@@ -88,6 +88,17 @@ Translations:
 
 ---
 
+## Storefront mobile and encoding fixes (April 2026)
+
+- Mobile header actions were reflowed to avoid overlapping logo real estate on initial viewport load.
+- Category navigation in `Navbar` now behaves as a mobile slider with `‹` / `›` controls and smooth horizontal step scrolling.
+- Slider controls auto-hide at start/end and initialize hidden until navigation bounds are computed.
+- Spanish storefront and wishlist strings were normalized to UTF-8 and corrected for accent rendering (`Colección`, `Categorías`, `Condición`, `Paginación`, etc.).
+- Category breadcrumbs now use a proper separator glyph and no longer display broken encoded characters.
+- Verified in local build and Dockerized runtime (`npm run build` + `docker compose ... up -d --build frontend`).
+
+---
+
 ## Component map (current)
 
 ```text

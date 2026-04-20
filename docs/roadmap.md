@@ -39,6 +39,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Per-size stock data model foundation (`product_size_stocks`, `sizeStocks` in product DTO)
 - [x] Chile-first defaults migration (`CLP` currency defaults + shipping origin normalization)
 - [x] Extended catalog DB migrations (`V7` to `V10`)
+- [x] Storefront mobile header/navigation polish: action-icon reflow + category slider controls + UTF-8 Spanish copy normalization
 
 ---
 

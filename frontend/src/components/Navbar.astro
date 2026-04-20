@@ -89,7 +89,7 @@ const categories = [
           />
         </a>
 
-        <div class="flex items-center gap-3">
+        <div id="nav-actions" class="flex items-center gap-3">
           <a
             href={`/${locale}/wishlist`}
             class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
@@ -114,26 +114,50 @@ const categories = [
 
   <div id="nav-cats" class="border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
     <div class="pe-container">
-      <ul class="flex w-max min-w-full items-center gap-0 overflow-x-auto pr-4 md:pr-0 hide-scrollbar" role="list" aria-label="Product categories">
-        <li class="shrink-0">
-          <a
-            href={`/${locale}/products`}
-            class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
-          >
-            {locale === 'es' ? 'Todo' : 'All'}
-          </a>
-        </li>
-        {categories.map(cat => (
-          <li class="shrink-0">
-            <a
-              href={`/${locale}/categories/${cat.slug}`}
-              class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
-            >
-              {locale === 'es' ? cat.labelEs : cat.labelEn}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <div class="nav-cats-shell">
+        <button
+          id="nav-cats-prev"
+          type="button"
+          class="nav-cats-slide-btn is-hidden"
+          data-side="left"
+          aria-label={locale === 'es' ? 'Deslizar categorías hacia la izquierda' : 'Slide categories left'}
+        >
+          <span class="nav-cats-slide-glyph" aria-hidden="true">‹</span>
+        </button>
+
+        <div id="nav-cats-scroller" class="hide-scrollbar">
+          <ul id="nav-cats-list" class="flex w-max min-w-full items-center gap-0 pr-4 md:pr-0" role="list" aria-label="Product categories">
+            <li class="shrink-0">
+              <a
+                href={`/${locale}/products`}
+                class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+              >
+                {locale === 'es' ? 'Todo' : 'All'}
+              </a>
+            </li>
+            {categories.map(cat => (
+              <li class="shrink-0">
+                <a
+                  href={`/${locale}/categories/${cat.slug}`}
+                  class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+                >
+                  {locale === 'es' ? cat.labelEs : cat.labelEn}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <button
+          id="nav-cats-next"
+          type="button"
+          class="nav-cats-slide-btn is-hidden"
+          data-side="right"
+          aria-label={locale === 'es' ? 'Deslizar categorías hacia la derecha' : 'Slide categories right'}
+        >
+          <span class="nav-cats-slide-glyph" aria-hidden="true">›</span>
+        </button>
+      </div>
     </div>
   </div>
 </header>
@@ -141,6 +165,16 @@ const categories = [
 <style>
   .hide-scrollbar { scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .nav-cats-shell { position: relative; }
+  #nav-cats-scroller { overflow-x: auto; scroll-behavior: smooth; }
+  #nav-cats-list > li { scroll-snap-align: start; }
+  .nav-cats-slide-btn { display: none; }
+  .nav-cats-slide-glyph {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.05rem;
+    line-height: 1;
+    transform: translateY(-0.5px);
+  }
 
   .nav-logo-wrap {
     position: relative;
@@ -241,6 +275,64 @@ const categories = [
   #site-header.theme-light #nav-cart-link { color: var(--pe-nav-subtle); }
 
   @media (max-width: 768px) {
+    #nav-cats-scroller {
+      scroll-snap-type: x proximity;
+      padding-inline: 1.5rem;
+    }
+
+    #nav-cats-list {
+      min-width: max-content;
+      padding-right: 2rem;
+    }
+
+    .nav-cats-shell::before,
+    .nav-cats-shell::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1.5rem;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .nav-cats-shell::before {
+      left: 0;
+      background: linear-gradient(to right, var(--pe-surface-soft), rgba(0, 0, 0, 0));
+    }
+
+    .nav-cats-shell::after {
+      right: 0;
+      background: linear-gradient(to left, var(--pe-surface-soft), rgba(0, 0, 0, 0));
+    }
+
+    .nav-cats-slide-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 9999px;
+      border: 1px solid color-mix(in srgb, var(--pe-border) 82%, transparent);
+      background-color: color-mix(in srgb, var(--pe-surface) 94%, transparent);
+      color: var(--pe-charcoal);
+      z-index: 2;
+      transition: opacity 220ms ease, transform 220ms ease;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .nav-cats-slide-btn[data-side="left"] { left: 0.15rem; }
+    .nav-cats-slide-btn[data-side="right"] { right: 0.15rem; }
+    .nav-cats-slide-btn.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) scale(0.94);
+    }
+
     .nav-logo-wrap {
       width: min(84vw, 560px);
       height: 134px;
@@ -257,10 +349,37 @@ const categories = [
     }
 
     #site-header:not(.logo-compact) #nav-main-row {
-      height: 140px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-areas:
+        "search . actions"
+        "logo logo logo";
+      align-items: center;
+      row-gap: 0.45rem;
+      height: auto;
+      padding-top: 0.5rem;
+      padding-bottom: 0.45rem;
+    }
+
+    #site-header:not(.logo-compact) #nav-search-btn {
+      grid-area: search;
+      justify-self: start;
+    }
+
+    #site-header:not(.logo-compact) #nav-actions {
+      grid-area: actions;
+      justify-self: end;
+    }
+
+    #site-header:not(.logo-compact) .nav-logo-wrap {
+      grid-area: logo;
+      justify-self: center;
     }
 
     #site-header.logo-compact #nav-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       height: 72px;
     }
 
@@ -276,6 +395,48 @@ const categories = [
   const COMPACT_ON_SCROLL_Y = 120;
   const EXPAND_ON_SCROLL_Y = 64;
   let isCompact = false;
+
+  function initCategorySlider() {
+    const scroller = document.getElementById('nav-cats-scroller') as HTMLDivElement | null;
+    const prevBtn = document.getElementById('nav-cats-prev') as HTMLButtonElement | null;
+    const nextBtn = document.getElementById('nav-cats-next') as HTMLButtonElement | null;
+    if (!scroller || !prevBtn || !nextBtn) return;
+    if (scroller.dataset.sliderReady === '1') return;
+    scroller.dataset.sliderReady = '1';
+
+    const updateButtons = () => {
+      const firstItem = scroller.querySelector('li') as HTMLLIElement | null;
+      const lastItem = scroller.querySelector('li:last-child') as HTMLLIElement | null;
+      const canScroll = scroller.scrollWidth - scroller.clientWidth > 4;
+      if (!firstItem || !lastItem || !canScroll) {
+        prevBtn.classList.add('is-hidden');
+        nextBtn.classList.add('is-hidden');
+        return;
+      }
+
+      const scrollerRect = scroller.getBoundingClientRect();
+      const firstRect = firstItem.getBoundingClientRect();
+      const lastRect = lastItem.getBoundingClientRect();
+      const atStart = firstRect.left >= scrollerRect.left - 1;
+      const atEnd = lastRect.right <= scrollerRect.right + 1;
+      prevBtn.classList.toggle('is-hidden', atStart);
+      nextBtn.classList.toggle('is-hidden', atEnd);
+    };
+
+    const scrollByStep = (dir: -1 | 1) => {
+      const step = Math.max(scroller.clientWidth * 0.7, 120);
+      scroller.scrollBy({ left: dir * step, behavior: 'smooth' });
+    };
+
+    prevBtn.addEventListener('click', () => scrollByStep(-1));
+    nextBtn.addEventListener('click', () => scrollByStep(1));
+    scroller.addEventListener('scroll', updateButtons, { passive: true });
+    window.addEventListener('resize', updateButtons, { passive: true });
+    window.addEventListener('load', updateButtons, { passive: true });
+    updateButtons();
+    requestAnimationFrame(updateButtons);
+    window.setTimeout(updateButtons, 180);
+  }
 
   function applyTheme(theme: string) {
     const header = document.getElementById('site-header');
@@ -318,6 +479,7 @@ const categories = [
   const saved = localStorage.getItem(STORAGE_KEY) ?? 'dark';
   applyTheme(saved);
   applyLogoScrollState();
+  initCategorySlider();
   document.getElementById('site-header')?.classList.add('logo-intro');
 
   document.getElementById('nav-search-btn')?.addEventListener('click', () => {

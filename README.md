@@ -1,6 +1,6 @@
 # Pilar Estilo
 
-> Lujo con Propósito — Luxury with Purpose
+> Lujo con Propósito - Luxury with Purpose
 
 Luxury online boutique for curated new and second-hand branded clothing.
 
@@ -23,6 +23,13 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 ```
 
 Open http://localhost
+
+## Latest updates (April 2026)
+
+- Admin product management now supports `Grilla` and `Cards` modes with responsive/mobile improvements.
+- Storefront mobile header now keeps action icons clear of the logo through a dedicated small-screen layout.
+- Storefront category navigation is now a mobile slider with `‹` / `›` controls and smooth step scrolling.
+- Spanish storefront and wishlist UI copy was normalized to UTF-8 (accent/mojibake fixes).
 
 ## Documentation
 

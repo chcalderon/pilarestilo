@@ -9,6 +9,25 @@ The format is inspired by Keep a Changelog.
 ### Changed
 - Pending
 
+## [2026-04-20] - Storefront mobile nav and UTF-8 text normalization
+
+### Fixed
+- Made storefront category navigation rail fully scrollable on mobile in `Navbar`.
+- Added mobile category slider controls (`‹` / `›`) with smooth step scrolling and auto-hide at bounds.
+- Improved slider control visibility logic to avoid initial double-button flash and hide/show based on real first/last item position.
+- Reworked mobile header layout so search/wishlist/cart actions do not overlap the logo on initial view.
+- Normalized Spanish storefront/wishlist copy with proper accents (removed mojibake), including labels like:
+  - `Colección`
+  - `Categorías`
+  - `Condición`
+  - `Paginación`
+  - `Tu lista de favoritos está vacía`
+- Replaced broken breadcrumb separator glyphs in category pages.
+
+### Verified
+- Frontend build passes (`npm run build`).
+- Docker frontend image rebuilt and container restarted successfully (`docker compose ... up -d --build frontend`).
+
 ## [2026-04-20] - Admin UI/UX and mobile responsiveness refresh
 
 ### Changed
