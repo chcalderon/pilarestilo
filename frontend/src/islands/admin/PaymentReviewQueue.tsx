@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Check, X, RefreshCw, ExternalLink } from 'lucide-react';
-import { getPendingPayments, approvePayment, rejectPayment, type PaymentDto } from '../../lib/api';
+import { getReviewQueuePayments, approvePayment, rejectPayment, type PaymentDto } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column } from './DataTable';
 
@@ -23,11 +23,26 @@ const STATUS_LABELS: Record<string, string> = {
 type ActionState = { id: string; action: 'approve' | 'reject' } | null;
 
 export default function PaymentReviewQueue() {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
   const [payments, setPayments] = useState<PaymentDto[]>([]);
   const [loading, setLoading]   = useState(true);
   const [acting, setActing]     = useState<ActionState>(null);
+
+  function readReviewerIdFromToken(jwt: string | null): string | null {
+    if (!jwt) return null;
+    try {
+      const payloadPart = jwt.split('.')[1];
+      if (!payloadPart) return null;
+      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+      const json = atob(padded);
+      const payload = JSON.parse(json) as { sub?: string };
+      return payload.sub ?? null;
+    } catch {
+      return null;
+    }
+  }
 
   const load = useCallback(async () => {
     if (!effectiveToken) {
@@ -36,7 +51,7 @@ export default function PaymentReviewQueue() {
     }
     setLoading(true);
     try {
-      const data = await getPendingPayments(effectiveToken);
+      const data = await getReviewQueuePayments(effectiveToken);
       setPayments(data);
     } finally {
       setLoading(false);
@@ -47,10 +62,16 @@ export default function PaymentReviewQueue() {
 
   async function handleAction(id: string, action: 'approve' | 'reject') {
     if (!effectiveToken) return;
+    const reviewerId = user?.id ?? readReviewerIdFromToken(effectiveToken);
+    if (!reviewerId) {
+      alert('No se pudo identificar al administrador actual. Vuelve a iniciar sesión.');
+      return;
+    }
+
     setActing({ id, action });
     try {
-      if (action === 'approve') await approvePayment(id, effectiveToken);
-      else await rejectPayment(id, effectiveToken);
+      if (action === 'approve') await approvePayment(id, reviewerId, effectiveToken);
+      else await rejectPayment(id, reviewerId, effectiveToken);
       setPayments(prev => prev.filter(p => p.id !== id));
     } catch {
       alert(`Error al ${action === 'approve' ? 'aprobar' : 'rechazar'} el pago.`);

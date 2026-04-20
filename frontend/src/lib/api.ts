@@ -70,6 +70,8 @@ export interface PaymentDto {
   method: string;
   status: string;
   proofReference?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
   createdAt: string;
 }
 
@@ -301,26 +303,73 @@ export async function deleteProduct(id: string, token?: string): Promise<void> {
   });
 }
 
-export async function getPendingPayments(token?: string): Promise<PaymentDto[]> {
-  try {
-    return await apiFetch<PaymentDto[]>('/payments?status=PENDING', {
+async function listPaymentsByStatus(status: string, token?: string): Promise<PaymentDto[]> {
+  const size = 100;
+  let pageNumber = 0;
+  let totalPages = 1;
+  const all: PaymentDto[] = [];
+
+  while (pageNumber < totalPages && pageNumber < 50) {
+    const query = buildQuery({
+      status,
+      page: pageNumber,
+      size,
+      sort: 'createdAt,desc',
+    });
+
+    const page = await apiFetch<Page<PaymentDto>>(`/payments${query}`, {
       headers: authHeaders(token),
     });
+
+    all.push(...(page.content ?? []));
+    totalPages = Math.max(page.totalPages ?? 1, 1);
+    pageNumber += 1;
+  }
+
+  return all;
+}
+
+export async function getPendingPayments(token?: string): Promise<PaymentDto[]> {
+  try {
+    return await listPaymentsByStatus('PENDING', token);
   } catch {
     return [];
   }
 }
 
-export async function approvePayment(paymentId: string, token?: string): Promise<void> {
-  await apiFetch<void>(`/payments/${encodeURIComponent(paymentId)}/approve`, {
-    method: 'POST',
+export async function getReviewQueuePayments(token?: string): Promise<PaymentDto[]> {
+  try {
+    const [submitted, underReview] = await Promise.all([
+      listPaymentsByStatus('SUBMITTED', token),
+      listPaymentsByStatus('UNDER_REVIEW', token),
+    ]);
+
+    const merged = [...submitted, ...underReview];
+    const byId = new Map<string, PaymentDto>();
+    for (const payment of merged) {
+      byId.set(payment.id, payment);
+    }
+
+    return [...byId.values()].sort(
+      (a, b) => new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function approvePayment(paymentId: string, reviewerId: string, token?: string): Promise<void> {
+  await apiFetch<void>(`/payments/${encodeURIComponent(paymentId)}/review`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'APPROVE', reviewerId }),
     headers: authHeaders(token),
   });
 }
 
-export async function rejectPayment(paymentId: string, token?: string): Promise<void> {
-  await apiFetch<void>(`/payments/${encodeURIComponent(paymentId)}/reject`, {
-    method: 'POST',
+export async function rejectPayment(paymentId: string, reviewerId: string, token?: string): Promise<void> {
+  await apiFetch<void>(`/payments/${encodeURIComponent(paymentId)}/review`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'REJECT', reviewerId }),
     headers: authHeaders(token),
   });
 }
