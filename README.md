@@ -31,6 +31,8 @@ Open http://localhost
 - Storefront category navigation is now a mobile slider with `<` / `>` controls and smooth step scrolling.
 - Spanish storefront and wishlist UI copy was normalized to UTF-8 (accent/mojibake fixes).
 - Product images now resolve through backend media routes (`/api/media/**`) backed by persisted Docker storage in `infra/storage/media`.
+- Customer account now supports bank-transfer proof submission (image upload or manual URL) directly from `My orders`.
+- Admin payment queue now includes `PENDING` rows for visibility and keeps review actions only for reviewable statuses.
 
 ## Documentation
 

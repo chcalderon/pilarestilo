@@ -74,8 +74,14 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 ### Payments
 
 - `POST /api/payments`
+- `GET /api/payments/order/{orderId}` (authenticated; customer ownership enforced)
 - `PATCH /api/payments/{id}/proof`
 - `PATCH /api/payments/{id}/review` (actions: `APPROVE` or `REJECT`)
+
+### Media upload
+
+- `POST /api/media/upload` (ADMIN/SELLER)
+- `POST /api/media/upload-proof` (authenticated users; used by customer proof flow)
 
 ---
 

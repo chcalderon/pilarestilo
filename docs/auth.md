@@ -67,12 +67,17 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/orders/{id}` | `isAuthenticated()` + customer ownership check |
 | `PATCH /api/orders/{id}/status` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
-| `PATCH /api/payments/{id}/proof` | `isAuthenticated()` |
+| `GET /api/payments/order/{orderId}` | `isAuthenticated()` + customer ownership check |
+| `PATCH /api/payments/{id}/proof` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
 | `PATCH /api/payments/{id}/review` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/payments/{id}` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/media/upload` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/media/upload-proof` | `isAuthenticated()` |
 
 Note: `GET /api/orders/{id}` - ADMIN/SELLER can read any order; CUSTOMER can only read their own (`customerId` must match principal id, otherwise `AccessDeniedException`).
+
+Note: `GET /api/payments/order/{orderId}` and `PATCH /api/payments/{id}/proof` apply ownership checks for `CUSTOMER` users. ADMIN/SELLER users can operate for support/admin workflows.
 
 Note: endpoints without method-level role guards still require authentication unless they are in the global public list.
 

@@ -73,6 +73,7 @@ Translations:
 - Reviews list/create flow
 - Cart experience with persisted state
 - Product cards now consume backend-hosted media paths (`/api/media/**`) instead of external image hosts
+- Account orders tab supports payment-proof submission for `BANK_TRANSFER` orders (image upload or proof URL)
 
 ---
 
@@ -86,15 +87,16 @@ Translations:
 - Admin action buttons were refreshed with consistent Lucide icon usage in core management flows.
 - Light theme tokens were darkened slightly (storefront + admin) to improve readability/contrast.
 - Storefront and wishlist grids were adjusted to be mobile-first (`1 column` at smallest breakpoints).
+- Payment review queue now lists `PENDING` entries and shows review actions only for `SUBMITTED`/`UNDER_REVIEW`.
 
 ---
 
 ## Storefront mobile and encoding fixes (April 2026)
 
 - Mobile header actions were reflowed to avoid overlapping logo real estate on initial viewport load.
-- Category navigation in `Navbar` now behaves as a mobile slider with `‹` / `›` controls and smooth horizontal step scrolling.
+- Category navigation in `Navbar` now behaves as a mobile slider with `<` / `>` controls and smooth horizontal step scrolling.
 - Slider controls auto-hide at start/end and initialize hidden until navigation bounds are computed.
-- Spanish storefront and wishlist strings were normalized to UTF-8 and corrected for accent rendering (`Colección`, `Categorías`, `Condición`, `Paginación`, etc.).
+- Spanish storefront and wishlist strings were normalized to UTF-8 and corrected for accent rendering (`Coleccion`, `Categorias`, `Condicion`, `Paginacion`, etc.).
 - Category breadcrumbs now use a proper separator glyph and no longer display broken encoded characters.
 - Verified in local build and Dockerized runtime (`npm run build` + `docker compose ... up -d --build frontend`).
 

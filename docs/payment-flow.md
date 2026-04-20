@@ -35,10 +35,15 @@ Important implementation detail:
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/payments` | Register payment for an order |
+| `GET` | `/api/payments/order/{orderId}` | Resolve payment linked to an order (customer ownership enforced) |
 | `PATCH` | `/api/payments/{id}/proof` | Submit payment proof (`proofReference`) |
 | `PATCH` | `/api/payments/{id}/review` | Review action (`APPROVE` or `REJECT`) |
 | `GET` | `/api/payments/{id}` | Get payment detail |
 | `GET` | `/api/payments?status=...` | List/filter payments |
+
+Supporting media upload endpoint used by storefront proof flow:
+
+- `POST /api/media/upload-proof` (authenticated)
 
 `/review` request shape:
 
@@ -60,6 +65,8 @@ Important implementation detail:
 
 ### Step 2 - Customer submits proof
 
+- Storefront account page resolves order payment with `GET /api/payments/order/{orderId}`.
+- Customer can upload a proof image with `POST /api/media/upload-proof` or paste a manual URL.
 - `PATCH /api/payments/{id}/proof`
 - `SubmitPaymentProofUseCase` sets status to `SUBMITTED`.
 - `PaymentSubmitted` event is published.
@@ -70,6 +77,7 @@ Important implementation detail:
 - `ReviewPaymentUseCase` transitions:
   - `SUBMITTED` -> `UNDER_REVIEW` -> `APPROVED`, or
   - `SUBMITTED` -> `UNDER_REVIEW` -> `REJECTED`
+- Admin queue UI includes `PENDING` rows for visibility, but review actions are enabled only for `SUBMITTED` and `UNDER_REVIEW`.
 
 ### Step 4 - Post-review events
 
@@ -86,6 +94,13 @@ Important implementation detail:
 ---
 
 ## 5. API Examples
+
+Get payment by order:
+
+```bash
+curl -X GET /api/payments/order/{orderId} \
+  -H "Authorization: Bearer <token>"
+```
 
 Submit proof:
 

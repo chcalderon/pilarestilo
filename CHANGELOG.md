@@ -9,6 +9,26 @@ The format is inspired by Keep a Changelog.
 ### Changed
 - Pending
 
+## [2026-04-20] - Customer proof submission and admin payment queue alignment
+
+### Added
+- Customer-facing payment resolution endpoint: `GET /api/payments/order/{orderId}`.
+- Customer proof media upload endpoint: `POST /api/media/upload-proof`.
+- Account page proof workflow: upload image or provide proof URL, then submit via `/api/payments/{id}/proof`.
+
+### Changed
+- `PATCH /api/payments/{id}/proof` now enforces customer ownership checks for `CUSTOMER` role.
+- Admin payment review queue now includes `PENDING` entries for visibility while keeping actions only for reviewable statuses.
+- Frontend API client now includes:
+  - `uploadPaymentProofImage`
+  - `getPaymentByOrder`
+  - `submitPaymentProof`
+
+### Verified
+- Frontend build passes (`npm run build`).
+- Backend authorization integration tests pass (`mvn -Dtest=AuthorizationGuardsIT test`).
+- End-to-end API validation confirmed `PENDING -> SUBMITTED` transition and admin queue visibility.
+
 ## [2026-04-20] - Backend-managed product media storage
 
 ### Changed

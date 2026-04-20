@@ -61,6 +61,8 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [ ] WhatsApp notifications (Twilio/Meta Cloud API)
 - [ ] Email notifications (SendGrid)
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
+- [x] Customer payment-proof self-service in account area (`GET /api/payments/order/{orderId}` + submit proof from `AccountPage`)
+- [x] Admin payment queue visibility for `PENDING` + review actions restricted to actionable statuses
 
 ---
 
