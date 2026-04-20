@@ -62,6 +62,17 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/wishlist` | `isAuthenticated()` |
 | `POST /api/wishlist/items/{productId}` | `isAuthenticated()` |
 | `DELETE /api/wishlist/items/{productId}` | `isAuthenticated()` |
+| `GET /api/orders` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/orders/mine` | `isAuthenticated()` |
+| `GET /api/orders/{id}` | `isAuthenticated()` + customer ownership check |
+| `PATCH /api/orders/{id}/status` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
+| `PATCH /api/payments/{id}/proof` | `isAuthenticated()` |
+| `PATCH /api/payments/{id}/review` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/payments/{id}` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
+
+Note: `GET /api/orders/{id}` - ADMIN/SELLER can read any order; CUSTOMER can only read their own (`customerId` must match principal id, otherwise `AccessDeniedException`).
 
 Note: endpoints without method-level role guards still require authentication unless they are in the global public list.
 
@@ -111,3 +122,4 @@ Registration currently enforces minimum length at API boundary:
 
 - `RegisterRequest.password` uses `@Size(min = 8)`
 - Passwords are hashed with BCrypt
+

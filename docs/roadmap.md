@@ -59,7 +59,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [ ] Webhook receiver for gateway events
 - [ ] WhatsApp notifications (Twilio/Meta Cloud API)
 - [ ] Email notifications (SendGrid)
-- [ ] Customer order history and receipts in account area
+- [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
 
 ---
 

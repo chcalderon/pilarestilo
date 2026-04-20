@@ -73,13 +73,15 @@ Important implementation detail:
 
 ### Step 4 - Post-review events
 
-- `APPROVED` publishes `PaymentConfirmed`.
-- `PaymentEventListener` reacts to `PaymentConfirmed` and moves order to `PAID`.
-- Notification listener also reacts to `PaymentConfirmed` (currently log-based adapter behavior).
+**On APPROVED:**
+- `PaymentConfirmed` event published.
+- `PaymentEventListener.onPaymentConfirmed` moves order to `PAID` (with idempotency guard - skips if order already past payment stage).
+- Notification listener also reacts to `PaymentConfirmed` (currently log-based adapter).
 
-Current gap:
-
-- `PaymentRejected` is published, but there is no listener yet updating order status or inventory release logic for rejection.
+**On REJECTED:**
+- `PaymentRejected` event published.
+- `PaymentEventListener.onPaymentRejected` moves order to `CANCELLED` and releases inventory for each line item.
+- Idempotency guard: skips if order already in `CANCELLED`, `PAID`, `PREPARING_ORDER`, `SHIPPED`, or `DELIVERED`.
 
 ---
 
@@ -116,3 +118,4 @@ curl -X PATCH /api/payments/{id}/review \
 ## 6. Gateway Upgrade Path
 
 `PaymentGatewayPort` is already present in domain. A future adapter (Mercado Pago/Stripe) can be added in infrastructure without changing domain models.
+
