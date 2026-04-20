@@ -73,4 +73,45 @@ class PaymentTest {
         Payment p = newPendingPayment();
         assertThrows(DomainException.class, p::markUnderReview);
     }
+
+    @Test
+    void gateway_confirm_from_pending_marks_approved() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        boolean changed = p.confirmByGateway();
+
+        assertTrue(changed);
+        assertEquals(PaymentStatus.APPROVED, p.getStatus());
+        assertNull(p.getReviewedBy());
+        assertNotNull(p.getReviewedAt());
+    }
+
+    @Test
+    void gateway_reject_from_pending_marks_rejected() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        boolean changed = p.rejectByGateway();
+
+        assertTrue(changed);
+        assertEquals(PaymentStatus.REJECTED, p.getStatus());
+        assertNull(p.getReviewedBy());
+        assertNotNull(p.getReviewedAt());
+    }
+
+    @Test
+    void gateway_confirm_is_idempotent_when_already_approved() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        p.confirmByGateway();
+
+        boolean changed = p.confirmByGateway();
+
+        assertFalse(changed);
+        assertEquals(PaymentStatus.APPROVED, p.getStatus());
+    }
+
+    @Test
+    void gateway_reject_after_approved_throws() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        p.confirmByGateway();
+
+        assertThrows(DomainException.class, p::rejectByGateway);
+    }
 }

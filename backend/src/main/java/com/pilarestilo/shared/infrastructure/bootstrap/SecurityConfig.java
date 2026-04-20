@@ -27,6 +27,7 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET,  "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/categories/**").permitAll()

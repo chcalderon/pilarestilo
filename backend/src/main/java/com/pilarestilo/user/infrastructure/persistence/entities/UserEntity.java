@@ -23,6 +23,9 @@ public class UserEntity {
     @Column(nullable = false, length = 50)
     private UserRole role;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Column(name = "password_hash")
     private String passwordHash;
 
@@ -40,6 +43,9 @@ public class UserEntity {
 
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }

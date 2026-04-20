@@ -33,6 +33,10 @@ Open http://localhost
 - Product images now resolve through backend media routes (`/api/media/**`) backed by persisted Docker storage in `infra/storage/media`.
 - Customer account now supports bank-transfer proof submission (image upload or manual URL) directly from `My orders`.
 - Admin payment queue now includes `PENDING` rows for visibility and keeps review actions only for reviewable statuses.
+- Payment module now exposes gateway-ready endpoints for checkout session creation and webhook ingestion (`/api/payments/{id}/gateway/checkout`, `/api/payments/webhooks/gateway`), currently backed by stub adapter.
+- Checkout now allows selecting `Transferencia` or `Pasarela (simulada)` so payment flows can be tested before production gateway onboarding.
+- Account area now includes profile self-service (`nombre`) and password change actions.
+- Admin now includes user management (`/admin/users`) for customers/workers, including role, status, password reset, deletion, and credit assignment.
 
 ## Documentation
 

@@ -160,8 +160,13 @@ html[data-theme='light'] .text-pe-charcoal\/55 {
 }
 
 html[data-theme='light'] .text-pe-charcoal\/60,
+html[data-theme='light'] .text-pe-charcoal\/65,
 html[data-theme='light'] .text-pe-charcoal\/70 {
   color: color-mix(in srgb, var(--pe-muted) 82%, transparent) !important;
+}
+
+html[data-theme='light'] .text-pe-charcoal\/75 {
+  color: color-mix(in srgb, var(--pe-muted) 88%, transparent) !important;
 }
 
 html[data-theme='light'] .placeholder\:text-pe-charcoal\/30::placeholder {
@@ -205,8 +210,13 @@ html[data-theme='dark'] .text-pe-charcoal\/55 {
 }
 
 html[data-theme='dark'] .text-pe-charcoal\/60,
+html[data-theme='dark'] .text-pe-charcoal\/65,
 html[data-theme='dark'] .text-pe-charcoal\/70 {
   color: color-mix(in srgb, var(--pe-muted) 88%, transparent) !important;
+}
+
+html[data-theme='dark'] .text-pe-charcoal\/75 {
+  color: color-mix(in srgb, var(--pe-muted) 94%, transparent) !important;
 }
 
 html[data-theme='dark'] .placeholder\:text-pe-charcoal\/30::placeholder {

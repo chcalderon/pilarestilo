@@ -45,7 +45,13 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrderRequest request) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrderRequest request,
+                                           @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        if (currentUser == null || !request.customerId().equals(currentUser.id())) {
+            throw new AccessDeniedException("You can only create orders for your own account");
+        }
+
         List<CreateOrderCommand.OrderItemCommand> items = request.items().stream()
                 .map(i -> new CreateOrderCommand.OrderItemCommand(i.productId(), i.quantity()))
                 .toList();
@@ -55,7 +61,8 @@ public class OrderController {
                 items,
                 PaymentMethod.valueOf(request.paymentMethod()),
                 request.notes(),
-                Money.zero()  // discount pre-applied externally; defaults to zero here
+                Money.zero(),
+                currentUser.role() == UserRole.SELLER
         );
 
         OrderDto dto = createOrderUseCase.execute(command);

@@ -32,6 +32,9 @@ public class RefreshTokenUseCase {
         UUID userId = UUID.fromString(claims.getSubject());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new DomainException("User not found"));
+        if (!user.isActive()) {
+            throw new DomainException("This account is blocked");
+        }
 
         String access  = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());

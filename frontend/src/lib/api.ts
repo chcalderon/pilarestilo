@@ -97,6 +97,38 @@ export interface OrderDto {
   updatedAt: string;
 }
 
+export interface AdminUserDto {
+  id: string;
+  email: string;
+  fullName: string;
+  role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
+  active: boolean;
+  createdAt: string;
+}
+
+export interface UpdateAdminUserRequest {
+  fullName?: string;
+  role?: AdminUserDto['role'];
+  active?: boolean;
+}
+
+export interface CustomerCreditDto {
+  id: string;
+  customerId: string;
+  balanceAmount: number;
+  balanceCurrency: string;
+}
+
+export interface CreditMovementDto {
+  id: string;
+  customerId: string;
+  type: 'CREDIT_GRANTED' | 'CREDIT_USED' | 'CREDIT_EXPIRED' | 'CREDIT_ADJUSTED';
+  amount: number;
+  currency: string;
+  reason?: string | null;
+  createdAt: string;
+}
+
 export interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
@@ -236,7 +268,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers,
   });
   if (!res.ok) {
-    throw new Error(`API error ${res.status} for ${url}`);
+    let detail = `API error ${res.status} for ${url}`;
+    try {
+      const body = await res.json() as { detail?: string; message?: string; error?: string };
+      detail = body.detail ?? body.message ?? body.error ?? detail;
+    } catch {
+      // Keep default detail when body is not JSON.
+    }
+    throw new Error(detail);
   }
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
@@ -373,7 +412,14 @@ export async function uploadPaymentProofImage(file: File, token: string): Promis
   });
 
   if (!res.ok) {
-    throw new Error(`Error al subir comprobante (${res.status})`);
+    let detail = `Error al subir comprobante (${res.status})`;
+    try {
+      const body = await res.json() as { detail?: string; message?: string };
+      detail = body.detail ?? body.message ?? detail;
+    } catch {
+      // keep default detail
+    }
+    throw new Error(detail);
   }
 
   return res.json() as Promise<MediaUploadDto>;
@@ -408,6 +454,14 @@ async function listPaymentsByStatus(status: string, token?: string): Promise<Pay
 export async function getPendingPayments(token?: string): Promise<PaymentDto[]> {
   try {
     return await listPaymentsByStatus('PENDING', token);
+  } catch {
+    return [];
+  }
+}
+
+export async function getApprovedPayments(token?: string): Promise<PaymentDto[]> {
+  try {
+    return await listPaymentsByStatus('APPROVED', token);
   } catch {
     return [];
   }
@@ -469,6 +523,27 @@ export async function submitPaymentProof(paymentId: string, proofReference: stri
   });
 }
 
+export type GatewaySimulationStatus = 'APPROVED' | 'FAILED';
+
+export async function simulateGatewayPaymentStatus(
+  paymentId: string,
+  gatewayStatus: GatewaySimulationStatus,
+  signature?: string
+): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (signature) {
+    headers['X-Gateway-Signature'] = signature;
+  }
+  await apiFetch<void>('/payments/webhooks/gateway', {
+    method: 'POST',
+    body: JSON.stringify({
+      paymentId,
+      gatewayStatus,
+    }),
+    headers,
+  });
+}
+
 // ─── Auth Types ───────────────────────────────────────────────────────────────
 
 export interface AuthTokenResponse {
@@ -478,6 +553,14 @@ export interface AuthTokenResponse {
   userId: string;
   email: string;
   role: string;
+}
+
+export interface UserProfileDto {
+  id: string;
+  email: string;
+  fullName: string;
+  role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
+  active: boolean;
 }
 
 export interface ReviewDto {
@@ -523,6 +606,28 @@ export async function getAuthMe(token: string): Promise<{ id: string; email: str
   });
 }
 
+export async function getMyProfile(token: string): Promise<UserProfileDto> {
+  return apiFetch<UserProfileDto>('/auth/me/profile', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function updateMyProfile(fullName: string, token: string): Promise<UserProfileDto> {
+  return apiFetch<UserProfileDto>('/auth/me/profile', {
+    method: 'PATCH',
+    body: JSON.stringify({ fullName }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function changeMyPassword(currentPassword: string, newPassword: string, token: string): Promise<void> {
+  await apiFetch<void>('/auth/me/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ currentPassword, newPassword }),
+    headers: authHeaders(token),
+  });
+}
+
 export async function getMyOrders(token: string, page = 0, size = 20): Promise<Page<OrderDto>> {
   try {
     const query = buildQuery({ page, size, sort: 'createdAt,desc' });
@@ -540,6 +645,91 @@ export async function createOrder(data: CreateOrderRequest, token: string): Prom
     body: JSON.stringify(data),
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+export async function getAdminOrdersByCustomer(
+  customerId: string,
+  token: string,
+  page = 0,
+  size = 30
+): Promise<Page<OrderDto>> {
+  try {
+    const query = buildQuery({ customerId, page, size, sort: 'createdAt,desc' });
+    return await apiFetch<Page<OrderDto>>(`/orders${query}`, {
+      headers: authHeaders(token),
+    });
+  } catch {
+    return { content: [], totalElements: 0, totalPages: 0, size, number: page };
+  }
+}
+
+export async function getAdminUsers(token: string, page = 0, size = 200): Promise<Page<AdminUserDto>> {
+  const query = buildQuery({ page, size, sort: 'createdAt,desc' });
+  return apiFetch<Page<AdminUserDto>>(`/users${query}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function updateAdminUser(userId: string, data: UpdateAdminUserRequest, token: string): Promise<AdminUserDto> {
+  return apiFetch<AdminUserDto>(`/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function deleteAdminUser(userId: string, token: string): Promise<void> {
+  await apiFetch<void>(`/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function resetAdminUserPassword(userId: string, newPassword: string, token: string): Promise<void> {
+  await apiFetch<void>(`/users/${encodeURIComponent(userId)}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ newPassword }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getCustomerCredit(customerId: string, token: string): Promise<CustomerCreditDto | null> {
+  try {
+    return await apiFetch<CustomerCreditDto>(`/customers/${encodeURIComponent(customerId)}/credit`, {
+      headers: authHeaders(token),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function grantCustomerCredit(
+  customerId: string,
+  amount: number,
+  reason: string,
+  token: string
+): Promise<CustomerCreditDto> {
+  return apiFetch<CustomerCreditDto>(`/customers/${encodeURIComponent(customerId)}/credit/grant`, {
+    method: 'POST',
+    body: JSON.stringify({ amount, reason }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getCustomerCreditMovements(
+  customerId: string,
+  token: string,
+  page = 0,
+  size = 100
+): Promise<Page<CreditMovementDto>> {
+  try {
+    const query = buildQuery({ page, size, sort: 'createdAt,desc' });
+    return await apiFetch<Page<CreditMovementDto>>(
+      `/customers/${encodeURIComponent(customerId)}/credit/movements${query}`,
+      { headers: authHeaders(token) }
+    );
+  } catch {
+    return { content: [], totalElements: 0, totalPages: 0, size, number: page };
+  }
 }
 
 // ─── Review API ───────────────────────────────────────────────────────────────
@@ -713,3 +903,4 @@ export async function removeFromWishlist(productId: string, token: string): Prom
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+

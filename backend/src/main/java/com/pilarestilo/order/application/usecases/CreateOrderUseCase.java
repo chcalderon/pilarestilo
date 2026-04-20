@@ -12,10 +12,13 @@ import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.application.Money;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -61,10 +64,22 @@ public class CreateOrderUseCase {
             inventoryService.reserve(itemCmd.productId(), itemCmd.quantity());
         }
 
+        var discount = command.discountAmount() != null ? command.discountAmount() : Money.zero();
+        if (command.employeeDiscountEligible()) {
+            BigDecimal subtotalAmount = orderItems.stream()
+                    .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal employeeDiscountAmount = subtotalAmount
+                    .multiply(new BigDecimal("0.10"))
+                    .setScale(2, RoundingMode.HALF_UP);
+            var employeeDiscount = Money.of(employeeDiscountAmount, discount.currency());
+            discount = discount.add(employeeDiscount);
+        }
+
         Order order = Order.create(
                 command.customerId(),
                 orderItems,
-                command.discountAmount(),
+                discount,
                 command.paymentMethod(),
                 command.notes()
         );

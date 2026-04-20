@@ -6,8 +6,30 @@ The format is inspired by Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- Gateway checkout session endpoint: `POST /api/payments/{id}/gateway/checkout` for payments created with `PAYMENT_GATEWAY`.
+- Gateway webhook endpoint: `POST /api/payments/webhooks/gateway` with optional signature validation via `X-Gateway-Signature`.
+- New payment gateway webhook processor use case with idempotent handling of repeated final-state events.
+- Stub gateway adapter now returns checkout session payload (`gatewayReference`, `checkoutUrl`, `expiresAt`) instead of throwing `UnsupportedOperationException`.
+- Auth profile self-service endpoints: `GET /api/auth/me/profile`, `PATCH /api/auth/me/profile`, `PATCH /api/auth/me/password`.
+- Admin user-management endpoints: `PATCH /api/users/{id}`, `PATCH /api/users/{id}/password`, `DELETE /api/users/{id}`.
+- Admin payment panel now includes `Por revisar` and `Pagados` tabs with search, date sorting, and filter reset.
+- Temporary gateway simulation controls in UI:
+  - Customer account: `Simular aprobado` / `Simular rechazado` for `PAYMENT_GATEWAY` orders.
+  - Admin queue: `Sim aprobar` / `Sim rechazar` actions for pending gateway rows.
+
 ### Changed
-- Pending
+- `PaymentGatewayPort` now returns a structured checkout session object.
+- Payment domain now supports gateway-driven transitions (`confirmByGateway`, `rejectByGateway`) with safeguards against conflicting final states.
+- Security config now explicitly allows unauthenticated POST calls only to `/api/payments/webhooks/gateway`.
+- Storefront checkout now allows selecting payment method (`BANK_TRANSFER` or `PAYMENT_GATEWAY`) and applies employee discount visualization for `SELLER` users.
+- Account profile screen now supports inline profile editing and password change workflow.
+- API error handling in frontend now surfaces backend `detail/message` when available (including media-proof upload failures).
+
+### Verified
+- Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.
+- Frontend build passes (`npm run build`).
+- Docker stack rebuild for `backend` and `frontend` completed successfully.
 
 ## [2026-04-20] - Customer proof submission and admin payment queue alignment
 

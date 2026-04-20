@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import UserManagement from '../../islands/admin/UserManagement';
+---
+
+<AdminLayout
+  title="Usuarios"
+  breadcrumbs={[{ label: 'Usuarios' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Gestion de Usuarios</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      Administra clientes y trabajadores, revisa creditos y controla accesos.
+    </p>
+  </div>
+
+  <UserManagement client:load />
+</AdminLayout>

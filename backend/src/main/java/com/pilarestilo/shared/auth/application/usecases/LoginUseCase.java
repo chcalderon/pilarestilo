@@ -26,6 +26,9 @@ public class LoginUseCase {
     public AuthTokenDto execute(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new DomainException("Invalid credentials"));
+        if (!user.isActive()) {
+            throw new DomainException("This account is blocked");
+        }
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new DomainException("Invalid credentials");
         }

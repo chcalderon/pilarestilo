@@ -2,6 +2,7 @@ package com.pilarestilo.user.infrastructure.persistence.repositories;
 
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
+import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.infrastructure.persistence.entities.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,34 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public Page<User> findByRoleAndActive(UserRole role, Boolean active, Pageable pageable) {
+        if (active == null) {
+            return jpaRepository.findByRole(role, pageable).map(this::toDomain);
+        }
+        return jpaRepository.findByRoleAndActive(role, active, pageable).map(this::toDomain);
+    }
+
+    @Override
+    public Page<User> findByRole(UserRole role, Pageable pageable) {
+        return jpaRepository.findByRole(role, pageable).map(this::toDomain);
+    }
+
+    @Override
+    public Page<User> findByActive(boolean active, Pageable pageable) {
+        return jpaRepository.findByActive(active, pageable).map(this::toDomain);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        return jpaRepository.existsById(id);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jpaRepository.deleteById(id);
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return jpaRepository.existsByEmail(email);
     }
@@ -51,16 +80,21 @@ public class UserRepositoryAdapter implements UserRepository {
         entity.setEmail(user.getEmail());
         entity.setFullName(user.getFullName());
         entity.setRole(user.getRole());
+        entity.setActive(user.isActive());
         entity.setPasswordHash(user.getPasswordHash());
         entity.setCreatedAt(user.getCreatedAt());
         return entity;
     }
 
     private User toDomain(UserEntity entity) {
-        User user = User.create(entity.getEmail(), entity.getFullName(),
-                entity.getRole(), entity.getPasswordHash());
-        user.setId(entity.getId());
-        user.setCreatedAt(entity.getCreatedAt());
-        return user;
+        return User.reconstruct(
+                entity.getId(),
+                entity.getEmail(),
+                entity.getFullName(),
+                entity.getRole(),
+                entity.isActive(),
+                entity.getPasswordHash(),
+                entity.getCreatedAt()
+        );
     }
 }

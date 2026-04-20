@@ -28,6 +28,9 @@ openssl rand -base64 32
 | `POST` | `/api/auth/login` | Issue access + refresh tokens |
 | `POST` | `/api/auth/refresh` | Rotate access token |
 | `GET` | `/api/auth/me` | Return current authenticated user |
+| `GET` | `/api/auth/me/profile` | Return authenticated user profile details |
+| `PATCH` | `/api/auth/me/profile` | Update authenticated user full name |
+| `PATCH` | `/api/auth/me/password` | Change authenticated user password |
 
 ---
 
@@ -36,14 +39,19 @@ openssl rand -base64 32
 ### Public routes
 
 - `POST /api/auth/**`
+- `POST /api/payments/webhooks/gateway`
 - `GET /api/products/**`
 - `GET /api/categories/**`
+- `GET /api/media/**`
 - `/actuator/**`
 - `/api/actuator/**`
 
 ### Authenticated routes
 
 - `GET /api/auth/me`
+- `GET /api/auth/me/profile`
+- `PATCH /api/auth/me/profile`
+- `PATCH /api/auth/me/password`
 - Any route not explicitly listed as public
 
 ---
@@ -70,14 +78,22 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/payments/order/{orderId}` | `isAuthenticated()` + customer ownership check |
 | `PATCH /api/payments/{id}/proof` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
 | `PATCH /api/payments/{id}/review` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/payments/{id}/gateway/checkout` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
 | `GET /api/payments/{id}` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/media/upload` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/media/upload-proof` | `isAuthenticated()` |
+| `GET /api/users` | `hasRole('ADMIN')` |
+| `GET /api/users/{id}` | `hasRole('ADMIN')` |
+| `PATCH /api/users/{id}` | `hasRole('ADMIN')` (plus self-protection guards) |
+| `PATCH /api/users/{id}/password` | `hasRole('ADMIN')` |
+| `DELETE /api/users/{id}` | `hasRole('ADMIN')` (self-deletion blocked) |
 
 Note: `GET /api/orders/{id}` - ADMIN/SELLER can read any order; CUSTOMER can only read their own (`customerId` must match principal id, otherwise `AccessDeniedException`).
 
-Note: `GET /api/payments/order/{orderId}` and `PATCH /api/payments/{id}/proof` apply ownership checks for `CUSTOMER` users. ADMIN/SELLER users can operate for support/admin workflows.
+Note: `GET /api/payments/order/{orderId}`, `PATCH /api/payments/{id}/proof`, and `POST /api/payments/{id}/gateway/checkout` apply ownership checks for `CUSTOMER` users. ADMIN/SELLER users can operate for support/admin workflows.
+
+Note: `/api/auth/me/profile` and `/api/auth/me/password` are authenticated via global security rules and use current principal id internally.
 
 Note: endpoints without method-level role guards still require authentication unless they are in the global public list.
 

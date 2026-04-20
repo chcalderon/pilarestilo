@@ -2,6 +2,7 @@ package com.pilarestilo.shared.auth.infrastructure;
 
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.user.domain.enums.UserRole;
+import com.pilarestilo.user.domain.ports.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,9 +23,11 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -36,6 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.isValid(token)) {
             Claims claims = jwtTokenProvider.parseToken(token);
             UUID userId = UUID.fromString(claims.getSubject());
+            var user = userRepository.findById(userId).orElse(null);
+            if (user == null || !user.isActive()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             String email = claims.get("email", String.class);
             UserRole role = UserRole.valueOf(claims.get("role", String.class));
 

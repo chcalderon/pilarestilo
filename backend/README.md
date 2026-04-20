@@ -32,7 +32,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 
 | Module | Responsibility |
 |---|---|
-| `shared/auth` | JWT issuance/validation, auth filter, login/register/refresh/me |
+| `shared/auth` | JWT issuance/validation, auth filter, login/register/refresh/me + self profile/password |
 | `product` | Product CRUD, catalog filters, search, rating summary fields, sizeStocks projection |
 | `category` | Category tree and taxonomy |
 | `review` | Product reviews + moderation workflow |
@@ -55,6 +55,17 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `GET /api/auth/me`
+- `GET /api/auth/me/profile`
+- `PATCH /api/auth/me/profile`
+- `PATCH /api/auth/me/password`
+
+### Users (admin)
+
+- `GET /api/users`
+- `GET /api/users/{id}`
+- `PATCH /api/users/{id}`
+- `PATCH /api/users/{id}/password`
+- `DELETE /api/users/{id}`
 
 ### Catalog
 
@@ -77,6 +88,8 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `GET /api/payments/order/{orderId}` (authenticated; customer ownership enforced)
 - `PATCH /api/payments/{id}/proof`
 - `PATCH /api/payments/{id}/review` (actions: `APPROVE` or `REJECT`)
+- `POST /api/payments/{id}/gateway/checkout` (authenticated; owner/admin/seller)
+- `POST /api/payments/webhooks/gateway` (public; optional `X-Gateway-Signature` validation)
 
 ### Media upload
 
@@ -114,6 +127,8 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `SPRING_DATASOURCE_PASSWORD` | Yes | DB password |
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
+| `PAYMENT_GATEWAY_WEBHOOK_SECRET` | No | If set, must match `X-Gateway-Signature` on `/api/payments/webhooks/gateway` |
+| `PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL` | No | Base URL used by stub gateway checkout sessions |
 | `SPRING_PROFILES_ACTIVE` | No | `local` for dev profile |
 | `SERVER_PORT` | No | API port (default 8080) |
 
@@ -130,13 +145,14 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V11`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V12`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
 - wishlist schema (`V9`)
 - Chile currency/default normalization (`V10`)
 - product image path migration to backend media routes (`V11`)
+- active-flag support for users (`V12`)
 
 ---
 

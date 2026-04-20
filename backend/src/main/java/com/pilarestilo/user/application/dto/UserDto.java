@@ -8,5 +8,6 @@ public record UserDto(
         String email,
         String fullName,
         String role,
+        boolean active,
         Instant createdAt
 ) {}

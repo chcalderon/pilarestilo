@@ -82,6 +82,32 @@ public class Payment {
         this.reviewedAt = Instant.now();
     }
 
+    public boolean confirmByGateway() {
+        if (status == PaymentStatus.APPROVED) {
+            return false;
+        }
+        if (status == PaymentStatus.REJECTED) {
+            throw new DomainException("Cannot confirm payment already rejected");
+        }
+        this.status = PaymentStatus.APPROVED;
+        this.reviewedBy = null;
+        this.reviewedAt = Instant.now();
+        return true;
+    }
+
+    public boolean rejectByGateway() {
+        if (status == PaymentStatus.REJECTED) {
+            return false;
+        }
+        if (status == PaymentStatus.APPROVED) {
+            throw new DomainException("Cannot reject payment already approved");
+        }
+        this.status = PaymentStatus.REJECTED;
+        this.reviewedBy = null;
+        this.reviewedAt = Instant.now();
+        return true;
+    }
+
     public UUID getId() { return id; }
     public UUID getOrderId() { return orderId; }
     public PaymentMethod getMethod() { return method; }

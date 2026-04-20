@@ -11,7 +11,8 @@ public record CreateOrderCommand(
         List<OrderItemCommand> items,
         PaymentMethod paymentMethod,
         String notes,
-        Money discountAmount
+        Money discountAmount,
+        boolean employeeDiscountEligible
 ) {
     public record OrderItemCommand(UUID productId, int quantity) {}
 }

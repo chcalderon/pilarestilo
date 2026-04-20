@@ -74,6 +74,9 @@ Translations:
 - Cart experience with persisted state
 - Product cards now consume backend-hosted media paths (`/api/media/**`) instead of external image hosts
 - Account orders tab supports payment-proof submission for `BANK_TRANSFER` orders (image upload or proof URL)
+- Account profile tab now supports profile name update + password change (`/api/auth/me/profile`, `/api/auth/me/password`)
+- Cart summary now supports payment method selection (`Transferencia` / `Pasarela (simulada)`) and reflects worker discount
+- Gateway simulation actions are available in account orders for `PAYMENT_GATEWAY` (approve/reject simulation)
 
 ---
 
@@ -88,6 +91,8 @@ Translations:
 - Light theme tokens were darkened slightly (storefront + admin) to improve readability/contrast.
 - Storefront and wishlist grids were adjusted to be mobile-first (`1 column` at smallest breakpoints).
 - Payment review queue now lists `PENDING` entries and shows review actions only for `SUBMITTED`/`UNDER_REVIEW`.
+- Payment review queue now has `Por revisar` / `Pagados` tabs, search, date sorting, and clear filters.
+- Added admin user management screen (`/admin/users`) with edit/reset password/role/status/delete and customer credit assignment.
 
 ---
 
@@ -134,6 +139,7 @@ src/
       ProductForm.tsx
       ProductTable.tsx
       ReviewModerationQueue.tsx
+      UserManagement.tsx
     auth/
       AccountMenu.tsx
       AccountPage.tsx

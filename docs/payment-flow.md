@@ -4,7 +4,10 @@ This document is aligned with the current backend implementation.
 
 ## 1. Current Approach
 
-Payments are semi-manual and admin-reviewed. There is no active external gateway adapter yet.
+Payments currently support two operational paths:
+
+- Semi-manual transfer flow (customer proof + admin review)
+- Gateway-ready flow with checkout session + webhook processing (currently wired with stub adapter)
 
 Supported methods in domain enum:
 
@@ -12,7 +15,7 @@ Supported methods in domain enum:
 - `CASH_ON_DELIVERY`
 - `AGREED_BY_WHATSAPP`
 - `STORE_CREDIT`
-- `PAYMENT_GATEWAY` (reserved seam, not wired to provider yet)
+- `PAYMENT_GATEWAY`
 
 ---
 
@@ -38,6 +41,8 @@ Important implementation detail:
 | `GET` | `/api/payments/order/{orderId}` | Resolve payment linked to an order (customer ownership enforced) |
 | `PATCH` | `/api/payments/{id}/proof` | Submit payment proof (`proofReference`) |
 | `PATCH` | `/api/payments/{id}/review` | Review action (`APPROVE` or `REJECT`) |
+| `POST` | `/api/payments/{id}/gateway/checkout` | Create checkout session for gateway payment |
+| `POST` | `/api/payments/webhooks/gateway` | Receive gateway webhook event (public endpoint, optional signature) |
 | `GET` | `/api/payments/{id}` | Get payment detail |
 | `GET` | `/api/payments?status=...` | List/filter payments |
 
@@ -71,6 +76,30 @@ Supporting media upload endpoint used by storefront proof flow:
 - `SubmitPaymentProofUseCase` sets status to `SUBMITTED`.
 - `PaymentSubmitted` event is published.
 
+### Step 2b - Customer starts gateway checkout
+
+- For orders created with `PAYMENT_GATEWAY`, authenticated user can call:
+  - `POST /api/payments/{id}/gateway/checkout`
+- Backend resolves order total and asks `PaymentGatewayPort` for checkout session data.
+- Current stub adapter returns:
+  - `gatewayReference`
+  - `checkoutUrl`
+  - `expiresAt`
+
+### Step 2c - Temporary simulation mode (dev/staging)
+
+- Storefront cart exposes payment method selector:
+  - `Transferencia` -> regular proof-based flow
+  - `Pasarela (simulada)` -> gateway webhook simulation flow
+- In account orders (`PAYMENT_GATEWAY` only), users can trigger:
+  - `Simular aprobado`
+  - `Simular rechazado`
+- In admin payment queue, pending gateway rows expose:
+  - `Sim aprobar`
+  - `Sim rechazar`
+- These controls call the same webhook endpoint used by provider integrations:
+  - `POST /api/payments/webhooks/gateway`
+
 ### Step 3 - Admin decision
 
 - `PATCH /api/payments/{id}/review`
@@ -90,6 +119,19 @@ Supporting media upload endpoint used by storefront proof flow:
 - `PaymentRejected` event published.
 - `PaymentEventListener.onPaymentRejected` moves order to `CANCELLED` and releases inventory for each line item.
 - Idempotency guard: skips if order already in `CANCELLED`, `PAID`, `PREPARING_ORDER`, `SHIPPED`, or `DELIVERED`.
+
+### Step 5 - Gateway webhook decisions
+
+- Gateway posts to `POST /api/payments/webhooks/gateway` with:
+  - `paymentId`
+  - `gatewayStatus` (for example: `APPROVED`, `FAILED`, `PENDING`)
+- If `PAYMENT_GATEWAY_WEBHOOK_SECRET` is configured, header `X-Gateway-Signature` must match.
+- Webhook processor maps statuses:
+  - Approved-like -> payment `APPROVED` + `PaymentConfirmed` event
+  - Rejected-like -> payment `REJECTED` + `PaymentRejected` event
+  - Pending-like -> accepted with no state transition
+- Duplicate webhook deliveries are idempotent on final states.
+- This endpoint is currently reused by temporary UI simulation controls for non-production environments.
 
 ---
 
@@ -128,9 +170,22 @@ curl -X PATCH /api/payments/{id}/review \
   -d '{"action":"REJECT","reviewerId":"<admin-uuid>"}'
 ```
 
+Simulate gateway approval (dev):
+
+```bash
+curl -X POST /api/payments/webhooks/gateway \
+  -H "Content-Type: application/json" \
+  -d '{"paymentId":"<payment-uuid>","gatewayStatus":"APPROVED"}'
+```
+
 ---
 
 ## 6. Gateway Upgrade Path
 
-`PaymentGatewayPort` is already present in domain. A future adapter (Mercado Pago/Stripe) can be added in infrastructure without changing domain models.
+`PaymentGatewayPort` is active in domain and currently backed by `StubPaymentGatewayAdapter`.
+
+Next step to reach production gateway:
+
+- Replace stub with a provider adapter (Mercado Pago or Stripe)
+- Keep current checkout and webhook endpoints as stable contracts
 

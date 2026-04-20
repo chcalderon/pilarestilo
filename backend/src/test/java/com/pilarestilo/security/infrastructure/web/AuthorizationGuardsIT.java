@@ -66,6 +66,19 @@ class AuthorizationGuardsIT {
     }
 
     @Test
+    void gateway_webhook_endpoint_is_public_but_still_validates_payload() throws Exception {
+        String body = om.writeValueAsString(Map.of(
+                "paymentId", UUID.randomUUID(),
+                "gatewayStatus", "APPROVED"
+        ));
+
+        mvc.perform(post("/api/payments/webhooks/gateway")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void customer_is_forbidden_from_admin_order_and_payment_endpoints() throws Exception {
         String customerToken = registerCustomerAndGetToken("forbidden_customer_" + UUID.randomUUID() + "@test.com");
 

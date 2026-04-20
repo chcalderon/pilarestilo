@@ -5,12 +5,17 @@ import {
   getMyReviews,
   deleteReview,
   getMyOrders,
+  getMyProfile,
+  updateMyProfile,
+  changeMyPassword,
   getPaymentByOrder,
   submitPaymentProof,
   uploadPaymentProofImage,
+  simulateGatewayPaymentStatus,
   type ReviewDto,
   type OrderDto,
   type PaymentDto,
+  type UserProfileDto,
 } from '../../lib/api';
 
 interface Props {
@@ -31,11 +36,24 @@ export default function AccountPage({ locale }: Props) {
   const [proofLinksByOrder, setProofLinksByOrder] = useState<Record<string, string>>({});
   const [proofSubmittingByOrder, setProofSubmittingByOrder] = useState<Record<string, boolean>>({});
   const [proofFeedbackByOrder, setProofFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
+  const [gatewaySimulatingByOrder, setGatewaySimulatingByOrder] = useState<Record<string, boolean>>({});
+  const [gatewayFeedbackByOrder, setGatewayFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [profile, setProfile] = useState<UserProfileDto | null>(null);
+  const [profileName, setProfileName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [ready, setReady] = useState(false);
   const es = locale === 'es';
+  const displayName = profile?.fullName?.trim() ? profile.fullName : (user?.email ?? '');
 
   useEffect(() => {
     setReady(true);
@@ -102,6 +120,24 @@ export default function AccountPage({ locale }: Props) {
     };
   }, [tab, orders, effectiveToken]);
 
+  useEffect(() => {
+    if (!effectiveToken) return;
+    let cancelled = false;
+    setProfileLoading(true);
+    getMyProfile(effectiveToken)
+      .then((data) => {
+        if (cancelled) return;
+        setProfile(data);
+        setProfileName(data.fullName ?? '');
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveToken]);
+
   // Redirect if not logged in (after hydration)
   useEffect(() => {
     if (ready && !user) {
@@ -124,6 +160,78 @@ export default function AccountPage({ locale }: Props) {
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
     } catch {
       // no-op
+    }
+  }
+
+  async function handleSaveProfile() {
+    if (!effectiveToken || profileSaving) return;
+    const fullName = profileName.trim();
+    if (!fullName) {
+      setProfileFeedback({ type: 'error', text: es ? 'El nombre no puede estar vacio.' : 'Full name cannot be empty.' });
+      return;
+    }
+
+    setProfileSaving(true);
+    setProfileFeedback(null);
+    try {
+      const updated = await updateMyProfile(fullName, effectiveToken);
+      setProfile(updated);
+      setProfileName(updated.fullName);
+      setProfileFeedback({ type: 'success', text: es ? 'Perfil actualizado.' : 'Profile updated.' });
+    } catch (error) {
+      const text = error instanceof Error ? error.message : '';
+      setProfileFeedback({
+        type: 'error',
+        text: text || (es ? 'No pudimos actualizar el perfil.' : 'Could not update profile.'),
+      });
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  async function handleChangePassword() {
+    if (!effectiveToken || passwordSaving) return;
+    if (!currentPassword.trim()) {
+      setPasswordFeedback({
+        type: 'error',
+        text: es ? 'Ingresa tu contraseña actual.' : 'Enter your current password.',
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordFeedback({
+        type: 'error',
+        text: es ? 'La nueva contraseña debe tener al menos 8 caracteres.' : 'New password must have at least 8 characters.',
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordFeedback({
+        type: 'error',
+        text: es ? 'Las contraseñas nuevas no coinciden.' : 'New passwords do not match.',
+      });
+      return;
+    }
+
+    setPasswordSaving(true);
+    setPasswordFeedback(null);
+    try {
+      await changeMyPassword(currentPassword, newPassword, effectiveToken);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordFeedback({
+        type: 'success',
+        text: es ? 'Contraseña actualizada correctamente.' : 'Password updated successfully.',
+      });
+    } catch (error) {
+      const raw = error instanceof Error ? error.message.toLowerCase() : '';
+      const message = raw.includes('current password is invalid')
+        ? (es ? 'La contraseña actual no es correcta.' : 'Current password is incorrect.')
+        : (error instanceof Error ? error.message : (es ? 'No pudimos cambiar la contraseña.' : 'Could not change password.'));
+      setPasswordFeedback({ type: 'error', text: message });
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -155,6 +263,12 @@ export default function AccountPage({ locale }: Props) {
     if (order.paymentMethod !== 'BANK_TRANSFER') return false;
     if (!payment) return false;
     return payment.status === 'PENDING' || payment.status === 'SUBMITTED';
+  }
+
+  function canSimulateGateway(order: OrderDto, payment: PaymentDto | undefined) {
+    if (order.paymentMethod !== 'PAYMENT_GATEWAY') return false;
+    if (!payment) return false;
+    return payment.status !== 'APPROVED' && payment.status !== 'REJECTED';
   }
 
   async function handleSubmitProof(orderId: string) {
@@ -207,16 +321,56 @@ export default function AccountPage({ locale }: Props) {
 
       const page = await getMyOrders(effectiveToken, 0, 20);
       setOrders(page.content ?? []);
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
+      const isTooLarge = errorMessage.includes('too large') || errorMessage.includes('payload too large') || errorMessage.includes('413') || errorMessage.includes('10mb');
       setProofFeedbackByOrder((prev) => ({
         ...prev,
         [orderId]: {
           type: 'error',
-          text: es ? 'No pudimos enviar el comprobante. Intenta nuevamente.' : 'Could not submit proof. Try again.',
+          text: isTooLarge
+            ? (es ? 'La imagen supera el tamano maximo (10 MB). Intenta con una mas liviana.' : 'Image exceeds max size (10 MB). Please use a smaller file.')
+            : (es ? 'No pudimos enviar el comprobante. Intenta nuevamente.' : 'Could not submit proof. Try again.'),
         },
       }));
     } finally {
       setProofSubmittingByOrder((prev) => ({ ...prev, [orderId]: false }));
+    }
+  }
+
+  async function handleSimulateGateway(orderId: string, simulation: 'APPROVED' | 'FAILED') {
+    const payment = paymentsByOrder[orderId];
+    if (!payment) return;
+
+    setGatewaySimulatingByOrder((prev) => ({ ...prev, [orderId]: true }));
+    setGatewayFeedbackByOrder((prev) => ({ ...prev, [orderId]: undefined }));
+
+    try {
+      await simulateGatewayPaymentStatus(payment.id, simulation);
+      const refreshed = effectiveToken ? await getPaymentByOrder(orderId, effectiveToken) : null;
+      if (refreshed) {
+        setPaymentsByOrder((prev) => ({ ...prev, [orderId]: refreshed }));
+      }
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'success',
+          text: simulation === 'APPROVED'
+            ? (es ? 'Simulacion aplicada: pago aprobado.' : 'Simulation applied: payment approved.')
+            : (es ? 'Simulacion aplicada: pago rechazado.' : 'Simulation applied: payment rejected.'),
+        },
+      }));
+    } catch (error) {
+      const text = error instanceof Error ? error.message : '';
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'error',
+          text: text || (es ? 'No se pudo simular el pago.' : 'Could not simulate payment.'),
+        },
+      }));
+    } finally {
+      setGatewaySimulatingByOrder((prev) => ({ ...prev, [orderId]: false }));
     }
   }
 
@@ -280,13 +434,14 @@ export default function AccountPage({ locale }: Props) {
     <div className="min-h-[calc(100vh-180px)] bg-pe-offwhite">
       <div className="bg-pe-cream border-b border-pe-black/6 py-10">
         <div className="pe-container flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <p className="pe-eyebrow text-pe-charcoal/40 mb-1">{es ? 'Mi cuenta' : 'My account'}</p>
-            <h1 className="font-display text-pe-black text-3xl font-light">{user.email}</h1>
-            <span className="inline-block mt-1.5 font-sans text-[0.65rem] tracking-wider uppercase bg-pe-rose/12 text-pe-rose-deep px-2 py-0.5">
-              {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
-            </span>
-          </div>
+        <div>
+          <p className="pe-eyebrow text-pe-charcoal/40 mb-1">{es ? 'Mi cuenta' : 'My account'}</p>
+          <h1 className="font-display text-pe-black text-3xl font-light">{displayName}</h1>
+          <p className="font-sans text-[0.78rem] text-pe-charcoal/50 mt-1">{user.email}</p>
+          <span className="inline-block mt-1.5 font-sans text-[0.65rem] tracking-wider uppercase bg-pe-rose/12 text-pe-rose-deep px-2 py-0.5">
+            {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
+          </span>
+        </div>
           <button
             onClick={handleLogout}
             className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/40 hover:text-pe-rose-deep transition-colors duration-200"
@@ -315,10 +470,82 @@ export default function AccountPage({ locale }: Props) {
         </nav>
 
         {tab === 'profile' && (
-          <div className="max-w-md flex flex-col gap-5">
+          <div className="max-w-2xl flex flex-col gap-5">
+            <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
+              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Datos de perfil' : 'Profile details'}</p>
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">{es ? 'Nombre completo' : 'Full name'}</label>
+              <input
+                type="text"
+                value={profileName}
+                onChange={(event) => setProfileName(event.target.value)}
+                disabled={profileLoading || profileSaving}
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+                placeholder={es ? 'Tu nombre completo' : 'Your full name'}
+              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    void handleSaveProfile();
+                  }}
+                  disabled={profileLoading || profileSaving}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+                >
+                  {profileSaving ? (es ? 'Guardando...' : 'Saving...') : (es ? 'Guardar perfil' : 'Save profile')}
+                </button>
+                {profileFeedback && (
+                  <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                    {profileFeedback.text}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
+              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Cambiar contraseña' : 'Change password'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
+                  placeholder={es ? 'Contraseña actual' : 'Current password'}
+                />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
+                  placeholder={es ? 'Nueva contraseña' : 'New password'}
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose sm:col-span-2"
+                  placeholder={es ? 'Confirmar nueva contraseña' : 'Confirm new password'}
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    void handleChangePassword();
+                  }}
+                  disabled={passwordSaving}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-charcoal transition-colors disabled:opacity-60"
+                >
+                  {passwordSaving ? (es ? 'Actualizando...' : 'Updating...') : (es ? 'Actualizar contraseña' : 'Update password')}
+                </button>
+                {passwordFeedback && (
+                  <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                    {passwordFeedback.text}
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">Email</p>
-              <p className="font-sans text-pe-charcoal">{user.email}</p>
+              <p className="font-sans text-pe-charcoal">{profile?.email ?? user.email}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Rol' : 'Role'}</p>
@@ -415,8 +642,11 @@ export default function AccountPage({ locale }: Props) {
                 {orders.map((order) => {
                   const payment = paymentsByOrder[order.id];
                   const canUploadProof = canSubmitProof(order, payment);
+                  const canSimulate = canSimulateGateway(order, payment);
                   const isSubmittingProof = proofSubmittingByOrder[order.id] === true;
                   const proofFeedback = proofFeedbackByOrder[order.id];
+                  const isSimulatingGateway = gatewaySimulatingByOrder[order.id] === true;
+                  const gatewayFeedback = gatewayFeedbackByOrder[order.id];
                   const selectedFile = proofFilesByOrder[order.id];
                   const proofLink = proofLinksByOrder[order.id] ?? '';
 
@@ -535,6 +765,54 @@ export default function AccountPage({ locale }: Props) {
                           {proofFeedback && (
                             <p className={`font-sans text-[0.72rem] ${proofFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
                               {proofFeedback.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {order.paymentMethod === 'PAYMENT_GATEWAY' && (
+                        <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/45">
+                              {es ? 'Estado pasarela' : 'Gateway status'}
+                            </p>
+                            {payment ? (
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-charcoal/65">
+                                {paymentStatusLabel(payment.status)}
+                              </span>
+                            ) : (
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/35">
+                                {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
+                              </span>
+                            )}
+                          </div>
+
+                          {canSimulate && (
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => {
+                                  void handleSimulateGateway(order.id, 'APPROVED');
+                                }}
+                                disabled={isSimulatingGateway}
+                                className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-green-700 transition-colors disabled:opacity-60"
+                              >
+                                {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular aprobado' : 'Simulate approve')}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  void handleSimulateGateway(order.id, 'FAILED');
+                                }}
+                                disabled={isSimulatingGateway}
+                                className="inline-flex items-center justify-center px-3 py-2 border border-red-300 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
+                              >
+                                {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular rechazado' : 'Simulate reject')}
+                              </button>
+                            </div>
+                          )}
+
+                          {gatewayFeedback && (
+                            <p className={`font-sans text-[0.72rem] ${gatewayFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                              {gatewayFeedback.text}
                             </p>
                           )}
                         </div>

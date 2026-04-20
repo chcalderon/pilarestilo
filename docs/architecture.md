@@ -44,6 +44,9 @@ PilarEstilo/
 - Search overlay wired to `/api/products/search`
 - Wishlist page and heart actions
 - Product detail size selector consuming `sizeStocks`
+- Account self-service profile/password management
+- Admin user management surface (`/admin/users`) with role/status/password/credit actions
+- Payment-gateway simulation controls in account/admin workflows for non-production environments
 
 ---
 
@@ -115,6 +118,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V9`: wishlist schema
 - `V10`: Chile defaults (`CLP`, shipping zone normalization, category associations)
 - `V11`: seeded product image URLs moved to backend media routes (`/api/media/products/*.jpg`)
+- `V12`: user active-flag support for account blocking/unblocking workflows
 
 ---
 

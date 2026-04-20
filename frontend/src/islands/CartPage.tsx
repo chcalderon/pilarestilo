@@ -15,8 +15,13 @@ const labels = {
     empty: 'Tu carrito está vacío',
     emptyLink: 'Explorar productos',
     subtotal: 'Subtotal',
+    workerDiscount: 'Descuento trabajador (10%)',
+    total: 'Total',
     checkout: 'Finalizar Compra',
     checkoutLoading: 'Procesando...',
+    paymentMethod: 'Metodo de pago',
+    paymentMethodTransfer: 'Transferencia',
+    paymentMethodGateway: 'Pasarela (simulada)',
     remove: 'Eliminar',
     quantity: 'Cantidad',
     checkoutError: 'No pudimos crear tu pedido. Inténtalo nuevamente.',
@@ -28,8 +33,13 @@ const labels = {
     empty: 'Your cart is empty',
     emptyLink: 'Explore products',
     subtotal: 'Subtotal',
+    workerDiscount: 'Employee discount (10%)',
+    total: 'Total',
     checkout: 'Checkout',
     checkoutLoading: 'Processing...',
+    paymentMethod: 'Payment method',
+    paymentMethodTransfer: 'Bank transfer',
+    paymentMethodGateway: 'Gateway (simulated)',
     remove: 'Remove',
     quantity: 'Quantity',
     checkoutError: 'We could not create your order. Please try again.',
@@ -51,8 +61,12 @@ export default function CartPage({ locale }: Props) {
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'PAYMENT_GATEWAY'>('BANK_TRANSFER');
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
+  const isEmployee = authUser?.role === 'SELLER';
+  const employeeDiscountAmount = isEmployee ? Math.round(subtotal * 0.1) : 0;
+  const total = Math.max(0, subtotal - employeeDiscountAmount);
 
   const priceFormat = (amount: number, currency: string) =>
     new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
@@ -81,7 +95,7 @@ export default function CartPage({ locale }: Props) {
         {
           customerId: authUser.id,
           items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
-          paymentMethod: 'BANK_TRANSFER',
+          paymentMethod,
         },
         effectiveToken
       );
@@ -201,7 +215,53 @@ export default function CartPage({ locale }: Props) {
                   </span>
                 </div>
 
+                {isEmployee && (
+                  <div className="flex justify-between font-sans text-sm mb-4">
+                    <span className="text-pe-black/60">{l.workerDiscount}</span>
+                    <span className="font-semibold text-green-700">
+                      - {priceFormat(employeeDiscountAmount, items[0]?.price.currency ?? 'CLP')}
+                    </span>
+                  </div>
+                )}
+
                 <div className="w-full h-px bg-pe-black/10 mb-6"></div>
+
+                <div className="mb-6">
+                  <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-black/55 mb-2">
+                    {l.paymentMethod}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-black/75">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="BANK_TRANSFER"
+                        checked={paymentMethod === 'BANK_TRANSFER'}
+                        onChange={() => setPaymentMethod('BANK_TRANSFER')}
+                        className="accent-pe-rose"
+                      />
+                      {l.paymentMethodTransfer}
+                    </label>
+                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-black/75">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="PAYMENT_GATEWAY"
+                        checked={paymentMethod === 'PAYMENT_GATEWAY'}
+                        onChange={() => setPaymentMethod('PAYMENT_GATEWAY')}
+                        className="accent-pe-rose"
+                      />
+                      {l.paymentMethodGateway}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-between font-sans text-sm mb-6">
+                  <span className="text-pe-black/75">{l.total}</span>
+                  <span className="font-semibold">
+                    {priceFormat(total, items[0]?.price.currency ?? 'CLP')}
+                  </span>
+                </div>
 
                 <button
                   onClick={handleCheckout}
@@ -232,3 +292,4 @@ export default function CartPage({ locale }: Props) {
     </div>
   );
 }
+

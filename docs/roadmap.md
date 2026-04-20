@@ -19,7 +19,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 
 ## v2 - Auth, Taxonomy, Reviews, Admin UX (Completed)
 
-- [x] JWT auth (`/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/me`)
+- [x] JWT auth (`/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/me`, `/api/auth/me/profile`, `/api/auth/me/password`)
 - [x] SSR admin guard in Astro middleware (`/admin/**`)
 - [x] Roles in JWT claims (`ADMIN`, `SELLER`, `CUSTOMER`)
 - [x] Category taxonomy + category filter on products
@@ -29,6 +29,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Admin layout with reusable data table patterns
 - [x] Admin mobile drawer navigation + mobile card rendering for data tables
 - [x] Admin product view toggle (`Grilla`/`Cards`) with persisted preference
+- [x] Admin user management hub (`/admin/users`) with role/status/password/customer-credit controls
 
 ---
 
@@ -57,7 +58,9 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 ## P3 - Payments and Notifications
 
 - [ ] Payment gateway adapter (Mercado Pago or Stripe) via `PaymentGatewayPort`
-- [ ] Webhook receiver for gateway events
+- [x] Gateway webhook receiver (`POST /api/payments/webhooks/gateway`) with optional signature guard
+- [x] Gateway checkout session endpoint for `PAYMENT_GATEWAY` payments (`POST /api/payments/{id}/gateway/checkout`) using current stub adapter
+- [x] Temporary gateway simulation controls in storefront/admin while production provider onboarding is pending
 - [ ] WhatsApp notifications (Twilio/Meta Cloud API)
 - [ ] Email notifications (SendGrid)
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
