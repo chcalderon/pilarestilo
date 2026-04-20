@@ -114,8 +114,8 @@ const categories = [
 
   <div id="nav-cats" class="border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
     <div class="pe-container">
-      <ul class="flex items-center gap-0 overflow-x-auto hide-scrollbar" role="list" aria-label="Product categories">
-        <li>
+      <ul class="flex w-max min-w-full items-center gap-0 overflow-x-auto pr-4 md:pr-0 hide-scrollbar" role="list" aria-label="Product categories">
+        <li class="shrink-0">
           <a
             href={`/${locale}/products`}
             class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
@@ -124,7 +124,7 @@ const categories = [
           </a>
         </li>
         {categories.map(cat => (
-          <li>
+          <li class="shrink-0">
             <a
               href={`/${locale}/categories/${cat.slug}`}
               class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"

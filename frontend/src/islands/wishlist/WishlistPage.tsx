@@ -47,7 +47,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
       <div className="text-center py-24">
         <img src="/ornaments/seal-pe.svg" alt="" className="w-24 h-24 mx-auto mb-6 opacity-20" />
         <p className="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A] mb-4">
-          {locale === 'es' ? 'Tu lista de favoritos estÃ¡ vacÃ­a' : 'Your wishlist is empty'}
+          {locale === 'es' ? 'Tu lista de favoritos está vacía' : 'Your wishlist is empty'}
         </p>
         <a
           href={`/${locale}/products`}

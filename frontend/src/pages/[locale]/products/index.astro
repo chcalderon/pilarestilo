@@ -81,7 +81,7 @@ const categories = [
           <h1 class="font-display text-pe-black text-3xl md:text-4xl font-light">
             {category
               ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category)
-              : (locale === 'es' ? 'ColecciÃ³n' : 'Collection')}
+              : (locale === 'es' ? 'Colección' : 'Collection')}
           </h1>
           <p class="font-sans text-[0.78rem] text-pe-charcoal/50">
             {productsPage.totalElements} {locale === 'es' ? 'piezas' : 'pieces'}
@@ -99,7 +99,7 @@ const categories = [
             <!-- Categories -->
             <div>
               <h3 class="pe-eyebrow mb-3">
-                {locale === 'es' ? 'CategorÃ­as' : 'Categories'}
+                {locale === 'es' ? 'Categorías' : 'Categories'}
               </h3>
               <ul class="flex flex-col gap-1" role="list">
                 <li>
@@ -132,7 +132,7 @@ const categories = [
             <!-- Condition toggle -->
             <div>
               <h3 class="pe-eyebrow mb-3">
-                {locale === 'es' ? 'CondiciÃ³n' : 'Condition'}
+                {locale === 'es' ? 'Condición' : 'Condition'}
               </h3>
               <div class="flex flex-col gap-1.5">
                 {(['NEW', 'USED'] as const).map(c => {
@@ -171,7 +171,7 @@ const categories = [
                   type="text"
                   name="brand"
                   value={brand ?? ''}
-                  placeholder={locale === 'es' ? 'Buscar marcaâ€¦' : 'Search brandâ€¦'}
+                  placeholder={locale === 'es' ? 'Buscar marca...' : 'Search brand...'}
                   class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
                   aria-label={locale === 'es' ? 'Filtrar por marca' : 'Filter by brand'}
                 />
@@ -213,14 +213,14 @@ const categories = [
                 {locale === 'es' ? 'No se encontraron piezas' : 'No pieces found'}
               </p>
               <Button href={clearUrl} variant="outline">
-                {locale === 'es' ? 'Ver toda la colecciÃ³n' : 'View full collection'}
+                {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
               </Button>
             </div>
           )}
 
           <!-- Pagination -->
           {productsPage.totalPages > 1 && (
-            <nav class="mt-12 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'PaginaciÃ³n' : 'Pagination'}>
+            <nav class="mt-12 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'Paginación' : 'Pagination'}>
               {Array.from({ length: productsPage.totalPages }, (_, i) => (
                 <a
                   href={`/${locale}/products?page=${i}${category ? `&category=${category}` : ''}${condition ? `&condition=${condition}` : ''}${brand ? `&brand=${brand}` : ''}`}
