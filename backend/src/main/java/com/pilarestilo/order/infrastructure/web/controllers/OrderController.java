@@ -11,11 +11,13 @@ import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
 import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
+import com.pilarestilo.user.domain.enums.UserRole;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -61,6 +63,7 @@ public class OrderController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public Page<OrderDto> list(@RequestParam(required = false) UUID customerId, Pageable pageable) {
         if (customerId != null) {
             return listOrdersUseCase.executeByCustomer(customerId, pageable);
@@ -75,11 +78,18 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public OrderDto getById(@PathVariable UUID id) {
-        return getOrderUseCase.execute(id);
+    @PreAuthorize("isAuthenticated()")
+    public OrderDto getById(@PathVariable UUID id,
+                            @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        OrderDto dto = getOrderUseCase.execute(id);
+        if (currentUser.role() == UserRole.CUSTOMER && !dto.customerId().equals(currentUser.id())) {
+            throw new AccessDeniedException("You can only access your own orders");
+        }
+        return dto;
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public OrderDto updateStatus(@PathVariable UUID id,
                                   @Valid @RequestBody UpdateOrderStatusRequest request) {
         return updateOrderStatusUseCase.execute(id, request.status());

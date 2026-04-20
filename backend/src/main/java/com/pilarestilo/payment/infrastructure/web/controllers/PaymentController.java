@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -40,6 +41,7 @@ public class PaymentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public ResponseEntity<PaymentDto> register(@Valid @RequestBody RegisterPaymentRequest request) {
         PaymentDto dto = registerPaymentUseCase.execute(
                 request.orderId(),
@@ -49,12 +51,14 @@ public class PaymentController {
     }
 
     @PatchMapping("/{id}/proof")
+    @PreAuthorize("isAuthenticated()")
     public PaymentDto submitProof(@PathVariable UUID id,
                                    @Valid @RequestBody SubmitProofRequest request) {
         return submitPaymentProofUseCase.execute(id, request.proofReference());
     }
 
     @PatchMapping("/{id}/review")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public PaymentDto review(@PathVariable UUID id,
                               @Valid @RequestBody ReviewPaymentRequest request) {
         return switch (request.action().toUpperCase()) {
@@ -65,11 +69,13 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public PaymentDto getById(@PathVariable UUID id) {
         return getPaymentUseCase.execute(id);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public Page<PaymentDto> list(@RequestParam(required = false) String status, Pageable pageable) {
         PaymentStatus paymentStatus = status != null ? PaymentStatus.valueOf(status.toUpperCase()) : null;
         return listPaymentsUseCase.execute(paymentStatus, pageable);
