@@ -10,11 +10,14 @@ import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
 import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,6 +66,12 @@ public class OrderController {
             return listOrdersUseCase.executeByCustomer(customerId, pageable);
         }
         return listOrdersUseCase.execute(pageable);
+    }
+
+    @GetMapping("/mine")
+    @PreAuthorize("isAuthenticated()")
+    public Page<OrderDto> listMine(@AuthenticationPrincipal AuthenticatedUser currentUser, Pageable pageable) {
+        return listOrdersUseCase.executeByCustomer(currentUser.id(), pageable);
     }
 
     @GetMapping("/{id}")

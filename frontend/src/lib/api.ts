@@ -75,6 +75,28 @@ export interface PaymentDto {
   createdAt: string;
 }
 
+export interface OrderItemDto {
+  id: string;
+  productId: string;
+  productName: string;
+  unitPrice: MoneyDto;
+  quantity: number;
+}
+
+export interface OrderDto {
+  id: string;
+  customerId: string;
+  items: OrderItemDto[];
+  subtotal: MoneyDto;
+  discountAmount: MoneyDto;
+  totalAmount: MoneyDto;
+  paymentMethod: 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'AGREED_BY_WHATSAPP' | 'STORE_CREDIT' | 'PAYMENT_GATEWAY';
+  notes?: string | null;
+  status: 'CREATED' | 'PENDING_PAYMENT' | 'PAYMENT_UNDER_REVIEW' | 'PAID' | 'PREPARING_ORDER' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateProductRequest {
   name: string;
   description: string;
@@ -426,6 +448,17 @@ export async function getAuthMe(token: string): Promise<{ id: string; email: str
   return apiFetch<{ id: string; email: string; role: string }>('/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+export async function getMyOrders(token: string, page = 0, size = 20): Promise<Page<OrderDto>> {
+  try {
+    const query = buildQuery({ page, size, sort: 'createdAt,desc' });
+    return await apiFetch<Page<OrderDto>>(`/orders/mine${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    return { content: [], totalElements: 0, totalPages: 0, size, number: page };
+  }
 }
 
 // ─── Review API ───────────────────────────────────────────────────────────────
