@@ -1,0 +1,74 @@
+-- Chile market defaults and idempotent category/product associations.
+
+UPDATE products
+SET price_currency = 'CLP'
+WHERE price_currency = 'ARS';
+
+UPDATE discounts
+SET min_order_currency = 'CLP'
+WHERE min_order_currency = 'ARS';
+
+UPDATE customer_credits
+SET balance_currency = 'CLP'
+WHERE balance_currency = 'ARS';
+
+UPDATE credit_movements
+SET amount_currency = 'CLP'
+WHERE amount_currency = 'ARS';
+
+UPDATE orders
+SET subtotal_currency = 'CLP',
+    discount_currency = 'CLP',
+    total_currency = 'CLP'
+WHERE subtotal_currency = 'ARS'
+   OR discount_currency = 'ARS'
+   OR total_currency = 'ARS';
+
+UPDATE order_items
+SET unit_price_currency = 'CLP'
+WHERE unit_price_currency = 'ARS';
+
+UPDATE products
+SET shipping_origin_zone = CASE shipping_origin_zone
+    WHEN 'CABA' THEN 'SANTIAGO'
+    WHEN 'GBA' THEN 'RM'
+    WHEN 'INTERIOR' THEN 'REGIONES'
+    ELSE shipping_origin_zone
+END;
+
+ALTER TABLE products
+    ALTER COLUMN price_currency SET DEFAULT 'CLP',
+    ALTER COLUMN shipping_origin_zone SET DEFAULT 'SANTIAGO';
+
+ALTER TABLE discounts
+    ALTER COLUMN min_order_currency SET DEFAULT 'CLP';
+
+ALTER TABLE customer_credits
+    ALTER COLUMN balance_currency SET DEFAULT 'CLP';
+
+ALTER TABLE credit_movements
+    ALTER COLUMN amount_currency SET DEFAULT 'CLP';
+
+ALTER TABLE orders
+    ALTER COLUMN subtotal_currency SET DEFAULT 'CLP',
+    ALTER COLUMN discount_currency SET DEFAULT 'CLP',
+    ALTER COLUMN total_currency SET DEFAULT 'CLP';
+
+ALTER TABLE order_items
+    ALTER COLUMN unit_price_currency SET DEFAULT 'CLP';
+
+INSERT INTO product_categories (product_id, category_id) VALUES
+  ('10000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000004'),
+  ('10000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003'),
+  ('10000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007'),
+  ('10000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000002'),
+  ('10000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000006'),
+  ('10000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000004'),
+  ('10000000-0000-0000-0000-000000000006', '30000000-0000-0000-0000-000000000008'),
+  ('10000000-0000-0000-0000-000000000007', '30000000-0000-0000-0000-000000000003'),
+  ('10000000-0000-0000-0000-000000000008', '30000000-0000-0000-0000-000000000004'),
+  ('10000000-0000-0000-0000-000000000008', '30000000-0000-0000-0000-000000000003'),
+  ('10000000-0000-0000-0000-000000000009', '30000000-0000-0000-0000-000000000007'),
+  ('10000000-0000-0000-0000-000000000010', '30000000-0000-0000-0000-000000000005'),
+  ('10000000-0000-0000-0000-000000000010', '30000000-0000-0000-0000-000000000002')
+ON CONFLICT DO NOTHING;

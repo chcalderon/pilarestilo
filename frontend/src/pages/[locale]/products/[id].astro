@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AddToCartButton from '../../../islands/AddToCartButton';
+import WishlistButton from '../../../islands/wishlist/WishlistButton';
+import SizeSelector from '../../../islands/product/SizeSelector';
+import ReviewList from '../../../islands/reviews/ReviewList';
+import ReviewForm from '../../../islands/reviews/ReviewForm';
+import RatingStars from '../../../components/RatingStars.astro';
+import CuotasDisplay from '../../../components/CuotasDisplay.astro';
+import DeliveryEstimate from '../../../components/DeliveryEstimate.astro';
+import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
+import { getProduct } from '../../../lib/api';
+
+const { locale, id } = Astro.params as { locale: Locale; id: string };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/products');
+}
+
+let product;
+try {
+  product = await getProduct(id);
+} catch {
+  return Astro.redirect(`/${locale}/products`);
+}
+
+const token = Astro.cookies.get('pe_token')?.value;
+const userId = Astro.cookies.get('pe_user_id')?.value;
+
+const priceFormatted = new Intl.NumberFormat('es-CL', {
+  style: 'currency',
+  currency: product.price.currency,
+  maximumFractionDigits: 0,
+}).format(product.price.amount);
+
+const conditionLabel =
+  product.condition === 'NEW'
+    ? t('product.condition.new', locale)
+    : t('product.condition.used', locale);
+
+const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | 'REGIONES';
+---
+
+<BaseLayout title={product.name} description={product.description} locale={locale}>
+  <div class="py-12 min-h-screen" style="background-color: var(--pe-surface)">
+    <div class="pe-container">
+      <!-- Breadcrumb -->
+      <nav class="mb-8 font-sans text-xs text-[#3A3A3A]/50 flex items-center gap-2" aria-label="Breadcrumb">
+        <a href={`/${locale}/`} class="hover:text-[#B76E79] transition-colors">{t('nav.home', locale)}</a>
+        <span aria-hidden="true">›</span>
+        <a href={`/${locale}/products`} class="hover:text-[#B76E79] transition-colors">{t('nav.products', locale)}</a>
+        <span aria-hidden="true">›</span>
+        <span class="text-[#1A1A1A]/70">{product.name}</span>
+      </nav>
+
+      <!-- Product grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <!-- Image -->
+        <div class="aspect-[3/4] overflow-hidden bg-[#EDE3D8] relative">
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            class="w-full h-full object-cover"
+            width="600"
+            height="800"
+          />
+          <!-- Wishlist button overlay -->
+          <div class="absolute top-4 right-4">
+            <WishlistButton
+              client:load
+              productId={product.id}
+              token={token}
+              className="w-10 h-10 border border-[var(--pe-border)] bg-[var(--pe-surface-card)] text-[var(--pe-ink)] hover:border-[#B76E79]"
+            />
+          </div>
+        </div>
+
+        <!-- Details panel -->
+        <div class="lg:sticky lg:top-24 flex flex-col gap-6">
+          <!-- Brand + condition -->
+          <div class="flex items-center justify-between">
+            <span class="font-sans text-[10px] tracking-[0.4em] uppercase text-[#B76E79] font-semibold">
+              {product.brand}
+            </span>
+            <span
+              class:list={[
+                'font-sans text-[9px] tracking-wider uppercase px-2.5 py-1 border',
+                product.condition === 'NEW'
+                  ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
+                  : 'bg-transparent text-[#3A3A3A]/60 border-[#3A3A3A]/30',
+              ]}
+            >
+              {conditionLabel}
+            </span>
+          </div>
+
+          <!-- Name -->
+          <h1 class="font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-3xl md:text-4xl font-light italic leading-tight">
+            {product.name}
+          </h1>
+
+          <!-- Rating stars -->
+          {(product.avgRating ?? 0) > 0 && (
+            <a href="#resenas" class="flex items-center gap-2">
+              <RatingStars value={product.avgRating ?? 0} count={product.reviewCount} />
+            </a>
+          )}
+
+          <!-- Price -->
+          <div class="flex items-baseline gap-3">
+            <span class="font-['Cormorant_Garamond',serif] text-3xl text-[#1A1A1A] tabular-nums">
+              {priceFormatted}
+            </span>
+          </div>
+
+          <!-- Size selector -->
+          {product.sizeStocks && product.sizeStocks.length > 1 && (
+            <SizeSelector
+              client:load
+              sizeStocks={product.sizeStocks}
+              locale={locale}
+            />
+          )}
+
+          <!-- Add to cart + wishlist row -->
+          <div class="flex items-stretch gap-3 mt-2">
+            <div class="flex-1">
+              <AddToCartButton
+                client:load
+                productId={product.id}
+                name={product.name}
+                brand={product.brand}
+                price={product.price}
+                imageUrl={product.imageUrl}
+                condition={product.condition}
+                stock={product.stock}
+                locale={locale}
+              />
+            </div>
+            <WishlistButton
+              client:load
+              productId={product.id}
+              token={token}
+              className="w-12 border border-[var(--pe-border)] hover:border-[#B76E79] text-[var(--pe-ink)] bg-[var(--pe-surface-card)]"
+            />
+          </div>
+
+          <!-- Divider -->
+          <div class="w-full h-px bg-[#EDE3D8]"></div>
+
+          <!-- Cuotas -->
+          <CuotasDisplay priceAmount={product.price.amount} locale={locale} />
+
+          <!-- Delivery estimate -->
+          <DeliveryEstimate zone={zone} locale={locale} />
+
+          <!-- Description -->
+          <div>
+            <p class="text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-2">
+              {locale === 'es' ? 'Descripción' : 'Description'}
+            </p>
+            <p class="font-sans text-[#3A3A3A] leading-relaxed text-sm">
+              {product.description}
+            </p>
+          </div>
+
+          <!-- Back link -->
+          <a href={`/${locale}/products`} class="text-xs tracking-widest uppercase text-[#3A3A3A]/50 hover:text-[#B76E79] transition-colors mt-2">
+            ← {locale === 'es' ? 'Volver al catálogo' : 'Back to catalogue'}
+          </a>
+        </div>
+      </div>
+
+      <!-- Reviews section -->
+      <section id="resenas" class="mt-20 max-w-2xl">
+        <div class="flex items-center gap-4 mb-8">
+          <h2 class="font-['Cormorant_Garamond',serif] text-2xl text-[#1A1A1A]">
+            {locale === 'es' ? 'Reseñas' : 'Reviews'}
+          </h2>
+          {(product.avgRating ?? 0) > 0 && (
+            <RatingStars value={product.avgRating ?? 0} count={product.reviewCount} />
+          )}
+        </div>
+
+        <ReviewList client:visible productId={product.id} locale={locale} />
+        <ReviewForm
+          client:visible
+          productId={product.id}
+          token={token}
+          userId={userId}
+          locale={locale}
+        />
+      </section>
+    </div>
+  </div>
+</BaseLayout>

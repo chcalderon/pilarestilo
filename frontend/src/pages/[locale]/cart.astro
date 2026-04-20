@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CartPage from '../../islands/CartPage';
+import { type Locale, SUPPORTED_LOCALES, t } from '../../i18n/index';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/cart');
+}
+---
+
+<BaseLayout title={t('cart.title', locale)} locale={locale}>
+  <CartPage client:load locale={locale} />
+</BaseLayout>

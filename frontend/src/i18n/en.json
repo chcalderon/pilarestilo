@@ -1,0 +1,220 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "admin": "Administration",
+    "account": "My account",
+    "search": "Search"
+  },
+  "hero": {
+    "headline": "Circular Luxury Fashion",
+    "slogan": "Luxury with Purpose",
+    "cta": "View Collection"
+  },
+  "product": {
+    "condition": {
+      "new": "New",
+      "used": "Pre-loved"
+    },
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "brand": "Brand",
+    "price": "Price",
+    "description": "Description",
+    "reviews": "Reviews",
+    "shipping": "Shipping"
+  },
+  "cart": {
+    "empty": "Your cart is empty",
+    "title": "Cart",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "footer": {
+    "rights": "© 2026 Pilar Estilo. All rights reserved.",
+    "slogan": "Luxury with Purpose"
+  },
+  "category": {
+    "all": "All",
+    "mujer": "Women",
+    "invierno": "Winter",
+    "verano": "Summer",
+    "zapatos": "Shoes",
+    "pantalones": "Trousers",
+    "vestidos": "Dresses",
+    "carteras": "Bags",
+    "accesorios": "Accessories"
+  },
+  "review": {
+    "title": "Review title",
+    "comment": "Your thoughts (optional)",
+    "submit": "Post review",
+    "submitting": "Posting…",
+    "loginPrompt": "Sign in to write a review",
+    "alreadyReviewed": "You have already reviewed this product",
+    "noReviews": "Be the first to leave a review",
+    "verifiedBuyer": "Verified buyer",
+    "approved": "Approved",
+    "pending": "Pending",
+    "deleteConfirm": "Delete this review?",
+    "ratingRequired": "Please select a rating",
+    "error": "Could not post your review. Please try again.",
+    "success": "Review posted! It will appear once approved."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "passwordMin": "min. 8 characters",
+    "fullName": "Full name",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signingIn": "Signing in…",
+    "signingUp": "Creating account…",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "register": "Register",
+    "loginLink": "Sign in",
+    "invalidCredentials": "Invalid email or password.",
+    "registrationError": "Could not create account. Try a different email.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+  "account": {
+    "title": "My account",
+    "profile": "Profile",
+    "myReviews": "My reviews",
+    "myOrders": "My orders",
+    "signOut": "Sign out",
+    "email": "Email",
+    "role": "Role",
+    "accountId": "Account ID",
+    "noReviews": "No reviews yet",
+    "browseProducts": "Browse products",
+    "ordersComingSoon": "Order history coming soon",
+    "roles": {
+      "admin": "Admin",
+      "seller": "Seller",
+      "customer": "Customer"
+    }
+  },
+  "search": {
+    "placeholder": "Search products, brands...",
+    "noResults": "No results for",
+    "resultsFor": "Results for",
+    "viewAll": "View all results",
+    "products": "Products",
+    "categories": "Categories",
+    "searching": "Searching..."
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty",
+    "add": "Add to wishlist",
+    "remove": "Remove from wishlist",
+    "moveToCart": "Move to cart",
+    "explore": "Explore products"
+  },
+  "size": {
+    "label": "Size",
+    "selectSize": "Select a size",
+    "lastN": "Last {n}",
+    "soldOut": "Sold out"
+  },
+  "delivery": {
+    "title": "Estimated delivery",
+    "santiago": "Ships within Santiago in 24-48h",
+    "rm": "Ships within Metropolitan Region in 2-3 business days",
+    "regiones": "Ships to Chilean regions in 3-7 business days"
+  },
+  "cuotas": {
+    "title": "Installment plans available",
+    "of": "installments of",
+    "noInterest": "interest-free with selected cards"
+  },
+  "filters": {
+    "condition": "Condition",
+    "allConditions": "All conditions",
+    "brand": "Brand",
+    "allBrands": "All brands",
+    "price": "Price",
+    "minPrice": "Min price",
+    "maxPrice": "Max price",
+    "category": "Category",
+    "allCategories": "All categories",
+    "sortBy": "Sort by",
+    "results": "results",
+    "clearFilters": "Clear filters"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "totalProducts": "Total products",
+      "pendingPayments": "Pending payments",
+      "pendingReviews": "Reviews to moderate"
+    },
+    "products": {
+      "title": "Product Management",
+      "new": "New Product",
+      "edit": "Edit",
+      "delete": "Delete",
+      "filterCondition": "All conditions",
+      "filterBrand": "Filter by brand…",
+      "columns": {
+        "name": "Name",
+        "brand": "Brand",
+        "condition": "Condition",
+        "price": "Price",
+        "stock": "Stock",
+        "active": "Active",
+        "actions": "Actions"
+      }
+    },
+    "categories": {
+      "title": "Categories",
+      "newRoot": "New root category",
+      "newChild": "New subcategory",
+      "slug": "Slug",
+      "nameEs": "Name ES",
+      "nameEn": "Name EN",
+      "order": "Order",
+      "imageUrl": "Image URL",
+      "active": "Active",
+      "save": "Save",
+      "cancel": "Cancel",
+      "deleteConfirm": "Delete category?"
+    },
+    "reviews": {
+      "title": "Reviews",
+      "pending": "Pending",
+      "approved": "Approved",
+      "all": "All",
+      "approve": "Approve",
+      "delete": "Delete",
+      "columns": {
+        "rating": "Rating",
+        "content": "Content",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions"
+      }
+    },
+    "payments": {
+      "title": "Payment Review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "pending": "pending",
+      "update": "Refresh",
+      "columns": {
+        "orderId": "Order ID",
+        "method": "Method",
+        "status": "Status",
+        "proof": "Proof",
+        "date": "Date",
+        "actions": "Actions"
+      }
+    }
+  }
+}

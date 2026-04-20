@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminDashboard from '../../islands/admin/AdminDashboard';
+---
+
+<AdminLayout title="Dashboard">
+  <div class="mb-6">
+    <p class="font-sans text-[0.65rem] tracking-[0.25em] uppercase text-pe-charcoal/35 mb-1">
+      Pilar Estilo
+    </p>
+    <h1 class="font-display text-pe-black text-3xl font-light">Dashboard</h1>
+  </div>
+
+  <AdminDashboard client:load />
+</AdminLayout>

@@ -1,0 +1,60 @@
+---
+import AdminLoginForm from '../../islands/admin/AdminLoginForm';
+
+const redirect = Astro.url.searchParams.get('redirect') ?? undefined;
+---
+
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acceso Admin | Pilar Estilo</title>
+    <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --pe-black: #1A1A1A;
+        --pe-offwhite: #F8F4EF;
+        --pe-cream: #EDE3D8;
+        --pe-charcoal: #3A3A3A;
+        --pe-rose: #B76E79;
+      }
+      body {
+        font-family: 'Montserrat', system-ui, sans-serif;
+        background: var(--pe-black);
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="w-full max-w-sm mx-auto px-6 py-12">
+      <div class="flex flex-col items-center mb-10">
+        <a href="/es/" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;text-decoration:none;">
+          <img src="/logo-pe.svg" alt="Pilar Estilo" width="200" height="177" style="opacity:0.9;" />
+          <span style="font-family:'Montserrat',sans-serif;font-size:0.58rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(248,244,239,0.4);">
+            Pilar Estilo
+          </span>
+        </a>
+      </div>
+
+      <div style="border-top:1px solid rgba(183,110,121,0.3);padding-top:2rem;">
+        <p style="font-family:'Montserrat',sans-serif;font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(183,110,121,0.8);text-align:center;margin-bottom:0.75rem;">
+          Panel de Administración
+        </p>
+        <h1 style="font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:300;color:#F8F4EF;text-align:center;margin-bottom:2rem;">
+          Acceder
+        </h1>
+
+        <div id="login-form-mount">
+          <AdminLoginForm client:load redirect={redirect} />
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

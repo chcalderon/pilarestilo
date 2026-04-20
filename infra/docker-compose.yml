@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pe_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pilarestilo}
+      POSTGRES_USER: ${POSTGRES_USER:-pilar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+    volumes:
+      - pe_pgdata:/var/lib/postgresql/data
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pilar} -d ${POSTGRES_DB:-pilarestilo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: pe_backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: pe_frontend
+    restart: unless-stopped
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "4321"
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-/api}
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8080/api}
+    networks:
+      - pe_net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: pe_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - pe_net
+
+networks:
+  pe_net:
+    driver: bridge
+
+volumes:
+  pe_pgdata:
+  caddy_data:
+  caddy_config:

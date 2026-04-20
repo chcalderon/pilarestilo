@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 130" role="presentation" aria-hidden="true">
+  <defs>
+    <linearGradient id="sealGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C9A0"/>
+      <stop offset="50%" stop-color="#C6A96B"/>
+      <stop offset="100%" stop-color="#A8893A"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="80" cy="65" rx="72" ry="58" fill="none" stroke="url(#sealGold)" stroke-width="1.4"/>
+  <ellipse cx="80" cy="65" rx="65" ry="51" fill="none" stroke="url(#sealGold)" stroke-width="0.7"/>
+  <ellipse cx="80" cy="65" rx="58" ry="44" fill="none" stroke="url(#sealGold)" stroke-width="0.35" opacity="0.5"/>
+  <circle cx="80"  cy="7"   r="1.4" fill="url(#sealGold)"/>
+  <circle cx="80"  cy="123" r="1.4" fill="url(#sealGold)"/>
+  <circle cx="8"   cy="65"  r="1.4" fill="url(#sealGold)"/>
+  <circle cx="152" cy="65"  r="1.4" fill="url(#sealGold)"/>
+  <!-- Tiny diamond ornaments at 45° cardinal points -->
+  <path d="M 29 22 l 3 3 l -3 3 l -3 -3 Z" fill="url(#sealGold)" opacity="0.6"/>
+  <path d="M 131 22 l 3 3 l -3 3 l -3 -3 Z" fill="url(#sealGold)" opacity="0.6"/>
+  <path d="M 29 108 l 3 3 l -3 3 l -3 -3 Z" fill="url(#sealGold)" opacity="0.6"/>
+  <path d="M 131 108 l 3 3 l -3 3 l -3 -3 Z" fill="url(#sealGold)" opacity="0.6"/>
+</svg>

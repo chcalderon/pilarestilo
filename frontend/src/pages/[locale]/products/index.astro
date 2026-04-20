@@ -1,0 +1,244 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import Button from '../../../components/Button.astro';
+import Icon from '../../../components/Icon.astro';
+import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
+import { getProducts, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/products');
+}
+
+const url = Astro.url;
+const condition = url.searchParams.get('condition') as ProductFilter['condition'] | null;
+const brand = url.searchParams.get('brand') ?? undefined;
+const category = url.searchParams.get('category') ?? undefined;
+const minPrice = url.searchParams.has('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
+const maxPrice = url.searchParams.has('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 0;
+
+const filter: ProductFilter = {
+  ...(condition ? { condition } : {}),
+  ...(brand ? { brand } : {}),
+  ...(category ? { category } : {}),
+  ...(minPrice !== undefined ? { minPrice } : {}),
+  ...(maxPrice !== undefined ? { maxPrice } : {}),
+  page,
+  size: 12,
+};
+
+let productsPage = {
+  content: FIXTURE_PRODUCTS,
+  totalElements: FIXTURE_PRODUCTS.length,
+  totalPages: 1,
+  size: FIXTURE_PRODUCTS.length,
+  number: 0,
+};
+try {
+  productsPage = await getProducts(filter);
+} catch {
+  // fallback
+}
+
+const activeFilters: { label: string; clearKey: string }[] = [];
+if (condition) activeFilters.push({ label: condition === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale), clearKey: 'condition' });
+if (brand) activeFilters.push({ label: brand, clearKey: 'brand' });
+if (category) activeFilters.push({ label: category, clearKey: 'category' });
+
+const clearUrl = `/${locale}/products`;
+
+const categories = [
+  { slug: 'invierno',   labelEs: 'Invierno',    labelEn: 'Winter' },
+  { slug: 'verano',     labelEs: 'Verano',       labelEn: 'Summer' },
+  { slug: 'vestidos',   labelEs: 'Vestidos',     labelEn: 'Dresses' },
+  { slug: 'zapatos',    labelEs: 'Zapatos',      labelEn: 'Shoes' },
+  { slug: 'pantalones', labelEs: 'Pantalones',   labelEn: 'Trousers' },
+  { slug: 'carteras',   labelEs: 'Carteras',     labelEn: 'Bags' },
+  { slug: 'accesorios', labelEs: 'Accesorios',   labelEn: 'Accessories' },
+];
+---
+
+<BaseLayout title={t('nav.products', locale)} locale={locale}>
+  <div class="bg-pe-offwhite min-h-screen">
+
+    <!-- Page header band -->
+    <div class="bg-pe-cream border-b border-pe-black/6 py-8">
+      <div class="pe-container">
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-charcoal/40 mb-3" aria-label="Breadcrumb">
+          <a href={`/${locale}/`} class="hover:text-pe-rose-deep transition-colors duration-200">
+            {locale === 'es' ? 'Inicio' : 'Home'}
+          </a>
+          <span aria-hidden="true"><Icon name="chevron-right" size={10} /></span>
+          <span class="text-pe-charcoal/70" aria-current="page">
+            {category ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category) : (locale === 'es' ? 'Todos los productos' : 'All products')}
+          </span>
+        </nav>
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <h1 class="font-display text-pe-black text-3xl md:text-4xl font-light">
+            {category
+              ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category)
+              : (locale === 'es' ? 'Colección' : 'Collection')}
+          </h1>
+          <p class="font-sans text-[0.78rem] text-pe-charcoal/50">
+            {productsPage.totalElements} {locale === 'es' ? 'piezas' : 'pieces'}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pe-container py-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+
+        <!-- Sidebar filter rail -->
+        <aside class="lg:w-52 shrink-0" aria-label={locale === 'es' ? 'Filtros' : 'Filters'}>
+          <form method="get" class="flex flex-col gap-6">
+            <!-- Categories -->
+            <div>
+              <h3 class="pe-eyebrow mb-3">
+                {locale === 'es' ? 'Categorías' : 'Categories'}
+              </h3>
+              <ul class="flex flex-col gap-1" role="list">
+                <li>
+                  <a
+                    href={`/${locale}/products${condition ? `?condition=${condition}` : ''}${brand ? `${condition ? '&' : '?'}brand=${brand}` : ''}`}
+                    class:list={[
+                      'block font-sans text-[0.78rem] py-1 hover:text-pe-rose-deep transition-colors duration-200',
+                      !category ? 'text-pe-rose-deep font-medium' : 'text-pe-charcoal/60',
+                    ]}
+                  >
+                    {locale === 'es' ? 'Todo' : 'All'}
+                  </a>
+                </li>
+                {categories.map(cat => (
+                  <li>
+                    <a
+                      href={`/${locale}/products?category=${cat.slug}${condition ? `&condition=${condition}` : ''}${brand ? `&brand=${brand}` : ''}`}
+                      class:list={[
+                        'block font-sans text-[0.78rem] py-1 hover:text-pe-rose-deep transition-colors duration-200',
+                        category === cat.slug ? 'text-pe-rose-deep font-medium' : 'text-pe-charcoal/60',
+                      ]}
+                    >
+                      {locale === 'es' ? cat.labelEs : cat.labelEn}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <!-- Condition toggle -->
+            <div>
+              <h3 class="pe-eyebrow mb-3">
+                {locale === 'es' ? 'Condición' : 'Condition'}
+              </h3>
+              <div class="flex flex-col gap-1.5">
+                {(['NEW', 'USED'] as const).map(c => {
+                  const isActive = condition === c;
+                  const newUrl = isActive
+                    ? `/${locale}/products${category ? `?category=${category}` : ''}${brand ? `${category ? '&' : '?'}brand=${brand}` : ''}`
+                    : `/${locale}/products?condition=${c}${category ? `&category=${category}` : ''}${brand ? `&brand=${brand}` : ''}`;
+                  return (
+                    <a
+                      href={newUrl}
+                      class:list={[
+                        'flex items-center gap-2 font-sans text-[0.78rem] py-0.5',
+                        isActive ? 'text-pe-rose-deep' : 'text-pe-charcoal/60 hover:text-pe-rose-deep',
+                      ]}
+                    >
+                      <span class:list={[
+                        'w-3 h-3 border shrink-0 flex items-center justify-center',
+                        isActive ? 'border-pe-rose bg-pe-rose' : 'border-pe-charcoal/30',
+                      ]}>
+                        {isActive && <Icon name="check" size={8} class="text-pe-white" strokeWidth={3} />}
+                      </span>
+                      {c === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale)}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            <!-- Brand text filter -->
+            <div>
+              <h3 class="pe-eyebrow mb-3">
+                {locale === 'es' ? 'Marca' : 'Brand'}
+              </h3>
+              <div class="flex gap-1.5">
+                <input
+                  type="text"
+                  name="brand"
+                  value={brand ?? ''}
+                  placeholder={locale === 'es' ? 'Buscar marca…' : 'Search brand…'}
+                  class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
+                  aria-label={locale === 'es' ? 'Filtrar por marca' : 'Filter by brand'}
+                />
+                {category && <input type="hidden" name="category" value={category} />}
+                {condition && <input type="hidden" name="condition" value={condition} />}
+                <button
+                  type="submit"
+                  class="bg-pe-black text-pe-offwhite px-2.5 py-1.5 hover:bg-pe-charcoal transition-colors"
+                  aria-label={locale === 'es' ? 'Aplicar filtro' : 'Apply filter'}
+                >
+                  <Icon name="arrow-right" size={13} />
+                </button>
+              </div>
+            </div>
+
+            {activeFilters.length > 0 && (
+              <a
+                href={clearUrl}
+                class="font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2 flex items-center gap-1"
+              >
+                <Icon name="x" size={11} />
+                {locale === 'es' ? 'Limpiar filtros' : 'Clear filters'}
+              </a>
+            )}
+          </form>
+        </aside>
+
+        <!-- Product grid -->
+        <div class="flex-1 min-w-0">
+          {productsPage.content.length > 0 ? (
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 fx-stagger">
+              {productsPage.content.map((product, i) => (
+                <ProductCard product={product} locale={locale} priority={i < 3} />
+              ))}
+            </div>
+          ) : (
+            <div class="text-center py-24 flex flex-col items-center gap-4">
+              <p class="font-display text-pe-black/30 text-2xl">
+                {locale === 'es' ? 'No se encontraron piezas' : 'No pieces found'}
+              </p>
+              <Button href={clearUrl} variant="outline">
+                {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
+              </Button>
+            </div>
+          )}
+
+          <!-- Pagination -->
+          {productsPage.totalPages > 1 && (
+            <nav class="mt-12 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'Paginación' : 'Pagination'}>
+              {Array.from({ length: productsPage.totalPages }, (_, i) => (
+                <a
+                  href={`/${locale}/products?page=${i}${category ? `&category=${category}` : ''}${condition ? `&condition=${condition}` : ''}${brand ? `&brand=${brand}` : ''}`}
+                  class:list={[
+                    'font-sans text-xs w-8 h-8 flex items-center justify-center border transition-colors duration-200',
+                    i === productsPage.number
+                      ? 'bg-pe-rose text-pe-offwhite border-pe-rose'
+                      : 'border-pe-black/15 text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep',
+                  ]}
+                  aria-current={i === productsPage.number ? 'page' : undefined}
+                >
+                  {i + 1}
+                </a>
+              ))}
+            </nav>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

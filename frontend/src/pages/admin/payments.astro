@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import PaymentReviewQueue from '../../islands/admin/PaymentReviewQueue';
+---
+
+<AdminLayout
+  title="Pagos"
+  breadcrumbs={[{ label: 'Pagos' }]}
+>
+  <div class="mb-6">
+    <h1 class="font-display text-pe-black text-3xl font-light">Revisión de Pagos</h1>
+    <p class="font-sans text-[0.78rem] text-pe-charcoal/45 mt-1">
+      Aprobá o rechazá comprobantes de pago enviados por los clientes.
+    </p>
+  </div>
+
+  <PaymentReviewQueue client:load />
+</AdminLayout>

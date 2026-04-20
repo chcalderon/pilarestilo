@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Button from '../../components/Button.astro';
+import { SUPPORTED_LOCALES, type Locale, t } from '../../i18n/index';
+import { getFeaturedProducts, FIXTURE_PRODUCTS } from '../../lib/api';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/');
+}
+
+let featured = [...FIXTURE_PRODUCTS];
+try {
+  featured = await getFeaturedProducts();
+} catch {
+  // fixture fallback already set
+}
+
+const categoryTiles = [
+  {
+    slug: 'invierno',
+    labelEs: 'Colección Invierno',
+    labelEn: 'Winter Collection',
+    image: 'https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=900&q=80',
+  },
+  {
+    slug: 'zapatos',
+    labelEs: 'Zapatos de Lujo',
+    labelEn: 'Luxury Shoes',
+    image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=900&q=80',
+  },
+  {
+    slug: 'carteras',
+    labelEs: 'Carteras Icónicas',
+    labelEn: 'Iconic Bags',
+    image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&q=80',
+  },
+];
+---
+
+<BaseLayout title={t('nav.home', locale)} locale={locale}>
+  <Hero locale={locale} />
+
+  <!-- Category editorial tiles -->
+  <section class="py-16 bg-pe-offwhite" aria-labelledby="categories-heading">
+    <div class="pe-container">
+      <div class="text-center mb-10">
+        <span class="chapter-mark text-base">
+          {locale === 'es' ? 'Explorar' : 'Explore'}
+        </span>
+        <h2
+          id="categories-heading"
+          class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
+        >
+          {locale === 'es' ? 'Por Categoría' : 'By Category'}
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {categoryTiles.map((cat, i) => (
+          <a
+            href={`/${locale}/categories/${cat.slug}`}
+            class="group relative overflow-hidden aspect-[4/5] block fx-lift"
+          >
+            <img
+              src={cat.image}
+              alt={locale === 'es' ? cat.labelEs : cat.labelEn}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              width="600"
+              height="750"
+            />
+            <!-- Gradient overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-pe-black/70 via-pe-black/20 to-transparent"></div>
+            <!-- Rose ornamental rule on hover -->
+            <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+            <!-- Text -->
+            <div class="absolute bottom-0 left-0 right-0 p-6">
+              <p class="pe-eyebrow text-pe-rose-soft mb-1">
+                {locale === 'es' ? 'Mujer' : 'Women'}
+              </p>
+              <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light">
+                {locale === 'es' ? cat.labelEs : cat.labelEn}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- "Recién llegados" featured products -->
+  <section class="py-16 bg-pe-cream" aria-labelledby="featured-heading">
+    <div class="pe-container">
+      <div class="text-center mb-12">
+        <span class="chapter-mark text-base">
+          {locale === 'es' ? 'Novedades' : 'New arrivals'}
+        </span>
+        <h2
+          id="featured-heading"
+          class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
+        >
+          {locale === 'es' ? 'Recién Llegados' : 'Recently Added'}
+        </h2>
+      </div>
+
+      {featured.length > 0 ? (
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 fx-stagger">
+          {featured.map((product) => (
+            <ProductCard product={product} locale={locale} priority={true} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-center text-pe-charcoal/50 font-sans text-sm">
+          {locale === 'es' ? 'No hay productos disponibles.' : 'No products available.'}
+        </p>
+      )}
+
+      <div class="text-center mt-12">
+        <Button href={`/${locale}/products`} variant="outline" trailingIcon="arrow-right">
+          {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brand quote band -->
+  <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label="Brand statement">
+    <div class="absolute inset-0 opacity-10" aria-hidden="true">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-pe-gold/40"></div>
+    </div>
+    <div class="pe-container relative z-10">
+      <p class="pe-script text-pe-rose" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
+        {locale === 'es' ? 'Lujo con Propósito' : 'Luxury with Purpose'}
+      </p>
+      <p class="font-display text-pe-offwhite/70 font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+        {locale === 'es'
+          ? 'Cada pieza tiene una historia. La nuestra es de calidad, cuidado y moda consciente.'
+          : 'Every piece has a story. Ours is about quality, care, and mindful fashion.'}
+      </p>
+      <div class="rose-rule mt-10 max-w-xs mx-auto" aria-hidden="true"></div>
+    </div>
+  </section>
+</BaseLayout>

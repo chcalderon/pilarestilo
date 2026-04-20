@@ -1,0 +1,39 @@
+---
+import type { Locale } from '../i18n/index';
+
+type ShippingZone = 'SANTIAGO' | 'RM' | 'REGIONES';
+
+interface Props {
+  zone?: ShippingZone;
+  locale?: Locale;
+}
+
+const { zone = 'SANTIAGO', locale = 'es' } = Astro.props;
+
+const estimates: Record<ShippingZone, { es: string; en: string }> = {
+  SANTIAGO: { es: 'Envio en Santiago 24-48 hs', en: 'Ships within Santiago in 24-48h' },
+  RM: { es: 'Envio en Region Metropolitana 2-3 dias habiles', en: 'Ships within Metropolitan Region in 2-3 business days' },
+  REGIONES: { es: 'Envio a regiones 3-7 dias habiles', en: 'Ships to Chilean regions in 3-7 business days' },
+};
+
+const copy = estimates[zone] ?? estimates.SANTIAGO;
+---
+
+<div class="flex items-start gap-3 text-sm">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+       fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
+       class="text-[#B76E79] mt-0.5 flex-shrink-0">
+    <rect x="1" y="3" width="15" height="13" rx="1"/>
+    <path d="M16 8h4l3 5v4h-7V8z"/>
+    <circle cx="5.5" cy="18.5" r="2.5"/>
+    <circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+  <div>
+    <p class="text-[#1A1A1A] font-medium">
+      {locale === 'es' ? copy.es : copy.en}
+    </p>
+    <p class="text-[10px] tracking-wide text-[#3A3A3A]/50 mt-0.5">
+      {locale === 'es' ? 'Entrega estimada' : 'Estimated delivery'}
+    </p>
+  </div>
+</div>

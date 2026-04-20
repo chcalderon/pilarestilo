@@ -1,0 +1,78 @@
+package com.pilarestilo.order.infrastructure.web.controllers;
+
+import com.pilarestilo.order.application.commands.CreateOrderCommand;
+import com.pilarestilo.order.application.dto.OrderDto;
+import com.pilarestilo.order.application.usecases.CreateOrderUseCase;
+import com.pilarestilo.order.application.usecases.GetOrderUseCase;
+import com.pilarestilo.order.application.usecases.ListOrdersUseCase;
+import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
+import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
+import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
+import com.pilarestilo.shared.application.Money;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+
+    private final CreateOrderUseCase createOrderUseCase;
+    private final GetOrderUseCase getOrderUseCase;
+    private final ListOrdersUseCase listOrdersUseCase;
+    private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
+
+    public OrderController(CreateOrderUseCase createOrderUseCase,
+                            GetOrderUseCase getOrderUseCase,
+                            ListOrdersUseCase listOrdersUseCase,
+                            UpdateOrderStatusUseCase updateOrderStatusUseCase) {
+        this.createOrderUseCase = createOrderUseCase;
+        this.getOrderUseCase = getOrderUseCase;
+        this.listOrdersUseCase = listOrdersUseCase;
+        this.updateOrderStatusUseCase = updateOrderStatusUseCase;
+    }
+
+    @PostMapping
+    public ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrderRequest request) {
+        List<CreateOrderCommand.OrderItemCommand> items = request.items().stream()
+                .map(i -> new CreateOrderCommand.OrderItemCommand(i.productId(), i.quantity()))
+                .toList();
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                request.customerId(),
+                items,
+                PaymentMethod.valueOf(request.paymentMethod()),
+                request.notes(),
+                Money.zero()  // discount pre-applied externally; defaults to zero here
+        );
+
+        OrderDto dto = createOrderUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @GetMapping
+    public Page<OrderDto> list(@RequestParam(required = false) UUID customerId, Pageable pageable) {
+        if (customerId != null) {
+            return listOrdersUseCase.executeByCustomer(customerId, pageable);
+        }
+        return listOrdersUseCase.execute(pageable);
+    }
+
+    @GetMapping("/{id}")
+    public OrderDto getById(@PathVariable UUID id) {
+        return getOrderUseCase.execute(id);
+    }
+
+    @PatchMapping("/{id}/status")
+    public OrderDto updateStatus(@PathVariable UUID id,
+                                  @Valid @RequestBody UpdateOrderStatusRequest request) {
+        return updateOrderStatusUseCase.execute(id, request.status());
+    }
+}

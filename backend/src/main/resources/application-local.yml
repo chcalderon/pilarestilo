@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pilarestilo
+    username: pilar
+    password: pilar
+  jpa:
+    show-sql: true

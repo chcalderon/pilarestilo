@@ -1,0 +1,86 @@
+---
+import type { Locale } from '../i18n/index';
+import { t } from '../i18n/index';
+import Button from './Button.astro';
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+---
+
+<section
+  class="relative min-h-[96vh] flex flex-col items-center justify-center rose-mesh grain-overlay grain-strong overflow-hidden"
+  aria-labelledby="hero-headline"
+>
+  <!-- Ornamental thin rings (purely decorative) -->
+  <div class="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+    <div class="w-[780px] h-[780px] rounded-full border border-pe-rose/8 absolute"></div>
+    <div class="w-[560px] h-[560px] rounded-full border border-pe-rose/10 absolute"></div>
+    <div class="w-[340px] h-[340px] rounded-full border border-pe-gold/12 absolute"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="pe-container relative z-10 text-center px-4 max-w-4xl">
+
+    <!-- Eyebrow -->
+    <p class="pe-eyebrow mb-5 fx-hero-eyebrow">
+      {locale === 'es' ? 'Colección Curada' : 'Curated Collection'}
+    </p>
+
+    <!-- Headline in display serif -->
+    <h1
+      id="hero-headline"
+      class="font-display text-pe-black font-light leading-[1.05] tracking-[-0.01em] mb-4 fx-hero-headline"
+      style="font-size: clamp(3.2rem, 8vw, 7rem);"
+    >
+      {t('hero.headline', locale)}
+    </h1>
+
+    <!-- Cursive flourish -->
+    <p
+      class="pe-script text-pe-rose mb-10 fx-hero-script"
+      style="font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.15; opacity: 0;"
+    >
+      Lujo con Prop&oacute;sito
+    </p>
+
+    <!-- Rose-gold thin divider -->
+    <div class="flex items-center justify-center gap-3 mb-10 fx-hero-cta" style="opacity:0;">
+      <div class="h-px w-20 bg-gradient-to-r from-transparent to-pe-rose/50"></div>
+      <span class="w-1 h-1 rounded-full bg-pe-rose/60 block"></span>
+      <div class="h-px w-20 bg-gradient-to-l from-transparent to-pe-rose/50"></div>
+    </div>
+
+    <!-- CTA -->
+    <div class="flex flex-wrap items-center justify-center gap-4 fx-hero-cta" style="opacity:0;">
+      <Button href={`/${locale}/products`} variant="primary" leadingIcon="arrow-right">
+        {t('hero.cta', locale)}
+      </Button>
+      <Button href={`/${locale}/products?category=zapatos`} variant="outline">
+        {locale === 'es' ? 'Ver zapatos' : 'See shoes'}
+      </Button>
+    </div>
+
+    <!-- Subtle slogan below CTAs -->
+    <p
+      class="font-sans text-pe-charcoal/45 text-[0.78rem] tracking-[0.25em] uppercase mt-14 fx-hero-cta"
+      style="opacity:0;"
+    >
+      {t('hero.slogan', locale)}
+    </p>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 fx-hero-cta"
+    style="opacity:0;"
+    aria-hidden="true"
+  >
+    <span class="font-sans text-[0.6rem] tracking-[0.3em] uppercase text-pe-charcoal/30">
+      {locale === 'es' ? 'Explorar' : 'Explore'}
+    </span>
+    <div class="w-px h-8 bg-gradient-to-b from-pe-rose/50 to-transparent animate-[rose-shimmer_3s_ease-in-out_infinite]"></div>
+  </div>
+</section>

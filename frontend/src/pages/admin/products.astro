@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ProductTable from '../../islands/admin/ProductTable';
+---
+
+<AdminLayout
+  title="Productos"
+  breadcrumbs={[{ label: 'Productos' }]}
+>
+  <div class="mb-6">
+    <h1 class="font-display text-pe-black text-3xl font-light">Productos</h1>
+    <p class="font-sans text-[0.78rem] text-pe-charcoal/45 mt-1">
+      Gestiona el catálogo de productos de Pilar Estilo.
+    </p>
+  </div>
+
+  <ProductTable client:load />
+</AdminLayout>

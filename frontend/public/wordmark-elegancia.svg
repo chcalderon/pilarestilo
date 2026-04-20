@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-label="Lujo con Propósito">
+  <defs>
+    <linearGradient id="wmRose" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B76E79"/>
+      <stop offset="100%" stop-color="#8E4F58"/>
+    </linearGradient>
+  </defs>
+  <text
+    x="240" y="78"
+    text-anchor="middle"
+    font-family="'Pinyon Script', 'Allura', cursive"
+    font-size="76"
+    fill="url(#wmRose)"
+    font-style="italic"
+  >Lujo con Propósito</text>
+</svg>

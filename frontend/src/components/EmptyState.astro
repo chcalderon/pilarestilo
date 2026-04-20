@@ -1,0 +1,32 @@
+---
+import Button from './Button.astro';
+
+export interface Props {
+  message: string;
+  cta?: { label: string; href: string };
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { message, cta, size = 'md' } = Astro.props;
+
+const sealSize = size === 'sm' ? 72 : size === 'lg' ? 160 : 120;
+---
+
+<div class="flex flex-col items-center justify-center text-center py-16 px-6 gap-6">
+  <img
+    src="/ornaments/seal-pe.svg"
+    alt=""
+    aria-hidden="true"
+    width={sealSize}
+    height={Math.round(sealSize * 0.81)}
+    class="opacity-55"
+  />
+
+  <p class="font-display text-pe-charcoal text-xl sm:text-2xl max-w-md leading-snug">
+    {message}
+  </p>
+
+  {cta && (
+    <Button href={cta.href} variant="outline">{cta.label}</Button>
+  )}
+</div>

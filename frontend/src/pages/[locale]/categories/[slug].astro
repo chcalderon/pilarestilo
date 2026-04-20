@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import { type Locale, SUPPORTED_LOCALES } from '../../../i18n/index';
+import { getCategories, getProducts } from '../../../lib/api';
+
+const { locale, slug } = Astro.params as { locale: Locale; slug: string };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/products');
+}
+
+const [categories, productsPage] = await Promise.all([
+  getCategories(),
+  getProducts({ category: slug, active: true, size: 24, page: 0 }),
+]);
+
+const category = categories.find(c => c.slug === slug);
+
+if (!category) {
+  return Astro.redirect(`/${locale}/products`);
+}
+
+const products = productsPage.content;
+const title = locale === 'es' ? category.nameEs : category.nameEn;
+
+// Breadcrumb: find parent if any
+const parent = category.parentId ? categories.find(c => c.id === category.parentId) : null;
+---
+
+<BaseLayout title={title} locale={locale}>
+  <div class="min-h-screen" style="background-color: var(--pe-surface, #F8F4EF)">
+    <!-- Category hero band -->
+    <section class="relative overflow-hidden border-b border-[#EDE3D8]">
+      {category.imageUrl && (
+        <img
+          src={category.imageUrl}
+          alt={title}
+          class="absolute inset-0 w-full h-full object-cover opacity-20"
+        />
+      )}
+      <div class="relative pe-container py-16">
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-2 text-xs text-[#3A3A3A]/50 mb-6" aria-label="Breadcrumb">
+          <a href={`/${locale}/`} class="hover:text-[#B76E79] transition-colors">
+            {locale === 'es' ? 'Inicio' : 'Home'}
+          </a>
+          <span>›</span>
+          <a href={`/${locale}/products`} class="hover:text-[#B76E79] transition-colors">
+            {locale === 'es' ? 'Productos' : 'Products'}
+          </a>
+          {parent && (
+            <>
+              <span>›</span>
+              <a href={`/${locale}/categories/${parent.slug}`} class="hover:text-[#B76E79] transition-colors">
+                {locale === 'es' ? parent.nameEs : parent.nameEn}
+              </a>
+            </>
+          )}
+          <span>›</span>
+          <span class="text-[#1A1A1A]">{title}</span>
+        </nav>
+
+        <p class="text-[10px] tracking-[0.3em] uppercase text-[#B76E79] mb-2">
+          {locale === 'es' ? 'Categoría' : 'Category'}
+        </p>
+        <h1 class="font-['Cormorant_Garamond',serif] text-5xl font-light text-[#1A1A1A]">
+          {title}
+        </h1>
+        <p class="mt-3 text-[#3A3A3A]/60 text-sm">
+          {products.length} {locale === 'es'
+            ? (products.length === 1 ? 'producto' : 'productos')
+            : (products.length === 1 ? 'product' : 'products')}
+        </p>
+      </div>
+    </section>
+
+    <!-- Products grid -->
+    <section class="pe-container py-12">
+      {products.length === 0 ? (
+        <div class="text-center py-24">
+          <img src="/ornaments/seal-pe.svg" alt="" class="w-20 h-20 mx-auto mb-6 opacity-20" />
+          <p class="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A]/50">
+            {locale === 'es' ? 'Sin productos en esta categoría aún' : 'No products in this category yet'}
+          </p>
+          <a
+            href={`/${locale}/products`}
+            class="inline-flex items-center gap-2 mt-6 border border-[#B76E79] text-[#B76E79] px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] hover:text-white transition-colors"
+          >
+            {locale === 'es' ? 'Ver todo el catálogo' : 'Browse all products'}
+          </a>
+        </div>
+      ) : (
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map(product => (
+            <ProductCard product={product} locale={locale} />
+          ))}
+        </div>
+      )}
+    </section>
+  </div>
+</BaseLayout>

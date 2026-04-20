@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import CategoryTree from '../../islands/admin/CategoryTree';
+---
+
+<AdminLayout
+  title="Categorías"
+  breadcrumbs={[{ label: 'Categorías' }]}
+>
+  <div class="mb-6">
+    <h1 class="font-display text-pe-black text-3xl font-light">Categorías</h1>
+    <p class="font-sans text-[0.78rem] text-pe-charcoal/45 mt-1">
+      Gestiona el árbol de categorías del catálogo.
+    </p>
+  </div>
+
+  <CategoryTree client:load />
+</AdminLayout>

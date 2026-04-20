@@ -1,0 +1,236 @@
+---
+import AdminSidebar from '../islands/admin/AdminSidebar';
+import '../styles/globals.css';
+
+export interface Props {
+  title: string;
+  breadcrumbs?: { label: string; href?: string }[];
+}
+
+const { title, breadcrumbs = [] } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F8F4EF" />
+    <script is:inline>
+      (() => {
+        const key = 'pe-theme';
+        const saved = localStorage.getItem(key) || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+      })();
+    </script>
+    <title>{title} | Admin Pilar Estilo</title>
+    <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Montserrat:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { font-size: 16px; }
+
+      :root,
+      html[data-theme='light'] {
+        --admin-bg: #F2ECE4;
+        --admin-topbar: #ECE2D6;
+        --admin-border: rgba(26, 26, 26, 0.14);
+        --admin-text: #1A1A1A;
+        --admin-muted: rgba(58, 58, 58, 0.78);
+      }
+
+      html[data-theme='dark'] {
+        --admin-bg: #161313;
+        --admin-topbar: #1F1A1B;
+        --admin-border: rgba(248, 244, 239, 0.14);
+        --admin-text: #F8F4EF;
+        --admin-muted: rgba(240, 230, 223, 0.86);
+      }
+
+      body {
+        font-family: 'Montserrat', system-ui, sans-serif;
+        background: var(--admin-bg);
+        color: var(--admin-text);
+        min-height: 100vh;
+      }
+
+      .admin-shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .admin-sidebar-area {
+        width: 240px;
+        flex-shrink: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 40;
+        overflow-y: auto;
+      }
+
+      .admin-main {
+        flex: 1;
+        margin-left: 240px;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .admin-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: color-mix(in srgb, var(--admin-topbar) 94%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--admin-border);
+        padding: 0 2rem;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .admin-content {
+        flex: 1;
+        padding: 2rem;
+      }
+
+      .breadcrumb-item {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        color: var(--admin-muted);
+      }
+
+      .breadcrumb-item a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .breadcrumb-item a:hover { color: #B76E79; }
+
+      .breadcrumb-sep {
+        font-size: 0.65rem;
+        color: color-mix(in srgb, var(--admin-muted) 70%, transparent);
+        margin: 0 0.4rem;
+      }
+
+      .breadcrumb-current {
+        color: var(--admin-text);
+      }
+
+      .admin-theme-toggle {
+        margin-left: auto;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--admin-border);
+        background: transparent;
+        color: var(--admin-muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+        cursor: pointer;
+      }
+
+      .admin-theme-toggle:hover {
+        color: #B76E79;
+        border-color: color-mix(in srgb, #B76E79 60%, transparent);
+        background: color-mix(in srgb, #B76E79 10%, transparent);
+      }
+
+      @media (max-width: 768px) {
+        .admin-sidebar-area { display: none; }
+        .admin-main { margin-left: 0; }
+        .admin-topbar { padding: 0 1rem; }
+        .admin-content { padding: 1rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-shell">
+      <div class="admin-sidebar-area">
+        <AdminSidebar client:load currentPath={currentPath} />
+      </div>
+
+      <div class="admin-main">
+        <div class="admin-topbar">
+          <nav aria-label="breadcrumb" style="display:flex;align-items:center;flex-wrap:wrap;">
+            <span class="breadcrumb-item"><a href="/admin/">Admin</a></span>
+            {breadcrumbs.map((crumb, i) => (
+              <>
+                <span class="breadcrumb-sep" aria-hidden="true">/</span>
+                {i === breadcrumbs.length - 1
+                  ? <span class="breadcrumb-item breadcrumb-current">{crumb.label}</span>
+                  : <span class="breadcrumb-item"><a href={crumb.href}>{crumb.label}</a></span>
+                }
+              </>
+            ))}
+          </nav>
+
+          <button id="admin-theme-toggle" class="admin-theme-toggle" aria-label="Cambiar tema">
+            <svg id="admin-icon-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg id="admin-icon-sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                 style="display:none;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+        </div>
+
+        <main class="admin-content">
+          <slot />
+        </main>
+      </div>
+    </div>
+
+    <script is:inline>
+      (() => {
+        const STORAGE_KEY = 'pe-theme';
+        const moonIcon = document.getElementById('admin-icon-moon');
+        const sunIcon = document.getElementById('admin-icon-sun');
+        const toggleButton = document.getElementById('admin-theme-toggle');
+
+        function applyTheme(theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'light') {
+            moonIcon?.setAttribute('style', 'display:none;');
+            sunIcon?.setAttribute('style', 'display:block;');
+          } else {
+            moonIcon?.setAttribute('style', 'display:block;');
+            sunIcon?.setAttribute('style', 'display:none;');
+          }
+        }
+
+        const saved = localStorage.getItem(STORAGE_KEY) || 'dark';
+        applyTheme(saved);
+
+        toggleButton?.addEventListener('click', () => {
+          const current = localStorage.getItem(STORAGE_KEY) || 'dark';
+          const next = current === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(STORAGE_KEY, next);
+          applyTheme(next);
+        });
+      })();
+    </script>
+  </body>
+</html>

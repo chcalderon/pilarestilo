@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ReviewModerationQueue from '../../islands/admin/ReviewModerationQueue';
+---
+
+<AdminLayout
+  title="Reseñas"
+  breadcrumbs={[{ label: 'Reseñas' }]}
+>
+  <div class="mb-6">
+    <h1 class="font-display text-pe-black text-3xl font-light">Reseñas</h1>
+    <p class="font-sans text-[0.78rem] text-pe-charcoal/45 mt-1">
+      Modera las reseñas enviadas por los clientes.
+    </p>
+  </div>
+
+  <ReviewModerationQueue client:load />
+</AdminLayout>

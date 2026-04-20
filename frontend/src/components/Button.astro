@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+
+export interface Props {
+  variant?: 'primary' | 'outline' | 'ghost' | 'icon' | 'dark';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  class?: string;
+  disabled?: boolean;
+  leadingIcon?: string;
+  trailingIcon?: string;
+  ariaLabel?: string;
+  target?: string;
+  rel?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  href,
+  type = 'button',
+  class: className = '',
+  disabled = false,
+  leadingIcon,
+  trailingIcon,
+  ariaLabel,
+  target,
+  rel,
+} = Astro.props;
+
+const sizes = {
+  sm: 'px-4 py-2 text-[0.7rem]',
+  md: 'px-6 py-3 text-[0.78rem]',
+  lg: 'px-8 py-3.5 text-[0.85rem]',
+};
+
+const base =
+  'group relative inline-flex items-center justify-center gap-2 font-sans font-medium uppercase tracking-[0.22em] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed';
+
+const variants: Record<string, string> = {
+  primary:
+    'bg-pe-rose text-pe-offwhite shadow-card-lift hover:bg-pe-rose-deep hover:-translate-y-[1px] active:translate-y-0',
+  dark:
+    'bg-pe-black text-pe-offwhite hover:bg-pe-charcoal hover:-translate-y-[1px]',
+  outline:
+    'border border-pe-rose text-pe-rose-deep bg-transparent hover:bg-pe-rose hover:text-pe-offwhite',
+  ghost:
+    'text-pe-charcoal hover:text-pe-rose-deep after:content-[""] after:block after:h-px after:w-0 after:bg-pe-rose-deep after:transition-all after:duration-300 hover:after:w-full after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+  icon:
+    'h-10 w-10 p-0 rounded-full text-pe-charcoal hover:bg-pe-rose-soft hover:text-pe-rose-deep tracking-normal',
+};
+
+const iconOnly = variant === 'icon';
+const classes = `${base} ${iconOnly ? 'h-10 w-10 p-0 rounded-full' : sizes[size]} ${variants[variant]} ${className}`;
+---
+
+{href ? (
+  <a
+    href={href}
+    class={classes}
+    aria-label={ariaLabel}
+    target={target}
+    rel={rel}
+  >
+    {leadingIcon && <Icon name={leadingIcon} size={iconOnly ? 18 : 16} />}
+    {!iconOnly && <span><slot /></span>}
+    {trailingIcon && <Icon name={trailingIcon} size={16} />}
+  </a>
+) : (
+  <button type={type} class={classes} disabled={disabled} aria-label={ariaLabel}>
+    {leadingIcon && <Icon name={leadingIcon} size={iconOnly ? 18 : 16} />}
+    {!iconOnly && <span><slot /></span>}
+    {trailingIcon && <Icon name={trailingIcon} size={16} />}
+  </button>
+)}

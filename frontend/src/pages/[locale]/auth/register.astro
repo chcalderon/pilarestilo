@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RegisterForm from '../../../islands/auth/RegisterForm';
+import { type Locale, SUPPORTED_LOCALES } from '../../../i18n/index';
+
+const { locale } = Astro.params as { locale: Locale };
+if (!SUPPORTED_LOCALES.includes(locale)) return Astro.redirect('/es/auth/register');
+
+const redirect = Astro.url.searchParams.get('redirect') ?? undefined;
+---
+
+<BaseLayout title={locale === 'es' ? 'Crear cuenta' : 'Create account'} locale={locale}>
+  <div class="min-h-[calc(100vh-180px)] grid grid-cols-1 lg:grid-cols-5">
+
+    <!-- Left: editorial brand panel -->
+    <div class="hidden lg:block lg:col-span-3 relative overflow-hidden">
+      <img
+        src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200&q=80"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-r from-pe-black/75 via-pe-black/40 to-transparent"></div>
+      <div class="absolute inset-0 flex flex-col justify-end p-12 pb-16">
+        <div class="rose-rule-short mb-6" aria-hidden="true"></div>
+        <p class="pe-script text-pe-rose-soft leading-tight" style="font-size: clamp(2rem, 4vw, 3.2rem);">
+          {locale === 'es' ? 'Lujo con Prop\u00F3sito' : 'Luxury with Purpose'}
+        </p>
+        <p class="font-display text-pe-offwhite/60 font-light text-lg mt-3 max-w-md">
+          {locale === 'es'
+            ? 'Creá tu cuenta y accedé a piezas de lujo curadas especialmente.'
+            : 'Create your account and access specially curated luxury pieces.'}
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: form panel -->
+    <div class="lg:col-span-2 bg-pe-cream flex items-center justify-center px-8 py-16">
+      <div class="w-full max-w-sm">
+
+        <!-- Logo -->
+        <a href={`/${locale}/`} class="flex flex-col items-center mb-10">
+          <img src="/logo-pe.svg" alt="Pilar Estilo" width="52" height="52" class="mb-2" />
+          <p class="pe-script text-pe-rose text-xl">{locale === 'es' ? 'Lujo con Prop\u00F3sito' : 'Luxury with Purpose'}</p>
+        </a>
+
+        <!-- Title -->
+        <h1 class="font-display text-pe-black text-3xl font-light text-center mb-8">
+          {locale === 'es' ? 'Crear cuenta' : 'Create account'}
+        </h1>
+
+        <RegisterForm client:load locale={locale} redirect={redirect} />
+      </div>
+    </div>
+
+  </div>
+</BaseLayout>

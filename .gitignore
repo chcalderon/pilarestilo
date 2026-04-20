@@ -1,0 +1,30 @@
+# Node / Frontend
+node_modules/
+dist/
+.astro/
+*.local
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Environment
+.env
+infra/.env
+!infra/.env.example
+
+# Postgres data volume
+infra/postgres/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log

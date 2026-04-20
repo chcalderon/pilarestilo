@@ -1,0 +1,120 @@
+---
+import type { ProductDto } from '../lib/api';
+import type { Locale } from '../i18n/index';
+import { t } from '../i18n/index';
+import AddToCartButton from '../islands/AddToCartButton';
+import Icon from './Icon.astro';
+
+export interface Props {
+  product: ProductDto;
+  locale: Locale;
+  priority?: boolean;
+}
+
+const { product, locale, priority = false } = Astro.props;
+
+const priceFormatted = new Intl.NumberFormat('es-CL', {
+  style: 'currency',
+  currency: product.price.currency,
+  maximumFractionDigits: 0,
+}).format(product.price.amount);
+
+const conditionLabel =
+  product.condition === 'NEW'
+    ? t('product.condition.new', locale)
+    : t('product.condition.used', locale);
+
+const isNew = product.condition === 'NEW';
+---
+
+<article
+  class="group relative flex flex-col bg-pe-white overflow-hidden fx-lift cursor-rose"
+  aria-label={product.name}
+>
+  <!-- Top rose rule (ornamental) -->
+  <div class="rose-rule"></div>
+
+  <!-- Image wrapper -->
+  <a
+    href={`/${locale}/products/${product.id}`}
+    class="block overflow-hidden aspect-[3/4] bg-pe-cream"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <img
+      src={product.imageUrl}
+      alt={product.name}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+      width="300"
+      height="400"
+    />
+
+    <!-- Condition badge, absolute over image -->
+    <span
+      class:list={[
+        'absolute top-3 left-3 font-sans text-[0.58rem] tracking-[0.22em] uppercase px-2.5 py-1',
+        isNew
+          ? 'bg-pe-black text-pe-offwhite'
+          : 'bg-pe-offwhite/90 text-pe-charcoal border border-pe-charcoal/20 backdrop-blur-sm',
+      ]}
+    >
+      {conditionLabel}
+    </span>
+
+    <!-- Wishlist button, revealed on hover -->
+    <button
+      class="absolute top-3 right-3 p-1.5 bg-pe-offwhite/80 backdrop-blur-sm text-pe-charcoal/50 hover:text-pe-rose transition-colors duration-200 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-300"
+      aria-label={locale === 'es' ? 'Guardar en favoritos' : 'Save to wishlist'}
+    >
+      <Icon name="heart" size={14} strokeWidth={1.4} />
+    </button>
+  </a>
+
+  <!-- Info block -->
+  <div class="flex flex-col flex-1 px-4 pt-3 pb-4 gap-1.5">
+
+    <!-- Brand in micro-caps -->
+    <span class="font-sans text-[0.62rem] tracking-[0.28em] uppercase text-pe-rose font-medium">
+      {product.brand}
+    </span>
+
+    <!-- Product name -->
+    <a href={`/${locale}/products/${product.id}`} class="hover:text-pe-rose-deep transition-colors duration-200">
+      <h3 class="font-display text-pe-black text-[1.05rem] font-normal leading-snug line-clamp-2">
+        {product.name}
+      </h3>
+    </a>
+
+    <!-- Price row -->
+    <div class="flex items-center justify-between mt-auto pt-2">
+      <span class="font-display text-pe-black text-lg font-medium tracking-tight">
+        {priceFormatted}
+      </span>
+      {product.stock === 1 && (
+        <span class="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-deep/70">
+          {locale === 'es' ? 'Último' : 'Last one'}
+        </span>
+      )}
+    </div>
+
+    <!-- Add to cart (revealed from bottom on hover) -->
+    <div class="mt-2 overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-400 ease-in-out">
+      <AddToCartButton
+        client:visible
+        productId={product.id}
+        name={product.name}
+        brand={product.brand}
+        price={product.price}
+        imageUrl={product.imageUrl}
+        condition={product.condition}
+        stock={product.stock}
+        locale={locale}
+      />
+    </div>
+  </div>
+
+  <!-- Bottom rose rule -->
+  <div class="rose-rule"></div>
+</article>

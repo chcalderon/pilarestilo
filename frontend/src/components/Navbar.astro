@@ -1,0 +1,335 @@
+---
+import type { Locale } from '../i18n/index';
+import { t } from '../i18n/index';
+import LocaleSwitcher from './LocaleSwitcher.astro';
+import CartBadge from '../islands/CartBadge';
+import AccountMenu from '../islands/auth/AccountMenu';
+import Icon from './Icon.astro';
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const categories = [
+  { slug: 'invierno', labelEs: 'Invierno', labelEn: 'Winter' },
+  { slug: 'verano', labelEs: 'Verano', labelEn: 'Summer' },
+  { slug: 'vestidos', labelEs: 'Vestidos', labelEn: 'Dresses' },
+  { slug: 'zapatos', labelEs: 'Zapatos', labelEn: 'Shoes' },
+  { slug: 'pantalones', labelEs: 'Pantalones', labelEn: 'Trousers' },
+  { slug: 'carteras', labelEs: 'Carteras', labelEn: 'Bags' },
+  { slug: 'accesorios', labelEs: 'Accesorios', labelEn: 'Accessories' },
+];
+---
+
+<header class="sticky top-0 z-50" id="site-header">
+  <div id="nav-utility" class="border-b transition-colors duration-300 bg-pe-black border-pe-white/8">
+    <div class="pe-container flex items-center justify-between h-9">
+      <p id="nav-shipping" class="pe-eyebrow text-pe-white/40 hidden sm:block">
+        {locale === 'es' ? 'Envios a todo el pais' : 'Nationwide shipping'}
+      </p>
+      <div class="flex items-center gap-5 ml-auto">
+        <button
+          id="theme-toggle"
+          aria-label="Cambiar tema"
+          class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200"
+        >
+          <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+               class="hidden">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
+        <LocaleSwitcher locale={locale} />
+        <AccountMenu client:only="react" locale={locale} />
+      </div>
+    </div>
+  </div>
+
+  <div id="nav-main" class="backdrop-blur-sm border-b transition-colors duration-300 bg-pe-black/95 border-pe-white/8">
+    <div class="pe-container">
+      <nav id="nav-main-row" class="flex items-center justify-between" aria-label="Main navigation">
+        <button
+          id="nav-search-btn"
+          class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+          aria-label={locale === 'es' ? 'Buscar' : 'Search'}
+        >
+          <Icon name="search" size={18} />
+        </button>
+
+        <a href={`/${locale}/`} class="nav-logo-wrap group" aria-label="Pilar Estilo - Inicio">
+          <img
+            id="nav-logo-full"
+            src="/logo-full-dark-ref.png"
+            alt="Pilar Estilo - Lujo con proposito"
+            width="380"
+            height="122"
+            class="nav-logo-layer nav-logo-full object-contain"
+          />
+          <img
+            id="nav-logo-compact"
+            src="/logo_princ.png"
+            alt="Pilar Estilo"
+            width="220"
+            height="74"
+            class="nav-logo-layer nav-logo-compact object-contain"
+          />
+        </a>
+
+        <div class="flex items-center gap-3">
+          <a
+            href={`/${locale}/wishlist`}
+            class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            aria-label={locale === 'es' ? 'Favoritos' : 'Wishlist'}
+            id="nav-wishlist-link"
+          >
+            <Icon name="heart" size={18} />
+          </a>
+          <a
+            id="nav-cart-link"
+            href={`/${locale}/cart`}
+            class="relative flex items-center gap-1 text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            aria-label={t('nav.cart', locale)}
+          >
+            <Icon name="shopping-bag" size={20} />
+            <CartBadge client:load />
+          </a>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <div id="nav-cats" class="border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
+    <div class="pe-container">
+      <ul class="flex items-center gap-0 overflow-x-auto hide-scrollbar" role="list" aria-label="Product categories">
+        <li>
+          <a
+            href={`/${locale}/products`}
+            class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+          >
+            {locale === 'es' ? 'Todo' : 'All'}
+          </a>
+        </li>
+        {categories.map(cat => (
+          <li>
+            <a
+              href={`/${locale}/categories/${cat.slug}`}
+              class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-charcoal/70 hover:text-pe-rose-deep transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+            >
+              {locale === 'es' ? cat.labelEs : cat.labelEn}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hide-scrollbar { scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+  .nav-logo-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(74vw, 680px);
+    height: 156px;
+    transition: width 320ms ease, height 320ms ease;
+  }
+
+  .nav-logo-layer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    will-change: opacity, transform;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .nav-logo-full {
+    opacity: 1;
+    height: 146px;
+    max-width: min(74vw, 680px);
+    filter: drop-shadow(0 1px 2px rgba(26, 26, 26, 0.28));
+    z-index: 1;
+    transition: none;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+
+  .nav-logo-compact {
+    opacity: 0;
+    height: 58px;
+    max-width: min(42vw, 240px);
+    transform: translate(-50%, -50%) scale(0.96);
+    filter: drop-shadow(0 1px 2px rgba(26, 26, 26, 0.24));
+    z-index: 2;
+    transition: opacity 320ms ease, transform 320ms ease;
+  }
+
+  #site-header:not(.logo-compact) #nav-main-row {
+    height: 166px;
+    transition: height 320ms ease;
+  }
+
+  #site-header.logo-compact #nav-main-row {
+    height: 78px;
+  }
+
+  #site-header.logo-compact .nav-logo-wrap {
+    width: min(42vw, 240px);
+    height: 74px;
+  }
+
+  #site-header.logo-intro .nav-logo-full {
+    animation: nav-logo-fade-in 720ms ease both;
+  }
+
+  #site-header.logo-compact .nav-logo-full {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+    visibility: hidden;
+  }
+
+  #site-header.logo-compact .nav-logo-compact {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    visibility: visible;
+  }
+
+  #site-header:not(.logo-compact) .nav-logo-full {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #site-header:not(.logo-compact) .nav-logo-compact {
+    visibility: hidden;
+  }
+
+  @keyframes nav-logo-fade-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.02);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.12);
+    }
+  }
+
+  #site-header.theme-light #nav-utility { background-color: var(--pe-surface); border-color: var(--pe-border); }
+  #site-header.theme-light #nav-main { background-color: color-mix(in srgb, var(--pe-surface) 95%, transparent); border-color: var(--pe-border); }
+  #site-header.theme-light #nav-cats { background-color: var(--pe-surface-soft); border-color: var(--pe-border); }
+  #site-header.theme-light #nav-shipping { color: var(--pe-nav-subtle); }
+  #site-header.theme-light #theme-toggle { color: var(--pe-nav-subtle); }
+  #site-header.theme-light #nav-search-btn { color: var(--pe-nav-subtle); }
+  #site-header.theme-light #nav-wishlist-link { color: var(--pe-nav-subtle); }
+  #site-header.theme-light #nav-cart-link { color: var(--pe-nav-subtle); }
+
+  @media (max-width: 768px) {
+    .nav-logo-wrap {
+      width: min(84vw, 560px);
+      height: 134px;
+    }
+
+    .nav-logo-full {
+      height: 124px;
+      max-width: min(84vw, 560px);
+    }
+
+    .nav-logo-compact {
+      height: 52px;
+      max-width: min(46vw, 220px);
+    }
+
+    #site-header:not(.logo-compact) #nav-main-row {
+      height: 140px;
+    }
+
+    #site-header.logo-compact #nav-main-row {
+      height: 72px;
+    }
+
+    #site-header.logo-compact .nav-logo-wrap {
+      width: min(46vw, 220px);
+      height: 68px;
+    }
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = 'pe-theme';
+  const COMPACT_ON_SCROLL_Y = 120;
+  const EXPAND_ON_SCROLL_Y = 64;
+  let isCompact = false;
+
+  function applyTheme(theme: string) {
+    const header = document.getElementById('site-header');
+    const fullLogo = document.getElementById('nav-logo-full') as HTMLImageElement | null;
+    const moonIcon = document.getElementById('icon-moon');
+    const sunIcon = document.getElementById('icon-sun');
+
+    if (theme === 'light') {
+      header?.classList.add('theme-light');
+      if (fullLogo) fullLogo.src = '/logo-full-light-ref.png';
+      moonIcon?.classList.add('hidden');
+      sunIcon?.classList.remove('hidden');
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      header?.classList.remove('theme-light');
+      if (fullLogo) fullLogo.src = '/logo-full-dark-ref.png';
+      moonIcon?.classList.remove('hidden');
+      sunIcon?.classList.add('hidden');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }
+
+  function applyLogoScrollState() {
+    const header = document.getElementById('site-header');
+    if (!header) return;
+    const y = window.scrollY;
+
+    if (!isCompact && y >= COMPACT_ON_SCROLL_Y) {
+      isCompact = true;
+      header.classList.add('logo-compact');
+      return;
+    }
+
+    if (isCompact && y <= EXPAND_ON_SCROLL_Y) {
+      isCompact = false;
+      header.classList.remove('logo-compact');
+    }
+  }
+
+  const saved = localStorage.getItem(STORAGE_KEY) ?? 'dark';
+  applyTheme(saved);
+  applyLogoScrollState();
+  document.getElementById('site-header')?.classList.add('logo-intro');
+
+  document.getElementById('nav-search-btn')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('open-search'));
+  });
+
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const current = localStorage.getItem(STORAGE_KEY) ?? 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  });
+
+  window.addEventListener('scroll', applyLogoScrollState, { passive: true });
+</script>

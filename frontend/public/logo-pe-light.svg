@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 130" role="img" aria-label="Pilar Estilo">
+  <defs>
+    <linearGradient id="rose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A5A5"/>
+      <stop offset="55%" stop-color="#B76E79"/>
+      <stop offset="100%" stop-color="#8E4F58"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="80" cy="65" rx="72" ry="58" fill="none" stroke="url(#rose)" stroke-width="1.2"/>
+  <ellipse cx="80" cy="65" rx="65" ry="51" fill="none" stroke="url(#rose)" stroke-width="0.7"/>
+
+  <circle cx="80"  cy="7"   r="1.2" fill="url(#rose)"/>
+  <circle cx="80"  cy="123" r="1.2" fill="url(#rose)"/>
+  <circle cx="8"   cy="65"  r="1.2" fill="url(#rose)"/>
+  <circle cx="152" cy="65"  r="1.2" fill="url(#rose)"/>
+
+  <path d="M 46 102 Q 44 80 46 55 Q 47 38 52 30 Q 56 23 65 22 Q 76 21 80 30 Q 84 40 78 50 Q 72 59 62 60 Q 55 61 50 57 Q 47 54 47 50"
+        fill="none" stroke="url(#rose)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 46 55 Q 43 46 38 48"
+        fill="none" stroke="url(#rose)" stroke-width="1.1" stroke-linecap="round" opacity="0.85"/>
+
+  <path d="M 95 36 Q 104 30 110 35 Q 116 42 112 52 Q 108 60 98 62 Q 90 63 88 70 Q 86 79 94 84 Q 104 90 110 85 Q 116 80 114 72"
+        fill="none" stroke="url(#rose)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 98 62 Q 105 60 108 62"
+        fill="none" stroke="url(#rose)" stroke-width="1.0" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 95 36 Q 98 28 104 30"
+        fill="none" stroke="url(#rose)" stroke-width="1.1" stroke-linecap="round" opacity="0.85"/>
+</svg>

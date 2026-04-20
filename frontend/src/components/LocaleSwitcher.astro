@@ -1,0 +1,50 @@
+---
+import type { Locale } from '../i18n/index';
+
+export interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+// Replace locale segment in the current path
+const currentPath = Astro.url.pathname;
+const pathSegments = currentPath.split('/');
+// pathSegments[1] is the locale
+const makeLocalePath = (targetLocale: Locale) => {
+  const segments = [...pathSegments];
+  segments[1] = targetLocale;
+  return segments.join('/') || '/';
+};
+
+const esPath = makeLocalePath('es');
+const enPath = makeLocalePath('en');
+---
+
+<nav aria-label="Language switcher" class="flex items-center gap-1 font-sans text-xs tracking-widest uppercase">
+  <a
+    href={esPath}
+    class:list={[
+      'px-2 py-1 transition-colors duration-200',
+      locale === 'es'
+        ? 'text-pe-gold font-semibold'
+        : 'text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)]',
+    ]}
+    aria-current={locale === 'es' ? 'true' : undefined}
+  >
+    ES
+  </a>
+  <span class="text-[var(--pe-nav-sep)]" aria-hidden="true">|</span>
+  <a
+    href={enPath}
+    class:list={[
+      'px-2 py-1 transition-colors duration-200',
+      locale === 'en'
+        ? 'text-pe-gold font-semibold'
+        : 'text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)]',
+    ]}
+    aria-current={locale === 'en' ? 'true' : undefined}
+  >
+    EN
+  </a>
+</nav>
