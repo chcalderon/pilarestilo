@@ -31,5 +31,6 @@ Open http://localhost
 - [Payment Flow](docs/payment-flow.md)
 - [Deployment](docs/deployment.md)
 - [Roadmap](docs/roadmap.md)
+- [Changelog](CHANGELOG.md)
 - [Frontend README](frontend/README.md)
 - [Backend README](backend/README.md)

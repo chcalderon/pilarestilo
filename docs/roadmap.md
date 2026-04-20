@@ -1,103 +1,101 @@
-# Pilar Estilo — Roadmap
+# Pilar Estilo - Roadmap
 
-## v1 — Initial Release (Completed)
+This roadmap is synced with the current codebase on `master` as of April 20, 2026.
 
-- [x] Product catalog with full CRUD (create, read, update, archive)
-- [x] Order management with state machine (DRAFT → AWAITING_PAYMENT → PAID → PROCESSING → SHIPPED → DELIVERED → CANCELLED)
-- [x] Semi-manual payment flow (bank transfer, cash on delivery, WhatsApp agreement, store credit)
-- [x] Discount and promo code system (fixed-amount and percentage codes, expiry dates, usage limits)
-- [x] Customer credit system (grant credits, apply to orders, track balance history)
-- [x] Inventory management — synchronous stock tracking with reservation on order creation
-- [x] Bilingual storefront (Spanish and English via Astro i18n routing)
-- [x] Minimal admin UI (product, order, payment, and inventory management pages)
-- [x] Dockerized deployment with Caddy reverse proxy (automatic TLS via Let's Encrypt)
-- [x] Hexagonal architecture with domain event seams in place
-- [x] Flyway database migrations + seed data
+## v1 - Initial Release (Completed)
 
----
-
-## v2 — Editorial Redesign, Categories, Ratings & Real Auth (Completed)
-
-- [x] JWT authentication — access tokens (24h) + refresh tokens (7d), BCrypt password hashing
-- [x] Role-based access control — `ADMIN`, `SELLER`, `CUSTOMER` roles with `@PreAuthorize` guards
-- [x] Admin login page — real JWT-based login form, server-side SSR middleware guard
-- [x] Token refresh endpoint + `GET /api/auth/me`
-- [x] Category taxonomy — tree structure (parent + children), product-category join table
-- [x] Category filter on product listing (`?category=<slug>`)
-- [x] Review module — 1–5 star ratings, approval workflow, `ReviewSummaryListener` denormalization
-- [x] `avg_rating` + `review_count` denormalized on `products` for fast listing queries
-- [x] Editorial luxury storefront redesign — Cormorant Garamond + Pinyon Script + Montserrat typography
-- [x] New brand palette — rose gold (`pe-rose`), off-white (`pe-offwhite`), cream (`pe-cream`)
-- [x] Falabella-style admin panel — `AdminLayout`, `DataTable`, sidebar nav, `CategoryTree`, `ReviewModerationQueue`
-- [x] Auth pages — `/[locale]/auth/login`, `/[locale]/auth/register`, `/[locale]/account`
-- [x] Full i18n coverage — all v2 keys in `es.json` + `en.json`
+- [x] Product catalog CRUD
+- [x] Order lifecycle with state transitions
+- [x] Semi-manual payments
+- [x] Discounts and promo codes
+- [x] Customer credit balance + movement history
+- [x] Inventory reservation on order creation
+- [x] Bilingual storefront (`/es` and `/en`)
+- [x] Admin panel base pages
+- [x] Docker Compose + Caddy reverse proxy
+- [x] Flyway migrations + seed data
 
 ---
 
-## Baseline Considerations (Plan Guardrails)
+## v2 - Auth, Taxonomy, Reviews, Admin UX (Completed)
 
-These are not treated as bug fixes. They are baseline decisions the team should preserve in upcoming phases.
-
-- [x] Chile-first commerce baseline - prices, labels, and checkout copy aligned to CLP and Chilean operation.
-- [x] Brand consistency on landing - single primary logo placement in header, with readable size and slogan visibility.
-- [x] Theme consistency - light/dark mode must apply site-wide (not header-only) for storefront and admin surfaces.
-- [x] Admin routing stability - keep Astro i18n routing compatible with `/admin/*` routes and `/admin/login` access.
-- [x] Authenticated admin mutations - product/category/payment/review write actions must always send Bearer token.
-- [x] Category-product integrity - maintain assignable category flow in admin product form and visible category listings.
-- [x] Infra runbook canonical path - local startup and verification via `infra/docker-compose.yml` + `infra/.env`.
-
----
-
-## P3 — Payment & Notifications
-
-- [ ] Payment gateway integration — Mercado Pago adapter via existing `PaymentGatewayPort` seam
-- [ ] WhatsApp notifications via Twilio or Meta Cloud API — order confirmation, payment status, shipping updates
-- [ ] Email notifications via SendGrid — receipts, rejection notices, shipping confirmations
-- [ ] Webhook receiver for gateway payment events → `PaymentConfirmed` / `PaymentRejected`
-- [ ] Customer self-service portal — order history, shipment tracking, downloadable receipts
+- [x] JWT auth (`/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/me`)
+- [x] SSR admin guard in Astro middleware (`/admin/**`)
+- [x] Roles in JWT claims (`ADMIN`, `SELLER`, `CUSTOMER`)
+- [x] Category taxonomy + category filter on products
+- [x] Review module (create/list/approve/delete)
+- [x] Product denormalized rating summary (`avg_rating`, `review_count`)
+- [x] Editorial storefront redesign + luxury brand tokens
+- [x] Admin layout with reusable data table patterns
 
 ---
 
-## P4 — Catalog Enhancements
+## v2.1 - Catalog and Commerce Refinements (Completed)
 
-- [ ] Wishlist / favorites — heart icon persisted per user, shareable links
-- [ ] Order tracking timeline — visual state machine display on account page
-- [ ] Image upload to S3 / Cloudflare R2 — replace URL input in admin product form with direct upload
-- [ ] Full-text product search — Postgres `tsvector` or Meilisearch adapter
-- [ ] Product variants — size/color combinations with per-variant stock
-
----
-
-## P5 — Event-Driven Architecture
-
-The `DomainEventPublisher` port is defined with a Kafka-ready swap path (see `docs/domain-events.md`).
-
-- [ ] Kafka cluster setup (single-broker for VPS, or Confluent Cloud for managed)
-- [ ] `KafkaDomainEventPublisher` adapter — replaces `SpringDomainEventPublisher` as `@Primary` bean
-- [ ] Update all `@EventListener` subscribers to `@KafkaListener` with consumer groups
-- [ ] Saga orchestration for order/inventory consistency (replace synchronous reservation)
-- [ ] Dead-letter topic handling — failed event processing with retry and alerting
+- [x] Wishlist backend module (`/api/wishlist`) and storefront page (`/[locale]/wishlist`)
+- [x] Product search endpoint (`GET /api/products/search?q=...`) + search overlay UI
+- [x] Per-size stock data model foundation (`product_size_stocks`, `sizeStocks` in product DTO)
+- [x] Chile-first defaults migration (`CLP` currency defaults + shipping origin normalization)
+- [x] Extended catalog DB migrations (`V7` to `V10`)
 
 ---
 
-## P6 — Microservices
+## Baseline Guardrails (Active)
 
-Package boundaries already designed for extraction. Recommended order:
+- [x] Chile-first commerce defaults (`CLP`, local shipping labels/copy)
+- [x] Admin routes remain outside locale prefix (`/admin/*`)
+- [x] Admin write operations require JWT authentication
+- [x] Category-product assignment flow stays available in admin product form
+- [x] Canonical local run path: `infra/docker-compose.yml` + `infra/.env`
 
-- [ ] Extract `product` service — own Spring Boot app, own PostgreSQL schema
-- [ ] Extract `inventory` service — consumes `OrderCreated` from Kafka
+---
+
+## P3 - Payments and Notifications
+
+- [ ] Payment gateway adapter (Mercado Pago or Stripe) via `PaymentGatewayPort`
+- [ ] Webhook receiver for gateway events
+- [ ] WhatsApp notifications (Twilio/Meta Cloud API)
+- [ ] Email notifications (SendGrid)
+- [ ] Customer order history and receipts in account area
+
+---
+
+## P4 - Catalog and Buying Experience
+
+- [x] Wishlist core (persisted favorites per authenticated user)
+- [x] Search core (keyword search API + storefront overlay)
+- [ ] Shareable wishlist links
+- [ ] Full product variants (size/color combinations with dedicated admin UX)
+- [ ] Direct media upload to S3/R2 from admin product form
+- [ ] Order tracking timeline in customer account
+
+---
+
+## P5 - Event-Driven Upgrade
+
+- [ ] Kafka infrastructure
+- [ ] `KafkaDomainEventPublisher` as primary adapter
+- [ ] Migrate in-process listeners to `@KafkaListener`
+- [ ] Retry/DLQ strategy
+- [ ] Sagas for order-inventory consistency
+
+---
+
+## P6 - Microservices Extraction
+
+- [ ] Extract `product` service
+- [ ] Extract `inventory` service
 - [ ] Extract `order` service
 - [ ] Extract `payment` service
-- [ ] API Gateway — Kong or extended Caddy for routing, rate limiting, auth offloading
+- [ ] Introduce API gateway policies (routing, auth offload, rate limits)
 
 ---
 
-## P7 — Observability & Scale
+## P7 - Observability and Scale
 
-- [ ] Prometheus metrics scraping — enable `/actuator/prometheus`
-- [ ] Grafana dashboards — JVM heap, HTTP latency, DB pool, order/payment funnel
-- [ ] Distributed tracing — OpenTelemetry → Jaeger or Grafana Tempo
-- [ ] CDN for product images — Cloudflare in front of R2 bucket
-- [ ] Redis for cart and session — server-rendered cart totals, cross-device sync
-- [ ] Horizontal scaling — stateless backend behind Caddy upstream pool
-- [ ] Read replicas — PostgreSQL streaming replica for catalog read queries
+- [ ] Prometheus scrape endpoint and metrics pipeline
+- [ ] Grafana dashboards (JVM, HTTP, DB, order/payment funnel)
+- [ ] Distributed tracing (OpenTelemetry)
+- [ ] Redis for cart/session acceleration
+- [ ] Horizontal backend scaling behind reverse proxy
+- [ ] Postgres read replicas for read-heavy catalog queries

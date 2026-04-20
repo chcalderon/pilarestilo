@@ -194,7 +194,7 @@ Pull the latest code and rebuild:
 
 ```bash
 cd /opt/PilarEstilo
-git pull origin main
+git pull origin master
 
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
