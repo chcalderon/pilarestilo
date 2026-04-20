@@ -134,6 +134,12 @@ export interface UpdateProductRequest {
   categoryIds?: string[];
 }
 
+export interface MediaUploadDto {
+  url: string;
+  filename: string;
+  size: number;
+}
+
 // ─── Fixture Fallback ───────────────────────────────────────────────────────
 
 export const FIXTURE_PRODUCTS: ProductDto[] = [
@@ -142,7 +148,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Bolso Chanel Classic Flap',
     description: 'Bolso icónico de Chanel en piel de cordero acolchada. Hardware dorado. En excelente estado de conservación.',
     price: { amount: 850000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
+    imageUrl: '/api/media/products/product-002.jpg',
     condition: 'USED',
     brand: 'Chanel',
     stock: 1,
@@ -155,7 +161,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Cinturón Hermès Reversible',
     description: 'Cinturón reversible Hermès con hebilla H en metal dorado. Cuero negro/marrón. Talle 85.',
     price: { amount: 320000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80',
+    imageUrl: '/api/media/products/product-006.jpg',
     condition: 'USED',
     brand: 'Hermès',
     stock: 1,
@@ -168,7 +174,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Zapatillas Gucci Ace',
     description: 'Zapatillas Gucci Ace de cuero blanco con bordado de abeja y flores. Talle 38. Sin uso.',
     price: { amount: 410000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80',
+    imageUrl: '/api/media/products/product-003.jpg',
     condition: 'NEW',
     brand: 'Gucci',
     stock: 1,
@@ -181,7 +187,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Lentes Louis Vuitton My LV',
     description: 'Anteojos de sol Louis Vuitton My LV con montura acetato en negro. Protección UV400.',
     price: { amount: 180000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&q=80',
+    imageUrl: '/api/media/products/product-004.jpg',
     condition: 'NEW',
     brand: 'Louis Vuitton',
     stock: 2,
@@ -194,7 +200,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Pañuelo Hermès Carré 90',
     description: 'Pañuelo de seda Hermès 90x90cm. Diseño Jungle Love. Colores vibrantes. En caja original.',
     price: { amount: 95000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=600&q=80',
+    imageUrl: '/api/media/products/product-008.jpg',
     condition: 'NEW',
     brand: 'Hermès',
     stock: 3,
@@ -207,7 +213,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Cartera Prada Saffiano',
     description: 'Cartera mediana Prada en cuero saffiano negro con logo triangular. Compartimentos interiores. Como nueva.',
     price: { amount: 540000, currency: 'CLP' },
-    imageUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&q=80',
+    imageUrl: '/api/media/products/product-010.jpg',
     condition: 'USED',
     brand: 'Prada',
     stock: 1,
@@ -336,6 +342,24 @@ export async function deleteProduct(id: string, token?: string): Promise<void> {
     method: 'DELETE',
     headers: authHeaders(token),
   });
+}
+
+export async function uploadProductImage(file: File, token: string): Promise<MediaUploadDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', 'products');
+
+  const res = await fetch(`${API_BASE}/media/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error al subir imagen (${res.status})`);
+  }
+
+  return res.json() as Promise<MediaUploadDto>;
 }
 
 async function listPaymentsByStatus(status: string, token?: string): Promise<PaymentDto[]> {

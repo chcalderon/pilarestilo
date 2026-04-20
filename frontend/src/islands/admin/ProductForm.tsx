@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Loader2, Save, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ImagePlus, Loader2, Save, Upload, X } from 'lucide-react';
 import {
   createProduct,
+  uploadProductImage,
   updateProduct,
   getCategories,
   type ProductDto,
@@ -34,7 +35,9 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [apiError, setApiError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
@@ -84,6 +87,24 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     return Object.keys(e).length === 0;
   }
 
+  async function handleImageUpload(file: File) {
+    if (!token) {
+      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
+      return;
+    }
+
+    setUploadingImage(true);
+    setApiError('');
+    try {
+      const uploaded = await uploadProductImage(file, token);
+      setForm((prev) => ({ ...prev, imageUrl: uploaded.url }));
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Error al subir imagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
@@ -101,7 +122,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         name: form.name.trim(),
         description: form.description.trim(),
         price: { amount: Number(form.amount), currency: form.currency },
-        imageUrl: form.imageUrl.trim() || 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&q=80',
+        imageUrl: form.imageUrl.trim() || '/api/media/products/product-001.jpg',
         condition: form.condition,
         brand: form.brand.trim(),
         stock: Number(form.stock),
@@ -128,6 +149,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     'w-full font-sans text-sm border border-pe-black/20 px-3 py-2 bg-white focus:outline-none focus:border-pe-rose transition-colors';
   const labelClass = 'block font-sans text-xs tracking-wider uppercase text-pe-black/60 mb-1';
   const errorClass = 'font-sans text-xs text-red-500 mt-1';
+  const previewUrl = form.imageUrl.trim() || '/api/media/products/product-001.jpg';
 
   const rootCats = categories.filter((c) => !c.parentId);
   const childCats = categories.filter((c) => c.parentId);
@@ -259,17 +281,70 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           </div>
 
           <div>
-            <label htmlFor="pf-image" className={labelClass}>
-              URL de imagen
-            </label>
-            <input
-              id="pf-image"
-              type="url"
-              className={inputClass}
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              placeholder="https://..."
-            />
+            <label className={labelClass}>Imagen del producto</label>
+            <div className="border border-pe-black/12 bg-pe-white p-3">
+              <div className="flex gap-3">
+                <img
+                  src={previewUrl}
+                  alt="Vista previa producto"
+                  className="w-20 h-24 object-cover bg-pe-cream border border-pe-black/10"
+                  loading="lazy"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-sans text-[0.65rem] uppercase tracking-[0.12em] text-pe-charcoal/45 mb-1">
+                    Ruta activa
+                  </p>
+                  <p className="font-mono text-[0.68rem] text-pe-charcoal/70 truncate">{previewUrl}</p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage || saving}
+                      className="inline-flex items-center gap-1.5 bg-[#B76E79] text-white font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#8E4F58] transition-colors disabled:opacity-60"
+                    >
+                      {uploadingImage ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                      {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, imageUrl: '/api/media/products/product-001.jpg' }))}
+                      disabled={uploadingImage || saving}
+                      className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-60"
+                    >
+                      <ImagePlus size={13} />
+                      Imagen por defecto
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        void handleImageUpload(file);
+                      }
+                      e.currentTarget.value = '';
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <label htmlFor="pf-image" className={labelClass}>
+                  Ruta manual (opcional)
+                </label>
+                <input
+                  id="pf-image"
+                  type="text"
+                  className={inputClass}
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                  placeholder="/api/media/products/product-001.jpg"
+                />
+              </div>
+            </div>
           </div>
 
           {categories.length > 0 && (

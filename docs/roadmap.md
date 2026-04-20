@@ -38,8 +38,9 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Product search endpoint (`GET /api/products/search?q=...`) + search overlay UI
 - [x] Per-size stock data model foundation (`product_size_stocks`, `sizeStocks` in product DTO)
 - [x] Chile-first defaults migration (`CLP` currency defaults + shipping origin normalization)
-- [x] Extended catalog DB migrations (`V7` to `V10`)
+- [x] Extended catalog DB migrations (`V7` to `V11`)
 - [x] Storefront mobile header/navigation polish: action-icon reflow + category slider controls + UTF-8 Spanish copy normalization
+- [x] Backend-managed product media routes with Docker-persisted local storage (`/api/media/**` -> `infra/storage/media`)
 
 ---
 

@@ -9,6 +9,20 @@ The format is inspired by Keep a Changelog.
 ### Changed
 - Pending
 
+## [2026-04-20] - Backend-managed product media storage
+
+### Changed
+- Added backend static media delivery via `GET /api/media/**` mapped to filesystem storage.
+- Added `MEDIA_STORAGE_PATH` runtime configuration and Docker bind mount (`infra/storage/media:/app/media`) for persistence.
+- Migrated seeded catalog products to backend-local image paths through `V11__product_images_from_backend_media.sql`.
+- Updated frontend fallback products and admin product form defaults to use backend media routes instead of external image URLs.
+- Added sample product images (`product-001.jpg` to `product-010.jpg`) under `infra/storage/media/products/`.
+
+### Verified
+- Docker stack rebuilt and backend health endpoint returned `200`.
+- `GET /api/products` includes `/api/media/products/...` paths.
+- `GET /api/media/products/product-001.jpg` returned `200`.
+
 ## [2026-04-20] - Storefront mobile nav and UTF-8 text normalization
 
 ### Fixed

@@ -82,6 +82,12 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `notification`
 - `shared` (`auth`, `domain`, common infra)
 
+### Media delivery
+
+- Backend serves static product media via `/api/media/**`.
+- `MediaResourceConfig` maps that route to `app.media.storage-path` (filesystem).
+- Docker Compose binds that path to `infra/storage/media` for persistence.
+
 ---
 
 ## 4. Eventing Model
@@ -108,6 +114,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V8`: per-size stock table + shipping origin
 - `V9`: wishlist schema
 - `V10`: Chile defaults (`CLP`, shipping zone normalization, category associations)
+- `V11`: seeded product image URLs moved to backend media routes (`/api/media/products/*.jpg`)
 
 ---
 

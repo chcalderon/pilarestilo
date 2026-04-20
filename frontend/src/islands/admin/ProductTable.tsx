@@ -167,7 +167,7 @@ export default function ProductTable() {
             'font-sans text-[0.65rem] tracking-[0.12em] uppercase px-2 py-0.5',
             row.condition === 'NEW'
               ? 'bg-pe-black text-pe-offwhite'
-              : 'bg-pe-cream text-pe-charcoal/60 border border-pe-black/12',
+              : 'bg-pe-rose-soft text-black border border-pe-rose/45',
           ].join(' ')}
         >
           {row.condition === 'NEW' ? 'Nuevo' : 'Usado'}
@@ -325,7 +325,7 @@ export default function ProductTable() {
                 <span
                   className={[
                     'absolute top-3 left-3 px-2 py-1 text-[0.62rem] uppercase tracking-[0.12em] font-sans',
-                    row.condition === 'NEW' ? 'bg-pe-black text-pe-offwhite' : 'bg-pe-cream text-pe-charcoal/65',
+                    row.condition === 'NEW' ? 'bg-pe-black text-pe-offwhite' : 'bg-pe-rose-soft text-black border border-pe-rose/45',
                   ].join(' ')}
                 >
                   {row.condition === 'NEW' ? 'Nuevo' : 'Usado'}

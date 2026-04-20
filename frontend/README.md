@@ -72,6 +72,7 @@ Translations:
 - Product detail size selector using `sizeStocks`
 - Reviews list/create flow
 - Cart experience with persisted state
+- Product cards now consume backend-hosted media paths (`/api/media/**`) instead of external image hosts
 
 ---
 

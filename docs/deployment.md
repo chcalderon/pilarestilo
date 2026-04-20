@@ -139,6 +139,7 @@ Docker will:
 3. Build the frontend image from `frontend/Dockerfile`.
 4. Start all four containers (`pe_postgres`, `pe_backend`, `pe_frontend`, `pe_caddy`).
 5. Apply Flyway database migrations on backend startup.
+6. Mount persisted product media storage from `infra/storage/media` into backend path `/app/media`.
 
 The first build takes 3–8 minutes depending on server speed and image cache state.
 
@@ -215,6 +216,7 @@ Docker Compose rebuilds only the services whose image changed and replaces conta
 
 ```bash
 docker exec pe_postgres pg_dump -U pilar pilarestilo > /opt/backups/pilarestilo_$(date +%Y%m%d_%H%M%S).sql
+tar -czf /opt/backups/pilarestilo_media_$(date +%Y%m%d_%H%M%S).tar.gz -C /opt/PilarEstilo/infra/storage media
 ```
 
 ### Automated backup with cron
@@ -232,6 +234,7 @@ Add this line to run a backup every day at 02:00 and keep the last 30 days:
 
 ```cron
 0 2 * * * docker exec pe_postgres pg_dump -U pilar pilarestilo > /opt/backups/pilarestilo_$(date +\%Y\%m\%d_\%H\%M\%S).sql && find /opt/backups -name "*.sql" -mtime +30 -delete
+10 2 * * * tar -czf /opt/backups/pilarestilo_media_$(date +\%Y\%m\%d_\%H\%M\%S).tar.gz -C /opt/PilarEstilo/infra/storage media && find /opt/backups -name "pilarestilo_media_*.tar.gz" -mtime +30 -delete
 ```
 
 ### Offsite backup
