@@ -362,6 +362,23 @@ export async function uploadProductImage(file: File, token: string): Promise<Med
   return res.json() as Promise<MediaUploadDto>;
 }
 
+export async function uploadPaymentProofImage(file: File, token: string): Promise<MediaUploadDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/media/upload-proof`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error al subir comprobante (${res.status})`);
+  }
+
+  return res.json() as Promise<MediaUploadDto>;
+}
+
 async function listPaymentsByStatus(status: string, token?: string): Promise<PaymentDto[]> {
   const size = 100;
   let pageNumber = 0;
@@ -398,12 +415,13 @@ export async function getPendingPayments(token?: string): Promise<PaymentDto[]> 
 
 export async function getReviewQueuePayments(token?: string): Promise<PaymentDto[]> {
   try {
-    const [submitted, underReview] = await Promise.all([
+    const [pending, submitted, underReview] = await Promise.all([
+      listPaymentsByStatus('PENDING', token),
       listPaymentsByStatus('SUBMITTED', token),
       listPaymentsByStatus('UNDER_REVIEW', token),
     ]);
 
-    const merged = [...submitted, ...underReview];
+    const merged = [...pending, ...submitted, ...underReview];
     const byId = new Map<string, PaymentDto>();
     for (const payment of merged) {
       byId.set(payment.id, payment);
@@ -429,6 +447,24 @@ export async function rejectPayment(paymentId: string, reviewerId: string, token
   await apiFetch<void>(`/payments/${encodeURIComponent(paymentId)}/review`, {
     method: 'PATCH',
     body: JSON.stringify({ action: 'REJECT', reviewerId }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getPaymentByOrder(orderId: string, token: string): Promise<PaymentDto | null> {
+  try {
+    return await apiFetch<PaymentDto>(`/payments/order/${encodeURIComponent(orderId)}`, {
+      headers: authHeaders(token),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function submitPaymentProof(paymentId: string, proofReference: string, token: string): Promise<PaymentDto> {
+  return apiFetch<PaymentDto>(`/payments/${encodeURIComponent(paymentId)}/proof`, {
+    method: 'PATCH',
+    body: JSON.stringify({ proofReference }),
     headers: authHeaders(token),
   });
 }

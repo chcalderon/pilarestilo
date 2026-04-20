@@ -60,6 +60,9 @@ class AuthorizationGuardsIT {
 
         mvc.perform(get("/api/payments"))
                 .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/payments/order/{orderId}", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -114,6 +117,35 @@ class AuthorizationGuardsIT {
         mvc.perform(get("/api/orders/{id}", orderId)
                         .header("Authorization", bearer(customerBToken)))
                 .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/payments/order/{orderId}", orderId)
+                        .header("Authorization", bearer(customerAToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId.toString()));
+
+        MvcResult ownPayment = mvc.perform(get("/api/payments/order/{orderId}", orderId)
+                        .header("Authorization", bearer(customerAToken)))
+                .andExpect(status().isOk())
+                .andReturn();
+        UUID paymentId = UUID.fromString(om.readTree(ownPayment.getResponse().getContentAsString()).get("id").asText());
+
+        mvc.perform(get("/api/payments/order/{orderId}", orderId)
+                        .header("Authorization", bearer(customerBToken)))
+                .andExpect(status().isForbidden());
+
+        String proofBody = om.writeValueAsString(Map.of("proofReference", "https://example.com/proof-test.jpg"));
+        mvc.perform(patch("/api/payments/{id}/proof", paymentId)
+                        .header("Authorization", bearer(customerBToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(proofBody))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(patch("/api/payments/{id}/proof", paymentId)
+                        .header("Authorization", bearer(customerAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(proofBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUBMITTED"));
     }
 
     @Test
