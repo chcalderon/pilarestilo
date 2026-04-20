@@ -25,6 +25,14 @@ export default function AccountPage({ locale }: Props) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    if (requestedTab === 'profile' || requestedTab === 'reviews' || requestedTab === 'orders') {
+      setTab(requestedTab);
+    }
+  }, []);
+
+  useEffect(() => {
     if (tab !== 'reviews' || !effectiveToken) return;
     setLoadingReviews(true);
     getMyReviews(effectiveToken)

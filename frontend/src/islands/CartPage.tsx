@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
+import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
+import { createOrder } from '../lib/api';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -13,9 +16,11 @@ const labels = {
     emptyLink: 'Explorar productos',
     subtotal: 'Subtotal',
     checkout: 'Finalizar Compra',
+    checkoutLoading: 'Procesando...',
     remove: 'Eliminar',
     quantity: 'Cantidad',
-    soon: 'Próximamente disponible',
+    checkoutError: 'No pudimos crear tu pedido. Inténtalo nuevamente.',
+    checkoutSuccess: 'Pedido creado. Redirigiendo a tu cuenta...',
     continueShopping: 'Seguir comprando',
   },
   en: {
@@ -24,9 +29,11 @@ const labels = {
     emptyLink: 'Explore products',
     subtotal: 'Subtotal',
     checkout: 'Checkout',
+    checkoutLoading: 'Processing...',
     remove: 'Remove',
     quantity: 'Quantity',
-    soon: 'Coming soon',
+    checkoutError: 'We could not create your order. Please try again.',
+    checkoutSuccess: 'Order created. Redirecting to your account...',
     continueShopping: 'Continue shopping',
   },
 } as const;
@@ -36,20 +43,59 @@ export default function CartPage({ locale }: Props) {
   const items = useCartStore((s) => s.items);
   const removeItem = useCartStore((s) => s.removeItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const [toast, setToast] = useState(false);
+  const clearCart = useCartStore((s) => s.clearCart);
+
+  const authUser = useAuthStore((s) => s.user);
+  const authToken = useAuthStore((s) => s.token);
+  const effectiveToken = authToken ?? readAuthTokenCookie();
+
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
 
   const priceFormat = (amount: number, currency: string) =>
-    new Intl.NumberFormat('es-CL', {
+    new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
       style: 'currency',
       currency,
       maximumFractionDigits: 0,
     }).format(amount);
 
-  function handleCheckout() {
-    setToast(true);
-    setTimeout(() => setToast(false), 3000);
+  function showToast(type: 'success' | 'error', message: string) {
+    setToast({ type, message });
+    window.setTimeout(() => setToast(null), 3200);
+  }
+
+  async function handleCheckout() {
+    if (!items.length || checkingOut) return;
+
+    if (!authUser || !effectiveToken) {
+      window.location.href = `/${locale}/auth/login?redirect=/${locale}/cart`;
+      return;
+    }
+
+    setCheckingOut(true);
+    setToast(null);
+    try {
+      const order = await createOrder(
+        {
+          customerId: authUser.id,
+          items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+          paymentMethod: 'BANK_TRANSFER',
+        },
+        effectiveToken
+      );
+
+      clearCart();
+      showToast('success', l.checkoutSuccess);
+      window.setTimeout(() => {
+        window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
+      }, 500);
+    } catch {
+      showToast('error', l.checkoutError);
+    } finally {
+      setCheckingOut(false);
+    }
   }
 
   return (
@@ -59,14 +105,17 @@ export default function CartPage({ locale }: Props) {
           {l.title}
         </h1>
 
-        {/* Toast */}
         {toast && (
           <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-6 right-6 z-[70] bg-pe-black text-pe-white font-sans text-sm px-5 py-3 shadow-xl border border-pe-white/15 max-w-[calc(100vw-2rem)]"
+            className={`fixed bottom-6 right-6 z-[70] font-sans text-sm px-5 py-3 shadow-xl border max-w-[calc(100vw-2rem)] ${
+              toast.type === 'success'
+                ? 'bg-pe-black text-pe-white border-pe-white/15'
+                : 'bg-[#5f1e25] text-pe-white border-[#f1c3cb]/40'
+            }`}
           >
-            {l.soon}
+            {toast.message}
           </div>
         )}
 
@@ -82,13 +131,9 @@ export default function CartPage({ locale }: Props) {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Line items */}
             <div className="lg:col-span-2 flex flex-col gap-4">
               {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-pe-white flex gap-4 p-4"
-                >
+                <div key={item.id} className="bg-pe-white flex gap-4 p-4">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
@@ -108,14 +153,13 @@ export default function CartPage({ locale }: Props) {
                     </p>
 
                     <div className="mt-auto flex items-center justify-between gap-4">
-                      {/* Quantity controls */}
                       <div className="flex items-center gap-2" aria-label={l.quantity}>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
                           aria-label="Decrease quantity"
                         >
-                          −
+                          -
                         </button>
                         <span className="font-sans text-sm w-5 text-center">{item.quantity}</span>
                         <button
@@ -127,12 +171,10 @@ export default function CartPage({ locale }: Props) {
                         </button>
                       </div>
 
-                      {/* Line total */}
                       <span className="font-sans text-sm font-semibold">
                         {priceFormat(item.price.amount * item.quantity, item.price.currency)}
                       </span>
 
-                      {/* Remove */}
                       <button
                         onClick={() => removeItem(item.id)}
                         className="font-sans text-[10px] tracking-widest uppercase text-pe-black/30 hover:text-pe-gold transition-colors"
@@ -146,7 +188,6 @@ export default function CartPage({ locale }: Props) {
               ))}
             </div>
 
-            {/* Order summary */}
             <div className="lg:col-span-1">
               <div className="bg-pe-white p-6 sticky top-24">
                 <h2 className="font-display text-pe-black text-xl font-semibold mb-6">
@@ -164,9 +205,17 @@ export default function CartPage({ locale }: Props) {
 
                 <button
                   onClick={handleCheckout}
-                  className="w-full bg-pe-gold text-pe-black font-sans text-xs tracking-widest uppercase py-3 hover:bg-opacity-90 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold"
+                  disabled={checkingOut}
+                  className="w-full bg-pe-gold text-pe-black font-sans text-xs tracking-widest uppercase py-3 hover:bg-opacity-90 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {l.checkout}
+                  {checkingOut ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 size={13} className="animate-spin" />
+                      {l.checkoutLoading}
+                    </span>
+                  ) : (
+                    l.checkout
+                  )}
                 </button>
 
                 <a

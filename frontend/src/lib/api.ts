@@ -97,6 +97,19 @@ export interface OrderDto {
   updatedAt: string;
 }
 
+export interface CreateOrderItemRequest {
+  productId: string;
+  quantity: number;
+}
+
+export interface CreateOrderRequest {
+  customerId: string;
+  items: CreateOrderItemRequest[];
+  paymentMethod: OrderDto['paymentMethod'];
+  notes?: string;
+  discountCode?: string;
+}
+
 export interface CreateProductRequest {
   name: string;
   description: string;
@@ -459,6 +472,14 @@ export async function getMyOrders(token: string, page = 0, size = 20): Promise<P
   } catch {
     return { content: [], totalElements: 0, totalPages: 0, size, number: page };
   }
+}
+
+export async function createOrder(data: CreateOrderRequest, token: string): Promise<OrderDto> {
+  return apiFetch<OrderDto>('/orders', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }
 
 // ─── Review API ───────────────────────────────────────────────────────────────
