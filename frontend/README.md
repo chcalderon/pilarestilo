@@ -75,6 +75,19 @@ Translations:
 
 ---
 
+## Admin UX and responsive updates (April 2026)
+
+- Product admin (`ProductTable`) supports dual view modes:
+  - `Grilla` (table workflow)
+  - `Cards` (visual workflow), persisted in local storage (`pe-admin-products-view`)
+- `DataTable` has mobile card rendering for better usability on phones.
+- Admin layout now includes a mobile navigation drawer with menu button + overlay close behavior.
+- Admin action buttons were refreshed with consistent Lucide icon usage in core management flows.
+- Light theme tokens were darkened slightly (storefront + admin) to improve readability/contrast.
+- Storefront and wishlist grids were adjusted to be mobile-first (`1 column` at smallest breakpoints).
+
+---
+
 ## Component map (current)
 
 ```text

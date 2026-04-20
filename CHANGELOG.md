@@ -9,6 +9,16 @@ The format is inspired by Keep a Changelog.
 ### Changed
 - Pending
 
+## [2026-04-20] - Admin UI/UX and mobile responsiveness refresh
+
+### Changed
+- Admin products now supports `Grilla` and `Cards` view modes with local persistence.
+- Added mobile-first rendering for admin data tables (`DataTable`) using card layout under small breakpoints.
+- Added mobile admin navigation drawer in `AdminLayout` + `AdminSidebar` (menu button, overlay, close behavior).
+- Refined admin action controls with icon-based buttons in product management and form flows.
+- Darkened light-mode visual tokens for storefront and admin to improve contrast while keeping the brand style.
+- Updated storefront/wishlist product grids to render as single-column first on small screens.
+
 ## [2026-04-20] - Documentation synchronization
 
 ### Changed

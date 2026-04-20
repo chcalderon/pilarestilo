@@ -16,7 +16,7 @@ const currentPath = Astro.url.pathname;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#F8F4EF" />
+    <meta name="theme-color" content="#E7DDCF" />
     <script is:inline>
       (() => {
         const key = 'pe-theme';
@@ -38,9 +38,9 @@ const currentPath = Astro.url.pathname;
 
       :root,
       html[data-theme='light'] {
-        --admin-bg: #F2ECE4;
-        --admin-topbar: #ECE2D6;
-        --admin-border: rgba(26, 26, 26, 0.14);
+        --admin-bg: #E7DDCF;
+        --admin-topbar: #DCCFBE;
+        --admin-border: rgba(26, 26, 26, 0.2);
         --admin-text: #1A1A1A;
         --admin-muted: rgba(58, 58, 58, 0.78);
       }
@@ -127,10 +127,11 @@ const currentPath = Astro.url.pathname;
         color: var(--admin-text);
       }
 
-      .admin-theme-toggle {
-        margin-left: auto;
-        width: 30px;
-        height: 30px;
+      .admin-theme-toggle,
+      .admin-menu-toggle,
+      .admin-mobile-close {
+        width: 34px;
+        height: 34px;
         border: 1px solid var(--admin-border);
         background: transparent;
         color: var(--admin-muted);
@@ -141,21 +142,87 @@ const currentPath = Astro.url.pathname;
         cursor: pointer;
       }
 
-      .admin-theme-toggle:hover {
+      .admin-theme-toggle:hover,
+      .admin-menu-toggle:hover,
+      .admin-mobile-close:hover {
         color: #B76E79;
         border-color: color-mix(in srgb, #B76E79 60%, transparent);
         background: color-mix(in srgb, #B76E79 10%, transparent);
       }
 
-      @media (max-width: 768px) {
+      .admin-menu-toggle {
+        display: none;
+      }
+
+      .admin-mobile-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+        z-index: 49;
+      }
+
+      .admin-mobile-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(88vw, 320px);
+        transform: translateX(-100%);
+        transition: transform 220ms ease;
+        z-index: 50;
+        background: #111;
+        display: none;
+      }
+
+      .admin-mobile-drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 0.85rem 0;
+      }
+
+      body.admin-mobile-open {
+        overflow: hidden;
+      }
+
+      body.admin-mobile-open .admin-mobile-overlay {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      body.admin-mobile-open .admin-mobile-drawer {
+        transform: translateX(0);
+      }
+
+      @media (max-width: 1024px) {
         .admin-sidebar-area { display: none; }
         .admin-main { margin-left: 0; }
-        .admin-topbar { padding: 0 1rem; }
+        .admin-topbar { padding: 0 1rem; gap: 0.75rem; }
         .admin-content { padding: 1rem; }
+        .admin-menu-toggle { display: inline-flex; }
+        .admin-mobile-drawer { display: block; }
       }
     </style>
   </head>
   <body>
+    <div class="admin-mobile-overlay" id="admin-mobile-overlay" aria-hidden="true"></div>
+
+    <aside class="admin-mobile-drawer" id="admin-mobile-drawer" aria-hidden="true">
+      <div class="admin-mobile-drawer-head">
+        <span class="breadcrumb-item" style="font-size:0.68rem;letter-spacing:0.12em;">Navegacion</span>
+        <button id="admin-mobile-close" class="admin-mobile-close" aria-label="Cerrar menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <AdminSidebar client:load currentPath={currentPath} mobile={true} />
+    </aside>
+
     <div class="admin-shell">
       <div class="admin-sidebar-area">
         <AdminSidebar client:load currentPath={currentPath} />
@@ -163,6 +230,14 @@ const currentPath = Astro.url.pathname;
 
       <div class="admin-main">
         <div class="admin-topbar">
+          <button id="admin-menu-toggle" class="admin-menu-toggle" aria-label="Abrir menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
           <nav aria-label="breadcrumb" style="display:flex;align-items:center;flex-wrap:wrap;">
             <span class="breadcrumb-item"><a href="/admin/">Admin</a></span>
             {breadcrumbs.map((crumb, i) => (
@@ -210,6 +285,10 @@ const currentPath = Astro.url.pathname;
         const sunIcon = document.getElementById('admin-icon-sun');
         const toggleButton = document.getElementById('admin-theme-toggle');
 
+        const mobileMenuBtn = document.getElementById('admin-menu-toggle');
+        const mobileCloseBtn = document.getElementById('admin-mobile-close');
+        const mobileOverlay = document.getElementById('admin-mobile-overlay');
+
         function applyTheme(theme) {
           document.documentElement.setAttribute('data-theme', theme);
           if (theme === 'light') {
@@ -221,6 +300,14 @@ const currentPath = Astro.url.pathname;
           }
         }
 
+        function openMobileMenu() {
+          document.body.classList.add('admin-mobile-open');
+        }
+
+        function closeMobileMenu() {
+          document.body.classList.remove('admin-mobile-open');
+        }
+
         const saved = localStorage.getItem(STORAGE_KEY) || 'dark';
         applyTheme(saved);
 
@@ -229,6 +316,13 @@ const currentPath = Astro.url.pathname;
           const next = current === 'dark' ? 'light' : 'dark';
           localStorage.setItem(STORAGE_KEY, next);
           applyTheme(next);
+        });
+
+        mobileMenuBtn?.addEventListener('click', openMobileMenu);
+        mobileCloseBtn?.addEventListener('click', closeMobileMenu);
+        mobileOverlay?.addEventListener('click', closeMobileMenu);
+        window.addEventListener('resize', () => {
+          if (window.innerWidth > 1024) closeMobileMenu();
         });
       })();
     </script>

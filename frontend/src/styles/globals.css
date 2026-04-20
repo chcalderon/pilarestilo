@@ -16,19 +16,19 @@
 @layer base {
   :root,
   html[data-theme='light'] {
-    --pe-surface: #F2ECE4;
-    --pe-surface-soft: #E5DACD;
-    --pe-surface-card: #FBF8F3;
+    --pe-surface: #E9DFD2;
+    --pe-surface-soft: #DBCEBF;
+    --pe-surface-card: #F2EADF;
     --pe-ink: #1A1A1A;
     --pe-muted: #3A3A3A;
-    --pe-border: rgba(26,26,26,0.14);
-    --pe-nav-muted: rgba(58,58,58,0.82);
-    --pe-nav-subtle: rgba(58,58,58,0.66);
-    --pe-nav-sep: rgba(58,58,58,0.44);
+    --pe-border: rgba(26,26,26,0.2);
+    --pe-nav-muted: rgba(58,58,58,0.88);
+    --pe-nav-subtle: rgba(58,58,58,0.72);
+    --pe-nav-sep: rgba(58,58,58,0.48);
     --pe-nav-hover: #8E4F58;
-    --pe-dropdown-bg: #F7F2EA;
-    --pe-dropdown-border: rgba(26,26,26,0.16);
-    --pe-dropdown-hover: rgba(183,110,121,0.10);
+    --pe-dropdown-bg: #EFE4D7;
+    --pe-dropdown-border: rgba(26,26,26,0.2);
+    --pe-dropdown-hover: rgba(183,110,121,0.12);
     --pe-offwhite: var(--pe-surface);
     --pe-cream: var(--pe-surface-soft);
     --pe-white: var(--pe-surface-card);
@@ -101,7 +101,7 @@
       radial-gradient(60% 40% at 18% 20%, rgba(232,201,204,0.65), transparent 60%),
       radial-gradient(45% 35% at 82% 70%, rgba(183,110,121,0.18), transparent 65%),
       radial-gradient(80% 60% at 50% 110%, rgba(198,169,107,0.14), transparent 70%),
-      #F8F4EF;
+      var(--pe-surface-card);
   }
 }
 

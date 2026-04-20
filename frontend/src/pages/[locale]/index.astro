@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import ProductCard from '../../components/ProductCard.astro';
@@ -22,7 +22,7 @@ try {
 const categoryTiles = [
   {
     slug: 'invierno',
-    labelEs: 'Colección Invierno',
+    labelEs: 'ColecciÃ³n Invierno',
     labelEn: 'Winter Collection',
     image: 'https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=900&q=80',
   },
@@ -34,7 +34,7 @@ const categoryTiles = [
   },
   {
     slug: 'carteras',
-    labelEs: 'Carteras Icónicas',
+    labelEs: 'Carteras IcÃ³nicas',
     labelEn: 'Iconic Bags',
     image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&q=80',
   },
@@ -55,7 +55,7 @@ const categoryTiles = [
           id="categories-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
         >
-          {locale === 'es' ? 'Por Categoría' : 'By Category'}
+          {locale === 'es' ? 'Por CategorÃ­a' : 'By Category'}
         </h2>
       </div>
 
@@ -92,7 +92,7 @@ const categoryTiles = [
     </div>
   </section>
 
-  <!-- "Recién llegados" featured products -->
+  <!-- "ReciÃ©n llegados" featured products -->
   <section class="py-16 bg-pe-cream" aria-labelledby="featured-heading">
     <div class="pe-container">
       <div class="text-center mb-12">
@@ -103,12 +103,12 @@ const categoryTiles = [
           id="featured-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
         >
-          {locale === 'es' ? 'Recién Llegados' : 'Recently Added'}
+          {locale === 'es' ? 'ReciÃ©n Llegados' : 'Recently Added'}
         </h2>
       </div>
 
       {featured.length > 0 ? (
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 fx-stagger">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 fx-stagger">
           {featured.map((product) => (
             <ProductCard product={product} locale={locale} priority={true} />
           ))}
@@ -121,7 +121,7 @@ const categoryTiles = [
 
       <div class="text-center mt-12">
         <Button href={`/${locale}/products`} variant="outline" trailingIcon="arrow-right">
-          {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
+          {locale === 'es' ? 'Ver toda la colecciÃ³n' : 'View full collection'}
         </Button>
       </div>
     </div>
@@ -134,7 +134,7 @@ const categoryTiles = [
     </div>
     <div class="pe-container relative z-10">
       <p class="pe-script text-pe-rose" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
-        {locale === 'es' ? 'Lujo con Propósito' : 'Luxury with Purpose'}
+        {locale === 'es' ? 'Lujo con PropÃ³sito' : 'Luxury with Purpose'}
       </p>
       <p class="font-display text-pe-offwhite/70 font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
         {locale === 'es'

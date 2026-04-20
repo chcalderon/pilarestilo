@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Loader2, Save, X } from 'lucide-react';
 import {
   createProduct,
   updateProduct,
@@ -28,12 +29,12 @@ const EMPTY_FORM = {
 };
 
 export default function ProductForm({ product, onSave, onCancel, token }: Props) {
-  const [form, setForm]                   = useState({ ...EMPTY_FORM });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
-  const [categories, setCategories]       = useState<CategoryDto[]>([]);
-  const [errors, setErrors]               = useState<Record<string, string>>({});
-  const [saving, setSaving]               = useState(false);
-  const [apiError, setApiError]           = useState('');
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
@@ -52,7 +53,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: String(product.stock),
         active: product.active,
       });
-      // Map categorySlugs → ids via loaded categories
       setSelectedCatIds([]);
     } else {
       setForm({ ...EMPTY_FORM });
@@ -62,31 +62,24 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setApiError('');
   }, [product]);
 
-  // Once categories load, resolve slugs → ids for existing product
   useEffect(() => {
     if (product?.categorySlugs && categories.length > 0) {
-      const ids = categories
-        .filter(c => product.categorySlugs!.includes(c.slug))
-        .map(c => c.id);
+      const ids = categories.filter((c) => product.categorySlugs!.includes(c.slug)).map((c) => c.id);
       setSelectedCatIds(ids);
     }
   }, [categories, product]);
 
   function toggleCategory(id: string) {
-    setSelectedCatIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setSelectedCatIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function validate(): boolean {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'Nombre requerido';
     if (!form.brand.trim()) e.brand = 'Marca requerida';
-    if (!form.description.trim()) e.description = 'Descripción requerida';
-    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
-      e.amount = 'Precio válido requerido';
-    if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0)
-      e.stock = 'Stock válido requerido';
+    if (!form.description.trim()) e.description = 'Descripcion requerida';
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
+    if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0) e.stock = 'Stock valido requerido';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -94,12 +87,15 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+
     if (!token) {
-      setApiError('Tu sesiÃ³n de administraciÃ³n expirÃ³. Vuelve a iniciar sesiÃ³n.');
+      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
       return;
     }
+
     setSaving(true);
     setApiError('');
+
     try {
       const payload: CreateProductRequest = {
         name: form.name.trim(),
@@ -112,12 +108,14 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         active: form.active,
         categoryIds: selectedCatIds,
       };
+
       let saved: ProductDto;
       if (product) {
         saved = await updateProduct(product.id, { ...payload, active: form.active }, token);
       } else {
         saved = await createProduct(payload, token);
       }
+
       onSave(saved);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Error al guardar');
@@ -131,138 +129,214 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const labelClass = 'block font-sans text-xs tracking-wider uppercase text-pe-black/60 mb-1';
   const errorClass = 'font-sans text-xs text-red-500 mt-1';
 
-  const rootCats = categories.filter(c => !c.parentId);
-  const childCats = categories.filter(c => c.parentId);
+  const rootCats = categories.filter((c) => !c.parentId);
+  const childCats = categories.filter((c) => c.parentId);
 
   return (
-    <div
-      className="fixed inset-0 bg-[#1A1A1A]/60 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="bg-[#F8F4EF] w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-[#1A1A1A]/60 z-50 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true">
+      <div className="bg-[#F8F4EF] w-full max-w-lg max-h-[92vh] overflow-y-auto p-4 sm:p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-xl font-light">
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
-          <button onClick={onCancel} className="text-[#3A3A3A]/40 hover:text-[#B76E79] transition-colors text-xl">✕</button>
+          <button
+            onClick={onCancel}
+            className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 hover:text-[#B76E79] transition-colors"
+            aria-label="Cerrar formulario"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        {apiError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 mb-4">
-            {apiError}
-          </div>
-        )}
+        {apiError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 mb-4">{apiError}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          {/* Name */}
           <div>
-            <label htmlFor="pf-name" className={labelClass}>Nombre</label>
-            <input id="pf-name" type="text" className={inputClass}
-              value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+            <label htmlFor="pf-name" className={labelClass}>
+              Nombre
+            </label>
+            <input
+              id="pf-name"
+              type="text"
+              className={inputClass}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
             {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
-          {/* Brand */}
           <div>
-            <label htmlFor="pf-brand" className={labelClass}>Marca</label>
-            <input id="pf-brand" type="text" className={inputClass}
-              value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} required />
+            <label htmlFor="pf-brand" className={labelClass}>
+              Marca
+            </label>
+            <input
+              id="pf-brand"
+              type="text"
+              className={inputClass}
+              value={form.brand}
+              onChange={(e) => setForm({ ...form, brand: e.target.value })}
+              required
+            />
             {errors.brand && <p className={errorClass}>{errors.brand}</p>}
           </div>
 
-          {/* Description */}
           <div>
-            <label htmlFor="pf-desc" className={labelClass}>Descripción</label>
-            <textarea id="pf-desc" className={inputClass + ' resize-none h-20'}
-              value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required />
+            <label htmlFor="pf-desc" className={labelClass}>
+              Descripcion
+            </label>
+            <textarea
+              id="pf-desc"
+              className={inputClass + ' resize-none h-20'}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              required
+            />
             {errors.description && <p className={errorClass}>{errors.description}</p>}
           </div>
 
-          {/* Price + Currency */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="pf-price" className={labelClass}>Precio (CLP)</label>
-              <input id="pf-price" type="number" min="0" step="1" className={inputClass}
-                value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
+              <label htmlFor="pf-price" className={labelClass}>
+                Precio (CLP)
+              </label>
+              <input
+                id="pf-price"
+                type="number"
+                min="0"
+                step="1"
+                className={inputClass}
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                required
+              />
               {errors.amount && <p className={errorClass}>{errors.amount}</p>}
             </div>
             <div>
-              <label htmlFor="pf-condition" className={labelClass}>Condición</label>
-              <select id="pf-condition" className={inputClass} value={form.condition}
-                onChange={e => setForm({ ...form, condition: e.target.value as 'NEW' | 'USED' })}>
+              <label htmlFor="pf-condition" className={labelClass}>
+                Condicion
+              </label>
+              <select
+                id="pf-condition"
+                className={inputClass}
+                value={form.condition}
+                onChange={(e) => setForm({ ...form, condition: e.target.value as 'NEW' | 'USED' })}
+              >
                 <option value="NEW">Nuevo</option>
                 <option value="USED">Usado</option>
               </select>
             </div>
           </div>
 
-          {/* Stock + Active */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="pf-stock" className={labelClass}>Stock</label>
-              <input id="pf-stock" type="number" min="0" step="1" className={inputClass}
-                value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} required />
+              <label htmlFor="pf-stock" className={labelClass}>
+                Stock
+              </label>
+              <input
+                id="pf-stock"
+                type="number"
+                min="0"
+                step="1"
+                className={inputClass}
+                value={form.stock}
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                required
+              />
               {errors.stock && <p className={errorClass}>{errors.stock}</p>}
             </div>
             <div className="flex flex-col justify-end pb-1">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-[#B76E79]"
-                  checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-[#B76E79]"
+                  checked={form.active}
+                  onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                />
                 <span className="font-sans text-sm text-[#1A1A1A]">Activo</span>
               </label>
             </div>
           </div>
 
-          {/* Image URL */}
           <div>
-            <label htmlFor="pf-image" className={labelClass}>URL de imagen</label>
-            <input id="pf-image" type="url" className={inputClass}
-              value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })}
-              placeholder="https://..." />
+            <label htmlFor="pf-image" className={labelClass}>
+              URL de imagen
+            </label>
+            <input
+              id="pf-image"
+              type="url"
+              className={inputClass}
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              placeholder="https://..."
+            />
           </div>
 
-          {/* Categories */}
           {categories.length > 0 && (
             <div>
-              <p className={labelClass}>Categorías</p>
+              <p className={labelClass}>Categorias</p>
               <div className="border border-[#EDE3D8] p-3 max-h-48 overflow-y-auto space-y-3">
-                {rootCats.map(root => (
+                {rootCats.map((root) => (
                   <div key={root.id}>
                     <label className="flex items-center gap-2 cursor-pointer mb-1">
-                      <input type="checkbox" className="w-3.5 h-3.5 accent-[#B76E79]"
+                      <input
+                        type="checkbox"
+                        className="w-3.5 h-3.5 accent-[#B76E79]"
                         checked={selectedCatIds.includes(root.id)}
-                        onChange={() => toggleCategory(root.id)} />
+                        onChange={() => toggleCategory(root.id)}
+                      />
                       <span className="font-sans text-sm font-medium text-[#1A1A1A]">{root.nameEs}</span>
                     </label>
                     <div className="ml-5 space-y-1">
-                      {childCats.filter(c => c.parentId === root.id).map(child => (
-                        <label key={child.id} className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-3.5 h-3.5 accent-[#B76E79]"
-                            checked={selectedCatIds.includes(child.id)}
-                            onChange={() => toggleCategory(child.id)} />
-                          <span className="font-sans text-xs text-[#3A3A3A]">{child.nameEs}</span>
-                        </label>
-                      ))}
+                      {childCats
+                        .filter((c) => c.parentId === root.id)
+                        .map((child) => (
+                          <label key={child.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="w-3.5 h-3.5 accent-[#B76E79]"
+                              checked={selectedCatIds.includes(child.id)}
+                              onChange={() => toggleCategory(child.id)}
+                            />
+                            <span className="font-sans text-xs text-[#3A3A3A]">{child.nameEs}</span>
+                          </label>
+                        ))}
                     </div>
                   </div>
                 ))}
               </div>
               {selectedCatIds.length > 0 && (
                 <p className="text-[10px] text-[#B76E79] mt-1">
-                  {selectedCatIds.length} {selectedCatIds.length === 1 ? 'categoría seleccionada' : 'categorías seleccionadas'}
+                  {selectedCatIds.length} {selectedCatIds.length === 1 ? 'categoria seleccionada' : 'categorias seleccionadas'}
                 </p>
               )}
             </div>
           )}
 
-          <div className="flex gap-3 mt-2">
-            <button type="submit" disabled={saving}
-              className="flex-1 bg-[#B76E79] text-white font-sans text-xs tracking-widest uppercase py-2.5 hover:bg-[#8E4F58] transition-colors disabled:opacity-50">
-              {saving ? 'Guardando…' : product ? 'Guardar Cambios' : 'Crear Producto'}
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#B76E79] text-white font-sans text-xs tracking-widest uppercase py-2.5 hover:bg-[#8E4F58] transition-colors disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save size={14} />
+                  {product ? 'Guardar Cambios' : 'Crear Producto'}
+                </>
+              )}
             </button>
-            <button type="button" onClick={onCancel}
-              className="flex-1 border border-[#3A3A3A]/20 text-[#1A1A1A] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 border border-[#3A3A3A]/20 text-[#1A1A1A] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
+            >
+              <X size={14} />
               Cancelar
             </button>
           </div>

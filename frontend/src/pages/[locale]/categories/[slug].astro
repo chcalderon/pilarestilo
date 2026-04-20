@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import { type Locale, SUPPORTED_LOCALES } from '../../../i18n/index';
@@ -45,24 +45,24 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
           <a href={`/${locale}/`} class="hover:text-[#B76E79] transition-colors">
             {locale === 'es' ? 'Inicio' : 'Home'}
           </a>
-          <span>›</span>
+          <span>â€º</span>
           <a href={`/${locale}/products`} class="hover:text-[#B76E79] transition-colors">
             {locale === 'es' ? 'Productos' : 'Products'}
           </a>
           {parent && (
             <>
-              <span>›</span>
+              <span>â€º</span>
               <a href={`/${locale}/categories/${parent.slug}`} class="hover:text-[#B76E79] transition-colors">
                 {locale === 'es' ? parent.nameEs : parent.nameEn}
               </a>
             </>
           )}
-          <span>›</span>
+          <span>â€º</span>
           <span class="text-[#1A1A1A]">{title}</span>
         </nav>
 
         <p class="text-[10px] tracking-[0.3em] uppercase text-[#B76E79] mb-2">
-          {locale === 'es' ? 'Categoría' : 'Category'}
+          {locale === 'es' ? 'CategorÃ­a' : 'Category'}
         </p>
         <h1 class="font-['Cormorant_Garamond',serif] text-5xl font-light text-[#1A1A1A]">
           {title}
@@ -81,17 +81,17 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
         <div class="text-center py-24">
           <img src="/ornaments/seal-pe.svg" alt="" class="w-20 h-20 mx-auto mb-6 opacity-20" />
           <p class="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A]/50">
-            {locale === 'es' ? 'Sin productos en esta categoría aún' : 'No products in this category yet'}
+            {locale === 'es' ? 'Sin productos en esta categorÃ­a aÃºn' : 'No products in this category yet'}
           </p>
           <a
             href={`/${locale}/products`}
             class="inline-flex items-center gap-2 mt-6 border border-[#B76E79] text-[#B76E79] px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] hover:text-white transition-colors"
           >
-            {locale === 'es' ? 'Ver todo el catálogo' : 'Browse all products'}
+            {locale === 'es' ? 'Ver todo el catÃ¡logo' : 'Browse all products'}
           </a>
         </div>
       ) : (
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map(product => (
             <ProductCard product={product} locale={locale} />
           ))}

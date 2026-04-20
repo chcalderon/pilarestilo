@@ -34,7 +34,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="aspect-[3/4] bg-[#EDE3D8] animate-pulse" />
         ))}
@@ -47,7 +47,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
       <div className="text-center py-24">
         <img src="/ornaments/seal-pe.svg" alt="" className="w-24 h-24 mx-auto mb-6 opacity-20" />
         <p className="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A] mb-4">
-          {locale === 'es' ? 'Tu lista de favoritos está vacía' : 'Your wishlist is empty'}
+          {locale === 'es' ? 'Tu lista de favoritos estÃ¡ vacÃ­a' : 'Your wishlist is empty'}
         </p>
         <a
           href={`/${locale}/products`}
@@ -60,7 +60,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {products.map(p => (
         <div key={p.id} className="group relative">
           <button

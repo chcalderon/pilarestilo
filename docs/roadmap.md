@@ -27,6 +27,8 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Product denormalized rating summary (`avg_rating`, `review_count`)
 - [x] Editorial storefront redesign + luxury brand tokens
 - [x] Admin layout with reusable data table patterns
+- [x] Admin mobile drawer navigation + mobile card rendering for data tables
+- [x] Admin product view toggle (`Grilla`/`Cards`) with persisted preference
 
 ---
 

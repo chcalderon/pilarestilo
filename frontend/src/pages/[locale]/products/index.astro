@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import Button from '../../../components/Button.astro';
@@ -81,7 +81,7 @@ const categories = [
           <h1 class="font-display text-pe-black text-3xl md:text-4xl font-light">
             {category
               ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category)
-              : (locale === 'es' ? 'Colección' : 'Collection')}
+              : (locale === 'es' ? 'ColecciÃ³n' : 'Collection')}
           </h1>
           <p class="font-sans text-[0.78rem] text-pe-charcoal/50">
             {productsPage.totalElements} {locale === 'es' ? 'piezas' : 'pieces'}
@@ -99,7 +99,7 @@ const categories = [
             <!-- Categories -->
             <div>
               <h3 class="pe-eyebrow mb-3">
-                {locale === 'es' ? 'Categorías' : 'Categories'}
+                {locale === 'es' ? 'CategorÃ­as' : 'Categories'}
               </h3>
               <ul class="flex flex-col gap-1" role="list">
                 <li>
@@ -132,7 +132,7 @@ const categories = [
             <!-- Condition toggle -->
             <div>
               <h3 class="pe-eyebrow mb-3">
-                {locale === 'es' ? 'Condición' : 'Condition'}
+                {locale === 'es' ? 'CondiciÃ³n' : 'Condition'}
               </h3>
               <div class="flex flex-col gap-1.5">
                 {(['NEW', 'USED'] as const).map(c => {
@@ -171,7 +171,7 @@ const categories = [
                   type="text"
                   name="brand"
                   value={brand ?? ''}
-                  placeholder={locale === 'es' ? 'Buscar marca…' : 'Search brand…'}
+                  placeholder={locale === 'es' ? 'Buscar marcaâ€¦' : 'Search brandâ€¦'}
                   class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
                   aria-label={locale === 'es' ? 'Filtrar por marca' : 'Filter by brand'}
                 />
@@ -202,7 +202,7 @@ const categories = [
         <!-- Product grid -->
         <div class="flex-1 min-w-0">
           {productsPage.content.length > 0 ? (
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 fx-stagger">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 fx-stagger">
               {productsPage.content.map((product, i) => (
                 <ProductCard product={product} locale={locale} priority={i < 3} />
               ))}
@@ -213,14 +213,14 @@ const categories = [
                 {locale === 'es' ? 'No se encontraron piezas' : 'No pieces found'}
               </p>
               <Button href={clearUrl} variant="outline">
-                {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
+                {locale === 'es' ? 'Ver toda la colecciÃ³n' : 'View full collection'}
               </Button>
             </div>
           )}
 
           <!-- Pagination -->
           {productsPage.totalPages > 1 && (
-            <nav class="mt-12 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'Paginación' : 'Pagination'}>
+            <nav class="mt-12 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'PaginaciÃ³n' : 'Pagination'}>
               {Array.from({ length: productsPage.totalPages }, (_, i) => (
                 <a
                   href={`/${locale}/products?page=${i}${category ? `&category=${category}` : ''}${condition ? `&condition=${condition}` : ''}${brand ? `&brand=${brand}` : ''}`}
