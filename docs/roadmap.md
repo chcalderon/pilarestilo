@@ -65,7 +65,8 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Gateway checkout session endpoint for `PAYMENT_GATEWAY` payments (`POST /api/payments/{id}/gateway/checkout`) using current stub adapter
 - [x] Temporary gateway simulation controls in storefront/admin while production provider onboarding is pending
 - [x] WhatsApp notifications (simulated provider for development: `WHATSAPP_SIMULATED`)
-- [ ] WhatsApp production integration (Twilio/Meta Cloud API)
+- [x] WhatsApp production-ready provider integration (`WHATSAPP_TWILIO`)
+- [ ] Customer phone capture/profile wiring for per-user WhatsApp destination (currently fallback destination is used if contact is not a phone number)
 - [ ] Email notifications (SendGrid)
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
 - [x] Customer payment-proof self-service in account area (`GET /api/payments/order/{orderId}` + submit proof from `AccountPage`)

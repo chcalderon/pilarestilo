@@ -42,7 +42,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `inventory` | Stock reservation/release and stock events |
 | `wishlist` | Customer favorites (`/api/wishlist`) |
 | `customercredit` | Credit balance and movement history |
-| `notification` | Notification port + provider-based adapters (`LOG` / `WHATSAPP_SIMULATED`) + domain listeners |
+| `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`) + domain listeners |
 | `user` | User repository and user-facing data |
 
 ---
@@ -128,9 +128,15 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `SPRING_DATASOURCE_PASSWORD` | Yes | DB password |
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
-| `NOTIFICATION_PROVIDER` | No | Notification adapter provider: `LOG` (default) or `WHATSAPP_SIMULATED` |
+| `NOTIFICATION_PROVIDER` | No | Notification adapter provider: `LOG` (default), `WHATSAPP_SIMULATED`, or `WHATSAPP_TWILIO` |
 | `WHATSAPP_SIMULATED_TO` | No | Destination phone used by simulated WhatsApp logs (default `+56900000000`) |
 | `WHATSAPP_SIMULATED_SENDER` | No | Sender alias for simulated WhatsApp logs |
+| `WHATSAPP_TWILIO_API_BASE_URL` | No | Twilio API base URL (default `https://api.twilio.com`) |
+| `WHATSAPP_TWILIO_ACCOUNT_SID` | Yes if provider `WHATSAPP_TWILIO` | Twilio Account SID |
+| `WHATSAPP_TWILIO_AUTH_TOKEN` | Yes if provider `WHATSAPP_TWILIO` | Twilio Auth Token |
+| `WHATSAPP_TWILIO_FROM` | Yes if provider `WHATSAPP_TWILIO` | WhatsApp sender in Twilio format (e.g. `whatsapp:+14155238886`) |
+| `WHATSAPP_TWILIO_TO_FALLBACK` | No | Fallback destination used when recipient contact is not a phone number |
+| `WHATSAPP_TWILIO_SENDER_ALIAS` | No | Sender alias used in Twilio message text |
 | `PAYMENT_GATEWAY_PROVIDER` | No | `STUB` (default) or `MERCADO_PAGO` |
 | `PAYMENT_GATEWAY_WEBHOOK_SECRET` | No | If set, must match `X-Gateway-Signature` on `/api/payments/webhooks/gateway` |
 | `PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL` | No | Base URL used by stub gateway checkout sessions (default `/es/account?tab=orders`) |
@@ -143,6 +149,9 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN` | No | If set, required as `token` query param on Mercado Pago webhook endpoint |
 | `SPRING_PROFILES_ACTIVE` | No | `local` for dev profile |
 | `SERVER_PORT` | No | API port (default 8080) |
+
+Current note:
+- Until customer phone is modeled in user profile, notification listeners pass email as recipient contact. `WHATSAPP_TWILIO` will use `WHATSAPP_TWILIO_TO_FALLBACK` when contact is not a phone number.
 
 ---
 

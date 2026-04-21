@@ -19,6 +19,7 @@ The format is inspired by Keep a Changelog.
   - Admin queue: `Sim aprobar` / `Sim rechazar` actions for pending gateway rows.
 - Mercado Pago provider webhook bridge endpoint: `POST /api/payments/webhooks/gateway/mercadopago`.
 - Simulated WhatsApp notification adapter (`WHATSAPP_SIMULATED`) selectable by env for development flows.
+- Twilio WhatsApp notification adapter (`WHATSAPP_TWILIO`) for production-ready message delivery via Twilio API.
 
 ### Changed
 - `PaymentGatewayPort` now returns a structured checkout session object.
@@ -37,6 +38,7 @@ The format is inspired by Keep a Changelog.
 - Storefront navbar logo transition now avoids scroll oscillation loops near the compact/full threshold.
 - Notification sender selection is now env-driven (`NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED`).
 - `PaymentNotificationListener` now resolves the order customer contact from repositories instead of hardcoded `unknown` when available.
+- Notification provider selection now supports `NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED|WHATSAPP_TWILIO`.
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.

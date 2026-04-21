@@ -37,6 +37,13 @@ app:
     whatsapp:
       simulated-to: ${WHATSAPP_SIMULATED_TO:-+56900000000}
       simulated-sender: ${WHATSAPP_SIMULATED_SENDER:Pilar Estilo}
+      twilio:
+        api-base-url: ${WHATSAPP_TWILIO_API_BASE_URL:https://api.twilio.com}
+        account-sid: ${WHATSAPP_TWILIO_ACCOUNT_SID:}
+        auth-token: ${WHATSAPP_TWILIO_AUTH_TOKEN:}
+        from: ${WHATSAPP_TWILIO_FROM:}
+        to-fallback: ${WHATSAPP_TWILIO_TO_FALLBACK:-+56900000000}
+        sender-alias: ${WHATSAPP_TWILIO_SENDER_ALIAS:Pilar Estilo}
   payment:
     gateway:
       provider: ${PAYMENT_GATEWAY_PROVIDER:STUB}
