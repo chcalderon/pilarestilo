@@ -42,8 +42,10 @@ PilarEstilo/
 
 - JWT-aware SSR middleware guard for admin routes
 - Search overlay wired to `/api/products/search`
+- Product cards with dual-price support (`price` + optional `listPrice`)
 - Wishlist page and heart actions
 - Product detail size selector consuming `sizeStocks`
+- Quick in-card star-only rating for authenticated users
 - Account self-service profile/password management
 - Admin user management surface (`/admin/users`) with role/status/password/credit actions
 - Payment-gateway simulation controls in account/admin workflows for non-production environments
@@ -103,7 +105,7 @@ Current listeners include:
 - `PaymentConfirmed` -> order moved to `PAID`
 - Review events -> product rating denormalization
 - Notification listeners for order/payment confirmation hooks
-- Notification providers selectable by env (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`)
+- Notification providers selectable by env (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`)
 
 The Kafka migration seam remains available via publisher adapter swap.
 
@@ -120,6 +122,10 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V10`: Chile defaults (`CLP`, shipping zone normalization, category associations)
 - `V11`: seeded product image URLs moved to backend media routes (`/api/media/products/*.jpg`)
 - `V12`: user active-flag support for account blocking/unblocking workflows
+- `V13`: singleton system settings + encrypted SMTP credential storage
+- `V14`: user phone capture for profile + notification routing
+- `V15`: product list-price schema support + DB constraints
+- `V16`: list-price default backfill for existing products
 
 ---
 

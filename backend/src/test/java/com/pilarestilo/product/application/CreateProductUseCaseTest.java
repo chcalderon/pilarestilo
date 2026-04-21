@@ -14,9 +14,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CreateProductUseCaseTest {
@@ -35,8 +38,10 @@ class CreateProductUseCaseTest {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ProductDto dto = useCase.execute(
-                "Bolso LV", "Desc auténtico",
+                "Bolso LV", "Desc autentico",
                 BigDecimal.valueOf(300000),
+                "CLP",
+                BigDecimal.valueOf(360000),
                 "CLP",
                 "http://img.example.com/bolso.jpg",
                 "USED", "Louis Vuitton", 3, true, null
@@ -46,6 +51,7 @@ class CreateProductUseCaseTest {
         assertEquals("Bolso LV", dto.name());
         assertEquals("Louis Vuitton", dto.brand());
         assertEquals(3, dto.stock());
+        assertEquals(0, BigDecimal.valueOf(360000).compareTo(dto.listPriceAmount()));
         verify(eventPublisher).publish(any(ProductCreated.class));
         verify(productRepository).save(any(Product.class));
     }
@@ -53,14 +59,22 @@ class CreateProductUseCaseTest {
     @Test
     void throws_when_price_is_zero() {
         assertThrows(Exception.class, () ->
-                useCase.execute("Bolso", "desc", BigDecimal.ZERO, "CLP", "http://img", "USED", "LV", 1, true, null)
+                useCase.execute("Bolso", "desc", BigDecimal.ZERO, "CLP", null, null, "http://img", "USED", "LV", 1, true, null)
         );
     }
 
     @Test
     void throws_when_name_is_blank() {
         assertThrows(Exception.class, () ->
-                useCase.execute("   ", "desc", BigDecimal.valueOf(100000), "CLP", "http://img", "USED", "LV", 1, true, null)
+                useCase.execute("   ", "desc", BigDecimal.valueOf(100000), "CLP", null, null, "http://img", "USED", "LV", 1, true, null)
+        );
+    }
+
+    @Test
+    void throws_when_list_price_is_not_greater_than_sale_price() {
+        assertThrows(Exception.class, () ->
+                useCase.execute("Bolso", "desc", BigDecimal.valueOf(100000), "CLP",
+                        BigDecimal.valueOf(90000), "CLP", "http://img", "USED", "LV", 1, true, null)
         );
     }
 }

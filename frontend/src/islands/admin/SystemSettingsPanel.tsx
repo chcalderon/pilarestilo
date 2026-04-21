@@ -88,8 +88,12 @@ export default function SystemSettingsPanel() {
       const data = await getSystemSettings(effectiveToken);
       setSettings(data);
       setForm(buildFormFromSettings(data));
-    } catch {
-      setFeedback({ tone: 'error', text: 'No se pudo cargar la configuracion del sistema.' });
+    } catch (error) {
+      const text = error instanceof Error ? error.message : '';
+      setFeedback({
+        tone: 'error',
+        text: text ? `No se pudo cargar la configuracion del sistema: ${text}` : 'No se pudo cargar la configuracion del sistema.',
+      });
     } finally {
       setLoading(false);
     }
@@ -148,8 +152,14 @@ export default function SystemSettingsPanel() {
       setSettings(saved);
       setForm(buildFormFromSettings(saved));
       setFeedback({ tone: 'success', text: 'Configuracion guardada correctamente.' });
-    } catch {
-      setFeedback({ tone: 'error', text: 'No se pudo guardar la configuracion. Revisa los datos e intenta de nuevo.' });
+    } catch (error) {
+      const text = error instanceof Error ? error.message : '';
+      setFeedback({
+        tone: 'error',
+        text: text
+          ? `No se pudo guardar la configuracion: ${text}`
+          : 'No se pudo guardar la configuracion. Revisa los datos e intenta de nuevo.',
+      });
     } finally {
       setSaving(false);
     }

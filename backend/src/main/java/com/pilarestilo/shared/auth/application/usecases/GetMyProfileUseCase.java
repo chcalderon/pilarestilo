@@ -26,6 +26,7 @@ public class GetMyProfileUseCase {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
+                user.getPhone(),
                 user.getRole().name(),
                 user.isActive()
         );

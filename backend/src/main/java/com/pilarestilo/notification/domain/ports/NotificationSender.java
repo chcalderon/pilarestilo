@@ -1,12 +1,14 @@
 package com.pilarestilo.notification.domain.ports;
 
+import com.pilarestilo.notification.domain.model.NotificationRecipient;
+
 import java.util.UUID;
 
 public interface NotificationSender {
 
-    void sendOrderConfirmation(UUID orderId, String customerEmail);
+    void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient);
 
-    void sendPaymentReceived(UUID paymentId, String customerEmail);
+    void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient);
 
-    void sendOrderShipped(UUID orderId, String customerEmail);
+    void sendOrderShipped(UUID orderId, NotificationRecipient recipient);
 }

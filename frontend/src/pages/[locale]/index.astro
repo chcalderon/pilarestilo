@@ -18,6 +18,7 @@ try {
 } catch {
   // fixture fallback already set
 }
+const token = Astro.cookies.get('pe_token')?.value;
 
 const categoryTiles = [
   {
@@ -110,7 +111,7 @@ const categoryTiles = [
       {featured.length > 0 ? (
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 fx-stagger">
           {featured.map((product) => (
-            <ProductCard product={product} locale={locale} priority={true} />
+            <ProductCard product={product} locale={locale} priority={true} token={token} />
           ))}
         </div>
       ) : (

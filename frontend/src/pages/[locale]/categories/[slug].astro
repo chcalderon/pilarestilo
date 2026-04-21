@@ -23,6 +23,7 @@ if (!category) {
 
 const products = productsPage.content;
 const title = locale === 'es' ? category.nameEs : category.nameEn;
+const token = Astro.cookies.get('pe_token')?.value;
 
 // Breadcrumb: find parent if any
 const parent = category.parentId ? categories.find(c => c.id === category.parentId) : null;
@@ -93,7 +94,7 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
       ) : (
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map(product => (
-            <ProductCard product={product} locale={locale} />
+            <ProductCard product={product} locale={locale} token={token} />
           ))}
         </div>
       )}

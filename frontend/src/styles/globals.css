@@ -259,6 +259,55 @@ a, button, [role="button"], summary, label[for] {
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'><circle cx='11' cy='11' r='5' fill='%23B76E79' stroke='%23F8F4EF' stroke-width='1.5'/></svg>") 11 11, pointer;
 }
 
+/* Wishlist contrast tuning */
+html[data-theme='light'] .pe-wishlist-card {
+  background: #f1e7da;
+  border: 1px solid rgba(26, 26, 26, 0.16);
+  box-shadow: 0 16px 28px -24px rgba(26, 26, 26, 0.6);
+  padding: 0.65rem;
+}
+
+html[data-theme='light'] .pe-wishlist-image-frame {
+  background: #d9c7b2;
+  border: 1px solid rgba(26, 26, 26, 0.12);
+}
+
+html[data-theme='light'] .pe-wishlist-image {
+  filter: brightness(0.96) contrast(1.06) saturate(1.04);
+}
+
+html[data-theme='light'] .pe-wishlist-remove {
+  background: rgba(241, 231, 218, 0.9);
+  border: 1px solid rgba(26, 26, 26, 0.2);
+}
+
+html[data-theme='light'] .pe-wishlist-remove:hover {
+  background: #fff;
+}
+
+html[data-theme='light'] .pe-wishlist-brand {
+  color: rgba(26, 26, 26, 0.82);
+}
+
+html[data-theme='light'] .pe-wishlist-name {
+  color: #111;
+}
+
+html[data-theme='light'] .pe-wishlist-price {
+  color: #7e3f49;
+  font-weight: 500;
+}
+
+html[data-theme='light'] .pe-wishlist-cart-btn {
+  border: 1px solid rgba(26, 26, 26, 0.82);
+  color: #111;
+}
+
+html[data-theme='light'] .pe-wishlist-cart-btn:hover {
+  background: #1a1a1a;
+  color: #f8f4ef;
+}
+
 /* Disabled / non-interactive elements revert to default pointer */
 button[disabled], a[aria-disabled="true"], [role="button"][aria-disabled="true"] {
   cursor: not-allowed;

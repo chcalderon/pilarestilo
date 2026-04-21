@@ -29,6 +29,7 @@ public class UpdateProductUseCase {
 
     @Transactional
     public ProductDto execute(UUID id, String name, String description, BigDecimal priceAmount, String priceCurrency,
+                               BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
                                boolean active, Set<UUID> categoryIds) {
         Product product = productRepository.findById(id)
@@ -37,9 +38,14 @@ public class UpdateProductUseCase {
         Money price = Money.of(priceAmount, priceCurrency == null || priceCurrency.isBlank()
                 ? Money.DEFAULT_CURRENCY
                 : priceCurrency);
+        Money listPrice = listPriceAmount == null
+                ? null
+                : Money.of(listPriceAmount, listPriceCurrency == null || listPriceCurrency.isBlank()
+                ? price.currency()
+                : listPriceCurrency);
         ProductCondition productCondition = ProductCondition.valueOf(condition);
 
-        product.update(name, description, price, imageUrl, productCondition, brand, stock, active);
+        product.update(name, description, price, imageUrl, productCondition, brand, stock, active, listPrice);
         if (categoryIds != null) {
             product.setCategoryIds(categoryIds);
         }

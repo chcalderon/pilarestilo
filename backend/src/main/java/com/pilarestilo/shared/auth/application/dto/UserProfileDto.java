@@ -6,6 +6,7 @@ public record UserProfileDto(
         UUID id,
         String email,
         String fullName,
+        String phone,
         String role,
         boolean active
 ) {}

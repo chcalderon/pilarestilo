@@ -19,15 +19,17 @@ public class UpdateMyProfileUseCase {
     }
 
     @Transactional
-    public UserProfileDto execute(UUID userId, String fullName) {
+    public UserProfileDto execute(UUID userId, String fullName, String phone) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         user.updateFullName(fullName);
+        user.updatePhone(phone);
         User saved = userRepository.save(user);
         return new UserProfileDto(
                 saved.getId(),
                 saved.getEmail(),
                 saved.getFullName(),
+                saved.getPhone(),
                 saved.getRole().name(),
                 saved.isActive()
         );

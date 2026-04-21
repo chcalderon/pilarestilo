@@ -22,6 +22,8 @@ public class ProductMapper {
                 product.getDescription(),
                 product.getPrice().amount(),
                 product.getPrice().currency(),
+                product.getListPrice() != null ? product.getListPrice().amount() : null,
+                product.getListPrice() != null ? product.getListPrice().currency() : null,
                 product.getImageUrl(),
                 product.getCondition().name(),
                 product.getBrand().value(),

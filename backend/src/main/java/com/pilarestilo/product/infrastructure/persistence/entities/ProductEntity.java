@@ -30,6 +30,12 @@ public class ProductEntity {
     @Column(name = "price_currency", nullable = false, length = 10)
     private String priceCurrency;
 
+    @Column(name = "list_price_amount", precision = 15, scale = 2)
+    private BigDecimal listPriceAmount;
+
+    @Column(name = "list_price_currency", length = 10)
+    private String listPriceCurrency;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
@@ -101,6 +107,12 @@ public class ProductEntity {
 
     public String getPriceCurrency() { return priceCurrency; }
     public void setPriceCurrency(String priceCurrency) { this.priceCurrency = priceCurrency; }
+
+    public BigDecimal getListPriceAmount() { return listPriceAmount; }
+    public void setListPriceAmount(BigDecimal listPriceAmount) { this.listPriceAmount = listPriceAmount; }
+
+    public String getListPriceCurrency() { return listPriceCurrency; }
+    public void setListPriceCurrency(String listPriceCurrency) { this.listPriceCurrency = listPriceCurrency; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }

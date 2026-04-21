@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   name: '',
   description: '',
   amount: '',
+  listAmount: '',
   currency: 'CLP',
   imageUrl: '',
   condition: 'NEW' as 'NEW' | 'USED',
@@ -49,6 +50,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         name: product.name,
         description: product.description,
         amount: String(product.price.amount),
+        listAmount: product.listPrice?.amount != null ? String(product.listPrice.amount) : '',
         currency: product.price.currency,
         imageUrl: product.imageUrl,
         condition: product.condition,
@@ -82,6 +84,13 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     if (!form.brand.trim()) e.brand = 'Marca requerida';
     if (!form.description.trim()) e.description = 'Descripcion requerida';
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
+    if (form.listAmount.trim()) {
+      if (isNaN(Number(form.listAmount)) || Number(form.listAmount) <= 0) {
+        e.listAmount = 'Precio lista valido requerido';
+      } else if (!isNaN(Number(form.amount)) && Number(form.listAmount) <= Number(form.amount)) {
+        e.listAmount = 'El precio lista debe ser mayor al precio oferta';
+      }
+    }
     if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0) e.stock = 'Stock valido requerido';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -122,6 +131,9 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         name: form.name.trim(),
         description: form.description.trim(),
         price: { amount: Number(form.amount), currency: form.currency },
+        ...(form.listAmount.trim()
+          ? { listPrice: { amount: Number(form.listAmount), currency: form.currency } }
+          : {}),
         imageUrl: form.imageUrl.trim() || '/api/media/products/product-001.jpg',
         condition: form.condition,
         brand: form.brand.trim(),
@@ -217,7 +229,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             {errors.description && <p className={errorClass}>{errors.description}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
               <label htmlFor="pf-price" className={labelClass}>
                 Precio (CLP)
@@ -233,6 +245,22 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 required
               />
               {errors.amount && <p className={errorClass}>{errors.amount}</p>}
+            </div>
+            <div>
+              <label htmlFor="pf-list-price" className={labelClass}>
+                Precio lista (tachado)
+              </label>
+              <input
+                id="pf-list-price"
+                type="number"
+                min="0"
+                step="1"
+                className={inputClass}
+                value={form.listAmount}
+                onChange={(e) => setForm({ ...form, listAmount: e.target.value })}
+                placeholder="Opcional"
+              />
+              {errors.listAmount && <p className={errorClass}>{errors.listAmount}</p>}
             </div>
             <div>
               <label htmlFor="pf-condition" className={labelClass}>

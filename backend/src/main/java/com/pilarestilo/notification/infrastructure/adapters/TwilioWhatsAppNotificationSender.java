@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,39 +54,39 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
     }
 
     @Override
-    public void sendOrderConfirmation(UUID orderId, String customerEmail) {
-        String recipient = normalizeRecipient(customerEmail);
+    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
+        String destination = normalizeRecipient(recipient.preferredPhoneThenEmail());
         String body = String.format(
                 Locale.ROOT,
                 "%s: pedido %s creado. Te avisaremos cuando avance.",
                 senderAlias,
                 shortId(orderId)
         );
-        send("ORDER_CONFIRMATION", orderId, recipient, body);
+        send("ORDER_CONFIRMATION", orderId, destination, body);
     }
 
     @Override
-    public void sendPaymentReceived(UUID paymentId, String customerEmail) {
-        String recipient = normalizeRecipient(customerEmail);
+    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
+        String destination = normalizeRecipient(recipient.preferredPhoneThenEmail());
         String body = String.format(
                 Locale.ROOT,
                 "%s: pago %s confirmado. Gracias por tu compra.",
                 senderAlias,
                 shortId(paymentId)
         );
-        send("PAYMENT_RECEIVED", paymentId, recipient, body);
+        send("PAYMENT_RECEIVED", paymentId, destination, body);
     }
 
     @Override
-    public void sendOrderShipped(UUID orderId, String customerEmail) {
-        String recipient = normalizeRecipient(customerEmail);
+    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
+        String destination = normalizeRecipient(recipient.preferredPhoneThenEmail());
         String body = String.format(
                 Locale.ROOT,
                 "%s: pedido %s enviado. Pronto llegara a destino.",
                 senderAlias,
                 shortId(orderId)
         );
-        send("ORDER_SHIPPED", orderId, recipient, body);
+        send("ORDER_SHIPPED", orderId, destination, body);
     }
 
     private void send(String template, UUID referenceId, String recipientContact, String body) {

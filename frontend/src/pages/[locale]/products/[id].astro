@@ -32,6 +32,20 @@ const priceFormatted = new Intl.NumberFormat('es-CL', {
   currency: product.price.currency,
   maximumFractionDigits: 0,
 }).format(product.price.amount);
+const hasDiscount =
+  !!product.listPrice
+  && product.listPrice.currency === product.price.currency
+  && product.listPrice.amount > product.price.amount;
+const listPriceFormatted = hasDiscount
+  ? new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: product.listPrice!.currency,
+      maximumFractionDigits: 0,
+    }).format(product.listPrice!.amount)
+  : null;
+const discountPct = hasDiscount
+  ? Math.round((1 - product.price.amount / product.listPrice!.amount) * 100)
+  : null;
 
 const conditionLabel =
   product.condition === 'NEW'
@@ -108,9 +122,17 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
 
           <!-- Price -->
           <div class="flex items-baseline gap-3">
+            {hasDiscount && (
+              <span class="font-sans text-base text-[#3A3A3A]/45 line-through tabular-nums">
+                {listPriceFormatted}
+              </span>
+            )}
             <span class="font-['Cormorant_Garamond',serif] text-3xl text-[#1A1A1A] tabular-nums">
               {priceFormatted}
             </span>
+            {discountPct !== null && (
+              <span class="font-sans text-xs uppercase tracking-[0.12em] text-emerald-700">-{discountPct}%</span>
+            )}
           </div>
 
           <!-- Size selector -->

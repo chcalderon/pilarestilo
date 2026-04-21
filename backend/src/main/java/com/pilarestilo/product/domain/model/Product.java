@@ -20,6 +20,7 @@ public class Product {
     private String name;
     private String description;
     private Money price;
+    private Money listPrice;
     private String imageUrl;
     private ProductCondition condition;
     private Brand brand;
@@ -39,6 +40,12 @@ public class Product {
     public static Product create(String name, String description, Money price,
                                   String imageUrl, ProductCondition condition,
                                   String brand, int stock) {
+        return create(name, description, price, imageUrl, condition, brand, stock, null);
+    }
+
+    public static Product create(String name, String description, Money price,
+                                  String imageUrl, ProductCondition condition,
+                                  String brand, int stock, Money listPrice) {
         if (name == null || name.isBlank()) {
             throw new DomainException("Product name cannot be blank");
         }
@@ -54,12 +61,14 @@ public class Product {
         if (condition == null) {
             throw new DomainException("Product condition cannot be null");
         }
+        validateListPrice(price, listPrice);
 
         Product product = new Product();
         product.id = UUID.randomUUID();
         product.name = name.trim();
         product.description = description;
         product.price = price;
+        product.listPrice = listPrice;
         product.imageUrl = imageUrl;
         product.condition = condition;
         product.brand = new Brand(brand);
@@ -72,6 +81,11 @@ public class Product {
 
     public void update(String name, String description, Money price, String imageUrl,
                        ProductCondition condition, String brand, int stock, boolean active) {
+        update(name, description, price, imageUrl, condition, brand, stock, active, null);
+    }
+
+    public void update(String name, String description, Money price, String imageUrl,
+                       ProductCondition condition, String brand, int stock, boolean active, Money listPrice) {
         if (name == null || name.isBlank()) {
             throw new DomainException("Product name cannot be blank");
         }
@@ -81,9 +95,11 @@ public class Product {
         if (stock < 0) {
             throw new DomainException("Product stock cannot be negative");
         }
+        validateListPrice(price, listPrice);
         this.name = name.trim();
         this.description = description;
         this.price = price;
+        this.listPrice = listPrice;
         this.imageUrl = imageUrl;
         this.condition = condition;
         this.brand = new Brand(brand);
@@ -115,6 +131,7 @@ public class Product {
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Money getPrice() { return price; }
+    public Money getListPrice() { return listPrice; }
     public String getImageUrl() { return imageUrl; }
     public ProductCondition getCondition() { return condition; }
     public Brand getBrand() { return brand; }
@@ -131,8 +148,24 @@ public class Product {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public void setActive(boolean active) { this.active = active; }
+    public void setListPrice(Money listPrice) { this.listPrice = listPrice; }
     public void setAvgRating(java.math.BigDecimal avgRating) { this.avgRating = avgRating; }
     public void setReviewCount(int reviewCount) { this.reviewCount = reviewCount; }
+
+    private static void validateListPrice(Money price, Money listPrice) {
+        if (listPrice == null) {
+            return;
+        }
+        if (!price.currency().equalsIgnoreCase(listPrice.currency())) {
+            throw new DomainException("Product list price currency must match sale price currency");
+        }
+        if (listPrice.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new DomainException("Product list price must be greater than zero");
+        }
+        if (listPrice.amount().compareTo(price.amount()) <= 0) {
+            throw new DomainException("Product list price must be greater than sale price");
+        }
+    }
 
     public ShippingOriginZone getShippingOriginZone() { return shippingOriginZone; }
     public void setShippingOriginZone(ShippingOriginZone shippingOriginZone) {

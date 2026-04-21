@@ -118,6 +118,8 @@ public class ProductRepositoryAdapter implements ProductRepository {
         entity.setDescription(product.getDescription());
         entity.setPriceAmount(product.getPrice().amount());
         entity.setPriceCurrency(product.getPrice().currency());
+        entity.setListPriceAmount(product.getListPrice() != null ? product.getListPrice().amount() : null);
+        entity.setListPriceCurrency(product.getListPrice() != null ? product.getListPrice().currency() : null);
         entity.setImageUrl(product.getImageUrl());
         entity.setCondition(product.getCondition());
         entity.setBrand(product.getBrand().value());
@@ -148,7 +150,13 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 entity.getImageUrl(),
                 entity.getCondition(),
                 entity.getBrand(),
-                entity.getStock()
+                entity.getStock(),
+                entity.getListPriceAmount() != null
+                        ? new Money(entity.getListPriceAmount(),
+                        entity.getListPriceCurrency() == null || entity.getListPriceCurrency().isBlank()
+                                ? entity.getPriceCurrency()
+                                : entity.getListPriceCurrency())
+                        : null
         );
         product.setId(entity.getId());
         product.setActive(entity.isActive());

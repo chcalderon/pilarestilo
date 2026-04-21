@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,29 +28,28 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
     }
 
     @Override
-    public void sendOrderConfirmation(UUID orderId, String customerEmail) {
-        logSimulated("ORDER_CONFIRMATION", simulatedTo, orderId, customerEmail);
+    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
+        logSimulated("ORDER_CONFIRMATION", simulatedTo, orderId, recipient);
     }
 
     @Override
-    public void sendPaymentReceived(UUID paymentId, String customerEmail) {
-        logSimulated("PAYMENT_RECEIVED", simulatedTo, paymentId, customerEmail);
+    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
+        logSimulated("PAYMENT_RECEIVED", simulatedTo, paymentId, recipient);
     }
 
     @Override
-    public void sendOrderShipped(UUID orderId, String customerEmail) {
-        logSimulated("ORDER_SHIPPED", simulatedTo, orderId, customerEmail);
+    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
+        logSimulated("ORDER_SHIPPED", simulatedTo, orderId, recipient);
     }
 
-    private void logSimulated(String template, String to, UUID referenceId, String customerEmail) {
-        String recipientLabel = customerEmail == null || customerEmail.isBlank() ? "unknown" : customerEmail.trim();
+    private void logSimulated(String template, String to, UUID referenceId, NotificationRecipient recipient) {
         log.info(
                 "[WHATSAPP:SIMULATED] sender={} to={} template={} referenceId={} recipient={}",
                 senderAlias,
                 to,
                 template,
                 referenceId,
-                recipientLabel
+                recipient.preferredPhoneThenEmail()
         );
     }
 

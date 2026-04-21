@@ -44,6 +44,7 @@ public class ProductController {
     public ResponseEntity<ProductDto> create(@Valid @RequestBody CreateProductRequest request) {
         ProductDto dto = createProductUseCase.execute(
                 request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
+                request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(), request.stock(),
                 request.active(), request.categoryIds()
         );
@@ -72,6 +73,7 @@ public class ProductController {
                               @Valid @RequestBody UpdateProductRequest request) {
         return updateProductUseCase.execute(
                 id, request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
+                request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(),
                 request.stock(), request.active(), request.categoryIds()
         );

@@ -28,14 +28,20 @@ public class CreateProductUseCase {
 
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
+                               BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
                                Boolean active, Set<UUID> categoryIds) {
         Money price = Money.of(priceAmount, priceCurrency == null || priceCurrency.isBlank()
                 ? Money.DEFAULT_CURRENCY
                 : priceCurrency);
+        Money listPrice = listPriceAmount == null
+                ? null
+                : Money.of(listPriceAmount, listPriceCurrency == null || listPriceCurrency.isBlank()
+                ? price.currency()
+                : listPriceCurrency);
         ProductCondition productCondition = ProductCondition.valueOf(condition);
 
-        Product product = Product.create(name, description, price, imageUrl, productCondition, brand, stock);
+        Product product = Product.create(name, description, price, imageUrl, productCondition, brand, stock, listPrice);
         if (active != null) {
             product.setActive(active);
         }

@@ -77,6 +77,12 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
 
   const formatPrice = (p: ProductDto) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: p.price.currency ?? 'CLP', maximumFractionDigits: 0 }).format(p.price.amount);
+  const hasDiscount = (p: ProductDto) =>
+    !!p.listPrice && p.listPrice.currency === p.price.currency && p.listPrice.amount > p.price.amount;
+  const formatListPrice = (p: ProductDto) =>
+    p.listPrice
+      ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: p.listPrice.currency ?? 'CLP', maximumFractionDigits: 0 }).format(p.listPrice.amount)
+      : '';
 
   if (!open) return null;
 
@@ -149,7 +155,12 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
                           {p.name}
                         </p>
                       </div>
-                      <span className="text-[#B76E79] font-['Cormorant_Garamond',serif]">{formatPrice(p)}</span>
+                      <span className="flex flex-col items-end">
+                        {hasDiscount(p) && (
+                          <span className="text-[#F8F4EF]/35 text-[0.7rem] line-through">{formatListPrice(p)}</span>
+                        )}
+                        <span className="text-[#B76E79] font-['Cormorant_Garamond',serif]">{formatPrice(p)}</span>
+                      </span>
                     </a>
                   </li>
                 ))}

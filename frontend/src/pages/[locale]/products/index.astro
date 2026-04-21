@@ -42,6 +42,7 @@ try {
 } catch {
   // fallback
 }
+const token = Astro.cookies.get('pe_token')?.value;
 
 const activeFilters: { label: string; clearKey: string }[] = [];
 if (condition) activeFilters.push({ label: condition === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale), clearKey: 'condition' });
@@ -204,7 +205,7 @@ const categories = [
           {productsPage.content.length > 0 ? (
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 fx-stagger">
               {productsPage.content.map((product, i) => (
-                <ProductCard product={product} locale={locale} priority={i < 3} />
+                <ProductCard product={product} locale={locale} priority={i < 3} token={token} />
               ))}
             </div>
           ) : (

@@ -39,9 +39,11 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 
 - [x] Wishlist backend module (`/api/wishlist`) and storefront page (`/[locale]/wishlist`)
 - [x] Product search endpoint (`GET /api/products/search?q=...`) + search overlay UI
+- [x] Dual product pricing support (`price` + optional `listPrice`) with storefront discount rendering
+- [x] Quick star-only in-card rating flow for authenticated customers
 - [x] Per-size stock data model foundation (`product_size_stocks`, `sizeStocks` in product DTO)
 - [x] Chile-first defaults migration (`CLP` currency defaults + shipping origin normalization)
-- [x] Extended catalog DB migrations (`V7` to `V11`)
+- [x] Extended catalog DB migrations (`V7` to `V16`)
 - [x] Storefront mobile header/navigation polish: action-icon reflow + category slider controls + UTF-8 Spanish copy normalization
 - [x] Navbar logo transition stabilized to avoid compact/full flicker loop on slight scroll
 - [x] Backend-managed product media routes with Docker-persisted local storage (`/api/media/**` -> `infra/storage/media`)
@@ -66,8 +68,8 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Temporary gateway simulation controls in storefront/admin while production provider onboarding is pending
 - [x] WhatsApp notifications (simulated provider for development: `WHATSAPP_SIMULATED`)
 - [x] WhatsApp production-ready provider integration (`WHATSAPP_TWILIO`)
-- [ ] Customer phone capture/profile wiring for per-user WhatsApp destination (currently fallback destination is used if contact is not a phone number)
-- [ ] Email notifications (SendGrid)
+- [x] Customer phone capture/profile wiring for per-user WhatsApp destination (`/api/auth/me/profile` now supports `phone`)
+- [x] Email notifications (SendGrid and direct SMTP provider)
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
 - [x] Customer payment-proof self-service in account area (`GET /api/payments/order/{orderId}` + submit proof from `AccountPage`)
 - [x] Admin payment queue visibility for `PENDING` + review actions restricted to actionable statuses

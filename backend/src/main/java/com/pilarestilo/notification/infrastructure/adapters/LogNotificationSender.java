@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,17 +16,17 @@ public class LogNotificationSender implements NotificationSender {
     private static final Logger log = LoggerFactory.getLogger(LogNotificationSender.class);
 
     @Override
-    public void sendOrderConfirmation(UUID orderId, String customerEmail) {
-        log.info("[NOTIFICATION] ORDER_CONFIRMATION orderId={} email={}", orderId, customerEmail);
+    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
+        log.info("[NOTIFICATION] ORDER_CONFIRMATION orderId={} recipient={}", orderId, recipient.preferredEmailThenPhone());
     }
 
     @Override
-    public void sendPaymentReceived(UUID paymentId, String customerEmail) {
-        log.info("[NOTIFICATION] PAYMENT_RECEIVED paymentId={} email={}", paymentId, customerEmail);
+    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
+        log.info("[NOTIFICATION] PAYMENT_RECEIVED paymentId={} recipient={}", paymentId, recipient.preferredEmailThenPhone());
     }
 
     @Override
-    public void sendOrderShipped(UUID orderId, String customerEmail) {
-        log.info("[NOTIFICATION] ORDER_SHIPPED orderId={} email={}", orderId, customerEmail);
+    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
+        log.info("[NOTIFICATION] ORDER_SHIPPED orderId={} recipient={}", orderId, recipient.preferredEmailThenPhone());
     }
 }

@@ -71,13 +71,16 @@ Translations:
 
 - Category and attribute filtering on product list
 - Search overlay (keyword search via `/api/products/search`)
+- Dual-price product cards (`listPrice` struck-through + discounted sale price)
 - Wishlist page + heart interactions
 - Product detail size selector using `sizeStocks`
 - Reviews list/create flow
+- Quick star-only rating from product cards for authenticated users
 - Cart experience with persisted state
 - Product cards now consume backend-hosted media paths (`/api/media/**`) instead of external image hosts
 - Account orders tab supports payment-proof submission for `BANK_TRANSFER` orders (image upload or proof URL)
 - Account profile tab now supports profile name update + password change (`/api/auth/me/profile`, `/api/auth/me/password`)
+- Account profile tab now supports WhatsApp phone capture in profile (`/api/auth/me/profile`) for notification routing.
 - Cart summary now supports payment method selection (`Transferencia` / `Pasarela (simulada)`) and reflects worker discount
 - Gateway simulation actions are available in account orders for `PAYMENT_GATEWAY` (approve/reject simulation)
 - Account orders now include `Ir a pagar / Pay now` action to open `/api/payments/{id}/gateway/checkout` sessions.
@@ -161,6 +164,7 @@ src/
     product/
       SizeSelector.tsx
     reviews/
+      QuickRateStars.tsx
       ReviewForm.tsx
       ReviewList.tsx
     search/

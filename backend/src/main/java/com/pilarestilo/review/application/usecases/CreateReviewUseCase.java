@@ -34,8 +34,16 @@ public class CreateReviewUseCase {
             throw new DomainException("User has already reviewed this product");
         }
         Review review = Review.create(productId, userId, rating, title, comment);
+        // Quick rating flow from product cards: rating-only submissions are auto-approved.
+        if (isBlank(title) && isBlank(comment)) {
+            review.approve();
+        }
         Review saved = reviewRepository.save(review);
         eventPublisher.publish(new ReviewCreated(saved.getId(), productId, userId, rating));
         return ReviewDto.from(saved);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

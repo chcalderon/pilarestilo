@@ -139,6 +139,11 @@ export default function ProductTable() {
       currency,
       maximumFractionDigits: 0,
     }).format(amount);
+  const getDiscountPercent = (row: ProductDto) => {
+    if (!row.listPrice || row.listPrice.currency !== row.price.currency) return null;
+    if (row.listPrice.amount <= row.price.amount) return null;
+    return Math.round((1 - row.price.amount / row.listPrice.amount) * 100);
+  };
 
   const actionButtonClass =
     'inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors';
@@ -197,7 +202,22 @@ export default function ProductTable() {
       key: 'price',
       header: 'Precio',
       sortable: true,
-      render: (row) => <span className="font-sans text-[0.82rem] text-pe-charcoal">{fmt(row.price.amount, row.price.currency)}</span>,
+      render: (row) => {
+        const discountPct = getDiscountPercent(row);
+        return (
+          <div className="flex flex-col leading-tight">
+            {discountPct !== null && (
+              <span className="font-sans text-[0.68rem] text-pe-charcoal/45 line-through">
+                {fmt(row.listPrice!.amount, row.listPrice!.currency)}
+              </span>
+            )}
+            <span className="font-sans text-[0.82rem] text-pe-charcoal">
+              {fmt(row.price.amount, row.price.currency)}
+              {discountPct !== null && <span className="ml-1 text-[0.66rem] text-emerald-700">-{discountPct}%</span>}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: 'stock',
@@ -364,7 +384,19 @@ export default function ProductTable() {
                 <h3 className="font-sans text-[0.9rem] text-pe-charcoal font-medium leading-snug mt-1">{row.name}</h3>
 
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="font-sans text-[0.85rem] text-pe-charcoal">{fmt(row.price.amount, row.price.currency)}</p>
+                  <div className="flex flex-col leading-tight">
+                    {getDiscountPercent(row) !== null && (
+                      <p className="font-sans text-[0.68rem] text-pe-charcoal/45 line-through">
+                        {fmt(row.listPrice!.amount, row.listPrice!.currency)}
+                      </p>
+                    )}
+                    <p className="font-sans text-[0.85rem] text-pe-charcoal">
+                      {fmt(row.price.amount, row.price.currency)}
+                      {getDiscountPercent(row) !== null && (
+                        <span className="ml-1 text-[0.66rem] text-emerald-700">-{getDiscountPercent(row)}%</span>
+                      )}
+                    </p>
+                  </div>
                   <p
                     className={[
                       'font-sans text-[0.75rem] uppercase tracking-[0.1em]',

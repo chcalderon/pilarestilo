@@ -19,6 +19,9 @@ public class UserEntity {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
+    @Column(name = "phone", length = 40)
+    private String phone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private UserRole role;
@@ -40,6 +43,9 @@ public class UserEntity {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }

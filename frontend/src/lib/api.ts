@@ -26,6 +26,7 @@ export interface ProductDto {
   name: string;
   description: string;
   price: MoneyDto;
+  listPrice?: MoneyDto;
   imageUrl: string;
   condition: 'NEW' | 'USED';
   brand: string;
@@ -194,6 +195,7 @@ export interface CreateProductRequest {
   name: string;
   description: string;
   price: MoneyDto;
+  listPrice?: MoneyDto;
   imageUrl: string;
   condition: 'NEW' | 'USED';
   brand: string;
@@ -206,6 +208,7 @@ export interface UpdateProductRequest {
   name?: string;
   description?: string;
   price?: MoneyDto;
+  listPrice?: MoneyDto;
   imageUrl?: string;
   condition?: 'NEW' | 'USED';
   brand?: string;
@@ -228,6 +231,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Bolso Chanel Classic Flap',
     description: 'Bolso icónico de Chanel en piel de cordero acolchada. Hardware dorado. En excelente estado de conservación.',
     price: { amount: 850000, currency: 'CLP' },
+    listPrice: { amount: 980000, currency: 'CLP' },
     imageUrl: '/api/media/products/product-002.jpg',
     condition: 'USED',
     brand: 'Chanel',
@@ -241,6 +245,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Cinturón Hermès Reversible',
     description: 'Cinturón reversible Hermès con hebilla H en metal dorado. Cuero negro/marrón. Talle 85.',
     price: { amount: 320000, currency: 'CLP' },
+    listPrice: { amount: 390000, currency: 'CLP' },
     imageUrl: '/api/media/products/product-006.jpg',
     condition: 'USED',
     brand: 'Hermès',
@@ -254,6 +259,7 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
     name: 'Zapatillas Gucci Ace',
     description: 'Zapatillas Gucci Ace de cuero blanco con bordado de abeja y flores. Talle 38. Sin uso.',
     price: { amount: 410000, currency: 'CLP' },
+    listPrice: { amount: 470000, currency: 'CLP' },
     imageUrl: '/api/media/products/product-003.jpg',
     condition: 'NEW',
     brand: 'Gucci',
@@ -344,6 +350,10 @@ function normalizeProduct(raw: any): ProductDto {
   return {
     ...raw,
     price: raw.price ?? { amount: raw.priceAmount, currency: raw.priceCurrency ?? 'CLP' },
+    listPrice: raw.listPrice
+      ?? (raw.listPriceAmount != null
+        ? { amount: raw.listPriceAmount, currency: raw.listPriceCurrency ?? raw.priceCurrency ?? 'CLP' }
+        : undefined),
   };
 }
 
@@ -352,10 +362,11 @@ function authHeaders(token?: string): Record<string, string> {
 }
 
 function toProductMutationBody(data: CreateProductRequest | UpdateProductRequest) {
-  const { price, ...rest } = data;
+  const { price, listPrice, ...rest } = data;
   return {
     ...rest,
     ...(price ? { priceAmount: price.amount, priceCurrency: price.currency } : {}),
+    ...(listPrice ? { listPriceAmount: listPrice.amount, listPriceCurrency: listPrice.currency } : {}),
   };
 }
 
@@ -617,6 +628,7 @@ export interface UserProfileDto {
   id: string;
   email: string;
   fullName: string;
+  phone?: string | null;
   role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
   active: boolean;
 }
@@ -670,10 +682,10 @@ export async function getMyProfile(token: string): Promise<UserProfileDto> {
   });
 }
 
-export async function updateMyProfile(fullName: string, token: string): Promise<UserProfileDto> {
+export async function updateMyProfile(fullName: string, phone: string, token: string): Promise<UserProfileDto> {
   return apiFetch<UserProfileDto>('/auth/me/profile', {
     method: 'PATCH',
-    body: JSON.stringify({ fullName }),
+    body: JSON.stringify({ fullName, phone }),
     headers: authHeaders(token),
   });
 }

@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.listeners;
 
+import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.payment.domain.events.PaymentConfirmed;
@@ -24,10 +25,10 @@ public class PaymentNotificationListener {
 
     @EventListener
     public void onPaymentConfirmed(PaymentConfirmed event) {
-        String contact = orderRepository.findById(event.orderId())
+        NotificationRecipient recipient = orderRepository.findById(event.orderId())
                 .flatMap(order -> userRepository.findById(order.getCustomerId()))
-                .map(user -> user.getEmail())
-                .orElse("unknown");
-        notificationSender.sendPaymentReceived(event.paymentId(), contact);
+                .map(user -> NotificationRecipient.of(user.getPhone(), user.getEmail()))
+                .orElse(NotificationRecipient.unknown());
+        notificationSender.sendPaymentReceived(event.paymentId(), recipient);
     }
 }

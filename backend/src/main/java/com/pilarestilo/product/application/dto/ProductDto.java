@@ -11,6 +11,8 @@ public record ProductDto(
         String description,
         BigDecimal priceAmount,
         String priceCurrency,
+        BigDecimal listPriceAmount,
+        String listPriceCurrency,
         String imageUrl,
         String condition,
         String brand,

@@ -34,6 +34,24 @@ app:
     storage-path: ${MEDIA_STORAGE_PATH:./media}
   notification:
     provider: ${NOTIFICATION_PROVIDER:LOG}
+    email:
+      smtp:
+        host: ${EMAIL_SMTP_HOST:}
+        port: ${EMAIL_SMTP_PORT:}
+        username: ${EMAIL_SMTP_USERNAME:}
+        password: ${EMAIL_SMTP_PASSWORD:}
+        from-email: ${EMAIL_SMTP_FROM_EMAIL:}
+        sender-name: ${EMAIL_SMTP_SENDER_NAME:Pilar Estilo}
+        auth-enabled: ${EMAIL_SMTP_AUTH_ENABLED:}
+        starttls-enabled: ${EMAIL_SMTP_STARTTLS_ENABLED:}
+        ssl-enabled: ${EMAIL_SMTP_SSL_ENABLED:}
+        to-fallback: ${EMAIL_SMTP_TO_FALLBACK:}
+      sendgrid:
+        api-base-url: ${SENDGRID_API_BASE_URL:https://api.sendgrid.com}
+        api-key: ${SENDGRID_API_KEY:}
+        from-email: ${SENDGRID_FROM_EMAIL:}
+        sender-name: ${SENDGRID_SENDER_NAME:Pilar Estilo}
+        to-fallback: ${SENDGRID_TO_FALLBACK:}
     whatsapp:
       simulated-to: ${WHATSAPP_SIMULATED_TO:-+56900000000}
       simulated-sender: ${WHATSAPP_SIMULATED_SENDER:Pilar Estilo}

@@ -21,6 +21,11 @@ public record UpdateProductRequest(
 
         String priceCurrency,
 
+        @DecimalMin(value = "0.01", message = "List price must be greater than zero")
+        BigDecimal listPriceAmount,
+
+        String listPriceCurrency,
+
         String imageUrl,
 
         @NotBlank(message = "Condition is required")

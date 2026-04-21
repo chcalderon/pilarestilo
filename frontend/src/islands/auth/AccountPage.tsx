@@ -26,6 +26,14 @@ interface Props {
 type Tab = 'profile' | 'reviews' | 'orders';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
 
+function sanitizePhoneDraft(value: string | null | undefined): string {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const digits = trimmed.replace(/\D/g, '');
+  return digits.length >= 8 && digits.length <= 15 ? trimmed : '';
+}
+
 export default function AccountPage({ locale }: Props) {
   const { user, token, clearAuth } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
@@ -48,6 +56,7 @@ export default function AccountPage({ locale }: Props) {
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [profileName, setProfileName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -131,6 +140,7 @@ export default function AccountPage({ locale }: Props) {
         if (cancelled) return;
         setProfile(data);
         setProfileName(data.fullName ?? '');
+        setProfilePhone(sanitizePhoneDraft(data.phone));
       })
       .finally(() => {
         if (!cancelled) setProfileLoading(false);
@@ -172,13 +182,30 @@ export default function AccountPage({ locale }: Props) {
       setProfileFeedback({ type: 'error', text: es ? 'El nombre no puede estar vacio.' : 'Full name cannot be empty.' });
       return;
     }
+    const rawPhone = profilePhone.trim();
+    if (rawPhone.includes('@')) {
+      setProfileFeedback({
+        type: 'error',
+        text: es ? 'Ingresa un telefono valido, no un correo.' : 'Enter a valid phone number, not an email.',
+      });
+      return;
+    }
+    const digits = rawPhone.replace(/\D/g, '');
+    if (rawPhone && (digits.length < 8 || digits.length > 15)) {
+      setProfileFeedback({
+        type: 'error',
+        text: es ? 'El telefono debe tener entre 8 y 15 digitos.' : 'Phone must contain between 8 and 15 digits.',
+      });
+      return;
+    }
 
     setProfileSaving(true);
     setProfileFeedback(null);
     try {
-      const updated = await updateMyProfile(fullName, effectiveToken);
+      const updated = await updateMyProfile(fullName, rawPhone, effectiveToken);
       setProfile(updated);
       setProfileName(updated.fullName);
+      setProfilePhone(sanitizePhoneDraft(updated.phone));
       setProfileFeedback({ type: 'success', text: es ? 'Perfil actualizado.' : 'Profile updated.' });
     } catch (error) {
       const text = error instanceof Error ? error.message : '';
@@ -537,6 +564,23 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? 'Tu nombre completo' : 'Your full name'}
               />
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
+              <input
+                type="tel"
+                value={profilePhone}
+                onChange={(event) => setProfilePhone(event.target.value)}
+                disabled={profileLoading || profileSaving}
+                autoComplete="tel"
+                inputMode="tel"
+                name="whatsappPhone"
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+                placeholder={es ? '+56912345678' : '+14155550123'}
+              />
+              <p className="font-sans text-[0.68rem] text-pe-charcoal/45">
+                {es
+                  ? 'Si lo completas, usaremos este numero para notificaciones de pedido por WhatsApp.'
+                  : 'If provided, this number will be used for WhatsApp order notifications.'}
+              </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
@@ -601,6 +645,10 @@ export default function AccountPage({ locale }: Props) {
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">Email</p>
               <p className="font-sans text-pe-charcoal">{profile?.email ?? user.email}</p>
+            </div>
+            <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
+              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</p>
+              <p className="font-sans text-pe-charcoal">{profile?.phone ?? (es ? 'No configurado' : 'Not configured')}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Rol' : 'Role'}</p>

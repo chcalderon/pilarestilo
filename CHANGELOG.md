@@ -7,6 +7,9 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Product dual-pricing fields in catalog API (`listPriceAmount`, `listPriceCurrency`) with domain/persistence validation and support in admin create/update forms.
+- Catalog migration `V15__product_list_price.sql` (schema + constraints) and `V16__seed_product_list_price_defaults.sql` (backfill defaults for existing products).
+- Quick star-only rating widget for authenticated customers directly in storefront product cards (`QuickRateStars` island).
 - Gateway checkout session endpoint: `POST /api/payments/{id}/gateway/checkout` for payments created with `PAYMENT_GATEWAY`.
 - Gateway webhook endpoint: `POST /api/payments/webhooks/gateway` with optional signature validation via `X-Gateway-Signature`.
 - New payment gateway webhook processor use case with idempotent handling of repeated final-state events.
@@ -20,13 +23,19 @@ The format is inspired by Keep a Changelog.
 - Mercado Pago provider webhook bridge endpoint: `POST /api/payments/webhooks/gateway/mercadopago`.
 - Simulated WhatsApp notification adapter (`WHATSAPP_SIMULATED`) selectable by env for development flows.
 - Twilio WhatsApp notification adapter (`WHATSAPP_TWILIO`) for production-ready message delivery via Twilio API.
+- SendGrid email notification adapter (`EMAIL_SENDGRID`) for transactional order/payment emails.
+- SMTP email notification adapter (`EMAIL_SMTP`) for direct delivery via your own mail server.
 - Floating storefront WhatsApp CTA button (desktop + mobile) with locale-aware prefilled message.
 - System settings module (`/api/system-settings`) with admin-managed storefront channels (WhatsApp, Instagram, Facebook).
 - Admin system settings screen (`/admin/settings`) to manage storefront contact channels and SMTP configuration.
 - Public settings endpoint (`GET /api/system-settings/public`) for storefront runtime channel links.
 - SMTP password encryption-at-rest with AES-GCM and env-driven crypto secret (`SYSTEM_SETTINGS_CRYPTO_SECRET`).
+- User profile phone capture in auth profile API (`GET/PATCH /api/auth/me/profile` with `phone`).
+- User phone persistence migration (`V14__user_phone.sql`) with index support.
 
 ### Changed
+- Storefront cards now display rating stars and dual price visualization (list price struck-through, discounted sale price, computed discount badge).
+- Card-level rating-only submissions are auto-approved server-side so product `avgRating/reviewCount` updates immediately without requiring comment moderation.
 - `PaymentGatewayPort` now returns a structured checkout session object.
 - Payment domain now supports gateway-driven transitions (`confirmByGateway`, `rejectByGateway`) with safeguards against conflicting final states.
 - Security config now explicitly allows unauthenticated POST calls only to `/api/payments/webhooks/gateway`.
@@ -44,11 +53,19 @@ The format is inspired by Keep a Changelog.
 - Notification sender selection is now env-driven (`NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED`).
 - `PaymentNotificationListener` now resolves the order customer contact from repositories instead of hardcoded `unknown` when available.
 - Notification provider selection now supports `NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED|WHATSAPP_TWILIO`.
+- Notification provider selection now supports `NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED|WHATSAPP_TWILIO|EMAIL_SENDGRID`.
+- Notification provider selection now supports `NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED|WHATSAPP_TWILIO|EMAIL_SENDGRID|EMAIL_SMTP`.
 - Frontend Docker/env config now supports `PUBLIC_WHATSAPP_PHONE`, `PUBLIC_WHATSAPP_MESSAGE_ES`, and `PUBLIC_WHATSAPP_MESSAGE_EN`.
 - Storefront footer social links and floating WhatsApp button now resolve from backend-managed system settings (with safe fallback defaults).
+- Notification listeners now prioritize customer phone (when available) before email for outbound WhatsApp destination contact resolution.
+- Notification listeners now publish structured recipients (`phone` + `email`) so channel-specific providers can choose correct destination safely.
+- `EMAIL_SENDGRID` can use explicit SendGrid env vars or fallback to admin SMTP credentials (`smtpPassword` decrypted server-side and `smtpFromEmail`).
+- `EMAIL_SMTP` supports env overrides (`EMAIL_SMTP_*`) and fallback to admin SMTP settings (`smtpHost`, `smtpPort`, `smtpUsername`, encrypted password, `smtpFromEmail`).
+- System settings load no longer fails when a legacy/corrupted encrypted SMTP password exists; admin can now open the page and replace/clear credentials from UI.
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.
+- Backend test suite passes (`mvn test`) with 53 tests after notification provider refactor.
 - Frontend build passes (`npm run build`).
 - Docker stack rebuild for `backend` and `frontend` completed successfully.
 
