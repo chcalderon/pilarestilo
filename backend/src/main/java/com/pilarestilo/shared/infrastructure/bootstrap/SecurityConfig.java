@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/media/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/system-settings/public").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/actuator/**").permitAll()
                         .anyRequest().authenticated()

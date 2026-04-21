@@ -42,6 +42,9 @@ Open http://localhost
 - Admin users now load with server-side pagination per tab plus status filter (`todos`, `habilitados`, `bloqueados`).
 - Cart dark mode readability was improved in summary/actions text.
 - Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
+- Storefront now includes a floating WhatsApp CTA button (configurable phone/message per locale via env).
+- Admin now includes `Configuracion del sistema` (`/admin/settings`) to manage WhatsApp number, Instagram/Facebook URLs, and SMTP settings.
+- Storefront WhatsApp button + footer social links now consume backend system settings (`/api/system-settings/public`).
 - Backend notifications now support `WHATSAPP_SIMULATED` provider (env-driven) for development/testing flows.
 - Backend notifications now support `WHATSAPP_TWILIO` provider for production-ready WhatsApp delivery.
 

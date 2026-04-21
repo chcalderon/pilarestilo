@@ -125,6 +125,41 @@ export interface UpdateAdminUserRequest {
   active?: boolean;
 }
 
+export interface SystemSettingsDto {
+  whatsappNumber: string;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpUsername?: string | null;
+  smtpFromEmail?: string | null;
+  smtpAuthEnabled: boolean;
+  smtpStarttlsEnabled: boolean;
+  smtpPasswordConfigured: boolean;
+  updatedAt?: string;
+  updatedBy?: string | null;
+}
+
+export interface UpdateSystemSettingsRequest {
+  whatsappNumber: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUsername?: string;
+  smtpFromEmail?: string;
+  smtpPassword?: string;
+  clearSmtpPassword?: boolean;
+  smtpAuthEnabled: boolean;
+  smtpStarttlsEnabled: boolean;
+}
+
+export interface PublicStoreSettingsDto {
+  whatsappNumber: string;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+}
+
 export interface CustomerCreditDto {
   id: string;
   customerId: string;
@@ -724,6 +759,31 @@ export async function resetAdminUserPassword(userId: string, newPassword: string
     body: JSON.stringify({ newPassword }),
     headers: authHeaders(token),
   });
+}
+
+export async function getSystemSettings(token: string): Promise<SystemSettingsDto> {
+  return apiFetch<SystemSettingsDto>('/system-settings', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function updateSystemSettings(
+  data: UpdateSystemSettingsRequest,
+  token: string
+): Promise<SystemSettingsDto> {
+  return apiFetch<SystemSettingsDto>('/system-settings', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getPublicStoreSettings(): Promise<PublicStoreSettingsDto | null> {
+  try {
+    return await apiFetch<PublicStoreSettingsDto>('/system-settings/public');
+  } catch {
+    return null;
+  }
 }
 
 export async function getCustomerCredit(customerId: string, token: string): Promise<CustomerCreditDto | null> {

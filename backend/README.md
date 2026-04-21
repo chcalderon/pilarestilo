@@ -44,6 +44,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `customercredit` | Credit balance and movement history |
 | `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`) + domain listeners |
 | `user` | User repository and user-facing data |
+| `systemsettings` | Admin-managed storefront/system configuration (channels + SMTP) |
 
 ---
 
@@ -66,6 +67,12 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `PATCH /api/users/{id}`
 - `PATCH /api/users/{id}/password`
 - `DELETE /api/users/{id}`
+
+### System settings
+
+- `GET /api/system-settings` (ADMIN)
+- `PATCH /api/system-settings` (ADMIN)
+- `GET /api/system-settings/public` (public storefront channels)
 
 ### Catalog
 
@@ -127,6 +134,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `SPRING_DATASOURCE_USERNAME` | Yes | DB username |
 | `SPRING_DATASOURCE_PASSWORD` | Yes | DB password |
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
+| `SYSTEM_SETTINGS_CRYPTO_SECRET` | No | Secret used to encrypt/decrypt SMTP password in `system_settings` table (defaults to `JWT_SECRET` if missing) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
 | `NOTIFICATION_PROVIDER` | No | Notification adapter provider: `LOG` (default), `WHATSAPP_SIMULATED`, or `WHATSAPP_TWILIO` |
 | `WHATSAPP_SIMULATED_TO` | No | Destination phone used by simulated WhatsApp logs (default `+56900000000`) |
@@ -166,7 +174,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V12`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V13`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -174,6 +182,7 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - Chile currency/default normalization (`V10`)
 - product image path migration to backend media routes (`V11`)
 - active-flag support for users (`V12`)
+- singleton system settings + SMTP credential storage (`V13`)
 
 ---
 

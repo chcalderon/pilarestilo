@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import SystemSettingsPanel from '../../islands/admin/SystemSettingsPanel';
+---
+
+<AdminLayout
+  title="Configuracion"
+  breadcrumbs={[{ label: 'Configuracion' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Configuracion del Sistema</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      Administra contacto WhatsApp, redes sociales y conexion SMTP de la tienda.
+    </p>
+  </div>
+
+  <SystemSettingsPanel client:load />
+</AdminLayout>

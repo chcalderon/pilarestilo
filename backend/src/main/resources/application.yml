@@ -57,6 +57,8 @@ app:
         failure-url: ${PAYMENT_GATEWAY_MP_FAILURE_URL:}
         notification-url: ${PAYMENT_GATEWAY_MP_NOTIFICATION_URL:}
         webhook-token: ${PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN:}
+  system-settings:
+    crypto-secret: ${SYSTEM_SETTINGS_CRYPTO_SECRET:${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}}
 
 server:
   port: 8080

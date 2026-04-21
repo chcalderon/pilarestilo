@@ -20,6 +20,11 @@ The format is inspired by Keep a Changelog.
 - Mercado Pago provider webhook bridge endpoint: `POST /api/payments/webhooks/gateway/mercadopago`.
 - Simulated WhatsApp notification adapter (`WHATSAPP_SIMULATED`) selectable by env for development flows.
 - Twilio WhatsApp notification adapter (`WHATSAPP_TWILIO`) for production-ready message delivery via Twilio API.
+- Floating storefront WhatsApp CTA button (desktop + mobile) with locale-aware prefilled message.
+- System settings module (`/api/system-settings`) with admin-managed storefront channels (WhatsApp, Instagram, Facebook).
+- Admin system settings screen (`/admin/settings`) to manage storefront contact channels and SMTP configuration.
+- Public settings endpoint (`GET /api/system-settings/public`) for storefront runtime channel links.
+- SMTP password encryption-at-rest with AES-GCM and env-driven crypto secret (`SYSTEM_SETTINGS_CRYPTO_SECRET`).
 
 ### Changed
 - `PaymentGatewayPort` now returns a structured checkout session object.
@@ -39,6 +44,8 @@ The format is inspired by Keep a Changelog.
 - Notification sender selection is now env-driven (`NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED`).
 - `PaymentNotificationListener` now resolves the order customer contact from repositories instead of hardcoded `unknown` when available.
 - Notification provider selection now supports `NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED|WHATSAPP_TWILIO`.
+- Frontend Docker/env config now supports `PUBLIC_WHATSAPP_PHONE`, `PUBLIC_WHATSAPP_MESSAGE_ES`, and `PUBLIC_WHATSAPP_MESSAGE_EN`.
+- Storefront footer social links and floating WhatsApp button now resolve from backend-managed system settings (with safe fallback defaults).
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.

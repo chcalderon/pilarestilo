@@ -34,6 +34,9 @@ Default dev URL: `http://localhost:4321`
 |---|---|---|
 | `PUBLIC_API_BASE_URL` | `/api` | Browser-side API base |
 | `INTERNAL_API_BASE_URL` | `http://backend:8080/api` | SSR/server-side API base |
+| `PUBLIC_WHATSAPP_PHONE` | `+56900000000` | Storefront WhatsApp destination number (used in floating CTA) |
+| `PUBLIC_WHATSAPP_MESSAGE_ES` | `Hola Pilar Estilo, quiero ayuda con una compra.` | Prefilled WhatsApp message for Spanish storefront |
+| `PUBLIC_WHATSAPP_MESSAGE_EN` | `Hi Pilar Estilo, I need help with a purchase.` | Prefilled WhatsApp message for English storefront |
 
 Example:
 
@@ -98,6 +101,9 @@ Translations:
 - Admin user management now uses server-side pagination by tab (`Clientes`/`Trabajadores`) and status filter (`Todos`/`Habilitados`/`Bloqueados`).
 - Admin users page now points admins to `Mi cuenta` (`/es/account?tab=profile`) for editing their own profile/password.
 - Cart dark theme copy in summary/actions was updated to improve text contrast.
+- Storefront now includes a floating WhatsApp button that opens a prefilled chat in `wa.me` (desktop + mobile).
+- Added admin system settings screen (`/admin/settings`) to edit storefront WhatsApp/social links and SMTP credentials.
+- Storefront WhatsApp and footer social URLs now load from backend public settings endpoint (`/api/system-settings/public`).
 
 ---
 
@@ -145,6 +151,7 @@ src/
       ProductForm.tsx
       ProductTable.tsx
       ReviewModerationQueue.tsx
+      SystemSettingsPanel.tsx
       UserManagement.tsx
     auth/
       AccountMenu.tsx

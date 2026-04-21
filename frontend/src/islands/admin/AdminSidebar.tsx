@@ -6,6 +6,7 @@ import {
   Star,
   CreditCard,
   Users,
+  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/admin/reviews', icon: Star, label: 'Resenas' },
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios' },
+  { href: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 
 export default function AdminSidebar({ currentPath, mobile = false }: Props) {

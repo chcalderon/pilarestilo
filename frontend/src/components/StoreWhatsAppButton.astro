@@ -1,0 +1,100 @@
+---
+import type { Locale } from '../i18n/index';
+import Icon from './Icon.astro';
+
+export interface Props {
+  locale: Locale;
+  phone?: string;
+  messageEs?: string;
+  messageEn?: string;
+}
+
+const {
+  locale,
+  phone = import.meta.env.PUBLIC_WHATSAPP_PHONE ?? '+56900000000',
+  messageEs = import.meta.env.PUBLIC_WHATSAPP_MESSAGE_ES ?? 'Hola Pilar Estilo, quiero ayuda con una compra.',
+  messageEn = import.meta.env.PUBLIC_WHATSAPP_MESSAGE_EN ?? 'Hi Pilar Estilo, I need help with a purchase.',
+} = Astro.props;
+
+const phoneDigits = String(phone).replace(/\D+/g, '') || '56900000000';
+const message = locale === 'es' ? messageEs : messageEn;
+const href = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(message)}`;
+const label = locale === 'es' ? 'WhatsApp' : 'WhatsApp';
+const ariaLabel = locale === 'es' ? 'Enviar mensaje por WhatsApp' : 'Send WhatsApp message';
+const shouldRender = phoneDigits.length >= 8;
+---
+
+{shouldRender && (
+  <a
+    id="store-whatsapp-button"
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label={ariaLabel}
+    class="pe-whatsapp-fab"
+  >
+    <Icon name="brand-whatsapp" size={20} class="pe-whatsapp-icon" ariaLabel="WhatsApp" />
+    <span class="pe-whatsapp-label">{label}</span>
+  </a>
+)}
+
+<style>
+  .pe-whatsapp-fab {
+    position: fixed;
+    right: max(0.85rem, env(safe-area-inset-right));
+    bottom: max(0.95rem, env(safe-area-inset-bottom));
+    z-index: 64;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(248, 244, 239, 0.22);
+    background: linear-gradient(135deg, #1aa861 0%, #118f4f 100%);
+    color: #fdf9f5;
+    box-shadow: 0 12px 30px rgba(17, 143, 79, 0.34);
+    text-decoration: none;
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .pe-whatsapp-fab:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 15px 34px rgba(17, 143, 79, 0.4);
+    filter: saturate(1.08);
+  }
+
+  .pe-whatsapp-fab:active {
+    transform: translateY(0);
+  }
+
+  .pe-whatsapp-icon {
+    flex-shrink: 0;
+  }
+
+  .pe-whatsapp-label {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  html[data-theme='light'] .pe-whatsapp-fab {
+    border-color: rgba(26, 26, 26, 0.12);
+    box-shadow: 0 12px 26px rgba(14, 104, 57, 0.28);
+  }
+
+  @media (max-width: 640px) {
+    .pe-whatsapp-fab {
+      right: max(0.7rem, env(safe-area-inset-right));
+      bottom: max(0.8rem, env(safe-area-inset-bottom));
+      padding: 0.72rem;
+      gap: 0;
+    }
+
+    .pe-whatsapp-label {
+      display: none;
+    }
+  }
+</style>

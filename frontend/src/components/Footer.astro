@@ -5,9 +5,15 @@ import Icon from './Icon.astro';
 
 export interface Props {
   locale: Locale;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
 }
 
-const { locale } = Astro.props;
+const {
+  locale,
+  instagramUrl = 'https://instagram.com/pilarestilo',
+  facebookUrl = 'https://facebook.com/pilarestilo',
+} = Astro.props;
 
 const links = {
   coleccion: [
@@ -110,10 +116,10 @@ const links = {
 
         <!-- Social icons -->
         <div class="flex gap-4">
-          <a href="#" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Instagram">
+          <a href={instagramUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Instagram">
             <Icon name="instagram" size={17} strokeWidth={1.4} />
           </a>
-          <a href="#" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Facebook">
+          <a href={facebookUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Facebook">
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
             </svg>
