@@ -26,12 +26,21 @@ public class UpdateSystemSettingsUseCase {
     public SystemSettingsDto execute(UpdateSystemSettingsCommand command) {
         var settings = systemSettingsRepository.get();
 
-        String nextEncryptedPassword = settings.getSmtpPasswordEncrypted();
-        if (Boolean.TRUE.equals(command.clearSmtpPassword())) {
-            nextEncryptedPassword = null;
-        } else if (command.smtpPassword() != null && !command.smtpPassword().isBlank()) {
-            nextEncryptedPassword = cryptoService.encrypt(command.smtpPassword().trim());
-        }
+        String nextSmtpPassword = resolveEncryptedSecret(
+                settings.getSmtpPasswordEncrypted(),
+                command.smtpPassword(),
+                command.clearSmtpPassword()
+        );
+        String nextTwilioAuthToken = resolveEncryptedSecret(
+                settings.getWhatsappTwilioAuthTokenEncrypted(),
+                command.whatsappTwilioAuthToken(),
+                command.clearWhatsappTwilioAuthToken()
+        );
+        String nextSendgridApiKey = resolveEncryptedSecret(
+                settings.getSendgridApiKeyEncrypted(),
+                command.sendgridApiKey(),
+                command.clearSendgridApiKey()
+        );
 
         settings.update(
                 command.whatsappNumber(),
@@ -41,13 +50,37 @@ public class UpdateSystemSettingsUseCase {
                 command.smtpPort(),
                 command.smtpUsername(),
                 command.smtpFromEmail(),
-                nextEncryptedPassword,
+                nextSmtpPassword,
                 Boolean.TRUE.equals(command.smtpAuthEnabled()),
                 Boolean.TRUE.equals(command.smtpStarttlsEnabled()),
+                command.notificationProvider(),
+                command.whatsappSimulatedTo(),
+                command.whatsappSimulatedSender(),
+                command.whatsappTwilioApiBaseUrl(),
+                command.whatsappTwilioAccountSid(),
+                nextTwilioAuthToken,
+                command.whatsappTwilioFrom(),
+                command.whatsappTwilioToFallback(),
+                command.whatsappTwilioSenderAlias(),
+                command.sendgridApiBaseUrl(),
+                nextSendgridApiKey,
+                command.sendgridFromEmail(),
+                command.sendgridSenderName(),
+                command.sendgridToFallback(),
                 command.updatedBy()
         );
 
         var saved = systemSettingsRepository.save(settings);
         return SystemSettingsMapper.toDto(saved);
+    }
+
+    private String resolveEncryptedSecret(String currentEncrypted, String nextPlainText, Boolean clearFlag) {
+        if (Boolean.TRUE.equals(clearFlag)) {
+            return null;
+        }
+        if (nextPlainText != null && !nextPlainText.isBlank()) {
+            return cryptoService.encrypt(nextPlainText.trim());
+        }
+        return currentEncrypted;
     }
 }

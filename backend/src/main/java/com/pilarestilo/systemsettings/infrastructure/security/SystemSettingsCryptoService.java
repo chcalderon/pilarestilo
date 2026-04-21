@@ -30,7 +30,7 @@ public class SystemSettingsCryptoService {
 
     public String encrypt(String plainText) {
         if (plainText == null || plainText.isBlank()) {
-            throw new DomainException("SMTP password cannot be blank");
+            throw new DomainException("Secret cannot be blank");
         }
         try {
             byte[] iv = new byte[IV_LENGTH_BYTES];
@@ -45,7 +45,7 @@ public class SystemSettingsCryptoService {
             System.arraycopy(cipherText, 0, packed, iv.length, cipherText.length);
             return Base64.getEncoder().encodeToString(packed);
         } catch (Exception ex) {
-            throw new DomainException("Could not encrypt SMTP password");
+            throw new DomainException("Could not encrypt secret");
         }
     }
 
@@ -56,7 +56,7 @@ public class SystemSettingsCryptoService {
         try {
             byte[] packed = Base64.getDecoder().decode(encryptedText);
             if (packed.length <= IV_LENGTH_BYTES) {
-                throw new DomainException("Invalid encrypted SMTP password");
+                throw new DomainException("Invalid encrypted secret");
             }
 
             byte[] iv = new byte[IV_LENGTH_BYTES];
@@ -71,7 +71,7 @@ public class SystemSettingsCryptoService {
         } catch (DomainException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new DomainException("Could not decrypt SMTP password");
+            throw new DomainException("Could not decrypt secret");
         }
     }
 

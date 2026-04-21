@@ -7,6 +7,9 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Notification provider runtime settings in `system_settings` with migration `V17__notification_provider_settings.sql`.
+- Admin system settings UI now includes provider selector cards (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) and provider-specific forms.
+- Encrypted-at-rest storage for Twilio auth token and SendGrid API key in admin-managed system settings.
 - Product dual-pricing fields in catalog API (`listPriceAmount`, `listPriceCurrency`) with domain/persistence validation and support in admin create/update forms.
 - Catalog migration `V15__product_list_price.sql` (schema + constraints) and `V16__seed_product_list_price_defaults.sql` (backfill defaults for existing products).
 - Quick star-only rating widget for authenticated customers directly in storefront product cards (`QuickRateStars` island).
@@ -34,6 +37,8 @@ The format is inspired by Keep a Changelog.
 - User phone persistence migration (`V14__user_phone.sql`) with index support.
 
 ### Changed
+- Notification sender selection is now runtime-configurable from admin settings (`system_settings.notification_provider`) with env fallback for seeded/default state.
+- `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, and `EMAIL_SMTP` adapters now resolve provider config from admin settings first, then env fallback.
 - Storefront cards now display rating stars and dual price visualization (list price struck-through, discounted sale price, computed discount badge).
 - Card-level rating-only submissions are auto-approved server-side so product `avgRating/reviewCount` updates immediately without requiring comment moderation.
 - `PaymentGatewayPort` now returns a structured checkout session object.
@@ -68,6 +73,7 @@ The format is inspired by Keep a Changelog.
 - Backend test suite passes (`mvn test`) with 53 tests after notification provider refactor.
 - Frontend build passes (`npm run build`).
 - Docker stack rebuild for `backend` and `frontend` completed successfully.
+- Docker rebuild validated Flyway migration `V17` and healthy startup for backend/frontend services.
 
 ## [2026-04-20] - Customer proof submission and admin payment queue alignment
 

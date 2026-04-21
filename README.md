@@ -46,13 +46,11 @@ Open http://localhost
 - Cart dark mode readability was improved in summary/actions text.
 - Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
 - Storefront now includes a floating WhatsApp CTA button (configurable phone/message per locale via env).
-- Admin now includes `Configuracion del sistema` (`/admin/settings`) to manage WhatsApp number, Instagram/Facebook URLs, and SMTP settings.
+- Admin now includes `Configuracion del sistema` (`/admin/settings`) to manage storefront channels and runtime notification provider selection (`LOG`, WhatsApp simulated/Twilio, SendGrid, SMTP).
 - Storefront WhatsApp button + footer social links now consume backend system settings (`/api/system-settings/public`).
 - Customer profile now supports WhatsApp phone capture (`/api/auth/me/profile`) and notifications prioritize that phone as destination contact.
-- Backend notifications now support `WHATSAPP_SIMULATED` provider (env-driven) for development/testing flows.
-- Backend notifications now support `WHATSAPP_TWILIO` provider for production-ready WhatsApp delivery.
-- Backend notifications now support `EMAIL_SENDGRID` provider for transactional email delivery (with env vars or admin SMTP credentials as fallback source).
-- Backend notifications now support `EMAIL_SMTP` provider for direct delivery through your own mail server.
+- Backend notifications now support runtime provider switching from admin settings without restart, with env variables kept as fallback.
+- Twilio auth token, SendGrid API key, and SMTP password are now encrypted at rest in `system_settings`.
 
 ## Documentation
 

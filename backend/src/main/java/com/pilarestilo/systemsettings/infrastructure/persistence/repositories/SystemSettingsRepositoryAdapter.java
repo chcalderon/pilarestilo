@@ -42,6 +42,20 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setSmtpPasswordEncrypted(settings.getSmtpPasswordEncrypted());
         entity.setSmtpAuthEnabled(settings.isSmtpAuthEnabled());
         entity.setSmtpStarttlsEnabled(settings.isSmtpStarttlsEnabled());
+        entity.setNotificationProvider(settings.getNotificationProvider().name());
+        entity.setWhatsappSimulatedTo(settings.getWhatsappSimulatedTo());
+        entity.setWhatsappSimulatedSender(settings.getWhatsappSimulatedSender());
+        entity.setWhatsappTwilioApiBaseUrl(settings.getWhatsappTwilioApiBaseUrl());
+        entity.setWhatsappTwilioAccountSid(settings.getWhatsappTwilioAccountSid());
+        entity.setWhatsappTwilioAuthTokenEncrypted(settings.getWhatsappTwilioAuthTokenEncrypted());
+        entity.setWhatsappTwilioFrom(settings.getWhatsappTwilioFrom());
+        entity.setWhatsappTwilioToFallback(settings.getWhatsappTwilioToFallback());
+        entity.setWhatsappTwilioSenderAlias(settings.getWhatsappTwilioSenderAlias());
+        entity.setSendgridApiBaseUrl(settings.getSendgridApiBaseUrl());
+        entity.setSendgridApiKeyEncrypted(settings.getSendgridApiKeyEncrypted());
+        entity.setSendgridFromEmail(settings.getSendgridFromEmail());
+        entity.setSendgridSenderName(settings.getSendgridSenderName());
+        entity.setSendgridToFallback(settings.getSendgridToFallback());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -60,6 +74,20 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getSmtpPasswordEncrypted(),
                 entity.isSmtpAuthEnabled(),
                 entity.isSmtpStarttlsEnabled(),
+                entity.getNotificationProvider(),
+                entity.getWhatsappSimulatedTo(),
+                entity.getWhatsappSimulatedSender(),
+                entity.getWhatsappTwilioApiBaseUrl(),
+                entity.getWhatsappTwilioAccountSid(),
+                entity.getWhatsappTwilioAuthTokenEncrypted(),
+                entity.getWhatsappTwilioFrom(),
+                entity.getWhatsappTwilioToFallback(),
+                entity.getWhatsappTwilioSenderAlias(),
+                entity.getSendgridApiBaseUrl(),
+                entity.getSendgridApiKeyEncrypted(),
+                entity.getSendgridFromEmail(),
+                entity.getSendgridSenderName(),
+                entity.getSendgridToFallback(),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

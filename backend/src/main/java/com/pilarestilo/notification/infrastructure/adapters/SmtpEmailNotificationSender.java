@@ -8,7 +8,6 @@ import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryp
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -19,7 +18,6 @@ import java.util.Properties;
 import java.util.UUID;
 
 @Component
-@ConditionalOnProperty(name = "app.notification.provider", havingValue = "EMAIL_SMTP")
 public class SmtpEmailNotificationSender implements NotificationSender {
 
     private static final Logger log = LoggerFactory.getLogger(SmtpEmailNotificationSender.class);

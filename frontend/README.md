@@ -105,7 +105,7 @@ Translations:
 - Admin users page now points admins to `Mi cuenta` (`/es/account?tab=profile`) for editing their own profile/password.
 - Cart dark theme copy in summary/actions was updated to improve text contrast.
 - Storefront now includes a floating WhatsApp button that opens a prefilled chat in `wa.me` (desktop + mobile).
-- Added admin system settings screen (`/admin/settings`) to edit storefront WhatsApp/social links and SMTP credentials.
+- Added admin system settings screen (`/admin/settings`) to edit storefront channels and choose/configure notification provider (`LOG`, WhatsApp Simulado/Twilio, SendGrid, SMTP) from one UI.
 - Storefront WhatsApp and footer social URLs now load from backend public settings endpoint (`/api/system-settings/public`).
 
 ---

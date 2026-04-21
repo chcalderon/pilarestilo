@@ -8,7 +8,6 @@ import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryp
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -19,14 +18,14 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-@ConditionalOnProperty(name = "app.notification.provider", havingValue = "EMAIL_SENDGRID")
 public class SendGridEmailNotificationSender implements NotificationSender {
 
     private static final Logger log = LoggerFactory.getLogger(SendGridEmailNotificationSender.class);
 
-    private final RestClient restClient;
+    private final RestClient.Builder restClientBuilder;
     private final SystemSettingsRepository systemSettingsRepository;
     private final SystemSettingsCryptoService cryptoService;
+    private final String envApiBaseUrl;
     private final String envApiKey;
     private final String envFromEmail;
     private final String envSenderName;
@@ -42,11 +41,10 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             @Value("${app.notification.email.sendgrid.sender-name:Pilar Estilo}") String senderName,
             @Value("${app.notification.email.sendgrid.to-fallback:}") String fallbackTo
     ) {
+        this.restClientBuilder = restClientBuilder;
         this.systemSettingsRepository = systemSettingsRepository;
         this.cryptoService = cryptoService;
-        this.restClient = restClientBuilder
-                .baseUrl(normalize(apiBaseUrl, "https://api.sendgrid.com"))
-                .build();
+        this.envApiBaseUrl = normalize(apiBaseUrl, "https://api.sendgrid.com");
         this.envApiKey = normalize(apiKey, "");
         this.envFromEmail = normalize(fromEmail, "");
         this.envSenderName = normalize(senderName, "Pilar Estilo");
@@ -121,6 +119,10 @@ public class SendGridEmailNotificationSender implements NotificationSender {
         );
 
         try {
+            RestClient restClient = restClientBuilder
+                    .baseUrl(config.apiBaseUrl())
+                    .build();
+
             restClient.post()
                     .uri("/v3/mail/send")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -147,25 +149,32 @@ public class SendGridEmailNotificationSender implements NotificationSender {
 
     private EffectiveConfig resolveConfig() {
         var settings = systemSettingsRepository.get();
-        String decryptedPassword = decryptPassword(settings.getSmtpPasswordEncrypted());
-        String apiKey = firstNonBlank(decryptedPassword, envApiKey);
-        String fromEmail = firstNonBlank(settings.getSmtpFromEmail(), envFromEmail);
-        String senderName = envSenderName;
-        String fallbackTo = firstNonBlank(envFallbackTo, null);
+        String decryptedApiKey = decryptSecret(settings.getSendgridApiKeyEncrypted(), "SendGrid API key");
+        String apiBaseUrl = firstNonBlank(settings.getSendgridApiBaseUrl(), envApiBaseUrl);
+        String apiKey = firstNonBlank(decryptedApiKey, envApiKey);
+        String fromEmail = firstNonBlank(settings.getSendgridFromEmail(), envFromEmail);
+        String senderName = firstNonBlank(settings.getSendgridSenderName(), envSenderName);
+        String fallbackTo = firstNonBlank(settings.getSendgridToFallback(), envFallbackTo);
 
         if (apiKey == null || apiKey.isBlank()) {
-            log.warn("[EMAIL:SENDGRID] disabled: missing API key (SENDGRID_API_KEY or SMTP password in admin settings).");
+            log.warn("[EMAIL:SENDGRID] disabled: missing API key.");
             return null;
         }
         if (!looksLikeEmail(fromEmail)) {
-            log.warn("[EMAIL:SENDGRID] disabled: invalid sender email (SENDGRID_FROM_EMAIL or smtpFromEmail in admin settings).");
+            log.warn("[EMAIL:SENDGRID] disabled: invalid sender email.");
             return null;
         }
         if (fallbackTo != null && !looksLikeEmail(fallbackTo)) {
             fallbackTo = null;
         }
 
-        return new EffectiveConfig(apiKey, fromEmail, senderName, fallbackTo);
+        return new EffectiveConfig(
+                normalize(apiBaseUrl, "https://api.sendgrid.com"),
+                apiKey.trim(),
+                fromEmail.trim(),
+                normalize(senderName, "Pilar Estilo"),
+                fallbackTo == null ? null : fallbackTo.trim()
+        );
     }
 
     private String resolveToEmail(NotificationRecipient recipient, String fallbackTo) {
@@ -181,7 +190,7 @@ public class SendGridEmailNotificationSender implements NotificationSender {
         return null;
     }
 
-    private String decryptPassword(String encrypted) {
+    private String decryptSecret(String encrypted, String label) {
         if (encrypted == null || encrypted.isBlank()) {
             return null;
         }
@@ -192,7 +201,7 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             }
             return decrypted.trim();
         } catch (DomainException ex) {
-            log.warn("[EMAIL:SENDGRID] could not decrypt stored SMTP password: {}", ex.getMessage());
+            log.warn("[EMAIL:SENDGRID] could not decrypt {}: {}", label, ex.getMessage());
             return null;
         }
     }
@@ -227,6 +236,7 @@ public class SendGridEmailNotificationSender implements NotificationSender {
     }
 
     private record EffectiveConfig(
+            String apiBaseUrl,
             String apiKey,
             String fromEmail,
             String senderName,

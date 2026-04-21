@@ -29,15 +29,22 @@ public class GetSystemSettingsUseCase {
     @Transactional(readOnly = true)
     public SystemSettingsDto execute() {
         var settings = systemSettingsRepository.get();
-        if (settings.getSmtpPasswordEncrypted() != null && !settings.getSmtpPasswordEncrypted().isBlank()) {
-            try {
-                cryptoService.decrypt(settings.getSmtpPasswordEncrypted());
-            } catch (DomainException ex) {
-                // Keep settings readable even if old/corrupted encrypted values exist.
-                // Admin can then replace or clear SMTP password from the UI.
-                log.warn("SMTP password decrypt check failed while loading system settings: {}", ex.getMessage());
-            }
-        }
+        verifyDecryptable(settings.getSmtpPasswordEncrypted(), "SMTP password");
+        verifyDecryptable(settings.getWhatsappTwilioAuthTokenEncrypted(), "Twilio auth token");
+        verifyDecryptable(settings.getSendgridApiKeyEncrypted(), "SendGrid API key");
         return SystemSettingsMapper.toDto(settings);
+    }
+
+    private void verifyDecryptable(String encryptedValue, String label) {
+        if (encryptedValue == null || encryptedValue.isBlank()) {
+            return;
+        }
+        try {
+            cryptoService.decrypt(encryptedValue);
+        } catch (DomainException ex) {
+            // Keep settings readable even if old/corrupted encrypted values exist.
+            // Admin can then replace or clear values from the UI.
+            log.warn("{} decrypt check failed while loading system settings: {}", label, ex.getMessage());
+        }
     }
 }

@@ -44,7 +44,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `customercredit` | Credit balance and movement history |
 | `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) + domain listeners |
 | `user` | User repository and user-facing data |
-| `systemsettings` | Admin-managed storefront/system configuration (channels + SMTP) |
+| `systemsettings` | Admin-managed storefront/system configuration (channels + notification providers) |
 
 ---
 
@@ -136,25 +136,25 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
 | `SYSTEM_SETTINGS_CRYPTO_SECRET` | No | Secret used to encrypt/decrypt SMTP password in `system_settings` table (defaults to `JWT_SECRET` if missing) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
-| `NOTIFICATION_PROVIDER` | No | Notification adapter provider: `LOG` (default), `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, or `EMAIL_SMTP` |
+| `NOTIFICATION_PROVIDER` | No | Default/fallback notification provider before admin overrides (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) |
 | `WHATSAPP_SIMULATED_TO` | No | Destination phone used by simulated WhatsApp logs (default `+56900000000`) |
 | `WHATSAPP_SIMULATED_SENDER` | No | Sender alias for simulated WhatsApp logs |
 | `WHATSAPP_TWILIO_API_BASE_URL` | No | Twilio API base URL (default `https://api.twilio.com`) |
-| `WHATSAPP_TWILIO_ACCOUNT_SID` | Yes if provider `WHATSAPP_TWILIO` | Twilio Account SID |
-| `WHATSAPP_TWILIO_AUTH_TOKEN` | Yes if provider `WHATSAPP_TWILIO` | Twilio Auth Token |
-| `WHATSAPP_TWILIO_FROM` | Yes if provider `WHATSAPP_TWILIO` | WhatsApp sender in Twilio format (e.g. `whatsapp:+14155238886`) |
+| `WHATSAPP_TWILIO_ACCOUNT_SID` | Optional | Twilio Account SID fallback when admin setting is empty |
+| `WHATSAPP_TWILIO_AUTH_TOKEN` | Optional | Twilio Auth Token fallback when admin setting is empty |
+| `WHATSAPP_TWILIO_FROM` | Optional | WhatsApp sender fallback in Twilio format (e.g. `whatsapp:+14155238886`) |
 | `WHATSAPP_TWILIO_TO_FALLBACK` | No | Fallback destination used when recipient contact is not a phone number |
 | `WHATSAPP_TWILIO_SENDER_ALIAS` | No | Sender alias used in Twilio message text |
 | `SENDGRID_API_BASE_URL` | No | SendGrid API base URL (default `https://api.sendgrid.com`) |
-| `SENDGRID_API_KEY` | Yes if provider `EMAIL_SENDGRID` (unless SMTP password is configured in Admin settings) | SendGrid API key |
-| `SENDGRID_FROM_EMAIL` | Yes if provider `EMAIL_SENDGRID` (unless SMTP from email is configured in Admin settings) | Sender email for outbound notifications |
+| `SENDGRID_API_KEY` | Optional | SendGrid API key fallback when admin setting is empty |
+| `SENDGRID_FROM_EMAIL` | Optional | Sender email fallback when admin setting is empty |
 | `SENDGRID_SENDER_NAME` | No | Sender display name (default `Pilar Estilo`) |
 | `SENDGRID_TO_FALLBACK` | No | Fallback destination when recipient does not have a valid email |
-| `EMAIL_SMTP_HOST` | Yes if provider `EMAIL_SMTP` (unless smtpHost is configured in Admin settings) | SMTP server hostname |
-| `EMAIL_SMTP_PORT` | Yes if provider `EMAIL_SMTP` (unless smtpPort is configured in Admin settings) | SMTP server port |
+| `EMAIL_SMTP_HOST` | Optional | SMTP host fallback when admin setting is empty |
+| `EMAIL_SMTP_PORT` | Optional | SMTP port fallback when admin setting is empty |
 | `EMAIL_SMTP_USERNAME` | No | SMTP username (required only if auth is enabled) |
 | `EMAIL_SMTP_PASSWORD` | No | SMTP password (required only if auth is enabled) |
-| `EMAIL_SMTP_FROM_EMAIL` | Yes if provider `EMAIL_SMTP` (unless smtpFromEmail is configured in Admin settings) | Sender email address |
+| `EMAIL_SMTP_FROM_EMAIL` | Optional | Sender email fallback when admin setting is empty |
 | `EMAIL_SMTP_SENDER_NAME` | No | Sender display name (default `Pilar Estilo`) |
 | `EMAIL_SMTP_AUTH_ENABLED` | No | SMTP auth toggle (`true/false`), defaults to admin setting |
 | `EMAIL_SMTP_STARTTLS_ENABLED` | No | STARTTLS toggle (`true/false`), defaults to admin setting |
@@ -175,10 +175,11 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 
 Current note:
 - Notification listeners now resolve a structured recipient (`phone` + `email`) so providers can choose the right channel safely.
-- `WHATSAPP_TWILIO` prioritizes user phone and falls back to `WHATSAPP_TWILIO_TO_FALLBACK` when needed.
-- `EMAIL_SENDGRID` prioritizes user email and can reuse admin SMTP credentials (`smtpPassword` and `smtpFromEmail`) when explicit SendGrid env vars are not set.
-- `EMAIL_SMTP` sends directly through your SMTP server, prioritizes user email, and supports env overrides with fallback to admin SMTP settings.
-- For "web-only" SMTP management, keep just `NOTIFICATION_PROVIDER=EMAIL_SMTP` in env and configure host/port/user/from/password from `/admin/settings`.
+- Active notification provider is now selected from `/admin/settings` (`notificationProvider` in `system_settings`) and can be changed at runtime.
+- `WHATSAPP_TWILIO` prioritizes user phone and falls back to `whatsappTwilioToFallback` (admin) or `WHATSAPP_TWILIO_TO_FALLBACK` (env).
+- `EMAIL_SENDGRID` uses its own admin-managed credentials (`sendgridApiKey`, `sendgridFromEmail`, etc.) with env fallback.
+- `EMAIL_SMTP` sends directly through your SMTP server, prioritizes user email, and supports admin-managed values with env fallback.
+- Sensitive values are encrypted at rest in `system_settings` (`smtpPassword`, Twilio auth token, SendGrid API key).
 
 ---
 
@@ -193,7 +194,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V16`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V17`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -205,6 +206,7 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - user phone capture (`V14`)
 - product list-price schema + constraints (`V15`)
 - default list-price backfill for existing catalog rows (`V16`)
+- notification provider admin configuration fields + encrypted Twilio/SendGrid secrets (`V17`)
 
 ---
 

@@ -126,10 +126,31 @@ export interface UpdateAdminUserRequest {
   active?: boolean;
 }
 
+export type NotificationProvider =
+  | 'LOG'
+  | 'WHATSAPP_SIMULATED'
+  | 'WHATSAPP_TWILIO'
+  | 'EMAIL_SENDGRID'
+  | 'EMAIL_SMTP';
+
 export interface SystemSettingsDto {
   whatsappNumber: string;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
+  notificationProvider: NotificationProvider;
+  whatsappSimulatedTo?: string | null;
+  whatsappSimulatedSender?: string | null;
+  whatsappTwilioApiBaseUrl?: string | null;
+  whatsappTwilioAccountSid?: string | null;
+  whatsappTwilioFrom?: string | null;
+  whatsappTwilioToFallback?: string | null;
+  whatsappTwilioSenderAlias?: string | null;
+  whatsappTwilioAuthTokenConfigured: boolean;
+  sendgridApiBaseUrl?: string | null;
+  sendgridFromEmail?: string | null;
+  sendgridSenderName?: string | null;
+  sendgridToFallback?: string | null;
+  sendgridApiKeyConfigured: boolean;
   smtpHost?: string | null;
   smtpPort?: number | null;
   smtpUsername?: string | null;
@@ -145,6 +166,22 @@ export interface UpdateSystemSettingsRequest {
   whatsappNumber: string;
   instagramUrl?: string;
   facebookUrl?: string;
+  notificationProvider: NotificationProvider;
+  whatsappSimulatedTo?: string;
+  whatsappSimulatedSender?: string;
+  whatsappTwilioApiBaseUrl?: string;
+  whatsappTwilioAccountSid?: string;
+  whatsappTwilioFrom?: string;
+  whatsappTwilioToFallback?: string;
+  whatsappTwilioSenderAlias?: string;
+  whatsappTwilioAuthToken?: string;
+  clearWhatsappTwilioAuthToken?: boolean;
+  sendgridApiBaseUrl?: string;
+  sendgridFromEmail?: string;
+  sendgridSenderName?: string;
+  sendgridToFallback?: string;
+  sendgridApiKey?: string;
+  clearSendgridApiKey?: boolean;
   smtpHost?: string;
   smtpPort?: number;
   smtpUsername?: string;
