@@ -3,11 +3,13 @@ package com.pilarestilo.notification.infrastructure.adapters;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(name = "app.notification.provider", havingValue = "LOG", matchIfMissing = true)
 public class LogNotificationSender implements NotificationSender {
 
     private static final Logger log = LoggerFactory.getLogger(LogNotificationSender.class);

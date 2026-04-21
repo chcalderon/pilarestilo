@@ -18,6 +18,7 @@ The format is inspired by Keep a Changelog.
   - Customer account: `Simular aprobado` / `Simular rechazado` for `PAYMENT_GATEWAY` orders.
   - Admin queue: `Sim aprobar` / `Sim rechazar` actions for pending gateway rows.
 - Mercado Pago provider webhook bridge endpoint: `POST /api/payments/webhooks/gateway/mercadopago`.
+- Simulated WhatsApp notification adapter (`WHATSAPP_SIMULATED`) selectable by env for development flows.
 
 ### Changed
 - `PaymentGatewayPort` now returns a structured checkout session object.
@@ -34,6 +35,8 @@ The format is inspired by Keep a Changelog.
 - Admin users screen now includes explicit guidance to edit the current admin profile/password through `Mi cuenta`.
 - Cart dark-mode typography was adjusted for stronger contrast in secondary labels/actions.
 - Storefront navbar logo transition now avoids scroll oscillation loops near the compact/full threshold.
+- Notification sender selection is now env-driven (`NOTIFICATION_PROVIDER=LOG|WHATSAPP_SIMULATED`).
+- `PaymentNotificationListener` now resolves the order customer contact from repositories instead of hardcoded `unknown` when available.
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.

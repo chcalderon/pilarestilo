@@ -42,6 +42,7 @@ Open http://localhost
 - Admin users now load with server-side pagination per tab plus status filter (`todos`, `habilitados`, `bloqueados`).
 - Cart dark mode readability was improved in summary/actions text.
 - Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
+- Backend notifications now support `WHATSAPP_SIMULATED` provider (env-driven) for development/testing flows.
 
 ## Documentation
 

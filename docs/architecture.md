@@ -103,6 +103,7 @@ Current listeners include:
 - `PaymentConfirmed` -> order moved to `PAID`
 - Review events -> product rating denormalization
 - Notification listeners for order/payment confirmation hooks
+- Notification providers selectable by env (`LOG` and `WHATSAPP_SIMULATED` for development)
 
 The Kafka migration seam remains available via publisher adapter swap.
 

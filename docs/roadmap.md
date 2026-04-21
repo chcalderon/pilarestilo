@@ -64,7 +64,8 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Gateway webhook receiver (`POST /api/payments/webhooks/gateway`) with optional signature guard
 - [x] Gateway checkout session endpoint for `PAYMENT_GATEWAY` payments (`POST /api/payments/{id}/gateway/checkout`) using current stub adapter
 - [x] Temporary gateway simulation controls in storefront/admin while production provider onboarding is pending
-- [ ] WhatsApp notifications (Twilio/Meta Cloud API)
+- [x] WhatsApp notifications (simulated provider for development: `WHATSAPP_SIMULATED`)
+- [ ] WhatsApp production integration (Twilio/Meta Cloud API)
 - [ ] Email notifications (SendGrid)
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
 - [x] Customer payment-proof self-service in account area (`GET /api/payments/order/{orderId}` + submit proof from `AccountPage`)
