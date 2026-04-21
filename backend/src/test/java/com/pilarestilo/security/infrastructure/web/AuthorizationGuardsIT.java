@@ -79,6 +79,14 @@ class AuthorizationGuardsIT {
     }
 
     @Test
+    void mercadopago_webhook_endpoint_is_public() throws Exception {
+        mvc.perform(post("/api/payments/webhooks/gateway/mercadopago")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void customer_is_forbidden_from_admin_order_and_payment_endpoints() throws Exception {
         String customerToken = registerCustomerAndGetToken("forbidden_customer_" + UUID.randomUUID() + "@test.com");
 

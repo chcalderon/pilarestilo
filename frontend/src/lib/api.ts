@@ -75,6 +75,14 @@ export interface PaymentDto {
   createdAt: string;
 }
 
+export interface PaymentGatewayCheckoutDto {
+  paymentId: string;
+  orderId: string;
+  gatewayReference: string;
+  checkoutUrl: string;
+  expiresAt?: string;
+}
+
 export interface OrderItemDto {
   id: string;
   productId: string;
@@ -519,6 +527,16 @@ export async function submitPaymentProof(paymentId: string, proofReference: stri
   return apiFetch<PaymentDto>(`/payments/${encodeURIComponent(paymentId)}/proof`, {
     method: 'PATCH',
     body: JSON.stringify({ proofReference }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function createGatewayCheckoutSession(
+  paymentId: string,
+  token: string
+): Promise<PaymentGatewayCheckoutDto> {
+  return apiFetch<PaymentGatewayCheckoutDto>(`/payments/${encodeURIComponent(paymentId)}/gateway/checkout`, {
+    method: 'POST',
     headers: authHeaders(token),
   });
 }

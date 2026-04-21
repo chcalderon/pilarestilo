@@ -3,8 +3,10 @@ package com.pilarestilo.payment.infrastructure.adapters;
 import com.pilarestilo.payment.domain.enums.PaymentStatus;
 import com.pilarestilo.payment.domain.ports.PaymentGatewayPort;
 import com.pilarestilo.shared.application.Money;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -12,12 +14,13 @@ import java.util.Locale;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(name = "app.payment.gateway.provider", havingValue = "STUB", matchIfMissing = true)
 public class StubPaymentGatewayAdapter implements PaymentGatewayPort {
 
     private final String checkoutBaseUrl;
 
     public StubPaymentGatewayAdapter(
-            @Value("${app.payment.gateway.stub-checkout-base-url:https://payments.pilarestilo.local/checkout}") String checkoutBaseUrl
+            @Value("${app.payment.gateway.stub-checkout-base-url:/es/account?tab=orders}") String checkoutBaseUrl
     ) {
         this.checkoutBaseUrl = checkoutBaseUrl;
     }
@@ -25,7 +28,10 @@ public class StubPaymentGatewayAdapter implements PaymentGatewayPort {
     @Override
     public CheckoutSession initiatePayment(UUID orderId, Money amount) {
         String reference = "stub-" + orderId.toString().substring(0, 8) + "-" + UUID.randomUUID().toString().substring(0, 8);
-        String checkoutUrl = checkoutBaseUrl + "?ref=" + reference;
+        String checkoutUrl = UriComponentsBuilder.fromUriString(checkoutBaseUrl)
+                .queryParam("ref", reference)
+                .build(true)
+                .toUriString();
         Instant expiresAt = Instant.now().plus(Duration.ofMinutes(30));
         return new CheckoutSession(reference, checkoutUrl, expiresAt);
     }

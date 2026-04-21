@@ -11,6 +11,7 @@ import {
   getPaymentByOrder,
   submitPaymentProof,
   uploadPaymentProofImage,
+  createGatewayCheckoutSession,
   simulateGatewayPaymentStatus,
   type ReviewDto,
   type OrderDto,
@@ -36,6 +37,7 @@ export default function AccountPage({ locale }: Props) {
   const [proofLinksByOrder, setProofLinksByOrder] = useState<Record<string, string>>({});
   const [proofSubmittingByOrder, setProofSubmittingByOrder] = useState<Record<string, boolean>>({});
   const [proofFeedbackByOrder, setProofFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
+  const [gatewayCheckoutLoadingByOrder, setGatewayCheckoutLoadingByOrder] = useState<Record<string, boolean>>({});
   const [gatewaySimulatingByOrder, setGatewaySimulatingByOrder] = useState<Record<string, boolean>>({});
   const [gatewayFeedbackByOrder, setGatewayFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -269,6 +271,59 @@ export default function AccountPage({ locale }: Props) {
     if (order.paymentMethod !== 'PAYMENT_GATEWAY') return false;
     if (!payment) return false;
     return payment.status !== 'APPROVED' && payment.status !== 'REJECTED';
+  }
+
+  async function handleStartGatewayCheckout(orderId: string) {
+    if (!effectiveToken) return;
+    const payment = paymentsByOrder[orderId];
+    if (!payment) return;
+
+    setGatewayCheckoutLoadingByOrder((prev) => ({ ...prev, [orderId]: true }));
+    setGatewayFeedbackByOrder((prev) => ({ ...prev, [orderId]: undefined }));
+
+    try {
+      const session = await createGatewayCheckoutSession(payment.id, effectiveToken);
+      const targetUrl = new URL(session.checkoutUrl, window.location.origin);
+      const currentUrl = new URL(window.location.href);
+      const isSameOrdersView =
+        targetUrl.origin === currentUrl.origin &&
+        targetUrl.pathname === currentUrl.pathname &&
+        targetUrl.searchParams.get('tab') === 'orders';
+
+      if (isSameOrdersView) {
+        const reference = session.gatewayReference?.trim() ?? '';
+        setGatewayFeedbackByOrder((prev) => ({
+          ...prev,
+          [orderId]: {
+            type: 'success',
+            text: es
+              ? `Checkout simulado iniciado${reference ? ` (${reference})` : ''}. Puedes usar Simular aprobado/rechazado para cerrar el flujo.`
+              : `Simulated checkout started${reference ? ` (${reference})` : ''}. Use Simulate approve/reject to complete the flow.`,
+          },
+        }));
+        return;
+      }
+
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'success',
+          text: es ? 'Abriendo checkout seguro...' : 'Opening secure checkout...',
+        },
+      }));
+      window.location.assign(targetUrl.toString());
+    } catch (error) {
+      const text = error instanceof Error ? error.message : '';
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'error',
+          text: text || (es ? 'No se pudo iniciar el checkout.' : 'Could not start checkout.'),
+        },
+      }));
+    } finally {
+      setGatewayCheckoutLoadingByOrder((prev) => ({ ...prev, [orderId]: false }));
+    }
   }
 
   async function handleSubmitProof(orderId: string) {
@@ -645,6 +700,7 @@ export default function AccountPage({ locale }: Props) {
                   const canSimulate = canSimulateGateway(order, payment);
                   const isSubmittingProof = proofSubmittingByOrder[order.id] === true;
                   const proofFeedback = proofFeedbackByOrder[order.id];
+                  const isStartingGatewayCheckout = gatewayCheckoutLoadingByOrder[order.id] === true;
                   const isSimulatingGateway = gatewaySimulatingByOrder[order.id] === true;
                   const gatewayFeedback = gatewayFeedbackByOrder[order.id];
                   const selectedFile = proofFilesByOrder[order.id];
@@ -791,9 +847,20 @@ export default function AccountPage({ locale }: Props) {
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => {
+                                  void handleStartGatewayCheckout(order.id);
+                                }}
+                                disabled={isSimulatingGateway || isStartingGatewayCheckout}
+                                className="inline-flex items-center justify-center px-3 py-2 bg-pe-rose text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+                              >
+                                {isStartingGatewayCheckout
+                                  ? (es ? 'Abriendo...' : 'Opening...')
+                                  : (es ? 'Ir a pagar' : 'Pay now')}
+                              </button>
+                              <button
+                                onClick={() => {
                                   void handleSimulateGateway(order.id, 'APPROVED');
                                 }}
-                                disabled={isSimulatingGateway}
+                                disabled={isSimulatingGateway || isStartingGatewayCheckout}
                                 className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-green-700 transition-colors disabled:opacity-60"
                               >
                                 {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular aprobado' : 'Simulate approve')}
@@ -802,7 +869,7 @@ export default function AccountPage({ locale }: Props) {
                                 onClick={() => {
                                   void handleSimulateGateway(order.id, 'FAILED');
                                 }}
-                                disabled={isSimulatingGateway}
+                                disabled={isSimulatingGateway || isStartingGatewayCheckout}
                                 className="inline-flex items-center justify-center px-3 py-2 border border-red-300 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
                               >
                                 {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular rechazado' : 'Simulate reject')}

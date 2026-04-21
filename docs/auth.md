@@ -40,6 +40,7 @@ openssl rand -base64 32
 
 - `POST /api/auth/**`
 - `POST /api/payments/webhooks/gateway`
+- `POST /api/payments/webhooks/gateway/**`
 - `GET /api/products/**`
 - `GET /api/categories/**`
 - `GET /api/media/**`

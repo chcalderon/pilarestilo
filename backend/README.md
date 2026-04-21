@@ -90,6 +90,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `PATCH /api/payments/{id}/review` (actions: `APPROVE` or `REJECT`)
 - `POST /api/payments/{id}/gateway/checkout` (authenticated; owner/admin/seller)
 - `POST /api/payments/webhooks/gateway` (public; optional `X-Gateway-Signature` validation)
+- `POST /api/payments/webhooks/gateway/mercadopago` (public; optional `token` query validation)
 
 ### Media upload
 
@@ -127,8 +128,16 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `SPRING_DATASOURCE_PASSWORD` | Yes | DB password |
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
+| `PAYMENT_GATEWAY_PROVIDER` | No | `STUB` (default) or `MERCADO_PAGO` |
 | `PAYMENT_GATEWAY_WEBHOOK_SECRET` | No | If set, must match `X-Gateway-Signature` on `/api/payments/webhooks/gateway` |
-| `PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL` | No | Base URL used by stub gateway checkout sessions |
+| `PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL` | No | Base URL used by stub gateway checkout sessions (default `/es/account?tab=orders`) |
+| `PAYMENT_GATEWAY_MP_API_BASE_URL` | No | Mercado Pago API base URL (default `https://api.mercadopago.com`) |
+| `PAYMENT_GATEWAY_MP_ACCESS_TOKEN` | Yes if provider `MERCADO_PAGO` | Mercado Pago access token |
+| `PAYMENT_GATEWAY_MP_SUCCESS_URL` | No | Back URL for successful checkout |
+| `PAYMENT_GATEWAY_MP_PENDING_URL` | No | Back URL for pending checkout |
+| `PAYMENT_GATEWAY_MP_FAILURE_URL` | No | Back URL for failed checkout |
+| `PAYMENT_GATEWAY_MP_NOTIFICATION_URL` | No | Webhook callback URL used in preference creation |
+| `PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN` | No | If set, required as `token` query param on Mercado Pago webhook endpoint |
 | `SPRING_PROFILES_ACTIVE` | No | `local` for dev profile |
 | `SERVER_PORT` | No | API port (default 8080) |
 

@@ -17,6 +17,7 @@ The format is inspired by Keep a Changelog.
 - Temporary gateway simulation controls in UI:
   - Customer account: `Simular aprobado` / `Simular rechazado` for `PAYMENT_GATEWAY` orders.
   - Admin queue: `Sim aprobar` / `Sim rechazar` actions for pending gateway rows.
+- Mercado Pago provider webhook bridge endpoint: `POST /api/payments/webhooks/gateway/mercadopago`.
 
 ### Changed
 - `PaymentGatewayPort` now returns a structured checkout session object.
@@ -25,6 +26,9 @@ The format is inspired by Keep a Changelog.
 - Storefront checkout now allows selecting payment method (`BANK_TRANSFER` or `PAYMENT_GATEWAY`) and applies employee discount visualization for `SELLER` users.
 - Account profile screen now supports inline profile editing and password change workflow.
 - API error handling in frontend now surfaces backend `detail/message` when available (including media-proof upload failures).
+- Payment gateway provider is now switchable via env (`PAYMENT_GATEWAY_PROVIDER=STUB|MERCADO_PAGO`) and includes Mercado Pago adapter support.
+- Account orders now include `Ir a pagar` action to open live gateway checkout sessions when available.
+- Stub checkout default URL now points to a real storefront route (`/es/account?tab=orders`) and appends `ref` safely.
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.

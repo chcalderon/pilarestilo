@@ -34,8 +34,17 @@ app:
     storage-path: ${MEDIA_STORAGE_PATH:./media}
   payment:
     gateway:
+      provider: ${PAYMENT_GATEWAY_PROVIDER:STUB}
       webhook-secret: ${PAYMENT_GATEWAY_WEBHOOK_SECRET:}
-      stub-checkout-base-url: ${PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL:https://payments.pilarestilo.local/checkout}
+      stub-checkout-base-url: ${PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL:/es/account?tab=orders}
+      mercadopago:
+        api-base-url: ${PAYMENT_GATEWAY_MP_API_BASE_URL:https://api.mercadopago.com}
+        access-token: ${PAYMENT_GATEWAY_MP_ACCESS_TOKEN:}
+        success-url: ${PAYMENT_GATEWAY_MP_SUCCESS_URL:}
+        pending-url: ${PAYMENT_GATEWAY_MP_PENDING_URL:}
+        failure-url: ${PAYMENT_GATEWAY_MP_FAILURE_URL:}
+        notification-url: ${PAYMENT_GATEWAY_MP_NOTIFICATION_URL:}
+        webhook-token: ${PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN:}
 
 server:
   port: 8080

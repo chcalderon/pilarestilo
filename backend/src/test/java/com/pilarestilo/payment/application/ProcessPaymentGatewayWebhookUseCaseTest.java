@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -90,5 +91,26 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
         assertThrows(DomainException.class, () -> useCase.execute(payment.getId(), "WHATEVER_STATUS"));
     }
-}
 
+    @Test
+    void execute_by_order_id_resolves_payment_and_confirms() {
+        UUID orderId = UUID.randomUUID();
+        Payment payment = Payment.create(orderId, PaymentMethod.PAYMENT_GATEWAY);
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
+        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.executeByOrderId(orderId, "APPROVED");
+
+        assertEquals(PaymentStatus.APPROVED, payment.getStatus());
+        verify(eventPublisher).publish(any(PaymentConfirmed.class));
+    }
+
+    @Test
+    void execute_by_order_id_throws_when_order_has_no_payment() {
+        UUID orderId = UUID.randomUUID();
+        when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> useCase.executeByOrderId(orderId, "APPROVED"));
+    }
+}

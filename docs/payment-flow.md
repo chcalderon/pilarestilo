@@ -43,6 +43,7 @@ Important implementation detail:
 | `PATCH` | `/api/payments/{id}/review` | Review action (`APPROVE` or `REJECT`) |
 | `POST` | `/api/payments/{id}/gateway/checkout` | Create checkout session for gateway payment |
 | `POST` | `/api/payments/webhooks/gateway` | Receive gateway webhook event (public endpoint, optional signature) |
+| `POST` | `/api/payments/webhooks/gateway/mercadopago` | Receive Mercado Pago webhook event (public endpoint, optional `token` query validation) |
 | `GET` | `/api/payments/{id}` | Get payment detail |
 | `GET` | `/api/payments?status=...` | List/filter payments |
 
@@ -81,7 +82,10 @@ Supporting media upload endpoint used by storefront proof flow:
 - For orders created with `PAYMENT_GATEWAY`, authenticated user can call:
   - `POST /api/payments/{id}/gateway/checkout`
 - Backend resolves order total and asks `PaymentGatewayPort` for checkout session data.
-- Current stub adapter returns:
+- Adapter selection is controlled by `PAYMENT_GATEWAY_PROVIDER`:
+  - `STUB` (default): returns synthetic checkout sessions for local simulation (default redirect `/es/account?tab=orders&ref=...`).
+  - `MERCADO_PAGO`: creates real preference sessions in Mercado Pago API.
+- Checkout response always returns:
   - `gatewayReference`
   - `checkoutUrl`
   - `expiresAt`
@@ -133,6 +137,14 @@ Supporting media upload endpoint used by storefront proof flow:
 - Duplicate webhook deliveries are idempotent on final states.
 - This endpoint is currently reused by temporary UI simulation controls for non-production environments.
 
+### Step 5b - Mercado Pago webhook bridge
+
+- Mercado Pago can call:
+  - `POST /api/payments/webhooks/gateway/mercadopago`
+- Endpoint resolves provider payment id (`id` query/body), loads payment status from Mercado Pago API, maps by `external_reference` (order id), and reuses the same gateway state machine.
+- Optional security hardening:
+  - Set `PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN` and include it as `token` in notification URL.
+
 ---
 
 ## 5. API Examples
@@ -176,6 +188,12 @@ Simulate gateway approval (dev):
 curl -X POST /api/payments/webhooks/gateway \
   -H "Content-Type: application/json" \
   -d '{"paymentId":"<payment-uuid>","gatewayStatus":"APPROVED"}'
+```
+
+Mercado Pago webhook callback (provider-managed):
+
+```bash
+curl -X POST "/api/payments/webhooks/gateway/mercadopago?id=<mp-payment-id>&topic=payment&token=<optional-token>"
 ```
 
 ---

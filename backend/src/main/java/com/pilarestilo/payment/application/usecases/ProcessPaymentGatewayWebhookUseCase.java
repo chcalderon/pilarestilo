@@ -56,6 +56,13 @@ public class ProcessPaymentGatewayWebhookUseCase {
         }
     }
 
+    @Transactional
+    public void executeByOrderId(UUID orderId, String gatewayStatus) {
+        var payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new NoSuchElementException("Payment not found for order: " + orderId));
+        execute(payment.getId(), gatewayStatus);
+    }
+
     private PaymentStatus resolveStatus(String gatewayStatus) {
         if (gatewayStatus == null || gatewayStatus.isBlank()) {
             throw new DomainException("gatewayStatus is required");
@@ -70,4 +77,3 @@ public class ProcessPaymentGatewayWebhookUseCase {
         };
     }
 }
-

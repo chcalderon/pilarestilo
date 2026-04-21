@@ -77,6 +77,7 @@ Translations:
 - Account profile tab now supports profile name update + password change (`/api/auth/me/profile`, `/api/auth/me/password`)
 - Cart summary now supports payment method selection (`Transferencia` / `Pasarela (simulada)`) and reflects worker discount
 - Gateway simulation actions are available in account orders for `PAYMENT_GATEWAY` (approve/reject simulation)
+- Account orders now include `Ir a pagar / Pay now` action to open `/api/payments/{id}/gateway/checkout` sessions.
 
 ---
 

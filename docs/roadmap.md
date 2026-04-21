@@ -57,7 +57,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 
 ## P3 - Payments and Notifications
 
-- [ ] Payment gateway adapter (Mercado Pago or Stripe) via `PaymentGatewayPort`
+- [x] Payment gateway adapter via `PaymentGatewayPort` (`STUB` + configurable `MERCADO_PAGO`)
 - [x] Gateway webhook receiver (`POST /api/payments/webhooks/gateway`) with optional signature guard
 - [x] Gateway checkout session endpoint for `PAYMENT_GATEWAY` payments (`POST /api/payments/{id}/gateway/checkout`) using current stub adapter
 - [x] Temporary gateway simulation controls in storefront/admin while production provider onboarding is pending
