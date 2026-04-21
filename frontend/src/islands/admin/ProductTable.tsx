@@ -10,7 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { getProducts, deleteProduct, type ProductDto } from '../../lib/api';
+import { getProducts, deleteProduct, getCategories, type ProductDto, type CategoryDto } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
@@ -34,6 +34,8 @@ export default function ProductTable() {
   const [deleting, setDeleting] = useState(false);
   const [filterCondition, setFilterCondition] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   useEffect(() => {
@@ -53,6 +55,22 @@ export default function ProductTable() {
     window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    let mounted = true;
+    getCategories()
+      .then((res) => {
+        if (!mounted) return;
+        setCategories(res);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCategories([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -61,13 +79,14 @@ export default function ProductTable() {
         size: PAGE_SIZE,
         condition: (filterCondition as 'NEW' | 'USED') || undefined,
         brand: filterBrand || undefined,
+        category: filterCategory || undefined,
       });
       setProducts(res.content);
       setTotal(res.totalElements);
     } finally {
       setLoading(false);
     }
-  }, [page, filterCondition, filterBrand]);
+  }, [page, filterCondition, filterBrand, filterCategory]);
 
   useEffect(() => {
     load();
@@ -441,6 +460,22 @@ export default function ProductTable() {
           }}
           className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
         />
+
+        <select
+          value={filterCategory}
+          onChange={(e) => {
+            setFilterCategory(e.target.value);
+            setPage(0);
+          }}
+          className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+        >
+          <option value="">Todas las categorias</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.slug}>
+              {cat.nameEs}
+            </option>
+          ))}
+        </select>
 
         <button
           onClick={load}

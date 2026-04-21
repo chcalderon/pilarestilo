@@ -86,6 +86,7 @@ Translations:
 - Product admin (`ProductTable`) supports dual view modes:
   - `Grilla` (table workflow)
   - `Cards` (visual workflow), persisted in local storage (`pe-admin-products-view`)
+- Product admin filters now include `Categoria` in addition to `Condicion` and `Marca`.
 - `DataTable` has mobile card rendering for better usability on phones.
 - Admin layout now includes a mobile navigation drawer with menu button + overlay close behavior.
 - Admin action buttons were refreshed with consistent Lucide icon usage in core management flows.
@@ -94,6 +95,9 @@ Translations:
 - Payment review queue now lists `PENDING` entries and shows review actions only for `SUBMITTED`/`UNDER_REVIEW`.
 - Payment review queue now has `Por revisar` / `Pagados` tabs, search, date sorting, and clear filters.
 - Added admin user management screen (`/admin/users`) with edit/reset password/role/status/delete and customer credit assignment.
+- Admin user management now uses server-side pagination by tab (`Clientes`/`Trabajadores`) and status filter (`Todos`/`Habilitados`/`Bloqueados`).
+- Admin users page now points admins to `Mi cuenta` (`/es/account?tab=profile`) for editing their own profile/password.
+- Cart dark theme copy in summary/actions was updated to improve text contrast.
 
 ---
 
@@ -102,6 +106,7 @@ Translations:
 - Mobile header actions were reflowed to avoid overlapping logo real estate on initial viewport load.
 - Category navigation in `Navbar` now behaves as a mobile slider with `<` / `>` controls and smooth horizontal step scrolling.
 - Slider controls auto-hide at start/end and initialize hidden until navigation bounds are computed.
+- Navbar logo compact/full switch now uses directional scroll gating + transition lock to avoid flicker loops near threshold.
 - Spanish storefront and wishlist strings were normalized to UTF-8 and corrected for accent rendering (`Coleccion`, `Categorias`, `Condicion`, `Paginacion`, etc.).
 - Category breadcrumbs now use a proper separator glyph and no longer display broken encoded characters.
 - Verified in local build and Dockerized runtime (`npm run build` + `docker compose ... up -d --build frontend`).

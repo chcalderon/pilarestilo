@@ -29,6 +29,11 @@ The format is inspired by Keep a Changelog.
 - Payment gateway provider is now switchable via env (`PAYMENT_GATEWAY_PROVIDER=STUB|MERCADO_PAGO`) and includes Mercado Pago adapter support.
 - Account orders now include `Ir a pagar` action to open live gateway checkout sessions when available.
 - Stub checkout default URL now points to a real storefront route (`/es/account?tab=orders`) and appends `ref` safely.
+- Admin product table now supports category filtering in addition to condition and brand filters.
+- Admin user management now uses server-side pagination per tab (`clientes`/`trabajadores`) with status filter (`todos`/`habilitados`/`bloqueados`).
+- Admin users screen now includes explicit guidance to edit the current admin profile/password through `Mi cuenta`.
+- Cart dark-mode typography was adjusted for stronger contrast in secondary labels/actions.
+- Storefront navbar logo transition now avoids scroll oscillation loops near the compact/full threshold.
 
 ### Verified
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.

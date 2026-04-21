@@ -15,6 +15,7 @@ import { readAuthTokenCookie, useAuthStore } from '../../lib/authStore';
 import DataTable, { type Column } from './DataTable';
 
 type TabKey = 'customers' | 'workers';
+type UserStatusFilter = 'ALL' | 'ACTIVE' | 'BLOCKED';
 
 type UserMetrics = {
   loading: boolean;
@@ -37,6 +38,11 @@ type UserModalState =
 
 const PAID_ORDER_STATUSES = new Set(['PAID', 'PREPARING_ORDER', 'SHIPPED', 'DELIVERED']);
 const PENDING_ORDER_STATUSES = new Set(['CREATED', 'PENDING_PAYMENT', 'PAYMENT_UNDER_REVIEW']);
+const USER_PAGE_SIZE = 12;
+const ROLE_BY_TAB: Record<TabKey, AdminUserDto['role']> = {
+  customers: 'CUSTOMER',
+  workers: 'SELLER',
+};
 
 const DEFAULT_METRICS: UserMetrics = {
   loading: false,
@@ -136,7 +142,14 @@ export default function UserManagement() {
   const { token, user } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
   const [tab, setTab] = useState<TabKey>('customers');
-  const [users, setUsers] = useState<AdminUserDto[]>([]);
+  const [customers, setCustomers] = useState<AdminUserDto[]>([]);
+  const [workers, setWorkers] = useState<AdminUserDto[]>([]);
+  const [customersPage, setCustomersPage] = useState(0);
+  const [workersPage, setWorkersPage] = useState(0);
+  const [customersTotal, setCustomersTotal] = useState(0);
+  const [workersTotal, setWorkersTotal] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<UserStatusFilter>('ALL');
+  const [counters, setCounters] = useState({ customers: 0, workers: 0, blocked: 0 });
   const [metricsByUser, setMetricsByUser] = useState<Record<string, UserMetrics>>({});
   const [loading, setLoading] = useState(true);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
@@ -144,20 +157,10 @@ export default function UserManagement() {
   const [modal, setModal] = useState<UserModalState | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  const visibleUsers = useMemo(
-    () => users.filter((u) => tab === 'customers' ? u.role === 'CUSTOMER' : u.role === 'SELLER'),
-    [users, tab]
-  );
-
-  const counters = useMemo(() => {
-    const customers = users.filter((u) => u.role === 'CUSTOMER');
-    const workers = users.filter((u) => u.role === 'SELLER');
-    return {
-      customers: customers.length,
-      workers: workers.length,
-      blocked: users.filter((u) => !u.active).length,
-    };
-  }, [users]);
+  const visibleUsers = useMemo(() => (tab === 'customers' ? customers : workers), [customers, workers, tab]);
+  const visibleTotal = tab === 'customers' ? customersTotal : workersTotal;
+  const visiblePage = tab === 'customers' ? customersPage : workersPage;
+  const statusFilterValue = statusFilter === 'ALL' ? undefined : statusFilter === 'ACTIVE';
 
   const moneyFormat = useCallback((amount: number, currency = 'CLP') => {
     return new Intl.NumberFormat('es-CL', {
@@ -167,19 +170,60 @@ export default function UserManagement() {
     }).format(amount);
   }, []);
 
-  const loadUsers = useCallback(async () => {
+  const loadCounters = useCallback(async () => {
+    if (!effectiveToken) {
+      return;
+    }
+    const [customersRes, workersRes, blockedRes] = await Promise.all([
+      getAdminUsers(effectiveToken, 0, 1, { role: 'CUSTOMER' }),
+      getAdminUsers(effectiveToken, 0, 1, { role: 'SELLER' }),
+      getAdminUsers(effectiveToken, 0, 1, { active: false }),
+    ]);
+    setCounters({
+      customers: customersRes.totalElements ?? 0,
+      workers: workersRes.totalElements ?? 0,
+      blocked: blockedRes.totalElements ?? 0,
+    });
+  }, [effectiveToken]);
+
+  const loadCurrentTab = useCallback(async () => {
     if (!effectiveToken) {
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
-      const page = await getAdminUsers(effectiveToken, 0, 300);
-      setUsers(page.content ?? []);
+      if (tab === 'customers') {
+        const page = await getAdminUsers(effectiveToken, customersPage, USER_PAGE_SIZE, {
+          role: ROLE_BY_TAB.customers,
+          active: statusFilterValue,
+        });
+        const lastPage = Math.max((page.totalPages ?? 1) - 1, 0);
+        if ((page.content ?? []).length === 0 && (page.totalElements ?? 0) > 0 && customersPage > lastPage) {
+          setCustomersPage(lastPage);
+          return;
+        }
+        setCustomers(page.content ?? []);
+        setCustomersTotal(page.totalElements ?? 0);
+        return;
+      }
+
+      const page = await getAdminUsers(effectiveToken, workersPage, USER_PAGE_SIZE, {
+        role: ROLE_BY_TAB.workers,
+        active: statusFilterValue,
+      });
+      const lastPage = Math.max((page.totalPages ?? 1) - 1, 0);
+      if ((page.content ?? []).length === 0 && (page.totalElements ?? 0) > 0 && workersPage > lastPage) {
+        setWorkersPage(lastPage);
+        return;
+      }
+      setWorkers(page.content ?? []);
+      setWorkersTotal(page.totalElements ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [effectiveToken]);
+  }, [effectiveToken, tab, customersPage, workersPage, statusFilterValue]);
 
   const loadMetrics = useCallback(async (u: AdminUserDto) => {
     if (!effectiveToken) return;
@@ -214,8 +258,12 @@ export default function UserManagement() {
   }, [effectiveToken]);
 
   useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
+    void loadCounters();
+  }, [loadCounters]);
+
+  useEffect(() => {
+    void loadCurrentTab();
+  }, [loadCurrentTab]);
 
   useEffect(() => {
     const missing = visibleUsers.filter((u) => !metricsByUser[u.id]).slice(0, 20);
@@ -223,6 +271,10 @@ export default function UserManagement() {
       void loadMetrics(u);
     }
   }, [visibleUsers, metricsByUser, loadMetrics]);
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([loadCounters(), loadCurrentTab()]);
+  }, [loadCounters, loadCurrentTab]);
 
   function closeModal() {
     if (busyUserId) return;
@@ -276,7 +328,7 @@ export default function UserManagement() {
     setBusyUserId(target.id);
     try {
       const updated = await updateAdminUser(target.id, { active: !target.active }, effectiveToken);
-      setUsers((prev) => prev.map((u) => u.id === target.id ? updated : u));
+      await refreshData();
       setFeedback({
         tone: 'success',
         text: updated.active ? 'Usuario habilitado correctamente.' : 'Usuario bloqueado correctamente.',
@@ -294,12 +346,12 @@ export default function UserManagement() {
     setBusyUserId(target.id);
     try {
       const updated = await updateAdminUser(target.id, { role: nextRole }, effectiveToken);
-      setUsers((prev) => prev.map((u) => u.id === target.id ? updated : u));
       setMetricsByUser((prev) => {
         const next = { ...prev };
         delete next[target.id];
         return next;
       });
+      await refreshData();
       setFeedback({
         tone: 'success',
         text: updated.role === 'SELLER' ? 'Usuario movido a trabajadores.' : 'Usuario movido a clientes.',
@@ -325,8 +377,8 @@ export default function UserManagement() {
 
     setBusyUserId(modal.user.id);
     try {
-      const updated = await updateAdminUser(modal.user.id, { fullName: trimmedName }, effectiveToken);
-      setUsers((prev) => prev.map((u) => u.id === modal.user.id ? updated : u));
+      await updateAdminUser(modal.user.id, { fullName: trimmedName }, effectiveToken);
+      await refreshData();
       setFeedback({ tone: 'success', text: 'Nombre actualizado correctamente.' });
       setModal(null);
       setModalError(null);
@@ -369,12 +421,12 @@ export default function UserManagement() {
     setBusyUserId(modal.user.id);
     try {
       await deleteAdminUser(modal.user.id, effectiveToken);
-      setUsers((prev) => prev.filter((u) => u.id !== modal.user.id));
       setMetricsByUser((prev) => {
         const next = { ...prev };
         delete next[modal.user.id];
         return next;
       });
+      await refreshData();
       setFeedback({ tone: 'success', text: 'Usuario eliminado correctamente.' });
       setModal(null);
       setModalError(null);
@@ -804,6 +856,14 @@ export default function UserManagement() {
     void submitGrantCredit();
   }
 
+  function handlePageChange(nextPage: number) {
+    if (tab === 'customers') {
+      setCustomersPage(Math.max(0, nextPage));
+      return;
+    }
+    setWorkersPage(Math.max(0, nextPage));
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -822,34 +882,51 @@ export default function UserManagement() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center p-1 bg-pe-cream border border-pe-black/10">
-          <button
-            type="button"
-            onClick={() => setTab('customers')}
-            className={[
-              'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              tab === 'customers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-            ].join(' ')}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center p-1 bg-pe-cream border border-pe-black/10">
+            <button
+              type="button"
+              onClick={() => setTab('customers')}
+              className={[
+                'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
+                tab === 'customers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              ].join(' ')}
+            >
+              Clientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('workers')}
+              className={[
+                'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
+                tab === 'workers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              ].join(' ')}
+            >
+              Trabajadores
+            </button>
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              const value = e.target.value as UserStatusFilter;
+              setStatusFilter(value);
+              setCustomersPage(0);
+              setWorkersPage(0);
+            }}
+            className="h-[34px] border border-pe-black/12 bg-pe-white px-3 font-sans text-[0.72rem] uppercase tracking-[0.12em] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
           >
-            Clientes
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('workers')}
-            className={[
-              'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              tab === 'workers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-            ].join(' ')}
-          >
-            Trabajadores
-          </button>
+            <option value="ALL">Todos</option>
+            <option value="ACTIVE">Habilitados</option>
+            <option value="BLOCKED">Bloqueados</option>
+          </select>
         </div>
 
         <button
           type="button"
           onClick={() => {
             setMetricsByUser({});
-            void loadUsers();
+            void refreshData();
           }}
           className="inline-flex items-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
         >
@@ -883,12 +960,24 @@ export default function UserManagement() {
         keyField="id"
         loading={loading}
         emptyMessage={tab === 'customers' ? 'No hay clientes para mostrar.' : 'No hay trabajadores para mostrar.'}
+        page={visiblePage}
+        pageSize={USER_PAGE_SIZE}
+        total={visibleTotal}
+        onPageChange={handlePageChange}
       />
 
       {user?.role === 'ADMIN' && (
-        <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
-          El descuento trabajador (10%) se aplica automaticamente al checkout para usuarios con rol de trabajador.
-        </p>
+        <div className="space-y-2">
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
+            El descuento trabajador (10%) se aplica automaticamente al checkout para usuarios con rol de trabajador.
+          </p>
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
+            Para editar tu usuario admin (nombre y contrasena), usa{' '}
+            <a href="/es/account?tab=profile" className="text-pe-rose-deep underline underline-offset-2 hover:text-pe-rose">
+              Mi cuenta
+            </a>.
+          </p>
+        </div>
       )}
 
       <ActionModal

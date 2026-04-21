@@ -114,6 +114,11 @@ export interface AdminUserDto {
   createdAt: string;
 }
 
+export interface AdminUsersFilter {
+  role?: AdminUserDto['role'];
+  active?: boolean;
+}
+
 export interface UpdateAdminUserRequest {
   fullName?: string;
   role?: AdminUserDto['role'];
@@ -680,8 +685,19 @@ export async function getAdminOrdersByCustomer(
   }
 }
 
-export async function getAdminUsers(token: string, page = 0, size = 200): Promise<Page<AdminUserDto>> {
-  const query = buildQuery({ page, size, sort: 'createdAt,desc' });
+export async function getAdminUsers(
+  token: string,
+  page = 0,
+  size = 200,
+  filter?: AdminUsersFilter
+): Promise<Page<AdminUserDto>> {
+  const query = buildQuery({
+    page,
+    size,
+    sort: 'createdAt,desc',
+    role: filter?.role,
+    active: filter?.active,
+  });
   return apiFetch<Page<AdminUserDto>>(`/users${query}`, {
     headers: authHeaders(token),
   });

@@ -38,6 +38,10 @@ Open http://localhost
 - Checkout now allows selecting `Transferencia` or `Pasarela (simulada)` so payment flows can be tested before production gateway onboarding.
 - Account area now includes profile self-service (`nombre`) and password change actions.
 - Admin now includes user management (`/admin/users`) for customers/workers, including role, status, password reset, deletion, and credit assignment.
+- Admin products now include category filtering alongside condition/brand filters.
+- Admin users now load with server-side pagination per tab plus status filter (`todos`, `habilitados`, `bloqueados`).
+- Cart dark mode readability was improved in summary/actions text.
+- Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
 
 ## Documentation
 

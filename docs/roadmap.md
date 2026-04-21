@@ -29,7 +29,9 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Admin layout with reusable data table patterns
 - [x] Admin mobile drawer navigation + mobile card rendering for data tables
 - [x] Admin product view toggle (`Grilla`/`Cards`) with persisted preference
+- [x] Admin product filters include category + server-backed pagination
 - [x] Admin user management hub (`/admin/users`) with role/status/password/customer-credit controls
+- [x] Admin users server-side pagination by role tab + status filter (`todos`, `habilitados`, `bloqueados`)
 
 ---
 
@@ -41,6 +43,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Chile-first defaults migration (`CLP` currency defaults + shipping origin normalization)
 - [x] Extended catalog DB migrations (`V7` to `V11`)
 - [x] Storefront mobile header/navigation polish: action-icon reflow + category slider controls + UTF-8 Spanish copy normalization
+- [x] Navbar logo transition stabilized to avoid compact/full flicker loop on slight scroll
 - [x] Backend-managed product media routes with Docker-persisted local storage (`/api/media/**` -> `infra/storage/media`)
 
 ---

@@ -393,8 +393,11 @@ const categories = [
 <script>
   const STORAGE_KEY = 'pe-theme';
   const COMPACT_ON_SCROLL_Y = 120;
-  const EXPAND_ON_SCROLL_Y = 64;
+  const EXPAND_ON_SCROLL_Y = 16;
   let isCompact = false;
+  let lastScrollY = 0;
+  let transitionLocked = false;
+  let transitionUnlockTimer: number | undefined;
 
   function initCategorySlider() {
     const scroller = document.getElementById('nav-cats-scroller') as HTMLDivElement | null;
@@ -459,25 +462,46 @@ const categories = [
     }
   }
 
+  function setCompactState(nextCompact: boolean) {
+    const header = document.getElementById('site-header');
+    if (!header) return;
+    if (isCompact === nextCompact || transitionLocked) return;
+
+    transitionLocked = true;
+    if (transitionUnlockTimer !== undefined) {
+      window.clearTimeout(transitionUnlockTimer);
+    }
+
+    isCompact = nextCompact;
+    header.classList.toggle('logo-compact', nextCompact);
+    transitionUnlockTimer = window.setTimeout(() => {
+      transitionLocked = false;
+    }, 260);
+  }
+
   function applyLogoScrollState() {
     const header = document.getElementById('site-header');
     if (!header) return;
     const y = window.scrollY;
+    const scrollingDown = y > lastScrollY + 1;
+    const scrollingUp = y < lastScrollY - 1;
 
-    if (!isCompact && y >= COMPACT_ON_SCROLL_Y) {
-      isCompact = true;
-      header.classList.add('logo-compact');
+    if (!isCompact && scrollingDown && y >= COMPACT_ON_SCROLL_Y) {
+      setCompactState(true);
+      lastScrollY = y;
       return;
     }
 
-    if (isCompact && y <= EXPAND_ON_SCROLL_Y) {
-      isCompact = false;
-      header.classList.remove('logo-compact');
+    if (isCompact && scrollingUp && y <= EXPAND_ON_SCROLL_Y) {
+      setCompactState(false);
     }
+
+    lastScrollY = y;
   }
 
   const saved = localStorage.getItem(STORAGE_KEY) ?? 'dark';
   applyTheme(saved);
+  lastScrollY = window.scrollY;
   applyLogoScrollState();
   initCategorySlider();
   document.getElementById('site-header')?.classList.add('logo-intro');

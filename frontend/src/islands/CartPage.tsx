@@ -135,7 +135,7 @@ export default function CartPage({ locale }: Props) {
 
         {items.length === 0 ? (
           <div className="text-center py-24">
-            <p className="font-display text-pe-black/30 text-2xl mb-6">{l.empty}</p>
+            <p className="font-display text-pe-charcoal/65 text-2xl mb-6">{l.empty}</p>
             <a
               href={`/${locale}/products`}
               className="font-sans text-sm tracking-widest uppercase text-pe-gold hover:underline underline-offset-4"
@@ -191,7 +191,7 @@ export default function CartPage({ locale }: Props) {
 
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="font-sans text-[10px] tracking-widest uppercase text-pe-black/30 hover:text-pe-gold transition-colors"
+                        className="font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors"
                         aria-label={`${l.remove} ${item.name}`}
                       >
                         {l.remove}
@@ -209,7 +209,7 @@ export default function CartPage({ locale }: Props) {
                 </h2>
 
                 <div className="flex justify-between font-sans text-sm mb-4">
-                  <span className="text-pe-black/60">{l.subtotal}</span>
+                  <span className="text-pe-charcoal/75">{l.subtotal}</span>
                   <span className="font-semibold">
                     {priceFormat(subtotal, items[0]?.price.currency ?? 'CLP')}
                   </span>
@@ -217,7 +217,7 @@ export default function CartPage({ locale }: Props) {
 
                 {isEmployee && (
                   <div className="flex justify-between font-sans text-sm mb-4">
-                    <span className="text-pe-black/60">{l.workerDiscount}</span>
+                    <span className="text-pe-charcoal/75">{l.workerDiscount}</span>
                     <span className="font-semibold text-green-700">
                       - {priceFormat(employeeDiscountAmount, items[0]?.price.currency ?? 'CLP')}
                     </span>
@@ -227,11 +227,11 @@ export default function CartPage({ locale }: Props) {
                 <div className="w-full h-px bg-pe-black/10 mb-6"></div>
 
                 <div className="mb-6">
-                  <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-black/55 mb-2">
+                  <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
                     {l.paymentMethod}
                   </p>
                   <div className="flex flex-col gap-2">
-                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-black/75">
+                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
                       <input
                         type="radio"
                         name="paymentMethod"
@@ -242,7 +242,7 @@ export default function CartPage({ locale }: Props) {
                       />
                       {l.paymentMethodTransfer}
                     </label>
-                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-black/75">
+                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
                       <input
                         type="radio"
                         name="paymentMethod"
@@ -257,7 +257,7 @@ export default function CartPage({ locale }: Props) {
                 </div>
 
                 <div className="flex justify-between font-sans text-sm mb-6">
-                  <span className="text-pe-black/75">{l.total}</span>
+                  <span className="text-pe-charcoal">{l.total}</span>
                   <span className="font-semibold">
                     {priceFormat(total, items[0]?.price.currency ?? 'CLP')}
                   </span>
@@ -280,7 +280,7 @@ export default function CartPage({ locale }: Props) {
 
                 <a
                   href={`/${locale}/products`}
-                  className="block text-center font-sans text-[10px] tracking-widest uppercase text-pe-black/40 hover:text-pe-gold transition-colors mt-4"
+                  className="block text-center font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors mt-4"
                 >
                   {l.continueShopping}
                 </a>
