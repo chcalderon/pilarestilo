@@ -78,15 +78,6 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
             width="600"
             height="800"
           />
-          <!-- Wishlist button overlay -->
-          <div class="absolute top-4 right-4">
-            <WishlistButton
-              client:load
-              productId={product.id}
-              token={token}
-              className="w-10 h-10 border border-[var(--pe-border)] bg-[var(--pe-surface-card)] text-[var(--pe-ink)] hover:border-[#B76E79]"
-            />
-          </div>
         </div>
 
         <!-- Details panel -->
@@ -144,7 +135,7 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
             />
           )}
 
-          <!-- Add to cart + wishlist row -->
+          <!-- Add to cart + wishlist action row -->
           <div class="flex items-stretch gap-3 mt-2">
             <div class="flex-1">
               <AddToCartButton

@@ -18,7 +18,12 @@ export default function WishlistButton({ productId, token, className = '' }: Pro
 
   return (
     <button
-      onClick={() => toggle(productId, token)}
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggle(productId, token);
+      }}
       aria-label={inWishlist ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       className={`group flex items-center justify-center transition-all duration-200 ${className}`}
     >

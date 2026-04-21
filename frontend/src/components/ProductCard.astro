@@ -4,7 +4,7 @@ import type { Locale } from '../i18n/index';
 import { t } from '../i18n/index';
 import AddToCartButton from '../islands/AddToCartButton';
 import QuickRateStars from '../islands/reviews/QuickRateStars';
-import Icon from './Icon.astro';
+import WishlistButton from '../islands/wishlist/WishlistButton';
 import RatingStars from './RatingStars.astro';
 
 export interface Props {
@@ -70,13 +70,16 @@ const isNew = product.condition === 'NEW';
       {conditionLabel}
     </span>
 
-    <button
-      class="absolute top-3 right-3 p-1.5 bg-pe-offwhite/80 backdrop-blur-sm text-pe-charcoal/50 hover:text-pe-rose transition-colors duration-200 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-300"
-      aria-label={locale === 'es' ? 'Guardar en favoritos' : 'Save to wishlist'}
-    >
-      <Icon name="heart" size={14} strokeWidth={1.4} />
-    </button>
   </a>
+
+  <div class="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 translate-y-0 md:translate-y-1 md:group-hover:translate-y-0 transition-all duration-300">
+    <WishlistButton
+      client:visible
+      productId={product.id}
+      token={token}
+      className="p-1.5 bg-pe-offwhite/80 backdrop-blur-sm text-pe-charcoal/50 hover:text-pe-rose"
+    />
+  </div>
 
   <div class="flex flex-col flex-1 px-4 pt-3 pb-4 gap-1.5">
     <span class="font-sans text-[0.62rem] tracking-[0.28em] uppercase text-pe-rose font-medium">{product.brand}</span>
