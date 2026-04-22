@@ -95,6 +95,8 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - Customer profile now supports WhatsApp phone capture (`/api/auth/me/profile`) and notifications prioritize that phone as destination contact.
 - Backend notifications now support runtime provider switching from admin settings without restart, with env variables kept as fallback.
 - Twilio auth token, SendGrid API key, and SMTP password are now encrypted at rest in `system_settings`.
+- Footer informational section now links to dedicated storefront pages: `Sobre Pilar Estilo`, `Cómo vendemos`, `Envíos y devoluciones`, and `Contacto`.
+- Added new localized storefront routes: `/{locale}/about`, `/{locale}/how-we-sell`, `/{locale}/shipping-returns`, and `/{locale}/contact`.
 
 ## Documentation
 

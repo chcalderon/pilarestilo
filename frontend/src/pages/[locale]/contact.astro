@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/Button.astro';
+import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/contact');
+}
+
+const isEs = locale === 'es';
+
+const channels = isEs
+  ? [
+      {
+        title: 'Atencion por WhatsApp',
+        detail: 'Respuesta rapida para estado de pedido, disponibilidad y asesoria de compra.',
+        value: '+56 9 1234 5678',
+      },
+      {
+        title: 'Correo de soporte',
+        detail: 'Consultas formales, cambios, devoluciones y coordinaciones postventa.',
+        value: 'soporte@pilarestilo.com',
+      },
+      {
+        title: 'Horario de atencion',
+        detail: 'Lunes a viernes de 10:00 a 19:00. Sabado de 10:00 a 14:00.',
+        value: 'America/Santiago',
+      },
+    ]
+  : [
+      {
+        title: 'WhatsApp support',
+        detail: 'Fast response for order status, availability, and purchase guidance.',
+        value: '+56 9 1234 5678',
+      },
+      {
+        title: 'Support email',
+        detail: 'Formal inquiries, returns, exchanges, and post-sale coordination.',
+        value: 'support@pilarestilo.com',
+      },
+      {
+        title: 'Business hours',
+        detail: 'Monday to Friday 10:00 to 19:00. Saturday 10:00 to 14:00.',
+        value: 'America/Santiago',
+      },
+    ];
+
+const reasons = isEs
+  ? ['Seguimiento de pedido', 'Cambios y devoluciones', 'Soporte de pago', 'Asesoria de productos']
+  : ['Order follow-up', 'Returns and exchanges', 'Payment support', 'Product advice'];
+---
+
+<BaseLayout
+  title={isEs ? 'Contacto' : 'Contact'}
+  description={isEs ? 'Canales de contacto de Pilar Estilo para soporte y ventas.' : 'Pilar Estilo contact channels for support and sales.'}
+  locale={locale}
+>
+  <div class="bg-pe-offwhite">
+    <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
+      <div class="absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
+      <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
+        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+          {isEs ? 'Canales de soporte' : 'Support channels'}
+        </p>
+        <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
+          {isEs ? 'Contacto' : 'Contact'}
+        </h1>
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+          {isEs
+            ? 'Estamos disponibles para ayudarte antes, durante y despues de tu compra.'
+            : 'We are available to support you before, during, and after your purchase.'}
+        </p>
+      </div>
+    </section>
+
+    <section class="py-14 md:py-20">
+      <div class="pe-container grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+        {channels.map((channel) => (
+          <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
+            <h2 class="font-display text-2xl text-pe-black font-light mb-2">{channel.title}</h2>
+            <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed mb-3">{channel.detail}</p>
+            <p class="font-sans text-sm tracking-wide text-pe-rose-deep">{channel.value}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="bg-pe-black py-14 md:py-16">
+      <div class="pe-container grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 items-start">
+        <article>
+          <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-4">
+            {isEs ? 'En que te ayudamos?' : 'What can we help with?'}
+          </h2>
+          <ul class="space-y-3">
+            {reasons.map((reason, index) => (
+              <li class="font-sans text-sm text-pe-white/75 border border-pe-white/15 bg-pe-white/5 px-4 py-3">
+                <span class="text-pe-rose-soft mr-2">{String(index + 1).padStart(2, '0')}.</span>
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="border border-pe-white/15 bg-pe-white/5 p-6 md:p-7">
+          <h3 class="font-display text-2xl text-pe-offwhite font-light mb-2">
+            {isEs ? 'Respuesta recomendada' : 'Recommended channel'}
+          </h3>
+          <p class="font-sans text-sm text-pe-white/75 leading-relaxed mb-6">
+            {isEs
+              ? 'Para consultas urgentes te recomendamos WhatsApp. Para respaldos formales, usa correo.'
+              : 'For urgent issues we recommend WhatsApp. For formal records, use email.'}
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <Button href="https://wa.me/56912345678" variant="primary" trailingIcon="arrow-right">
+              {isEs ? 'Ir a WhatsApp' : 'Open WhatsApp'}
+            </Button>
+            <Button href="mailto:soporte@pilarestilo.com" variant="outline-dark">
+              {isEs ? 'Enviar correo' : 'Send email'}
+            </Button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
