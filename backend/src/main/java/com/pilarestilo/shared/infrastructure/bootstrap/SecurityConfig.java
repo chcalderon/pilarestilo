@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET,  "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/inventory/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/wishlist/shared/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/media/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/system-settings/public").permitAll()

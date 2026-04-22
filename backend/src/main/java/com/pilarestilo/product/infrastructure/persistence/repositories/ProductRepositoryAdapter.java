@@ -6,9 +6,11 @@ import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.enums.ProductSize;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.model.ProductSizeStock;
+import com.pilarestilo.product.domain.model.ProductVariant;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.product.infrastructure.persistence.entities.ProductEntity;
 import com.pilarestilo.product.infrastructure.persistence.entities.ProductSizeStockEmbeddable;
+import com.pilarestilo.product.infrastructure.persistence.entities.ProductVariantEmbeddable;
 import com.pilarestilo.shared.application.Money;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
@@ -134,6 +136,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 .collect(Collectors.toList());
         entity.setSizeStocks(sizeEmbeddables);
 
+        List<ProductVariantEmbeddable> variantEmbeddables = product.getVariants().stream()
+                .map(v -> new ProductVariantEmbeddable(v.getColor(), v.getSize().name(), v.getStock()))
+                .collect(Collectors.toList());
+        entity.setVariants(variantEmbeddables);
+
         Set<CategoryEntity> cats = new HashSet<>(
                 categoryJpaRepository.findAllById(product.getCategoryIds())
         );
@@ -171,6 +178,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 .map(s -> new ProductSizeStock(ProductSize.valueOf(s.getSize()), s.getStock()))
                 .collect(Collectors.toList());
         product.setSizeStocks(sizeStocks);
+
+        List<ProductVariant> variants = (entity.getVariants() == null ? List.<ProductVariantEmbeddable>of() : entity.getVariants()).stream()
+                .map(v -> new ProductVariant(v.getColor(), ProductSize.valueOf(v.getSize()), v.getStock()))
+                .collect(Collectors.toList());
+        product.setVariants(variants);
 
         // Map categories from entity
         if (entity.getCategories() != null && !entity.getCategories().isEmpty()) {

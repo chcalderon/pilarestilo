@@ -12,8 +12,8 @@ This file reflects the event contracts currently defined in code.
 | `OrderStatusChanged` | `orderId`, `customerId`, `previousStatus`, `newStatus`, `occurredAt` | `order` | shipped notification |
 | `PaymentRegistered` | `paymentId`, `orderId`, `occurredAt` | `payment` | none |
 | `PaymentSubmitted` | `paymentId`, `proofReference`, `occurredAt` | `payment` | none |
-| `PaymentConfirmed` | `paymentId`, `orderId`, `occurredAt` | `payment` | order status update to `PAID`, payment notification |
-| `PaymentRejected` | `paymentId`, `orderId`, `reviewerId`, `occurredAt` | `payment` | none (currently) |
+| `PaymentConfirmed` | `paymentId`, `orderId`, `occurredAt` | `payment` | `OrderInventorySaga` (status progression), payment notification |
+| `PaymentRejected` | `paymentId`, `orderId`, `reviewerId`, `occurredAt` | `payment` | `OrderInventorySaga` (cancel + stock compensation) |
 | `DiscountApplied` | `discountId`, `discountCode`, `orderId`, `discountAmount`, `occurredAt` | `discount` | none |
 | `StoreCreditGranted` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
 | `StoreCreditUsed` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
@@ -24,18 +24,18 @@ This file reflects the event contracts currently defined in code.
 
 ---
 
-## In-process publisher
+## Publisher adapters
 
-Current implementation uses Spring events behind the `DomainEventPublisher` port:
+`DomainEventPublisher` now supports two runtime adapters:
 
-- `shared/domain/DomainEventPublisher` (port)
-- `shared/infrastructure/SpringDomainEventPublisher` (adapter)
+- `shared/infrastructure/SpringDomainEventPublisher` (default, in-process)
+- `shared/infrastructure/kafka/KafkaDomainEventPublisher` (enabled with `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`)
 
-Behavior:
+Kafka mode behavior:
 
-- synchronous dispatch
-- same-process delivery
-- transaction-aware with Spring listener semantics
+- event-type topic routing (prefix + kebab-case event name, e.g. `pe.domain.order-created`)
+- JSON payload with type headers
+- synchronous publish acknowledgement from producer send
 
 ---
 
@@ -59,14 +59,27 @@ Behavior:
 - `notification/infrastructure/listeners/PaymentNotificationListener`
   - listens `PaymentConfirmed`
 
+Kafka listener equivalents are available under:
+
+- `payment/infrastructure/listeners/kafka/*`
+- `review/infrastructure/listeners/kafka/*`
+- `notification/infrastructure/listeners/kafka/*`
+
 ---
 
-## Kafka migration seam
+## Retry and DLQ
 
-The system is still ready for an adapter swap:
+When Kafka mode is enabled, listeners use `domainEventsKafkaListenerContainerFactory` with:
 
-1. Create `KafkaDomainEventPublisher implements DomainEventPublisher`
-2. Make it `@Primary`
-3. Replace/augment listeners with `@KafkaListener`
+- `DefaultErrorHandler`
+- fixed backoff retry (`APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS`)
+- max attempts (`APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS`)
+- dead-letter topic suffix (`APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX`, default `.dlt`)
+- run Kafka broker with compose profile: `docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d`
 
-Domain and use-case code can stay unchanged.
+## Saga note
+
+Order/payment/inventory consistency is coordinated through `OrderInventorySaga`:
+
+- on `PaymentConfirmed`: progresses order status toward `PAID` (idempotent guards)
+- on `PaymentRejected`: cancels order and compensates by releasing reserved stock

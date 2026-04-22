@@ -22,6 +22,8 @@ public class WishlistRepositoryAdapter implements WishlistRepository {
         WishlistEntity entity = jpa.findById(wishlist.getCustomerId())
                 .orElse(new WishlistEntity(wishlist.getCustomerId()));
         entity.setProductIds(new java.util.LinkedHashSet<>(wishlist.getProductIds()));
+        entity.setShareToken(wishlist.getShareToken().orElse(null));
+        entity.setShareEnabled(wishlist.isShareEnabled());
         jpa.save(entity);
         return wishlist;
     }
@@ -29,6 +31,12 @@ public class WishlistRepositoryAdapter implements WishlistRepository {
     @Override
     public Optional<Wishlist> findByCustomerId(UUID customerId) {
         return jpa.findById(customerId)
-                .map(e -> Wishlist.reconstruct(e.getCustomerId(), e.getProductIds()));
+                .map(e -> Wishlist.reconstruct(e.getCustomerId(), e.getProductIds(), e.getShareToken(), e.isShareEnabled()));
+    }
+
+    @Override
+    public Optional<Wishlist> findByShareToken(UUID shareToken) {
+        return jpa.findByShareTokenAndShareEnabledTrue(shareToken)
+                .map(e -> Wishlist.reconstruct(e.getCustomerId(), e.getProductIds(), e.getShareToken(), e.isShareEnabled()));
     }
 }

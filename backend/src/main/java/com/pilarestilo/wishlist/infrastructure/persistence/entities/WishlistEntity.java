@@ -24,6 +24,12 @@ public class WishlistEntity {
     @Column(name = "product_id")
     private Set<UUID> productIds = new LinkedHashSet<>();
 
+    @Column(name = "share_token")
+    private UUID shareToken;
+
+    @Column(name = "share_enabled", nullable = false)
+    private boolean shareEnabled = false;
+
     protected WishlistEntity() {}
 
     public WishlistEntity(UUID customerId) {
@@ -35,4 +41,8 @@ public class WishlistEntity {
     public Instant getCreatedAt() { return createdAt; }
     public Set<UUID> getProductIds() { return productIds; }
     public void setProductIds(Set<UUID> productIds) { this.productIds = productIds; }
+    public UUID getShareToken() { return shareToken; }
+    public void setShareToken(UUID shareToken) { this.shareToken = shareToken; }
+    public boolean isShareEnabled() { return shareEnabled; }
+    public void setShareEnabled(boolean shareEnabled) { this.shareEnabled = shareEnabled; }
 }

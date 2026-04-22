@@ -1,8 +1,10 @@
 package com.pilarestilo.product.infrastructure.web.controllers;
 
 import com.pilarestilo.product.application.dto.ProductDto;
+import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.product.application.usecases.*;
 import com.pilarestilo.product.infrastructure.web.requests.CreateProductRequest;
+import com.pilarestilo.product.infrastructure.web.requests.ProductVariantRequest;
 import com.pilarestilo.product.infrastructure.web.requests.UpdateProductRequest;
 import com.pilarestilo.product.application.usecases.SearchProductsUseCase;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -46,7 +49,7 @@ public class ProductController {
                 request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
                 request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(), request.stock(),
-                request.active(), request.categoryIds()
+                request.active(), request.categoryIds(), toVariantInputs(request.variants())
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
@@ -75,7 +78,7 @@ public class ProductController {
                 id, request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
                 request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(),
-                request.stock(), request.active(), request.categoryIds()
+                request.stock(), request.active(), request.categoryIds(), toVariantInputs(request.variants())
         );
     }
 
@@ -90,5 +93,14 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "") String q,
             Pageable pageable) {
         return searchProductsUseCase.execute(q, pageable);
+    }
+
+    private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {
+        if (requests == null) {
+            return null;
+        }
+        return requests.stream()
+                .map(v -> new ProductVariantInput(v.color(), v.size(), v.stock()))
+                .toList();
     }
 }

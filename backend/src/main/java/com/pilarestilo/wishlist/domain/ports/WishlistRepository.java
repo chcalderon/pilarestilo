@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface WishlistRepository {
     Wishlist save(Wishlist wishlist);
     Optional<Wishlist> findByCustomerId(UUID customerId);
+    Optional<Wishlist> findByShareToken(UUID shareToken);
 }

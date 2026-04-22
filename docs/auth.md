@@ -42,6 +42,8 @@ openssl rand -base64 32
 - `POST /api/payments/webhooks/gateway`
 - `POST /api/payments/webhooks/gateway/**`
 - `GET /api/products/**`
+- `GET /api/inventory/**`
+- `GET /api/wishlist/shared/**`
 - `GET /api/categories/**`
 - `GET /api/media/**`
 - `/actuator/**`
@@ -71,6 +73,9 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/wishlist` | `isAuthenticated()` |
 | `POST /api/wishlist/items/{productId}` | `isAuthenticated()` |
 | `DELETE /api/wishlist/items/{productId}` | `isAuthenticated()` |
+| `GET /api/wishlist/share-link` | `isAuthenticated()` |
+| `POST /api/wishlist/share-link` | `isAuthenticated()` |
+| `DELETE /api/wishlist/share-link` | `isAuthenticated()` |
 | `GET /api/orders` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/orders/mine` | `isAuthenticated()` |
 | `GET /api/orders/{id}` | `isAuthenticated()` + customer ownership check |
