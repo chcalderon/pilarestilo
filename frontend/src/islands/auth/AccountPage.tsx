@@ -25,6 +25,18 @@ interface Props {
 
 type Tab = 'profile' | 'reviews' | 'orders';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
+type TimelineState = 'done' | 'current' | 'todo';
+type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
+
+const ORDER_TIMELINE_FLOW: TimelineStepStatus[] = [
+  'CREATED',
+  'PENDING_PAYMENT',
+  'PAYMENT_UNDER_REVIEW',
+  'PAID',
+  'PREPARING_ORDER',
+  'SHIPPED',
+  'DELIVERED',
+];
 
 function sanitizePhoneDraft(value: string | null | undefined): string {
   if (!value) return '';
@@ -488,6 +500,57 @@ export default function AccountPage({ locale }: Props) {
     return (es ? labelsEs : labelsEn)[status] ?? status;
   }
 
+  function orderTimelineLabel(status: TimelineStepStatus) {
+    const labelsEs: Record<TimelineStepStatus, string> = {
+      CREATED: 'Creado',
+      PENDING_PAYMENT: 'Pago pendiente',
+      PAYMENT_UNDER_REVIEW: 'En revision',
+      PAID: 'Pagado',
+      PREPARING_ORDER: 'Preparacion',
+      SHIPPED: 'Enviado',
+      DELIVERED: 'Entregado',
+    };
+    const labelsEn: Record<TimelineStepStatus, string> = {
+      CREATED: 'Created',
+      PENDING_PAYMENT: 'Payment pending',
+      PAYMENT_UNDER_REVIEW: 'Under review',
+      PAID: 'Paid',
+      PREPARING_ORDER: 'Preparing',
+      SHIPPED: 'Shipped',
+      DELIVERED: 'Delivered',
+    };
+    return (es ? labelsEs : labelsEn)[status];
+  }
+
+  function getOrderTimeline(status: OrderDto['status']) {
+    if (status === 'CANCELLED') {
+      return {
+        cancelled: true,
+        steps: ORDER_TIMELINE_FLOW.map((step, index) => ({
+          step,
+          state: (index === 0 ? 'done' : 'todo') as TimelineState,
+        })),
+      };
+    }
+
+    const currentIndex = ORDER_TIMELINE_FLOW.indexOf(status as TimelineStepStatus);
+    const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
+
+    return {
+      cancelled: false,
+      steps: ORDER_TIMELINE_FLOW.map((step, index) => ({
+        step,
+        state: (
+          index < normalizedIndex
+            ? 'done'
+            : index === normalizedIndex
+              ? 'current'
+              : 'todo'
+        ) as TimelineState,
+      })),
+    };
+  }
+
   function paymentMethodLabel(method: OrderDto['paymentMethod']) {
     const labelsEs: Record<OrderDto['paymentMethod'], string> = {
       BANK_TRANSFER: 'Transferencia',
@@ -744,6 +807,7 @@ export default function AccountPage({ locale }: Props) {
               <ul className="flex flex-col gap-4">
                 {orders.map((order) => {
                   const payment = paymentsByOrder[order.id];
+                  const timeline = getOrderTimeline(order.status);
                   const canUploadProof = canSubmitProof(order, payment);
                   const canSimulate = canSimulateGateway(order, payment);
                   const isSubmittingProof = proofSubmittingByOrder[order.id] === true;
@@ -771,6 +835,53 @@ export default function AccountPage({ locale }: Props) {
                             {orderStatusLabel(order.status)}
                           </span>
                         </div>
+                      </div>
+
+                      <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-3 overflow-x-auto">
+                        <div className="flex items-center gap-2 min-w-[680px]">
+                          {timeline.steps.map((node, index) => (
+                            <div key={node.step} className="flex items-center gap-2">
+                              <span
+                                className={[
+                                  'inline-flex h-2.5 w-2.5 rounded-full border',
+                                  node.state === 'done'
+                                    ? 'bg-emerald-600 border-emerald-600'
+                                    : node.state === 'current'
+                                      ? 'bg-pe-rose border-pe-rose'
+                                      : 'bg-transparent border-pe-black/20',
+                                ].join(' ')}
+                              />
+                              <span
+                                className={[
+                                  'font-sans text-[0.62rem] tracking-[0.08em] uppercase whitespace-nowrap',
+                                  node.state === 'done'
+                                    ? 'text-emerald-700'
+                                    : node.state === 'current'
+                                      ? 'text-pe-rose-deep'
+                                      : 'text-pe-charcoal/45',
+                                ].join(' ')}
+                              >
+                                {orderTimelineLabel(node.step)}
+                              </span>
+                              {index < timeline.steps.length - 1 && (
+                                <span
+                                  className={[
+                                    'block h-px w-5',
+                                    node.state === 'done' || node.state === 'current'
+                                      ? 'bg-pe-rose/45'
+                                      : 'bg-pe-black/12',
+                                  ].join(' ')}
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {timeline.cancelled && (
+                          <p className="font-sans text-[0.68rem] text-red-600 mt-2">
+                            {es ? 'Pedido cancelado por administracion o cliente.' : 'Order cancelled by admin or customer.'}
+                          </p>
+                        )}
                       </div>
 
                       <ul className="flex flex-col gap-1.5 border-t border-pe-black/7 pt-3">

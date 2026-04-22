@@ -94,7 +94,7 @@ export default function CartPage({ locale }: Props) {
       const order = await createOrder(
         {
           customerId: authUser.id,
-          items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+          items: items.map((item) => ({ productId: item.productId ?? item.id, quantity: item.quantity })),
           paymentMethod,
         },
         effectiveToken
@@ -162,6 +162,11 @@ export default function CartPage({ locale }: Props) {
                     <p className="font-display text-pe-black text-sm font-semibold truncate">
                       {item.name}
                     </p>
+                    {item.variantLabel && (
+                      <p className="font-sans text-[11px] tracking-wide text-pe-charcoal/55">
+                        {item.variantLabel}
+                      </p>
+                    )}
                     <p className="font-sans text-pe-black text-sm">
                       {priceFormat(item.price.amount, item.price.currency)}
                     </p>

@@ -391,7 +391,9 @@ const categories = [
 </style>
 
 <script>
-  const STORAGE_KEY = 'pe-theme';
+  const STORAGE_THEME_KEY = 'pe-theme';
+  const STORAGE_MODE_KEY = 'pe-theme-mode';
+  const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const COMPACT_ON_SCROLL_Y = 120;
   const EXPAND_ON_SCROLL_Y = 16;
   let isCompact = false;
@@ -441,11 +443,28 @@ const categories = [
     window.setTimeout(updateButtons, 180);
   }
 
+  function safeGet(key: string) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function safeSet(key: string, value: string) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Ignore storage write failures.
+    }
+  }
+
   function applyTheme(theme: string) {
     const header = document.getElementById('site-header');
     const fullLogo = document.getElementById('nav-logo-full') as HTMLImageElement | null;
     const moonIcon = document.getElementById('icon-moon');
     const sunIcon = document.getElementById('icon-sun');
+    const source = getMode();
 
     if (theme === 'light') {
       header?.classList.add('theme-light');
@@ -460,6 +479,34 @@ const categories = [
       sunIcon?.classList.add('hidden');
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+    document.documentElement.setAttribute('data-theme-source', source);
+    document.documentElement.setAttribute('data-theme-system', getSystemTheme());
+  }
+
+  function getStoredTheme() {
+    const raw = safeGet(STORAGE_THEME_KEY);
+    if (raw === 'light' || raw === 'dark') {
+      return raw;
+    }
+    if (getMode() === 'manual') {
+      safeSet(STORAGE_THEME_KEY, 'dark');
+      return 'dark';
+    }
+    return null;
+  }
+
+  function getMode() {
+    const mode = safeGet(STORAGE_MODE_KEY);
+    return mode === 'manual' ? 'manual' : 'system';
+  }
+
+  function getSystemTheme() {
+    return prefersDarkQuery.matches ? 'dark' : 'light';
+  }
+
+  function getRootTheme() {
+    const raw = document.documentElement.getAttribute('data-theme');
+    return raw === 'light' || raw === 'dark' ? raw : null;
   }
 
   function setCompactState(nextCompact: boolean) {
@@ -499,8 +546,14 @@ const categories = [
     lastScrollY = y;
   }
 
-  const saved = localStorage.getItem(STORAGE_KEY) ?? 'dark';
-  applyTheme(saved);
+  const mode = getMode();
+  const storedTheme = getStoredTheme();
+  const initialTheme = getRootTheme() ?? storedTheme ?? getSystemTheme();
+  if (!storedTheme) {
+    safeSet(STORAGE_THEME_KEY, initialTheme);
+  }
+  safeSet(STORAGE_MODE_KEY, mode);
+  applyTheme(initialTheme);
   lastScrollY = window.scrollY;
   applyLogoScrollState();
   initCategorySlider();
@@ -511,9 +564,10 @@ const categories = [
   });
 
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const current = localStorage.getItem(STORAGE_KEY) ?? 'dark';
+    const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
     const next = current === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(STORAGE_KEY, next);
+    safeSet(STORAGE_THEME_KEY, next);
+    safeSet(STORAGE_MODE_KEY, 'manual');
     applyTheme(next);
   });
 

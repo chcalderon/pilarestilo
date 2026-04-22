@@ -1,8 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import AddToCartButton from '../../../islands/AddToCartButton';
 import WishlistButton from '../../../islands/wishlist/WishlistButton';
-import SizeSelector from '../../../islands/product/SizeSelector';
+import ProductVariantSelector from '../../../islands/product/ProductVariantSelector';
 import ReviewList from '../../../islands/reviews/ReviewList';
 import ReviewForm from '../../../islands/reviews/ReviewForm';
 import RatingStars from '../../../components/RatingStars.astro';
@@ -126,19 +125,10 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
             )}
           </div>
 
-          <!-- Size selector -->
-          {product.sizeStocks && product.sizeStocks.length > 1 && (
-            <SizeSelector
-              client:load
-              sizeStocks={product.sizeStocks}
-              locale={locale}
-            />
-          )}
-
           <!-- Add to cart + wishlist action row -->
           <div class="flex items-stretch gap-3 mt-2">
             <div class="flex-1">
-              <AddToCartButton
+              <ProductVariantSelector
                 client:load
                 productId={product.id}
                 name={product.name}
@@ -147,6 +137,7 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
                 imageUrl={product.imageUrl}
                 condition={product.condition}
                 stock={product.stock}
+                variants={product.variants}
                 locale={locale}
               />
             </div>

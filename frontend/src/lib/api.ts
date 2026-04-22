@@ -21,6 +21,12 @@ export interface SizeStockDto {
   stock: number;
 }
 
+export interface ProductVariantDto {
+  color: string;
+  size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'UNICO';
+  stock: number;
+}
+
 export interface ProductDto {
   id: string;
   name: string;
@@ -39,10 +45,21 @@ export interface ProductDto {
   shippingOriginZone?: 'SANTIAGO' | 'RM' | 'REGIONES';
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
+  variants?: ProductVariantDto[];
 }
 
 export interface WishlistDto {
   customerId: string;
+  productIds: string[];
+}
+
+export interface WishlistShareLinkDto {
+  token: string | null;
+  enabled: boolean;
+}
+
+export interface SharedWishlistDto {
+  token: string;
   productIds: string[];
 }
 
@@ -239,6 +256,7 @@ export interface CreateProductRequest {
   stock: number;
   active: boolean;
   categoryIds?: string[];
+  variants?: ProductVariantDto[];
 }
 
 export interface UpdateProductRequest {
@@ -252,6 +270,7 @@ export interface UpdateProductRequest {
   stock?: number;
   active?: boolean;
   categoryIds?: string[];
+  variants?: ProductVariantDto[];
 }
 
 export interface MediaUploadDto {
@@ -1045,5 +1064,29 @@ export async function removeFromWishlist(productId: string, token: string): Prom
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+export async function getWishlistShareLink(token: string): Promise<WishlistShareLinkDto> {
+  return apiFetch<WishlistShareLinkDto>('/wishlist/share-link', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function enableWishlistShareLink(token: string): Promise<WishlistShareLinkDto> {
+  return apiFetch<WishlistShareLinkDto>('/wishlist/share-link', {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export async function disableWishlistShareLink(token: string): Promise<void> {
+  await apiFetch<void>('/wishlist/share-link', {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function getSharedWishlist(token: string): Promise<SharedWishlistDto> {
+  return apiFetch<SharedWishlistDto>(`/wishlist/shared/${encodeURIComponent(token)}`);
 }
 

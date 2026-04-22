@@ -17,8 +17,10 @@ import ProductForm from './ProductForm';
 
 type ViewMode = 'grid' | 'cards';
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 const VIEW_MODE_KEY = 'pe-admin-products-view';
+const PAGE_SIZE_KEY = 'pe-admin-products-page-size';
 
 export default function ProductTable() {
   const { token } = useAuthStore();
@@ -26,6 +28,7 @@ export default function ProductTable() {
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<string | undefined>(undefined);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -48,12 +51,23 @@ export default function ProductTable() {
     if (window.innerWidth < 768) {
       setViewMode('cards');
     }
+
+    const savedSizeRaw = window.localStorage.getItem(PAGE_SIZE_KEY);
+    const savedSize = savedSizeRaw ? Number(savedSizeRaw) : NaN;
+    if (PAGE_SIZE_OPTIONS.includes(savedSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
+      setPageSize(savedSize);
+    }
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PAGE_SIZE_KEY, String(pageSize));
+  }, [pageSize]);
 
   useEffect(() => {
     let mounted = true;
@@ -76,7 +90,7 @@ export default function ProductTable() {
     try {
       const res = await getProducts({
         page,
-        size: PAGE_SIZE,
+        size: pageSize,
         condition: (filterCondition as 'NEW' | 'USED') || undefined,
         brand: filterBrand || undefined,
         category: filterCategory || undefined,
@@ -86,7 +100,7 @@ export default function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, filterCondition, filterBrand, filterCategory]);
+  }, [page, pageSize, filterCondition, filterBrand, filterCategory]);
 
   useEffect(() => {
     load();
@@ -223,16 +237,26 @@ export default function ProductTable() {
       key: 'stock',
       header: 'Stock',
       width: '64px',
-      render: (row) => (
-        <span
-          className={[
-            'font-sans text-[0.82rem]',
-            row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-charcoal',
-          ].join(' ')}
-        >
-          {row.stock}
-        </span>
-      ),
+      render: (row) => {
+        const variantCount = row.variants?.length ?? 0;
+        return (
+          <div className="flex flex-col leading-tight">
+            <span
+              className={[
+                'font-sans text-[0.82rem]',
+                row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-charcoal',
+              ].join(' ')}
+            >
+              {row.stock}
+            </span>
+            {variantCount > 0 && (
+              <span className="font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/45">
+                {variantCount} var
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'active',
@@ -299,12 +323,12 @@ export default function ProductTable() {
     },
   ];
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const displayedFrom = total === 0 ? 0 : page * PAGE_SIZE + 1;
-  const displayedTo = Math.min((page + 1) * PAGE_SIZE, total);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const displayedFrom = total === 0 ? 0 : page * pageSize + 1;
+  const displayedTo = Math.min((page + 1) * pageSize, total);
 
   function PaginationControls() {
-    if (total <= PAGE_SIZE) return null;
+    if (total <= pageSize) return null;
 
     return (
       <div className="flex items-center justify-between px-1 pt-3">
@@ -404,6 +428,7 @@ export default function ProductTable() {
                     ].join(' ')}
                   >
                     Stock {row.stock}
+                    {(row.variants?.length ?? 0) > 0 ? ` · ${row.variants!.length} var` : ''}
                   </p>
                 </div>
 
@@ -518,6 +543,24 @@ export default function ProductTable() {
           <RefreshCw size={15} />
         </button>
 
+        <label className="inline-flex items-center gap-2 font-sans text-[0.72rem] text-pe-charcoal/45">
+          <span>Por página</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(0);
+            }}
+            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+          >
+            {PAGE_SIZE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <div className="inline-flex border border-pe-black/12 bg-pe-white">
           <button
             onClick={() => setViewMode('grid')}
@@ -562,7 +605,7 @@ export default function ProductTable() {
           loading={loading}
           emptyMessage="No hay productos que coincidan."
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           total={total}
           onPageChange={setPage}
           sortKey={sortKey}
