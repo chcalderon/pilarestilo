@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,6 +35,7 @@ public class Product {
     private int reviewCount = 0;
     private ShippingOriginZone shippingOriginZone = ShippingOriginZone.SANTIAGO;
     private List<ProductSizeStock> sizeStocks = new ArrayList<>();
+    private List<ProductVariant> variants = new ArrayList<>();
     private Set<UUID> categoryIds = new HashSet<>();
     private List<String> categorySlugs = new ArrayList<>();
 
@@ -185,5 +189,44 @@ public class Product {
     public List<String> getCategorySlugs() { return categorySlugs; }
     public void setCategorySlugs(List<String> categorySlugs) {
         this.categorySlugs = categorySlugs != null ? categorySlugs : new ArrayList<>();
+    }
+
+    public List<ProductVariant> getVariants() { return variants; }
+    public void setVariants(List<ProductVariant> variants) {
+        this.variants = variants != null ? new ArrayList<>(variants) : new ArrayList<>();
+        validateVariants();
+        syncStocksFromVariants();
+    }
+
+    private void validateVariants() {
+        if (variants.isEmpty()) {
+            return;
+        }
+        Set<String> uniqueKeys = new HashSet<>();
+        for (ProductVariant variant : variants) {
+            String key = variant.getColor().trim().toLowerCase(Locale.ROOT) + "::" + variant.getSize().name();
+            if (!uniqueKeys.add(key)) {
+                throw new DomainException("Duplicated product variant combination: " + variant.getColor() + " / " + variant.getSize().name());
+            }
+        }
+    }
+
+    private void syncStocksFromVariants() {
+        if (variants.isEmpty()) {
+            return;
+        }
+
+        int totalStock = variants.stream().mapToInt(ProductVariant::getStock).sum();
+        Map<com.pilarestilo.product.domain.enums.ProductSize, Integer> bySize = new LinkedHashMap<>();
+        for (ProductVariant variant : variants) {
+            bySize.merge(variant.getSize(), variant.getStock(), Integer::sum);
+        }
+
+        List<ProductSizeStock> nextSizeStocks = bySize.entrySet().stream()
+                .map(e -> new ProductSizeStock(e.getKey(), e.getValue()))
+                .toList();
+
+        this.stock = totalStock;
+        this.sizeStocks = nextSizeStocks;
     }
 }

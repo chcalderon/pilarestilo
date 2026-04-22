@@ -73,7 +73,9 @@ Translations:
 - Search overlay (keyword search via `/api/products/search`)
 - Dual-price product cards (`listPrice` struck-through + discounted sale price)
 - Wishlist page + heart interactions
+- Wishlist page now supports creating/copying/disabling public share links
 - Product detail size selector using `sizeStocks`
+- Product detail variant picker (`color + talla`) with stock-aware add-to-cart for variant combinations
 - Reviews list/create flow
 - Quick star-only rating from product cards for authenticated users
 - Cart experience with persisted state
@@ -84,6 +86,7 @@ Translations:
 - Cart summary now supports payment method selection (`Transferencia` / `Pasarela (simulada)`) and reflects worker discount
 - Gateway simulation actions are available in account orders for `PAYMENT_GATEWAY` (approve/reject simulation)
 - Account orders now include `Ir a pagar / Pay now` action to open `/api/payments/{id}/gateway/checkout` sessions.
+- Public shared wishlist route available at `/:locale/wishlist/shared/:token`.
 
 ---
 
@@ -162,6 +165,7 @@ src/
       LoginForm.tsx
       RegisterForm.tsx
     product/
+      ProductVariantSelector.tsx
       SizeSelector.tsx
     reviews/
       QuickRateStars.tsx
@@ -172,6 +176,7 @@ src/
     wishlist/
       WishlistButton.tsx
       WishlistPage.tsx
+      SharedWishlistPage.tsx
 ```
 
 ---

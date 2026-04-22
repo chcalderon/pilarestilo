@@ -8,6 +8,7 @@ import {
   type ProductDto,
   type CreateProductRequest,
   type CategoryDto,
+  type ProductVariantDto,
 } from '../../lib/api';
 
 interface Props {
@@ -30,8 +31,27 @@ const EMPTY_FORM = {
   active: true,
 };
 
+type VariantSize = ProductVariantDto['size'];
+type VariantRow = {
+  color: string;
+  size: VariantSize;
+  stock: string;
+};
+
+const VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'UNICO'];
+
+function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
+  return rows.map((row) => ({
+    color: row.color.trim(),
+    size: row.size,
+    stock: Number(row.stock),
+  }));
+}
+
 export default function ProductForm({ product, onSave, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [useVariants, setUseVariants] = useState(false);
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,6 +66,11 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
   useEffect(() => {
     if (product) {
+      const existingVariants: VariantRow[] = (product.variants ?? []).map((variant) => ({
+        color: variant.color,
+        size: variant.size,
+        stock: String(variant.stock),
+      }));
       setForm({
         name: product.name,
         description: product.description,
@@ -58,14 +83,31 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: String(product.stock),
         active: product.active,
       });
+      setUseVariants(existingVariants.length > 0);
+      setVariantRows(existingVariants);
       setSelectedCatIds([]);
     } else {
       setForm({ ...EMPTY_FORM });
+      setUseVariants(false);
+      setVariantRows([]);
       setSelectedCatIds([]);
     }
     setErrors({});
     setApiError('');
   }, [product]);
+
+  useEffect(() => {
+    if (!useVariants) return;
+    if (variantRows.length > 0) return;
+    const baseStock = Number(form.stock);
+    setVariantRows([
+      {
+        color: 'Base',
+        size: 'UNICO',
+        stock: String(Number.isFinite(baseStock) ? Math.max(baseStock, 0) : 0),
+      },
+    ]);
+  }, [useVariants, variantRows.length, form.stock]);
 
   useEffect(() => {
     if (product?.categorySlugs && categories.length > 0) {
@@ -77,6 +119,26 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   function toggleCategory(id: string) {
     setSelectedCatIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
+
+  function addVariantRow() {
+    setVariantRows((prev) => [...prev, { color: '', size: 'UNICO', stock: '0' }]);
+  }
+
+  function updateVariantRow(index: number, patch: Partial<VariantRow>) {
+    setVariantRows((prev) =>
+      prev.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row))
+    );
+  }
+
+  function removeVariantRow(index: number) {
+    setVariantRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
+  }
+
+  const variantTotalStock = variantRows.reduce((sum, row) => {
+    const value = Number(row.stock);
+    if (!Number.isFinite(value) || value < 0) return sum;
+    return sum + value;
+  }, 0);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -91,7 +153,32 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         e.listAmount = 'El precio lista debe ser mayor al precio oferta';
       }
     }
-    if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0) e.stock = 'Stock valido requerido';
+    if (useVariants) {
+      if (variantRows.length === 0) {
+        e.variants = 'Debes agregar al menos una variante';
+      } else {
+        const seen = new Set<string>();
+        for (let idx = 0; idx < variantRows.length; idx += 1) {
+          const row = variantRows[idx];
+          if (!row.color.trim()) {
+            e.variants = `Color requerido en variante ${idx + 1}`;
+            break;
+          }
+          if (!row.stock || isNaN(Number(row.stock)) || Number(row.stock) < 0) {
+            e.variants = `Stock valido requerido en variante ${idx + 1}`;
+            break;
+          }
+          const key = `${row.color.trim().toLowerCase()}::${row.size}`;
+          if (seen.has(key)) {
+            e.variants = 'No se permiten variantes duplicadas (color + talla)';
+            break;
+          }
+          seen.add(key);
+        }
+      }
+    } else if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0) {
+      e.stock = 'Stock valido requerido';
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -127,6 +214,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setApiError('');
 
     try {
+      const normalizedVariants = useVariants ? normalizeVariantRows(variantRows) : undefined;
       const payload: CreateProductRequest = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -137,9 +225,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         imageUrl: form.imageUrl.trim() || '/api/media/products/product-001.jpg',
         condition: form.condition,
         brand: form.brand.trim(),
-        stock: Number(form.stock),
+        stock: useVariants ? variantTotalStock : Number(form.stock),
         active: form.active,
         categoryIds: selectedCatIds,
+        variants: normalizedVariants,
       };
 
       let saved: ProductDto;
@@ -281,7 +370,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="pf-stock" className={labelClass}>
-                Stock
+                Stock {useVariants ? '(total variantes)' : ''}
               </label>
               <input
                 id="pf-stock"
@@ -289,13 +378,23 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 min="0"
                 step="1"
                 className={inputClass}
-                value={form.stock}
+                value={useVariants ? String(variantTotalStock) : form.stock}
                 onChange={(e) => setForm({ ...form, stock: e.target.value })}
                 required
+                disabled={useVariants}
               />
               {errors.stock && <p className={errorClass}>{errors.stock}</p>}
             </div>
-            <div className="flex flex-col justify-end pb-1">
+            <div className="flex flex-col justify-end pb-1 gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-[#B76E79]"
+                  checked={useVariants}
+                  onChange={(e) => setUseVariants(e.target.checked)}
+                />
+                <span className="font-sans text-sm text-[#1A1A1A]">Gestionar por variantes</span>
+              </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -307,6 +406,66 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               </label>
             </div>
           </div>
+
+          {useVariants && (
+            <div className="border border-pe-black/12 bg-pe-white p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className={labelClass + ' mb-0'}>Variantes (color + talla + stock)</p>
+                <button
+                  type="button"
+                  onClick={addVariantRow}
+                  className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
+                >
+                  + Agregar
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {variantRows.map((row, index) => (
+                  <div key={`${index}-${row.color}-${row.size}`} className="grid grid-cols-12 gap-2 items-center">
+                    <input
+                      type="text"
+                      className={`col-span-5 ${inputClass}`}
+                      placeholder="Color"
+                      value={row.color}
+                      onChange={(e) => updateVariantRow(index, { color: e.target.value })}
+                    />
+                    <select
+                      className={`col-span-3 ${inputClass}`}
+                      value={row.size}
+                      onChange={(e) => updateVariantRow(index, { size: e.target.value as VariantSize })}
+                    >
+                      {VARIANT_SIZES.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      className={`col-span-2 ${inputClass}`}
+                      value={row.stock}
+                      onChange={(e) => updateVariantRow(index, { stock: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeVariantRow(index)}
+                      className="col-span-2 border border-red-300 text-red-500 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
+                Stock total calculado automaticamente: <strong>{variantTotalStock}</strong>
+              </p>
+              {errors.variants && <p className={errorClass}>{errors.variants}</p>}
+            </div>
+          )}
 
           <div>
             <label className={labelClass}>Imagen del producto</label>

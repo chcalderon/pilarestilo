@@ -13,6 +13,9 @@ public class ProductMapper {
         List<ProductDto.SizeStockDto> sizeStocks = product.getSizeStocks().stream()
                 .map(s -> new ProductDto.SizeStockDto(s.getSize().name(), s.getStock()))
                 .toList();
+        List<ProductDto.VariantDto> variants = product.getVariants().stream()
+                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize().name(), v.getStock()))
+                .toList();
 
         List<String> slugs = product.getCategorySlugs();
 
@@ -35,7 +38,8 @@ public class ProductMapper {
                 product.getReviewCount(),
                 product.getShippingOriginZone().name(),
                 sizeStocks,
-                slugs
+                slugs,
+                variants
         );
     }
 }

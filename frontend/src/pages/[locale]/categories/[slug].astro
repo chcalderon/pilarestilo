@@ -5,6 +5,11 @@ import { type Locale, SUPPORTED_LOCALES } from '../../../i18n/index';
 import { getCategories, getProducts } from '../../../lib/api';
 
 const { locale, slug } = Astro.params as { locale: Locale; slug: string };
+const url = Astro.url;
+const rawPage = url.searchParams.get('page');
+const parsedPage = rawPage !== null ? Number(rawPage) : 0;
+const page = Number.isFinite(parsedPage) && parsedPage >= 0 ? Math.floor(parsedPage) : 0;
+const PAGE_SIZE = 8;
 
 if (!SUPPORTED_LOCALES.includes(locale)) {
   return Astro.redirect('/es/products');
@@ -12,7 +17,7 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 
 const [categories, productsPage] = await Promise.all([
   getCategories(),
-  getProducts({ category: slug, active: true, size: 24, page: 0 }),
+  getProducts({ category: slug, active: true, size: PAGE_SIZE, page }),
 ]);
 
 const category = categories.find(c => c.slug === slug);
@@ -69,9 +74,9 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
           {title}
         </h1>
         <p class="mt-3 text-[#3A3A3A]/60 text-sm">
-          {products.length} {locale === 'es'
-            ? (products.length === 1 ? 'producto' : 'productos')
-            : (products.length === 1 ? 'product' : 'products')}
+          {productsPage.totalElements} {locale === 'es'
+            ? (productsPage.totalElements === 1 ? 'producto' : 'productos')
+            : (productsPage.totalElements === 1 ? 'product' : 'products')}
         </p>
       </div>
     </section>
@@ -97,6 +102,25 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
             <ProductCard product={product} locale={locale} token={token} />
           ))}
         </div>
+      )}
+
+      {productsPage.totalPages > 1 && (
+        <nav class="mt-10 flex justify-center gap-1.5" aria-label={locale === 'es' ? 'Paginación' : 'Pagination'}>
+          {Array.from({ length: productsPage.totalPages }, (_, i) => (
+            <a
+              href={`/${locale}/categories/${slug}?page=${i}`}
+              class:list={[
+                'font-sans text-xs w-8 h-8 flex items-center justify-center border transition-colors duration-200',
+                i === productsPage.number
+                  ? 'bg-pe-rose text-pe-offwhite border-pe-rose'
+                  : 'border-pe-black/15 text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep',
+              ]}
+              aria-current={i === productsPage.number ? 'page' : undefined}
+            >
+              {i + 1}
+            </a>
+          ))}
+        </nav>
       )}
     </section>
   </div>

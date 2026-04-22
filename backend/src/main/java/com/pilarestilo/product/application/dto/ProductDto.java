@@ -24,7 +24,9 @@ public record ProductDto(
         int reviewCount,
         String shippingOriginZone,
         List<SizeStockDto> sizeStocks,
-        List<String> categorySlugs
+        List<String> categorySlugs,
+        List<VariantDto> variants
 ) {
     public record SizeStockDto(String size, int stock) {}
+    public record VariantDto(String color, String size, int stock) {}
 }

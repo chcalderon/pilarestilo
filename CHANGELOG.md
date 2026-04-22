@@ -7,6 +7,12 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Public store settings API now exposes `supportEmail` (resolved from admin SMTP/SendGrid sender settings) for storefront contact surfaces.
+- New localized storefront informational pages:
+  - `/{locale}/about` (Sobre Pilar Estilo)
+  - `/{locale}/how-we-sell` (Cómo vendemos)
+  - `/{locale}/shipping-returns` (Envíos y devoluciones)
+  - `/{locale}/contact` (Contacto)
 - Horizontal backend scaling baseline behind Caddy using Docker Compose replicas (`--scale backend=N`).
 - Postgres read-replica routing baseline for catalog queries in `product-service` (read-only transaction routing).
 - Redis-backed cache baseline for hot storefront reads (`/api/categories`, `/api/categories/tree`, `/api/system-settings/public`) with opt-in runtime toggle.
@@ -83,6 +89,8 @@ The format is inspired by Keep a Changelog.
   - OTLP tracing bridge dependencies on backend and product-service
 
 ### Changed
+- Storefront contact page now renders WhatsApp, support email, and social links from admin-managed public system settings.
+- Footer informational links now point to real localized routes instead of placeholders.
 - Caddy fallback API upstream now uses dynamic DNS discovery (`dynamic a backend 8080`) with round-robin balancing for scaled backend replicas.
 - `backend` service no longer uses a fixed container name, enabling `docker compose --scale backend=N`.
 - `product-service` now supports `APP_DB_READ_REPLICA_*` env config and routes read-only queries to replica when enabled.
@@ -162,6 +170,7 @@ The format is inspired by Keep a Changelog.
 - System settings load no longer fails when a legacy/corrupted encrypted SMTP password exists; admin can now open the page and replace/clear credentials from UI.
 
 ### Verified
+- Frontend build passes after adding new informational pages and footer links (`npm run build`).
 - Docker Compose config validates after backend scaling changes (`docker compose -f infra/docker-compose.yml --env-file infra/.env config`).
 - Caddy config validates after dynamic backend upstream change (`caddy validate --config /etc/caddy/Caddyfile`).
 - `product-service` compiles with read-replica routing configuration (`mvn -DskipTests compile` in `services/product-service`).

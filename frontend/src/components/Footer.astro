@@ -24,10 +24,10 @@ const links = {
     { labelEs: 'Carteras', labelEn: 'Bags', href: `/${locale}/products?category=carteras` },
   ],
   info: [
-    { labelEs: 'Sobre Pilar Estilo', labelEn: 'About us', href: '#' },
-    { labelEs: 'Cómo vendemos', labelEn: 'How we sell', href: '#' },
-    { labelEs: 'Envíos y devoluciones', labelEn: 'Shipping & returns', href: '#' },
-    { labelEs: 'Contacto', labelEn: 'Contact', href: '#' },
+    { labelEs: 'Sobre Pilar Estilo', labelEn: 'About us', href: `/${locale}/about` },
+    { labelEs: 'Cómo vendemos', labelEn: 'How we sell', href: '/' + locale + '/how-we-sell' },
+    { labelEs: 'Envíos y devoluciones', labelEn: 'Shipping & returns', href: `/${locale}/shipping-returns` },
+    { labelEs: 'Contacto', labelEn: 'Contact', href: `/${locale}/contact` },
   ],
 };
 ---
@@ -139,3 +139,5 @@ const links = {
     </div>
   </div>
 </footer>
+
+

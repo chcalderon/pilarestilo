@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/Button.astro';
+import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/shipping-returns');
+}
+
+const isEs = locale === 'es';
+
+const shippingZones = isEs
+  ? [
+      { zone: 'Santiago', eta: '24 a 48 horas habiles', note: 'Despacho prioritario en zona urbana.' },
+      { zone: 'Region Metropolitana', eta: '2 a 4 dias habiles', note: 'Tiempo sujeto a comuna y disponibilidad.' },
+      { zone: 'Regiones', eta: '3 a 7 dias habiles', note: 'Con numero de seguimiento una vez despachado.' },
+    ]
+  : [
+      { zone: 'Santiago', eta: '24 to 48 business hours', note: 'Priority urban dispatch.' },
+      { zone: 'Metropolitan Region', eta: '2 to 4 business days', note: 'Timing depends on district and availability.' },
+      { zone: 'Other regions', eta: '3 to 7 business days', note: 'Tracking number shared after dispatch.' },
+    ];
+
+const returns = isEs
+  ? [
+      'Puedes solicitar revision dentro de 5 dias corridos desde la recepcion.',
+      'La pieza debe mantenerse en el mismo estado de entrega y con sus etiquetas.',
+      'Si existe diferencia relevante con la publicacion, gestionamos solucion o devolucion.',
+      'No aplican cambios por preferencia estetica en productos usados informados correctamente.',
+    ]
+  : [
+      'You can request a review within 5 calendar days after delivery.',
+      'Items must remain in the original delivered condition with tags attached.',
+      'If there is a material mismatch with the listing, we process a resolution or refund.',
+      'Returns are not available for aesthetic preference on correctly disclosed pre-loved items.',
+    ];
+---
+
+<BaseLayout
+  title={isEs ? 'Envios y devoluciones' : 'Shipping and returns'}
+  description={isEs ? 'Conoce tiempos de envio y politicas de devolucion de Pilar Estilo.' : 'Understand Pilar Estilo shipping times and return policy.'}
+  locale={locale}
+>
+  <div class="bg-pe-offwhite">
+    <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
+      <div class="absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
+      <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
+        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+          {isEs ? 'Informacion logistica' : 'Logistics information'}
+        </p>
+        <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
+          {isEs ? 'Envios y devoluciones' : 'Shipping and returns'}
+        </h1>
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+          {isEs
+            ? 'Trabajamos para que tu compra llegue segura y en tiempo, con reglas claras para revisiones y devoluciones.'
+            : 'We make sure your order arrives safely and on time, with clear rules for reviews and returns.'}
+        </p>
+      </div>
+    </section>
+
+    <section class="py-14 md:py-20">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-6 md:mb-8">
+          {isEs ? 'Tiempos de envio estimados' : 'Estimated shipping windows'}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+          {shippingZones.map((item) => (
+            <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
+              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-2">{item.zone}</p>
+              <h3 class="font-display text-2xl text-pe-black font-light mb-2">{item.eta}</h3>
+              <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">{item.note}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-pe-black py-14 md:py-16">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-6">
+          {isEs ? 'Politica de devoluciones' : 'Return policy'}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          {returns.map((rule, index) => (
+            <article class="border border-pe-white/15 p-6 md:p-7 bg-pe-white/5">
+              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
+                {isEs ? `Regla ${index + 1}` : `Rule ${index + 1}`}
+              </p>
+              <p class="font-sans text-sm text-pe-white/75 leading-relaxed">{rule}</p>
+            </article>
+          ))}
+        </div>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <Button href={`/${locale}/contact`} variant="primary" trailingIcon="arrow-right">
+            {isEs ? 'Hablar con soporte' : 'Contact support'}
+          </Button>
+          <Button href={`/${locale}/products`} variant="outline-dark">
+            {isEs ? 'Volver a productos' : 'Back to products'}
+          </Button>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -1,0 +1,158 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/Button.astro';
+import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/how-we-sell');
+}
+
+const isEs = locale === 'es';
+
+const steps = isEs
+  ? [
+      {
+        title: 'Seleccion y curaduria',
+        description:
+          'Cada producto se revisa por estado, autenticidad y coherencia con la propuesta editorial de Pilar Estilo.',
+      },
+      {
+        title: 'Publicacion transparente',
+        description:
+          'Mostramos fotos reales, condicion (nuevo o usado), precio original referencial y precio final de venta.',
+      },
+      {
+        title: 'Reserva y pago',
+        description:
+          'Al confirmar tu compra, reservamos el stock. Puedes pagar por los metodos habilitados por la tienda.',
+      },
+      {
+        title: 'Validacion y despacho',
+        description:
+          'Validamos el comprobante cuando aplica, confirmamos el pedido y coordinamos el envio con seguimiento.',
+      },
+    ]
+  : [
+      {
+        title: 'Selection and curation',
+        description:
+          'Every product is checked for condition, authenticity, and editorial fit with Pilar Estilo.',
+      },
+      {
+        title: 'Transparent listing',
+        description:
+          'We display real photos, condition (new or pre-loved), reference price, and final selling price.',
+      },
+      {
+        title: 'Reservation and payment',
+        description:
+          'When you confirm the order, stock is reserved. You can pay using enabled store methods.',
+      },
+      {
+        title: 'Validation and shipping',
+        description:
+          'We validate proof of payment when needed, confirm the order, and coordinate tracked shipping.',
+      },
+    ];
+
+const faqs = isEs
+  ? [
+      {
+        q: 'Como se define el precio final?',
+        a: 'Se calcula en base al estado, marca, demanda y referencia comercial vigente al momento de publicar.',
+      },
+      {
+        q: 'Los productos usados tienen garantia?',
+        a: 'Tienen respaldo de autenticidad y condiciones informadas. Si hay diferencia con lo publicado, puedes solicitar revision.',
+      },
+      {
+        q: 'Puedo pagar con credito como cliente?',
+        a: 'Si tienes cupo habilitado por administracion, se aplica automaticamente en checkout segun tu saldo disponible.',
+      },
+    ]
+  : [
+      {
+        q: 'How is the final price defined?',
+        a: 'It is calculated using condition, brand, demand, and active market references at publishing time.',
+      },
+      {
+        q: 'Do pre-loved items include warranty?',
+        a: 'They include authenticity backing and clear condition notes. If details differ, you can request a review.',
+      },
+      {
+        q: 'Can I pay using store credit?',
+        a: 'If your account has approved credit, it is applied during checkout according to your available balance.',
+      },
+    ];
+---
+
+<BaseLayout
+  title={isEs ? 'Como vendemos' : 'How we sell'}
+  description={isEs ? 'Conoce el flujo de venta de Pilar Estilo, desde la curaduria hasta el despacho.' : 'Understand Pilar Estilo sales flow from curation to delivery.'}
+  locale={locale}
+>
+  <div class="bg-pe-offwhite">
+    <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
+      <div class="absolute -top-36 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
+      <div class="absolute -top-20 left-1/2 h-[24rem] w-[24rem] -translate-x-1/2 rounded-full border border-pe-gold/20" aria-hidden="true"></div>
+      <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
+        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+          {isEs ? 'Informacion de compra' : 'Purchase information'}
+        </p>
+        <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
+          {isEs ? 'Como vendemos' : 'How we sell'}
+        </h1>
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+          {isEs
+            ? 'Un flujo claro y profesional: seleccionamos, publicamos con transparencia y acompanamos tu compra hasta la entrega.'
+            : 'A clear and professional flow: we curate, publish transparently, and support your order until delivery.'}
+        </p>
+      </div>
+    </section>
+
+    <section class="py-14 md:py-20">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-6 md:mb-8">
+          {isEs ? 'Proceso de compra' : 'Purchase flow'}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          {steps.map((step, index) => (
+            <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
+              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-3">
+                {isEs ? `Paso ${index + 1}` : `Step ${index + 1}`}
+              </p>
+              <h3 class="font-display text-2xl text-pe-black font-light mb-3">{step.title}</h3>
+              <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">{step.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-pe-black py-14 md:py-16">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-6">
+          {isEs ? 'Preguntas frecuentes' : 'Frequently asked questions'}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+          {faqs.map((faq) => (
+            <article class="border border-pe-white/15 p-6 md:p-7 bg-pe-white/5">
+              <h3 class="font-display text-2xl text-pe-offwhite font-light mb-3">{faq.q}</h3>
+              <p class="font-sans text-sm text-pe-white/70 leading-relaxed">{faq.a}</p>
+            </article>
+          ))}
+        </div>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <Button href={`/${locale}/products`} variant="primary" trailingIcon="arrow-right">
+            {isEs ? 'Ir a productos' : 'Go to products'}
+          </Button>
+          <Button href={`/${locale}/account`} variant="outline-dark">
+            {isEs ? 'Ver mi cuenta' : 'View my account'}
+          </Button>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

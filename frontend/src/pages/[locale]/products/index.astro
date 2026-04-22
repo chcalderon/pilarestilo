@@ -18,7 +18,10 @@ const brand = url.searchParams.get('brand') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
 const minPrice = url.searchParams.has('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.has('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
-const page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 0;
+const rawPage = url.searchParams.get('page');
+const parsedPage = rawPage !== null ? Number(rawPage) : 0;
+const page = Number.isFinite(parsedPage) && parsedPage >= 0 ? Math.floor(parsedPage) : 0;
+const PAGE_SIZE = 8;
 
 const filter: ProductFilter = {
   ...(condition ? { condition } : {}),
@@ -27,7 +30,7 @@ const filter: ProductFilter = {
   ...(minPrice !== undefined ? { minPrice } : {}),
   ...(maxPrice !== undefined ? { maxPrice } : {}),
   page,
-  size: 12,
+  size: PAGE_SIZE,
 };
 
 let productsPage = {

@@ -76,6 +76,9 @@ export default function CartDrawer({ locale, isOpen, onClose }: Props) {
                 <div className="flex-1 flex flex-col gap-1">
                   <span className="font-sans text-[9px] tracking-[0.3em] uppercase text-pe-gold">{item.brand}</span>
                   <p className="font-display text-pe-black text-xs font-semibold line-clamp-2">{item.name}</p>
+                  {item.variantLabel && (
+                    <p className="font-sans text-[10px] text-pe-charcoal/55">{item.variantLabel}</p>
+                  )}
                   <p className="font-sans text-pe-black text-xs">{priceFormat(item.price.amount, item.price.currency)}</p>
                   <div className="mt-auto flex items-center justify-between">
                     <div className="flex items-center gap-1">

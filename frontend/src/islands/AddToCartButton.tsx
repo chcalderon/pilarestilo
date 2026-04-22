@@ -36,7 +36,7 @@ export default function AddToCartButton({
 
   function handleClick() {
     if (outOfStock || added) return;
-    addItem({ id: productId, name, brand, price, imageUrl, condition });
+    addItem({ id: productId, productId, name, brand, price, imageUrl, condition });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }
