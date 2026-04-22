@@ -33,7 +33,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | Module | Responsibility |
 |---|---|
 | `shared/auth` | JWT issuance/validation, auth filter, login/register/refresh/me + self profile/password |
-| `product` | Product CRUD, catalog filters, search, rating summary fields, sizeStocks projection |
+| `product` | Product CRUD, catalog filters, search, rating summary fields, sizeStocks projection, and variant combinations (`color + size + stock`) |
 | `category` | Category tree and taxonomy |
 | `review` | Product reviews + moderation workflow |
 | `order` | Order aggregate and status transitions |
@@ -45,6 +45,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) + domain listeners |
 | `user` | User repository and user-facing data |
 | `systemsettings` | Admin-managed storefront/system configuration (channels + notification providers) |
+| `shared/kafka` | Optional Kafka domain-event transport (`KafkaDomainEventPublisher`, listener retry/DLQ config) |
 
 ---
 
@@ -79,15 +80,31 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `GET /api/products`
 - `GET /api/products/{id}`
 - `GET /api/products/search?q=...`
+- `GET /api/inventory/products`
+- `GET /api/inventory/products/{id}`
 - `GET /api/categories`
 - `GET /api/categories/tree`
 - `GET /api/media/**` (static media served from backend storage path)
+
+Inventory command endpoints (extracted service, backend-to-backend):
+- `POST /api/inventory/commands/reserve`
+- `POST /api/inventory/commands/release`
+- `POST /api/inventory/commands/confirm`
+
+Order query endpoints (extracted service, backend-to-backend):
+- `GET /api/orders`
+- `GET /api/orders/{id}`
+- `GET /api/orders/_health`
 
 ### Wishlist
 
 - `GET /api/wishlist`
 - `POST /api/wishlist/items/{productId}`
 - `DELETE /api/wishlist/items/{productId}`
+- `GET /api/wishlist/share-link` (authenticated owner)
+- `POST /api/wishlist/share-link` (authenticated owner, enable/generate token)
+- `DELETE /api/wishlist/share-link` (authenticated owner, disable sharing)
+- `GET /api/wishlist/shared/{token}` (public read-only shared wishlist)
 
 ### Payments
 
@@ -103,6 +120,12 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 
 - `POST /api/media/upload` (ADMIN/SELLER)
 - `POST /api/media/upload-proof` (authenticated users; used by customer proof flow)
+
+### Actuator (ops)
+
+- `GET /api/actuator/health`
+- `GET /api/actuator/metrics`
+- `GET /api/actuator/prometheus`
 
 ---
 
@@ -123,6 +146,40 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```bash
 docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 ```
+
+Optional profiles from repo root:
+
+```bash
+# Kafka broker for domain-events mode
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
+
+# Extracted read microservices (P6)
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile microservices up -d --build product-service inventory-service order-service payment-service
+
+# Tracing stack (P7)
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
+```
+
+When that profile is running, Caddy routes:
+- `GET/HEAD /api/products*` to `product-service`.
+- `GET/HEAD /api/inventory*` to `inventory-service`.
+- `/api/orders*` to `order-service`.
+
+Optional inventory write delegation from backend to `inventory-service`:
+- Set `APP_INVENTORY_REMOTE_ENABLED=true`.
+- Backend will forward `reserve/release/confirm` stock commands to `APP_INVENTORY_REMOTE_BASE_URL`.
+
+Optional order read delegation from backend to `order-service`:
+- Set `APP_ORDER_REMOTE_ENABLED=true`.
+- Backend will resolve order queries (`/api/orders*`) through `APP_ORDER_REMOTE_BASE_URL`.
+
+Optional order write delegation from backend to `order-service`:
+- Set `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
+- Backend will resolve order create/status commands through `APP_ORDER_REMOTE_BASE_URL`.
+
+Optional payment read delegation from backend to `payment-service`:
+- Set `APP_PAYMENT_REMOTE_ENABLED=true`.
+- Backend will resolve payment queries (`/api/payments*`) through `APP_PAYMENT_REMOTE_BASE_URL`.
 
 ---
 
@@ -170,6 +227,24 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 | `PAYMENT_GATEWAY_MP_FAILURE_URL` | No | Back URL for failed checkout |
 | `PAYMENT_GATEWAY_MP_NOTIFICATION_URL` | No | Webhook callback URL used in preference creation |
 | `PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN` | No | If set, required as `token` query param on Mercado Pago webhook endpoint |
+| `KAFKA_BOOTSTRAP_SERVERS` | No | Kafka brokers for domain-event mode (default `localhost:9092`) |
+| `APP_DOMAIN_EVENTS_KAFKA_ENABLED` | No | Enables Kafka as primary `DomainEventPublisher` (`true/false`, default `false`) |
+| `APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX` | No | Topic prefix for domain events (default `pe.domain`) |
+| `APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID` | No | Kafka group id used by backend domain-event consumers |
+| `APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS` | No | Backoff in ms for Kafka listener retries |
+| `APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS` | No | Max delivery attempts before dead-letter routing |
+| `APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX` | No | Dead-letter topic suffix (default `.dlt`) |
+| `APP_INVENTORY_REMOTE_ENABLED` | No | Enables remote inventory command delegation from backend (`true/false`, default `false`) |
+| `APP_INVENTORY_REMOTE_BASE_URL` | No | Base URL for extracted inventory-service commands (default `http://inventory-service:8082`) |
+| `APP_ORDER_REMOTE_ENABLED` | No | Enables remote order query delegation from backend (`true/false`, default `false`) |
+| `APP_ORDER_REMOTE_WRITE_ENABLED` | No | Enables remote order command delegation from backend (`true/false`, default `false`) |
+| `APP_ORDER_REMOTE_BASE_URL` | No | Base URL for extracted order-service queries (default `http://order-service:8083`) |
+| `APP_ORDER_REMOTE_SERVICE_TOKEN` | No | Internal token sent by backend when calling order-service (`X-Service-Token`) |
+| `APP_PAYMENT_REMOTE_ENABLED` | No | Enables remote payment query delegation from backend (`true/false`, default `false`) |
+| `APP_PAYMENT_REMOTE_BASE_URL` | No | Base URL for extracted payment-service queries (default `http://payment-service:8084`) |
+| `APP_TRACING_ENABLED` | No | Enables OTLP tracing export (`true/false`, default `false`) |
+| `APP_TRACING_OTLP_ENDPOINT` | No | OTLP HTTP traces endpoint (default `http://otel-collector:4318/v1/traces`) |
+| `APP_TRACING_SAMPLING_PROBABILITY` | No | Trace sampling ratio between `0.0` and `1.0` (default `1.0`) |
 | `SPRING_PROFILES_ACTIVE` | No | `local` for dev profile |
 | `SERVER_PORT` | No | API port (default 8080) |
 
@@ -180,6 +255,8 @@ Current note:
 - `EMAIL_SENDGRID` uses its own admin-managed credentials (`sendgridApiKey`, `sendgridFromEmail`, etc.) with env fallback.
 - `EMAIL_SMTP` sends directly through your SMTP server, prioritizes user email, and supports admin-managed values with env fallback.
 - Sensitive values are encrypted at rest in `system_settings` (`smtpPassword`, Twilio auth token, SendGrid API key).
+- Domain events can run in-process (default) or over Kafka via runtime toggle. Kafka mode includes retry + DLT and `OrderInventorySaga` for payment/inventory consistency.
+- Distributed tracing is optional and emits OpenTelemetry spans to OTLP when enabled.
 
 ---
 
@@ -194,7 +271,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V17`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V20`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -207,6 +284,9 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - product list-price schema + constraints (`V15`)
 - default list-price backfill for existing catalog rows (`V16`)
 - notification provider admin configuration fields + encrypted Twilio/SendGrid secrets (`V17`)
+- extended catalog seed with additional products (`V18`)
+- wishlist share-link token and enablement fields (`V19`)
+- product variants table + backfill from size stocks (`V20`)
 
 ---
 

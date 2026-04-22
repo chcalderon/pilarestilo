@@ -87,6 +87,25 @@ Edit the following values at minimum:
 ```bash
 POSTGRES_PASSWORD=a_long_random_password_here   # CHANGE THIS
 DOMAIN=pilarestilo.com                          # your real domain
+# Optional Kafka domain-events mode:
+# APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
+# Then start Kafka profile:
+# docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
+
+# Optional P6 inventory write delegation:
+# APP_INVENTORY_REMOTE_ENABLED=true
+# APP_INVENTORY_REMOTE_BASE_URL=http://inventory-service:8082
+# (requires microservices profile with inventory-service running)
+# Optional P6 order query delegation:
+# APP_ORDER_REMOTE_ENABLED=true
+# Optional P6 order write delegation:
+# APP_ORDER_REMOTE_WRITE_ENABLED=true
+# APP_ORDER_REMOTE_BASE_URL=http://order-service:8083
+# (requires microservices profile with order-service running)
+# Optional P6 payment query delegation:
+# APP_PAYMENT_REMOTE_ENABLED=true
+# APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084
+# (requires microservices profile with payment-service running)
 ```
 
 Protect the file from other users:
@@ -137,9 +156,41 @@ Docker will:
 1. Pull `postgres:16-alpine` and `caddy:2-alpine` images.
 2. Build the backend image from `backend/Dockerfile`.
 3. Build the frontend image from `frontend/Dockerfile`.
-4. Start all four containers (`pe_postgres`, `pe_backend`, `pe_frontend`, `pe_caddy`).
+4. Start baseline containers (`pe_postgres`, `pe_backend`, `pe_frontend`, `pe_caddy`).
 5. Apply Flyway database migrations on backend startup.
 6. Mount persisted product media storage from `infra/storage/media` into backend path `/app/media`.
+
+Optional profiles:
+
+```bash
+# Kafka broker for domain-events mode
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
+
+# Extracted catalog read service
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile microservices up -d --build product-service inventory-service order-service payment-service
+
+# Distributed tracing stack (OTel Collector + Tempo)
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
+```
+
+With `microservices` profile enabled, Caddy routes:
+- `GET/HEAD /api/products*` to `product-service`
+- `GET/HEAD /api/inventory*` to `inventory-service`
+- `/api/orders*` to `order-service`
+
+When `APP_INVENTORY_REMOTE_ENABLED=true`, backend inventory write commands
+(`reserve/release/confirm`) are also delegated to `inventory-service` through
+internal service-to-service HTTP (`APP_INVENTORY_REMOTE_BASE_URL`).
+
+When `APP_ORDER_REMOTE_ENABLED=true`, backend order reads are delegated to
+`order-service` through internal service-to-service HTTP (`APP_ORDER_REMOTE_BASE_URL`).
+
+When `APP_ORDER_REMOTE_WRITE_ENABLED=true`, backend order create/status updates
+are delegated to `order-service` through internal service-to-service HTTP
+(`APP_ORDER_REMOTE_BASE_URL`).
+
+When `APP_PAYMENT_REMOTE_ENABLED=true`, backend payment reads are delegated to
+`payment-service` through internal service-to-service HTTP (`APP_PAYMENT_REMOTE_BASE_URL`).
 
 The first build takes 3–8 minutes depending on server speed and image cache state.
 
@@ -164,6 +215,35 @@ curl -f http://localhost:8080/actuator/health
 ```bash
 curl -f https://pilarestilo.com/api/actuator/health
 # Expected: {"status":"UP"}
+```
+
+**Check catalog read routing through Caddy (when `microservices` profile is enabled):**
+```bash
+curl -i http://localhost/api/products/_health
+# Expected: HTTP/1.1 204 No Content
+
+curl -f "http://localhost/api/products?page=0&size=1"
+# Expected: 200 with paged JSON payload
+
+curl -i http://localhost/api/inventory/_health
+# Expected: HTTP/1.1 204 No Content
+
+curl -f "http://localhost/api/inventory/products?page=0&size=1"
+# Expected: 200 with paged JSON payload
+```
+
+**Check extracted order-service health (internal container network):**
+```bash
+docker run --rm --network infra_pe_net curlimages/curl:8.7.1 \
+  -s -o /dev/null -w "%{http_code}\n" http://order-service:8083/api/orders/_health
+# Expected: 204
+```
+
+**Check extracted payment-service health (internal container network):**
+```bash
+docker run --rm --network infra_pe_net curlimages/curl:8.7.1 \
+  -s -o /dev/null -w "%{http_code}\n" http://payment-service:8084/api/payments/_health
+# Expected: 204
 ```
 
 **Check logs for errors:**
@@ -272,9 +352,27 @@ docker compose -f infra/docker-compose.yml logs -f caddy
 | `/api/actuator/info` | App version, build info |
 | `/api/actuator/metrics` | JVM metrics, HTTP request counts, DB pool stats |
 
-**Future Prometheus integration (P5):**
+**Prometheus + Grafana (P7 baseline):**
 
-Add `management.endpoints.web.exposure.include=health,info,metrics,prometheus` to `application.properties` and scrape `/api/actuator/prometheus` with Prometheus. Visualize in Grafana.
+```bash
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile observability up -d
+```
+
+- Prometheus UI: `http://<host>:9090`
+- Grafana UI: `http://<host>:3000` (defaults from `.env`: `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`)
+- Backend metrics endpoint: `https://<domain>/api/actuator/prometheus`
+
+**Distributed tracing (OpenTelemetry baseline):**
+
+- Set in `.env`:
+  - `APP_TRACING_ENABLED=true`
+  - `APP_TRACING_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces`
+  - `APP_TRACING_SAMPLING_PROBABILITY=1.0` (adjust lower in production)
+- Start with either:
+  - `--profile tracing` (collector + tempo only), or
+  - `--profile observability` (includes tracing stack plus Prometheus/Grafana).
+- Tempo API: `http://<host>:3200`
+- In Grafana, use provisioned `Tempo` datasource to explore traces.
 
 ---
 

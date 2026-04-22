@@ -1,4 +1,4 @@
-# Pilar Estilo — Caddy reverse proxy configuration
+# Pilar Estilo - Caddy reverse proxy configuration
 #
 # LOCAL DEV (no TLS):
 #   Replace {$DOMAIN:localhost} with `:80` to bind on port 80 without TLS:
@@ -11,21 +11,49 @@
 # VPS WITH CUSTOM DOMAIN (automatic TLS):
 #   Set DOMAIN=pilarestilo.com in infra/.env (or export it before running
 #   docker compose). Caddy will contact Let's Encrypt automatically and
-#   provision/renew the TLS certificate — no manual certbot needed.
+#   provision/renew the TLS certificate - no manual certbot needed.
 #   Ports 80 and 443 must be reachable from the internet.
 #
 # NOTE: If the frontend Dockerfile serves via nginx on port 80, change
 #       `frontend:4321` to `frontend:80` in the reverse_proxy directive below.
 
 http://{$DOMAIN:localhost} {
-    # API — proxy all /api/* requests to the Spring Boot backend
-    handle /api/* {
-        reverse_proxy backend:8080
-    }
+    route {
+        # Catalog reads - route product GETs to extracted product-service.
+        @product_reads {
+            method GET HEAD
+            path /api/products /api/products/*
+        }
+        handle @product_reads {
+            reverse_proxy product-service:8081
+        }
 
-    # Frontend — everything else goes to the Astro frontend
-    handle {
-        reverse_proxy frontend:4321
+        # Inventory reads - route to extracted inventory-service.
+        @inventory_reads {
+            method GET HEAD
+            path /api/inventory /api/inventory/*
+        }
+        handle @inventory_reads {
+            reverse_proxy inventory-service:8082
+        }
+
+        # Orders - route all order traffic to extracted order-service.
+        @order_all {
+            path /api/orders /api/orders/*
+        }
+        handle @order_all {
+            reverse_proxy order-service:8083
+        }
+
+        # API - proxy all remaining /api/* requests to the Spring Boot backend
+        handle /api/* {
+            reverse_proxy backend:8080
+        }
+
+        # Frontend - everything else goes to the Astro frontend
+        handle {
+            reverse_proxy frontend:4321
+        }
     }
 
     # Compression

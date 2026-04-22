@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,6 +16,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: pe_kafka
+    profiles: ["kafka"]
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - pe_net
 
   backend:
     build:
@@ -66,6 +84,24 @@ services:
       PAYMENT_GATEWAY_MP_FAILURE_URL: ${PAYMENT_GATEWAY_MP_FAILURE_URL:-}
       PAYMENT_GATEWAY_MP_NOTIFICATION_URL: ${PAYMENT_GATEWAY_MP_NOTIFICATION_URL:-}
       PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN: ${PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN:-}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      APP_DOMAIN_EVENTS_KAFKA_ENABLED: ${APP_DOMAIN_EVENTS_KAFKA_ENABLED:-false}
+      APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX: ${APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX:-pe.domain}
+      APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID: ${APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID:-pe-backend-domain-events}
+      APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:-1500}
+      APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:-3}
+      APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:-.dlt}
+      APP_INVENTORY_REMOTE_ENABLED: ${APP_INVENTORY_REMOTE_ENABLED:-false}
+      APP_INVENTORY_REMOTE_BASE_URL: ${APP_INVENTORY_REMOTE_BASE_URL:-http://inventory-service:8082}
+      APP_ORDER_REMOTE_ENABLED: ${APP_ORDER_REMOTE_ENABLED:-false}
+      APP_ORDER_REMOTE_WRITE_ENABLED: ${APP_ORDER_REMOTE_WRITE_ENABLED:-false}
+      APP_ORDER_REMOTE_BASE_URL: ${APP_ORDER_REMOTE_BASE_URL:-http://order-service:8083}
+      APP_ORDER_REMOTE_SERVICE_TOKEN: ${APP_ORDER_REMOTE_SERVICE_TOKEN:-order-service-internal-token}
+      APP_PAYMENT_REMOTE_ENABLED: ${APP_PAYMENT_REMOTE_ENABLED:-false}
+      APP_PAYMENT_REMOTE_BASE_URL: ${APP_PAYMENT_REMOTE_BASE_URL:-http://payment-service:8084}
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,6 +114,116 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 90s
+      retries: 3
+
+  product-service:
+    build:
+      context: ../services/product-service
+      dockerfile: Dockerfile
+    container_name: pe_product_service
+    profiles: ["microservices"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      SERVER_PORT: "8081"
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+  inventory-service:
+    build:
+      context: ../services/inventory-service
+      dockerfile: Dockerfile
+    container_name: pe_inventory_service
+    profiles: ["microservices"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      SERVER_PORT: "8082"
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+  order-service:
+    build:
+      context: ../services/order-service
+      dockerfile: Dockerfile
+    container_name: pe_order_service
+    profiles: ["microservices"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+      APP_ORDER_INTERNAL_TOKEN: ${APP_ORDER_REMOTE_SERVICE_TOKEN:-order-service-internal-token}
+      SERVER_PORT: "8083"
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+  payment-service:
+    build:
+      context: ../services/payment-service
+      dockerfile: Dockerfile
+    container_name: pe_payment_service
+    profiles: ["microservices"]
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      SERVER_PORT: "8084"
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
       retries: 3
 
   frontend:
@@ -114,11 +260,84 @@ services:
     networks:
       - pe_net
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pe_prometheus
+    profiles: ["observability"]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - pe_prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+    networks:
+      - pe_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pe_grafana
+    profiles: ["observability"]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - pe_grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - pe_net
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: pe_tempo
+    profiles: ["observability", "tracing"]
+    restart: unless-stopped
+    user: "0:0"
+    command:
+      - -config.file=/etc/tempo/tempo.yml
+    volumes:
+      - ./monitoring/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - pe_tempo_data:/tmp/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - pe_net
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.1
+    container_name: pe_otel_collector
+    profiles: ["observability", "tracing"]
+    restart: unless-stopped
+    command:
+      - --config=/etc/otelcol-contrib/collector.yml
+    volumes:
+      - ./monitoring/otel/collector.yml:/etc/otelcol-contrib/collector.yml:ro
+    depends_on:
+      - tempo
+    networks:
+      - pe_net
+
 networks:
   pe_net:
     driver: bridge
 
 volumes:
   pe_pgdata:
+  pe_prometheus_data:
+  pe_grafana_data:
+  pe_tempo_data:
   caddy_data:
   caddy_config:

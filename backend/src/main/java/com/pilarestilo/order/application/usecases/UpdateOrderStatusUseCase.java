@@ -2,6 +2,8 @@ package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
+import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
+import com.pilarestilo.order.application.remote.OrderRemoteQueryClient;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
 import com.pilarestilo.order.domain.model.Order;
@@ -20,15 +22,35 @@ public class UpdateOrderStatusUseCase {
 
     private final OrderRepository orderRepository;
     private final DomainEventPublisher eventPublisher;
+    private final OrderRemoteCommandClient orderRemoteCommandClient;
+    private final OrderRemoteQueryClient orderRemoteQueryClient;
 
     public UpdateOrderStatusUseCase(OrderRepository orderRepository,
-                                     DomainEventPublisher eventPublisher) {
+                                     DomainEventPublisher eventPublisher,
+                                     OrderRemoteCommandClient orderRemoteCommandClient,
+                                     OrderRemoteQueryClient orderRemoteQueryClient) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
+        this.orderRemoteCommandClient = orderRemoteCommandClient;
+        this.orderRemoteQueryClient = orderRemoteQueryClient;
     }
 
     @Transactional
     public OrderDto execute(UUID orderId, OrderStatus targetStatus) {
+        if (orderRemoteCommandClient.isWriteEnabled()) {
+            OrderDto previous = orderRemoteQueryClient.getById(orderId)
+                    .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
+            OrderDto updated = orderRemoteCommandClient.updateStatus(orderId, targetStatus);
+            eventPublisher.publish(new OrderStatusChanged(
+                    updated.id(),
+                    updated.customerId(),
+                    previous.status(),
+                    updated.status(),
+                    Instant.now()
+            ));
+            return updated;
+        }
+
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
 

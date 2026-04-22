@@ -17,6 +17,11 @@ Monorepo layout:
 ```text
 PilarEstilo/
   backend/
+  services/
+    inventory-service/
+    order-service/
+    payment-service/
+    product-service/
   frontend/
   infra/
   docs/
@@ -97,17 +102,21 @@ Rule: no Spring/JPA annotations inside `domain/`.
 
 ## 4. Eventing Model
 
-The project uses a `DomainEventPublisher` port with an in-process Spring implementation by default.
+The project uses a `DomainEventPublisher` port with runtime-selectable transport:
+
+- default: in-process Spring events (`SpringDomainEventPublisher`)
+- optional: Kafka (`KafkaDomainEventPublisher`) when `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`
 
 Current listeners include:
 
 - `OrderCreated` -> payment registration
 - `PaymentConfirmed` -> order moved to `PAID`
+- `PaymentRejected` -> order cancellation + stock compensation (`OrderInventorySaga`)
 - Review events -> product rating denormalization
 - Notification listeners for order/payment confirmation hooks
 - Notification providers selectable by env (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`)
 
-The Kafka migration seam remains available via publisher adapter swap.
+Kafka mode includes retry + DLQ through a dedicated listener container factory.
 
 ---
 
@@ -126,16 +135,75 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V14`: user phone capture for profile + notification routing
 - `V15`: product list-price schema support + DB constraints
 - `V16`: list-price default backfill for existing products
+- `V17`: runtime notification provider settings + encrypted Twilio/SendGrid secrets
+- `V18`: extended seed catalog products
+- `V19`: wishlist share-link token and enablement fields
+- `V20`: product variants (`color + size + stock`) with backfill from `product_size_stocks`
 
 ---
 
 ## 6. Runtime Topology (Docker Compose)
 
-`infra/docker-compose.yml` defines:
+`infra/docker-compose.yml` defines baseline services:
 
 - `postgres`
 - `backend`
 - `frontend`
 - `caddy`
 
-Caddy routes `/api/*` to backend and all other routes to frontend.
+Optional profiles:
+
+- `kafka`: adds `kafka` broker for Kafka-backed domain-events mode.
+- `microservices`: adds extracted services (`product-service`, `inventory-service`, `order-service`, `payment-service`).
+- `observability`: adds `prometheus` + `grafana` with provisioned datasource/dashboard.
+- `tracing`: adds `otel-collector` + `tempo` stack for distributed traces.
+
+Caddy now applies a read-routing policy for catalog endpoints:
+
+- `GET`/`HEAD /api/products*` -> `product-service` (when `microservices` profile is running)
+- `GET`/`HEAD /api/inventory*` -> `inventory-service` (when `microservices` profile is running)
+- `/api/orders*` -> `order-service` (public order traffic; JWT auth enforced in `order-service`)
+- remaining `/api/*` -> `backend`
+- all other routes -> `frontend`
+
+Inventory write extraction (P6 step 3):
+
+- `inventory-service` now exposes stock command endpoints:
+  - `POST /api/inventory/commands/reserve`
+  - `POST /api/inventory/commands/release`
+  - `POST /api/inventory/commands/confirm`
+- Backend delegates order-driven inventory writes to those endpoints when `APP_INVENTORY_REMOTE_ENABLED=true`.
+- This delegation uses internal service-to-service calls (`APP_INVENTORY_REMOTE_BASE_URL`) and keeps storefront/public routing unchanged.
+
+Order query extraction (P6 step 4):
+
+- `order-service` now exposes read endpoints:
+  - `GET /api/orders`
+  - `GET /api/orders/{id}`
+  - `GET /api/orders/_health`
+- Backend can delegate order reads to that service when `APP_ORDER_REMOTE_ENABLED=true`.
+- Delegation uses internal service-to-service calls (`APP_ORDER_REMOTE_BASE_URL`) and keeps Caddy public routing unchanged for `/api/orders/**`.
+
+Order write extraction (P6 step 6):
+
+- `order-service` now exposes command endpoints:
+  - `POST /api/orders`
+  - `PATCH /api/orders/{id}/status`
+- Backend can delegate order writes to that service when `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
+- Backend still publishes `OrderCreated` / `OrderStatusChanged` domain events after delegated writes so downstream payment/saga flows keep working.
+
+Payment query extraction (P6 step 5):
+
+- `payment-service` now exposes read endpoints:
+  - `GET /api/payments`
+  - `GET /api/payments/{id}`
+  - `GET /api/payments/order/{orderId}`
+  - `GET /api/payments/_health`
+- Backend can delegate payment reads to that service when `APP_PAYMENT_REMOTE_ENABLED=true`.
+- Delegation uses internal service-to-service calls (`APP_PAYMENT_REMOTE_BASE_URL`) and keeps Caddy public routing unchanged for `/api/payments/**`.
+
+Distributed tracing flow:
+
+- Backend, `product-service`, `inventory-service`, `order-service`, and `payment-service` emit OTLP traces (Micrometer tracing bridge + OTel exporter).
+- `otel-collector` receives and batches spans.
+- `tempo` stores traces and Grafana reads them through provisioned datasource.

@@ -80,38 +80,43 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 
 - [x] Wishlist core (persisted favorites per authenticated user)
 - [x] Search core (keyword search API + storefront overlay)
-- [ ] Shareable wishlist links
-- [ ] Full product variants (size/color combinations with dedicated admin UX)
+- [x] Shareable wishlist links
+- [x] Full product variants (size/color combinations with dedicated admin UX)
 - [ ] Direct media upload to S3/R2 from admin product form
-- [ ] Order tracking timeline in customer account
+- [x] Order tracking timeline in customer account
 
 ---
 
 ## P5 - Event-Driven Upgrade
 
-- [ ] Kafka infrastructure
-- [ ] `KafkaDomainEventPublisher` as primary adapter
-- [ ] Migrate in-process listeners to `@KafkaListener`
-- [ ] Retry/DLQ strategy
-- [ ] Sagas for order-inventory consistency
+- [x] Kafka infrastructure
+- [x] `KafkaDomainEventPublisher` as primary adapter
+- [x] Migrate in-process listeners to `@KafkaListener`
+- [x] Retry/DLQ strategy
+- [x] Sagas for order-inventory consistency
 
 ---
 
 ## P6 - Microservices Extraction
 
-- [ ] Extract `product` service
-- [ ] Extract `inventory` service
-- [ ] Extract `order` service
-- [ ] Extract `payment` service
+- [x] Extract `product` read service (`services/product-service`) with compatible `GET /api/products*` endpoints
+- [x] Route gateway read traffic (`GET/HEAD /api/products*`) to extracted `product-service` through Caddy
+- [x] Extract `inventory` read service (`services/inventory-service`) with compatible `GET /api/inventory*` endpoints
+- [x] Route gateway read traffic (`GET/HEAD /api/inventory*`) to extracted `inventory-service` through Caddy
+- [x] Extract `inventory` write paths (`reserve/release/confirm`) into dedicated service
+- [x] Extract `order` query service (`services/order-service`) with backend delegation toggle (`APP_ORDER_REMOTE_ENABLED`)
+- [x] Extract `payment` query service (`services/payment-service`) with backend delegation toggle (`APP_PAYMENT_REMOTE_ENABLED`)
+- [x] Extract `order` write paths into `order-service` with backend delegation toggle (`APP_ORDER_REMOTE_WRITE_ENABLED`)
+- [x] Move public `/api/orders/**` traffic to extracted order-service (gateway/auth offload phase)
 - [ ] Introduce API gateway policies (routing, auth offload, rate limits)
 
 ---
 
 ## P7 - Observability and Scale
 
-- [ ] Prometheus scrape endpoint and metrics pipeline
-- [ ] Grafana dashboards (JVM, HTTP, DB, order/payment funnel)
-- [ ] Distributed tracing (OpenTelemetry)
+- [x] Prometheus scrape endpoint and metrics pipeline
+- [x] Grafana dashboards (baseline JVM/HTTP/DB pool overview)
+- [x] Distributed tracing baseline with OpenTelemetry Collector + Tempo
 - [ ] Redis for cart/session acceleration
 - [ ] Horizontal backend scaling behind reverse proxy
 - [ ] Postgres read replicas for read-heavy catalog queries

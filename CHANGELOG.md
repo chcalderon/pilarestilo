@@ -35,6 +35,48 @@ The format is inspired by Keep a Changelog.
 - SMTP password encryption-at-rest with AES-GCM and env-driven crypto secret (`SYSTEM_SETTINGS_CRYPTO_SECRET`).
 - User profile phone capture in auth profile API (`GET/PATCH /api/auth/me/profile` with `phone`).
 - User phone persistence migration (`V14__user_phone.sql`) with index support.
+- Customer account order timeline UI across lifecycle states (`CREATED` -> `DELIVERED`, with `CANCELLED` handling) in `AccountPage`.
+- Shareable wishlist links with authenticated owner controls (`GET/POST/DELETE /api/wishlist/share-link`) and public read endpoint (`GET /api/wishlist/shared/{token}`).
+- Full product variants support (`color + size + stock`) with migration `V20__product_variants.sql` and API payload support on create/update product requests.
+- Storefront product detail now includes variant picker (`ProductVariantSelector`) with color+talla selection and stock-aware add-to-cart behavior.
+- Admin product form now supports dedicated variant management rows (add/edit/remove combinations) and automatic total stock calculation from variants.
+- Kafka event infrastructure for domain events (Docker service + backend wiring) with runtime toggle `APP_DOMAIN_EVENTS_KAFKA_ENABLED`.
+- `KafkaDomainEventPublisher` as primary `DomainEventPublisher` adapter when Kafka mode is enabled.
+- Kafka listeners added for payment, review summary, and notification event consumers.
+- Retry + dead-letter strategy for Kafka consumers via `DefaultErrorHandler` and `<topic>.dlt` recoverer.
+- `OrderInventorySaga` introduced for payment-driven order/inventory consistency handling.
+- New extracted read-oriented microservice `services/product-service` (P6 step 1) with compatible endpoints:
+  - `GET /api/products`
+  - `GET /api/products/{id}`
+  - `GET /api/products/search?q=...`
+- New extracted read-oriented microservice `services/inventory-service` (P6 step 2) with compatible endpoints:
+  - `GET /api/inventory/products`
+  - `GET /api/inventory/products/{id}`
+  - `GET /api/inventory/_health`
+- Inventory command endpoints in extracted `inventory-service` (P6 step 3):
+  - `POST /api/inventory/commands/reserve`
+  - `POST /api/inventory/commands/release`
+  - `POST /api/inventory/commands/confirm`
+- New extracted query-oriented microservice `services/order-service` (P6 step 4) with endpoints:
+  - `GET /api/orders`
+  - `GET /api/orders/{id}`
+  - `GET /api/orders/_health`
+- New extracted query-oriented microservice `services/payment-service` (P6 step 5) with endpoints:
+  - `GET /api/payments`
+  - `GET /api/payments/{id}`
+  - `GET /api/payments/order/{orderId}`
+  - `GET /api/payments/_health`
+- Order command endpoints added to extracted `services/order-service` (P6 step 6):
+  - `POST /api/orders`
+  - `PATCH /api/orders/{id}/status`
+- Observability baseline (P7) with Docker profile `observability`:
+  - `prometheus` scraping backend/product-service actuator endpoints
+  - `grafana` with provisioned Prometheus datasource and starter dashboard
+- Prometheus metric registry enabled in backend and product-service via `micrometer-registry-prometheus`.
+- Distributed tracing baseline (P7) with OpenTelemetry:
+  - `otel-collector` + `tempo` services (optional `tracing` profile)
+  - Grafana Tempo datasource provisioning
+  - OTLP tracing bridge dependencies on backend and product-service
 
 ### Changed
 - Notification sender selection is now runtime-configurable from admin settings (`system_settings.notification_provider`) with env fallback for seeded/default state.
@@ -44,6 +86,36 @@ The format is inspired by Keep a Changelog.
 - `PaymentGatewayPort` now returns a structured checkout session object.
 - Payment domain now supports gateway-driven transitions (`confirmByGateway`, `rejectByGateway`) with safeguards against conflicting final states.
 - Security config now explicitly allows unauthenticated POST calls only to `/api/payments/webhooks/gateway`.
+- Security config now explicitly permits unauthenticated `GET /api/wishlist/shared/**` for public wishlist sharing.
+- Security config now explicitly permits unauthenticated `GET /api/inventory/**` for inventory read endpoints.
+- Cart lines now support optional variant metadata while keeping order creation compatibility through canonical `productId` mapping.
+- Domain-event mode now supports `spring` (default in-process) and `kafka` (topic-routed) without changing use-case/domain code.
+- `PaymentEventListener` now delegates payment outcomes to `OrderInventorySaga` (single orchestration point for order/inventory consistency).
+- `infra/docker-compose.yml` now keeps Kafka optional behind `--profile kafka` and introduces `--profile microservices` for `product-service`.
+- `infra/docker-compose.yml` now includes optional `--profile observability` for Prometheus/Grafana.
+- Default local stack (`backend + frontend + postgres + caddy`) no longer requires pulling/starting Kafka when Kafka mode is disabled.
+- Backend actuator exposure now includes `metrics` and `prometheus` under `/api/actuator/*`.
+- Kafka profile now uses `apache/kafka:3.8.0` with single-node KRaft settings (fixes broken `bitnami/kafka:3.7` tag).
+- Caddy gateway now routes `GET/HEAD /api/products*` directly to `product-service` when microservices profile is enabled; remaining `/api/*` traffic stays on backend.
+- Caddy gateway now routes `GET/HEAD /api/inventory*` to `inventory-service` when microservices profile is enabled.
+- Backend now exposes inventory read endpoints (`/api/inventory/products*`) using the same product stock source as the extracted service.
+- Backend inventory application now supports optional remote command delegation to extracted `inventory-service` using:
+  - `APP_INVENTORY_REMOTE_ENABLED=true`
+  - `APP_INVENTORY_REMOTE_BASE_URL=http://inventory-service:8082`
+- Backend order query use cases (`GetOrderUseCase`, `ListOrdersUseCase`) now support optional delegation to extracted `order-service` using:
+  - `APP_ORDER_REMOTE_ENABLED=true`
+  - `APP_ORDER_REMOTE_BASE_URL=http://order-service:8083`
+- Backend order command use cases (`CreateOrderUseCase`, `UpdateOrderStatusUseCase`) now support optional delegation to extracted `order-service` using:
+  - `APP_ORDER_REMOTE_WRITE_ENABLED=true`
+  - `APP_ORDER_REMOTE_BASE_URL=http://order-service:8083`
+  - `APP_ORDER_REMOTE_SERVICE_TOKEN` for backend->order-service internal auth header (`X-Service-Token`)
+- Backend payment query use cases (`GetPaymentUseCase`, `GetPaymentByOrderUseCase`, `ListPaymentsUseCase`) now support optional delegation to extracted `payment-service` using:
+  - `APP_PAYMENT_REMOTE_ENABLED=true`
+  - `APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084`
+- `infra/docker-compose.yml` microservices profile now includes `order-service` and `payment-service`, plus backend wiring for order/payment remote env toggles.
+- Caddy gateway now routes public `/api/orders*` traffic directly to `order-service`.
+- `order-service` now enforces JWT auth/role rules for `/api/orders/**` and supports trusted internal service calls via `X-Service-Token`.
+- Backend and product-service runtime config now supports `APP_TRACING_ENABLED`, `APP_TRACING_OTLP_ENDPOINT`, and `APP_TRACING_SAMPLING_PROBABILITY`.
 - Storefront checkout now allows selecting payment method (`BANK_TRANSFER` or `PAYMENT_GATEWAY`) and applies employee discount visualization for `SELLER` users.
 - Account profile screen now supports inline profile editing and password change workflow.
 - API error handling in frontend now surfaces backend `detail/message` when available (including media-proof upload failures).
@@ -74,6 +146,38 @@ The format is inspired by Keep a Changelog.
 - Frontend build passes (`npm run build`).
 - Docker stack rebuild for `backend` and `frontend` completed successfully.
 - Docker rebuild validated Flyway migration `V17` and healthy startup for backend/frontend services.
+- Backend tests pass after saga/listener refactor (`mvn clean test`, 54 tests).
+- New `product-service` builds successfully (`mvn -DskipTests compile`) and runs healthy in Docker profile `microservices`.
+- Default Docker stack rebuild (`backend` + `frontend`) succeeds without Kafka profile enabled.
+- `product-service` smoke check succeeded for `GET /api/products?page=0&size=1`.
+- Caddy routing smoke checks now pass for extracted catalog reads:
+  - `GET /api/products/_health` -> `204`
+  - `GET /api/products?page=0&size=1` -> `200`
+- New `inventory-service` builds successfully (`mvn -DskipTests compile`) and runs healthy in Docker profile `microservices`.
+- Inventory routing smoke checks pass through Caddy:
+  - `GET /api/inventory/_health` -> `204`
+  - `GET /api/inventory/products?page=0&size=1` -> `200`
+- Inventory command endpoints validate in extracted service:
+  - `POST /api/inventory/commands/reserve` -> `204`
+  - `POST /api/inventory/commands/release` -> `204`
+- New `order-service` builds successfully (`mvn -DskipTests compile`) and runs healthy in Docker profile `microservices`.
+- Order-service smoke checks pass:
+  - `GET /api/orders/_health` -> `204`
+  - `GET /api/orders?page=0&size=1` -> `200`
+- Backend delegation smoke checks pass with `APP_ORDER_REMOTE_ENABLED=true`:
+  - `GET /api/orders/mine?page=0&size=1` -> `200`
+  - `GET /api/orders?page=0&size=1` -> `200`
+- Backend delegation smoke checks pass with `APP_ORDER_REMOTE_WRITE_ENABLED=true`:
+  - `POST /api/orders` -> `201`
+  - `PATCH /api/orders/{id}/status` -> `200`
+  - Follow-up payment registration still works (order event published in backend after delegated create)
+- New `payment-service` builds successfully (`mvn -DskipTests compile`) and runs healthy in Docker profile `microservices`.
+- Payment-service smoke checks pass:
+  - `GET /api/payments/_health` -> `204`
+  - `GET /api/payments?page=0&size=1` -> `200`
+- Backend delegation smoke checks pass with `APP_PAYMENT_REMOTE_ENABLED=true`:
+  - `GET /api/payments?page=0&size=1` -> `200`
+  - `GET /api/payments/order/{orderId}` -> `200`
 
 ## [2026-04-20] - Customer proof submission and admin payment queue alignment
 

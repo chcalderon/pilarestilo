@@ -1,30 +1,35 @@
-package com.pilarestilo.payment.infrastructure.listeners;
+package com.pilarestilo.payment.infrastructure.listeners.kafka;
 
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.ports.OrderRepository;
-import com.pilarestilo.payment.domain.ports.PaymentRepository;
 import com.pilarestilo.payment.application.usecases.RegisterPaymentUseCase;
+import com.pilarestilo.payment.domain.ports.PaymentRepository;
 import com.pilarestilo.shared.domain.DomainException;
-import org.springframework.context.event.EventListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OrderEventListener {
+@ConditionalOnProperty(prefix = "app.domain-events.kafka", name = "enabled", havingValue = "true")
+public class KafkaOrderEventListener {
 
     private final RegisterPaymentUseCase registerPaymentUseCase;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
 
-    public OrderEventListener(RegisterPaymentUseCase registerPaymentUseCase,
-                               OrderRepository orderRepository,
-                               PaymentRepository paymentRepository) {
+    public KafkaOrderEventListener(RegisterPaymentUseCase registerPaymentUseCase,
+                                   OrderRepository orderRepository,
+                                   PaymentRepository paymentRepository) {
         this.registerPaymentUseCase = registerPaymentUseCase;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
     }
 
-    @EventListener
+    @KafkaListener(
+            topics = "#{@domainEventTopics.topicFor('OrderCreated')}",
+            containerFactory = "domainEventsKafkaListenerContainerFactory"
+    )
     public void onOrderCreated(OrderCreated event) {
         if (paymentRepository.findByOrderId(event.orderId()).isPresent()) {
             return;

@@ -4,6 +4,7 @@ import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
+import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
@@ -30,19 +31,28 @@ public class CreateOrderUseCase {
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final DomainEventPublisher eventPublisher;
+    private final OrderRemoteCommandClient orderRemoteCommandClient;
 
     public CreateOrderUseCase(OrderRepository orderRepository,
                                ProductRepository productRepository,
                                InventoryService inventoryService,
-                               DomainEventPublisher eventPublisher) {
+                               DomainEventPublisher eventPublisher,
+                               OrderRemoteCommandClient orderRemoteCommandClient) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
         this.eventPublisher = eventPublisher;
+        this.orderRemoteCommandClient = orderRemoteCommandClient;
     }
 
     @Transactional
     public OrderDto execute(CreateOrderCommand command) {
+        if (orderRemoteCommandClient.isWriteEnabled()) {
+            OrderDto created = orderRemoteCommandClient.create(command);
+            eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
+            return created;
+        }
+
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
