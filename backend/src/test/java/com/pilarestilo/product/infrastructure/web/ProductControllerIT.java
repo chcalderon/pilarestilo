@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductControllerIT {
 
     @Container
+    @SuppressWarnings("resource")
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
@@ -43,6 +45,7 @@ class ProductControllerIT {
     ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser(username = "admin@pilarestilo.com", roles = {"ADMIN"})
     void create_product_returns_201() throws Exception {
         String body = objectMapper.writeValueAsString(Map.of(
                 "name", "Blazer Gucci",

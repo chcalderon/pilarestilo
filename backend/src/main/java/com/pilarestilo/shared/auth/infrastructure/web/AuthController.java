@@ -21,7 +21,6 @@ public class AuthController {
     private final RegisterUseCase registerUseCase;
     private final LoginUseCase loginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
-    private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final GetMyProfileUseCase getMyProfileUseCase;
     private final UpdateMyProfileUseCase updateMyProfileUseCase;
     private final ChangeMyPasswordUseCase changeMyPasswordUseCase;
@@ -29,14 +28,12 @@ public class AuthController {
     public AuthController(RegisterUseCase registerUseCase,
                           LoginUseCase loginUseCase,
                           RefreshTokenUseCase refreshTokenUseCase,
-                          GetCurrentUserUseCase getCurrentUserUseCase,
                           GetMyProfileUseCase getMyProfileUseCase,
                           UpdateMyProfileUseCase updateMyProfileUseCase,
                           ChangeMyPasswordUseCase changeMyPasswordUseCase) {
         this.registerUseCase = registerUseCase;
         this.loginUseCase = loginUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
-        this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.getMyProfileUseCase = getMyProfileUseCase;
         this.updateMyProfileUseCase = updateMyProfileUseCase;
         this.changeMyPasswordUseCase = changeMyPasswordUseCase;
