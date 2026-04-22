@@ -130,6 +130,13 @@ app:
       write-enabled: ${APP_ORDER_REMOTE_WRITE_ENABLED:false}
       base-url: ${APP_ORDER_REMOTE_BASE_URL:http://order-service:8083}
       service-token: ${APP_ORDER_REMOTE_SERVICE_TOKEN:}
+  gateway:
+    rate-limit:
+      enabled: ${APP_GATEWAY_RATE_LIMIT_ENABLED:true}
+      window-seconds: ${APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS:60}
+      login-max-requests: ${APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS:12}
+      register-max-requests: ${APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS:6}
+      webhook-max-requests: ${APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS:180}
 
 server:
   port: 8080

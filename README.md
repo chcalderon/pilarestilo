@@ -75,6 +75,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - Caddy now routes `GET/HEAD /api/payments*` traffic directly to `payment-service` with JWT auth offloaded there.
 - P6 step 6 completed: extracted `services/order-service` now supports order command endpoints, and backend can delegate order create/status updates through `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
 - Caddy now routes public `/api/orders*` traffic directly to `order-service` (JWT auth offloaded there).
+- Gateway guardrails now include API body-size/method policies at Caddy plus per-IP rate limits for sensitive public POST endpoints in backend (`login/register/payment webhooks`).
 - P7 baseline observability is available through optional `observability` profile (`prometheus` + `grafana`) with preprovisioned dashboard.
 - P7 tracing baseline is now available through optional `tracing` profile (`otel-collector` + `tempo`) and Grafana Tempo datasource provisioning.
 - Customer account now supports bank-transfer proof submission (image upload or manual URL) directly from `My orders`.

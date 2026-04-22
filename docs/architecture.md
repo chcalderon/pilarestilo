@@ -167,6 +167,17 @@ Caddy now applies a read-routing policy for catalog endpoints:
 - remaining `/api/*` -> `backend`
 - all other routes -> `frontend`
 
+Gateway guardrails currently enforced:
+
+- API payload cap at edge (`/api/*` max body: `12MB`)
+- API invalid method rejection at edge (`405` for unsupported verbs)
+- Order API method policy at edge (`GET|HEAD|POST|PATCH` only)
+- Upstream proxy timeouts (`dial_timeout` + `response_header_timeout`) for extracted services and backend
+- Per-IP rate limiting in backend gateway-facing filter for sensitive public POST endpoints:
+  - `/api/auth/login`
+  - `/api/auth/register`
+  - `/api/payments/webhooks/gateway` and `/api/payments/webhooks/gateway/mercadopago`
+
 Inventory write extraction (P6 step 3):
 
 - `inventory-service` now exposes stock command endpoints:

@@ -109,7 +109,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Route gateway read traffic (`GET/HEAD /api/payments*`) to extracted `payment-service` with auth offload
 - [x] Extract `order` write paths into `order-service` with backend delegation toggle (`APP_ORDER_REMOTE_WRITE_ENABLED`)
 - [x] Move public `/api/orders/**` traffic to extracted order-service (gateway/auth offload phase)
-- [ ] Introduce API gateway policies (routing, auth offload, rate limits)
+- [x] Introduce API gateway policies (routing, auth offload, rate limits)
 
 ---
 

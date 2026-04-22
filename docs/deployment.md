@@ -107,6 +107,13 @@ DOMAIN=pilarestilo.com                          # your real domain
 # APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084
 # APP_PAYMENT_REMOTE_SERVICE_TOKEN=payment-service-internal-token
 # (requires microservices profile with payment-service running)
+
+# Optional gateway rate limits (sensitive public POST endpoints)
+# APP_GATEWAY_RATE_LIMIT_ENABLED=true
+# APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS=60
+# APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS=12
+# APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS=6
+# APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS=180
 ```
 
 Protect the file from other users:
@@ -179,6 +186,11 @@ With `microservices` profile enabled, Caddy routes:
 - `GET/HEAD /api/inventory*` to `inventory-service`
 - `GET/HEAD /api/payments*` to `payment-service`
 - `/api/orders*` to `order-service`
+
+Additional gateway policies:
+- `/api/*` request body cap: `12MB`
+- unsupported API methods rejected with `405`
+- `/api/orders*` only allows `GET|HEAD|POST|PATCH` at gateway
 
 When `APP_INVENTORY_REMOTE_ENABLED=true`, backend inventory write commands
 (`reserve/release/confirm`) are also delegated to `inventory-service` through

@@ -18,6 +18,21 @@
 #       `frontend:4321` to `frontend:80` in the reverse_proxy directive below.
 
 http://{$DOMAIN:localhost} {
+    # Gateway policy: cap API payload size.
+    @api_paths {
+        path /api/*
+    }
+    request_body @api_paths {
+        max_size 12MB
+    }
+
+    # Gateway policy: block unsupported HTTP methods for API traffic.
+    @api_invalid_method {
+        path /api/*
+        not method GET HEAD POST PUT PATCH DELETE OPTIONS
+    }
+    respond @api_invalid_method "Method Not Allowed" 405
+
     route {
         # Catalog reads - route product GETs to extracted product-service.
         @product_reads {
@@ -25,7 +40,12 @@ http://{$DOMAIN:localhost} {
             path /api/products /api/products/*
         }
         handle @product_reads {
-            reverse_proxy product-service:8081
+            reverse_proxy product-service:8081 {
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 30s
+                }
+            }
         }
 
         # Inventory reads - route to extracted inventory-service.
@@ -34,7 +54,12 @@ http://{$DOMAIN:localhost} {
             path /api/inventory /api/inventory/*
         }
         handle @inventory_reads {
-            reverse_proxy inventory-service:8082
+            reverse_proxy inventory-service:8082 {
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 30s
+                }
+            }
         }
 
         # Payment reads - route GET/HEAD payment queries to extracted payment-service.
@@ -43,20 +68,43 @@ http://{$DOMAIN:localhost} {
             path /api/payments /api/payments/*
         }
         handle @payment_reads {
-            reverse_proxy payment-service:8084
+            reverse_proxy payment-service:8084 {
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 30s
+                }
+            }
         }
 
         # Orders - route all order traffic to extracted order-service.
-        @order_all {
+        @order_allowed {
+            method GET HEAD POST PATCH
             path /api/orders /api/orders/*
         }
-        handle @order_all {
-            reverse_proxy order-service:8083
+        handle @order_allowed {
+            reverse_proxy order-service:8083 {
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 30s
+                }
+            }
+        }
+
+        @order_disallowed {
+            path /api/orders /api/orders/*
+        }
+        handle @order_disallowed {
+            respond "Method Not Allowed" 405
         }
 
         # API - proxy all remaining /api/* requests to the Spring Boot backend
         handle /api/* {
-            reverse_proxy backend:8080
+            reverse_proxy backend:8080 {
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 30s
+                }
+            }
         }
 
         # Frontend - everything else goes to the Astro frontend

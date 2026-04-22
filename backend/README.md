@@ -183,6 +183,10 @@ Optional payment read delegation from backend to `payment-service`:
 - Backend will resolve payment queries (`/api/payments*`) through `APP_PAYMENT_REMOTE_BASE_URL`.
 - If `payment-service` internal auth is enabled, set `APP_PAYMENT_REMOTE_SERVICE_TOKEN` so backend includes `X-Service-Token`.
 
+Gateway-facing rate-limit filter (backend side):
+- Protects sensitive public POST endpoints (`/api/auth/login`, `/api/auth/register`, payment webhooks).
+- Per-IP window and thresholds are tunable through `APP_GATEWAY_RATE_LIMIT_*` variables.
+
 ---
 
 ## Environment variables
@@ -245,6 +249,11 @@ Optional payment read delegation from backend to `payment-service`:
 | `APP_PAYMENT_REMOTE_ENABLED` | No | Enables remote payment query delegation from backend (`true/false`, default `false`) |
 | `APP_PAYMENT_REMOTE_BASE_URL` | No | Base URL for extracted payment-service queries (default `http://payment-service:8084`) |
 | `APP_PAYMENT_REMOTE_SERVICE_TOKEN` | No | Internal token sent by backend when calling payment-service (`X-Service-Token`) |
+| `APP_GATEWAY_RATE_LIMIT_ENABLED` | No | Enables backend gateway-facing rate-limit filter (`true/false`, default `true`) |
+| `APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS` | No | Rate-limit time window in seconds (default `60`) |
+| `APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS` | No | Max requests per IP/window for `POST /api/auth/login` (default `12`) |
+| `APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS` | No | Max requests per IP/window for `POST /api/auth/register` (default `6`) |
+| `APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS` | No | Max requests per IP/window for payment webhooks (default `180`) |
 | `APP_TRACING_ENABLED` | No | Enables OTLP tracing export (`true/false`, default `false`) |
 | `APP_TRACING_OTLP_ENDPOINT` | No | OTLP HTTP traces endpoint (default `http://otel-collector:4318/v1/traces`) |
 | `APP_TRACING_SAMPLING_PROBABILITY` | No | Trace sampling ratio between `0.0` and `1.0` (default `1.0`) |

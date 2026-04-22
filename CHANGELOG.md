@@ -118,6 +118,15 @@ The format is inspired by Keep a Changelog.
 - Caddy gateway now routes `GET/HEAD /api/payments*` traffic to `payment-service`; non-read payment endpoints remain on backend.
 - `payment-service` now enforces JWT auth/role rules for payment queries and supports trusted internal calls via `X-Service-Token`.
 - Backend payment query remote client now supports `APP_PAYMENT_REMOTE_SERVICE_TOKEN` for backend->payment-service auth.
+- Caddy gateway now enforces baseline API policies:
+  - `/api/*` request body max size `12MB`
+  - unsupported API methods rejected with `405`
+  - `/api/orders*` restricted to `GET|HEAD|POST|PATCH`
+  - upstream timeout guardrails for extracted services and backend
+- Backend now applies per-IP gateway-facing rate limits for sensitive public POST endpoints:
+  - `/api/auth/login`
+  - `/api/auth/register`
+  - `/api/payments/webhooks/gateway` and `/api/payments/webhooks/gateway/mercadopago`
 - Backend and product-service runtime config now supports `APP_TRACING_ENABLED`, `APP_TRACING_OTLP_ENDPOINT`, and `APP_TRACING_SAMPLING_PROBABILITY`.
 - Storefront checkout now allows selecting payment method (`BANK_TRANSFER` or `PAYMENT_GATEWAY`) and applies employee discount visualization for `SELLER` users.
 - Account profile screen now supports inline profile editing and password change workflow.
@@ -185,6 +194,11 @@ The format is inspired by Keep a Changelog.
   - `GET /api/payments/_health` -> `204`
   - `GET /api/payments?page=0&size=1` as admin -> `200`
   - `GET /api/payments?page=0&size=1` as customer -> `403`
+- Gateway policy smoke checks pass:
+  - unsupported methods on API paths are rejected at edge (`400/405` depending on HTTP verb parsing stage)
+  - `DELETE /api/orders` -> `405`
+  - oversized payload `POST /api/auth/login` (~13MB JSON) -> `413`
+  - repeated `POST /api/auth/login` attempts exceed threshold and return `429`
 
 ## [2026-04-20] - Customer proof submission and admin payment queue alignment
 
