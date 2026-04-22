@@ -17,6 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: pe_redis
+    profiles: ["cache"]
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - pe_redis_data:/data
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
   kafka:
     image: apache/kafka:3.8.0
     container_name: pe_kafka
@@ -41,15 +57,19 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    container_name: pe_backend
     restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+      SPRING_DATA_REDIS_PASSWORD: ${SPRING_DATA_REDIS_PASSWORD:-}
       JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
       SYSTEM_SETTINGS_CRYPTO_SECRET: ${SYSTEM_SETTINGS_CRYPTO_SECRET:-U2VjcmV0U3lzdGVtU2V0dGluZ3MxMjM0NTY3ODkw}
       MEDIA_STORAGE_PATH: /app/media
+      APP_CACHE_REDIS_ENABLED: ${APP_CACHE_REDIS_ENABLED:-false}
+      APP_CACHE_REDIS_TTL_SECONDS: ${APP_CACHE_REDIS_TTL_SECONDS:-300}
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
       WHATSAPP_SIMULATED_TO: ${WHATSAPP_SIMULATED_TO:-+56900000000}
       WHATSAPP_SIMULATED_SENDER: ${WHATSAPP_SIMULATED_SENDER:-Pilar Estilo}
@@ -133,6 +153,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      APP_DB_READ_REPLICA_ENABLED: ${APP_DB_READ_REPLICA_ENABLED:-false}
+      APP_DB_READ_REPLICA_URL: ${APP_DB_READ_REPLICA_URL:-}
+      APP_DB_READ_REPLICA_USERNAME: ${APP_DB_READ_REPLICA_USERNAME:-}
+      APP_DB_READ_REPLICA_PASSWORD: ${APP_DB_READ_REPLICA_PASSWORD:-}
+      APP_DB_READ_REPLICA_DRIVER_CLASS_NAME: ${APP_DB_READ_REPLICA_DRIVER_CLASS_NAME:-org.postgresql.Driver}
       SERVER_PORT: "8081"
       APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
       APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
@@ -344,6 +369,7 @@ networks:
 
 volumes:
   pe_pgdata:
+  pe_redis_data:
   pe_prometheus_data:
   pe_grafana_data:
   pe_tempo_data:

@@ -99,7 +99,10 @@ http://{$DOMAIN:localhost} {
 
         # API - proxy all remaining /api/* requests to the Spring Boot backend
         handle /api/* {
-            reverse_proxy backend:8080 {
+            reverse_proxy {
+                dynamic a backend 8080
+                lb_policy round_robin
+                lb_try_duration 2s
                 transport http {
                     dial_timeout 5s
                     response_header_timeout 30s

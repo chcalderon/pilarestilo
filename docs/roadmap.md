@@ -1,6 +1,6 @@
 # Pilar Estilo - Roadmap
 
-This roadmap is synced with the current codebase on `master` as of April 20, 2026.
+This roadmap is synced with the current codebase on `master` as of April 22, 2026.
 
 ## v1 - Initial Release (Completed)
 
@@ -118,6 +118,6 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Prometheus scrape endpoint and metrics pipeline
 - [x] Grafana dashboards (baseline JVM/HTTP/DB pool overview)
 - [x] Distributed tracing baseline with OpenTelemetry Collector + Tempo
-- [ ] Redis for cart/session acceleration
-- [ ] Horizontal backend scaling behind reverse proxy
-- [ ] Postgres read replicas for read-heavy catalog queries
+- [x] Redis-backed hot-read cache baseline (optional profile) for categories + public store settings
+- [x] Horizontal backend scaling behind reverse proxy (`docker compose --scale backend=N`)
+- [x] Postgres read-replica routing baseline for catalog queries in `product-service`

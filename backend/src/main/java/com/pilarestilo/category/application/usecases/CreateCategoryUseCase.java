@@ -4,6 +4,8 @@ import com.pilarestilo.category.application.dto.CategoryDto;
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.infrastructure.cache.CacheNames;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ public class CreateCategoryUseCase {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.CATEGORY_TREE}, allEntries = true)
     public CategoryDto execute(String slug, String nameEs, String nameEn,
                                UUID parentId, int sortOrder, String imageUrl) {
         if (categoryRepository.existsBySlug(slug)) {

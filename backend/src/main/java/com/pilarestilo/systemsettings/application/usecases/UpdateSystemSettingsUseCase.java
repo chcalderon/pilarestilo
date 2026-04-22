@@ -5,6 +5,8 @@ import com.pilarestilo.systemsettings.application.dto.SystemSettingsDto;
 import com.pilarestilo.systemsettings.application.mappers.SystemSettingsMapper;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
+import com.pilarestilo.shared.infrastructure.cache.CacheNames;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class UpdateSystemSettingsUseCase {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.PUBLIC_STORE_SETTINGS, allEntries = true)
     public SystemSettingsDto execute(UpdateSystemSettingsCommand command) {
         var settings = systemSettingsRepository.get();
 

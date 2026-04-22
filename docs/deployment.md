@@ -108,12 +108,27 @@ DOMAIN=pilarestilo.com                          # your real domain
 # APP_PAYMENT_REMOTE_SERVICE_TOKEN=payment-service-internal-token
 # (requires microservices profile with payment-service running)
 
+# Optional P7 catalog read replica (product-service reads):
+# APP_DB_READ_REPLICA_ENABLED=true
+# APP_DB_READ_REPLICA_URL=jdbc:postgresql://<replica-host>:5432/<db>
+# APP_DB_READ_REPLICA_USERNAME=<replica-user>
+# APP_DB_READ_REPLICA_PASSWORD=<replica-password>
+
 # Optional gateway rate limits (sensitive public POST endpoints)
 # APP_GATEWAY_RATE_LIMIT_ENABLED=true
 # APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS=60
 # APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS=12
 # APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS=6
 # APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS=180
+
+# Optional Redis cache baseline (P7)
+# APP_CACHE_REDIS_ENABLED=true
+# APP_CACHE_REDIS_TTL_SECONDS=300
+# SPRING_DATA_REDIS_HOST=redis
+# SPRING_DATA_REDIS_PORT=6379
+# SPRING_DATA_REDIS_PASSWORD=
+# Then start Redis profile:
+# docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache up -d redis
 ```
 
 Protect the file from other users:
@@ -164,7 +179,7 @@ Docker will:
 1. Pull `postgres:16-alpine` and `caddy:2-alpine` images.
 2. Build the backend image from `backend/Dockerfile`.
 3. Build the frontend image from `frontend/Dockerfile`.
-4. Start baseline containers (`pe_postgres`, `pe_backend`, `pe_frontend`, `pe_caddy`).
+4. Start baseline services (`postgres`, `backend`, `frontend`, `caddy`).
 5. Apply Flyway database migrations on backend startup.
 6. Mount persisted product media storage from `infra/storage/media` into backend path `/app/media`.
 
@@ -179,6 +194,12 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile micro
 
 # Distributed tracing stack (OTel Collector + Tempo)
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
+
+# Redis cache (optional, used when APP_CACHE_REDIS_ENABLED=true)
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache up -d redis
+
+# Horizontal backend scale behind Caddy (optional)
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=2
 ```
 
 With `microservices` profile enabled, Caddy routes:
@@ -191,6 +212,20 @@ Additional gateway policies:
 - `/api/*` request body cap: `12MB`
 - unsupported API methods rejected with `405`
 - `/api/orders*` only allows `GET|HEAD|POST|PATCH` at gateway
+
+Redis cache baseline:
+
+- Backend uses in-memory cache by default for hot-read endpoints.
+- Set `APP_CACHE_REDIS_ENABLED=true` to move cache storage to Redis.
+- Redis service is optional and started through `--profile cache`.
+
+Horizontal backend scaling baseline:
+
+- Caddy resolves backend upstreams dynamically by Docker DNS (`dynamic a backend 8080`).
+- Scale backend instances with Docker Compose:
+  - `docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=2`
+- Scale down to single replica:
+  - `docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=1`
 
 When `APP_INVENTORY_REMOTE_ENABLED=true`, backend inventory write commands
 (`reserve/release/confirm`) are also delegated to `inventory-service` through
@@ -207,6 +242,10 @@ When `APP_PAYMENT_REMOTE_ENABLED=true`, backend payment reads are delegated to
 `payment-service` through internal service-to-service HTTP (`APP_PAYMENT_REMOTE_BASE_URL`).
 If internal auth is enabled there, backend must also provide
 `APP_PAYMENT_REMOTE_SERVICE_TOKEN` (`X-Service-Token`).
+
+When `APP_DB_READ_REPLICA_ENABLED=true`, `product-service` routes read-only
+catalog queries to the configured replica datasource (`APP_DB_READ_REPLICA_*`).
+If disabled, catalog reads continue using the primary Postgres datasource.
 
 The first build takes 3–8 minutes depending on server speed and image cache state.
 
@@ -296,9 +335,14 @@ git pull origin master
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
-Docker Compose rebuilds only the services whose image changed and replaces containers one at a time. There is a brief downtime window (~5–15 seconds) while the backend container restarts.
+Docker Compose rebuilds only the services whose image changed and replaces containers one at a time. There is a brief downtime window (~5–15 seconds) while backend replicas restart.
 
-**Zero-downtime strategy (future):** Run two backend replicas behind a load balancer and do a rolling restart. With a single VPS this is not worth the complexity in v1.
+**Lower-downtime strategy (available):** run at least two backend replicas behind Caddy before updating:
+
+```bash
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=2
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build backend caddy
+```
 
 **Database migrations:** Flyway runs automatically on backend startup. Migrations are applied in order and are idempotent — re-running them on an already-migrated database is safe.
 
@@ -449,7 +493,7 @@ Access the app at `http://localhost` (Caddy on port 80 with `DOMAIN=localhost`).
 
 ### Backend health check fails / container keeps restarting
 
-**Symptom:** `pe_backend` shows `unhealthy` or restart loops.
+**Symptom:** `backend` service containers show `unhealthy` or restart loops.
 
 **Causes and fixes:**
 - Database not ready — check `pe_postgres` logs: `docker compose logs postgres`. Wait for `database system is ready to accept connections`.

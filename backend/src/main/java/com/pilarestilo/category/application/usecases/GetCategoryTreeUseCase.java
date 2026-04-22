@@ -3,6 +3,8 @@ package com.pilarestilo.category.application.usecases;
 import com.pilarestilo.category.application.dto.CategoryTreeNode;
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
+import com.pilarestilo.shared.infrastructure.cache.CacheNames;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class GetCategoryTreeUseCase {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.CATEGORY_TREE, sync = true)
     public List<CategoryTreeNode> execute() {
         List<Category> all = categoryRepository.findAll().stream()
                 .filter(Category::isActive)

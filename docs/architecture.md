@@ -64,6 +64,7 @@ PilarEstilo/
 - Java 17 + Spring Boot 3.3
 - Spring Security + JWT filter
 - Spring Data JPA + Hibernate
+- Spring Cache abstraction with optional Redis-backed cache manager
 - Flyway migrations
 - PostgreSQL 16
 
@@ -155,6 +156,7 @@ Optional profiles:
 
 - `kafka`: adds `kafka` broker for Kafka-backed domain-events mode.
 - `microservices`: adds extracted services (`product-service`, `inventory-service`, `order-service`, `payment-service`).
+- `cache`: adds `redis` for hot-read response caching.
 - `observability`: adds `prometheus` + `grafana` with provisioned datasource/dashboard.
 - `tracing`: adds `otel-collector` + `tempo` stack for distributed traces.
 
@@ -164,7 +166,7 @@ Caddy now applies a read-routing policy for catalog endpoints:
 - `GET`/`HEAD /api/inventory*` -> `inventory-service` (when `microservices` profile is running)
 - `GET`/`HEAD /api/payments*` -> `payment-service` (JWT auth enforced in `payment-service`)
 - `/api/orders*` -> `order-service` (public order traffic; JWT auth enforced in `order-service`)
-- remaining `/api/*` -> `backend`
+- remaining `/api/*` -> `backend` (dynamic DNS upstreams; supports horizontal scale with `--scale backend=N`)
 - all other routes -> `frontend`
 
 Gateway guardrails currently enforced:
@@ -177,6 +179,16 @@ Gateway guardrails currently enforced:
   - `/api/auth/login`
   - `/api/auth/register`
   - `/api/payments/webhooks/gateway` and `/api/payments/webhooks/gateway/mercadopago`
+
+Redis cache baseline (P7):
+
+- Backend cache manager runs in-memory by default.
+- When `APP_CACHE_REDIS_ENABLED=true`, cache storage moves to Redis (`cache` profile service).
+- Current hot-read cached entries:
+  - `GET /api/categories`
+  - `GET /api/categories/tree`
+  - `GET /api/system-settings/public`
+- Category and system-settings write operations evict those caches automatically.
 
 Inventory write extraction (P6 step 3):
 
@@ -213,6 +225,16 @@ Payment query extraction (P6 step 5):
   - `GET /api/payments/_health`
 - Backend can delegate payment reads to that service when `APP_PAYMENT_REMOTE_ENABLED=true`.
 - Delegation uses internal service-to-service calls (`APP_PAYMENT_REMOTE_BASE_URL`) and can include trusted `X-Service-Token` via `APP_PAYMENT_REMOTE_SERVICE_TOKEN`.
+
+Catalog read-replica routing (P7):
+
+- `product-service` supports optional read-replica routing for read-only transactions.
+- When `APP_DB_READ_REPLICA_ENABLED=true`, read queries (`list`, `search`, `getById`) use the replica datasource.
+- Write/default traffic still uses the primary datasource.
+- Required replica env vars:
+  - `APP_DB_READ_REPLICA_URL`
+  - `APP_DB_READ_REPLICA_USERNAME`
+  - `APP_DB_READ_REPLICA_PASSWORD`
 
 Distributed tracing flow:
 

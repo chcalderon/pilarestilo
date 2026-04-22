@@ -7,6 +7,10 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Horizontal backend scaling baseline behind Caddy using Docker Compose replicas (`--scale backend=N`).
+- Postgres read-replica routing baseline for catalog queries in `product-service` (read-only transaction routing).
+- Redis-backed cache baseline for hot storefront reads (`/api/categories`, `/api/categories/tree`, `/api/system-settings/public`) with opt-in runtime toggle.
+- Optional Docker `cache` profile with Redis service (`pe_redis`) and persisted volume (`pe_redis_data`).
 - Notification provider runtime settings in `system_settings` with migration `V17__notification_provider_settings.sql`.
 - Admin system settings UI now includes provider selector cards (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) and provider-specific forms.
 - Encrypted-at-rest storage for Twilio auth token and SendGrid API key in admin-managed system settings.
@@ -79,6 +83,11 @@ The format is inspired by Keep a Changelog.
   - OTLP tracing bridge dependencies on backend and product-service
 
 ### Changed
+- Caddy fallback API upstream now uses dynamic DNS discovery (`dynamic a backend 8080`) with round-robin balancing for scaled backend replicas.
+- `backend` service no longer uses a fixed container name, enabling `docker compose --scale backend=N`.
+- `product-service` now supports `APP_DB_READ_REPLICA_*` env config and routes read-only queries to replica when enabled.
+- Backend cache manager now defaults to in-memory cache and switches to Redis when `APP_CACHE_REDIS_ENABLED=true`.
+- Category and system-settings write use cases now evict related hot-read caches automatically.
 - Notification sender selection is now runtime-configurable from admin settings (`system_settings.notification_provider`) with env fallback for seeded/default state.
 - `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, and `EMAIL_SMTP` adapters now resolve provider config from admin settings first, then env fallback.
 - Storefront cards now display rating stars and dual price visualization (list price struck-through, discounted sale price, computed discount badge).
@@ -153,6 +162,10 @@ The format is inspired by Keep a Changelog.
 - System settings load no longer fails when a legacy/corrupted encrypted SMTP password exists; admin can now open the page and replace/clear credentials from UI.
 
 ### Verified
+- Docker Compose config validates after backend scaling changes (`docker compose -f infra/docker-compose.yml --env-file infra/.env config`).
+- Caddy config validates after dynamic backend upstream change (`caddy validate --config /etc/caddy/Caddyfile`).
+- `product-service` compiles with read-replica routing configuration (`mvn -DskipTests compile` in `services/product-service`).
+- Backend compiles with Redis cache integration (`mvn -DskipTests compile`).
 - Backend test suite passes (`mvn test`) with 51 tests, including new gateway webhook and domain transition coverage.
 - Backend test suite passes (`mvn test`) with 53 tests after notification provider refactor.
 - Frontend build passes (`npm run build`).

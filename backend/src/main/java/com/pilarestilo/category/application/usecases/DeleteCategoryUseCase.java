@@ -2,6 +2,8 @@ package com.pilarestilo.category.application.usecases;
 
 import com.pilarestilo.category.domain.ports.CategoryRepository;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.infrastructure.cache.CacheNames;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ public class DeleteCategoryUseCase {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.CATEGORY_TREE}, allEntries = true)
     public void execute(UUID id) {
         if (categoryRepository.findById(id).isEmpty()) {
             throw new DomainException("Category not found: " + id);
