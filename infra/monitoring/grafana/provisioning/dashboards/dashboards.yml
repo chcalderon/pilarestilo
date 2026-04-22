@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: PilarEstilo
+    orgId: 1
+    folder: Pilar Estilo
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
