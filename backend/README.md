@@ -163,6 +163,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 When that profile is running, Caddy routes:
 - `GET/HEAD /api/products*` to `product-service`.
 - `GET/HEAD /api/inventory*` to `inventory-service`.
+- `GET/HEAD /api/payments*` to `payment-service`.
 - `/api/orders*` to `order-service`.
 
 Optional inventory write delegation from backend to `inventory-service`:
@@ -180,6 +181,7 @@ Optional order write delegation from backend to `order-service`:
 Optional payment read delegation from backend to `payment-service`:
 - Set `APP_PAYMENT_REMOTE_ENABLED=true`.
 - Backend will resolve payment queries (`/api/payments*`) through `APP_PAYMENT_REMOTE_BASE_URL`.
+- If `payment-service` internal auth is enabled, set `APP_PAYMENT_REMOTE_SERVICE_TOKEN` so backend includes `X-Service-Token`.
 
 ---
 
@@ -242,6 +244,7 @@ Optional payment read delegation from backend to `payment-service`:
 | `APP_ORDER_REMOTE_SERVICE_TOKEN` | No | Internal token sent by backend when calling order-service (`X-Service-Token`) |
 | `APP_PAYMENT_REMOTE_ENABLED` | No | Enables remote payment query delegation from backend (`true/false`, default `false`) |
 | `APP_PAYMENT_REMOTE_BASE_URL` | No | Base URL for extracted payment-service queries (default `http://payment-service:8084`) |
+| `APP_PAYMENT_REMOTE_SERVICE_TOKEN` | No | Internal token sent by backend when calling payment-service (`X-Service-Token`) |
 | `APP_TRACING_ENABLED` | No | Enables OTLP tracing export (`true/false`, default `false`) |
 | `APP_TRACING_OTLP_ENDPOINT` | No | OTLP HTTP traces endpoint (default `http://otel-collector:4318/v1/traces`) |
 | `APP_TRACING_SAMPLING_PROBABILITY` | No | Trace sampling ratio between `0.0` and `1.0` (default `1.0`) |

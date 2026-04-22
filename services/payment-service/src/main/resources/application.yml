@@ -1,0 +1,37 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:payment-service}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/pilarestilo}
+    username: ${SPRING_DATASOURCE_USERNAME:pilar}
+    password: ${SPRING_DATASOURCE_PASSWORD:pilar}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    enabled: ${APP_TRACING_ENABLED:false}
+    sampling:
+      probability: ${APP_TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${APP_TRACING_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+  payment:
+    internal-token: ${APP_PAYMENT_INTERNAL_TOKEN:}

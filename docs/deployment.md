@@ -105,6 +105,7 @@ DOMAIN=pilarestilo.com                          # your real domain
 # Optional P6 payment query delegation:
 # APP_PAYMENT_REMOTE_ENABLED=true
 # APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084
+# APP_PAYMENT_REMOTE_SERVICE_TOKEN=payment-service-internal-token
 # (requires microservices profile with payment-service running)
 ```
 
@@ -176,6 +177,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 With `microservices` profile enabled, Caddy routes:
 - `GET/HEAD /api/products*` to `product-service`
 - `GET/HEAD /api/inventory*` to `inventory-service`
+- `GET/HEAD /api/payments*` to `payment-service`
 - `/api/orders*` to `order-service`
 
 When `APP_INVENTORY_REMOTE_ENABLED=true`, backend inventory write commands
@@ -191,6 +193,8 @@ are delegated to `order-service` through internal service-to-service HTTP
 
 When `APP_PAYMENT_REMOTE_ENABLED=true`, backend payment reads are delegated to
 `payment-service` through internal service-to-service HTTP (`APP_PAYMENT_REMOTE_BASE_URL`).
+If internal auth is enabled there, backend must also provide
+`APP_PAYMENT_REMOTE_SERVICE_TOKEN` (`X-Service-Token`).
 
 The first build takes 3–8 minutes depending on server speed and image cache state.
 

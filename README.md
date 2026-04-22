@@ -43,6 +43,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile micro
 # Optional payment read delegation (P6 step 5):
 # APP_PAYMENT_REMOTE_ENABLED=true
 # APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084
+# APP_PAYMENT_REMOTE_SERVICE_TOKEN=payment-service-internal-token
 
 # Prometheus + Grafana observability stack (P7 baseline)
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile observability up -d
@@ -71,6 +72,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - P6 step 3 completed: backend inventory writes (`reserve/release/confirm`) can now be delegated to `inventory-service` through `APP_INVENTORY_REMOTE_ENABLED=true`.
 - P6 step 4 completed: extracted `services/order-service` now provides order query endpoints, and backend can delegate order reads through `APP_ORDER_REMOTE_ENABLED=true`.
 - P6 step 5 completed: extracted `services/payment-service` now provides payment query endpoints, and backend can delegate payment reads through `APP_PAYMENT_REMOTE_ENABLED=true`.
+- Caddy now routes `GET/HEAD /api/payments*` traffic directly to `payment-service` with JWT auth offloaded there.
 - P6 step 6 completed: extracted `services/order-service` now supports order command endpoints, and backend can delegate order create/status updates through `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
 - Caddy now routes public `/api/orders*` traffic directly to `order-service` (JWT auth offloaded there).
 - P7 baseline observability is available through optional `observability` profile (`prometheus` + `grafana`) with preprovisioned dashboard.

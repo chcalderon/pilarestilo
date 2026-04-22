@@ -106,6 +106,7 @@ This roadmap is synced with the current codebase on `master` as of April 20, 202
 - [x] Extract `inventory` write paths (`reserve/release/confirm`) into dedicated service
 - [x] Extract `order` query service (`services/order-service`) with backend delegation toggle (`APP_ORDER_REMOTE_ENABLED`)
 - [x] Extract `payment` query service (`services/payment-service`) with backend delegation toggle (`APP_PAYMENT_REMOTE_ENABLED`)
+- [x] Route gateway read traffic (`GET/HEAD /api/payments*`) to extracted `payment-service` with auth offload
 - [x] Extract `order` write paths into `order-service` with backend delegation toggle (`APP_ORDER_REMOTE_WRITE_ENABLED`)
 - [x] Move public `/api/orders/**` traffic to extracted order-service (gateway/auth offload phase)
 - [ ] Introduce API gateway policies (routing, auth offload, rate limits)

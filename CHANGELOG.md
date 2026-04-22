@@ -115,6 +115,9 @@ The format is inspired by Keep a Changelog.
 - `infra/docker-compose.yml` microservices profile now includes `order-service` and `payment-service`, plus backend wiring for order/payment remote env toggles.
 - Caddy gateway now routes public `/api/orders*` traffic directly to `order-service`.
 - `order-service` now enforces JWT auth/role rules for `/api/orders/**` and supports trusted internal service calls via `X-Service-Token`.
+- Caddy gateway now routes `GET/HEAD /api/payments*` traffic to `payment-service`; non-read payment endpoints remain on backend.
+- `payment-service` now enforces JWT auth/role rules for payment queries and supports trusted internal calls via `X-Service-Token`.
+- Backend payment query remote client now supports `APP_PAYMENT_REMOTE_SERVICE_TOKEN` for backend->payment-service auth.
 - Backend and product-service runtime config now supports `APP_TRACING_ENABLED`, `APP_TRACING_OTLP_ENDPOINT`, and `APP_TRACING_SAMPLING_PROBABILITY`.
 - Storefront checkout now allows selecting payment method (`BANK_TRANSFER` or `PAYMENT_GATEWAY`) and applies employee discount visualization for `SELLER` users.
 - Account profile screen now supports inline profile editing and password change workflow.
@@ -178,6 +181,10 @@ The format is inspired by Keep a Changelog.
 - Backend delegation smoke checks pass with `APP_PAYMENT_REMOTE_ENABLED=true`:
   - `GET /api/payments?page=0&size=1` -> `200`
   - `GET /api/payments/order/{orderId}` -> `200`
+- Gateway payment read offload smoke checks pass:
+  - `GET /api/payments/_health` -> `204`
+  - `GET /api/payments?page=0&size=1` as admin -> `200`
+  - `GET /api/payments?page=0&size=1` as customer -> `403`
 
 ## [2026-04-20] - Customer proof submission and admin payment queue alignment
 

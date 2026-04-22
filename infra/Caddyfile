@@ -37,6 +37,15 @@ http://{$DOMAIN:localhost} {
             reverse_proxy inventory-service:8082
         }
 
+        # Payment reads - route GET/HEAD payment queries to extracted payment-service.
+        @payment_reads {
+            method GET HEAD
+            path /api/payments /api/payments/*
+        }
+        handle @payment_reads {
+            reverse_proxy payment-service:8084
+        }
+
         # Orders - route all order traffic to extracted order-service.
         @order_all {
             path /api/orders /api/orders/*

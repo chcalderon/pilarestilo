@@ -162,6 +162,7 @@ Caddy now applies a read-routing policy for catalog endpoints:
 
 - `GET`/`HEAD /api/products*` -> `product-service` (when `microservices` profile is running)
 - `GET`/`HEAD /api/inventory*` -> `inventory-service` (when `microservices` profile is running)
+- `GET`/`HEAD /api/payments*` -> `payment-service` (JWT auth enforced in `payment-service`)
 - `/api/orders*` -> `order-service` (public order traffic; JWT auth enforced in `order-service`)
 - remaining `/api/*` -> `backend`
 - all other routes -> `frontend`
@@ -200,7 +201,7 @@ Payment query extraction (P6 step 5):
   - `GET /api/payments/order/{orderId}`
   - `GET /api/payments/_health`
 - Backend can delegate payment reads to that service when `APP_PAYMENT_REMOTE_ENABLED=true`.
-- Delegation uses internal service-to-service calls (`APP_PAYMENT_REMOTE_BASE_URL`) and keeps Caddy public routing unchanged for `/api/payments/**`.
+- Delegation uses internal service-to-service calls (`APP_PAYMENT_REMOTE_BASE_URL`) and can include trusted `X-Service-Token` via `APP_PAYMENT_REMOTE_SERVICE_TOKEN`.
 
 Distributed tracing flow:
 
