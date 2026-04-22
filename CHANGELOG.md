@@ -7,6 +7,7 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Public store settings API now exposes `supportEmail` (resolved from admin SMTP/SendGrid sender settings) for storefront contact surfaces.
 - New localized storefront informational pages:
   - `/{locale}/about` (Sobre Pilar Estilo)
   - `/{locale}/how-we-sell` (Cómo vendemos)
@@ -88,6 +89,7 @@ The format is inspired by Keep a Changelog.
   - OTLP tracing bridge dependencies on backend and product-service
 
 ### Changed
+- Storefront contact page now renders WhatsApp, support email, and social links from admin-managed public system settings.
 - Footer informational links now point to real localized routes instead of placeholders.
 - Caddy fallback API upstream now uses dynamic DNS discovery (`dynamic a backend 8080`) with round-robin balancing for scaled backend replicas.
 - `backend` service no longer uses a fixed container name, enabling `docker compose --scale backend=N`.

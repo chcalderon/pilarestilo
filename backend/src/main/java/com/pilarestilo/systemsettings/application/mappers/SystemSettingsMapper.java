@@ -43,7 +43,20 @@ public final class SystemSettingsMapper {
         return new PublicStoreSettingsDto(
                 settings.getWhatsappNumber(),
                 settings.getInstagramUrl(),
-                settings.getFacebookUrl()
+                settings.getFacebookUrl(),
+                resolveSupportEmail(settings)
         );
+    }
+
+    private static String resolveSupportEmail(SystemSettings settings) {
+        String smtpFrom = settings.getSmtpFromEmail();
+        if (smtpFrom != null && !smtpFrom.isBlank()) {
+            return smtpFrom;
+        }
+        String sendgridFrom = settings.getSendgridFromEmail();
+        if (sendgridFrom != null && !sendgridFrom.isBlank()) {
+            return sendgridFrom;
+        }
+        return null;
     }
 }

@@ -213,6 +213,7 @@ export interface PublicStoreSettingsDto {
   whatsappNumber: string;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
+  supportEmail?: string | null;
 }
 
 export interface CustomerCreditDto {

@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/Button.astro';
 import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+import { getPublicStoreSettings } from '../../lib/api';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -10,18 +11,26 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 }
 
 const isEs = locale === 'es';
+const storeSettings = await getPublicStoreSettings();
+
+const whatsappNumber = storeSettings?.whatsappNumber?.trim() || '+56912345678';
+const supportEmail = storeSettings?.supportEmail?.trim() || 'soporte@pilarestilo.com';
+const instagramUrl = storeSettings?.instagramUrl?.trim() || 'https://instagram.com/pilarestilo';
+const facebookUrl = storeSettings?.facebookUrl?.trim() || 'https://facebook.com/pilarestilo';
+const whatsappHref = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}`;
+const supportEmailHref = `mailto:${supportEmail}`;
 
 const channels = isEs
   ? [
       {
         title: 'Atencion por WhatsApp',
         detail: 'Respuesta rapida para estado de pedido, disponibilidad y asesoria de compra.',
-        value: '+56 9 1234 5678',
+        value: whatsappNumber,
       },
       {
         title: 'Correo de soporte',
         detail: 'Consultas formales, cambios, devoluciones y coordinaciones postventa.',
-        value: 'soporte@pilarestilo.com',
+        value: supportEmail,
       },
       {
         title: 'Horario de atencion',
@@ -33,12 +42,12 @@ const channels = isEs
       {
         title: 'WhatsApp support',
         detail: 'Fast response for order status, availability, and purchase guidance.',
-        value: '+56 9 1234 5678',
+        value: whatsappNumber,
       },
       {
         title: 'Support email',
         detail: 'Formal inquiries, returns, exchanges, and post-sale coordination.',
-        value: 'support@pilarestilo.com',
+        value: supportEmail,
       },
       {
         title: 'Business hours',
@@ -113,11 +122,19 @@ const reasons = isEs
               : 'For urgent issues we recommend WhatsApp. For formal records, use email.'}
           </p>
           <div class="flex flex-wrap gap-3">
-            <Button href="https://wa.me/56912345678" variant="primary" trailingIcon="arrow-right">
+            <Button href={whatsappHref} variant="primary" trailingIcon="arrow-right">
               {isEs ? 'Ir a WhatsApp' : 'Open WhatsApp'}
             </Button>
-            <Button href="mailto:soporte@pilarestilo.com" variant="outline-dark">
+            <Button href={supportEmailHref} variant="outline-dark">
               {isEs ? 'Enviar correo' : 'Send email'}
+            </Button>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <Button href={instagramUrl} variant="outline">
+              Instagram
+            </Button>
+            <Button href={facebookUrl} variant="outline">
+              Facebook
             </Button>
           </div>
         </article>
