@@ -280,6 +280,8 @@ services:
     image: caddy:2-alpine
     container_name: pe_caddy
     restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"
