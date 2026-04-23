@@ -17,7 +17,7 @@
 # NOTE: If the frontend Dockerfile serves via nginx on port 80, change
 #       `frontend:4321` to `frontend:80` in the reverse_proxy directive below.
 
-http://{$DOMAIN:localhost} {
+{$DOMAIN:localhost} {
     # Gateway policy: cap API payload size.
     @api_paths {
         path /api/*
