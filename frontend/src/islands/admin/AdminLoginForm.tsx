@@ -8,12 +8,12 @@ interface Props {
 }
 
 export default function AdminLoginForm({ redirect }: Props) {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
-  const { setAuth }              = useAuthStore();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { setAuth } = useAuthStore();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +29,7 @@ export default function AdminLoginForm({ redirect }: Props) {
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = redirect ?? '/admin/';
     } catch {
-      setError('Email o contraseña incorrectos.');
+      setError('Email o contrase\u00f1a incorrectos.');
     } finally {
       setLoading(false);
     }
@@ -39,14 +39,14 @@ export default function AdminLoginForm({ redirect }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="flex flex-col gap-1.5">
         <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
-          Correo electrónico
+          Correo electr\u00f3nico
         </label>
         <input
           type="email"
           required
           autoComplete="email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
           placeholder="admin@pilarestilo.com"
         />
@@ -54,7 +54,7 @@ export default function AdminLoginForm({ redirect }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
-          Contraseña
+          Contrase\u00f1a
         </label>
         <div className="relative">
           <input
@@ -62,15 +62,15 @@ export default function AdminLoginForm({ redirect }: Props) {
             required
             autoComplete="current-password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
-            placeholder="••••••••"
+            placeholder="********"
           />
           <button
             type="button"
-            onClick={() => setShowPass(v => !v)}
+            onClick={() => setShowPass((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
-            aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-label={showPass ? 'Ocultar contrase\u00f1a' : 'Mostrar contrase\u00f1a'}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -78,7 +78,7 @@ export default function AdminLoginForm({ redirect }: Props) {
       </div>
 
       {error && (
-        <p className="font-sans text-[0.78rem] text-pe-rose-deep bg-pe-rose-soft/40 px-3 py-2 border-l-2 border-pe-rose">
+        <p className="font-sans text-[0.78rem] font-medium text-[#FFF4F6] bg-[#8E4F58]/78 px-3 py-2 border border-[#E8C9CC]/55 shadow-[inset_3px_0_0_0_#E8C9CC]">
           {error}
         </p>
       )}
@@ -89,7 +89,7 @@ export default function AdminLoginForm({ redirect }: Props) {
         className="flex items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
-        {loading ? 'Ingresando…' : 'Acceder al panel'}
+        {loading ? 'Ingresando...' : 'Acceder al panel'}
       </button>
 
       <p className="font-sans text-[0.72rem] text-pe-charcoal/40 text-center">
