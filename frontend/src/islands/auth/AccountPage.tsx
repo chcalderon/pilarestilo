@@ -60,6 +60,7 @@ export default function AccountPage({ locale }: Props) {
   const [gatewayCheckoutLoadingByOrder, setGatewayCheckoutLoadingByOrder] = useState<Record<string, boolean>>({});
   const [gatewaySimulatingByOrder, setGatewaySimulatingByOrder] = useState<Record<string, boolean>>({});
   const [gatewayFeedbackByOrder, setGatewayFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
+  const [gatewayReturnFeedback, setGatewayReturnFeedback] = useState<ProofFeedback | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [loadingPayments, setLoadingPayments] = useState(false);
@@ -84,9 +85,62 @@ export default function AccountPage({ locale }: Props) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    const url = new URL(window.location.href);
+    const searchParams = url.searchParams;
+    const requestedTab = searchParams.get('tab');
     if (requestedTab === 'profile' || requestedTab === 'reviews' || requestedTab === 'orders') {
       setTab(requestedTab);
+    }
+
+    const mpSignal = (searchParams.get('mp') ?? '').trim().toLowerCase();
+    const collectionStatusSignal = (searchParams.get('collection_status') ?? '').trim().toLowerCase();
+    const genericStatusSignal = (searchParams.get('status') ?? '').trim().toLowerCase();
+    const normalizedSignal = mpSignal || collectionStatusSignal || genericStatusSignal;
+
+    if (normalizedSignal) {
+      if (normalizedSignal === 'success' || normalizedSignal === 'approved') {
+        setGatewayReturnFeedback({
+          type: 'success',
+          text: es
+            ? 'Pago confirmado por pasarela. Estamos actualizando tu pedido.'
+            : 'Gateway payment confirmed. We are updating your order.',
+        });
+      } else if (normalizedSignal === 'pending' || normalizedSignal === 'in_process' || normalizedSignal === 'inprocess') {
+        setGatewayReturnFeedback({
+          type: 'success',
+          text: es
+            ? 'Pago recibido como pendiente. Te avisaremos cuando quede confirmado.'
+            : 'Payment received as pending. We will notify you once it is confirmed.',
+        });
+      } else if (normalizedSignal === 'failure' || normalizedSignal === 'rejected' || normalizedSignal === 'cancelled') {
+        setGatewayReturnFeedback({
+          type: 'error',
+          text: es
+            ? 'El pago fue rechazado o cancelado. Puedes reintentar cuando quieras.'
+            : 'Payment was rejected or cancelled. You can retry anytime.',
+        });
+      }
+
+      setTab('orders');
+
+      const mpReturnKeys = [
+        'mp',
+        'collection_status',
+        'status',
+        'payment_id',
+        'payment_type',
+        'merchant_order_id',
+        'preference_id',
+        'external_reference',
+        'site_id',
+        'processing_mode',
+        'merchant_account_id',
+      ];
+      mpReturnKeys.forEach((key) => searchParams.delete(key));
+
+      const nextQuery = searchParams.toString();
+      const nextUrl = nextQuery ? `${url.pathname}?${nextQuery}` : url.pathname;
+      window.history.replaceState(window.history.state, '', nextUrl);
     }
   }, []);
 
@@ -795,6 +849,18 @@ export default function AccountPage({ locale }: Props) {
 
         {tab === 'orders' && (
           <div className="max-w-3xl">
+            {gatewayReturnFeedback && (
+              <div
+                className={[
+                  'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
+                  gatewayReturnFeedback.type === 'success'
+                    ? 'border-green-200 bg-green-50 text-green-700'
+                    : 'border-red-200 bg-red-50 text-red-700',
+                ].join(' ')}
+              >
+                {gatewayReturnFeedback.text}
+              </div>
+            )}
             {loadingOrders ? (
               <div className="flex justify-center py-16">
                 <Loader2 size={24} className="animate-spin text-pe-rose/60" />
