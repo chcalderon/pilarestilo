@@ -35,6 +35,20 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setWhatsappNumber(settings.getWhatsappNumber());
         entity.setInstagramUrl(settings.getInstagramUrl());
         entity.setFacebookUrl(settings.getFacebookUrl());
+        entity.setBankTransferAccountHolder(settings.getBankTransferAccountHolder());
+        entity.setBankTransferContactEmail(settings.getBankTransferContactEmail());
+        entity.setBankTransferAccountNumber(settings.getBankTransferAccountNumber());
+        entity.setBankTransferAccountType(settings.getBankTransferAccountType());
+        entity.setPaymentMethodBankTransferEnabled(settings.isPaymentMethodBankTransferEnabled());
+        entity.setPaymentMethodGatewayEnabled(settings.isPaymentMethodGatewayEnabled());
+        entity.setPaymentGatewayProviders(settings.getPaymentGatewayProvidersSerialized());
+        entity.setPaymentGatewayMpApiBaseUrl(settings.getPaymentGatewayMpApiBaseUrl());
+        entity.setPaymentGatewayMpAccessTokenEncrypted(settings.getPaymentGatewayMpAccessTokenEncrypted());
+        entity.setPaymentGatewayMpSuccessUrl(settings.getPaymentGatewayMpSuccessUrl());
+        entity.setPaymentGatewayMpPendingUrl(settings.getPaymentGatewayMpPendingUrl());
+        entity.setPaymentGatewayMpFailureUrl(settings.getPaymentGatewayMpFailureUrl());
+        entity.setPaymentGatewayMpNotificationUrl(settings.getPaymentGatewayMpNotificationUrl());
+        entity.setPaymentGatewayMpWebhookTokenEncrypted(settings.getPaymentGatewayMpWebhookTokenEncrypted());
         entity.setMediaStorageProvider(settings.getMediaStorageProvider().name());
         entity.setMediaS3Endpoint(settings.getMediaS3Endpoint());
         entity.setMediaS3Region(settings.getMediaS3Region());
@@ -75,6 +89,20 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getWhatsappNumber(),
                 entity.getInstagramUrl(),
                 entity.getFacebookUrl(),
+                entity.getBankTransferAccountHolder(),
+                entity.getBankTransferContactEmail(),
+                entity.getBankTransferAccountNumber(),
+                entity.getBankTransferAccountType(),
+                entity.isPaymentMethodBankTransferEnabled(),
+                entity.isPaymentMethodGatewayEnabled(),
+                entity.getPaymentGatewayProviders(),
+                entity.getPaymentGatewayMpApiBaseUrl(),
+                entity.getPaymentGatewayMpAccessTokenEncrypted(),
+                entity.getPaymentGatewayMpSuccessUrl(),
+                entity.getPaymentGatewayMpPendingUrl(),
+                entity.getPaymentGatewayMpFailureUrl(),
+                entity.getPaymentGatewayMpNotificationUrl(),
+                entity.getPaymentGatewayMpWebhookTokenEncrypted(),
                 entity.getMediaStorageProvider(),
                 entity.getMediaS3Endpoint(),
                 entity.getMediaS3Region(),

@@ -12,8 +12,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PaymentTest {
 
+    private static final String TRANSFER_HOLDER = "Pilar Estilo";
+    private static final String TRANSFER_EMAIL = "pagos@pilarestilo.com";
+    private static final String TRANSFER_ACCOUNT = "1234567890";
+    private static final String TRANSFER_TYPE = "Cuenta Corriente";
+
     private Payment newPendingPayment() {
-        return Payment.create(UUID.randomUUID(), PaymentMethod.BANK_TRANSFER);
+        return Payment.create(
+                UUID.randomUUID(),
+                PaymentMethod.BANK_TRANSFER,
+                TRANSFER_HOLDER,
+                TRANSFER_EMAIL,
+                TRANSFER_ACCOUNT,
+                TRANSFER_TYPE
+        );
     }
 
     @Test

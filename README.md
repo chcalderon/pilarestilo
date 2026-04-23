@@ -91,6 +91,11 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
 - Storefront now includes a floating WhatsApp CTA button (configurable phone/message per locale via env).
 - Admin now includes `Configuracion del sistema` (`/admin/settings`) to manage storefront channels and runtime notification provider selection (`LOG`, WhatsApp simulated/Twilio, SendGrid, SMTP).
+- Admin `Configuracion del sistema` now includes checkout payment-method toggles (`Transferencia` / `Pasarela`) and gateway provider selection (currently `Mercado Pago`) with guardrails that always keep at least one option enabled.
+- Admin `Configuracion del sistema` now includes editable bank-transfer details (titular/correo/cuenta/tipo), shown in checkout when `Transferencia` is selected.
+- Bank-transfer payments now persist a transfer-data snapshot per payment record, so account/admin history remains auditable even if transfer settings change later.
+- Admin payment settings now include Mercado Pago connection fields (API base URL, back URLs, notification URL, access token, webhook token) with encrypted secret storage.
+- Bank transfer account type is now selected from common Chilean account types for cleaner checkout/admin consistency.
 - Storefront WhatsApp button + footer social links now consume backend system settings (`/api/system-settings/public`).
 - Storefront contact page (`/{locale}/contact`) now consumes public admin settings for WhatsApp, support email, and social links.
 - Customer profile now supports WhatsApp phone capture (`/api/auth/me/profile`) and notifications prioritize that phone as destination contact.

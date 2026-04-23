@@ -23,6 +23,48 @@ public class SystemSettingsEntity {
     @Column(name = "facebook_url", length = 500)
     private String facebookUrl;
 
+    @Column(name = "bank_transfer_account_holder", length = 160)
+    private String bankTransferAccountHolder;
+
+    @Column(name = "bank_transfer_contact_email", length = 255)
+    private String bankTransferContactEmail;
+
+    @Column(name = "bank_transfer_account_number", length = 120)
+    private String bankTransferAccountNumber;
+
+    @Column(name = "bank_transfer_account_type", length = 80)
+    private String bankTransferAccountType;
+
+    @Column(name = "payment_method_bank_transfer_enabled", nullable = false)
+    private boolean paymentMethodBankTransferEnabled;
+
+    @Column(name = "payment_method_gateway_enabled", nullable = false)
+    private boolean paymentMethodGatewayEnabled;
+
+    @Column(name = "payment_gateway_providers", length = 255)
+    private String paymentGatewayProviders;
+
+    @Column(name = "payment_gateway_mp_api_base_url", length = 255)
+    private String paymentGatewayMpApiBaseUrl;
+
+    @Column(name = "payment_gateway_mp_access_token_encrypted", columnDefinition = "TEXT")
+    private String paymentGatewayMpAccessTokenEncrypted;
+
+    @Column(name = "payment_gateway_mp_success_url", length = 500)
+    private String paymentGatewayMpSuccessUrl;
+
+    @Column(name = "payment_gateway_mp_pending_url", length = 500)
+    private String paymentGatewayMpPendingUrl;
+
+    @Column(name = "payment_gateway_mp_failure_url", length = 500)
+    private String paymentGatewayMpFailureUrl;
+
+    @Column(name = "payment_gateway_mp_notification_url", length = 500)
+    private String paymentGatewayMpNotificationUrl;
+
+    @Column(name = "payment_gateway_mp_webhook_token_encrypted", columnDefinition = "TEXT")
+    private String paymentGatewayMpWebhookTokenEncrypted;
+
     @Column(name = "media_storage_provider", nullable = false, length = 40)
     private String mediaStorageProvider;
 
@@ -124,6 +166,60 @@ public class SystemSettingsEntity {
     public void setInstagramUrl(String instagramUrl) { this.instagramUrl = instagramUrl; }
     public String getFacebookUrl() { return facebookUrl; }
     public void setFacebookUrl(String facebookUrl) { this.facebookUrl = facebookUrl; }
+    public String getBankTransferAccountHolder() { return bankTransferAccountHolder; }
+    public void setBankTransferAccountHolder(String bankTransferAccountHolder) {
+        this.bankTransferAccountHolder = bankTransferAccountHolder;
+    }
+    public String getBankTransferContactEmail() { return bankTransferContactEmail; }
+    public void setBankTransferContactEmail(String bankTransferContactEmail) {
+        this.bankTransferContactEmail = bankTransferContactEmail;
+    }
+    public String getBankTransferAccountNumber() { return bankTransferAccountNumber; }
+    public void setBankTransferAccountNumber(String bankTransferAccountNumber) {
+        this.bankTransferAccountNumber = bankTransferAccountNumber;
+    }
+    public String getBankTransferAccountType() { return bankTransferAccountType; }
+    public void setBankTransferAccountType(String bankTransferAccountType) {
+        this.bankTransferAccountType = bankTransferAccountType;
+    }
+    public boolean isPaymentMethodBankTransferEnabled() { return paymentMethodBankTransferEnabled; }
+    public void setPaymentMethodBankTransferEnabled(boolean paymentMethodBankTransferEnabled) {
+        this.paymentMethodBankTransferEnabled = paymentMethodBankTransferEnabled;
+    }
+    public boolean isPaymentMethodGatewayEnabled() { return paymentMethodGatewayEnabled; }
+    public void setPaymentMethodGatewayEnabled(boolean paymentMethodGatewayEnabled) {
+        this.paymentMethodGatewayEnabled = paymentMethodGatewayEnabled;
+    }
+    public String getPaymentGatewayProviders() { return paymentGatewayProviders; }
+    public void setPaymentGatewayProviders(String paymentGatewayProviders) { this.paymentGatewayProviders = paymentGatewayProviders; }
+    public String getPaymentGatewayMpApiBaseUrl() { return paymentGatewayMpApiBaseUrl; }
+    public void setPaymentGatewayMpApiBaseUrl(String paymentGatewayMpApiBaseUrl) {
+        this.paymentGatewayMpApiBaseUrl = paymentGatewayMpApiBaseUrl;
+    }
+    public String getPaymentGatewayMpAccessTokenEncrypted() { return paymentGatewayMpAccessTokenEncrypted; }
+    public void setPaymentGatewayMpAccessTokenEncrypted(String paymentGatewayMpAccessTokenEncrypted) {
+        this.paymentGatewayMpAccessTokenEncrypted = paymentGatewayMpAccessTokenEncrypted;
+    }
+    public String getPaymentGatewayMpSuccessUrl() { return paymentGatewayMpSuccessUrl; }
+    public void setPaymentGatewayMpSuccessUrl(String paymentGatewayMpSuccessUrl) {
+        this.paymentGatewayMpSuccessUrl = paymentGatewayMpSuccessUrl;
+    }
+    public String getPaymentGatewayMpPendingUrl() { return paymentGatewayMpPendingUrl; }
+    public void setPaymentGatewayMpPendingUrl(String paymentGatewayMpPendingUrl) {
+        this.paymentGatewayMpPendingUrl = paymentGatewayMpPendingUrl;
+    }
+    public String getPaymentGatewayMpFailureUrl() { return paymentGatewayMpFailureUrl; }
+    public void setPaymentGatewayMpFailureUrl(String paymentGatewayMpFailureUrl) {
+        this.paymentGatewayMpFailureUrl = paymentGatewayMpFailureUrl;
+    }
+    public String getPaymentGatewayMpNotificationUrl() { return paymentGatewayMpNotificationUrl; }
+    public void setPaymentGatewayMpNotificationUrl(String paymentGatewayMpNotificationUrl) {
+        this.paymentGatewayMpNotificationUrl = paymentGatewayMpNotificationUrl;
+    }
+    public String getPaymentGatewayMpWebhookTokenEncrypted() { return paymentGatewayMpWebhookTokenEncrypted; }
+    public void setPaymentGatewayMpWebhookTokenEncrypted(String paymentGatewayMpWebhookTokenEncrypted) {
+        this.paymentGatewayMpWebhookTokenEncrypted = paymentGatewayMpWebhookTokenEncrypted;
+    }
     public String getMediaStorageProvider() { return mediaStorageProvider; }
     public void setMediaStorageProvider(String mediaStorageProvider) { this.mediaStorageProvider = mediaStorageProvider; }
     public String getMediaS3Endpoint() { return mediaS3Endpoint; }

@@ -6,10 +6,28 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record UpdateSystemSettingsRequest(
         @NotBlank @Size(max = 40) String whatsappNumber,
         @Size(max = 500) String instagramUrl,
         @Size(max = 500) String facebookUrl,
+        @Size(max = 160) String bankTransferAccountHolder,
+        @Size(max = 255) String bankTransferContactEmail,
+        @Size(max = 120) String bankTransferAccountNumber,
+        @Size(max = 80) String bankTransferAccountType,
+        @NotNull Boolean paymentMethodBankTransferEnabled,
+        @NotNull Boolean paymentMethodGatewayEnabled,
+        List<@NotBlank @Size(max = 40) String> paymentGatewayProviders,
+        @Size(max = 255) String paymentGatewayMpApiBaseUrl,
+        @Size(max = 500) String paymentGatewayMpSuccessUrl,
+        @Size(max = 500) String paymentGatewayMpPendingUrl,
+        @Size(max = 500) String paymentGatewayMpFailureUrl,
+        @Size(max = 500) String paymentGatewayMpNotificationUrl,
+        @Size(max = 255) String paymentGatewayMpAccessToken,
+        Boolean clearPaymentGatewayMpAccessToken,
+        @Size(max = 255) String paymentGatewayMpWebhookToken,
+        Boolean clearPaymentGatewayMpWebhookToken,
         @NotBlank @Size(max = 40) String mediaStorageProvider,
         @Size(max = 255) String mediaS3Endpoint,
         @Size(max = 120) String mediaS3Region,

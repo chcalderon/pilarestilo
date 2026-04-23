@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -10,6 +10,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Store,
+  Wallet,
+  Image,
+  Bell,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
 
@@ -18,6 +22,8 @@ interface Props {
   mobile?: boolean;
 }
 
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications';
+
 const navItems = [
   { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/products', icon: Package, label: 'Productos' },
@@ -25,14 +31,41 @@ const navItems = [
   { href: '/admin/reviews', icon: Star, label: 'Resenas' },
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios' },
-  { href: '/admin/settings', icon: Settings, label: 'Configuracion' },
+];
+
+const settingsSubmenuItems: Array<{
+  href: string;
+  tab: SettingsSubmenuTab;
+  icon: typeof Store;
+  label: string;
+}> = [
+  { href: '/admin/settings?tab=store', tab: 'store', icon: Store, label: 'Canales tienda' },
+  { href: '/admin/settings?tab=payments', tab: 'payments', icon: Wallet, label: 'Pagos' },
+  { href: '/admin/settings?tab=media', tab: 'media', icon: Image, label: 'Media' },
+  { href: '/admin/settings?tab=notifications', tab: 'notifications', icon: Bell, label: 'Notificaciones' },
 ];
 
 export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+  const [settingsExpanded, setSettingsExpanded] = useState(currentPath.startsWith('/admin/settings'));
+  const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
   const { user, clearAuth } = useAuthStore();
 
   const isCollapsed = mobile ? false : collapsed;
+  const settingsRouteActive = currentPath.startsWith('/admin/settings');
+  const showSettingsChildren = !isCollapsed && settingsExpanded;
+  const settingsSubmenuId = mobile ? 'admin-settings-submenu-mobile' : 'admin-settings-submenu-desktop';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'payments' || tab === 'media' || tab === 'notifications' || tab === 'store') {
+      setActiveSettingsTab(tab);
+      return;
+    }
+    setActiveSettingsTab('store');
+  }, []);
 
   function closeMobileMenu() {
     if (!mobile) return;
@@ -48,6 +81,14 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
 
   const isActive = (href: string) =>
     href === '/admin/' ? currentPath === '/admin' || currentPath === '/admin/' : currentPath.startsWith(href);
+
+  function handleSettingsToggle() {
+    if (isCollapsed && !mobile) {
+      window.location.href = '/admin/settings?tab=store';
+      return;
+    }
+    setSettingsExpanded((value) => !value);
+  }
 
   return (
     <div
@@ -103,6 +144,75 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
               </li>
             );
           })}
+
+          <li>
+            <button
+              type="button"
+              onClick={handleSettingsToggle}
+              className={[
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all duration-200 group border-l-2',
+                'font-sans text-[0.78rem] tracking-[0.04em]',
+                settingsRouteActive
+                  ? 'bg-pe-rose/12 text-pe-rose-soft border-pe-rose'
+                  : 'text-pe-white/50 hover:text-pe-white/80 hover:bg-pe-white/4 border-transparent',
+              ].join(' ')}
+              aria-expanded={showSettingsChildren}
+              aria-controls={settingsSubmenuId}
+              title={isCollapsed ? 'Configuracion' : undefined}
+            >
+              <Settings
+                size={16}
+                className={[
+                  'flex-shrink-0 transition-transform duration-300',
+                  showSettingsChildren ? 'rotate-90 text-pe-rose-soft' : '',
+                ].join(' ')}
+              />
+              {!isCollapsed && <span className="text-left">Configuracion</span>}
+              {!isCollapsed && (
+                <ChevronRight
+                  size={14}
+                  className={[
+                    'ml-auto transition-all duration-300',
+                    showSettingsChildren ? 'rotate-90 text-pe-rose-soft' : 'text-pe-white/35',
+                  ].join(' ')}
+                />
+              )}
+            </button>
+
+            <div
+              id={settingsSubmenuId}
+              className={[
+                'grid overflow-hidden transition-all duration-300 ease-out',
+                showSettingsChildren ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0',
+              ].join(' ')}
+            >
+              <ul className="min-h-0 flex flex-col gap-1 pl-4 pr-1 pb-1">
+                {settingsSubmenuItems.map((subitem) => {
+                  const SubIcon = subitem.icon;
+                  const active = settingsRouteActive && activeSettingsTab === subitem.tab;
+                  return (
+                    <li key={subitem.tab}>
+                      <a
+                        href={subitem.href}
+                        onClick={closeMobileMenu}
+                        className={[
+                          'flex items-center gap-2 px-2.5 py-2 rounded border-l transition-all duration-200',
+                          'font-sans text-[0.7rem] tracking-[0.06em]',
+                          active
+                            ? 'border-pe-rose text-pe-rose-soft bg-pe-rose/8'
+                            : 'border-transparent text-pe-white/45 hover:text-pe-white/80 hover:bg-pe-white/4',
+                        ].join(' ')}
+                        aria-current={active ? 'page' : undefined}
+                      >
+                        <SubIcon size={13} className={active ? 'text-pe-rose-soft' : 'text-pe-white/40'} />
+                        <span>{subitem.label}</span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </li>
         </ul>
       </nav>
 

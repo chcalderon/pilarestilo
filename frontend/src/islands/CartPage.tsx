@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
-import { createOrder } from '../lib/api';
+import { createOrder, getPublicStoreSettings, type PaymentGatewayProvider } from '../lib/api';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -22,6 +22,13 @@ const labels = {
     paymentMethod: 'Metodo de pago',
     paymentMethodTransfer: 'Transferencia',
     paymentMethodGateway: 'Pasarela de pago',
+    paymentMethodUnavailable: 'El metodo de pago seleccionado ya no esta disponible.',
+    paymentProviderLabel: 'Proveedor',
+    transferDetailsTitle: 'Datos para transferencia',
+    transferHolder: 'Nombre',
+    transferEmail: 'Correo',
+    transferAccount: 'Numero de cuenta',
+    transferType: 'Tipo de cuenta',
     remove: 'Eliminar',
     quantity: 'Cantidad',
     checkoutError: 'No pudimos crear tu pedido. Inténtalo nuevamente.',
@@ -40,6 +47,13 @@ const labels = {
     paymentMethod: 'Payment method',
     paymentMethodTransfer: 'Bank transfer',
     paymentMethodGateway: 'Payment gateway',
+    paymentMethodUnavailable: 'The selected payment method is no longer available.',
+    paymentProviderLabel: 'Provider',
+    transferDetailsTitle: 'Bank transfer details',
+    transferHolder: 'Name',
+    transferEmail: 'Email',
+    transferAccount: 'Account number',
+    transferType: 'Account type',
     remove: 'Remove',
     quantity: 'Quantity',
     checkoutError: 'We could not create your order. Please try again.',
@@ -62,6 +76,13 @@ export default function CartPage({ locale }: Props) {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'PAYMENT_GATEWAY'>('BANK_TRANSFER');
+  const [paymentMethodBankTransferEnabled, setPaymentMethodBankTransferEnabled] = useState(true);
+  const [paymentMethodGatewayEnabled, setPaymentMethodGatewayEnabled] = useState(true);
+  const [paymentGatewayProviders, setPaymentGatewayProviders] = useState<PaymentGatewayProvider[]>(['MERCADO_PAGO']);
+  const [transferAccountHolder, setTransferAccountHolder] = useState('');
+  const [transferContactEmail, setTransferContactEmail] = useState('');
+  const [transferAccountNumber, setTransferAccountNumber] = useState('');
+  const [transferAccountType, setTransferAccountType] = useState('');
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
   const isEmployee = authUser?.role === 'SELLER';
@@ -80,8 +101,67 @@ export default function CartPage({ locale }: Props) {
     window.setTimeout(() => setToast(null), 3200);
   }
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPaymentConfig() {
+      try {
+        const settings = await getPublicStoreSettings();
+        if (!settings || cancelled) return;
+
+        const providers = Array.isArray(settings.paymentGatewayProviders)
+          ? settings.paymentGatewayProviders
+          : [];
+        const gatewayEnabled = settings.paymentMethodGatewayEnabled !== false && providers.length > 0;
+        const bankTransferEnabled = settings.paymentMethodBankTransferEnabled !== false || !gatewayEnabled;
+
+        setPaymentGatewayProviders(providers.length ? providers : ['MERCADO_PAGO']);
+        setPaymentMethodGatewayEnabled(gatewayEnabled);
+        setPaymentMethodBankTransferEnabled(bankTransferEnabled);
+        setTransferAccountHolder(settings.bankTransferAccountHolder?.trim() ?? '');
+        setTransferContactEmail(settings.bankTransferContactEmail?.trim() ?? '');
+        setTransferAccountNumber(settings.bankTransferAccountNumber?.trim() ?? '');
+        setTransferAccountType(settings.bankTransferAccountType?.trim() ?? '');
+
+        setPaymentMethod((prev) => {
+          if (prev === 'BANK_TRANSFER' && !bankTransferEnabled && gatewayEnabled) {
+            return 'PAYMENT_GATEWAY';
+          }
+          if (prev === 'PAYMENT_GATEWAY' && !gatewayEnabled && bankTransferEnabled) {
+            return 'BANK_TRANSFER';
+          }
+          return prev;
+        });
+      } catch {
+        // Keep defaults if public settings are unavailable.
+      }
+    }
+
+    void loadPaymentConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedGatewayProviderLabel = useMemo(() => {
+    if (!paymentGatewayProviders.length) return '';
+    const first = paymentGatewayProviders[0];
+    if (first === 'MERCADO_PAGO') {
+      return 'Mercado Pago';
+    }
+    return first;
+  }, [paymentGatewayProviders]);
+
   async function handleCheckout() {
     if (!items.length || checkingOut) return;
+
+    if (paymentMethod === 'BANK_TRANSFER' && !paymentMethodBankTransferEnabled) {
+      showToast('error', l.paymentMethodUnavailable);
+      return;
+    }
+    if (paymentMethod === 'PAYMENT_GATEWAY' && !paymentMethodGatewayEnabled) {
+      showToast('error', l.paymentMethodUnavailable);
+      return;
+    }
 
     if (!authUser || !effectiveToken) {
       window.location.href = `/${locale}/auth/login?redirect=/${locale}/cart`;
@@ -236,29 +316,65 @@ export default function CartPage({ locale }: Props) {
                     {l.paymentMethod}
                   </p>
                   <div className="flex flex-col gap-2">
-                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="BANK_TRANSFER"
-                        checked={paymentMethod === 'BANK_TRANSFER'}
-                        onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                        className="accent-pe-rose"
-                      />
-                      {l.paymentMethodTransfer}
-                    </label>
-                    <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="PAYMENT_GATEWAY"
-                        checked={paymentMethod === 'PAYMENT_GATEWAY'}
-                        onChange={() => setPaymentMethod('PAYMENT_GATEWAY')}
-                        className="accent-pe-rose"
-                      />
-                      {l.paymentMethodGateway}
-                    </label>
+                    {paymentMethodBankTransferEnabled && (
+                      <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="BANK_TRANSFER"
+                          checked={paymentMethod === 'BANK_TRANSFER'}
+                          onChange={() => setPaymentMethod('BANK_TRANSFER')}
+                          className="accent-pe-rose"
+                        />
+                        {l.paymentMethodTransfer}
+                      </label>
+                    )}
+                    {paymentMethodGatewayEnabled && (
+                      <label className="inline-flex items-start gap-2 font-sans text-sm text-pe-charcoal">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="PAYMENT_GATEWAY"
+                          checked={paymentMethod === 'PAYMENT_GATEWAY'}
+                          onChange={() => setPaymentMethod('PAYMENT_GATEWAY')}
+                          className="mt-1 accent-pe-rose"
+                        />
+                        <span>
+                          {l.paymentMethodGateway}
+                          {selectedGatewayProviderLabel && (
+                            <span className="block text-[0.68rem] text-pe-charcoal/60">
+                              {l.paymentProviderLabel}: {selectedGatewayProviderLabel}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    )}
                   </div>
+                  {paymentMethod === 'BANK_TRANSFER' && (
+                    <div className="mt-3 border border-pe-black/10 bg-pe-cream/35 px-3 py-2">
+                      <p className="font-sans text-[0.65rem] uppercase tracking-[0.16em] text-pe-charcoal/55 mb-2">
+                        {l.transferDetailsTitle}
+                      </p>
+                      <dl className="grid grid-cols-1 gap-1.5 font-sans text-[0.74rem] text-pe-charcoal/75">
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-pe-charcoal/55">{l.transferHolder}</dt>
+                          <dd className="text-right">{transferAccountHolder || '-'}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-pe-charcoal/55">{l.transferEmail}</dt>
+                          <dd className="text-right">{transferContactEmail || '-'}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-pe-charcoal/55">{l.transferAccount}</dt>
+                          <dd className="text-right">{transferAccountNumber || '-'}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-pe-charcoal/55">{l.transferType}</dt>
+                          <dd className="text-right">{transferAccountType || '-'}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between font-sans text-sm mb-6">

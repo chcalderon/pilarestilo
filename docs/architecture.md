@@ -140,6 +140,10 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V18`: extended seed catalog products
 - `V19`: wishlist share-link token and enablement fields
 - `V20`: product variants (`color + size + stock`) with backfill from `product_size_stocks`
+- `V21`: media storage provider runtime settings (`LOCAL` / `S3_COMPATIBLE`)
+- `V22`: checkout payment-method toggles + gateway provider selection (`MERCADO_PAGO`)
+- `V23`: bank-transfer account settings + transfer snapshot fields persisted in `payments`
+- `V24`: Mercado Pago runtime settings fields in `system_settings` (with encrypted token storage)
 
 ---
 

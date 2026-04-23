@@ -9,6 +9,10 @@ public record PaymentDto(
         String method,
         String status,
         String proofReference,
+        String transferAccountHolderName,
+        String transferAccountEmail,
+        String transferAccountNumber,
+        String transferAccountType,
         UUID reviewedBy,
         Instant reviewedAt,
         Instant createdAt

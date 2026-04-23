@@ -1,8 +1,17 @@
 package com.pilarestilo.systemsettings.application.dto;
 
+import java.util.List;
+
 public record PublicStoreSettingsDto(
         String whatsappNumber,
         String instagramUrl,
         String facebookUrl,
-        String supportEmail
+        String supportEmail,
+        String bankTransferAccountHolder,
+        String bankTransferContactEmail,
+        String bankTransferAccountNumber,
+        String bankTransferAccountType,
+        boolean paymentMethodBankTransferEnabled,
+        boolean paymentMethodGatewayEnabled,
+        List<String> paymentGatewayProviders
 ) {}

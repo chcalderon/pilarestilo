@@ -29,6 +29,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProcessPaymentGatewayWebhookUseCaseTest {
 
+    private static final String TRANSFER_HOLDER = "Pilar Estilo";
+    private static final String TRANSFER_EMAIL = "pagos@pilarestilo.com";
+    private static final String TRANSFER_ACCOUNT = "1234567890";
+    private static final String TRANSFER_TYPE = "Cuenta Corriente";
+
     @Mock
     PaymentRepository paymentRepository;
 
@@ -78,7 +83,14 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
     @Test
     void webhook_for_non_gateway_payment_throws() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.BANK_TRANSFER);
+        Payment payment = Payment.create(
+                UUID.randomUUID(),
+                PaymentMethod.BANK_TRANSFER,
+                TRANSFER_HOLDER,
+                TRANSFER_EMAIL,
+                TRANSFER_ACCOUNT,
+                TRANSFER_TYPE
+        );
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
 
         assertThrows(DomainException.class, () -> useCase.execute(payment.getId(), "APPROVED"));

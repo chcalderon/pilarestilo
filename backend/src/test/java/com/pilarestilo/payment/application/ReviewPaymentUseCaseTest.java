@@ -24,6 +24,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ReviewPaymentUseCaseTest {
 
+    private static final String TRANSFER_HOLDER = "Pilar Estilo";
+    private static final String TRANSFER_EMAIL = "pagos@pilarestilo.com";
+    private static final String TRANSFER_ACCOUNT = "1234567890";
+    private static final String TRANSFER_TYPE = "Cuenta Corriente";
+
     @Mock
     PaymentRepository paymentRepository;
 
@@ -34,7 +39,14 @@ class ReviewPaymentUseCaseTest {
     ReviewPaymentUseCase useCase;
 
     private Payment paymentReadyForReview() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.BANK_TRANSFER);
+        Payment payment = Payment.create(
+                UUID.randomUUID(),
+                PaymentMethod.BANK_TRANSFER,
+                TRANSFER_HOLDER,
+                TRANSFER_EMAIL,
+                TRANSFER_ACCOUNT,
+                TRANSFER_TYPE
+        );
         payment.submitProof("ref-123");
         payment.markUnderReview();
         return payment;
@@ -69,7 +81,14 @@ class ReviewPaymentUseCaseTest {
 
     @Test
     void approve_auto_transitions_from_submitted_to_under_review() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.BANK_TRANSFER);
+        Payment payment = Payment.create(
+                UUID.randomUUID(),
+                PaymentMethod.BANK_TRANSFER,
+                TRANSFER_HOLDER,
+                TRANSFER_EMAIL,
+                TRANSFER_ACCOUNT,
+                TRANSFER_TYPE
+        );
         payment.submitProof("ref-456");
         // status is SUBMITTED, not UNDER_REVIEW yet
         assertEquals(PaymentStatus.SUBMITTED, payment.getStatus());

@@ -53,6 +53,10 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         e.setMethod(p.getMethod());
         e.setStatus(p.getStatus());
         e.setProofReference(p.getProofReference());
+        e.setTransferAccountHolderName(p.getTransferAccountHolderName());
+        e.setTransferAccountEmail(p.getTransferAccountEmail());
+        e.setTransferAccountNumber(p.getTransferAccountNumber());
+        e.setTransferAccountType(p.getTransferAccountType());
         e.setReviewedBy(p.getReviewedBy());
         e.setReviewedAt(p.getReviewedAt());
         e.setCreatedAt(p.getCreatedAt());
@@ -62,7 +66,12 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     private Payment toDomain(PaymentEntity e) {
         return Payment.reconstruct(
                 e.getId(), e.getOrderId(), e.getMethod(), e.getStatus(),
-                e.getProofReference(), e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt()
+                e.getProofReference(),
+                e.getTransferAccountHolderName(),
+                e.getTransferAccountEmail(),
+                e.getTransferAccountNumber(),
+                e.getTransferAccountType(),
+                e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt()
         );
     }
 }

@@ -5,6 +5,7 @@ import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
+import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
@@ -14,6 +15,7 @@ import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,21 +34,26 @@ public class CreateOrderUseCase {
     private final InventoryService inventoryService;
     private final DomainEventPublisher eventPublisher;
     private final OrderRemoteCommandClient orderRemoteCommandClient;
+    private final SystemSettingsRepository systemSettingsRepository;
 
     public CreateOrderUseCase(OrderRepository orderRepository,
                                ProductRepository productRepository,
                                InventoryService inventoryService,
                                DomainEventPublisher eventPublisher,
-                               OrderRemoteCommandClient orderRemoteCommandClient) {
+                               OrderRemoteCommandClient orderRemoteCommandClient,
+                               SystemSettingsRepository systemSettingsRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
         this.eventPublisher = eventPublisher;
         this.orderRemoteCommandClient = orderRemoteCommandClient;
+        this.systemSettingsRepository = systemSettingsRepository;
     }
 
     @Transactional
     public OrderDto execute(CreateOrderCommand command) {
+        validatePaymentMethodEnabled(command.paymentMethod());
+
         if (orderRemoteCommandClient.isWriteEnabled()) {
             OrderDto created = orderRemoteCommandClient.create(command);
             eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
@@ -97,5 +104,22 @@ public class CreateOrderUseCase {
         Order saved = orderRepository.save(order);
         eventPublisher.publish(new OrderCreated(saved.getId(), saved.getCustomerId(), Instant.now()));
         return OrderMapper.toDto(saved);
+    }
+
+    private void validatePaymentMethodEnabled(PaymentMethod paymentMethod) {
+        var settings = systemSettingsRepository.get();
+
+        if (paymentMethod == PaymentMethod.BANK_TRANSFER && !settings.isPaymentMethodBankTransferEnabled()) {
+            throw new DomainException("Payment method BANK_TRANSFER is currently disabled");
+        }
+
+        if (paymentMethod == PaymentMethod.PAYMENT_GATEWAY) {
+            if (!settings.isPaymentMethodGatewayEnabled()) {
+                throw new DomainException("Payment method PAYMENT_GATEWAY is currently disabled");
+            }
+            if (settings.getPaymentGatewayProviders().isEmpty()) {
+                throw new DomainException("No payment gateway provider is configured");
+            }
+        }
     }
 }

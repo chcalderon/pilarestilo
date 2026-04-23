@@ -14,6 +14,10 @@ public class Payment {
     private PaymentMethod method;
     private PaymentStatus status;
     private String proofReference;
+    private String transferAccountHolderName;
+    private String transferAccountEmail;
+    private String transferAccountNumber;
+    private String transferAccountType;
     private UUID reviewedBy;
     private Instant reviewedAt;
     private Instant createdAt;
@@ -21,10 +25,23 @@ public class Payment {
     private Payment() {}
 
     public static Payment create(UUID orderId, PaymentMethod method) {
+        return create(orderId, method, null, null, null, null);
+    }
+
+    public static Payment create(UUID orderId, PaymentMethod method,
+                                 String transferAccountHolderName,
+                                 String transferAccountEmail,
+                                 String transferAccountNumber,
+                                 String transferAccountType) {
         Payment p = new Payment();
         p.id = UUID.randomUUID();
         p.orderId = orderId;
         p.method = method;
+        p.transferAccountHolderName = normalizeNullable(transferAccountHolderName);
+        p.transferAccountEmail = normalizeNullable(transferAccountEmail);
+        p.transferAccountNumber = normalizeNullable(transferAccountNumber);
+        p.transferAccountType = normalizeNullable(transferAccountType);
+        p.validateTransferSnapshot();
         p.status = PaymentStatus.PENDING;
         p.createdAt = Instant.now();
         return p;
@@ -36,6 +53,10 @@ public class Payment {
      */
     public static Payment reconstruct(UUID id, UUID orderId, PaymentMethod method,
                                        PaymentStatus status, String proofReference,
+                                       String transferAccountHolderName,
+                                       String transferAccountEmail,
+                                       String transferAccountNumber,
+                                       String transferAccountType,
                                        UUID reviewedBy, Instant reviewedAt, Instant createdAt) {
         Payment p = new Payment();
         p.id = id;
@@ -43,10 +64,40 @@ public class Payment {
         p.method = method;
         p.status = status;
         p.proofReference = proofReference;
+        p.transferAccountHolderName = transferAccountHolderName;
+        p.transferAccountEmail = transferAccountEmail;
+        p.transferAccountNumber = transferAccountNumber;
+        p.transferAccountType = transferAccountType;
         p.reviewedBy = reviewedBy;
         p.reviewedAt = reviewedAt;
         p.createdAt = createdAt;
         return p;
+    }
+
+    private static String normalizeNullable(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private void validateTransferSnapshot() {
+        if (method != PaymentMethod.BANK_TRANSFER) {
+            return;
+        }
+        if (transferAccountHolderName == null || transferAccountHolderName.isBlank()) {
+            throw new DomainException("Transfer account holder snapshot is required for BANK_TRANSFER payments");
+        }
+        if (transferAccountEmail == null || transferAccountEmail.isBlank()) {
+            throw new DomainException("Transfer account email snapshot is required for BANK_TRANSFER payments");
+        }
+        if (transferAccountNumber == null || transferAccountNumber.isBlank()) {
+            throw new DomainException("Transfer account number snapshot is required for BANK_TRANSFER payments");
+        }
+        if (transferAccountType == null || transferAccountType.isBlank()) {
+            throw new DomainException("Transfer account type snapshot is required for BANK_TRANSFER payments");
+        }
     }
 
     public void submitProof(String proofReference) {
@@ -113,6 +164,10 @@ public class Payment {
     public PaymentMethod getMethod() { return method; }
     public PaymentStatus getStatus() { return status; }
     public String getProofReference() { return proofReference; }
+    public String getTransferAccountHolderName() { return transferAccountHolderName; }
+    public String getTransferAccountEmail() { return transferAccountEmail; }
+    public String getTransferAccountNumber() { return transferAccountNumber; }
+    public String getTransferAccountType() { return transferAccountType; }
     public UUID getReviewedBy() { return reviewedBy; }
     public Instant getReviewedAt() { return reviewedAt; }
     public Instant getCreatedAt() { return createdAt; }

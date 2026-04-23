@@ -5,6 +5,10 @@ import com.pilarestilo.payment.domain.enums.PaymentStatus;
 import com.pilarestilo.payment.domain.ports.PaymentGatewayPort;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
+import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +34,8 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "app.payment.gateway.provider", havingValue = "MERCADO_PAGO")
 public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
 
+    private static final Logger log = LoggerFactory.getLogger(MercadoPagoPaymentGatewayAdapter.class);
+
     public record WebhookResolution(
             UUID orderId,
             String gatewayStatus,
@@ -38,15 +44,21 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
 
     private static final Duration CHECKOUT_TTL_FALLBACK = Duration.ofMinutes(30);
 
-    private final RestClient restClient;
-    private final String successUrl;
-    private final String pendingUrl;
-    private final String failureUrl;
-    private final String notificationUrl;
-    private final String webhookToken;
+    private final RestClient.Builder restClientBuilder;
+    private final SystemSettingsRepository systemSettingsRepository;
+    private final SystemSettingsCryptoService cryptoService;
+    private final String envApiBaseUrl;
+    private final String envAccessToken;
+    private final String envSuccessUrl;
+    private final String envPendingUrl;
+    private final String envFailureUrl;
+    private final String envNotificationUrl;
+    private final String envWebhookToken;
 
     public MercadoPagoPaymentGatewayAdapter(
             RestClient.Builder restClientBuilder,
+            SystemSettingsRepository systemSettingsRepository,
+            SystemSettingsCryptoService cryptoService,
             @Value("${app.payment.gateway.mercadopago.api-base-url:https://api.mercadopago.com}") String apiBaseUrl,
             @Value("${app.payment.gateway.mercadopago.access-token:}") String accessToken,
             @Value("${app.payment.gateway.mercadopago.success-url:}") String successUrl,
@@ -55,30 +67,28 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
             @Value("${app.payment.gateway.mercadopago.notification-url:}") String notificationUrl,
             @Value("${app.payment.gateway.mercadopago.webhook-token:}") String webhookToken
     ) {
-        String normalizedToken = accessToken == null ? "" : accessToken.trim();
-        if (normalizedToken.isBlank()) {
-            throw new IllegalStateException("PAYMENT_GATEWAY_MP_ACCESS_TOKEN is required when provider is MERCADO_PAGO");
-        }
-        this.restClient = restClientBuilder
-                .baseUrl(apiBaseUrl)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + normalizedToken)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-        this.successUrl = normalize(successUrl);
-        this.pendingUrl = normalize(pendingUrl);
-        this.failureUrl = normalize(failureUrl);
-        this.notificationUrl = normalize(notificationUrl);
-        this.webhookToken = normalize(webhookToken);
+        this.restClientBuilder = restClientBuilder;
+        this.systemSettingsRepository = systemSettingsRepository;
+        this.cryptoService = cryptoService;
+        this.envApiBaseUrl = normalize(apiBaseUrl);
+        this.envAccessToken = normalize(accessToken);
+        this.envSuccessUrl = normalize(successUrl);
+        this.envPendingUrl = normalize(pendingUrl);
+        this.envFailureUrl = normalize(failureUrl);
+        this.envNotificationUrl = normalize(notificationUrl);
+        this.envWebhookToken = normalize(webhookToken);
     }
 
     @Override
     public CheckoutSession initiatePayment(UUID orderId, Money amount) {
+        EffectiveConfig config = resolveEffectiveConfig(true);
+        RestClient restClient = buildRestClient(config);
         JsonNode response;
         try {
             response = restClient.post()
                     .uri("/checkout/preferences")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(buildPreferencePayload(orderId, amount))
+                    .body(buildPreferencePayload(orderId, amount, config))
                     .retrieve()
                     .body(JsonNode.class);
         } catch (Exception ex) {
@@ -109,6 +119,8 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         if (gatewayReference == null || gatewayReference.isBlank()) {
             return PaymentStatus.PENDING;
         }
+        EffectiveConfig config = resolveEffectiveConfig(true);
+        RestClient restClient = buildRestClient(config);
 
         try {
             JsonNode response = restClient.get()
@@ -133,6 +145,8 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         if (mercadoPagoPaymentId == null || mercadoPagoPaymentId.isBlank()) {
             throw new DomainException("Mercado Pago payment id is required");
         }
+        EffectiveConfig config = resolveEffectiveConfig(true);
+        RestClient restClient = buildRestClient(config);
 
         JsonNode response;
         try {
@@ -170,25 +184,26 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
     }
 
     public boolean isWebhookTokenValid(String providedToken) {
-        if (webhookToken.isBlank()) {
+        String expectedToken = resolveEffectiveConfig(false).webhookToken();
+        if (expectedToken.isBlank()) {
             return true;
         }
         if (providedToken == null || providedToken.isBlank()) {
             return false;
         }
         return MessageDigest.isEqual(
-                webhookToken.getBytes(StandardCharsets.UTF_8),
+                expectedToken.getBytes(StandardCharsets.UTF_8),
                 providedToken.trim().getBytes(StandardCharsets.UTF_8)
         );
     }
 
-    private Map<String, Object> buildPreferencePayload(UUID orderId, Money amount) {
+    private Map<String, Object> buildPreferencePayload(UUID orderId, Money amount, EffectiveConfig config) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("external_reference", orderId.toString());
         payload.put("metadata", Map.of("order_id", orderId.toString(), "platform", "pilar-estilo"));
         payload.put("items", List.of(buildItem(orderId, amount)));
 
-        Map<String, String> backUrls = buildBackUrls();
+        Map<String, String> backUrls = buildBackUrls(config);
         if (!backUrls.isEmpty()) {
             payload.put("back_urls", backUrls);
             if (backUrls.containsKey("success")) {
@@ -196,7 +211,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
             }
         }
 
-        String builtNotification = buildNotificationUrl(orderId);
+        String builtNotification = buildNotificationUrl(orderId, config);
         if (!builtNotification.isBlank()) {
             payload.put("notification_url", builtNotification);
         }
@@ -213,28 +228,28 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         return item;
     }
 
-    private Map<String, String> buildBackUrls() {
+    private Map<String, String> buildBackUrls(EffectiveConfig config) {
         Map<String, String> backUrls = new LinkedHashMap<>();
-        if (!successUrl.isBlank()) {
-            backUrls.put("success", successUrl);
+        if (!config.successUrl().isBlank()) {
+            backUrls.put("success", config.successUrl());
         }
-        if (!pendingUrl.isBlank()) {
-            backUrls.put("pending", pendingUrl);
+        if (!config.pendingUrl().isBlank()) {
+            backUrls.put("pending", config.pendingUrl());
         }
-        if (!failureUrl.isBlank()) {
-            backUrls.put("failure", failureUrl);
+        if (!config.failureUrl().isBlank()) {
+            backUrls.put("failure", config.failureUrl());
         }
         return backUrls;
     }
 
-    private String buildNotificationUrl(UUID orderId) {
-        if (notificationUrl.isBlank()) {
+    private String buildNotificationUrl(UUID orderId, EffectiveConfig config) {
+        if (config.notificationUrl().isBlank()) {
             return "";
         }
-        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(notificationUrl)
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(config.notificationUrl())
                 .queryParam("orderId", orderId.toString());
-        if (!webhookToken.isBlank()) {
-            builder.queryParam("token", webhookToken);
+        if (!config.webhookToken().isBlank()) {
+            builder.queryParam("token", config.webhookToken());
         }
         return builder.build(true).toUriString();
     }
@@ -261,6 +276,64 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         return second == null ? "" : second;
     }
 
+    private EffectiveConfig resolveEffectiveConfig(boolean requireAccessToken) {
+        var settings = systemSettingsRepository.get();
+
+        String apiBaseUrl = firstNonBlank(settings.getPaymentGatewayMpApiBaseUrl(), envApiBaseUrl);
+        String accessToken = firstNonBlank(
+                decryptSecret(settings.getPaymentGatewayMpAccessTokenEncrypted(), "Mercado Pago access token"),
+                envAccessToken
+        );
+        String successUrl = firstNonBlank(settings.getPaymentGatewayMpSuccessUrl(), envSuccessUrl);
+        String pendingUrl = firstNonBlank(settings.getPaymentGatewayMpPendingUrl(), envPendingUrl);
+        String failureUrl = firstNonBlank(settings.getPaymentGatewayMpFailureUrl(), envFailureUrl);
+        String notificationUrl = firstNonBlank(settings.getPaymentGatewayMpNotificationUrl(), envNotificationUrl);
+        String webhookToken = firstNonBlank(
+                decryptSecret(settings.getPaymentGatewayMpWebhookTokenEncrypted(), "Mercado Pago webhook token"),
+                envWebhookToken
+        );
+
+        if (requireAccessToken && accessToken.isBlank()) {
+            throw new DomainException(
+                    "Mercado Pago access token is missing. Configure it in admin settings or PAYMENT_GATEWAY_MP_ACCESS_TOKEN."
+            );
+        }
+
+        return new EffectiveConfig(
+                normalize(apiBaseUrl).isBlank() ? "https://api.mercadopago.com" : normalize(apiBaseUrl),
+                normalize(accessToken),
+                normalize(successUrl),
+                normalize(pendingUrl),
+                normalize(failureUrl),
+                normalize(notificationUrl),
+                normalize(webhookToken)
+        );
+    }
+
+    private RestClient buildRestClient(EffectiveConfig config) {
+        return restClientBuilder
+                .baseUrl(config.apiBaseUrl())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.accessToken())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    private String decryptSecret(String encryptedValue, String label) {
+        if (encryptedValue == null || encryptedValue.isBlank()) {
+            return null;
+        }
+        try {
+            String decrypted = cryptoService.decrypt(encryptedValue);
+            if (decrypted == null || decrypted.isBlank()) {
+                return null;
+            }
+            return decrypted.trim();
+        } catch (DomainException ex) {
+            log.warn("[PAYMENT:GATEWAY:MP] could not decrypt {}: {}", label, ex.getMessage());
+            return null;
+        }
+    }
+
     private Instant parseInstant(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -271,4 +344,14 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
             return null;
         }
     }
+
+    private record EffectiveConfig(
+            String apiBaseUrl,
+            String accessToken,
+            String successUrl,
+            String pendingUrl,
+            String failureUrl,
+            String notificationUrl,
+            String webhookToken
+    ) {}
 }

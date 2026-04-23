@@ -10,6 +10,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class UpdateSystemSettingsUseCase {
 
@@ -49,11 +52,35 @@ public class UpdateSystemSettingsUseCase {
                 command.mediaS3SecretKey(),
                 command.clearMediaS3SecretKey()
         );
+        String nextPaymentGatewayMpAccessToken = resolveEncryptedSecret(
+                settings.getPaymentGatewayMpAccessTokenEncrypted(),
+                command.paymentGatewayMpAccessToken(),
+                command.clearPaymentGatewayMpAccessToken()
+        );
+        String nextPaymentGatewayMpWebhookToken = resolveEncryptedSecret(
+                settings.getPaymentGatewayMpWebhookTokenEncrypted(),
+                command.paymentGatewayMpWebhookToken(),
+                command.clearPaymentGatewayMpWebhookToken()
+        );
 
         settings.update(
                 command.whatsappNumber(),
                 command.instagramUrl(),
                 command.facebookUrl(),
+                command.bankTransferAccountHolder(),
+                command.bankTransferContactEmail(),
+                command.bankTransferAccountNumber(),
+                command.bankTransferAccountType(),
+                Boolean.TRUE.equals(command.paymentMethodBankTransferEnabled()),
+                Boolean.TRUE.equals(command.paymentMethodGatewayEnabled()),
+                serializePaymentGatewayProviders(command.paymentGatewayProviders()),
+                command.paymentGatewayMpApiBaseUrl(),
+                nextPaymentGatewayMpAccessToken,
+                command.paymentGatewayMpSuccessUrl(),
+                command.paymentGatewayMpPendingUrl(),
+                command.paymentGatewayMpFailureUrl(),
+                command.paymentGatewayMpNotificationUrl(),
+                nextPaymentGatewayMpWebhookToken,
                 command.mediaStorageProvider(),
                 command.mediaS3Endpoint(),
                 command.mediaS3Region(),
@@ -88,6 +115,16 @@ public class UpdateSystemSettingsUseCase {
 
         var saved = systemSettingsRepository.save(settings);
         return SystemSettingsMapper.toDto(saved);
+    }
+
+    private String serializePaymentGatewayProviders(List<String> providers) {
+        if (providers == null || providers.isEmpty()) {
+            return "";
+        }
+        return providers.stream()
+                .map(value -> value == null ? "" : value.trim())
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.joining(","));
     }
 
     private String resolveEncryptedSecret(String currentEncrypted, String nextPlainText, Boolean clearFlag) {

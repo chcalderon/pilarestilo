@@ -1,11 +1,26 @@
 package com.pilarestilo.systemsettings.application.dto;
 
 import java.time.Instant;
+import java.util.List;
 
 public record SystemSettingsDto(
         String whatsappNumber,
         String instagramUrl,
         String facebookUrl,
+        String bankTransferAccountHolder,
+        String bankTransferContactEmail,
+        String bankTransferAccountNumber,
+        String bankTransferAccountType,
+        boolean paymentMethodBankTransferEnabled,
+        boolean paymentMethodGatewayEnabled,
+        List<String> paymentGatewayProviders,
+        String paymentGatewayMpApiBaseUrl,
+        String paymentGatewayMpSuccessUrl,
+        String paymentGatewayMpPendingUrl,
+        String paymentGatewayMpFailureUrl,
+        String paymentGatewayMpNotificationUrl,
+        boolean paymentGatewayMpAccessTokenConfigured,
+        boolean paymentGatewayMpWebhookTokenConfigured,
         String mediaStorageProvider,
         String mediaS3Endpoint,
         String mediaS3Region,

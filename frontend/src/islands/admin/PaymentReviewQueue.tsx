@@ -143,7 +143,14 @@ export default function PaymentReviewQueue() {
       key: 'method',
       header: 'Metodo',
       render: (row) => (
-        <span className="font-sans text-[0.78rem] uppercase tracking-wider text-pe-charcoal/70">{row.method}</span>
+        <div className="flex flex-col">
+          <span className="font-sans text-[0.78rem] uppercase tracking-wider text-pe-charcoal/70">{row.method}</span>
+          {String(row.method) === 'BANK_TRANSFER' && row.transferAccountNumber && (
+            <span className="font-sans text-[0.66rem] text-pe-charcoal/45">
+              Cuenta ****{String(row.transferAccountNumber).slice(-4)}
+            </span>
+          )}
+        </div>
       ),
     },
     {

@@ -569,6 +569,13 @@ export default function AccountPage({ locale }: Props) {
     return (es ? labelsEs : labelsEn)[method] ?? method;
   }
 
+  function maskAccountNumber(accountNumber: string | null | undefined) {
+    const normalized = (accountNumber ?? '').trim();
+    if (!normalized) return '-';
+    if (normalized.length <= 4) return normalized;
+    return `${'*'.repeat(Math.max(0, normalized.length - 4))}${normalized.slice(-4)}`;
+  }
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: es ? 'Perfil' : 'Profile', icon: <User size={14} /> },
     { id: 'reviews', label: es ? 'Mis resenas' : 'My reviews', icon: <Star size={14} /> },
@@ -913,6 +920,35 @@ export default function AccountPage({ locale }: Props) {
                               </span>
                             )}
                           </div>
+
+                          {(payment?.transferAccountHolderName
+                            || payment?.transferAccountEmail
+                            || payment?.transferAccountNumber
+                            || payment?.transferAccountType) && (
+                              <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-2">
+                                <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/45 mb-1.5">
+                                  {es ? 'Datos transferencia (snapshot)' : 'Transfer details (snapshot)'}
+                                </p>
+                                <dl className="grid grid-cols-1 gap-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-pe-charcoal/45">{es ? 'Nombre' : 'Name'}</dt>
+                                    <dd className="text-right">{payment?.transferAccountHolderName || '-'}</dd>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-pe-charcoal/45">{es ? 'Correo' : 'Email'}</dt>
+                                    <dd className="text-right">{payment?.transferAccountEmail || '-'}</dd>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-pe-charcoal/45">{es ? 'Cuenta' : 'Account'}</dt>
+                                    <dd className="text-right">{maskAccountNumber(payment?.transferAccountNumber)}</dd>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-pe-charcoal/45">{es ? 'Tipo' : 'Type'}</dt>
+                                    <dd className="text-right">{payment?.transferAccountType || '-'}</dd>
+                                  </div>
+                                </dl>
+                              </div>
+                            )}
 
                           {payment?.proofReference && (
                             <a

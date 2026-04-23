@@ -15,6 +15,7 @@ import {
 import {
   getSystemSettings,
   type MediaStorageProvider,
+  type PaymentGatewayProvider,
   updateSystemSettings,
   type NotificationProvider,
   type SystemSettingsDto,
@@ -31,6 +32,22 @@ type FormState = {
   whatsappNumber: string;
   instagramUrl: string;
   facebookUrl: string;
+  bankTransferAccountHolder: string;
+  bankTransferContactEmail: string;
+  bankTransferAccountNumber: string;
+  bankTransferAccountType: string;
+  paymentMethodBankTransferEnabled: boolean;
+  paymentMethodGatewayEnabled: boolean;
+  paymentGatewayProviders: PaymentGatewayProvider[];
+  paymentGatewayMpApiBaseUrl: string;
+  paymentGatewayMpSuccessUrl: string;
+  paymentGatewayMpPendingUrl: string;
+  paymentGatewayMpFailureUrl: string;
+  paymentGatewayMpNotificationUrl: string;
+  paymentGatewayMpAccessToken: string;
+  clearPaymentGatewayMpAccessToken: boolean;
+  paymentGatewayMpWebhookToken: string;
+  clearPaymentGatewayMpWebhookToken: boolean;
   mediaStorageProvider: MediaStorageProvider;
   mediaS3Endpoint: string;
   mediaS3Region: string;
@@ -80,6 +97,14 @@ type MediaStorageOption = {
   icon: typeof HardDrive;
 };
 
+type PaymentGatewayProviderOption = {
+  value: PaymentGatewayProvider;
+  label: string;
+  subtitle: string;
+};
+
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications';
+
 const PROVIDER_OPTIONS: ProviderOption[] = [
   {
     value: 'LOG',
@@ -128,11 +153,56 @@ const MEDIA_STORAGE_OPTIONS: MediaStorageOption[] = [
   },
 ];
 
+const PAYMENT_GATEWAY_PROVIDER_OPTIONS: PaymentGatewayProviderOption[] = [
+  {
+    value: 'MERCADO_PAGO',
+    label: 'Mercado Pago',
+    subtitle: 'Checkout online con tarjetas y medios locales.',
+  },
+];
+
+const BANK_ACCOUNT_TYPE_OPTIONS = [
+  'Cuenta Corriente',
+  'Cuenta Vista',
+  'Cuenta RUT',
+  'Cuenta de Ahorro',
+  'Chequera Electronica',
+];
+
+const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications'];
+
+function parseSettingsTab(rawValue: string | null): SettingsSubmenuTab {
+  if (!rawValue) return 'store';
+  const normalized = rawValue.toLowerCase();
+  if (SETTINGS_SUBMENU_TAB_IDS.includes(normalized as SettingsSubmenuTab)) {
+    return normalized as SettingsSubmenuTab;
+  }
+  return 'store';
+}
+
 function buildFormFromSettings(settings: SystemSettingsDto): FormState {
   return {
     whatsappNumber: settings.whatsappNumber ?? '',
     instagramUrl: settings.instagramUrl ?? '',
     facebookUrl: settings.facebookUrl ?? '',
+    bankTransferAccountHolder: settings.bankTransferAccountHolder ?? '',
+    bankTransferContactEmail: settings.bankTransferContactEmail ?? '',
+    bankTransferAccountNumber: settings.bankTransferAccountNumber ?? '',
+    bankTransferAccountType: settings.bankTransferAccountType ?? '',
+    paymentMethodBankTransferEnabled: settings.paymentMethodBankTransferEnabled ?? true,
+    paymentMethodGatewayEnabled: settings.paymentMethodGatewayEnabled ?? true,
+    paymentGatewayProviders: settings.paymentGatewayProviders?.length
+      ? settings.paymentGatewayProviders
+      : ['MERCADO_PAGO'],
+    paymentGatewayMpApiBaseUrl: settings.paymentGatewayMpApiBaseUrl ?? 'https://api.mercadopago.com',
+    paymentGatewayMpSuccessUrl: settings.paymentGatewayMpSuccessUrl ?? '',
+    paymentGatewayMpPendingUrl: settings.paymentGatewayMpPendingUrl ?? '',
+    paymentGatewayMpFailureUrl: settings.paymentGatewayMpFailureUrl ?? '',
+    paymentGatewayMpNotificationUrl: settings.paymentGatewayMpNotificationUrl ?? '',
+    paymentGatewayMpAccessToken: '',
+    clearPaymentGatewayMpAccessToken: false,
+    paymentGatewayMpWebhookToken: '',
+    clearPaymentGatewayMpWebhookToken: false,
     mediaStorageProvider: settings.mediaStorageProvider ?? 'LOCAL',
     mediaS3Endpoint: settings.mediaS3Endpoint ?? '',
     mediaS3Region: settings.mediaS3Region ?? '',
@@ -226,11 +296,29 @@ export default function SystemSettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
+  const [tabSyncedFromUrl, setTabSyncedFromUrl] = useState(false);
   const [settings, setSettings] = useState<SystemSettingsDto | null>(null);
   const [form, setForm] = useState<FormState>({
     whatsappNumber: '',
     instagramUrl: '',
     facebookUrl: '',
+    bankTransferAccountHolder: '',
+    bankTransferContactEmail: '',
+    bankTransferAccountNumber: '',
+    bankTransferAccountType: '',
+    paymentMethodBankTransferEnabled: true,
+    paymentMethodGatewayEnabled: true,
+    paymentGatewayProviders: ['MERCADO_PAGO'],
+    paymentGatewayMpApiBaseUrl: 'https://api.mercadopago.com',
+    paymentGatewayMpSuccessUrl: '',
+    paymentGatewayMpPendingUrl: '',
+    paymentGatewayMpFailureUrl: '',
+    paymentGatewayMpNotificationUrl: '',
+    paymentGatewayMpAccessToken: '',
+    clearPaymentGatewayMpAccessToken: false,
+    paymentGatewayMpWebhookToken: '',
+    clearPaymentGatewayMpWebhookToken: false,
     mediaStorageProvider: 'LOCAL',
     mediaS3Endpoint: '',
     mediaS3Region: '',
@@ -294,8 +382,45 @@ export default function SystemSettingsPanel() {
     void loadSettings();
   }, [effectiveToken]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setActiveSettingsTab(parseSettingsTab(params.get('tab')));
+    setTabSyncedFromUrl(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!tabSyncedFromUrl) return;
+    const url = new URL(window.location.href);
+    const current = parseSettingsTab(url.searchParams.get('tab'));
+    if (current === activeSettingsTab) return;
+    url.searchParams.set('tab', activeSettingsTab);
+    window.history.replaceState(window.history.state, '', `${url.pathname}?${url.searchParams.toString()}`);
+  }, [activeSettingsTab, tabSyncedFromUrl]);
+
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setFeedback(null);
+  }
+
+  function toggleGatewayProvider(provider: PaymentGatewayProvider) {
+    setForm((prev) => {
+      const exists = prev.paymentGatewayProviders.includes(provider);
+      if (exists) {
+        if (prev.paymentGatewayProviders.length <= 1) {
+          return prev;
+        }
+        return {
+          ...prev,
+          paymentGatewayProviders: prev.paymentGatewayProviders.filter((value) => value !== provider),
+        };
+      }
+      return {
+        ...prev,
+        paymentGatewayProviders: [...prev.paymentGatewayProviders, provider],
+      };
+    });
     setFeedback(null);
   }
 
@@ -304,6 +429,7 @@ export default function SystemSettingsPanel() {
   const hasProviderRequiringTwilio = form.notificationProvider === 'WHATSAPP_TWILIO';
   const hasProviderSimulated = form.notificationProvider === 'WHATSAPP_SIMULATED';
   const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
+  const hasMercadoPagoSelected = form.paymentGatewayProviders.includes('MERCADO_PAGO');
 
   async function handleSave() {
     if (!effectiveToken || saving) return;
@@ -321,6 +447,39 @@ export default function SystemSettingsPanel() {
 
     if (!form.mediaStorageProvider) {
       setFeedback({ tone: 'error', text: 'Debes seleccionar un proveedor de almacenamiento de imagenes.' });
+      return;
+    }
+
+    if (!form.paymentMethodBankTransferEnabled && !form.paymentMethodGatewayEnabled) {
+      setFeedback({ tone: 'error', text: 'Debes mantener al menos un medio de pago habilitado.' });
+      return;
+    }
+
+    if (form.paymentMethodBankTransferEnabled) {
+      if (!form.bankTransferAccountHolder.trim()) {
+        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar nombre del titular.' });
+        return;
+      }
+      if (!form.bankTransferContactEmail.trim()) {
+        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar correo de contacto.' });
+        return;
+      }
+      if (!form.bankTransferAccountNumber.trim()) {
+        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar numero de cuenta.' });
+        return;
+      }
+      if (!form.bankTransferAccountType.trim()) {
+        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar tipo de cuenta.' });
+        return;
+      }
+    }
+
+    if (form.paymentMethodGatewayEnabled && form.paymentGatewayProviders.length === 0) {
+      setFeedback({ tone: 'error', text: 'Si habilitas pasarela de pago, debes seleccionar al menos un proveedor.' });
+      return;
+    }
+    if (form.paymentMethodGatewayEnabled && hasMercadoPagoSelected && !form.paymentGatewayMpApiBaseUrl.trim()) {
+      setFeedback({ tone: 'error', text: 'Para Mercado Pago debes indicar API base URL.' });
       return;
     }
 
@@ -371,6 +530,22 @@ export default function SystemSettingsPanel() {
       whatsappNumber: whatsappTrimmed,
       instagramUrl: form.instagramUrl.trim(),
       facebookUrl: form.facebookUrl.trim(),
+      bankTransferAccountHolder: form.bankTransferAccountHolder.trim(),
+      bankTransferContactEmail: form.bankTransferContactEmail.trim(),
+      bankTransferAccountNumber: form.bankTransferAccountNumber.trim(),
+      bankTransferAccountType: form.bankTransferAccountType.trim(),
+      paymentMethodBankTransferEnabled: form.paymentMethodBankTransferEnabled,
+      paymentMethodGatewayEnabled: form.paymentMethodGatewayEnabled,
+      paymentGatewayProviders: form.paymentGatewayProviders,
+      paymentGatewayMpApiBaseUrl: form.paymentGatewayMpApiBaseUrl.trim(),
+      paymentGatewayMpSuccessUrl: form.paymentGatewayMpSuccessUrl.trim(),
+      paymentGatewayMpPendingUrl: form.paymentGatewayMpPendingUrl.trim(),
+      paymentGatewayMpFailureUrl: form.paymentGatewayMpFailureUrl.trim(),
+      paymentGatewayMpNotificationUrl: form.paymentGatewayMpNotificationUrl.trim(),
+      paymentGatewayMpAccessToken: form.paymentGatewayMpAccessToken.trim(),
+      clearPaymentGatewayMpAccessToken: form.clearPaymentGatewayMpAccessToken,
+      paymentGatewayMpWebhookToken: form.paymentGatewayMpWebhookToken.trim(),
+      clearPaymentGatewayMpWebhookToken: form.clearPaymentGatewayMpWebhookToken,
       mediaStorageProvider: form.mediaStorageProvider,
       mediaS3Endpoint: form.mediaS3Endpoint.trim(),
       mediaS3Region: form.mediaS3Region.trim(),
@@ -474,6 +649,7 @@ export default function SystemSettingsPanel() {
         </div>
       )}
 
+      {activeSettingsTab === 'store' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Canales tienda</h2>
         <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -515,7 +691,271 @@ export default function SystemSettingsPanel() {
           </label>
         </div>
       </section>
+      )}
 
+      {activeSettingsTab === 'payments' && (
+      <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+        <h2 className="font-display text-2xl text-pe-black font-light">Medios de pago</h2>
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          Controla que opciones de pago estaran disponibles en checkout. Siempre debe quedar al menos una activa.
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="inline-flex items-center gap-2 font-sans text-[0.8rem] text-pe-charcoal">
+            <input
+              type="checkbox"
+              checked={form.paymentMethodBankTransferEnabled}
+              onChange={(e) => {
+                const next = e.target.checked;
+                if (!next && !form.paymentMethodGatewayEnabled) return;
+                updateField('paymentMethodBankTransferEnabled', next);
+              }}
+              className="h-4 w-4 accent-pe-rose"
+            />
+            Transferencia bancaria
+          </label>
+
+          <label className="inline-flex items-center gap-2 font-sans text-[0.8rem] text-pe-charcoal">
+            <input
+              type="checkbox"
+              checked={form.paymentMethodGatewayEnabled}
+              onChange={(e) => {
+                const next = e.target.checked;
+                if (!next && !form.paymentMethodBankTransferEnabled) return;
+                updateField('paymentMethodGatewayEnabled', next);
+              }}
+              className="h-4 w-4 accent-pe-rose"
+            />
+            Pasarela de pago
+          </label>
+        </div>
+
+        {form.paymentMethodBankTransferEnabled && (
+          <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+              Datos de transferencia bancaria
+            </p>
+            <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+              Estos datos se muestran en checkout y se guardan como snapshot historico en cada pago por transferencia.
+            </p>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nombre titular</span>
+                <input
+                  type="text"
+                  value={form.bankTransferAccountHolder}
+                  onChange={(e) => updateField('bankTransferAccountHolder', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="Pilar Estilo Spa"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Correo contacto</span>
+                <input
+                  type="email"
+                  value={form.bankTransferContactEmail}
+                  onChange={(e) => updateField('bankTransferContactEmail', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="pagos@pilarestilo.com"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Numero de cuenta</span>
+                <input
+                  type="text"
+                  value={form.bankTransferAccountNumber}
+                  onChange={(e) => updateField('bankTransferAccountNumber', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="1234567890"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Tipo de cuenta</span>
+                <select
+                  value={form.bankTransferAccountType}
+                  onChange={(e) => updateField('bankTransferAccountType', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                >
+                  <option value="">Selecciona tipo de cuenta</option>
+                  {BANK_ACCOUNT_TYPE_OPTIONS.map((accountType) => (
+                    <option key={accountType} value={accountType}>
+                      {accountType}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {form.paymentMethodGatewayEnabled && (
+          <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+              Proveedores de pasarela activos
+            </p>
+            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+              {PAYMENT_GATEWAY_PROVIDER_OPTIONS.map((option) => {
+                const checked = form.paymentGatewayProviders.includes(option.value);
+                const isLastSelected = checked && form.paymentGatewayProviders.length === 1;
+                return (
+                  <label key={option.value} className="inline-flex items-start gap-2 font-sans text-[0.78rem] text-pe-charcoal">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={isLastSelected}
+                      onChange={() => toggleGatewayProvider(option.value)}
+                      className="mt-0.5 h-4 w-4 accent-pe-rose disabled:opacity-45"
+                    />
+                    <span>
+                      <strong className="font-medium">{option.label}</strong>
+                      <span className="block text-[0.72rem] text-pe-charcoal/60">{option.subtitle}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {hasMercadoPagoSelected && (
+              <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-white px-3 py-3">
+                <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                  Configuracion Mercado Pago
+                </p>
+                <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+                  Se usa para crear sesiones de checkout y validar webhooks. Si dejas campos vacios, se usa fallback desde .env.
+                </p>
+
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">API base URL</span>
+                    <input
+                      type="url"
+                      value={form.paymentGatewayMpApiBaseUrl}
+                      onChange={(e) => updateField('paymentGatewayMpApiBaseUrl', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="https://api.mercadopago.com"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Access Token</span>
+                    <input
+                      type="password"
+                      value={form.paymentGatewayMpAccessToken}
+                      onChange={(e) => updateField('paymentGatewayMpAccessToken', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="APP_USR-xxxxxxxxxxxxxxxx"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL exito</span>
+                    <input
+                      type="url"
+                      value={form.paymentGatewayMpSuccessUrl}
+                      onChange={(e) => updateField('paymentGatewayMpSuccessUrl', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="https://tudominio.com/es/account?tab=orders"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL pendiente</span>
+                    <input
+                      type="url"
+                      value={form.paymentGatewayMpPendingUrl}
+                      onChange={(e) => updateField('paymentGatewayMpPendingUrl', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="https://tudominio.com/es/account?tab=orders"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL fallo</span>
+                    <input
+                      type="url"
+                      value={form.paymentGatewayMpFailureUrl}
+                      onChange={(e) => updateField('paymentGatewayMpFailureUrl', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="https://tudominio.com/es/account?tab=orders"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Notification URL</span>
+                    <input
+                      type="url"
+                      value={form.paymentGatewayMpNotificationUrl}
+                      onChange={(e) => updateField('paymentGatewayMpNotificationUrl', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="https://tudominio.com/api/payments/webhooks/gateway/mercadopago"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Webhook Token (opcional)</span>
+                    <input
+                      type="password"
+                      value={form.paymentGatewayMpWebhookToken}
+                      onChange={(e) => updateField('paymentGatewayMpWebhookToken', e.target.value)}
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      placeholder="token-seguro-opcional"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+                    <input
+                      type="checkbox"
+                      checked={form.clearPaymentGatewayMpAccessToken}
+                      onChange={(e) => updateField('clearPaymentGatewayMpAccessToken', e.target.checked)}
+                      className="h-4 w-4 accent-pe-rose"
+                    />
+                    Limpiar access token guardado
+                  </label>
+
+                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+                    <input
+                      type="checkbox"
+                      checked={form.clearPaymentGatewayMpWebhookToken}
+                      onChange={(e) => updateField('clearPaymentGatewayMpWebhookToken', e.target.checked)}
+                      className="h-4 w-4 accent-pe-rose"
+                    />
+                    Limpiar webhook token guardado
+                  </label>
+                </div>
+
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <SecurityHint
+                    configured={Boolean(settings?.paymentGatewayMpAccessTokenConfigured)}
+                    clearFlag={form.clearPaymentGatewayMpAccessToken}
+                    newValue={form.paymentGatewayMpAccessToken}
+                    emptyText="Sin access token Mercado Pago configurado."
+                    keepText="Hay un access token Mercado Pago guardado (no visible)."
+                    replaceText="Se reemplazara el access token Mercado Pago actual."
+                    clearText="Se eliminara el access token Mercado Pago al guardar."
+                  />
+                  <SecurityHint
+                    configured={Boolean(settings?.paymentGatewayMpWebhookTokenConfigured)}
+                    clearFlag={form.clearPaymentGatewayMpWebhookToken}
+                    newValue={form.paymentGatewayMpWebhookToken}
+                    emptyText="Sin webhook token Mercado Pago configurado."
+                    keepText="Hay un webhook token Mercado Pago guardado (no visible)."
+                    replaceText="Se reemplazara el webhook token Mercado Pago actual."
+                    clearText="Se eliminara el webhook token Mercado Pago al guardar."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+      )}
+
+      {activeSettingsTab === 'media' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Almacenamiento de imagenes</h2>
         <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -554,8 +994,9 @@ export default function SystemSettingsPanel() {
           </span>
         </div>
       </section>
+      )}
 
-      {hasS3CompatibleStorage && (
+      {activeSettingsTab === 'media' && hasS3CompatibleStorage && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Configuracion S3 compatible</h2>
           <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -664,6 +1105,7 @@ export default function SystemSettingsPanel() {
         </section>
       )}
 
+      {activeSettingsTab === 'notifications' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Proveedor de notificaciones</h2>
         <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -702,8 +1144,9 @@ export default function SystemSettingsPanel() {
           </span>
         </div>
       </section>
+      )}
 
-      {hasProviderSimulated && (
+      {activeSettingsTab === 'notifications' && hasProviderSimulated && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">WhatsApp Simulado</h2>
           <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -734,7 +1177,7 @@ export default function SystemSettingsPanel() {
         </section>
       )}
 
-      {hasProviderRequiringTwilio && (
+      {activeSettingsTab === 'notifications' && hasProviderRequiringTwilio && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">WhatsApp Twilio</h2>
           <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -833,7 +1276,7 @@ export default function SystemSettingsPanel() {
         </section>
       )}
 
-      {hasProviderRequiringSendgrid && (
+      {activeSettingsTab === 'notifications' && hasProviderRequiringSendgrid && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Correo SendGrid</h2>
           <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
@@ -921,7 +1364,7 @@ export default function SystemSettingsPanel() {
         </section>
       )}
 
-      {hasProviderRequiringSmtp && (
+      {activeSettingsTab === 'notifications' && hasProviderRequiringSmtp && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Correo SMTP</h2>
           <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">

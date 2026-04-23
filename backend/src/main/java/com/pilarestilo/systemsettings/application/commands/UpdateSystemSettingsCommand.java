@@ -1,9 +1,27 @@
 package com.pilarestilo.systemsettings.application.commands;
 
+import java.util.List;
+
 public record UpdateSystemSettingsCommand(
         String whatsappNumber,
         String instagramUrl,
         String facebookUrl,
+        String bankTransferAccountHolder,
+        String bankTransferContactEmail,
+        String bankTransferAccountNumber,
+        String bankTransferAccountType,
+        Boolean paymentMethodBankTransferEnabled,
+        Boolean paymentMethodGatewayEnabled,
+        List<String> paymentGatewayProviders,
+        String paymentGatewayMpApiBaseUrl,
+        String paymentGatewayMpSuccessUrl,
+        String paymentGatewayMpPendingUrl,
+        String paymentGatewayMpFailureUrl,
+        String paymentGatewayMpNotificationUrl,
+        String paymentGatewayMpAccessToken,
+        Boolean clearPaymentGatewayMpAccessToken,
+        String paymentGatewayMpWebhookToken,
+        Boolean clearPaymentGatewayMpWebhookToken,
         String mediaStorageProvider,
         String mediaS3Endpoint,
         String mediaS3Region,

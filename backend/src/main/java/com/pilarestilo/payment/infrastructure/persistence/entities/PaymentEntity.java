@@ -28,6 +28,18 @@ public class PaymentEntity {
     @Column(name = "proof_reference", length = 500)
     private String proofReference;
 
+    @Column(name = "transfer_account_holder_name", length = 160)
+    private String transferAccountHolderName;
+
+    @Column(name = "transfer_account_email", length = 255)
+    private String transferAccountEmail;
+
+    @Column(name = "transfer_account_number", length = 120)
+    private String transferAccountNumber;
+
+    @Column(name = "transfer_account_type", length = 80)
+    private String transferAccountType;
+
     @Column(name = "reviewed_by")
     private UUID reviewedBy;
 
@@ -51,6 +63,16 @@ public class PaymentEntity {
 
     public String getProofReference() { return proofReference; }
     public void setProofReference(String proofReference) { this.proofReference = proofReference; }
+    public String getTransferAccountHolderName() { return transferAccountHolderName; }
+    public void setTransferAccountHolderName(String transferAccountHolderName) {
+        this.transferAccountHolderName = transferAccountHolderName;
+    }
+    public String getTransferAccountEmail() { return transferAccountEmail; }
+    public void setTransferAccountEmail(String transferAccountEmail) { this.transferAccountEmail = transferAccountEmail; }
+    public String getTransferAccountNumber() { return transferAccountNumber; }
+    public void setTransferAccountNumber(String transferAccountNumber) { this.transferAccountNumber = transferAccountNumber; }
+    public String getTransferAccountType() { return transferAccountType; }
+    public void setTransferAccountType(String transferAccountType) { this.transferAccountType = transferAccountType; }
 
     public UUID getReviewedBy() { return reviewedBy; }
     public void setReviewedBy(UUID reviewedBy) { this.reviewedBy = reviewedBy; }

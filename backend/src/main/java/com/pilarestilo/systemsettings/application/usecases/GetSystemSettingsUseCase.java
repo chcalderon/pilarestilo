@@ -33,6 +33,8 @@ public class GetSystemSettingsUseCase {
         verifyDecryptable(settings.getWhatsappTwilioAuthTokenEncrypted(), "Twilio auth token");
         verifyDecryptable(settings.getSendgridApiKeyEncrypted(), "SendGrid API key");
         verifyDecryptable(settings.getMediaS3SecretKeyEncrypted(), "Media S3 secret key");
+        verifyDecryptable(settings.getPaymentGatewayMpAccessTokenEncrypted(), "Mercado Pago access token");
+        verifyDecryptable(settings.getPaymentGatewayMpWebhookTokenEncrypted(), "Mercado Pago webhook token");
         return SystemSettingsMapper.toDto(settings);
     }
 

@@ -13,6 +13,20 @@ public final class SystemSettingsMapper {
                 settings.getWhatsappNumber(),
                 settings.getInstagramUrl(),
                 settings.getFacebookUrl(),
+                settings.getBankTransferAccountHolder(),
+                settings.getBankTransferContactEmail(),
+                settings.getBankTransferAccountNumber(),
+                settings.getBankTransferAccountType(),
+                settings.isPaymentMethodBankTransferEnabled(),
+                settings.isPaymentMethodGatewayEnabled(),
+                settings.getPaymentGatewayProviders().stream().map(Enum::name).toList(),
+                settings.getPaymentGatewayMpApiBaseUrl(),
+                settings.getPaymentGatewayMpSuccessUrl(),
+                settings.getPaymentGatewayMpPendingUrl(),
+                settings.getPaymentGatewayMpFailureUrl(),
+                settings.getPaymentGatewayMpNotificationUrl(),
+                settings.getPaymentGatewayMpAccessTokenEncrypted() != null && !settings.getPaymentGatewayMpAccessTokenEncrypted().isBlank(),
+                settings.getPaymentGatewayMpWebhookTokenEncrypted() != null && !settings.getPaymentGatewayMpWebhookTokenEncrypted().isBlank(),
                 settings.getMediaStorageProvider().name(),
                 settings.getMediaS3Endpoint(),
                 settings.getMediaS3Region(),
@@ -52,7 +66,14 @@ public final class SystemSettingsMapper {
                 settings.getWhatsappNumber(),
                 settings.getInstagramUrl(),
                 settings.getFacebookUrl(),
-                resolveSupportEmail(settings)
+                resolveSupportEmail(settings),
+                settings.getBankTransferAccountHolder(),
+                settings.getBankTransferContactEmail(),
+                settings.getBankTransferAccountNumber(),
+                settings.getBankTransferAccountType(),
+                settings.isPaymentMethodBankTransferEnabled(),
+                settings.isPaymentMethodGatewayEnabled(),
+                settings.getPaymentGatewayProviders().stream().map(Enum::name).toList()
         );
     }
 

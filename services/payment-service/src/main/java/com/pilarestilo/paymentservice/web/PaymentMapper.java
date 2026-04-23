@@ -15,6 +15,10 @@ public final class PaymentMapper {
                 entity.getMethod(),
                 entity.getStatus(),
                 entity.getProofReference(),
+                entity.getTransferAccountHolderName(),
+                entity.getTransferAccountEmail(),
+                entity.getTransferAccountNumber(),
+                entity.getTransferAccountType(),
                 entity.getReviewedBy(),
                 entity.getReviewedAt(),
                 entity.getCreatedAt()

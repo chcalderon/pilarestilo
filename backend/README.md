@@ -44,7 +44,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `customercredit` | Credit balance and movement history |
 | `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) + domain listeners |
 | `user` | User repository and user-facing data |
-| `systemsettings` | Admin-managed storefront/system configuration (channels + notification providers) |
+| `systemsettings` | Admin-managed storefront/system configuration (channels + notifications + checkout payment-method toggles/providers) |
 | `shared/kafka` | Optional Kafka domain-event transport (`KafkaDomainEventPublisher`, listener retry/DLQ config) |
 
 ---
@@ -73,7 +73,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 
 - `GET /api/system-settings` (ADMIN)
 - `PATCH /api/system-settings` (ADMIN)
-- `GET /api/system-settings/public` (public storefront channels)
+- `GET /api/system-settings/public` (public storefront channels + checkout payment methods + transfer details)
 
 ### Catalog
 
@@ -267,6 +267,9 @@ Current note:
 - `EMAIL_SENDGRID` uses its own admin-managed credentials (`sendgridApiKey`, `sendgridFromEmail`, etc.) with env fallback.
 - `EMAIL_SMTP` sends directly through your SMTP server, prioritizes user email, and supports admin-managed values with env fallback.
 - Sensitive values are encrypted at rest in `system_settings` (`smtpPassword`, Twilio auth token, SendGrid API key).
+- Checkout payment methods are runtime-configurable from admin settings: `BANK_TRANSFER` and `PAYMENT_GATEWAY` can be toggled, and gateway mode requires at least one enabled provider (`MERCADO_PAGO` for now).
+- Bank-transfer account details are admin-managed in `system_settings` and are snapshotted into each `payments` record created with `BANK_TRANSFER`.
+- Mercado Pago connection settings can be managed from admin system settings, with encrypted-at-rest storage for `access token` and optional `webhook token`; env values remain fallback.
 - Domain events can run in-process (default) or over Kafka via runtime toggle. Kafka mode includes retry + DLT and `OrderInventorySaga` for payment/inventory consistency.
 - Distributed tracing is optional and emits OpenTelemetry spans to OTLP when enabled.
 
@@ -283,7 +286,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V20`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V24`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -299,6 +302,10 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - extended catalog seed with additional products (`V18`)
 - wishlist share-link token and enablement fields (`V19`)
 - product variants table + backfill from size stocks (`V20`)
+- media storage provider configuration (`V21`)
+- checkout payment method + gateway provider settings (`V22`)
+- bank-transfer configuration fields and per-payment transfer snapshot persistence (`V23`)
+- Mercado Pago settings fields in system settings (`V24`)
 
 ---
 

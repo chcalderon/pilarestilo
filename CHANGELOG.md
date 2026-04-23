@@ -43,6 +43,9 @@ The format is inspired by Keep a Changelog.
 - Admin system settings screen (`/admin/settings`) to manage storefront contact channels and SMTP configuration.
 - Public settings endpoint (`GET /api/system-settings/public`) for storefront runtime channel links.
 - SMTP password encryption-at-rest with AES-GCM and env-driven crypto secret (`SYSTEM_SETTINGS_CRYPTO_SECRET`).
+- Bank-transfer runtime settings fields in admin system settings (`titular`, `correo`, `numero`, `tipo de cuenta`) with validation when transfer is enabled.
+- Bank-transfer checkout/account history snapshot support: transfer account data is persisted per payment record and displayed in customer/admin payment views.
+- Mercado Pago runtime settings fields in admin system settings (API/base URLs + encrypted access/webhook tokens with env fallback).
 - User profile phone capture in auth profile API (`GET/PATCH /api/auth/me/profile` with `phone`).
 - User phone persistence migration (`V14__user_phone.sql`) with index support.
 - Customer account order timeline UI across lifecycle states (`CREATED` -> `DELIVERED`, with `CANCELLED` handling) in `AccountPage`.

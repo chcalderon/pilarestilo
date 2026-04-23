@@ -88,6 +88,10 @@ export interface PaymentDto {
   method: string;
   status: string;
   proofReference?: string;
+  transferAccountHolderName?: string;
+  transferAccountEmail?: string;
+  transferAccountNumber?: string;
+  transferAccountType?: string;
   reviewedBy?: string;
   reviewedAt?: string;
   createdAt: string;
@@ -154,10 +158,27 @@ export type MediaStorageProvider =
   | 'LOCAL'
   | 'S3_COMPATIBLE';
 
+export type PaymentGatewayProvider =
+  | 'MERCADO_PAGO';
+
 export interface SystemSettingsDto {
   whatsappNumber: string;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
+  bankTransferAccountHolder?: string | null;
+  bankTransferContactEmail?: string | null;
+  bankTransferAccountNumber?: string | null;
+  bankTransferAccountType?: string | null;
+  paymentMethodBankTransferEnabled: boolean;
+  paymentMethodGatewayEnabled: boolean;
+  paymentGatewayProviders: PaymentGatewayProvider[];
+  paymentGatewayMpApiBaseUrl?: string | null;
+  paymentGatewayMpSuccessUrl?: string | null;
+  paymentGatewayMpPendingUrl?: string | null;
+  paymentGatewayMpFailureUrl?: string | null;
+  paymentGatewayMpNotificationUrl?: string | null;
+  paymentGatewayMpAccessTokenConfigured: boolean;
+  paymentGatewayMpWebhookTokenConfigured: boolean;
   mediaStorageProvider: MediaStorageProvider;
   mediaS3Endpoint?: string | null;
   mediaS3Region?: string | null;
@@ -195,6 +216,22 @@ export interface UpdateSystemSettingsRequest {
   whatsappNumber: string;
   instagramUrl?: string;
   facebookUrl?: string;
+  bankTransferAccountHolder?: string;
+  bankTransferContactEmail?: string;
+  bankTransferAccountNumber?: string;
+  bankTransferAccountType?: string;
+  paymentMethodBankTransferEnabled: boolean;
+  paymentMethodGatewayEnabled: boolean;
+  paymentGatewayProviders: PaymentGatewayProvider[];
+  paymentGatewayMpApiBaseUrl?: string;
+  paymentGatewayMpSuccessUrl?: string;
+  paymentGatewayMpPendingUrl?: string;
+  paymentGatewayMpFailureUrl?: string;
+  paymentGatewayMpNotificationUrl?: string;
+  paymentGatewayMpAccessToken?: string;
+  clearPaymentGatewayMpAccessToken?: boolean;
+  paymentGatewayMpWebhookToken?: string;
+  clearPaymentGatewayMpWebhookToken?: boolean;
   mediaStorageProvider: MediaStorageProvider;
   mediaS3Endpoint?: string;
   mediaS3Region?: string;
@@ -235,6 +272,13 @@ export interface PublicStoreSettingsDto {
   instagramUrl?: string | null;
   facebookUrl?: string | null;
   supportEmail?: string | null;
+  bankTransferAccountHolder?: string | null;
+  bankTransferContactEmail?: string | null;
+  bankTransferAccountNumber?: string | null;
+  bankTransferAccountType?: string | null;
+  paymentMethodBankTransferEnabled: boolean;
+  paymentMethodGatewayEnabled: boolean;
+  paymentGatewayProviders: PaymentGatewayProvider[];
 }
 
 export interface CustomerCreditDto {
