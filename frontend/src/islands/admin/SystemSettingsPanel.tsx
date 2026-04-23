@@ -1010,7 +1010,7 @@ export default function SystemSettingsPanel() {
                   'text-left border px-3 py-3 transition',
                   isActive
                     ? 'border-pe-rose bg-pe-rose/10'
-                    : 'border-pe-black/10 hover:border-pe-black/25 hover:bg-pe-offwhite',
+                    : 'border-pe-black/10 hover:border-pe-rose/45 hover:bg-pe-rose/10',
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
@@ -1160,7 +1160,7 @@ export default function SystemSettingsPanel() {
                   'text-left border px-3 py-3 transition',
                   isActive
                     ? 'border-pe-rose bg-pe-rose/10'
-                    : 'border-pe-black/10 hover:border-pe-black/25 hover:bg-pe-offwhite',
+                    : 'border-pe-black/10 hover:border-pe-rose/45 hover:bg-pe-rose/10',
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
