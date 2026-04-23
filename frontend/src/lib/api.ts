@@ -152,7 +152,8 @@ export type NotificationProvider =
   | 'WHATSAPP_SIMULATED'
   | 'WHATSAPP_TWILIO'
   | 'EMAIL_SENDGRID'
-  | 'EMAIL_SMTP';
+  | 'EMAIL_SMTP'
+  | 'N8N_WEBHOOK';
 
 export type MediaStorageProvider =
   | 'LOCAL'
@@ -188,6 +189,9 @@ export interface SystemSettingsDto {
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl?: string | null;
   notificationProvider: NotificationProvider;
+  n8nWebhookUrl?: string | null;
+  n8nTokenHeaderName?: string | null;
+  n8nApiKeyConfigured: boolean;
   whatsappSimulatedTo?: string | null;
   whatsappSimulatedSender?: string | null;
   whatsappTwilioApiBaseUrl?: string | null;
@@ -242,6 +246,10 @@ export interface UpdateSystemSettingsRequest {
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl?: string;
   notificationProvider: NotificationProvider;
+  n8nWebhookUrl?: string;
+  n8nTokenHeaderName?: string;
+  n8nApiKey?: string;
+  clearN8nApiKey?: boolean;
   whatsappSimulatedTo?: string;
   whatsappSimulatedSender?: string;
   whatsappTwilioApiBaseUrl?: string;
@@ -751,6 +759,7 @@ export interface UserProfileDto {
   email: string;
   fullName: string;
   phone?: string | null;
+  notificationChannelPreference?: 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
   role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
   active: boolean;
 }
@@ -804,10 +813,15 @@ export async function getMyProfile(token: string): Promise<UserProfileDto> {
   });
 }
 
-export async function updateMyProfile(fullName: string, phone: string, token: string): Promise<UserProfileDto> {
+export async function updateMyProfile(
+  fullName: string,
+  phone: string,
+  notificationChannelPreference: 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH',
+  token: string
+): Promise<UserProfileDto> {
   return apiFetch<UserProfileDto>('/auth/me/profile', {
     method: 'PATCH',
-    body: JSON.stringify({ fullName, phone }),
+    body: JSON.stringify({ fullName, phone, notificationChannelPreference }),
     headers: authHeaders(token),
   });
 }

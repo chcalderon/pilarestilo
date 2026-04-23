@@ -32,7 +32,11 @@ public class KafkaPaymentNotificationListener {
     public void onPaymentConfirmed(PaymentConfirmed event) {
         NotificationRecipient recipient = orderRepository.findById(event.orderId())
                 .flatMap(order -> userRepository.findById(order.getCustomerId()))
-                .map(user -> NotificationRecipient.of(user.getPhone(), user.getEmail()))
+                .map(user -> NotificationRecipient.of(
+                        user.getPhone(),
+                        user.getEmail(),
+                        user.getNotificationChannelPreference().name()
+                ))
                 .orElse(NotificationRecipient.unknown());
         notificationSender.sendPaymentReceived(event.paymentId(), recipient);
     }

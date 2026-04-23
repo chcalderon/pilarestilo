@@ -113,6 +113,15 @@ public class SystemSettingsEntity {
     @Column(name = "notification_provider", nullable = false, length = 40)
     private String notificationProvider;
 
+    @Column(name = "n8n_webhook_url", length = 500)
+    private String n8nWebhookUrl;
+
+    @Column(name = "n8n_api_key_encrypted", columnDefinition = "TEXT")
+    private String n8nApiKeyEncrypted;
+
+    @Column(name = "n8n_token_header_name", length = 120)
+    private String n8nTokenHeaderName;
+
     @Column(name = "whatsapp_simulated_to", length = 40)
     private String whatsappSimulatedTo;
 
@@ -256,6 +265,12 @@ public class SystemSettingsEntity {
     public void setSmtpStarttlsEnabled(boolean smtpStarttlsEnabled) { this.smtpStarttlsEnabled = smtpStarttlsEnabled; }
     public String getNotificationProvider() { return notificationProvider; }
     public void setNotificationProvider(String notificationProvider) { this.notificationProvider = notificationProvider; }
+    public String getN8nWebhookUrl() { return n8nWebhookUrl; }
+    public void setN8nWebhookUrl(String n8nWebhookUrl) { this.n8nWebhookUrl = n8nWebhookUrl; }
+    public String getN8nApiKeyEncrypted() { return n8nApiKeyEncrypted; }
+    public void setN8nApiKeyEncrypted(String n8nApiKeyEncrypted) { this.n8nApiKeyEncrypted = n8nApiKeyEncrypted; }
+    public String getN8nTokenHeaderName() { return n8nTokenHeaderName; }
+    public void setN8nTokenHeaderName(String n8nTokenHeaderName) { this.n8nTokenHeaderName = n8nTokenHeaderName; }
     public String getWhatsappSimulatedTo() { return whatsappSimulatedTo; }
     public void setWhatsappSimulatedTo(String whatsappSimulatedTo) { this.whatsappSimulatedTo = whatsappSimulatedTo; }
     public String getWhatsappSimulatedSender() { return whatsappSimulatedSender; }

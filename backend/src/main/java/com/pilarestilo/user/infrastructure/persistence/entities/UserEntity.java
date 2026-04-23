@@ -22,6 +22,9 @@ public class UserEntity {
     @Column(name = "phone", length = 40)
     private String phone;
 
+    @Column(name = "notification_channel_preference", nullable = false, length = 20)
+    private String notificationChannelPreference = "AUTO";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private UserRole role;
@@ -46,6 +49,11 @@ public class UserEntity {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getNotificationChannelPreference() { return notificationChannelPreference; }
+    public void setNotificationChannelPreference(String notificationChannelPreference) {
+        this.notificationChannelPreference = notificationChannelPreference;
+    }
 
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }

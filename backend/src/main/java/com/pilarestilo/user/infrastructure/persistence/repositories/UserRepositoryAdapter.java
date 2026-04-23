@@ -80,6 +80,7 @@ public class UserRepositoryAdapter implements UserRepository {
         entity.setEmail(user.getEmail());
         entity.setFullName(user.getFullName());
         entity.setPhone(user.getPhone());
+        entity.setNotificationChannelPreference(user.getNotificationChannelPreference().name());
         entity.setRole(user.getRole());
         entity.setActive(user.isActive());
         entity.setPasswordHash(user.getPasswordHash());
@@ -93,6 +94,7 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getFullName(),
                 entity.getPhone(),
+                entity.getNotificationChannelPreference(),
                 entity.getRole(),
                 entity.isActive(),
                 entity.getPasswordHash(),

@@ -103,6 +103,16 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             String subject,
             String body
     ) {
+        if (!recipient.allowsEmail()) {
+            log.info(
+                    "[EMAIL:SMTP] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    template,
+                    referenceId,
+                    recipient.preference()
+            );
+            return;
+        }
+
         EffectiveConfig config = resolveConfig();
         if (config == null) {
             return;

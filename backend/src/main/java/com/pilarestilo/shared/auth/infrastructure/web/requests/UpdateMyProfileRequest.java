@@ -7,5 +7,7 @@ public record UpdateMyProfileRequest(
         @NotBlank(message = "Full name is required")
         String fullName,
         @Size(max = 40, message = "Phone must be at most 40 characters")
-        String phone
+        String phone,
+        @Size(max = 20, message = "Notification channel preference must be at most 20 characters")
+        String notificationChannelPreference
 ) {}

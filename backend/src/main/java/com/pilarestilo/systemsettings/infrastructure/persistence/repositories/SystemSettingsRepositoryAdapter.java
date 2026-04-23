@@ -65,6 +65,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setSmtpAuthEnabled(settings.isSmtpAuthEnabled());
         entity.setSmtpStarttlsEnabled(settings.isSmtpStarttlsEnabled());
         entity.setNotificationProvider(settings.getNotificationProvider().name());
+        entity.setN8nWebhookUrl(settings.getN8nWebhookUrl());
+        entity.setN8nTokenHeaderName(settings.getN8nTokenHeaderName());
+        entity.setN8nApiKeyEncrypted(settings.getN8nApiKeyEncrypted());
         entity.setWhatsappSimulatedTo(settings.getWhatsappSimulatedTo());
         entity.setWhatsappSimulatedSender(settings.getWhatsappSimulatedSender());
         entity.setWhatsappTwilioApiBaseUrl(settings.getWhatsappTwilioApiBaseUrl());
@@ -119,6 +122,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.isSmtpAuthEnabled(),
                 entity.isSmtpStarttlsEnabled(),
                 entity.getNotificationProvider(),
+                entity.getN8nWebhookUrl(),
+                entity.getN8nTokenHeaderName(),
+                entity.getN8nApiKeyEncrypted(),
                 entity.getWhatsappSimulatedTo(),
                 entity.getWhatsappSimulatedSender(),
                 entity.getWhatsappTwilioApiBaseUrl(),

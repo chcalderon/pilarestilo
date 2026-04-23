@@ -58,6 +58,10 @@ type FormState = {
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl: string;
   notificationProvider: NotificationProvider;
+  n8nWebhookUrl: string;
+  n8nTokenHeaderName: string;
+  n8nApiKey: string;
+  clearN8nApiKey: boolean;
   whatsappSimulatedTo: string;
   whatsappSimulatedSender: string;
   whatsappTwilioApiBaseUrl: string;
@@ -136,6 +140,12 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
     subtitle: 'Servidor SMTP propio o proveedor tradicional.',
     icon: Mail,
   },
+  {
+    value: 'N8N_WEBHOOK',
+    label: 'N8N Webhook',
+    subtitle: 'Delega notificaciones a flujos n8n externos por webhook.',
+    icon: CloudCog,
+  },
 ];
 
 const MEDIA_STORAGE_OPTIONS: MediaStorageOption[] = [
@@ -213,6 +223,10 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     mediaS3PathStyleEnabled: settings.mediaS3PathStyleEnabled ?? false,
     mediaS3PublicBaseUrl: settings.mediaS3PublicBaseUrl ?? '',
     notificationProvider: settings.notificationProvider ?? 'LOG',
+    n8nWebhookUrl: settings.n8nWebhookUrl ?? '',
+    n8nTokenHeaderName: settings.n8nTokenHeaderName ?? 'X-PE-N8N-TOKEN',
+    n8nApiKey: '',
+    clearN8nApiKey: false,
     whatsappSimulatedTo: settings.whatsappSimulatedTo ?? '',
     whatsappSimulatedSender: settings.whatsappSimulatedSender ?? '',
     whatsappTwilioApiBaseUrl: settings.whatsappTwilioApiBaseUrl ?? '',
@@ -329,6 +343,10 @@ export default function SystemSettingsPanel() {
     mediaS3PathStyleEnabled: false,
     mediaS3PublicBaseUrl: '',
     notificationProvider: 'LOG',
+    n8nWebhookUrl: '',
+    n8nTokenHeaderName: 'X-PE-N8N-TOKEN',
+    n8nApiKey: '',
+    clearN8nApiKey: false,
     whatsappSimulatedTo: '',
     whatsappSimulatedSender: '',
     whatsappTwilioApiBaseUrl: '',
@@ -428,6 +446,7 @@ export default function SystemSettingsPanel() {
   const hasProviderRequiringSendgrid = form.notificationProvider === 'EMAIL_SENDGRID';
   const hasProviderRequiringTwilio = form.notificationProvider === 'WHATSAPP_TWILIO';
   const hasProviderSimulated = form.notificationProvider === 'WHATSAPP_SIMULATED';
+  const hasProviderN8n = form.notificationProvider === 'N8N_WEBHOOK';
   const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
   const hasMercadoPagoSelected = form.paymentGatewayProviders.includes('MERCADO_PAGO');
 
@@ -526,6 +545,18 @@ export default function SystemSettingsPanel() {
       }
     }
 
+    if (hasProviderN8n) {
+      const webhookUrl = form.n8nWebhookUrl.trim();
+      if (webhookUrl && !/^https?:\/\//i.test(webhookUrl)) {
+        setFeedback({ tone: 'error', text: 'La URL de webhook n8n debe iniciar con http:// o https://.' });
+        return;
+      }
+      if (!form.n8nTokenHeaderName.trim()) {
+        setFeedback({ tone: 'error', text: 'Para n8n debes indicar nombre de header para el token.' });
+        return;
+      }
+    }
+
     const payload: UpdateSystemSettingsRequest = {
       whatsappNumber: whatsappTrimmed,
       instagramUrl: form.instagramUrl.trim(),
@@ -556,6 +587,10 @@ export default function SystemSettingsPanel() {
       mediaS3PathStyleEnabled: form.mediaS3PathStyleEnabled,
       mediaS3PublicBaseUrl: form.mediaS3PublicBaseUrl.trim(),
       notificationProvider: form.notificationProvider,
+      n8nWebhookUrl: form.n8nWebhookUrl.trim(),
+      n8nTokenHeaderName: form.n8nTokenHeaderName.trim(),
+      n8nApiKey: form.n8nApiKey.trim(),
+      clearN8nApiKey: form.clearN8nApiKey,
       whatsappSimulatedTo: form.whatsappSimulatedTo.trim(),
       whatsappSimulatedSender: form.whatsappSimulatedSender.trim(),
       whatsappTwilioApiBaseUrl: form.whatsappTwilioApiBaseUrl.trim(),
@@ -1470,6 +1505,79 @@ export default function SystemSettingsPanel() {
             replaceText="Se reemplazara la password SMTP actual."
             clearText="Se eliminara la password SMTP al guardar."
           />
+        </section>
+      )}
+
+      {activeSettingsTab === 'notifications' && hasProviderN8n && (
+        <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+          <h2 className="font-display text-2xl text-pe-black font-light">N8N Webhook</h2>
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+            Configura webhook y token para delegar notificaciones a flujos n8n.
+            Si dejas campos vacios, el backend usa fallback desde variables de entorno.
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 md:col-span-2">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Webhook URL</span>
+              <input
+                type="url"
+                value={form.n8nWebhookUrl}
+                onChange={(e) => updateField('n8nWebhookUrl', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="https://n8n.tudominio.com/webhook/pilar-notifications"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Header token</span>
+              <input
+                type="text"
+                value={form.n8nTokenHeaderName}
+                onChange={(e) => updateField('n8nTokenHeaderName', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="X-PE-N8N-TOKEN"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo API key/token</span>
+              <input
+                type="password"
+                value={form.n8nApiKey}
+                onChange={(e) => updateField('n8nApiKey', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="Deja vacio para mantener el actual"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+              <input
+                type="checkbox"
+                checked={form.clearN8nApiKey}
+                onChange={(e) => updateField('clearN8nApiKey', e.target.checked)}
+                className="h-4 w-4 accent-pe-rose"
+              />
+              Limpiar API key n8n guardada
+            </label>
+          </div>
+
+          <SecurityHint
+            configured={Boolean(settings?.n8nApiKeyConfigured)}
+            clearFlag={form.clearN8nApiKey}
+            newValue={form.n8nApiKey}
+            emptyText="Sin API key n8n configurada."
+            keepText="Hay una API key n8n guardada (no visible)."
+            replaceText="Se reemplazara la API key n8n actual."
+            clearText="Se eliminara la API key n8n al guardar."
+          />
+          <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
+            <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
+              Tip: cada cliente puede elegir su canal preferido (WhatsApp/Correo/Ambos) en Mi Cuenta y n8n puede enrutar en base a ese dato.
+              Si no completas estos campos, se usan fallback desde <span className="font-mono text-[0.7rem]">NOTIFICATION_N8N_*</span>.
+            </span>
+          </div>
         </section>
       )}
 

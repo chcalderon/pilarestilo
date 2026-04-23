@@ -74,6 +74,10 @@ app:
       ttl-seconds: ${APP_CACHE_REDIS_TTL_SECONDS:300}
   notification:
     provider: ${NOTIFICATION_PROVIDER:LOG}
+    n8n:
+      webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}
+      api-key: ${NOTIFICATION_N8N_API_KEY:}
+      token-header-name: ${NOTIFICATION_N8N_TOKEN_HEADER_NAME:X-PE-N8N-TOKEN}
     email:
       smtp:
         host: ${EMAIL_SMTP_HOST:}

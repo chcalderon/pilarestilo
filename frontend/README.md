@@ -83,6 +83,7 @@ Translations:
 - Account orders tab supports payment-proof submission for `BANK_TRANSFER` orders (image upload or proof URL)
 - Account profile tab now supports profile name update + password change (`/api/auth/me/profile`, `/api/auth/me/password`)
 - Account profile tab now supports WhatsApp phone capture in profile (`/api/auth/me/profile`) for notification routing.
+- Account profile tab now supports notification channel preference (`AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`) to route transactional notifications per user.
 - Cart summary now supports payment method selection (`Transferencia` / `Pasarela (simulada)`) and reflects worker discount
 - Gateway simulation actions are available in account orders for `PAYMENT_GATEWAY` (approve/reject simulation)
 - Account orders now include `Ir a pagar / Pay now` action to open `/api/payments/{id}/gateway/checkout` sessions.
@@ -108,7 +109,7 @@ Translations:
 - Admin users page now points admins to `Mi cuenta` (`/es/account?tab=profile`) for editing their own profile/password.
 - Cart dark theme copy in summary/actions was updated to improve text contrast.
 - Storefront now includes a floating WhatsApp button that opens a prefilled chat in `wa.me` (desktop + mobile).
-- Added admin system settings screen (`/admin/settings`) to edit storefront channels and choose/configure notification provider (`LOG`, WhatsApp Simulado/Twilio, SendGrid, SMTP) from one UI.
+- Added admin system settings screen (`/admin/settings`) to edit storefront channels and choose/configure notification provider (`LOG`, WhatsApp Simulado/Twilio, SendGrid, SMTP, N8N webhook) from one UI, including n8n webhook URL/header/API key fields.
 - Storefront WhatsApp and footer social URLs now load from backend public settings endpoint (`/api/system-settings/public`).
 
 ---

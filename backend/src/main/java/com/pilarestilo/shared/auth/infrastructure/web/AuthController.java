@@ -68,7 +68,12 @@ public class AuthController {
     @PatchMapping("/me/profile")
     public UserProfileDto updateMyProfile(@AuthenticationPrincipal AuthenticatedUser currentUser,
                                           @RequestBody @Valid UpdateMyProfileRequest request) {
-        return updateMyProfileUseCase.execute(currentUser.id(), request.fullName(), request.phone());
+        return updateMyProfileUseCase.execute(
+                currentUser.id(),
+                request.fullName(),
+                request.phone(),
+                request.notificationChannelPreference()
+        );
     }
 
     @PatchMapping("/me/password")

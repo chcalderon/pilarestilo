@@ -7,6 +7,7 @@ public record UserProfileDto(
         String email,
         String fullName,
         String phone,
+        String notificationChannelPreference,
         String role,
         boolean active
 ) {}

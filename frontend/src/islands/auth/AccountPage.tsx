@@ -27,6 +27,7 @@ type Tab = 'profile' | 'reviews' | 'orders';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
 type TimelineState = 'done' | 'current' | 'todo';
 type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
+type NotificationChannelPreference = 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
 
 const ORDER_TIMELINE_FLOW: TimelineStepStatus[] = [
   'CREATED',
@@ -70,6 +71,7 @@ export default function AccountPage({ locale }: Props) {
   const [profile, setProfile] = useState<UserProfileDto | null>(null);
   const [profileName, setProfileName] = useState('');
   const [profilePhone, setProfilePhone] = useState('');
+  const [profileNotificationChannel, setProfileNotificationChannel] = useState<NotificationChannelPreference>('AUTO');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -207,6 +209,7 @@ export default function AccountPage({ locale }: Props) {
         setProfile(data);
         setProfileName(data.fullName ?? '');
         setProfilePhone(sanitizePhoneDraft(data.phone));
+        setProfileNotificationChannel((data.notificationChannelPreference as NotificationChannelPreference) ?? 'AUTO');
       })
       .finally(() => {
         if (!cancelled) setProfileLoading(false);
@@ -268,10 +271,11 @@ export default function AccountPage({ locale }: Props) {
     setProfileSaving(true);
     setProfileFeedback(null);
     try {
-      const updated = await updateMyProfile(fullName, rawPhone, effectiveToken);
+      const updated = await updateMyProfile(fullName, rawPhone, profileNotificationChannel, effectiveToken);
       setProfile(updated);
       setProfileName(updated.fullName);
       setProfilePhone(sanitizePhoneDraft(updated.phone));
+      setProfileNotificationChannel((updated.notificationChannelPreference as NotificationChannelPreference) ?? 'AUTO');
       setProfileFeedback({ type: 'success', text: es ? 'Perfil actualizado.' : 'Profile updated.' });
     } catch (error) {
       const text = error instanceof Error ? error.message : '';
@@ -623,6 +627,23 @@ export default function AccountPage({ locale }: Props) {
     return (es ? labelsEs : labelsEn)[method] ?? method;
   }
 
+  function notificationChannelLabel(value: string | null | undefined) {
+    const normalized = (value ?? 'AUTO').toUpperCase();
+    const labelsEs: Record<string, string> = {
+      AUTO: 'Automatico',
+      WHATSAPP: 'WhatsApp',
+      EMAIL: 'Correo',
+      BOTH: 'Ambos',
+    };
+    const labelsEn: Record<string, string> = {
+      AUTO: 'Automatic',
+      WHATSAPP: 'WhatsApp',
+      EMAIL: 'Email',
+      BOTH: 'Both',
+    };
+    return (es ? labelsEs : labelsEn)[normalized] ?? normalized;
+  }
+
   function maskAccountNumber(accountNumber: string | null | undefined) {
     const normalized = (accountNumber ?? '').trim();
     if (!normalized) return '-';
@@ -700,10 +721,24 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? '+56912345678' : '+14155550123'}
               />
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">
+                {es ? 'Canal de notificaciones' : 'Notification channel'}
+              </label>
+              <select
+                value={profileNotificationChannel}
+                onChange={(event) => setProfileNotificationChannel(event.target.value as NotificationChannelPreference)}
+                disabled={profileLoading || profileSaving}
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+              >
+                <option value="AUTO">{es ? 'Automatico (recomendado)' : 'Automatic (recommended)'}</option>
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="EMAIL">{es ? 'Correo' : 'Email'}</option>
+                <option value="BOTH">{es ? 'Ambos' : 'Both'}</option>
+              </select>
               <p className="font-sans text-[0.68rem] text-pe-charcoal/45">
                 {es
-                  ? 'Si lo completas, usaremos este numero para notificaciones de pedido por WhatsApp.'
-                  : 'If provided, this number will be used for WhatsApp order notifications.'}
+                  ? 'Si completas tu WhatsApp y eliges un canal, enviaremos notificaciones de pedido segun tu preferencia.'
+                  : 'If you provide WhatsApp and choose a channel, order notifications will follow your preference.'}
               </p>
               <div className="flex items-center gap-3">
                 <button
@@ -773,6 +808,10 @@ export default function AccountPage({ locale }: Props) {
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</p>
               <p className="font-sans text-pe-charcoal">{profile?.phone ?? (es ? 'No configurado' : 'Not configured')}</p>
+            </div>
+            <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
+              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Canal de notificaciones' : 'Notification channel'}</p>
+              <p className="font-sans text-pe-charcoal">{notificationChannelLabel(profile?.notificationChannelPreference)}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Rol' : 'Role'}</p>

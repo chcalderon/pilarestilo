@@ -12,6 +12,7 @@ public class UserMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
+                user.getNotificationChannelPreference().name(),
                 user.getRole().name(),
                 user.isActive(),
                 user.getCreatedAt()

@@ -47,6 +47,9 @@ public class SystemSettings {
     private boolean smtpAuthEnabled;
     private boolean smtpStarttlsEnabled;
     private NotificationProvider notificationProvider;
+    private String n8nWebhookUrl;
+    private String n8nApiKeyEncrypted;
+    private String n8nTokenHeaderName;
     private String whatsappSimulatedTo;
     private String whatsappSimulatedSender;
     private String whatsappTwilioApiBaseUrl;
@@ -85,6 +88,7 @@ public class SystemSettings {
         settings.smtpAuthEnabled = true;
         settings.smtpStarttlsEnabled = true;
         settings.notificationProvider = NotificationProvider.LOG;
+        settings.n8nTokenHeaderName = "X-PE-N8N-TOKEN";
         settings.whatsappSimulatedTo = "+56900000000";
         settings.whatsappSimulatedSender = "Pilar Estilo";
         settings.whatsappTwilioApiBaseUrl = "https://api.twilio.com";
@@ -132,6 +136,9 @@ public class SystemSettings {
             boolean smtpAuthEnabled,
             boolean smtpStarttlsEnabled,
             String notificationProvider,
+            String n8nWebhookUrl,
+            String n8nTokenHeaderName,
+            String n8nApiKeyEncrypted,
             String whatsappSimulatedTo,
             String whatsappSimulatedSender,
             String whatsappTwilioApiBaseUrl,
@@ -185,6 +192,9 @@ public class SystemSettings {
         settings.smtpAuthEnabled = smtpAuthEnabled;
         settings.smtpStarttlsEnabled = smtpStarttlsEnabled;
         settings.notificationProvider = normalizeProvider(notificationProvider);
+        settings.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
+        settings.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
+        settings.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
         settings.whatsappSimulatedTo = normalizeNullable(whatsappSimulatedTo);
         settings.whatsappSimulatedSender = normalizeNullable(whatsappSimulatedSender);
         settings.whatsappTwilioApiBaseUrl = normalizeNullable(whatsappTwilioApiBaseUrl);
@@ -238,6 +248,9 @@ public class SystemSettings {
             boolean smtpAuthEnabled,
             boolean smtpStarttlsEnabled,
             String notificationProvider,
+            String n8nWebhookUrl,
+            String n8nTokenHeaderName,
+            String n8nApiKeyEncrypted,
             String whatsappSimulatedTo,
             String whatsappSimulatedSender,
             String whatsappTwilioApiBaseUrl,
@@ -286,6 +299,9 @@ public class SystemSettings {
         this.smtpAuthEnabled = smtpAuthEnabled;
         this.smtpStarttlsEnabled = smtpStarttlsEnabled;
         this.notificationProvider = normalizeProvider(notificationProvider);
+        this.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
+        this.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
+        this.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
         this.whatsappSimulatedTo = normalizeNullable(whatsappSimulatedTo);
         this.whatsappSimulatedSender = normalizeNullable(whatsappSimulatedSender);
         this.whatsappTwilioApiBaseUrl = normalizeNullable(whatsappTwilioApiBaseUrl);
@@ -325,6 +341,11 @@ public class SystemSettings {
         } catch (IllegalArgumentException ex) {
             throw new DomainException("Unsupported notification provider: " + rawProvider);
         }
+    }
+
+    private static String normalizeN8nTokenHeaderName(String value) {
+        String normalized = normalizeNullable(value);
+        return normalized == null ? "X-PE-N8N-TOKEN" : normalized;
     }
 
     private static MediaStorageProvider normalizeMediaStorageProvider(String rawProvider) {
@@ -434,6 +455,9 @@ public class SystemSettings {
     public boolean isSmtpAuthEnabled() { return smtpAuthEnabled; }
     public boolean isSmtpStarttlsEnabled() { return smtpStarttlsEnabled; }
     public NotificationProvider getNotificationProvider() { return notificationProvider; }
+    public String getN8nWebhookUrl() { return n8nWebhookUrl; }
+    public String getN8nApiKeyEncrypted() { return n8nApiKeyEncrypted; }
+    public String getN8nTokenHeaderName() { return n8nTokenHeaderName; }
     public String getWhatsappSimulatedTo() { return whatsappSimulatedTo; }
     public String getWhatsappSimulatedSender() { return whatsappSimulatedSender; }
     public String getWhatsappTwilioApiBaseUrl() { return whatsappTwilioApiBaseUrl; }

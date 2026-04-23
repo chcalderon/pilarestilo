@@ -7,6 +7,7 @@ public record UserDto(
         UUID id,
         String email,
         String fullName,
+        String notificationChannelPreference,
         String role,
         boolean active,
         Instant createdAt

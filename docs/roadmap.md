@@ -69,7 +69,9 @@ This roadmap is synced with the current codebase on `master` as of April 22, 202
 - [x] WhatsApp notifications (simulated provider for development: `WHATSAPP_SIMULATED`)
 - [x] WhatsApp production-ready provider integration (`WHATSAPP_TWILIO`)
 - [x] Customer phone capture/profile wiring for per-user WhatsApp destination (`/api/auth/me/profile` now supports `phone`)
+- [x] Customer notification channel preference (`AUTO` / `WHATSAPP` / `EMAIL` / `BOTH`) from account profile
 - [x] Email notifications (SendGrid and direct SMTP provider)
+- [x] n8n webhook notification provider (`N8N_WEBHOOK`) for external orchestration flows
 - [x] Customer order history and receipts in account area (`GET /api/orders/mine` + `AccountPage` orders tab)
 - [x] Customer payment-proof self-service in account area (`GET /api/payments/order/{orderId}` + submit proof from `AccountPage`)
 - [x] Admin payment queue visibility for `PENDING` + review actions restricted to actionable statuses

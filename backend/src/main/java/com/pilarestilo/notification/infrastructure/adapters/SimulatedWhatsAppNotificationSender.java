@@ -58,6 +58,16 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
     }
 
     private void logSimulated(String template, String to, String senderAlias, UUID referenceId, NotificationRecipient recipient) {
+        if (!recipient.allowsWhatsApp()) {
+            log.info(
+                    "[WHATSAPP:SIMULATED] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    template,
+                    referenceId,
+                    recipient.preference()
+            );
+            return;
+        }
+
         log.info(
                 "[WHATSAPP:SIMULATED] sender={} to={} template={} referenceId={} recipient={}",
                 senderAlias,

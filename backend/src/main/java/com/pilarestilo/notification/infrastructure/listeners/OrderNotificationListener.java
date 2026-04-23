@@ -26,7 +26,11 @@ public class OrderNotificationListener {
         userRepository.findById(event.customerId())
                 .ifPresent(user -> notificationSender.sendOrderConfirmation(
                         event.orderId(),
-                        NotificationRecipient.of(user.getPhone(), user.getEmail())
+                        NotificationRecipient.of(
+                                user.getPhone(),
+                                user.getEmail(),
+                                user.getNotificationChannelPreference().name()
+                        )
                 ));
     }
 
@@ -37,7 +41,11 @@ public class OrderNotificationListener {
                     .ifPresentOrElse(
                             user -> notificationSender.sendOrderShipped(
                                     event.orderId(),
-                                    NotificationRecipient.of(user.getPhone(), user.getEmail())
+                                    NotificationRecipient.of(
+                                            user.getPhone(),
+                                            user.getEmail(),
+                                            user.getNotificationChannelPreference().name()
+                                    )
                             ),
                             () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
                     );

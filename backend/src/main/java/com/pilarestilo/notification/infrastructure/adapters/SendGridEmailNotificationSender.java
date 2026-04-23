@@ -91,6 +91,16 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             String subject,
             String body
     ) {
+        if (!recipient.allowsEmail()) {
+            log.info(
+                    "[EMAIL:SENDGRID] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    template,
+                    referenceId,
+                    recipient.preference()
+            );
+            return;
+        }
+
         EffectiveConfig config = resolveConfig();
         if (config == null) {
             return;

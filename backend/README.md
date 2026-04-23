@@ -42,7 +42,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `inventory` | Stock reservation/release and stock events |
 | `wishlist` | Customer favorites (`/api/wishlist`) |
 | `customercredit` | Credit balance and movement history |
-| `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) + domain listeners |
+| `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`, `N8N_WEBHOOK`) + domain listeners |
 | `user` | User repository and user-facing data |
 | `systemsettings` | Admin-managed storefront/system configuration (channels + notifications + checkout payment-method toggles/providers) |
 | `shared/kafka` | Optional Kafka domain-event transport (`KafkaDomainEventPublisher`, listener retry/DLQ config) |
@@ -199,7 +199,10 @@ Gateway-facing rate-limit filter (backend side):
 | `JWT_SECRET` | Yes | HS256 secret (min 32 bytes recommended) |
 | `SYSTEM_SETTINGS_CRYPTO_SECRET` | No | Secret used to encrypt/decrypt SMTP password in `system_settings` table (defaults to `JWT_SECRET` if missing) |
 | `MEDIA_STORAGE_PATH` | No | Filesystem directory used by `/api/media/**` (default `./media`) |
-| `NOTIFICATION_PROVIDER` | No | Default/fallback notification provider before admin overrides (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) |
+| `NOTIFICATION_PROVIDER` | No | Default/fallback notification provider before admin overrides (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`, `N8N_WEBHOOK`) |
+| `NOTIFICATION_N8N_WEBHOOK_URL` | Optional | n8n webhook URL when provider is `N8N_WEBHOOK` |
+| `NOTIFICATION_N8N_API_KEY` | Optional | API key/header token sent to n8n webhook |
+| `NOTIFICATION_N8N_TOKEN_HEADER_NAME` | No | Header name used for n8n token (default `X-PE-N8N-TOKEN`) |
 | `WHATSAPP_SIMULATED_TO` | No | Destination phone used by simulated WhatsApp logs (default `+56900000000`) |
 | `WHATSAPP_SIMULATED_SENDER` | No | Sender alias for simulated WhatsApp logs |
 | `WHATSAPP_TWILIO_API_BASE_URL` | No | Twilio API base URL (default `https://api.twilio.com`) |
@@ -262,11 +265,13 @@ Gateway-facing rate-limit filter (backend side):
 
 Current note:
 - Notification listeners now resolve a structured recipient (`phone` + `email`) so providers can choose the right channel safely.
+- Recipient resolution now includes per-user channel preference (`AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`) from `/api/auth/me/profile`.
 - Active notification provider is now selected from `/admin/settings` (`notificationProvider` in `system_settings`) and can be changed at runtime.
 - `WHATSAPP_TWILIO` prioritizes user phone and falls back to `whatsappTwilioToFallback` (admin) or `WHATSAPP_TWILIO_TO_FALLBACK` (env).
 - `EMAIL_SENDGRID` uses its own admin-managed credentials (`sendgridApiKey`, `sendgridFromEmail`, etc.) with env fallback.
 - `EMAIL_SMTP` sends directly through your SMTP server, prioritizes user email, and supports admin-managed values with env fallback.
-- Sensitive values are encrypted at rest in `system_settings` (`smtpPassword`, Twilio auth token, SendGrid API key).
+- `N8N_WEBHOOK` can be configured from `/admin/settings` (`n8nWebhookUrl`, `n8nTokenHeaderName`, encrypted API key) with env fallback.
+- Sensitive values are encrypted at rest in `system_settings` (`smtpPassword`, Twilio auth token, SendGrid API key, n8n API key).
 - Checkout payment methods are runtime-configurable from admin settings: `BANK_TRANSFER` and `PAYMENT_GATEWAY` can be toggled, and gateway mode requires at least one enabled provider (`MERCADO_PAGO` for now).
 - Bank-transfer account details are admin-managed in `system_settings` and are snapshotted into each `payments` record created with `BANK_TRANSFER`.
 - Mercado Pago connection settings can be managed from admin system settings, with encrypted-at-rest storage for `access token` and optional `webhook token`; env values remain fallback.
@@ -286,7 +291,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V24`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V27`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -306,6 +311,9 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - checkout payment method + gateway provider settings (`V22`)
 - bank-transfer configuration fields and per-payment transfer snapshot persistence (`V23`)
 - Mercado Pago settings fields in system settings (`V24`)
+- user notification channel preference (`V25`)
+- notification provider enum extension with `N8N_WEBHOOK` constraint (`V26`)
+- n8n webhook settings persisted in `system_settings` (`V27`)
 
 ---
 

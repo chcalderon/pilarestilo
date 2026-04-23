@@ -62,6 +62,11 @@ public class UpdateSystemSettingsUseCase {
                 command.paymentGatewayMpWebhookToken(),
                 command.clearPaymentGatewayMpWebhookToken()
         );
+        String nextN8nApiKey = resolveEncryptedSecret(
+                settings.getN8nApiKeyEncrypted(),
+                command.n8nApiKey(),
+                command.clearN8nApiKey()
+        );
 
         settings.update(
                 command.whatsappNumber(),
@@ -97,6 +102,9 @@ public class UpdateSystemSettingsUseCase {
                 Boolean.TRUE.equals(command.smtpAuthEnabled()),
                 Boolean.TRUE.equals(command.smtpStarttlsEnabled()),
                 command.notificationProvider(),
+                command.n8nWebhookUrl(),
+                command.n8nTokenHeaderName(),
+                nextN8nApiKey,
                 command.whatsappSimulatedTo(),
                 command.whatsappSimulatedSender(),
                 command.whatsappTwilioApiBaseUrl(),

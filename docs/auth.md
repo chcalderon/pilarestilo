@@ -29,7 +29,7 @@ openssl rand -base64 32
 | `POST` | `/api/auth/refresh` | Rotate access token |
 | `GET` | `/api/auth/me` | Return current authenticated user |
 | `GET` | `/api/auth/me/profile` | Return authenticated user profile details |
-| `PATCH` | `/api/auth/me/profile` | Update authenticated user full name |
+| `PATCH` | `/api/auth/me/profile` | Update authenticated user profile (`fullName`, `phone`, `notificationChannelPreference`) |
 | `PATCH` | `/api/auth/me/password` | Change authenticated user password |
 
 ---
@@ -102,6 +102,20 @@ Note: `GET /api/payments/order/{orderId}`, `PATCH /api/payments/{id}/proof`, and
 Note: `/api/auth/me/profile` and `/api/auth/me/password` are authenticated via global security rules and use current principal id internally.
 
 Note: endpoints without method-level role guards still require authentication unless they are in the global public list.
+
+### Profile patch payload
+
+`PATCH /api/auth/me/profile` accepts:
+
+```json
+{
+  "fullName": "Pilar Admin",
+  "phone": "+56912345678",
+  "notificationChannelPreference": "AUTO"
+}
+```
+
+Allowed values for `notificationChannelPreference`: `AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`.
 
 ---
 

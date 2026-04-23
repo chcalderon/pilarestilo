@@ -5,7 +5,8 @@ public enum NotificationProvider {
     WHATSAPP_SIMULATED,
     WHATSAPP_TWILIO,
     EMAIL_SENDGRID,
-    EMAIL_SMTP;
+    EMAIL_SMTP,
+    N8N_WEBHOOK;
 
     public static NotificationProvider fromRaw(String rawValue) {
         if (rawValue == null || rawValue.isBlank()) {

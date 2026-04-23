@@ -70,6 +70,16 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
     }
 
     private void send(String template, UUID referenceId, NotificationRecipient recipient) {
+        if (!recipient.allowsWhatsApp()) {
+            log.info(
+                    "[WHATSAPP:TWILIO] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    template,
+                    referenceId,
+                    recipient.preference()
+            );
+            return;
+        }
+
         EffectiveConfig config = resolveConfig();
         if (config == null) {
             return;

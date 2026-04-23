@@ -115,9 +115,12 @@ Current listeners include:
 - `PaymentRejected` -> order cancellation + stock compensation (`OrderInventorySaga`)
 - Review events -> product rating denormalization
 - Notification listeners for order/payment confirmation hooks
-- Notification providers selectable by env (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`)
+- Notification providers selectable by env (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`, `N8N_WEBHOOK`)
+- Notification recipient carries per-user channel preference (`AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`) used by adapters.
+- `N8N_WEBHOOK` can now be configured in admin system settings with encrypted API key and env fallback.
 
 Kafka mode includes retry + DLQ through a dedicated listener container factory.
+Operational n8n setup reference: `docs/n8n-integration.md`.
 
 ---
 

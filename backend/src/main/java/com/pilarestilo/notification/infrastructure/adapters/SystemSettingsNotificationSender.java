@@ -24,6 +24,7 @@ public class SystemSettingsNotificationSender implements NotificationSender {
     private final TwilioWhatsAppNotificationSender twilioWhatsAppNotificationSender;
     private final SendGridEmailNotificationSender sendGridEmailNotificationSender;
     private final SmtpEmailNotificationSender smtpEmailNotificationSender;
+    private final N8nWebhookNotificationSender n8nWebhookNotificationSender;
     private final NotificationProvider envDefaultProvider;
 
     public SystemSettingsNotificationSender(
@@ -33,6 +34,7 @@ public class SystemSettingsNotificationSender implements NotificationSender {
             TwilioWhatsAppNotificationSender twilioWhatsAppNotificationSender,
             SendGridEmailNotificationSender sendGridEmailNotificationSender,
             SmtpEmailNotificationSender smtpEmailNotificationSender,
+            N8nWebhookNotificationSender n8nWebhookNotificationSender,
             @Value("${app.notification.provider:LOG}") String envDefaultProvider
     ) {
         this.systemSettingsRepository = systemSettingsRepository;
@@ -41,6 +43,7 @@ public class SystemSettingsNotificationSender implements NotificationSender {
         this.twilioWhatsAppNotificationSender = twilioWhatsAppNotificationSender;
         this.sendGridEmailNotificationSender = sendGridEmailNotificationSender;
         this.smtpEmailNotificationSender = smtpEmailNotificationSender;
+        this.n8nWebhookNotificationSender = n8nWebhookNotificationSender;
         this.envDefaultProvider = parseProvider(envDefaultProvider, NotificationProvider.LOG);
     }
 
@@ -66,6 +69,7 @@ public class SystemSettingsNotificationSender implements NotificationSender {
             case WHATSAPP_TWILIO -> twilioWhatsAppNotificationSender;
             case EMAIL_SENDGRID -> sendGridEmailNotificationSender;
             case EMAIL_SMTP -> smtpEmailNotificationSender;
+            case N8N_WEBHOOK -> n8nWebhookNotificationSender;
             case LOG -> logNotificationSender;
         };
     }
