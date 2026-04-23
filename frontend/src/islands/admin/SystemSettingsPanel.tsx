@@ -180,6 +180,8 @@ const BANK_ACCOUNT_TYPE_OPTIONS = [
   'Chequera Electronica',
 ];
 
+const BANCO_ESTADO_ALLOWED_ACCOUNT_TYPES = ['Cuenta Corriente', 'Cuenta Vista', 'Cuenta RUT', 'Cuenta de Ahorro', 'Chequera Electronica'];
+
 const CHILE_BANK_OPTIONS = [
   'Banco BICE',
   'Banco BTG Pactual Chile',
@@ -199,6 +201,24 @@ const CHILE_BANK_OPTIONS = [
 ];
 
 const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications'];
+
+function normalizeBankName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+function isBancoEstado(bankName: string) {
+  const normalized = normalizeBankName(bankName);
+  return (
+    normalized === 'bancoestado' ||
+    normalized === 'bancodelestadodechile' ||
+    normalized.includes('bancoestado') ||
+    normalized.includes('estadodechile')
+  );
+}
 
 function parseSettingsTab(rawValue: string | null): SettingsSubmenuTab {
   if (!rawValue) return 'store';
@@ -470,6 +490,7 @@ export default function SystemSettingsPanel() {
   const hasProviderN8n = form.notificationProvider === 'N8N_WEBHOOK';
   const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
   const hasMercadoPagoSelected = form.paymentGatewayProviders.includes('MERCADO_PAGO');
+  const isBancoEstadoSelected = isBancoEstado(form.bankTransferBankName);
   const bankOptions = useMemo(() => {
     const current = form.bankTransferBankName.trim();
     if (current && !CHILE_BANK_OPTIONS.includes(current)) {
@@ -477,6 +498,19 @@ export default function SystemSettingsPanel() {
     }
     return CHILE_BANK_OPTIONS;
   }, [form.bankTransferBankName]);
+  const bankAccountTypeOptions = useMemo(() => {
+    if (isBancoEstadoSelected) {
+      return BANCO_ESTADO_ALLOWED_ACCOUNT_TYPES;
+    }
+    return BANK_ACCOUNT_TYPE_OPTIONS.filter((accountType) => accountType !== 'Cuenta RUT');
+  }, [isBancoEstadoSelected]);
+
+  useEffect(() => {
+    if (isBancoEstadoSelected) return;
+    if (form.bankTransferAccountType !== 'Cuenta RUT') return;
+    setForm((prev) => ({ ...prev, bankTransferAccountType: '' }));
+    setFeedback(null);
+  }, [isBancoEstadoSelected, form.bankTransferAccountType]);
 
   async function handleSave() {
     if (!effectiveToken || saving) return;
@@ -521,6 +555,10 @@ export default function SystemSettingsPanel() {
       }
       if (!form.bankTransferAccountType.trim()) {
         setFeedback({ tone: 'error', text: 'Para transferencia debes indicar tipo de cuenta.' });
+        return;
+      }
+      if (!isBancoEstadoSelected && form.bankTransferAccountType.trim() === 'Cuenta RUT') {
+        setFeedback({ tone: 'error', text: 'Cuenta RUT solo esta disponible para BancoEstado.' });
         return;
       }
     }
@@ -864,12 +902,17 @@ export default function SystemSettingsPanel() {
                   className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
                 >
                   <option value="">Selecciona tipo de cuenta</option>
-                  {BANK_ACCOUNT_TYPE_OPTIONS.map((accountType) => (
+                  {bankAccountTypeOptions.map((accountType) => (
                     <option key={accountType} value={accountType}>
                       {accountType}
                     </option>
                   ))}
                 </select>
+                {!isBancoEstadoSelected && (
+                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">
+                    Cuenta RUT solo se habilita cuando seleccionas BancoEstado.
+                  </span>
+                )}
               </label>
             </div>
           </div>
