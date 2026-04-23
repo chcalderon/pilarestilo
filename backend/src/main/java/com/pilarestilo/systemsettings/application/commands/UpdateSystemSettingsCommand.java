@@ -9,6 +9,7 @@ public record UpdateSystemSettingsCommand(
         String bankTransferAccountHolder,
         String bankTransferContactEmail,
         String bankTransferAccountNumber,
+        String bankTransferBankName,
         String bankTransferAccountType,
         Boolean paymentMethodBankTransferEnabled,
         Boolean paymentMethodGatewayEnabled,

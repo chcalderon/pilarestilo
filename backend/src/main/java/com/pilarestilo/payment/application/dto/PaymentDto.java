@@ -15,6 +15,7 @@ public record PaymentDto(
         String transferAccountHolderName,
         String transferAccountEmail,
         String transferAccountNumber,
+        String transferBankName,
         String transferAccountType,
         UUID reviewedBy,
         Instant reviewedAt,

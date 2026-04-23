@@ -56,6 +56,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         e.setTransferAccountHolderName(p.getTransferAccountHolderName());
         e.setTransferAccountEmail(p.getTransferAccountEmail());
         e.setTransferAccountNumber(p.getTransferAccountNumber());
+        e.setTransferBankName(p.getTransferBankName());
         e.setTransferAccountType(p.getTransferAccountType());
         e.setReviewedBy(p.getReviewedBy());
         e.setReviewedAt(p.getReviewedAt());
@@ -70,6 +71,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
                 e.getTransferAccountHolderName(),
                 e.getTransferAccountEmail(),
                 e.getTransferAccountNumber(),
+                e.getTransferBankName(),
                 e.getTransferAccountType(),
                 e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt()
         );

@@ -75,6 +75,7 @@ public class UpdateSystemSettingsUseCase {
                 command.bankTransferAccountHolder(),
                 command.bankTransferContactEmail(),
                 command.bankTransferAccountNumber(),
+                command.bankTransferBankName(),
                 command.bankTransferAccountType(),
                 Boolean.TRUE.equals(command.paymentMethodBankTransferEnabled()),
                 Boolean.TRUE.equals(command.paymentMethodGatewayEnabled()),

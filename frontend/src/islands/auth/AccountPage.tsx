@@ -1029,6 +1029,7 @@ export default function AccountPage({ locale }: Props) {
                           {(payment?.transferAccountHolderName
                             || payment?.transferAccountEmail
                             || payment?.transferAccountNumber
+                            || payment?.transferBankName
                             || payment?.transferAccountType) && (
                               <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-2">
                                 <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/45 mb-1.5">
@@ -1046,6 +1047,10 @@ export default function AccountPage({ locale }: Props) {
                                   <div className="flex items-center justify-between gap-3">
                                     <dt className="text-pe-charcoal/45">{es ? 'Cuenta' : 'Account'}</dt>
                                     <dd className="text-right">{maskAccountNumber(payment?.transferAccountNumber)}</dd>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-pe-charcoal/45">{es ? 'Banco' : 'Bank'}</dt>
+                                    <dd className="text-right">{payment?.transferBankName || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
                                     <dt className="text-pe-charcoal/45">{es ? 'Tipo' : 'Type'}</dt>

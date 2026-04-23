@@ -32,6 +32,9 @@ public class SystemSettingsEntity {
     @Column(name = "bank_transfer_account_number", length = 120)
     private String bankTransferAccountNumber;
 
+    @Column(name = "bank_transfer_bank_name", length = 120)
+    private String bankTransferBankName;
+
     @Column(name = "bank_transfer_account_type", length = 80)
     private String bankTransferAccountType;
 
@@ -186,6 +189,10 @@ public class SystemSettingsEntity {
     public String getBankTransferAccountNumber() { return bankTransferAccountNumber; }
     public void setBankTransferAccountNumber(String bankTransferAccountNumber) {
         this.bankTransferAccountNumber = bankTransferAccountNumber;
+    }
+    public String getBankTransferBankName() { return bankTransferBankName; }
+    public void setBankTransferBankName(String bankTransferBankName) {
+        this.bankTransferBankName = bankTransferBankName;
     }
     public String getBankTransferAccountType() { return bankTransferAccountType; }
     public void setBankTransferAccountType(String bankTransferAccountType) {

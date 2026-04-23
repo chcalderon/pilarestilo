@@ -37,6 +37,9 @@ public class PaymentEntity {
     @Column(name = "transfer_account_number", length = 120)
     private String transferAccountNumber;
 
+    @Column(name = "transfer_bank_name", length = 120)
+    private String transferBankName;
+
     @Column(name = "transfer_account_type", length = 80)
     private String transferAccountType;
 
@@ -71,6 +74,8 @@ public class PaymentEntity {
     public void setTransferAccountEmail(String transferAccountEmail) { this.transferAccountEmail = transferAccountEmail; }
     public String getTransferAccountNumber() { return transferAccountNumber; }
     public void setTransferAccountNumber(String transferAccountNumber) { this.transferAccountNumber = transferAccountNumber; }
+    public String getTransferBankName() { return transferBankName; }
+    public void setTransferBankName(String transferBankName) { this.transferBankName = transferBankName; }
     public String getTransferAccountType() { return transferAccountType; }
     public void setTransferAccountType(String transferAccountType) { this.transferAccountType = transferAccountType; }
 

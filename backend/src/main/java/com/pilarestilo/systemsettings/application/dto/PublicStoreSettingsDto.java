@@ -10,6 +10,7 @@ public record PublicStoreSettingsDto(
         String bankTransferAccountHolder,
         String bankTransferContactEmail,
         String bankTransferAccountNumber,
+        String bankTransferBankName,
         String bankTransferAccountType,
         boolean paymentMethodBankTransferEnabled,
         boolean paymentMethodGatewayEnabled,

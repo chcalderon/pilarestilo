@@ -39,6 +39,7 @@ public class RegisterPaymentUseCase {
                     settings.getBankTransferAccountHolder(),
                     settings.getBankTransferContactEmail(),
                     settings.getBankTransferAccountNumber(),
+                    settings.getBankTransferBankName(),
                     settings.getBankTransferAccountType()
             );
         } else {
@@ -56,6 +57,7 @@ public class RegisterPaymentUseCase {
                 p.getTransferAccountHolderName(),
                 p.getTransferAccountEmail(),
                 p.getTransferAccountNumber(),
+                p.getTransferBankName(),
                 p.getTransferAccountType(),
                 p.getReviewedBy(), p.getReviewedAt(), p.getCreatedAt()
         );

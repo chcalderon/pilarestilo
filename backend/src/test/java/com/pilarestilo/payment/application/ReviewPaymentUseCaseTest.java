@@ -27,6 +27,7 @@ class ReviewPaymentUseCaseTest {
     private static final String TRANSFER_HOLDER = "Pilar Estilo";
     private static final String TRANSFER_EMAIL = "pagos@pilarestilo.com";
     private static final String TRANSFER_ACCOUNT = "1234567890";
+    private static final String TRANSFER_BANK = "Banco de Chile";
     private static final String TRANSFER_TYPE = "Cuenta Corriente";
 
     @Mock
@@ -45,6 +46,7 @@ class ReviewPaymentUseCaseTest {
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,
+                TRANSFER_BANK,
                 TRANSFER_TYPE
         );
         payment.submitProof("ref-123");
@@ -87,6 +89,7 @@ class ReviewPaymentUseCaseTest {
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,
+                TRANSFER_BANK,
                 TRANSFER_TYPE
         );
         payment.submitProof("ref-456");

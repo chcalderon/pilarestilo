@@ -20,6 +20,7 @@ public class SystemSettings {
     private String bankTransferAccountHolder;
     private String bankTransferContactEmail;
     private String bankTransferAccountNumber;
+    private String bankTransferBankName;
     private String bankTransferAccountType;
     private boolean paymentMethodBankTransferEnabled;
     private boolean paymentMethodGatewayEnabled;
@@ -77,6 +78,7 @@ public class SystemSettings {
         settings.bankTransferAccountHolder = "Pilar Estilo";
         settings.bankTransferContactEmail = "admin@pilarestilo.com";
         settings.bankTransferAccountNumber = "0000000000";
+        settings.bankTransferBankName = "Banco de Chile";
         settings.bankTransferAccountType = "Cuenta Corriente";
         settings.paymentMethodBankTransferEnabled = true;
         settings.paymentMethodGatewayEnabled = true;
@@ -109,6 +111,7 @@ public class SystemSettings {
             String bankTransferAccountHolder,
             String bankTransferContactEmail,
             String bankTransferAccountNumber,
+            String bankTransferBankName,
             String bankTransferAccountType,
             boolean paymentMethodBankTransferEnabled,
             boolean paymentMethodGatewayEnabled,
@@ -165,6 +168,7 @@ public class SystemSettings {
         settings.bankTransferAccountHolder = normalizeNullable(bankTransferAccountHolder);
         settings.bankTransferContactEmail = normalizeNullable(bankTransferContactEmail);
         settings.bankTransferAccountNumber = normalizeNullable(bankTransferAccountNumber);
+        settings.bankTransferBankName = normalizeNullable(bankTransferBankName);
         settings.bankTransferAccountType = normalizeNullable(bankTransferAccountType);
         settings.paymentMethodBankTransferEnabled = paymentMethodBankTransferEnabled;
         settings.paymentMethodGatewayEnabled = paymentMethodGatewayEnabled;
@@ -221,6 +225,7 @@ public class SystemSettings {
             String bankTransferAccountHolder,
             String bankTransferContactEmail,
             String bankTransferAccountNumber,
+            String bankTransferBankName,
             String bankTransferAccountType,
             boolean paymentMethodBankTransferEnabled,
             boolean paymentMethodGatewayEnabled,
@@ -272,6 +277,7 @@ public class SystemSettings {
         this.bankTransferAccountHolder = normalizeNullable(bankTransferAccountHolder);
         this.bankTransferContactEmail = normalizeNullable(bankTransferContactEmail);
         this.bankTransferAccountNumber = normalizeNullable(bankTransferAccountNumber);
+        this.bankTransferBankName = normalizeNullable(bankTransferBankName);
         this.bankTransferAccountType = normalizeNullable(bankTransferAccountType);
         this.paymentMethodBankTransferEnabled = paymentMethodBankTransferEnabled;
         this.paymentMethodGatewayEnabled = paymentMethodGatewayEnabled;
@@ -411,6 +417,9 @@ public class SystemSettings {
             if (bankTransferAccountNumber == null || bankTransferAccountNumber.isBlank()) {
                 throw new DomainException("Bank transfer account number cannot be blank when bank transfer is enabled");
             }
+            if (bankTransferBankName == null || bankTransferBankName.isBlank()) {
+                throw new DomainException("Bank transfer bank name cannot be blank when bank transfer is enabled");
+            }
             if (bankTransferAccountType == null || bankTransferAccountType.isBlank()) {
                 throw new DomainException("Bank transfer account type cannot be blank when bank transfer is enabled");
             }
@@ -427,6 +436,7 @@ public class SystemSettings {
     public String getBankTransferAccountHolder() { return bankTransferAccountHolder; }
     public String getBankTransferContactEmail() { return bankTransferContactEmail; }
     public String getBankTransferAccountNumber() { return bankTransferAccountNumber; }
+    public String getBankTransferBankName() { return bankTransferBankName; }
     public String getBankTransferAccountType() { return bankTransferAccountType; }
     public boolean isPaymentMethodBankTransferEnabled() { return paymentMethodBankTransferEnabled; }
     public boolean isPaymentMethodGatewayEnabled() { return paymentMethodGatewayEnabled; }

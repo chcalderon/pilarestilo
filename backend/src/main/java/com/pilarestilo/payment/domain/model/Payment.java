@@ -17,6 +17,7 @@ public class Payment {
     private String transferAccountHolderName;
     private String transferAccountEmail;
     private String transferAccountNumber;
+    private String transferBankName;
     private String transferAccountType;
     private UUID reviewedBy;
     private Instant reviewedAt;
@@ -25,13 +26,14 @@ public class Payment {
     private Payment() {}
 
     public static Payment create(UUID orderId, PaymentMethod method) {
-        return create(orderId, method, null, null, null, null);
+        return create(orderId, method, null, null, null, null, null);
     }
 
     public static Payment create(UUID orderId, PaymentMethod method,
                                  String transferAccountHolderName,
                                  String transferAccountEmail,
                                  String transferAccountNumber,
+                                 String transferBankName,
                                  String transferAccountType) {
         Payment p = new Payment();
         p.id = UUID.randomUUID();
@@ -40,6 +42,7 @@ public class Payment {
         p.transferAccountHolderName = normalizeNullable(transferAccountHolderName);
         p.transferAccountEmail = normalizeNullable(transferAccountEmail);
         p.transferAccountNumber = normalizeNullable(transferAccountNumber);
+        p.transferBankName = normalizeNullable(transferBankName);
         p.transferAccountType = normalizeNullable(transferAccountType);
         p.validateTransferSnapshot();
         p.status = PaymentStatus.PENDING;
@@ -56,6 +59,7 @@ public class Payment {
                                        String transferAccountHolderName,
                                        String transferAccountEmail,
                                        String transferAccountNumber,
+                                       String transferBankName,
                                        String transferAccountType,
                                        UUID reviewedBy, Instant reviewedAt, Instant createdAt) {
         Payment p = new Payment();
@@ -67,6 +71,7 @@ public class Payment {
         p.transferAccountHolderName = transferAccountHolderName;
         p.transferAccountEmail = transferAccountEmail;
         p.transferAccountNumber = transferAccountNumber;
+        p.transferBankName = transferBankName;
         p.transferAccountType = transferAccountType;
         p.reviewedBy = reviewedBy;
         p.reviewedAt = reviewedAt;
@@ -94,6 +99,9 @@ public class Payment {
         }
         if (transferAccountNumber == null || transferAccountNumber.isBlank()) {
             throw new DomainException("Transfer account number snapshot is required for BANK_TRANSFER payments");
+        }
+        if (transferBankName == null || transferBankName.isBlank()) {
+            throw new DomainException("Transfer bank name snapshot is required for BANK_TRANSFER payments");
         }
         if (transferAccountType == null || transferAccountType.isBlank()) {
             throw new DomainException("Transfer account type snapshot is required for BANK_TRANSFER payments");
@@ -167,6 +175,7 @@ public class Payment {
     public String getTransferAccountHolderName() { return transferAccountHolderName; }
     public String getTransferAccountEmail() { return transferAccountEmail; }
     public String getTransferAccountNumber() { return transferAccountNumber; }
+    public String getTransferBankName() { return transferBankName; }
     public String getTransferAccountType() { return transferAccountType; }
     public UUID getReviewedBy() { return reviewedBy; }
     public Instant getReviewedAt() { return reviewedAt; }

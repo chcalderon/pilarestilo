@@ -35,6 +35,7 @@ type FormState = {
   bankTransferAccountHolder: string;
   bankTransferContactEmail: string;
   bankTransferAccountNumber: string;
+  bankTransferBankName: string;
   bankTransferAccountType: string;
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;
@@ -179,6 +180,24 @@ const BANK_ACCOUNT_TYPE_OPTIONS = [
   'Chequera Electronica',
 ];
 
+const CHILE_BANK_OPTIONS = [
+  'Banco BICE',
+  'Banco BTG Pactual Chile',
+  'Banco Coopeuch',
+  'Banco Consorcio',
+  'Banco de Chile',
+  'Banco de Credito e Inversiones (BCI)',
+  'BancoEstado',
+  'Banco Falabella',
+  'Banco Internacional',
+  'Banco Paris',
+  'Banco Ripley',
+  'Banco Santander Chile',
+  'Banco Security',
+  'Itau Chile',
+  'Scotiabank Chile',
+];
+
 const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications'];
 
 function parseSettingsTab(rawValue: string | null): SettingsSubmenuTab {
@@ -198,6 +217,7 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     bankTransferAccountHolder: settings.bankTransferAccountHolder ?? '',
     bankTransferContactEmail: settings.bankTransferContactEmail ?? '',
     bankTransferAccountNumber: settings.bankTransferAccountNumber ?? '',
+    bankTransferBankName: settings.bankTransferBankName ?? '',
     bankTransferAccountType: settings.bankTransferAccountType ?? '',
     paymentMethodBankTransferEnabled: settings.paymentMethodBankTransferEnabled ?? true,
     paymentMethodGatewayEnabled: settings.paymentMethodGatewayEnabled ?? true,
@@ -320,6 +340,7 @@ export default function SystemSettingsPanel() {
     bankTransferAccountHolder: '',
     bankTransferContactEmail: '',
     bankTransferAccountNumber: '',
+    bankTransferBankName: '',
     bankTransferAccountType: '',
     paymentMethodBankTransferEnabled: true,
     paymentMethodGatewayEnabled: true,
@@ -449,6 +470,13 @@ export default function SystemSettingsPanel() {
   const hasProviderN8n = form.notificationProvider === 'N8N_WEBHOOK';
   const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
   const hasMercadoPagoSelected = form.paymentGatewayProviders.includes('MERCADO_PAGO');
+  const bankOptions = useMemo(() => {
+    const current = form.bankTransferBankName.trim();
+    if (current && !CHILE_BANK_OPTIONS.includes(current)) {
+      return [current, ...CHILE_BANK_OPTIONS];
+    }
+    return CHILE_BANK_OPTIONS;
+  }, [form.bankTransferBankName]);
 
   async function handleSave() {
     if (!effectiveToken || saving) return;
@@ -485,6 +513,10 @@ export default function SystemSettingsPanel() {
       }
       if (!form.bankTransferAccountNumber.trim()) {
         setFeedback({ tone: 'error', text: 'Para transferencia debes indicar numero de cuenta.' });
+        return;
+      }
+      if (!form.bankTransferBankName.trim()) {
+        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar banco.' });
         return;
       }
       if (!form.bankTransferAccountType.trim()) {
@@ -564,6 +596,7 @@ export default function SystemSettingsPanel() {
       bankTransferAccountHolder: form.bankTransferAccountHolder.trim(),
       bankTransferContactEmail: form.bankTransferContactEmail.trim(),
       bankTransferAccountNumber: form.bankTransferAccountNumber.trim(),
+      bankTransferBankName: form.bankTransferBankName.trim(),
       bankTransferAccountType: form.bankTransferAccountType.trim(),
       paymentMethodBankTransferEnabled: form.paymentMethodBankTransferEnabled,
       paymentMethodGatewayEnabled: form.paymentMethodGatewayEnabled,
@@ -805,6 +838,22 @@ export default function SystemSettingsPanel() {
                   className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
                   placeholder="1234567890"
                 />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Banco</span>
+                <select
+                  value={form.bankTransferBankName}
+                  onChange={(e) => updateField('bankTransferBankName', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                >
+                  <option value="">Selecciona banco</option>
+                  {bankOptions.map((bankName) => (
+                    <option key={bankName} value={bankName}>
+                      {bankName}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="flex flex-col gap-1">

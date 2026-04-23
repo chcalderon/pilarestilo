@@ -91,6 +91,7 @@ export interface PaymentDto {
   transferAccountHolderName?: string;
   transferAccountEmail?: string;
   transferAccountNumber?: string;
+  transferBankName?: string;
   transferAccountType?: string;
   reviewedBy?: string;
   reviewedAt?: string;
@@ -169,6 +170,7 @@ export interface SystemSettingsDto {
   bankTransferAccountHolder?: string | null;
   bankTransferContactEmail?: string | null;
   bankTransferAccountNumber?: string | null;
+  bankTransferBankName?: string | null;
   bankTransferAccountType?: string | null;
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;
@@ -223,6 +225,7 @@ export interface UpdateSystemSettingsRequest {
   bankTransferAccountHolder?: string;
   bankTransferContactEmail?: string;
   bankTransferAccountNumber?: string;
+  bankTransferBankName?: string;
   bankTransferAccountType?: string;
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;
@@ -283,6 +286,7 @@ export interface PublicStoreSettingsDto {
   bankTransferAccountHolder?: string | null;
   bankTransferContactEmail?: string | null;
   bankTransferAccountNumber?: string | null;
+  bankTransferBankName?: string | null;
   bankTransferAccountType?: string | null;
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;

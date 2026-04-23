@@ -38,6 +38,7 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setBankTransferAccountHolder(settings.getBankTransferAccountHolder());
         entity.setBankTransferContactEmail(settings.getBankTransferContactEmail());
         entity.setBankTransferAccountNumber(settings.getBankTransferAccountNumber());
+        entity.setBankTransferBankName(settings.getBankTransferBankName());
         entity.setBankTransferAccountType(settings.getBankTransferAccountType());
         entity.setPaymentMethodBankTransferEnabled(settings.isPaymentMethodBankTransferEnabled());
         entity.setPaymentMethodGatewayEnabled(settings.isPaymentMethodGatewayEnabled());
@@ -95,6 +96,7 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getBankTransferAccountHolder(),
                 entity.getBankTransferContactEmail(),
                 entity.getBankTransferAccountNumber(),
+                entity.getBankTransferBankName(),
                 entity.getBankTransferAccountType(),
                 entity.isPaymentMethodBankTransferEnabled(),
                 entity.isPaymentMethodGatewayEnabled(),

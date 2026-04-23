@@ -55,6 +55,7 @@ public class SystemSettingsController {
                 request.bankTransferAccountHolder(),
                 request.bankTransferContactEmail(),
                 request.bankTransferAccountNumber(),
+                request.bankTransferBankName(),
                 request.bankTransferAccountType(),
                 request.paymentMethodBankTransferEnabled(),
                 request.paymentMethodGatewayEnabled(),

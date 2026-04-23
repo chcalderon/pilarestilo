@@ -28,6 +28,7 @@ const labels = {
     transferHolder: 'Nombre',
     transferEmail: 'Correo',
     transferAccount: 'Numero de cuenta',
+    transferBank: 'Banco',
     transferType: 'Tipo de cuenta',
     remove: 'Eliminar',
     quantity: 'Cantidad',
@@ -53,6 +54,7 @@ const labels = {
     transferHolder: 'Name',
     transferEmail: 'Email',
     transferAccount: 'Account number',
+    transferBank: 'Bank',
     transferType: 'Account type',
     remove: 'Remove',
     quantity: 'Quantity',
@@ -82,6 +84,7 @@ export default function CartPage({ locale }: Props) {
   const [transferAccountHolder, setTransferAccountHolder] = useState('');
   const [transferContactEmail, setTransferContactEmail] = useState('');
   const [transferAccountNumber, setTransferAccountNumber] = useState('');
+  const [transferBankName, setTransferBankName] = useState('');
   const [transferAccountType, setTransferAccountType] = useState('');
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
@@ -120,6 +123,7 @@ export default function CartPage({ locale }: Props) {
         setTransferAccountHolder(settings.bankTransferAccountHolder?.trim() ?? '');
         setTransferContactEmail(settings.bankTransferContactEmail?.trim() ?? '');
         setTransferAccountNumber(settings.bankTransferAccountNumber?.trim() ?? '');
+        setTransferBankName(settings.bankTransferBankName?.trim() ?? '');
         setTransferAccountType(settings.bankTransferAccountType?.trim() ?? '');
 
         setPaymentMethod((prev) => {
@@ -367,6 +371,10 @@ export default function CartPage({ locale }: Props) {
                         <div className="flex items-center justify-between gap-3">
                           <dt className="text-pe-charcoal/55">{l.transferAccount}</dt>
                           <dd className="text-right">{transferAccountNumber || '-'}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-pe-charcoal/55">{l.transferBank}</dt>
+                          <dd className="text-right">{transferBankName || '-'}</dd>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <dt className="text-pe-charcoal/55">{l.transferType}</dt>

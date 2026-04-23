@@ -15,6 +15,7 @@ public record UpdateSystemSettingsRequest(
         @Size(max = 160) String bankTransferAccountHolder,
         @Size(max = 255) String bankTransferContactEmail,
         @Size(max = 120) String bankTransferAccountNumber,
+        @Size(max = 120) String bankTransferBankName,
         @Size(max = 80) String bankTransferAccountType,
         @NotNull Boolean paymentMethodBankTransferEnabled,
         @NotNull Boolean paymentMethodGatewayEnabled,
