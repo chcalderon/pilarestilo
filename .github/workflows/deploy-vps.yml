@@ -58,7 +58,7 @@ jobs:
           script: |
             set -euo pipefail
             if [ -z "${APP_DIR}" ]; then
-              APP_DIR="/opt/PilarEstilo"
+              APP_DIR="/opt/pilarestilo"
             fi
             cd "${APP_DIR}"
             bash scripts/deploy/vps_deploy.sh
