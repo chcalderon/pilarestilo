@@ -1,6 +1,7 @@
 package com.pilarestilo.systemsettings.domain.model;
 
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.systemsettings.domain.enums.MediaStorageProvider;
 import com.pilarestilo.systemsettings.domain.enums.NotificationProvider;
 
 import java.time.Instant;
@@ -11,6 +12,14 @@ public class SystemSettings {
     private String whatsappNumber;
     private String instagramUrl;
     private String facebookUrl;
+    private MediaStorageProvider mediaStorageProvider;
+    private String mediaS3Endpoint;
+    private String mediaS3Region;
+    private String mediaS3Bucket;
+    private String mediaS3AccessKeyId;
+    private String mediaS3SecretKeyEncrypted;
+    private boolean mediaS3PathStyleEnabled;
+    private String mediaS3PublicBaseUrl;
     private String smtpHost;
     private Integer smtpPort;
     private String smtpUsername;
@@ -43,6 +52,8 @@ public class SystemSettings {
         settings.whatsappNumber = "+56900000000";
         settings.instagramUrl = "https://instagram.com/pilarestilo";
         settings.facebookUrl = "https://facebook.com/pilarestilo";
+        settings.mediaStorageProvider = MediaStorageProvider.LOCAL;
+        settings.mediaS3PathStyleEnabled = false;
         settings.smtpAuthEnabled = true;
         settings.smtpStarttlsEnabled = true;
         settings.notificationProvider = NotificationProvider.LOG;
@@ -63,6 +74,14 @@ public class SystemSettings {
             String whatsappNumber,
             String instagramUrl,
             String facebookUrl,
+            String mediaStorageProvider,
+            String mediaS3Endpoint,
+            String mediaS3Region,
+            String mediaS3Bucket,
+            String mediaS3AccessKeyId,
+            String mediaS3SecretKeyEncrypted,
+            boolean mediaS3PathStyleEnabled,
+            String mediaS3PublicBaseUrl,
             String smtpHost,
             Integer smtpPort,
             String smtpUsername,
@@ -94,6 +113,14 @@ public class SystemSettings {
         settings.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
         settings.instagramUrl = normalizeNullable(instagramUrl);
         settings.facebookUrl = normalizeNullable(facebookUrl);
+        settings.mediaStorageProvider = normalizeMediaStorageProvider(mediaStorageProvider);
+        settings.mediaS3Endpoint = normalizeNullable(mediaS3Endpoint);
+        settings.mediaS3Region = normalizeNullable(mediaS3Region);
+        settings.mediaS3Bucket = normalizeNullable(mediaS3Bucket);
+        settings.mediaS3AccessKeyId = normalizeNullable(mediaS3AccessKeyId);
+        settings.mediaS3SecretKeyEncrypted = normalizeNullable(mediaS3SecretKeyEncrypted);
+        settings.mediaS3PathStyleEnabled = mediaS3PathStyleEnabled;
+        settings.mediaS3PublicBaseUrl = normalizeNullable(mediaS3PublicBaseUrl);
         settings.smtpHost = normalizeNullable(smtpHost);
         settings.smtpPort = smtpPort;
         settings.smtpUsername = normalizeNullable(smtpUsername);
@@ -115,6 +142,7 @@ public class SystemSettings {
         settings.sendgridFromEmail = normalizeNullable(sendgridFromEmail);
         settings.sendgridSenderName = normalizeNullable(sendgridSenderName);
         settings.sendgridToFallback = normalizeNullable(sendgridToFallback);
+        settings.validateMediaConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
         return settings;
@@ -124,6 +152,14 @@ public class SystemSettings {
             String whatsappNumber,
             String instagramUrl,
             String facebookUrl,
+            String mediaStorageProvider,
+            String mediaS3Endpoint,
+            String mediaS3Region,
+            String mediaS3Bucket,
+            String mediaS3AccessKeyId,
+            String mediaS3SecretKeyEncrypted,
+            boolean mediaS3PathStyleEnabled,
+            String mediaS3PublicBaseUrl,
             String smtpHost,
             Integer smtpPort,
             String smtpUsername,
@@ -150,6 +186,14 @@ public class SystemSettings {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
         this.instagramUrl = normalizeNullable(instagramUrl);
         this.facebookUrl = normalizeNullable(facebookUrl);
+        this.mediaStorageProvider = normalizeMediaStorageProvider(mediaStorageProvider);
+        this.mediaS3Endpoint = normalizeNullable(mediaS3Endpoint);
+        this.mediaS3Region = normalizeNullable(mediaS3Region);
+        this.mediaS3Bucket = normalizeNullable(mediaS3Bucket);
+        this.mediaS3AccessKeyId = normalizeNullable(mediaS3AccessKeyId);
+        this.mediaS3SecretKeyEncrypted = normalizeNullable(mediaS3SecretKeyEncrypted);
+        this.mediaS3PathStyleEnabled = mediaS3PathStyleEnabled;
+        this.mediaS3PublicBaseUrl = normalizeNullable(mediaS3PublicBaseUrl);
         this.smtpHost = normalizeNullable(smtpHost);
         this.smtpPort = smtpPort;
         this.smtpUsername = normalizeNullable(smtpUsername);
@@ -171,6 +215,7 @@ public class SystemSettings {
         this.sendgridFromEmail = normalizeNullable(sendgridFromEmail);
         this.sendgridSenderName = normalizeNullable(sendgridSenderName);
         this.sendgridToFallback = normalizeNullable(sendgridToFallback);
+        validateMediaConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
     }
@@ -198,10 +243,33 @@ public class SystemSettings {
         }
     }
 
+    private static MediaStorageProvider normalizeMediaStorageProvider(String rawProvider) {
+        try {
+            return MediaStorageProvider.fromRaw(rawProvider);
+        } catch (IllegalArgumentException ex) {
+            throw new DomainException("Unsupported media storage provider: " + rawProvider);
+        }
+    }
+
+    private void validateMediaConfiguration() {
+        if (mediaStorageProvider == MediaStorageProvider.S3_COMPATIBLE
+                && (mediaS3Bucket == null || mediaS3Bucket.isBlank())) {
+            throw new DomainException("S3 bucket cannot be blank when S3-compatible storage is enabled");
+        }
+    }
+
     public short getId() { return id; }
     public String getWhatsappNumber() { return whatsappNumber; }
     public String getInstagramUrl() { return instagramUrl; }
     public String getFacebookUrl() { return facebookUrl; }
+    public MediaStorageProvider getMediaStorageProvider() { return mediaStorageProvider; }
+    public String getMediaS3Endpoint() { return mediaS3Endpoint; }
+    public String getMediaS3Region() { return mediaS3Region; }
+    public String getMediaS3Bucket() { return mediaS3Bucket; }
+    public String getMediaS3AccessKeyId() { return mediaS3AccessKeyId; }
+    public String getMediaS3SecretKeyEncrypted() { return mediaS3SecretKeyEncrypted; }
+    public boolean isMediaS3PathStyleEnabled() { return mediaS3PathStyleEnabled; }
+    public String getMediaS3PublicBaseUrl() { return mediaS3PublicBaseUrl; }
     public String getSmtpHost() { return smtpHost; }
     public Integer getSmtpPort() { return smtpPort; }
     public String getSmtpUsername() { return smtpUsername; }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   BellRing,
+  Database,
   CloudCog,
+  HardDrive,
   Loader2,
   Mail,
   MessageCircleMore,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react';
 import {
   getSystemSettings,
+  type MediaStorageProvider,
   updateSystemSettings,
   type NotificationProvider,
   type SystemSettingsDto,
@@ -28,6 +31,15 @@ type FormState = {
   whatsappNumber: string;
   instagramUrl: string;
   facebookUrl: string;
+  mediaStorageProvider: MediaStorageProvider;
+  mediaS3Endpoint: string;
+  mediaS3Region: string;
+  mediaS3Bucket: string;
+  mediaS3AccessKeyId: string;
+  mediaS3SecretKey: string;
+  clearMediaS3SecretKey: boolean;
+  mediaS3PathStyleEnabled: boolean;
+  mediaS3PublicBaseUrl: string;
   notificationProvider: NotificationProvider;
   whatsappSimulatedTo: string;
   whatsappSimulatedSender: string;
@@ -59,6 +71,13 @@ type ProviderOption = {
   label: string;
   subtitle: string;
   icon: typeof BellRing;
+};
+
+type MediaStorageOption = {
+  value: MediaStorageProvider;
+  label: string;
+  subtitle: string;
+  icon: typeof HardDrive;
 };
 
 const PROVIDER_OPTIONS: ProviderOption[] = [
@@ -94,11 +113,35 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
   },
 ];
 
+const MEDIA_STORAGE_OPTIONS: MediaStorageOption[] = [
+  {
+    value: 'LOCAL',
+    label: 'Local',
+    subtitle: 'Archivos se guardan en el volumen local del backend.',
+    icon: HardDrive,
+  },
+  {
+    value: 'S3_COMPATIBLE',
+    label: 'S3 compatible',
+    subtitle: 'Soporta proveedores tipo S3/S2 (AWS, MinIO, R2, etc).',
+    icon: Database,
+  },
+];
+
 function buildFormFromSettings(settings: SystemSettingsDto): FormState {
   return {
     whatsappNumber: settings.whatsappNumber ?? '',
     instagramUrl: settings.instagramUrl ?? '',
     facebookUrl: settings.facebookUrl ?? '',
+    mediaStorageProvider: settings.mediaStorageProvider ?? 'LOCAL',
+    mediaS3Endpoint: settings.mediaS3Endpoint ?? '',
+    mediaS3Region: settings.mediaS3Region ?? '',
+    mediaS3Bucket: settings.mediaS3Bucket ?? '',
+    mediaS3AccessKeyId: settings.mediaS3AccessKeyId ?? '',
+    mediaS3SecretKey: '',
+    clearMediaS3SecretKey: false,
+    mediaS3PathStyleEnabled: settings.mediaS3PathStyleEnabled ?? false,
+    mediaS3PublicBaseUrl: settings.mediaS3PublicBaseUrl ?? '',
     notificationProvider: settings.notificationProvider ?? 'LOG',
     whatsappSimulatedTo: settings.whatsappSimulatedTo ?? '',
     whatsappSimulatedSender: settings.whatsappSimulatedSender ?? '',
@@ -188,6 +231,15 @@ export default function SystemSettingsPanel() {
     whatsappNumber: '',
     instagramUrl: '',
     facebookUrl: '',
+    mediaStorageProvider: 'LOCAL',
+    mediaS3Endpoint: '',
+    mediaS3Region: '',
+    mediaS3Bucket: '',
+    mediaS3AccessKeyId: '',
+    mediaS3SecretKey: '',
+    clearMediaS3SecretKey: false,
+    mediaS3PathStyleEnabled: false,
+    mediaS3PublicBaseUrl: '',
     notificationProvider: 'LOG',
     whatsappSimulatedTo: '',
     whatsappSimulatedSender: '',
@@ -251,6 +303,7 @@ export default function SystemSettingsPanel() {
   const hasProviderRequiringSendgrid = form.notificationProvider === 'EMAIL_SENDGRID';
   const hasProviderRequiringTwilio = form.notificationProvider === 'WHATSAPP_TWILIO';
   const hasProviderSimulated = form.notificationProvider === 'WHATSAPP_SIMULATED';
+  const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
 
   async function handleSave() {
     if (!effectiveToken || saving) return;
@@ -263,6 +316,16 @@ export default function SystemSettingsPanel() {
 
     if (!form.notificationProvider) {
       setFeedback({ tone: 'error', text: 'Debes seleccionar un proveedor de notificaciones.' });
+      return;
+    }
+
+    if (!form.mediaStorageProvider) {
+      setFeedback({ tone: 'error', text: 'Debes seleccionar un proveedor de almacenamiento de imagenes.' });
+      return;
+    }
+
+    if (hasS3CompatibleStorage && !form.mediaS3Bucket.trim()) {
+      setFeedback({ tone: 'error', text: 'Para almacenamiento S3-compatible debes indicar bucket.' });
       return;
     }
 
@@ -308,6 +371,15 @@ export default function SystemSettingsPanel() {
       whatsappNumber: whatsappTrimmed,
       instagramUrl: form.instagramUrl.trim(),
       facebookUrl: form.facebookUrl.trim(),
+      mediaStorageProvider: form.mediaStorageProvider,
+      mediaS3Endpoint: form.mediaS3Endpoint.trim(),
+      mediaS3Region: form.mediaS3Region.trim(),
+      mediaS3Bucket: form.mediaS3Bucket.trim(),
+      mediaS3AccessKeyId: form.mediaS3AccessKeyId.trim(),
+      mediaS3SecretKey: form.mediaS3SecretKey.trim(),
+      clearMediaS3SecretKey: form.clearMediaS3SecretKey,
+      mediaS3PathStyleEnabled: form.mediaS3PathStyleEnabled,
+      mediaS3PublicBaseUrl: form.mediaS3PublicBaseUrl.trim(),
       notificationProvider: form.notificationProvider,
       whatsappSimulatedTo: form.whatsappSimulatedTo.trim(),
       whatsappSimulatedSender: form.whatsappSimulatedSender.trim(),
@@ -357,6 +429,10 @@ export default function SystemSettingsPanel() {
   const selectedProvider = useMemo(
     () => PROVIDER_OPTIONS.find((option) => option.value === form.notificationProvider),
     [form.notificationProvider]
+  );
+  const selectedMediaStorageProvider = useMemo(
+    () => MEDIA_STORAGE_OPTIONS.find((option) => option.value === form.mediaStorageProvider),
+    [form.mediaStorageProvider]
   );
 
   if (loading) {
@@ -439,6 +515,154 @@ export default function SystemSettingsPanel() {
           </label>
         </div>
       </section>
+
+      <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+        <h2 className="font-display text-2xl text-pe-black font-light">Almacenamiento de imagenes</h2>
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          Elige donde guardar imagenes de productos y comprobantes.
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {MEDIA_STORAGE_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const isActive = form.mediaStorageProvider === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => updateField('mediaStorageProvider', option.value)}
+                className={[
+                  'text-left border px-3 py-3 transition',
+                  isActive
+                    ? 'border-pe-rose bg-pe-rose/10'
+                    : 'border-pe-black/10 hover:border-pe-black/25 hover:bg-pe-offwhite',
+                ].join(' ')}
+              >
+                <div className="inline-flex items-center gap-2">
+                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-charcoal/70'} />
+                  <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
+                </div>
+                <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60 leading-relaxed">{option.subtitle}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
+          <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
+            Activo ahora: <strong>{selectedMediaStorageProvider?.label ?? form.mediaStorageProvider}</strong>
+          </span>
+        </div>
+      </section>
+
+      {hasS3CompatibleStorage && (
+        <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+          <h2 className="font-display text-2xl text-pe-black font-light">Configuracion S3 compatible</h2>
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+            Compatible con proveedores tipo S3/S2 (AWS S3, MinIO, Cloudflare R2, Wasabi, etc).
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Endpoint</span>
+              <input
+                type="url"
+                value={form.mediaS3Endpoint}
+                onChange={(e) => updateField('mediaS3Endpoint', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="https://s3.amazonaws.com"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Region</span>
+              <input
+                type="text"
+                value={form.mediaS3Region}
+                onChange={(e) => updateField('mediaS3Region', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="us-east-1"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Bucket</span>
+              <input
+                type="text"
+                value={form.mediaS3Bucket}
+                onChange={(e) => updateField('mediaS3Bucket', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="pilarestilo-media"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Access Key ID</span>
+              <input
+                type="text"
+                value={form.mediaS3AccessKeyId}
+                onChange={(e) => updateField('mediaS3AccessKeyId', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="AKIA..."
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 md:col-span-2">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Secret Access Key</span>
+              <input
+                type="password"
+                value={form.mediaS3SecretKey}
+                onChange={(e) => updateField('mediaS3SecretKey', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="Deja vacio para mantener el actual"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 md:col-span-2">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Base URL publica (opcional)</span>
+              <input
+                type="url"
+                value={form.mediaS3PublicBaseUrl}
+                onChange={(e) => updateField('mediaS3PublicBaseUrl', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                placeholder="https://cdn.tu-dominio.com"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+              <input
+                type="checkbox"
+                checked={form.mediaS3PathStyleEnabled}
+                onChange={(e) => updateField('mediaS3PathStyleEnabled', e.target.checked)}
+                className="h-4 w-4 accent-pe-rose"
+              />
+              Path style habilitado
+            </label>
+
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+              <input
+                type="checkbox"
+                checked={form.clearMediaS3SecretKey}
+                onChange={(e) => updateField('clearMediaS3SecretKey', e.target.checked)}
+                className="h-4 w-4 accent-pe-rose"
+              />
+              Limpiar Secret Access Key guardado
+            </label>
+          </div>
+
+          <SecurityHint
+            configured={Boolean(settings?.mediaS3SecretKeyConfigured)}
+            clearFlag={form.clearMediaS3SecretKey}
+            newValue={form.mediaS3SecretKey}
+            emptyText="Sin Secret Access Key configurado."
+            keepText="Hay un Secret Access Key guardado (no visible)."
+            replaceText="Se reemplazara el Secret Access Key actual."
+            clearText="Se eliminara el Secret Access Key al guardar."
+          />
+        </section>
+      )}
 
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Proveedor de notificaciones</h2>

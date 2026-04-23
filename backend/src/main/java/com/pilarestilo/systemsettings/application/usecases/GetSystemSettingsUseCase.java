@@ -32,6 +32,7 @@ public class GetSystemSettingsUseCase {
         verifyDecryptable(settings.getSmtpPasswordEncrypted(), "SMTP password");
         verifyDecryptable(settings.getWhatsappTwilioAuthTokenEncrypted(), "Twilio auth token");
         verifyDecryptable(settings.getSendgridApiKeyEncrypted(), "SendGrid API key");
+        verifyDecryptable(settings.getMediaS3SecretKeyEncrypted(), "Media S3 secret key");
         return SystemSettingsMapper.toDto(settings);
     }
 

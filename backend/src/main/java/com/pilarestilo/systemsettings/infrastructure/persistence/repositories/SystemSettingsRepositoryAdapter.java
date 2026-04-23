@@ -35,6 +35,14 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setWhatsappNumber(settings.getWhatsappNumber());
         entity.setInstagramUrl(settings.getInstagramUrl());
         entity.setFacebookUrl(settings.getFacebookUrl());
+        entity.setMediaStorageProvider(settings.getMediaStorageProvider().name());
+        entity.setMediaS3Endpoint(settings.getMediaS3Endpoint());
+        entity.setMediaS3Region(settings.getMediaS3Region());
+        entity.setMediaS3Bucket(settings.getMediaS3Bucket());
+        entity.setMediaS3AccessKeyId(settings.getMediaS3AccessKeyId());
+        entity.setMediaS3SecretKeyEncrypted(settings.getMediaS3SecretKeyEncrypted());
+        entity.setMediaS3PathStyleEnabled(settings.isMediaS3PathStyleEnabled());
+        entity.setMediaS3PublicBaseUrl(settings.getMediaS3PublicBaseUrl());
         entity.setSmtpHost(settings.getSmtpHost());
         entity.setSmtpPort(settings.getSmtpPort());
         entity.setSmtpUsername(settings.getSmtpUsername());
@@ -67,6 +75,14 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getWhatsappNumber(),
                 entity.getInstagramUrl(),
                 entity.getFacebookUrl(),
+                entity.getMediaStorageProvider(),
+                entity.getMediaS3Endpoint(),
+                entity.getMediaS3Region(),
+                entity.getMediaS3Bucket(),
+                entity.getMediaS3AccessKeyId(),
+                entity.getMediaS3SecretKeyEncrypted(),
+                entity.isMediaS3PathStyleEnabled(),
+                entity.getMediaS3PublicBaseUrl(),
                 entity.getSmtpHost(),
                 entity.getSmtpPort(),
                 entity.getSmtpUsername(),

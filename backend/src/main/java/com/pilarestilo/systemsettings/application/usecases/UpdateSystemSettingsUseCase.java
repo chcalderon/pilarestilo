@@ -44,11 +44,24 @@ public class UpdateSystemSettingsUseCase {
                 command.sendgridApiKey(),
                 command.clearSendgridApiKey()
         );
+        String nextMediaS3SecretKey = resolveEncryptedSecret(
+                settings.getMediaS3SecretKeyEncrypted(),
+                command.mediaS3SecretKey(),
+                command.clearMediaS3SecretKey()
+        );
 
         settings.update(
                 command.whatsappNumber(),
                 command.instagramUrl(),
                 command.facebookUrl(),
+                command.mediaStorageProvider(),
+                command.mediaS3Endpoint(),
+                command.mediaS3Region(),
+                command.mediaS3Bucket(),
+                command.mediaS3AccessKeyId(),
+                nextMediaS3SecretKey,
+                Boolean.TRUE.equals(command.mediaS3PathStyleEnabled()),
+                command.mediaS3PublicBaseUrl(),
                 command.smtpHost(),
                 command.smtpPort(),
                 command.smtpUsername(),

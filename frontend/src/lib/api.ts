@@ -150,10 +150,22 @@ export type NotificationProvider =
   | 'EMAIL_SENDGRID'
   | 'EMAIL_SMTP';
 
+export type MediaStorageProvider =
+  | 'LOCAL'
+  | 'S3_COMPATIBLE';
+
 export interface SystemSettingsDto {
   whatsappNumber: string;
   instagramUrl?: string | null;
   facebookUrl?: string | null;
+  mediaStorageProvider: MediaStorageProvider;
+  mediaS3Endpoint?: string | null;
+  mediaS3Region?: string | null;
+  mediaS3Bucket?: string | null;
+  mediaS3AccessKeyId?: string | null;
+  mediaS3SecretKeyConfigured: boolean;
+  mediaS3PathStyleEnabled: boolean;
+  mediaS3PublicBaseUrl?: string | null;
   notificationProvider: NotificationProvider;
   whatsappSimulatedTo?: string | null;
   whatsappSimulatedSender?: string | null;
@@ -183,6 +195,15 @@ export interface UpdateSystemSettingsRequest {
   whatsappNumber: string;
   instagramUrl?: string;
   facebookUrl?: string;
+  mediaStorageProvider: MediaStorageProvider;
+  mediaS3Endpoint?: string;
+  mediaS3Region?: string;
+  mediaS3Bucket?: string;
+  mediaS3AccessKeyId?: string;
+  mediaS3SecretKey?: string;
+  clearMediaS3SecretKey?: boolean;
+  mediaS3PathStyleEnabled: boolean;
+  mediaS3PublicBaseUrl?: string;
   notificationProvider: NotificationProvider;
   whatsappSimulatedTo?: string;
   whatsappSimulatedSender?: string;

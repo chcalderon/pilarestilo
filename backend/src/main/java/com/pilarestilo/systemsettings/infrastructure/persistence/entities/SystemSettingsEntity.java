@@ -23,6 +23,30 @@ public class SystemSettingsEntity {
     @Column(name = "facebook_url", length = 500)
     private String facebookUrl;
 
+    @Column(name = "media_storage_provider", nullable = false, length = 40)
+    private String mediaStorageProvider;
+
+    @Column(name = "media_s3_endpoint", length = 255)
+    private String mediaS3Endpoint;
+
+    @Column(name = "media_s3_region", length = 120)
+    private String mediaS3Region;
+
+    @Column(name = "media_s3_bucket", length = 120)
+    private String mediaS3Bucket;
+
+    @Column(name = "media_s3_access_key_id", length = 255)
+    private String mediaS3AccessKeyId;
+
+    @Column(name = "media_s3_secret_key_encrypted", columnDefinition = "TEXT")
+    private String mediaS3SecretKeyEncrypted;
+
+    @Column(name = "media_s3_path_style_enabled", nullable = false)
+    private boolean mediaS3PathStyleEnabled;
+
+    @Column(name = "media_s3_public_base_url", length = 500)
+    private String mediaS3PublicBaseUrl;
+
     @Column(name = "smtp_host", length = 255)
     private String smtpHost;
 
@@ -100,6 +124,26 @@ public class SystemSettingsEntity {
     public void setInstagramUrl(String instagramUrl) { this.instagramUrl = instagramUrl; }
     public String getFacebookUrl() { return facebookUrl; }
     public void setFacebookUrl(String facebookUrl) { this.facebookUrl = facebookUrl; }
+    public String getMediaStorageProvider() { return mediaStorageProvider; }
+    public void setMediaStorageProvider(String mediaStorageProvider) { this.mediaStorageProvider = mediaStorageProvider; }
+    public String getMediaS3Endpoint() { return mediaS3Endpoint; }
+    public void setMediaS3Endpoint(String mediaS3Endpoint) { this.mediaS3Endpoint = mediaS3Endpoint; }
+    public String getMediaS3Region() { return mediaS3Region; }
+    public void setMediaS3Region(String mediaS3Region) { this.mediaS3Region = mediaS3Region; }
+    public String getMediaS3Bucket() { return mediaS3Bucket; }
+    public void setMediaS3Bucket(String mediaS3Bucket) { this.mediaS3Bucket = mediaS3Bucket; }
+    public String getMediaS3AccessKeyId() { return mediaS3AccessKeyId; }
+    public void setMediaS3AccessKeyId(String mediaS3AccessKeyId) { this.mediaS3AccessKeyId = mediaS3AccessKeyId; }
+    public String getMediaS3SecretKeyEncrypted() { return mediaS3SecretKeyEncrypted; }
+    public void setMediaS3SecretKeyEncrypted(String mediaS3SecretKeyEncrypted) {
+        this.mediaS3SecretKeyEncrypted = mediaS3SecretKeyEncrypted;
+    }
+    public boolean isMediaS3PathStyleEnabled() { return mediaS3PathStyleEnabled; }
+    public void setMediaS3PathStyleEnabled(boolean mediaS3PathStyleEnabled) {
+        this.mediaS3PathStyleEnabled = mediaS3PathStyleEnabled;
+    }
+    public String getMediaS3PublicBaseUrl() { return mediaS3PublicBaseUrl; }
+    public void setMediaS3PublicBaseUrl(String mediaS3PublicBaseUrl) { this.mediaS3PublicBaseUrl = mediaS3PublicBaseUrl; }
     public String getSmtpHost() { return smtpHost; }
     public void setSmtpHost(String smtpHost) { this.smtpHost = smtpHost; }
     public Integer getSmtpPort() { return smtpPort; }
