@@ -1,0 +1,64 @@
+name: Deploy VPS
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: false
+        default: "master"
+      compose_profiles:
+        description: "Optional COMPOSE_PROFILES value (example: cache,microservices,observability)"
+        required: false
+        default: ""
+      skip_build:
+        description: "Skip docker compose --build"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-vps-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to VPS over SSH
+    runs-on: ubuntu-latest
+    environment: production
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'master'
+      )
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          DEPLOY_BRANCH: ${{ github.event.inputs.branch || 'master' }}
+          DEPLOY_PROFILES: ${{ github.event.inputs.compose_profiles || secrets.VPS_COMPOSE_PROFILES }}
+          SKIP_BUILD: ${{ github.event.inputs.skip_build == 'true' && 'true' || 'false' }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT != '' && secrets.VPS_PORT || '22' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: APP_DIR,DEPLOY_BRANCH,DEPLOY_PROFILES,SKIP_BUILD
+          script_stop: true
+          command_timeout: 45m
+          script: |
+            set -euo pipefail
+            if [ -z "${APP_DIR}" ]; then
+              APP_DIR="/opt/PilarEstilo"
+            fi
+            cd "${APP_DIR}"
+            bash scripts/deploy/vps_deploy.sh

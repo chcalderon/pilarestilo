@@ -335,6 +335,9 @@ git pull origin master
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
+For automated VPS deploys using GitHub Actions (after CI success on `master` or manual dispatch),
+see: `docs/github-actions-vps.md`.
+
 Docker Compose rebuilds only the services whose image changed and replaces containers one at a time. There is a brief downtime window (~5–15 seconds) while backend replicas restart.
 
 **Lower-downtime strategy (available):** run at least two backend replicas behind Caddy before updating:
