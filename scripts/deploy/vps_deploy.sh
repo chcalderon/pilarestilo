@@ -37,18 +37,6 @@ fi
 
 compose_cmd=(docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}")
 
-echo "[deploy] Backing up database..."
-BACKUP_DIR="${APP_DIR}/backups"
-mkdir -p "${BACKUP_DIR}"
-BACKUP_FILE="${BACKUP_DIR}/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz"
-source "${ENV_FILE}"
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" exec -T postgres \
-  pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" | gzip > "${BACKUP_FILE}" && \
-  echo "[deploy] Backup saved: ${BACKUP_FILE}" || \
-  echo "[deploy] WARNING: backup failed (postgres may not be running yet), continuing..."
-# Keep last 10 backups
-ls -t "${BACKUP_DIR}"/pre-deploy-*.sql.gz 2>/dev/null | tail -n +11 | xargs rm -f || true
-
 echo "[deploy] Pulling updated base images (best effort)..."
 "${compose_cmd[@]}" pull || true
 
