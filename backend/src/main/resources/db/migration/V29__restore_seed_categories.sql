@@ -12,7 +12,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Restore product→category associations for seed products (only if both rows exist).
 INSERT INTO product_categories (product_id, category_id)
-SELECT p.product_id, p.category_id FROM (VALUES
+SELECT p.product_id::uuid, p.category_id::uuid FROM (VALUES
   ('10000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000004'),
   ('10000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000003'),
   ('10000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000007'),
