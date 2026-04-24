@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/PilarEstilo}"
+APP_DIR="${APP_DIR:-/opt/pilarestilo}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-master}"
 SKIP_BUILD="${SKIP_BUILD:-false}"
 
