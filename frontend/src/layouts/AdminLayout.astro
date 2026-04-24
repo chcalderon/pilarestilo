@@ -146,6 +146,7 @@ const currentPath = Astro.url.pathname;
 
       .admin-main {
         flex: 1;
+        min-width: 0;
         margin-left: 240px;
         display: flex;
         flex-direction: column;
@@ -168,6 +169,8 @@ const currentPath = Astro.url.pathname;
 
       .admin-content {
         flex: 1;
+        min-width: 0;
+        overflow-x: hidden;
         padding: clamp(1rem, 2.2vw, 2rem);
       }
 
