@@ -34,57 +34,70 @@
     respond @api_invalid_method "Method Not Allowed" 405
 
     route {
-        # Catalog reads - route product GETs to extracted product-service.
+        # Catalog reads - route product GETs to extracted product-service when active,
+        # with backend:8080 as fallback when running without the microservices profile.
         @product_reads {
             method GET HEAD
             path /api/products /api/products/*
         }
         handle @product_reads {
-            reverse_proxy product-service:8081 {
+            reverse_proxy product-service:8081 backend:8080 {
+                lb_policy first
+                fail_duration 15s
+                unhealthy_request_count 1
                 transport http {
-                    dial_timeout 5s
+                    dial_timeout 2s
                     response_header_timeout 30s
                 }
             }
         }
 
-        # Inventory reads - route to extracted inventory-service.
+        # Inventory reads - route to extracted inventory-service with backend fallback.
         @inventory_reads {
             method GET HEAD
             path /api/inventory /api/inventory/*
         }
         handle @inventory_reads {
-            reverse_proxy inventory-service:8082 {
+            reverse_proxy inventory-service:8082 backend:8080 {
+                lb_policy first
+                fail_duration 15s
+                unhealthy_request_count 1
                 transport http {
-                    dial_timeout 5s
+                    dial_timeout 2s
                     response_header_timeout 30s
                 }
             }
         }
 
-        # Payment reads - route GET/HEAD payment queries to extracted payment-service.
+        # Payment reads - route GET/HEAD payment queries to extracted payment-service with fallback.
         @payment_reads {
             method GET HEAD
             path /api/payments /api/payments/*
         }
         handle @payment_reads {
-            reverse_proxy payment-service:8084 {
+            reverse_proxy payment-service:8084 backend:8080 {
+                lb_policy first
+                fail_duration 15s
+                unhealthy_request_count 1
                 transport http {
-                    dial_timeout 5s
+                    dial_timeout 2s
                     response_header_timeout 30s
                 }
             }
         }
 
-        # Orders - route all order traffic to extracted order-service.
+        # Orders - route all order traffic to extracted order-service with backend fallback.
         @order_allowed {
             method GET HEAD POST PATCH
             path /api/orders /api/orders/*
         }
         handle @order_allowed {
-            reverse_proxy order-service:8083 {
+            reverse_proxy order-service:8083 backend:8080 {
+                lb_policy first
+                fail_duration 15s
+                unhealthy_request_count 1
                 transport http {
-                    dial_timeout 5s
+                    dial_timeout 2s
                     response_header_timeout 30s
                 }
             }
