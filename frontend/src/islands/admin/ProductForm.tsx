@@ -518,19 +518,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 </div>
               </div>
 
-              <div className="mt-3">
-                <label htmlFor="pf-image" className={labelClass}>
-                  Ruta manual (opcional)
-                </label>
-                <input
-                  id="pf-image"
-                  type="text"
-                  className={inputClass}
-                  value={form.imageUrl}
-                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                  placeholder="/api/media/products/product-001.jpg"
-                />
-              </div>
             </div>
           </div>
 
