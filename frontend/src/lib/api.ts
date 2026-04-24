@@ -534,7 +534,7 @@ export async function getProduct(id: string): Promise<ProductDto> {
 }
 
 export async function getFeaturedProducts(): Promise<ProductDto[]> {
-  const query = buildQuery({ active: true, size: 8, page: 0 });
+  const query = buildQuery({ active: true, size: 8, page: 0, sort: 'createdAt,desc' });
 
   try {
     const firstPage = await apiFetch<Page<unknown>>(`/products${query}`);
