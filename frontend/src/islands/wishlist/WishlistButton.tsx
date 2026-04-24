@@ -6,15 +6,20 @@ interface Props {
   productId: string;
   token?: string;
   className?: string;
+  showLabel?: boolean;
+  locale?: 'es' | 'en';
 }
 
-export default function WishlistButton({ productId, token, className = '' }: Props) {
+export default function WishlistButton({ productId, token, className = '', showLabel = false, locale = 'es' }: Props) {
   const { has, toggle } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   const inWishlist = mounted && has(productId);
+
+  const labelAdd = locale === 'es' ? 'Agregar a favoritos' : 'Save to wishlist';
+  const labelRemove = locale === 'es' ? 'En favoritos' : 'Saved';
 
   return (
     <button
@@ -24,18 +29,25 @@ export default function WishlistButton({ productId, token, className = '' }: Pro
         event.stopPropagation();
         toggle(productId, token);
       }}
-      aria-label={inWishlist ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-      className={`group flex items-center justify-center transition-all duration-200 ${className}`}
+      aria-label={inWishlist ? labelRemove : labelAdd}
+      className={`group flex items-center justify-center gap-2 transition-all duration-200 ${className}`}
     >
       <Heart
-        size={20}
+        size={showLabel ? 15 : 20}
         strokeWidth={1.25}
-        className={`transition-all duration-200 ${
+        className={`flex-shrink-0 transition-all duration-200 ${
           inWishlist
             ? 'fill-[#B76E79] stroke-[#B76E79]'
             : 'stroke-current group-hover:stroke-[#B76E79]'
         }`}
       />
+      {showLabel && (
+        <span className={`font-sans text-[0.72rem] tracking-[0.14em] uppercase transition-colors duration-200 ${
+          inWishlist ? 'text-[#B76E79]' : 'group-hover:text-[#B76E79]'
+        }`}>
+          {inWishlist ? labelRemove : labelAdd}
+        </span>
+      )}
     </button>
   );
 }

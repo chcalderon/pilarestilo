@@ -126,26 +126,26 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
           </div>
 
           <!-- Add to cart + wishlist action row -->
-          <div class="flex items-stretch gap-3 mt-2">
-            <div class="flex-1">
-              <ProductVariantSelector
-                client:load
-                productId={product.id}
-                name={product.name}
-                brand={product.brand}
-                price={product.price}
-                imageUrl={product.imageUrl}
-                condition={product.condition}
-                stock={product.stock}
-                variants={product.variants}
-                locale={locale}
-              />
-            </div>
+          <div class="flex flex-col gap-2 mt-2">
+            <ProductVariantSelector
+              client:load
+              productId={product.id}
+              name={product.name}
+              brand={product.brand}
+              price={product.price}
+              imageUrl={product.imageUrl}
+              condition={product.condition}
+              stock={product.stock}
+              variants={product.variants}
+              locale={locale}
+            />
             <WishlistButton
               client:load
               productId={product.id}
               token={token}
-              className="w-12 border border-[var(--pe-border)] hover:border-[#B76E79] text-[var(--pe-ink)] bg-[var(--pe-surface-card)]"
+              showLabel={true}
+              locale={locale}
+              className="w-full py-2.5 border border-[var(--pe-border)] hover:border-[#B76E79] text-[var(--pe-ink)] bg-[var(--pe-surface-card)]"
             />
           </div>
 

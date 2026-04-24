@@ -422,7 +422,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
               <div className="space-y-2">
                 {variantRows.map((row, index) => (
-                  <div key={`${index}-${row.color}-${row.size}`} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                     <input
                       type="text"
                       className={`sm:col-span-5 ${inputClass}`}
