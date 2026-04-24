@@ -64,7 +64,7 @@ export default function DataTable<T>({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = () => setIsMobile(window.innerWidth < 768);
+    const mq = () => setIsMobile(window.innerWidth < 1024);
     mq();
     window.addEventListener('resize', mq);
     return () => window.removeEventListener('resize', mq);
@@ -288,7 +288,7 @@ export default function DataTable<T>({
       )}
 
       {totalPages !== undefined && totalPages > 1 && (
-        <div className="flex items-center justify-between px-1 pt-3">
+        <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
             {displayedFrom}-{displayedTo} de {total}
           </p>

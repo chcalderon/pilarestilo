@@ -181,13 +181,14 @@ export default function ReviewModerationQueue() {
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-0 border-b border-pe-black/10 mb-4">
+      <div className="mb-4 border-b border-pe-black/10">
+        <div className="flex gap-0 overflow-x-auto">
         {(['pending', 'approved', 'all'] as FilterStatus[]).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={[
-              'px-4 py-2.5 font-sans text-[0.72rem] tracking-[0.12em] uppercase border-b-2 -mb-px transition-colors duration-150',
+              'whitespace-nowrap px-4 py-2.5 font-sans text-[0.72rem] tracking-[0.12em] uppercase border-b-2 -mb-px transition-colors duration-150',
               filter === f
                 ? 'border-pe-rose text-pe-rose-deep'
                 : 'border-transparent text-pe-charcoal/45 hover:text-pe-charcoal',
@@ -196,7 +197,8 @@ export default function ReviewModerationQueue() {
             {f === 'pending' ? 'Pendientes' : f === 'approved' ? 'Aprobadas' : 'Todas'}
           </button>
         ))}
-        <span className="ml-auto self-end pb-2.5 font-sans text-[0.72rem] text-pe-charcoal/35">
+        </div>
+        <span className="block pb-2.5 pt-1 font-sans text-[0.72rem] text-pe-charcoal/35">
           {reviews.length} reseña{reviews.length !== 1 ? 's' : ''}
         </span>
       </div>

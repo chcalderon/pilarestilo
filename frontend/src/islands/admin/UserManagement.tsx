@@ -881,8 +881,8 @@ export default function UserManagement() {
         </article>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="inline-flex items-center p-1 bg-pe-cream border border-pe-black/10">
             <button
               type="button"
@@ -914,7 +914,7 @@ export default function UserManagement() {
               setCustomersPage(0);
               setWorkersPage(0);
             }}
-            className="h-[34px] border border-pe-black/12 bg-pe-white px-3 font-sans text-[0.72rem] uppercase tracking-[0.12em] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+            className="h-[34px] w-full sm:w-auto border border-pe-black/12 bg-pe-white px-3 font-sans text-[0.72rem] uppercase tracking-[0.12em] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
           >
             <option value="ALL">Todos</option>
             <option value="ACTIVE">Habilitados</option>
@@ -928,7 +928,7 @@ export default function UserManagement() {
             setMetricsByUser({});
             void refreshData();
           }}
-          className="inline-flex items-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
         >
           <RefreshCw size={13} /> Actualizar
         </button>

@@ -40,6 +40,7 @@ export default function ProductTable() {
   const [filterCategory, setFilterCategory] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -48,7 +49,7 @@ export default function ProductTable() {
       setViewMode(saved);
       return;
     }
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 1024) {
       setViewMode('cards');
     }
 
@@ -57,6 +58,14 @@ export default function ProductTable() {
     if (PAGE_SIZE_OPTIONS.includes(savedSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
       setPageSize(savedSize);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onResize = () => setIsMobileViewport(window.innerWidth < 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   useEffect(() => {
@@ -326,12 +335,13 @@ export default function ProductTable() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const displayedFrom = total === 0 ? 0 : page * pageSize + 1;
   const displayedTo = Math.min((page + 1) * pageSize, total);
+  const effectiveViewMode: ViewMode = isMobileViewport ? 'cards' : viewMode;
 
   function PaginationControls() {
     if (total <= pageSize) return null;
 
     return (
-      <div className="flex items-center justify-between px-1 pt-3">
+      <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
           {displayedFrom}-{displayedTo} de {total}
         </p>
@@ -380,7 +390,7 @@ export default function ProductTable() {
 
     return (
       <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {products.map((row) => (
             <article key={row.id} className="bg-pe-white border border-pe-black/6 shadow-sm overflow-hidden">
               <div className="relative">
@@ -493,14 +503,14 @@ export default function ProductTable() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
         <select
           value={filterCondition}
           onChange={(e) => {
             setFilterCondition(e.target.value);
             setPage(0);
           }}
-          className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+          className="w-full sm:w-auto font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
         >
           <option value="">Todas las condiciones</option>
           <option value="NEW">Nuevo</option>
@@ -515,7 +525,7 @@ export default function ProductTable() {
             setFilterBrand(e.target.value);
             setPage(0);
           }}
-          className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
+          className="w-full sm:w-[220px] font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
         />
 
         <select
@@ -524,7 +534,7 @@ export default function ProductTable() {
             setFilterCategory(e.target.value);
             setPage(0);
           }}
-          className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+          className="w-full sm:w-auto font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
         >
           <option value="">Todas las categorias</option>
           {categories.map((cat) => (
@@ -561,43 +571,45 @@ export default function ProductTable() {
           </select>
         </label>
 
-        <div className="inline-flex border border-pe-black/12 bg-pe-white">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={[
-              'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
-              viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-            ].join(' ')}
-            title="Vista grilla"
-          >
-            <Rows3 size={13} />
-            Grilla
-          </button>
-          <button
-            onClick={() => setViewMode('cards')}
-            className={[
-              'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
-              viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-            ].join(' ')}
-            title="Vista cards"
-          >
-            <LayoutGrid size={13} />
-            Cards
-          </button>
-        </div>
+        {!isMobileViewport && (
+          <div className="inline-flex w-full sm:w-auto border border-pe-black/12 bg-pe-white">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={[
+                'inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
+                viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              ].join(' ')}
+              title="Vista grilla"
+            >
+              <Rows3 size={13} />
+              Grilla
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={[
+                'inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
+                viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              ].join(' ')}
+              title="Vista cards"
+            >
+              <LayoutGrid size={13} />
+              Cards
+            </button>
+          </div>
+        )}
 
         <span className="font-sans text-[0.72rem] text-pe-charcoal/35 ml-1">{total} productos</span>
 
         <button
           onClick={() => setEditTarget(null)}
-          className="ml-auto inline-flex items-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto sm:ml-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nuevo producto
         </button>
       </div>
 
-      {viewMode === 'grid' ? (
+      {effectiveViewMode === 'grid' ? (
         <DataTable
           columns={columns}
           data={products}

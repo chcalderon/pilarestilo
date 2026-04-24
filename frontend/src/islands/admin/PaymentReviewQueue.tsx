@@ -338,8 +338,8 @@ export default function PaymentReviewQueue() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="inline-flex items-center p-1 bg-pe-cream border border-pe-black/10">
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="inline-flex w-full overflow-x-auto items-center p-1 bg-pe-cream border border-pe-black/10">
           <button
             type="button"
             onClick={() => setActiveTab('queue')}
@@ -362,20 +362,20 @@ export default function PaymentReviewQueue() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <input
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : 'Buscar pago aprobado...'}
-            className="w-[220px] max-w-[52vw] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-none focus:border-pe-rose/45"
+            className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-none focus:border-pe-rose/45"
             aria-label="Buscar pagos"
           />
 
           <select
             value={dateSort}
             onChange={(e) => setDateSort(e.target.value as DateSortDirection)}
-            className="bg-pe-white border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.72rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
+            className="w-full sm:w-auto bg-pe-white border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.72rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
             aria-label="Ordenar por fecha"
           >
             <option value="desc">Fecha: mas reciente</option>
@@ -389,7 +389,7 @@ export default function PaymentReviewQueue() {
               setDateSort('desc');
             }}
             disabled={!canClearFilters}
-            className="px-2.5 py-1.5 font-sans text-[0.72rem] uppercase tracking-wider border border-pe-black/15 text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-cream transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-2.5 py-1.5 font-sans text-[0.72rem] uppercase tracking-wider border border-pe-black/15 text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-cream transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
           >
             Limpiar filtros
           </button>
@@ -398,7 +398,7 @@ export default function PaymentReviewQueue() {
             onClick={() => {
               void load();
             }}
-            className="flex items-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
             aria-label="Actualizar"
           >
             <RefreshCw size={13} /> Actualizar

@@ -247,8 +247,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }
 
   const inputClass =
-    'w-full font-sans text-sm border border-pe-black/20 px-3 py-2 bg-white focus:outline-none focus:border-pe-rose transition-colors';
-  const labelClass = 'block font-sans text-xs tracking-wider uppercase text-pe-black/60 mb-1';
+    'w-full font-sans text-[0.82rem] border border-pe-black/30 px-2.5 py-1.5 bg-[#fffdfa] text-[#1A1A1A] focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
+  const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 mb-1';
   const errorClass = 'font-sans text-xs text-red-500 mt-1';
   const previewUrl = form.imageUrl.trim() || '/api/media/products/product-001.jpg';
 
@@ -256,9 +256,9 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const childCats = categories.filter((c) => c.parentId);
 
   return (
-    <div className="fixed inset-0 bg-[#1A1A1A]/60 z-50 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true">
-      <div className="bg-[#F8F4EF] w-full max-w-lg max-h-[92vh] overflow-y-auto p-4 sm:p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 bg-[#1A1A1A]/68 z-50 flex items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true">
+      <div className="bg-[#F8F4EF] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-xl font-light">
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
@@ -273,7 +273,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
         {apiError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 mb-4">{apiError}</div>}
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
             <label htmlFor="pf-name" className={labelClass}>
               Nombre
@@ -310,7 +310,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             </label>
             <textarea
               id="pf-desc"
-              className={inputClass + ' resize-none h-20'}
+              className={inputClass + ' resize-none h-16'}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               required
@@ -318,8 +318,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             {errors.description && <p className={errorClass}>{errors.description}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div className="col-span-1">
               <label htmlFor="pf-price" className={labelClass}>
                 Precio (CLP)
               </label>
@@ -335,7 +335,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               />
               {errors.amount && <p className={errorClass}>{errors.amount}</p>}
             </div>
-            <div>
+            <div className="col-span-1">
               <label htmlFor="pf-list-price" className={labelClass}>
                 Precio lista (tachado)
               </label>
@@ -351,7 +351,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               />
               {errors.listAmount && <p className={errorClass}>{errors.listAmount}</p>}
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-2 lg:col-span-1">
               <label htmlFor="pf-condition" className={labelClass}>
                 Condicion
               </label>
@@ -367,7 +367,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <label htmlFor="pf-stock" className={labelClass}>
                 Stock {useVariants ? '(total variantes)' : ''}
@@ -422,16 +422,16 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
               <div className="space-y-2">
                 {variantRows.map((row, index) => (
-                  <div key={`${index}-${row.color}-${row.size}`} className="grid grid-cols-12 gap-2 items-center">
+                  <div key={`${index}-${row.color}-${row.size}`} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                     <input
                       type="text"
-                      className={`col-span-5 ${inputClass}`}
+                      className={`sm:col-span-5 ${inputClass}`}
                       placeholder="Color"
                       value={row.color}
                       onChange={(e) => updateVariantRow(index, { color: e.target.value })}
                     />
                     <select
-                      className={`col-span-3 ${inputClass}`}
+                      className={`sm:col-span-3 ${inputClass}`}
                       value={row.size}
                       onChange={(e) => updateVariantRow(index, { size: e.target.value as VariantSize })}
                     >
@@ -445,14 +445,14 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                       type="number"
                       min="0"
                       step="1"
-                      className={`col-span-2 ${inputClass}`}
+                      className={`sm:col-span-2 ${inputClass}`}
                       value={row.stock}
                       onChange={(e) => updateVariantRow(index, { stock: e.target.value })}
                     />
                     <button
                       type="button"
                       onClick={() => removeVariantRow(index)}
-                      className="col-span-2 border border-red-300 text-red-500 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
+                      className="sm:col-span-2 border border-red-300 text-red-500 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
                     >
                       Quitar
                     </button>
@@ -470,7 +470,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           <div>
             <label className={labelClass}>Imagen del producto</label>
             <div className="border border-pe-black/12 bg-pe-white p-3">
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <img
                   src={previewUrl}
                   alt="Vista previa producto"
@@ -575,7 +575,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+          <div className="flex flex-col sm:flex-row gap-2.5 mt-2">
             <button
               type="submit"
               disabled={saving}

@@ -90,7 +90,7 @@ export default function CategoryTree() {
     return (
       <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-2">
         {error && <p className="font-sans text-[0.72rem] text-pe-rose-deep">{error}</p>}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <div className="flex flex-col gap-0.5">
             <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Slug *</label>
             <input className={inputClass} value={form.slug}
@@ -111,13 +111,13 @@ export default function CategoryTree() {
             <input type="number" min="0" className={inputClass} value={form.sortOrder}
               onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
           </div>
-          <div className="flex flex-col gap-0.5 col-span-2">
+          <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
             <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">URL imagen</label>
             <input className={inputClass} value={form.imageUrl}
               onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://…" />
           </div>
         </div>
-        <div className="flex items-center gap-3 mt-1">
+        <div className="mt-1 flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
             <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />
             Activa
@@ -145,7 +145,7 @@ export default function CategoryTree() {
     return (
       <div>
         <div
-          className="flex items-center gap-2 py-2 px-2 hover:bg-pe-cream/40 transition-colors rounded group"
+          className="group flex items-center gap-2 rounded px-2 py-2 hover:bg-pe-cream/40 transition-colors"
           style={{ paddingLeft: `${(depth + 1) * 16}px` }}
         >
           <button
@@ -159,17 +159,17 @@ export default function CategoryTree() {
             {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
 
-          <span className={['font-sans text-[0.82rem]', node.active ? 'text-pe-charcoal' : 'text-pe-charcoal/35 line-through'].join(' ')}>
+          <span className={['min-w-0 truncate font-sans text-[0.82rem]', node.active ? 'text-pe-charcoal' : 'text-pe-charcoal/35 line-through'].join(' ')}>
             {node.nameEs}
           </span>
-          <span className="font-sans text-[0.65rem] text-pe-charcoal/35 ml-1">/{node.slug}</span>
+          <span className="min-w-0 truncate font-sans text-[0.65rem] text-pe-charcoal/35 ml-1">/{node.slug}</span>
           {!node.active && (
             <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/30 bg-pe-cream px-1.5 py-0.5">
               Inactiva
             </span>
           )}
 
-          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {depth === 0 && (
               <button
                 onClick={() => { setCreating(node.id); setForm({ ...EMPTY_FORM }); setEditing(null); }}
@@ -223,11 +223,11 @@ export default function CategoryTree() {
   return (
     <div>
       {/* Add root category */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-sans text-[0.72rem] text-pe-charcoal/40">{tree.length} categorías raíz</p>
         <button
           onClick={() => { setCreating('__root__'); setForm({ ...EMPTY_FORM }); setEditing(null); setError(''); }}
-          className="flex items-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nueva categoría raíz
