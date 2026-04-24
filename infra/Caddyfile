@@ -44,7 +44,6 @@
             reverse_proxy product-service:8081 backend:8080 {
                 lb_policy first
                 fail_duration 15s
-                unhealthy_request_count 1
                 transport http {
                     dial_timeout 2s
                     response_header_timeout 30s
@@ -61,7 +60,6 @@
             reverse_proxy inventory-service:8082 backend:8080 {
                 lb_policy first
                 fail_duration 15s
-                unhealthy_request_count 1
                 transport http {
                     dial_timeout 2s
                     response_header_timeout 30s
@@ -78,7 +76,6 @@
             reverse_proxy payment-service:8084 backend:8080 {
                 lb_policy first
                 fail_duration 15s
-                unhealthy_request_count 1
                 transport http {
                     dial_timeout 2s
                     response_header_timeout 30s
@@ -95,7 +92,6 @@
             reverse_proxy order-service:8083 backend:8080 {
                 lb_policy first
                 fail_duration 15s
-                unhealthy_request_count 1
                 transport http {
                     dial_timeout 2s
                     response_header_timeout 30s
