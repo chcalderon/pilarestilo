@@ -3,16 +3,10 @@ set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/PilarEstilo}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-master}"
-DEPLOY_PROFILES="${DEPLOY_PROFILES:-}"
 SKIP_BUILD="${SKIP_BUILD:-false}"
 
 COMPOSE_FILE="infra/docker-compose.yml"
 ENV_FILE="infra/.env"
-
-echo "[deploy] App dir: ${APP_DIR}"
-echo "[deploy] Branch: ${DEPLOY_BRANCH}"
-echo "[deploy] Profiles: ${DEPLOY_PROFILES:-<none>}"
-echo "[deploy] Skip build: ${SKIP_BUILD}"
 
 cd "${APP_DIR}"
 
@@ -25,6 +19,16 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   echo "[deploy] ERROR: ${ENV_FILE} not found. Create it from infra/.env.example first." >&2
   exit 1
 fi
+
+# Read DEPLOY_PROFILES from infra/.env if not set in the environment.
+if [[ -z "${DEPLOY_PROFILES:-}" ]]; then
+  DEPLOY_PROFILES=$(grep -E '^DEPLOY_PROFILES=' "${ENV_FILE}" | cut -d'=' -f2- | tr -d '[:space:]' || true)
+fi
+
+echo "[deploy] App dir: ${APP_DIR}"
+echo "[deploy] Branch: ${DEPLOY_BRANCH}"
+echo "[deploy] Profiles: ${DEPLOY_PROFILES:-<none>}"
+echo "[deploy] Skip build: ${SKIP_BUILD}"
 
 echo "[deploy] Syncing repository..."
 git fetch origin --prune
