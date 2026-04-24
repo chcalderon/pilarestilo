@@ -62,9 +62,9 @@ docker compose version
 ```bash
 # On the server
 cd /opt
-sudo git clone https://github.com/YOUR_ORG/PilarEstilo.git
-sudo chown -R $USER:$USER /opt/PilarEstilo
-cd /opt/PilarEstilo
+sudo git clone https://github.com/YOUR_ORG/pilarestilo.git
+sudo chown -R $USER:$USER /opt/pilarestilo
+cd /opt/pilarestilo
 ```
 
 If you use a private repo, set up a deploy key:
@@ -78,62 +78,37 @@ ssh-keygen -t ed25519 -C "deploy@pilarestilo" -f ~/.ssh/deploy_key -N ""
 ## 4. Configure Environment
 
 ```bash
-cp /opt/PilarEstilo/infra/.env.example /opt/PilarEstilo/infra/.env
-nano /opt/PilarEstilo/infra/.env
+cp /opt/pilarestilo/infra/.env.example /opt/pilarestilo/infra/.env
+nano /opt/pilarestilo/infra/.env
 ```
 
 Edit the following values at minimum:
 
 ```bash
-POSTGRES_PASSWORD=a_long_random_password_here   # CHANGE THIS
+POSTGRES_PASSWORD=a_long_random_password_here   # generate with: openssl rand -base64 32
+JWT_SECRET=                                     # generate with: openssl rand -base64 32
+SYSTEM_SETTINGS_CRYPTO_SECRET=                  # generate with: openssl rand -base64 32
 DOMAIN=pilarestilo.com                          # your real domain
+
+# Docker Compose profiles activated by vps_deploy.sh.
+# Standard full stack (includes extracted microservices + Redis):
+DEPLOY_PROFILES=microservices,cache
+
+# Enable backend-to-microservice delegation once microservices are running:
+APP_INVENTORY_REMOTE_ENABLED=true
+APP_ORDER_REMOTE_ENABLED=true
+APP_ORDER_REMOTE_WRITE_ENABLED=true
+APP_PAYMENT_REMOTE_ENABLED=true
+APP_CACHE_REDIS_ENABLED=true
+
 # Optional Kafka domain-events mode:
 # APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
-# Then start Kafka profile:
-# docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
-
-# Optional P6 inventory write delegation:
-# APP_INVENTORY_REMOTE_ENABLED=true
-# APP_INVENTORY_REMOTE_BASE_URL=http://inventory-service:8082
-# (requires microservices profile with inventory-service running)
-# Optional P6 order query delegation:
-# APP_ORDER_REMOTE_ENABLED=true
-# Optional P6 order write delegation:
-# APP_ORDER_REMOTE_WRITE_ENABLED=true
-# APP_ORDER_REMOTE_BASE_URL=http://order-service:8083
-# (requires microservices profile with order-service running)
-# Optional P6 payment query delegation:
-# APP_PAYMENT_REMOTE_ENABLED=true
-# APP_PAYMENT_REMOTE_BASE_URL=http://payment-service:8084
-# APP_PAYMENT_REMOTE_SERVICE_TOKEN=payment-service-internal-token
-# (requires microservices profile with payment-service running)
-
-# Optional P7 catalog read replica (product-service reads):
-# APP_DB_READ_REPLICA_ENABLED=true
-# APP_DB_READ_REPLICA_URL=jdbc:postgresql://<replica-host>:5432/<db>
-# APP_DB_READ_REPLICA_USERNAME=<replica-user>
-# APP_DB_READ_REPLICA_PASSWORD=<replica-password>
-
-# Optional gateway rate limits (sensitive public POST endpoints)
-# APP_GATEWAY_RATE_LIMIT_ENABLED=true
-# APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS=60
-# APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS=12
-# APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS=6
-# APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS=180
-
-# Optional Redis cache baseline (P7)
-# APP_CACHE_REDIS_ENABLED=true
-# APP_CACHE_REDIS_TTL_SECONDS=300
-# SPRING_DATA_REDIS_HOST=redis
-# SPRING_DATA_REDIS_PORT=6379
-# SPRING_DATA_REDIS_PASSWORD=
-# Then start Redis profile:
-# docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache up -d redis
+# DEPLOY_PROFILES=microservices,cache,kafka
 ```
 
 Protect the file from other users:
 ```bash
-chmod 600 /opt/PilarEstilo/infra/.env
+chmod 600 /opt/pilarestilo/infra/.env
 ```
 
 Never commit `.env` to version control. It is listed in `.gitignore`.
@@ -171,34 +146,37 @@ dig +short pilarestilo.com
 ## 6. First Deploy
 
 ```bash
-cd /opt/PilarEstilo
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+cd /opt/pilarestilo
+bash scripts/deploy/vps_deploy.sh
 ```
 
-Docker will:
-1. Pull `postgres:16-alpine` and `caddy:2-alpine` images.
-2. Build the backend image from `backend/Dockerfile`.
-3. Build the frontend image from `frontend/Dockerfile`.
-4. Start baseline services (`postgres`, `backend`, `frontend`, `caddy`).
-5. Apply Flyway database migrations on backend startup.
-6. Mount persisted product media storage from `infra/storage/media` into backend path `/app/media`.
+The script:
+1. Reads `DEPLOY_PROFILES` from `infra/.env` (or shell env) to activate optional profiles.
+2. Syncs the repo (`git pull --ff-only`).
+3. Builds and starts all services for the active profiles.
+4. Flyway migrations run automatically on backend startup.
+5. Product media is mounted from `infra/storage/media` → `/app/media`.
 
-Optional profiles:
-
+To override profiles for a single run without editing `.env`:
 ```bash
+DEPLOY_PROFILES=microservices,cache bash scripts/deploy/vps_deploy.sh
+```
+
+Manual profile examples (without deploy script):
+```bash
+# Extracted microservices (product / inventory / order / payment)
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile microservices up -d --build
+
+# Redis cache
+docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache up -d redis
+
 # Kafka broker for domain-events mode
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
-
-# Extracted catalog read service
-docker compose -f infra/docker-compose.yml --env-file infra/.env --profile microservices up -d --build product-service inventory-service order-service payment-service
 
 # Distributed tracing stack (OTel Collector + Tempo)
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
 
-# Redis cache (optional, used when APP_CACHE_REDIS_ENABLED=true)
-docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache up -d redis
-
-# Horizontal backend scale behind Caddy (optional)
+# Horizontal backend scale behind Caddy
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=2
 ```
 
@@ -326,13 +304,9 @@ No `certbot`, no cron jobs, no manual renewal needed.
 
 ## 9. Updating the Application
 
-Pull the latest code and rebuild:
-
 ```bash
-cd /opt/PilarEstilo
-git pull origin master
-
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+cd /opt/pilarestilo
+bash scripts/deploy/vps_deploy.sh
 ```
 
 For automated VPS deploys using GitHub Actions (after CI success on `master` or manual dispatch),
