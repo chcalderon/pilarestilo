@@ -91,6 +91,14 @@ The format is inspired by Keep a Changelog.
   - Grafana Tempo datasource provisioning
   - OTLP tracing bridge dependencies on backend and product-service
 
+### Fixed
+- Caddyfile now lists `backend:8080` as fallback upstream for all microservice routes (`product-service`, `inventory-service`, `order-service`, `payment-service`). Previously, if a microservice container was absent (e.g. `microservices` Docker profile not active), requests failed silently and the frontend fell back to hardcoded fixture data — admin product list showed wrong products while storefront (SSR) still worked.
+- Removed invalid Caddy 2 directive `unhealthy_request_count` from `reverse_proxy` blocks; caused Caddyfile parse failure and full site outage on deploy. Replaced with Caddy default (`max_fails=1`).
+- Deploy script (`scripts/deploy/vps_deploy.sh`) now reads `DEPLOY_PROFILES` from `infra/.env` when not set in shell environment, so the server `.env` controls which Docker Compose profiles activate on deploy.
+- Corrected `APP_DIR` default in deploy script from `/opt/PilarEstilo` to `/opt/pilarestilo` (actual production path, lowercase).
+- Synced `infra/.env.example` with variables introduced after initial commit: `NOTIFICATION_N8N_*`, `DEPLOY_PROFILES`, all microservices delegation flags, rate limit, Redis, read replica, observability, and tracing vars.
+- Updated `docs/deployment.md` app path references from `/opt/PilarEstilo` to `/opt/pilarestilo` and replaced manual `docker compose` deploy steps with `bash scripts/deploy/vps_deploy.sh`.
+
 ### Changed
 - Storefront contact page now renders WhatsApp, support email, and social links from admin-managed public system settings.
 - Footer informational links now point to real localized routes instead of placeholders.

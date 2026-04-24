@@ -147,6 +147,10 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V22`: checkout payment-method toggles + gateway provider selection (`MERCADO_PAGO`)
 - `V23`: bank-transfer account settings + transfer snapshot fields persisted in `payments`
 - `V24`: Mercado Pago runtime settings fields in `system_settings` (with encrypted token storage)
+- `V25`: per-user notification channel preference (`AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`) stored in `users`
+- `V26`: N8N webhook notification provider settings fields in `system_settings`
+- `V27`: N8N admin runtime settings (webhook URL, encrypted API key, token header name)
+- `V28`: `bank_transfer_bank_name` column in `system_settings` + `transfer_bank_name` snapshot field in `payments` with CHECK constraint enforcing full transfer snapshot for `BANK_TRANSFER` payments
 
 ---
 
