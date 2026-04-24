@@ -503,110 +503,100 @@ export default function ProductTable() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
-        <select
-          value={filterCondition}
-          onChange={(e) => {
-            setFilterCondition(e.target.value);
-            setPage(0);
-          }}
-          className="w-full sm:w-auto font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
-        >
-          <option value="">Todas las condiciones</option>
-          <option value="NEW">Nuevo</option>
-          <option value="USED">Usado</option>
-        </select>
-
-        <input
-          type="text"
-          placeholder="Filtrar por marca..."
-          value={filterBrand}
-          onChange={(e) => {
-            setFilterBrand(e.target.value);
-            setPage(0);
-          }}
-          className="w-full sm:w-[220px] font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
-        />
-
-        <select
-          value={filterCategory}
-          onChange={(e) => {
-            setFilterCategory(e.target.value);
-            setPage(0);
-          }}
-          className="w-full sm:w-auto font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
-        >
-          <option value="">Todas las categorias</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.slug}>
-              {cat.nameEs}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={load}
-          className="p-2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
-          aria-label="Actualizar"
-          title="Actualizar"
-        >
-          <RefreshCw size={15} />
-        </button>
-
-        <label className="inline-flex items-center gap-2 font-sans text-[0.72rem] text-pe-charcoal/45">
-          <span>Por página</span>
+      <div className="mb-4 flex flex-col gap-2">
+        {/* Fila 1: filtros */}
+        <div className="flex flex-wrap items-center gap-2">
           <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(0);
-            }}
-            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+            value={filterCondition}
+            onChange={(e) => { setFilterCondition(e.target.value); setPage(0); }}
+            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
           >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+            <option value="">Todas las condiciones</option>
+            <option value="NEW">Nuevo</option>
+            <option value="USED">Usado</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Filtrar por marca..."
+            value={filterBrand}
+            onChange={(e) => { setFilterBrand(e.target.value); setPage(0); }}
+            className="w-[180px] font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
+          />
+
+          <select
+            value={filterCategory}
+            onChange={(e) => { setFilterCategory(e.target.value); setPage(0); }}
+            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+          >
+            <option value="">Todas las categorias</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.slug}>{cat.nameEs}</option>
             ))}
           </select>
-        </label>
 
-        {!isMobileViewport && (
-          <div className="inline-flex w-full sm:w-auto border border-pe-black/12 bg-pe-white">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={[
-                'inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
-                viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-              ].join(' ')}
-              title="Vista grilla"
+          <button
+            onClick={load}
+            className="p-2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+            aria-label="Actualizar"
+            title="Actualizar"
+          >
+            <RefreshCw size={15} />
+          </button>
+        </div>
+
+        {/* Fila 2: vista + paginación + acción */}
+        <div className="flex flex-wrap items-center gap-2">
+          {!isMobileViewport && (
+            <div className="inline-flex border border-pe-black/12 bg-pe-white">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={[
+                  'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
+                  viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                ].join(' ')}
+                title="Vista grilla"
+              >
+                <Rows3 size={13} />
+                Grilla
+              </button>
+              <button
+                onClick={() => setViewMode('cards')}
+                className={[
+                  'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
+                  viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                ].join(' ')}
+                title="Vista cards"
+              >
+                <LayoutGrid size={13} />
+                Cards
+              </button>
+            </div>
+          )}
+
+          <label className="inline-flex items-center gap-2 font-sans text-[0.72rem] text-pe-charcoal/45">
+            <span>Por página</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
             >
-              <Rows3 size={13} />
-              Grilla
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              className={[
-                'inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
-                viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
-              ].join(' ')}
-              title="Vista cards"
-            >
-              <LayoutGrid size={13} />
-              Cards
-            </button>
-          </div>
-        )}
+              {PAGE_SIZE_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
 
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/35 ml-1">{total} productos</span>
+          <span className="font-sans text-[0.72rem] text-pe-charcoal/35">{total} productos</span>
 
-        <button
-          onClick={() => setEditTarget(null)}
-          className="inline-flex w-full sm:w-auto sm:ml-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
-        >
-          <Plus size={13} />
-          Nuevo producto
-        </button>
+          <button
+            onClick={() => setEditTarget(null)}
+            className="ml-auto inline-flex items-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+          >
+            <Plus size={13} />
+            Nuevo producto
+          </button>
+        </div>
       </div>
 
       {effectiveViewMode === 'grid' ? (
