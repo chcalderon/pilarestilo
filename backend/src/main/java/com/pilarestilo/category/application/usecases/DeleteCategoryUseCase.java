@@ -24,6 +24,9 @@ public class DeleteCategoryUseCase {
         if (categoryRepository.findById(id).isEmpty()) {
             throw new DomainException("Category not found: " + id);
         }
+        if (categoryRepository.hasAssociatedProducts(id)) {
+            throw new DomainException("Cannot delete category with associated products. Remove or reassign products first.");
+        }
         categoryRepository.deleteById(id);
     }
 }

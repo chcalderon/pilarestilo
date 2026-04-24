@@ -21,4 +21,6 @@ public interface CategoryRepository {
     void deleteById(UUID id);
 
     boolean existsBySlug(String slug);
+
+    boolean hasAssociatedProducts(UUID categoryId);
 }

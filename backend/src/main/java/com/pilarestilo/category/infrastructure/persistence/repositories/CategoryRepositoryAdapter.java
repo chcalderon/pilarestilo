@@ -3,6 +3,7 @@ package com.pilarestilo.category.infrastructure.persistence.repositories;
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
+import com.pilarestilo.product.infrastructure.persistence.repositories.ProductJpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -14,9 +15,11 @@ import java.util.UUID;
 public class CategoryRepositoryAdapter implements CategoryRepository {
 
     private final CategoryJpaRepository jpa;
+    private final ProductJpaRepository productJpa;
 
-    public CategoryRepositoryAdapter(CategoryJpaRepository jpa) {
+    public CategoryRepositoryAdapter(CategoryJpaRepository jpa, ProductJpaRepository productJpa) {
         this.jpa = jpa;
+        this.productJpa = productJpa;
     }
 
     @Override
@@ -53,6 +56,11 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
     @Override
     public boolean existsBySlug(String slug) {
         return jpa.existsBySlug(slug);
+    }
+
+    @Override
+    public boolean hasAssociatedProducts(UUID categoryId) {
+        return productJpa.countByCategoriesId(categoryId) > 0;
     }
 
     private CategoryEntity toEntity(Category c) {

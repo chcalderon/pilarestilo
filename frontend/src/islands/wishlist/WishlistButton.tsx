@@ -33,7 +33,7 @@ export default function WishlistButton({ productId, token, className = '', showL
       className={`group flex items-center justify-center gap-2 transition-all duration-200 ${className}`}
     >
       <Heart
-        size={showLabel ? 15 : 20}
+        size={showLabel ? 16 : 20}
         strokeWidth={1.25}
         className={`flex-shrink-0 transition-all duration-200 ${
           inWishlist
@@ -42,7 +42,7 @@ export default function WishlistButton({ productId, token, className = '', showL
         }`}
       />
       {showLabel && (
-        <span className={`font-sans text-[0.72rem] tracking-[0.14em] uppercase transition-colors duration-200 ${
+        <span className={`font-sans text-xs tracking-widest uppercase transition-colors duration-200 ${
           inWishlist ? 'text-[#B76E79]' : 'group-hover:text-[#B76E79]'
         }`}>
           {inWishlist ? labelRemove : labelAdd}

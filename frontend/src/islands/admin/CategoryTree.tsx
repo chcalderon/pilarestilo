@@ -79,9 +79,9 @@ export default function CategoryTree() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!effectiveToken || !confirm(`¿Eliminar categoría "${name}"?`)) return;
+    if (!effectiveToken || !confirm(`¿Eliminar categoría "${name}"?\n\nEsta acción no se puede deshacer.`)) return;
     try { await deleteCategory(id, effectiveToken); await loadTree(); }
-    catch { alert('Error al eliminar.'); }
+    catch (err) { alert(err instanceof Error ? err.message : 'Error al eliminar la categoría.'); }
   }
 
   const inputClass = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors';

@@ -18,4 +18,6 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
     void updateRatingSummary(@Param("productId") UUID productId,
                              @Param("avgRating") BigDecimal avgRating,
                              @Param("reviewCount") int reviewCount);
+
+    long countByCategoriesId(UUID categoryId);
 }
