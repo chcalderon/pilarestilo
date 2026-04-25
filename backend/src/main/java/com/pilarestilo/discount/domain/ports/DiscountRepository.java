@@ -4,6 +4,7 @@ import com.pilarestilo.discount.domain.model.Discount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,5 +18,13 @@ public interface DiscountRepository {
 
     Page<Discount> findAll(Pageable pageable);
 
+    List<Discount> findAllByStatus(String status);
+
     void deleteById(UUID id);
+
+    boolean hasUserUsedDiscount(UUID discountId, UUID userId);
+
+    void recordUsage(UUID discountId, UUID userId);
+
+    long countByCodePattern(String pattern);
 }

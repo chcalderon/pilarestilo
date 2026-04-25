@@ -2,12 +2,15 @@ package com.pilarestilo.discount.infrastructure.persistence.repositories;
 
 import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.domain.ports.DiscountRepository;
+import com.pilarestilo.discount.infrastructure.persistence.entities.DiscountCodeUsageEntity;
 import com.pilarestilo.discount.infrastructure.persistence.entities.DiscountEntity;
 import com.pilarestilo.shared.application.Money;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,15 +18,17 @@ import java.util.UUID;
 public class DiscountRepositoryAdapter implements DiscountRepository {
 
     private final DiscountJpaRepository jpaRepository;
+    private final DiscountCodeUsageJpaRepository usageRepository;
 
-    public DiscountRepositoryAdapter(DiscountJpaRepository jpaRepository) {
+    public DiscountRepositoryAdapter(DiscountJpaRepository jpaRepository,
+                                      DiscountCodeUsageJpaRepository usageRepository) {
         this.jpaRepository = jpaRepository;
+        this.usageRepository = usageRepository;
     }
 
     @Override
     public Discount save(Discount discount) {
-        DiscountEntity entity = toEntity(discount);
-        return toDomain(jpaRepository.save(entity));
+        return toDomain(jpaRepository.save(toEntity(discount)));
     }
 
     @Override
@@ -42,8 +47,33 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
     }
 
     @Override
+    public List<Discount> findAllByStatus(String status) {
+        LocalDate today = LocalDate.now();
+        return switch (status) {
+            case "active"  -> jpaRepository.findActiveDiscounts(today).stream().map(this::toDomain).toList();
+            case "expired" -> jpaRepository.findExpiredDiscounts(today).stream().map(this::toDomain).toList();
+            default        -> jpaRepository.findAll().stream().map(this::toDomain).toList();
+        };
+    }
+
+    @Override
     public void deleteById(UUID id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean hasUserUsedDiscount(UUID discountId, UUID userId) {
+        return usageRepository.existsByDiscountIdAndUserId(discountId, userId);
+    }
+
+    @Override
+    public void recordUsage(UUID discountId, UUID userId) {
+        usageRepository.save(new DiscountCodeUsageEntity(discountId, userId));
+    }
+
+    @Override
+    public long countByCodePattern(String pattern) {
+        return jpaRepository.countByCodeLike(pattern);
     }
 
     private DiscountEntity toEntity(Discount discount) {

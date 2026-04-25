@@ -1,5 +1,7 @@
 package com.pilarestilo.order.application.usecases;
 
+import com.pilarestilo.discount.domain.model.Discount;
+import com.pilarestilo.discount.domain.ports.DiscountRepository;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
@@ -12,16 +14,16 @@ import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
-import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,19 +37,22 @@ public class CreateOrderUseCase {
     private final DomainEventPublisher eventPublisher;
     private final OrderRemoteCommandClient orderRemoteCommandClient;
     private final SystemSettingsRepository systemSettingsRepository;
+    private final DiscountRepository discountRepository;
 
     public CreateOrderUseCase(OrderRepository orderRepository,
                                ProductRepository productRepository,
                                InventoryService inventoryService,
                                DomainEventPublisher eventPublisher,
                                OrderRemoteCommandClient orderRemoteCommandClient,
-                               SystemSettingsRepository systemSettingsRepository) {
+                               SystemSettingsRepository systemSettingsRepository,
+                               DiscountRepository discountRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
         this.eventPublisher = eventPublisher;
         this.orderRemoteCommandClient = orderRemoteCommandClient;
         this.systemSettingsRepository = systemSettingsRepository;
+        this.discountRepository = discountRepository;
     }
 
     @Transactional
@@ -66,31 +71,41 @@ public class CreateOrderUseCase {
             Product product = productRepository.findById(itemCmd.productId())
                     .orElseThrow(() -> new DomainException("Product not found: " + itemCmd.productId()));
 
-            OrderItem orderItem = new OrderItem(
+            orderItems.add(new OrderItem(
                     UUID.randomUUID(),
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
                     itemCmd.quantity()
-            );
-            orderItems.add(orderItem);
+            ));
         }
 
-        // Reserve stock for each item
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
             inventoryService.reserve(itemCmd.productId(), itemCmd.quantity());
         }
 
-        var discount = command.discountAmount() != null ? command.discountAmount() : Money.zero();
+        BigDecimal subtotalAmount = orderItems.stream()
+                .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Money discount = Money.zero();
+
+        // Apply discount code
+        if (command.discountCode() != null && !command.discountCode().isBlank()) {
+            Discount disc = discountRepository.findByCode(command.discountCode().toUpperCase())
+                    .orElseThrow(() -> new DomainException("Código de descuento no encontrado"));
+            Money subtotal = Money.of(subtotalAmount);
+            discount = disc.apply(subtotal);
+            discountRepository.save(disc); // persist incremented timesUsed
+            discountRepository.recordUsage(disc.getId(), command.customerId());
+        }
+
+        // Employee discount stacks on top of code discount
         if (command.employeeDiscountEligible()) {
-            BigDecimal subtotalAmount = orderItems.stream()
-                    .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal employeeDiscountAmount = subtotalAmount
                     .multiply(new BigDecimal("0.10"))
                     .setScale(2, RoundingMode.HALF_UP);
-            var employeeDiscount = Money.of(employeeDiscountAmount, discount.currency());
-            discount = discount.add(employeeDiscount);
+            discount = discount.add(Money.of(employeeDiscountAmount, discount.currency()));
         }
 
         Order order = Order.create(

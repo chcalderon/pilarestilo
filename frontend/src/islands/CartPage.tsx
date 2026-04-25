@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
-import { createOrder, getPublicStoreSettings, type PaymentGatewayProvider } from '../lib/api';
+import { createOrder, getPublicStoreSettings, validateDiscountCodeForUser, type PaymentGatewayProvider, type DiscountCodeDto } from '../lib/api';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -86,11 +86,20 @@ export default function CartPage({ locale }: Props) {
   const [transferAccountNumber, setTransferAccountNumber] = useState('');
   const [transferBankName, setTransferBankName] = useState('');
   const [transferAccountType, setTransferAccountType] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<DiscountCodeDto | null>(null);
+  const [discountApplying, setDiscountApplying] = useState(false);
+  const [discountError, setDiscountError] = useState('');
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
   const isEmployee = authUser?.role === 'SELLER';
   const employeeDiscountAmount = isEmployee ? Math.round(subtotal * 0.1) : 0;
-  const total = Math.max(0, subtotal - employeeDiscountAmount);
+  const appliedDiscountAmount = appliedDiscount
+    ? appliedDiscount.type === 'PERCENTAGE'
+      ? Math.round(subtotal * appliedDiscount.value / 100)
+      : Math.min(appliedDiscount.value, subtotal)
+    : 0;
+  const total = Math.max(0, subtotal - employeeDiscountAmount - appliedDiscountAmount);
 
   const priceFormat = (amount: number, currency: string) =>
     new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
@@ -155,6 +164,25 @@ export default function CartPage({ locale }: Props) {
     return first;
   }, [paymentGatewayProviders]);
 
+  async function handleApplyDiscount() {
+    if (!discountCode.trim()) return;
+    if (!effectiveToken) {
+      setDiscountError(locale === 'es' ? 'Debes iniciar sesión para usar un código.' : 'You must be logged in to apply a code.');
+      return;
+    }
+    setDiscountApplying(true);
+    setDiscountError('');
+    try {
+      const dto = await validateDiscountCodeForUser(discountCode.trim(), subtotal, effectiveToken);
+      setAppliedDiscount(dto);
+    } catch (e: unknown) {
+      setDiscountError(e instanceof Error ? e.message : (locale === 'es' ? 'Código inválido o ya utilizado.' : 'Invalid or already used code.'));
+      setAppliedDiscount(null);
+    } finally {
+      setDiscountApplying(false);
+    }
+  }
+
   async function handleCheckout() {
     if (!items.length || checkingOut) return;
 
@@ -180,6 +208,7 @@ export default function CartPage({ locale }: Props) {
           customerId: authUser.id,
           items: items.map((item) => ({ productId: item.productId ?? item.id, quantity: item.quantity })),
           paymentMethod,
+          discountCode: appliedDiscount?.code,
         },
         effectiveToken
       );
@@ -312,6 +341,61 @@ export default function CartPage({ locale }: Props) {
                     </span>
                   </div>
                 )}
+
+                {appliedDiscount && (
+                  <div className="flex justify-between font-sans text-sm mb-4">
+                    <span className="text-pe-charcoal/75 flex items-center gap-1.5">
+                      <span>{locale === 'es' ? 'Descuento' : 'Discount'}</span>
+                      <span className="font-mono text-[0.65rem] bg-pe-rose/8 text-pe-rose-deep px-1.5 py-0.5">{appliedDiscount.code}</span>
+                    </span>
+                    <span className="font-semibold text-green-700">
+                      - {priceFormat(appliedDiscountAmount, items[0]?.price.currency ?? 'CLP')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Discount code input */}
+                <div className="mb-4">
+                  <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
+                    {locale === 'es' ? 'Código de descuento' : 'Discount code'}
+                  </p>
+                  {appliedDiscount ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[0.78rem] text-green-700 border border-green-200 bg-green-50 px-2 py-1.5 flex-1 truncate">
+                        {appliedDiscount.code}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setAppliedDiscount(null); setDiscountCode(''); setDiscountError(''); }}
+                        className="font-sans text-[0.68rem] uppercase tracking-wider px-2 py-1.5 border border-pe-black/12 text-pe-charcoal/50 hover:text-pe-rose hover:border-pe-rose/40 transition-colors"
+                      >
+                        {locale === 'es' ? 'Quitar' : 'Remove'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        value={discountCode}
+                        onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountError(''); }}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyDiscount()}
+                        placeholder={locale === 'es' ? 'PILAR_PE_ESTILO_...' : 'Enter code'}
+                        className="flex-1 font-mono text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyDiscount}
+                        disabled={discountApplying || !discountCode.trim()}
+                        className="shrink-0 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 bg-pe-charcoal/8 hover:bg-pe-charcoal/14 border border-pe-black/12 text-pe-charcoal/60 hover:text-pe-charcoal transition-colors disabled:opacity-40"
+                      >
+                        {discountApplying ? <Loader2 size={12} className="animate-spin" /> : (locale === 'es' ? 'Aplicar' : 'Apply')}
+                      </button>
+                    </div>
+                  )}
+                  {discountError && (
+                    <p className="font-sans text-[0.68rem] text-pe-rose-deep mt-1">{discountError}</p>
+                  )}
+                </div>
 
                 <div className="w-full h-px bg-pe-black/10 mb-6"></div>
 

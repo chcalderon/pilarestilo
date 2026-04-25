@@ -14,6 +14,7 @@ import {
   Wallet,
   Image,
   Bell,
+  Ticket,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
 
@@ -30,6 +31,7 @@ const navItems = [
   { href: '/admin/categories', icon: Tag, label: 'Categorias' },
   { href: '/admin/reviews', icon: Star, label: 'Resenas' },
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos' },
+  { href: '/admin/discounts', icon: Ticket, label: 'Descuentos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios' },
 ];
 

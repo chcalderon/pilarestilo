@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class ListDiscountsUseCase {
 
@@ -20,5 +22,12 @@ public class ListDiscountsUseCase {
     @Transactional(readOnly = true)
     public Page<DiscountDto> execute(Pageable pageable) {
         return discountRepository.findAll(pageable).map(DiscountMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiscountDto> executeByStatus(String status) {
+        return discountRepository.findAllByStatus(status).stream()
+                .map(DiscountMapper::toDto)
+                .toList();
     }
 }

@@ -1174,3 +1174,74 @@ export async function getSharedWishlist(token: string): Promise<SharedWishlistDt
   return apiFetch<SharedWishlistDto>(`/wishlist/shared/${encodeURIComponent(token)}`);
 }
 
+// ─── Discount Codes ───────────────────────────────────────────────────────────
+
+export interface DiscountCodeDto {
+  id: string;
+  code: string;
+  type: string;
+  value: number;
+  minOrderAmount: number;
+  minOrderCurrency: string;
+  validFrom: string;
+  validUntil: string;
+  maxUses: number;
+  timesUsed: number;
+  active: boolean;
+}
+
+export interface CreateDiscountCodeRequest {
+  code: string;
+  type: string;
+  value: number;
+  minOrderAmount?: number;
+  validFrom: string;
+  validUntil: string;
+  maxUses: number;
+}
+
+export async function listDiscountCodes(
+  token: string,
+  status: 'active' | 'expired' | 'all' = 'all'
+): Promise<DiscountCodeDto[]> {
+  return apiFetch<DiscountCodeDto[]>(`/discounts?status=${status}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function createDiscountCode(
+  data: CreateDiscountCodeRequest,
+  token: string
+): Promise<DiscountCodeDto> {
+  return apiFetch<DiscountCodeDto>('/discounts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function deleteDiscountCode(id: string, token: string): Promise<void> {
+  await apiFetch<void>(`/discounts/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function suggestDiscountCode(token: string): Promise<string> {
+  const res = await apiFetch<{ code: string }>('/discounts/suggest-code', {
+    headers: authHeaders(token),
+  });
+  return res.code;
+}
+
+export async function validateDiscountCodeForUser(
+  code: string,
+  subtotal: number,
+  token: string
+): Promise<DiscountCodeDto> {
+  return apiFetch<DiscountCodeDto>(
+    `/discounts/validate-for-user?code=${encodeURIComponent(code)}&subtotal=${subtotal}`,
+    { headers: authHeaders(token) }
+  );
+}
+

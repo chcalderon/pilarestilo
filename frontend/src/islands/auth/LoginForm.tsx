@@ -26,7 +26,8 @@ export default function LoginForm({ locale, redirect }: Props) {
       const data = await loginUser(email, password);
       setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      window.location.href = redirect ?? `/${locale}/account`;
+      const isStaff = data.role === 'ADMIN' || data.role === 'SELLER';
+      window.location.href = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
     } catch {
       setError(es ? 'Email o contraseña incorrectos.' : 'Invalid email or password.');
     } finally {

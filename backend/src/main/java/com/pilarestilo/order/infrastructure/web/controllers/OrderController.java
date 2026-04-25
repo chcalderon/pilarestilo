@@ -62,7 +62,8 @@ public class OrderController {
                 PaymentMethod.valueOf(request.paymentMethod()),
                 request.notes(),
                 Money.zero(),
-                currentUser.role() == UserRole.SELLER
+                currentUser.role() == UserRole.SELLER,
+                request.discountCode()
         );
 
         OrderDto dto = createOrderUseCase.execute(command);

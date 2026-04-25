@@ -12,7 +12,14 @@ public record CreateOrderCommand(
         PaymentMethod paymentMethod,
         String notes,
         Money discountAmount,
-        boolean employeeDiscountEligible
+        boolean employeeDiscountEligible,
+        String discountCode
 ) {
+    public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
+                               PaymentMethod paymentMethod, String notes,
+                               Money discountAmount, boolean employeeDiscountEligible) {
+        this(customerId, items, paymentMethod, notes, discountAmount, employeeDiscountEligible, null);
+    }
+
     public record OrderItemCommand(UUID productId, int quantity) {}
 }
