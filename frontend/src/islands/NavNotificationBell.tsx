@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, X } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
@@ -29,7 +29,7 @@ function relativeTime(iso: string, es: boolean): string {
 
 export default function NavNotificationBell({ locale }: Props) {
   const { user, token } = useAuthStore();
-  const effectiveToken = token ?? readAuthTokenCookie();
+  const effectiveToken = useMemo(() => token ?? readAuthTokenCookie(), [token]);
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [recent, setRecent] = useState<InAppNotificationDto[]>([]);
@@ -47,7 +47,7 @@ export default function NavNotificationBell({ locale }: Props) {
     return () => obs.disconnect();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!effectiveToken || !user) return;
     try {
       const [countRes, recentRes, profile] = await Promise.all([
@@ -81,13 +81,13 @@ export default function NavNotificationBell({ locale }: Props) {
     } catch {
       // ignore
     }
-  };
+  }, [effectiveToken, user, es, locale]);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60_000);
     return () => clearInterval(interval);
-  }, [user?.id, effectiveToken]);
+  }, [fetchData]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -139,6 +139,7 @@ export default function NavNotificationBell({ locale }: Props) {
     if (!n.read && effectiveToken) {
       await markNotificationRead(n.id, effectiveToken).catch(() => {});
       setUnreadCount(c => Math.max(0, c - 1));
+      setRecent(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
     }
     const link = n.metadata?.link as string | undefined;
     if (link) window.location.href = link;
