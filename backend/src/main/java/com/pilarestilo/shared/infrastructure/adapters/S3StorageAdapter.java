@@ -41,14 +41,16 @@ public class S3StorageAdapter implements MediaStoragePort {
         String key = folder + "/" + filename;
         try {
             byte[] bytes = data.readAllBytes();
-            buildClient(settings).putObject(
-                PutObjectRequest.builder()
-                    .bucket(settings.getMediaS3Bucket())
-                    .key(key)
-                    .contentType(contentType != null ? contentType : "application/octet-stream")
-                    .build(),
-                RequestBody.fromBytes(bytes)
-            );
+            try (S3Client client = buildClient(settings)) {
+                client.putObject(
+                    PutObjectRequest.builder()
+                        .bucket(settings.getMediaS3Bucket())
+                        .key(key)
+                        .contentType(contentType != null ? contentType : "application/octet-stream")
+                        .build(),
+                    RequestBody.fromBytes(bytes)
+                );
+            }
         } catch (IOException e) {
             throw new RuntimeException("Could not read file for S3 upload", e);
         }
@@ -61,12 +63,14 @@ public class S3StorageAdapter implements MediaStoragePort {
     public void delete(String folder, String filename) {
         var settings = settingsRepo.get();
         if (!isConfigured(settings)) return;
-        buildClient(settings).deleteObject(
-            DeleteObjectRequest.builder()
-                .bucket(settings.getMediaS3Bucket())
-                .key(folder + "/" + filename)
-                .build()
-        );
+        try (S3Client client = buildClient(settings)) {
+            client.deleteObject(
+                DeleteObjectRequest.builder()
+                    .bucket(settings.getMediaS3Bucket())
+                    .key(folder + "/" + filename)
+                    .build()
+            );
+        }
     }
 
     private boolean isConfigured(SystemSettings s) {
