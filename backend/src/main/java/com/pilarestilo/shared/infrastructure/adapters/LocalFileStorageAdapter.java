@@ -27,6 +27,9 @@ public class LocalFileStorageAdapter implements MediaStoragePort {
             throw new IllegalArgumentException("Invalid folder: " + folder);
         }
         Path target = targetDir.resolve(filename).normalize();
+        if (!target.startsWith(mediaRoot)) {
+            throw new IllegalArgumentException("Invalid filename: " + filename);
+        }
         try {
             Files.createDirectories(targetDir);
             Files.copy(data, target, StandardCopyOption.REPLACE_EXISTING);
@@ -38,7 +41,14 @@ public class LocalFileStorageAdapter implements MediaStoragePort {
 
     @Override
     public void delete(String folder, String filename) {
-        Path target = mediaRoot.resolve(folder).resolve(filename).normalize();
+        Path targetDir = mediaRoot.resolve(folder).normalize();
+        if (!targetDir.startsWith(mediaRoot)) {
+            throw new IllegalArgumentException("Invalid folder: " + folder);
+        }
+        Path target = targetDir.resolve(filename).normalize();
+        if (!target.startsWith(mediaRoot)) {
+            throw new IllegalArgumentException("Invalid filename: " + filename);
+        }
         try {
             Files.deleteIfExists(target);
         } catch (IOException e) {
