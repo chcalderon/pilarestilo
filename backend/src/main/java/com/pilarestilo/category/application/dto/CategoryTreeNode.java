@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record CategoryTreeNode(
         UUID id,
+        UUID parentId,
         String slug,
         String nameEs,
         String nameEn,

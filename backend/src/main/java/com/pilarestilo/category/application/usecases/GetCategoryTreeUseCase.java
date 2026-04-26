@@ -45,7 +45,7 @@ public class GetCategoryTreeUseCase {
                 .map(child -> toNode(child, byParent))
                 .toList();
         return new CategoryTreeNode(
-                c.getId(), c.getSlug(), c.getNameEs(), c.getNameEn(),
+                c.getId(), c.getParentId(), c.getSlug(), c.getNameEs(), c.getNameEn(),
                 c.getSortOrder(), c.isActive(), c.getImageUrl(), children
         );
     }
