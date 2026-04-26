@@ -47,6 +47,17 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
         logSimulated("ORDER_SHIPPED", config.simulatedTo(), config.senderAlias(), orderId, recipient);
     }
 
+    @Override
+    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
+        EffectiveConfig config = resolveConfig();
+        if (!recipient.allowsWhatsApp()) {
+            log.info("[WHATSAPP:SIMULATED] skipped template=DISCOUNT_CODE_ASSIGNED code={} reason=channel-preference preference={}", code, recipient.preference());
+            return;
+        }
+        log.info("[WHATSAPP:SIMULATED] sender={} to={} template=DISCOUNT_CODE_ASSIGNED code={} recipient={}",
+            config.senderAlias(), config.simulatedTo(), code, recipient.preferredPhoneThenEmail());
+    }
+
     private EffectiveConfig resolveConfig() {
         var settings = systemSettingsRepository.get();
         String simulatedTo = firstNonBlank(settings.getWhatsappSimulatedTo(), envSimulatedTo);

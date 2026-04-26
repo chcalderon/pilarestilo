@@ -20,6 +20,7 @@ public class Discount {
     private int maxUses;
     private int timesUsed;
     private boolean active;
+    private UUID assignedUserId;
 
     private Discount() {}
 
@@ -110,4 +111,7 @@ public class Discount {
     public void setId(UUID id) { this.id = id; }
     public void setTimesUsed(int timesUsed) { this.timesUsed = timesUsed; }
     public void setActive(boolean active) { this.active = active; }
+
+    public UUID getAssignedUserId() { return assignedUserId; }
+    public void setAssignedUserId(UUID assignedUserId) { this.assignedUserId = assignedUserId; }
 }

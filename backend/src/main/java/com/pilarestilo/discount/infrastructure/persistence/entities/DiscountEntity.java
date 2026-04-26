@@ -45,6 +45,9 @@ public class DiscountEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(name = "assigned_user_id")
+    private UUID assignedUserId;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -77,4 +80,7 @@ public class DiscountEntity {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public UUID getAssignedUserId() { return assignedUserId; }
+    public void setAssignedUserId(UUID assignedUserId) { this.assignedUserId = assignedUserId; }
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, Check, X, Ticket, RefreshCw } from 'lucide-react';
 import {
   listDiscountCodes, createDiscountCode, deleteDiscountCode, suggestDiscountCode,
+  searchUsers, type UserSearchResultDto,
   type DiscountCodeDto, type CreateDiscountCodeRequest,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
@@ -50,6 +51,10 @@ export default function DiscountCodeManager() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [suggesting, setSuggesting] = useState(false);
+  const [userQuery, setUserQuery] = useState('');
+  const [userResults, setUserResults] = useState<UserSearchResultDto[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserSearchResultDto | null>(null);
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
 
   async function load(t: Tab = tab) {
     setLoading(true);
@@ -62,6 +67,23 @@ export default function DiscountCodeManager() {
   }
 
   useEffect(() => { load(); }, [tab]);
+
+  useEffect(() => {
+    if (!userQuery.trim() || !effectiveToken) {
+      setUserResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchUsers(userQuery, effectiveToken);
+        setUserResults(results);
+        setUserSearchOpen(results.length > 0);
+      } catch {
+        setUserResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userQuery, effectiveToken]);
 
   async function handleSuggest() {
     if (!effectiveToken) return;
@@ -81,9 +103,11 @@ export default function DiscountCodeManager() {
     }
     setSaving(true); setError('');
     try {
-      await createDiscountCode(form, effectiveToken);
+      await createDiscountCode({ ...form, assignedUserId: selectedUser?.id ?? null }, effectiveToken);
       setShowForm(false);
       setForm({ ...EMPTY_FORM });
+      setSelectedUser(null);
+      setUserQuery('');
       await load();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al crear código.');
@@ -242,6 +266,52 @@ export default function DiscountCodeManager() {
                 onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))}
               />
             </div>
+
+            {/* User assignment */}
+            <div style={{ position: 'relative' }}>
+              <label className="font-sans text-xs text-pe-charcoal/60 uppercase tracking-wider block mb-1">
+                Asignar a usuario (opcional)
+              </label>
+              {selectedUser ? (
+                <div className="flex items-center gap-2 border border-pe-black/20 px-3 py-2 text-sm font-sans">
+                  <span className="text-pe-charcoal">{selectedUser.fullName}</span>
+                  <span className="text-pe-charcoal/50 text-xs">{selectedUser.email}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedUser(null); setUserQuery(''); }}
+                    className="ml-auto text-pe-charcoal/40 hover:text-pe-charcoal"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={userQuery}
+                  onChange={e => setUserQuery(e.target.value)}
+                  onFocus={() => userResults.length > 0 && setUserSearchOpen(true)}
+                  onBlur={() => setTimeout(() => setUserSearchOpen(false), 150)}
+                  placeholder="Buscar por nombre o email..."
+                  className="w-full border border-pe-black/20 px-3 py-2 text-sm font-sans focus:outline-none focus:border-pe-rose"
+                />
+              )}
+              {userSearchOpen && userResults.length > 0 && (
+                <ul className="absolute z-50 w-full border border-pe-black/20 bg-white shadow-lg mt-0.5 max-h-48 overflow-y-auto">
+                  {userResults.map(u => (
+                    <li key={u.id}>
+                      <button
+                        type="button"
+                        onMouseDown={() => { setSelectedUser(u); setUserQuery(''); setUserSearchOpen(false); }}
+                        className="w-full text-left px-3 py-2 hover:bg-pe-rose/5 flex gap-2 items-center"
+                      >
+                        <span className="font-sans text-sm text-pe-charcoal">{u.fullName}</span>
+                        <span className="font-sans text-xs text-pe-charcoal/50">{u.email}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           <div className="mt-3 flex gap-2">
@@ -277,6 +347,9 @@ export default function DiscountCodeManager() {
                     {h}
                   </th>
                 ))}
+                <th className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/40 px-4 py-3">
+                  Disponible para
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -305,6 +378,15 @@ export default function DiscountCodeManager() {
                     >
                       <Trash2 size={14} />
                     </button>
+                  </td>
+                  <td className="font-sans text-xs text-pe-charcoal px-4 py-3">
+                    {c.assignedUserName ? (
+                      <span className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-0.5 text-xs">
+                        {c.assignedUserName}
+                      </span>
+                    ) : (
+                      <span className="text-pe-charcoal/40">Todos</span>
+                    )}
                   </td>
                 </tr>
               ))}

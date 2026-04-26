@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Star, ShoppingBag, Trash2, Loader2 } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
+import NotificationHistory from '../NotificationHistory';
 import {
   getMyReviews,
   deleteReview,
@@ -23,7 +24,7 @@ interface Props {
   locale: 'es' | 'en';
 }
 
-type Tab = 'profile' | 'reviews' | 'orders';
+type Tab = 'profile' | 'reviews' | 'orders' | 'notifications';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
 type TimelineState = 'done' | 'current' | 'todo';
 type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
@@ -83,6 +84,12 @@ export default function AccountPage({ locale }: Props) {
 
   useEffect(() => {
     setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#notifications') {
+      setTab('notifications');
+    }
   }, []);
 
   useEffect(() => {
@@ -655,6 +662,7 @@ export default function AccountPage({ locale }: Props) {
     { id: 'profile', label: es ? 'Perfil' : 'Profile', icon: <User size={14} /> },
     { id: 'reviews', label: es ? 'Mis resenas' : 'My reviews', icon: <Star size={14} /> },
     { id: 'orders', label: es ? 'Mis pedidos' : 'My orders', icon: <ShoppingBag size={14} /> },
+    { id: 'notifications', label: es ? 'Notificaciones' : 'Notifications', icon: null },
   ];
 
   return (
@@ -885,6 +893,8 @@ export default function AccountPage({ locale }: Props) {
             )}
           </div>
         )}
+
+        {tab === 'notifications' && <NotificationHistory locale={locale} />}
 
         {tab === 'orders' && (
           <div className="max-w-3xl">

@@ -1188,6 +1188,9 @@ export interface DiscountCodeDto {
   maxUses: number;
   timesUsed: number;
   active: boolean;
+  assignedUserId?: string | null;
+  assignedUserName?: string | null;
+  assignedUserEmail?: string | null;
 }
 
 export interface CreateDiscountCodeRequest {
@@ -1198,6 +1201,7 @@ export interface CreateDiscountCodeRequest {
   validFrom: string;
   validUntil: string;
   maxUses: number;
+  assignedUserId?: string | null;
 }
 
 export async function listDiscountCodes(
@@ -1245,3 +1249,76 @@ export async function validateDiscountCodeForUser(
   );
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface InAppNotificationDto {
+  id: string;
+  type: 'DISCOUNT_CODE_ASSIGNED' | 'ORDER_CONFIRMED' | 'PAYMENT_RECEIVED' | 'ORDER_SHIPPED';
+  title: string;
+  body: string;
+  metadata: Record<string, unknown> | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface UserSearchResultDto {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+export async function getNotifications(
+  token: string,
+  page = 0,
+  size = 20,
+): Promise<Page<InAppNotificationDto>> {
+  return apiFetch<Page<InAppNotificationDto>>(
+    `/notifications?page=${page}&size=${size}`,
+    { headers: authHeaders(token) },
+  );
+}
+
+export async function getRecentNotifications(
+  token: string,
+  size = 5,
+): Promise<Page<InAppNotificationDto>> {
+  return apiFetch<Page<InAppNotificationDto>>(
+    `/notifications?page=0&size=${size}&recentOnly=true`,
+    { headers: authHeaders(token) },
+  );
+}
+
+export async function getUnreadNotificationsCount(
+  token: string,
+): Promise<{ count: number }> {
+  return apiFetch<{ count: number }>('/notifications/unread-count', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function markNotificationRead(
+  id: string,
+  token: string,
+): Promise<void> {
+  return apiFetch<void>(`/notifications/${id}/read`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+  });
+}
+
+export async function markAllNotificationsRead(token: string): Promise<void> {
+  return apiFetch<void>('/notifications/read-all', {
+    method: 'PUT',
+    headers: authHeaders(token),
+  });
+}
+
+export async function searchUsers(
+  query: string,
+  token: string,
+): Promise<UserSearchResultDto[]> {
+  const q = encodeURIComponent(query);
+  return apiFetch<UserSearchResultDto[]>(`/users/search?q=${q}`, {
+    headers: authHeaders(token),
+  });
+}

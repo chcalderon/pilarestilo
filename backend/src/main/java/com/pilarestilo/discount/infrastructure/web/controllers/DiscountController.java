@@ -50,7 +50,8 @@ public class DiscountController {
     public ResponseEntity<DiscountDto> create(@Valid @RequestBody CreateDiscountRequest request) {
         DiscountDto dto = createDiscountUseCase.execute(
                 request.code(), request.type(), request.value(),
-                request.minOrderAmount(), request.validFrom(), request.validUntil(), request.maxUses()
+                request.minOrderAmount(), request.validFrom(), request.validUntil(),
+                request.maxUses(), request.assignedUserId()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }

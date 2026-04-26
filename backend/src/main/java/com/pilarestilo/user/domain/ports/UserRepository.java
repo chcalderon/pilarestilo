@@ -5,6 +5,7 @@ import com.pilarestilo.user.domain.enums.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,4 +30,6 @@ public interface UserRepository {
     void deleteById(UUID id);
 
     boolean existsByEmail(String email);
+
+    List<User> searchByQuery(String query, int limit);
 }

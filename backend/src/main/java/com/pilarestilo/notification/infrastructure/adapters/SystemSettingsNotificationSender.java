@@ -62,6 +62,11 @@ public class SystemSettingsNotificationSender implements NotificationSender {
         resolveSender().sendOrderShipped(orderId, recipient);
     }
 
+    @Override
+    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
+        resolveSender().sendDiscountCodeAssigned(code, recipient);
+    }
+
     private NotificationSender resolveSender() {
         NotificationProvider provider = resolveProvider();
         return switch (provider) {

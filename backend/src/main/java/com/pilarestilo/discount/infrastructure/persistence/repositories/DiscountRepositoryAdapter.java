@@ -89,6 +89,7 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
         entity.setMaxUses(discount.getMaxUses());
         entity.setTimesUsed(discount.getTimesUsed());
         entity.setActive(discount.isActive());
+        entity.setAssignedUserId(discount.getAssignedUserId());
         return entity;
     }
 
@@ -105,6 +106,7 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
         discount.setId(entity.getId());
         discount.setTimesUsed(entity.getTimesUsed());
         discount.setActive(entity.isActive());
+        discount.setAssignedUserId(entity.getAssignedUserId());
         return discount;
     }
 }
