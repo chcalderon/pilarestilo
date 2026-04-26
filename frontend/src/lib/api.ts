@@ -1322,3 +1322,31 @@ export async function searchUsers(
     headers: authHeaders(token),
   });
 }
+
+export async function uploadMediaFile(file: File, folder: string, token: string): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('folder', folder);
+  const res = await fetch(`${API_BASE}/media/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(body.message ?? `Upload failed (${res.status})`);
+  }
+  const data = await res.json() as MediaUploadDto;
+  return data.url;
+}
+
+export async function migrateCategoryImages(token: string): Promise<{
+  migrated: number;
+  failed: number;
+  errors: { categoryId: string; originalUrl: string; reason: string }[];
+}> {
+  return apiFetch('/admin/media/migrate-category-images', {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
