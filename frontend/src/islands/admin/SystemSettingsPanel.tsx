@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import {
   getSystemSettings,
+  migrateCategoryImages,
   type MediaStorageProvider,
   type PaymentGatewayProvider,
   updateSystemSettings,
@@ -353,6 +354,8 @@ export default function SystemSettingsPanel() {
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
   const [tabSyncedFromUrl, setTabSyncedFromUrl] = useState(false);
   const [settings, setSettings] = useState<SystemSettingsDto | null>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [migrateResult, setMigrateResult] = useState<{ migrated: number; failed: number } | null>(null);
   const [form, setForm] = useState<FormState>({
     whatsappNumber: '',
     instagramUrl: '',
@@ -482,6 +485,20 @@ export default function SystemSettingsPanel() {
     });
     setFeedback(null);
   }
+
+  const handleMigrateCategories = async () => {
+    if (!effectiveToken) return;
+    setMigrating(true);
+    setMigrateResult(null);
+    try {
+      const result = await migrateCategoryImages(effectiveToken);
+      setMigrateResult({ migrated: result.migrated, failed: result.failed });
+    } catch {
+      setMigrateResult({ migrated: 0, failed: -1 });
+    } finally {
+      setMigrating(false);
+    }
+  };
 
   const hasProviderRequiringSmtp = form.notificationProvider === 'EMAIL_SMTP';
   const hasProviderRequiringSendgrid = form.notificationProvider === 'EMAIL_SENDGRID';
@@ -1119,6 +1136,32 @@ export default function SystemSettingsPanel() {
           <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
             Activo ahora: <strong>{selectedMediaStorageProvider?.label ?? form.mediaStorageProvider}</strong>
           </span>
+        </div>
+
+        <div className="pt-4 border-t border-pe-black/8">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+            Migración de imágenes
+          </p>
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+            Descarga las imágenes de categorías desde URLs externas al almacenamiento configurado.
+            Solo procesa imágenes que aún no estén almacenadas localmente.
+          </p>
+          <button
+            type="button"
+            onClick={handleMigrateCategories}
+            disabled={migrating}
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+          >
+            {migrating ? <Loader2 size={13} className="animate-spin" /> : null}
+            {migrating ? 'Migrando...' : 'Migrar imágenes de categorías'}
+          </button>
+          {migrateResult && (
+            <p className={`font-sans text-[0.72rem] mt-2 ${migrateResult.failed === -1 ? 'text-red-500' : 'text-pe-charcoal/60'}`}>
+              {migrateResult.failed === -1
+                ? 'Error al ejecutar la migración.'
+                : `Migradas: ${migrateResult.migrated} · Fallidas: ${migrateResult.failed}`}
+            </p>
+          )}
         </div>
       </section>
       )}
