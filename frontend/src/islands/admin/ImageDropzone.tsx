@@ -94,7 +94,7 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
               <>
                 <ImagePlus size={22} />
                 <span className="font-sans text-[0.68rem] text-center">
-                  {dragging ? 'Soltá para subir' : 'Arrastrá o hacé clic para subir'}
+                  {dragging ? 'Suelta para subir' : 'Arrastra o haz clic para subir'}
                 </span>
               </>
             )}
