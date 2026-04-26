@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record CreateDiscountRequest(
         @NotBlank(message = "Code is required")
@@ -28,5 +29,7 @@ public record CreateDiscountRequest(
         LocalDate validUntil,
 
         @Min(value = 1, message = "maxUses must be at least 1")
-        int maxUses
+        int maxUses,
+
+        UUID assignedUserId
 ) {}
