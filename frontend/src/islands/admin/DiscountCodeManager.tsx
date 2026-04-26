@@ -347,7 +347,7 @@ export default function DiscountCodeManager() {
                     {h}
                   </th>
                 ))}
-                <th className="font-sans text-xs text-pe-charcoal/50 uppercase tracking-wider text-left pb-2">
+                <th className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/40 px-4 py-3">
                   Disponible para
                 </th>
               </tr>
@@ -379,7 +379,7 @@ export default function DiscountCodeManager() {
                       <Trash2 size={14} />
                     </button>
                   </td>
-                  <td className="font-sans text-xs text-pe-charcoal py-3 pr-4">
+                  <td className="font-sans text-xs text-pe-charcoal px-4 py-3">
                     {c.assignedUserName ? (
                       <span className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-0.5 text-xs">
                         {c.assignedUserName}
