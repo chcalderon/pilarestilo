@@ -5,9 +5,11 @@ import com.pilarestilo.user.domain.ports.UserRepository;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.infrastructure.persistence.entities.UserEntity;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,6 +74,12 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public boolean existsByEmail(String email) {
         return jpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public List<User> searchByQuery(String query, int limit) {
+        return jpaRepository.searchByNameOrEmail(query, PageRequest.of(0, limit))
+            .stream().map(this::toDomain).toList();
     }
 
     private UserEntity toEntity(User user) {

@@ -1,11 +1,13 @@
 package com.pilarestilo.user.infrastructure.web.controllers;
 
 import com.pilarestilo.user.application.dto.UserDto;
+import com.pilarestilo.user.application.dto.UserSearchResultDto;
 import com.pilarestilo.user.application.usecases.CreateUserUseCase;
 import com.pilarestilo.user.application.usecases.AdminResetUserPasswordUseCase;
 import com.pilarestilo.user.application.usecases.DeleteUserUseCase;
 import com.pilarestilo.user.application.usecases.GetUserUseCase;
 import com.pilarestilo.user.application.usecases.ListUsersUseCase;
+import com.pilarestilo.user.application.usecases.SearchUsersUseCase;
 import com.pilarestilo.user.application.usecases.UpdateUserUseCase;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.shared.domain.DomainException;
@@ -21,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,19 +36,22 @@ public class UserController {
     private final UpdateUserUseCase updateUserUseCase;
     private final DeleteUserUseCase deleteUserUseCase;
     private final AdminResetUserPasswordUseCase adminResetUserPasswordUseCase;
+    private final SearchUsersUseCase searchUsersUseCase;
 
     public UserController(CreateUserUseCase createUserUseCase,
                            GetUserUseCase getUserUseCase,
                            ListUsersUseCase listUsersUseCase,
                            UpdateUserUseCase updateUserUseCase,
                            DeleteUserUseCase deleteUserUseCase,
-                           AdminResetUserPasswordUseCase adminResetUserPasswordUseCase) {
+                           AdminResetUserPasswordUseCase adminResetUserPasswordUseCase,
+                           SearchUsersUseCase searchUsersUseCase) {
         this.createUserUseCase = createUserUseCase;
         this.getUserUseCase = getUserUseCase;
         this.listUsersUseCase = listUsersUseCase;
         this.updateUserUseCase = updateUserUseCase;
         this.deleteUserUseCase = deleteUserUseCase;
         this.adminResetUserPasswordUseCase = adminResetUserPasswordUseCase;
+        this.searchUsersUseCase = searchUsersUseCase;
     }
 
     @PostMapping
@@ -63,6 +69,12 @@ public class UserController {
                               @RequestParam(required = false) Boolean active,
                               Pageable pageable) {
         return listUsersUseCase.execute(pageable, role, active);
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SELLER')")
+    public List<UserSearchResultDto> search(@RequestParam String q) {
+        return searchUsersUseCase.execute(q);
     }
 
     @GetMapping("/{id}")
