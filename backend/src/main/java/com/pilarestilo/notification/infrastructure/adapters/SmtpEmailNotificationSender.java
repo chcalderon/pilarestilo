@@ -96,6 +96,14 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         send("ORDER_SHIPPED", orderId, recipient, subject, body);
     }
 
+    @Override
+    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
+        String subject = "Código de descuento exclusivo para ti";
+        String body = String.format(Locale.ROOT,
+            "Tienes un código de descuento exclusivo: %s%nÚsalo en tu próxima compra en Pilar Estilo.", code);
+        send("DISCOUNT_CODE_ASSIGNED", null, recipient, subject, body);
+    }
+
     private void send(
             String template,
             UUID referenceId,
