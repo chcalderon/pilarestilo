@@ -6,6 +6,7 @@ import CartBadge from '../islands/CartBadge';
 import AccountMenu from '../islands/auth/AccountMenu';
 import NavNotificationBell from '../islands/NavNotificationBell';
 import Icon from './Icon.astro';
+import { getCategoryTree } from '../lib/api';
 
 export interface Props {
   locale: Locale;
@@ -13,15 +14,17 @@ export interface Props {
 
 const { locale } = Astro.props;
 
-const categories = [
-  { slug: 'invierno', labelEs: 'Invierno', labelEn: 'Winter' },
-  { slug: 'verano', labelEs: 'Verano', labelEn: 'Summer' },
-  { slug: 'vestidos', labelEs: 'Vestidos', labelEn: 'Dresses' },
-  { slug: 'zapatos', labelEs: 'Zapatos', labelEn: 'Shoes' },
-  { slug: 'pantalones', labelEs: 'Pantalones', labelEn: 'Trousers' },
-  { slug: 'carteras', labelEs: 'Carteras', labelEn: 'Bags' },
-  { slug: 'accesorios', labelEs: 'Accesorios', labelEn: 'Accessories' },
-];
+let categories: { slug: string; labelEs: string; labelEn: string }[] = [];
+try {
+  const tree = await getCategoryTree();
+  categories = tree.flatMap(root =>
+    root.children.length > 0
+      ? root.children.map(c => ({ slug: c.slug, labelEs: c.nameEs, labelEn: c.nameEn ?? c.nameEs }))
+      : [{ slug: root.slug, labelEs: root.nameEs, labelEn: root.nameEn ?? root.nameEs }]
+  );
+} catch {
+  // fallback — empty nav rather than broken page
+}
 ---
 
 <header class="sticky top-0 z-50" id="site-header">
