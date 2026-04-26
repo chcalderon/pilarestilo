@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, ImagePlus, Loader2, X } from 'lucide-react';
+import { Upload, Loader2, X } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
 interface Props {
