@@ -86,6 +86,28 @@ const faqs = isEs
         a: 'If your account has approved credit, it is applied during checkout according to your available balance.',
       },
     ];
+
+const discountInfo = isEs
+  ? {
+      title: 'Códigos de descuento',
+      items: [
+        'Para usar un código, ingrésalo en el carrito antes de confirmar tu compra.',
+        'Cada código es personal y puede usarse una sola vez por cuenta.',
+        'Los códigos no son transferibles entre cuentas ni acumulables.',
+        'Si un código fue asignado específicamente a tu cuenta, solo tu usuario puede utilizarlo.',
+        'Los códigos generales están disponibles para cualquier usuario hasta que se agoten los usos disponibles.',
+      ],
+    }
+  : {
+      title: 'Discount codes',
+      items: [
+        'To use a code, enter it in the cart before confirming your order.',
+        'Each code is personal and can only be used once per account.',
+        'Codes are not transferable between accounts and cannot be combined.',
+        'If a code was assigned specifically to your account, only your user can redeem it.',
+        'General codes are available to any user until the available uses run out.',
+      ],
+    };
 ---
 
 <BaseLayout
@@ -128,6 +150,22 @@ const faqs = isEs
             </article>
           ))}
         </div>
+      </div>
+    </section>
+
+    <section class="py-14 md:py-20 border-t border-pe-black/10">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-6">
+          {discountInfo.title}
+        </h2>
+        <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          {discountInfo.items.map(item => (
+            <li class="flex gap-3 bg-pe-white border border-pe-black/10 p-5">
+              <span class="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-pe-rose"></span>
+              <p class="font-sans text-sm text-pe-charcoal/80 leading-relaxed">{item}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
 
