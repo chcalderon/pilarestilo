@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Bell } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
@@ -44,7 +44,7 @@ function relativeTime(iso: string, es: boolean): string {
 
 export default function NotificationHistory({ locale }: Props) {
   const { token } = useAuthStore();
-  const effectiveToken = token ?? readAuthTokenCookie();
+  const effectiveToken = useMemo(() => token ?? readAuthTokenCookie(), [token]);
   const [page, setPage] = useState<Page<InAppNotificationDto> | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function NotificationHistory({ locale }: Props) {
   const es = locale === 'es';
   const labels = es ? TYPE_LABELS_ES : TYPE_LABELS_EN;
 
-  const load = async (p: number) => {
+  const load = useCallback(async (p: number) => {
     if (!effectiveToken) return;
     setLoading(true);
     try {
@@ -64,9 +64,9 @@ export default function NotificationHistory({ locale }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [effectiveToken]);
 
-  useEffect(() => { load(0); }, [effectiveToken]);
+  useEffect(() => { load(0); }, [load]);
 
   const handleMarkAll = async () => {
     if (!effectiveToken) return;
