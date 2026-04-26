@@ -28,6 +28,10 @@ public class ValidateDiscountForUserUseCase {
 
         discount.validate(Money.of(subtotalAmount));
 
+        if (discount.getAssignedUserId() != null && !discount.getAssignedUserId().equals(userId)) {
+            throw new DomainException("Este código no está disponible para tu cuenta");
+        }
+
         if (discountRepository.hasUserUsedDiscount(discount.getId(), userId)) {
             throw new DomainException("Ya usaste este código de descuento");
         }

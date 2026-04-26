@@ -15,5 +15,8 @@ public record DiscountDto(
         LocalDate validUntil,
         int maxUses,
         int timesUsed,
-        boolean active
+        boolean active,
+        UUID assignedUserId,
+        String assignedUserName,
+        String assignedUserEmail
 ) {}
