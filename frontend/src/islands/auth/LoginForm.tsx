@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, AlertCircle } from 'lucide-react';
 import { loginUser } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
 
@@ -81,9 +81,10 @@ export default function LoginForm({ locale, redirect }: Props) {
 
       {/* Error */}
       {error && (
-        <p className="font-sans text-[0.78rem] text-pe-rose-deep bg-pe-rose-soft/40 px-3 py-2 border-l-2 border-pe-rose">
+        <div className="flex items-center gap-2 font-sans text-[0.78rem] text-red-300 bg-red-500/20 border border-red-500/50 px-3 py-2.5">
+          <AlertCircle size={14} className="shrink-0 text-red-400" />
           {error}
-        </p>
+        </div>
       )}
 
       {/* Submit */}
