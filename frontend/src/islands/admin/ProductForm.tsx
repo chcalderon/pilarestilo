@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { ImagePlus, Loader2, Save, Upload, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Save, X } from 'lucide-react';
 import {
   createProduct,
-  uploadProductImage,
   updateProduct,
   getCategories,
   type ProductDto,
@@ -10,6 +9,7 @@ import {
   type CategoryDto,
   type ProductVariantDto,
 } from '../../lib/api';
+import ImageDropzone from './ImageDropzone';
 
 interface Props {
   product?: ProductDto | null;
@@ -56,9 +56,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [apiError, setApiError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
@@ -181,24 +179,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     }
     setErrors(e);
     return Object.keys(e).length === 0;
-  }
-
-  async function handleImageUpload(file: File) {
-    if (!token) {
-      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
-      return;
-    }
-
-    setUploadingImage(true);
-    setApiError('');
-    try {
-      const uploaded = await uploadProductImage(file, token);
-      setForm((prev) => ({ ...prev, imageUrl: uploaded.url }));
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Error al subir imagen');
-    } finally {
-      setUploadingImage(false);
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -469,56 +449,14 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
           <div>
             <label className={labelClass}>Imagen del producto</label>
-            <div className="border border-pe-black/12 bg-pe-white p-3">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <img
-                  src={previewUrl}
-                  alt="Vista previa producto"
-                  className="w-20 h-24 object-cover bg-pe-cream border border-pe-black/10"
-                  loading="lazy"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-sans text-[0.65rem] uppercase tracking-[0.12em] text-pe-charcoal/45 mb-1">
-                    Ruta activa
-                  </p>
-                  <p className="font-mono text-[0.68rem] text-pe-charcoal/70 truncate">{previewUrl}</p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingImage || saving}
-                      className="inline-flex items-center gap-1.5 bg-[#B76E79] text-white font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#8E4F58] transition-colors disabled:opacity-60"
-                    >
-                      {uploadingImage ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                      {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, imageUrl: '/api/media/products/product-001.jpg' }))}
-                      disabled={uploadingImage || saving}
-                      className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-60"
-                    >
-                      <ImagePlus size={13} />
-                      Imagen por defecto
-                    </button>
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        void handleImageUpload(file);
-                      }
-                      e.currentTarget.value = '';
-                    }}
-                  />
-                </div>
-              </div>
-
-            </div>
+            <ImageDropzone
+              folder="products"
+              value={previewUrl || undefined}
+              onUpload={url => {
+                setForm(prev => ({ ...prev, imageUrl: url }));
+              }}
+              token={token ?? ''}
+            />
           </div>
 
           {categories.length > 0 && (
