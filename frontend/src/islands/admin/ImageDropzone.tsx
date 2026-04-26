@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, ImagePlus, Loader2 } from 'lucide-react';
+import { Upload, ImagePlus, Loader2, X } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
 interface Props {
@@ -49,12 +49,57 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
   const uploading = state === 'uploading';
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {label && (
         <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
           {label}
         </span>
       )}
+
+      {/* Preview — two views: banner crop + full image */}
+      {preview && (
+        <div className="flex flex-col gap-1">
+          {/* Banner view */}
+          <div className="relative w-full">
+            <span className="absolute top-1 left-1.5 font-sans text-[0.55rem] uppercase tracking-wider text-white/70 bg-black/40 px-1 py-0.5 z-10">
+              Banner
+            </span>
+            <img
+              src={preview}
+              alt="Vista banner"
+              className="w-full h-20 object-cover"
+              loading="lazy"
+            />
+          </div>
+          {/* Full image view */}
+          <div className="relative w-full bg-pe-cream/60">
+            <span className="absolute top-1 left-1.5 font-sans text-[0.55rem] uppercase tracking-wider text-pe-charcoal/50 bg-white/60 px-1 py-0.5 z-10">
+              Completa
+            </span>
+            <img
+              src={preview}
+              alt="Vista completa"
+              className="w-full max-h-48 object-contain"
+              loading="lazy"
+            />
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Loader2 size={22} className="text-white animate-spin" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => { setPreview(undefined); onUpload(''); }}
+              className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white p-0.5 transition-colors"
+              title="Quitar imagen"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Drop zone — always visible for uploading/changing */}
       <div
         onClick={() => !uploading && inputRef.current?.click()}
         onDragEnter={e => { e.preventDefault(); setState('dragging'); }}
@@ -62,45 +107,28 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
         onDragLeave={() => setState('idle')}
         onDrop={onDrop}
         className={[
-          'relative cursor-pointer border-2 border-dashed transition-colors select-none',
+          'cursor-pointer border-2 border-dashed transition-colors select-none',
+          'flex items-center justify-center gap-2 px-4 py-3',
           dragging ? 'border-pe-rose bg-pe-rose/5' : 'border-pe-black/15 hover:border-pe-rose/40',
           state === 'error' ? 'border-red-400' : '',
         ].join(' ')}
-        style={{ minHeight: '96px' }}
       >
-        {preview ? (
-          <div className="relative w-full" style={{ minHeight: '96px' }}>
-            <img
-              src={preview}
-              alt="Vista previa"
-              className="w-full h-24 object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader2 size={20} className="text-white animate-spin" />
-              ) : (
-                <span className="font-sans text-[0.62rem] uppercase tracking-wider text-white flex items-center gap-1">
-                  <Upload size={12} /> Cambiar
-                </span>
-              )}
-            </div>
-          </div>
+        {uploading ? (
+          <Loader2 size={16} className="animate-spin text-pe-rose" />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 p-6 text-pe-charcoal/40">
-            {uploading ? (
-              <Loader2 size={22} className="animate-spin text-pe-rose" />
-            ) : (
-              <>
-                <ImagePlus size={22} />
-                <span className="font-sans text-[0.68rem] text-center">
-                  {dragging ? 'Suelta para subir' : 'Arrastra o haz clic para subir'}
-                </span>
-              </>
-            )}
-          </div>
+          <Upload size={14} className="text-pe-charcoal/35 shrink-0" />
         )}
+        <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
+          {uploading
+            ? 'Subiendo...'
+            : dragging
+              ? 'Suelta para subir'
+              : preview
+                ? 'Arrastra o haz clic para cambiar'
+                : 'Arrastra o haz clic para subir'}
+        </span>
       </div>
+
       {state === 'error' && (
         <p className="font-sans text-[0.65rem] text-red-500">{error}</p>
       )}

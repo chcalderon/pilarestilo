@@ -6,6 +6,7 @@ import {
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import ImageDropzone from './ImageDropzone';
+import { useToast, Toaster } from './Toast';
 
 type EditForm = {
   slug: string; nameEs: string; nameEn: string;
@@ -26,27 +27,34 @@ function fromDto(dto: CategoryDto): EditForm {
 
 const INPUT_CLASS = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors';
 
+function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-+|-+$)/g, '');
+}
+
 // ─── FormRow ─────────────────────────────────────────────────────────────────
 
 interface FormRowProps {
   form: EditForm;
   setForm: React.Dispatch<React.SetStateAction<EditForm>>;
-  error: string;
   saving: boolean;
   onSubmit: () => void;
   onCancel: () => void;
   token: string | null;
 }
 
-function FormRow({ form, setForm, error, saving, onSubmit, onCancel, token }: FormRowProps) {
+function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowProps) {
   return (
-    <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-2">
-      {error && <p className="font-sans text-[0.72rem] text-pe-rose-deep">{error}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+    <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div className="flex flex-col gap-0.5">
           <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Slug *</label>
           <input className={INPUT_CLASS} value={form.slug}
-            onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="ej: zapatos" />
+            onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))} placeholder="ej: zapatos" />
         </div>
         <div className="flex flex-col gap-0.5">
           <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Nombre ES *</label>
@@ -63,17 +71,15 @@ function FormRow({ form, setForm, error, saving, onSubmit, onCancel, token }: Fo
           <input type="number" min="0" className={INPUT_CLASS} value={form.sortOrder}
             onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
         </div>
-        <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
-          <ImageDropzone
-            label="Imagen"
-            folder="categories"
-            value={form.imageUrl || undefined}
-            onUpload={url => setForm(f => ({ ...f, imageUrl: url }))}
-            token={token ?? ''}
-          />
-        </div>
       </div>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
+      <ImageDropzone
+        label="Imagen"
+        folder="categories"
+        value={form.imageUrl || undefined}
+        onUpload={url => setForm(f => ({ ...f, imageUrl: url }))}
+        token={token ?? ''}
+      />
+      <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
           <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />
           Activa
@@ -102,28 +108,26 @@ interface CategoryRowProps {
   expanded: Set<string>;
   form: EditForm;
   setForm: React.Dispatch<React.SetStateAction<EditForm>>;
-  error: string;
   saving: boolean;
   token: string | null;
   setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
   setEditing: (id: string | null) => void;
   setCreating: (id: string | null) => void;
-  setError: (e: string) => void;
   onSaveEdit: (id: string) => void;
   onDelete: (id: string, name: string) => void;
   onCreate: (parentId: string | null) => void;
 }
 
 function CategoryRow({
-  node, depth, editing, creating, expanded, form, setForm, error, saving, token,
-  setExpanded, setEditing, setCreating, setError, onSaveEdit, onDelete, onCreate,
+  node, depth, editing, creating, expanded, form, setForm, saving, token,
+  setExpanded, setEditing, setCreating, onSaveEdit, onDelete, onCreate,
 }: CategoryRowProps) {
   const isExpanded = expanded.has(node.id);
   const hasChildren = node.children.length > 0;
   const isEditing = editing === node.id;
   const isCreatingChild = creating === node.id;
 
-  const handleCancel = () => { setEditing(null); setCreating(null); setError(''); };
+  const handleCancel = () => { setEditing(null); setCreating(null); };
 
   return (
     <div>
@@ -163,7 +167,7 @@ function CategoryRow({
             </button>
           )}
           <button
-            onClick={() => { setEditing(node.id); setForm(fromDto(node)); setCreating(null); setError(''); }}
+            onClick={() => { setEditing(node.id); setForm(fromDto(node)); setCreating(null); }}
             className="p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
             title="Editar"
           >
@@ -181,7 +185,7 @@ function CategoryRow({
 
       {isEditing && (
         <div style={{ paddingLeft: `${(depth + 1) * 16}px` }}>
-          <FormRow form={form} setForm={setForm} error={error} saving={saving}
+          <FormRow form={form} setForm={setForm} saving={saving}
             onSubmit={() => onSaveEdit(node.id)} onCancel={handleCancel} token={token} />
         </div>
       )}
@@ -189,9 +193,9 @@ function CategoryRow({
       {isExpanded && hasChildren && node.children.map(child => (
         <CategoryRow key={child.id} node={child} depth={depth + 1}
           editing={editing} creating={creating} expanded={expanded}
-          form={form} setForm={setForm} error={error} saving={saving} token={token}
+          form={form} setForm={setForm} saving={saving} token={token}
           setExpanded={setExpanded} setEditing={setEditing} setCreating={setCreating}
-          setError={setError} onSaveEdit={onSaveEdit} onDelete={onDelete} onCreate={onCreate} />
+          onSaveEdit={onSaveEdit} onDelete={onDelete} onCreate={onCreate} />
       ))}
 
       {isCreatingChild && (
@@ -199,7 +203,7 @@ function CategoryRow({
           <p className="font-sans text-[0.65rem] uppercase tracking-wider text-pe-charcoal/40 mb-1 mt-2 px-2">
             Nueva subcategoría en {node.nameEs}
           </p>
-          <FormRow form={form} setForm={setForm} error={error} saving={saving}
+          <FormRow form={form} setForm={setForm} saving={saving}
             onSubmit={() => onCreate(node.id)} onCancel={handleCancel} token={token} />
         </div>
       )}
@@ -219,7 +223,7 @@ export default function CategoryTree() {
   const [creating, setCreating] = useState<string | null>(null);
   const [form, setForm]         = useState<EditForm>({ ...EMPTY_FORM });
   const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState('');
+  const { toasts, show, dismiss } = useToast();
 
   async function loadTree() {
     setLoading(true);
@@ -235,8 +239,10 @@ export default function CategoryTree() {
   useEffect(() => { loadTree(); }, []);
 
   async function handleSaveEdit(id: string) {
-    if (!effectiveToken || !form.slug || !form.nameEs) { setError('Slug y nombre ES son requeridos.'); return; }
-    setSaving(true); setError('');
+    if (!effectiveToken || !form.slug || !form.nameEs) {
+      show('error', 'Slug y Nombre ES son requeridos.'); return;
+    }
+    setSaving(true);
     try {
       await updateCategory(id, {
         slug: form.slug, nameEs: form.nameEs, nameEn: form.nameEn,
@@ -244,13 +250,18 @@ export default function CategoryTree() {
         imageUrl: form.imageUrl || undefined, active: form.active,
       }, effectiveToken);
       setEditing(null);
+      show('success', 'Categoría actualizada.');
       await loadTree();
-    } catch { setError('Error al guardar.'); } finally { setSaving(false); }
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Error al guardar.');
+    } finally { setSaving(false); }
   }
 
   async function handleCreate(parentId: string | null) {
-    if (!effectiveToken || !form.slug || !form.nameEs) { setError('Slug y nombre ES son requeridos.'); return; }
-    setSaving(true); setError('');
+    if (!effectiveToken || !form.slug || !form.nameEs) {
+      show('error', 'Slug y Nombre ES son requeridos.'); return;
+    }
+    setSaving(true);
     try {
       await createCategory({
         slug: form.slug, nameEs: form.nameEs, nameEn: form.nameEn,
@@ -259,21 +270,29 @@ export default function CategoryTree() {
       }, effectiveToken);
       setCreating(null);
       setForm({ ...EMPTY_FORM });
+      show('success', 'Categoría creada.');
       await loadTree();
-    } catch { setError('Error al crear categoría.'); } finally { setSaving(false); }
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Error al crear categoría.');
+    } finally { setSaving(false); }
   }
 
   async function handleDelete(id: string, name: string) {
     if (!effectiveToken || !confirm(`¿Eliminar categoría "${name}"?\n\nEsta acción no se puede deshacer.`)) return;
-    try { await deleteCategory(id, effectiveToken); await loadTree(); }
-    catch (err) { alert(err instanceof Error ? err.message : 'Error al eliminar la categoría.'); }
+    try {
+      await deleteCategory(id, effectiveToken);
+      show('success', `Categoría "${name}" eliminada.`);
+      await loadTree();
+    } catch (err) {
+      show('error', err instanceof Error ? err.message : 'Error al eliminar la categoría.');
+    }
   }
 
-  const handleCancel = () => { setEditing(null); setCreating(null); setError(''); };
+  const handleCancel = () => { setEditing(null); setCreating(null); };
 
   const rowProps = {
-    editing, creating, expanded, form, setForm, error, saving, token: effectiveToken,
-    setExpanded, setEditing, setCreating, setError,
+    editing, creating, expanded, form, setForm, saving, token: effectiveToken,
+    setExpanded, setEditing, setCreating,
     onSaveEdit: handleSaveEdit, onDelete: handleDelete, onCreate: handleCreate,
   };
 
@@ -286,7 +305,7 @@ export default function CategoryTree() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-sans text-[0.72rem] text-pe-charcoal/40">{tree.length} categorías raíz</p>
         <button
-          onClick={() => { setCreating('__root__'); setForm({ ...EMPTY_FORM }); setEditing(null); setError(''); }}
+          onClick={() => { setCreating('__root__'); setForm({ ...EMPTY_FORM }); setEditing(null); }}
           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
         >
           <Plus size={13} />
@@ -296,7 +315,7 @@ export default function CategoryTree() {
 
       {creating === '__root__' && (
         <div className="mb-4">
-          <FormRow form={form} setForm={setForm} error={error} saving={saving}
+          <FormRow form={form} setForm={setForm} saving={saving}
             onSubmit={() => handleCreate(null)} onCancel={handleCancel} token={effectiveToken} />
         </div>
       )}
@@ -310,6 +329,8 @@ export default function CategoryTree() {
           tree.map(node => <CategoryRow key={node.id} node={node} depth={0} {...rowProps} />)
         )}
       </div>
+
+      <Toaster toasts={toasts} dismiss={dismiss} />
     </div>
   );
 }
