@@ -5,6 +5,7 @@ import {
   type CategoryTreeNode, type CategoryDto,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
+import ImageDropzone from './ImageDropzone';
 
 type EditForm = {
   slug: string; nameEs: string; nameEn: string;
@@ -34,9 +35,10 @@ interface FormRowProps {
   saving: boolean;
   onSubmit: () => void;
   onCancel: () => void;
+  token: string | null;
 }
 
-function FormRow({ form, setForm, error, saving, onSubmit, onCancel }: FormRowProps) {
+function FormRow({ form, setForm, error, saving, onSubmit, onCancel, token }: FormRowProps) {
   return (
     <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-2">
       {error && <p className="font-sans text-[0.72rem] text-pe-rose-deep">{error}</p>}
@@ -62,9 +64,13 @@ function FormRow({ form, setForm, error, saving, onSubmit, onCancel }: FormRowPr
             onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
         </div>
         <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">URL imagen</label>
-          <input className={INPUT_CLASS} value={form.imageUrl}
-            onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://…" />
+          <ImageDropzone
+            label="Imagen"
+            folder="categories"
+            value={form.imageUrl || undefined}
+            onUpload={url => setForm(f => ({ ...f, imageUrl: url }))}
+            token={token ?? ''}
+          />
         </div>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -98,6 +104,7 @@ interface CategoryRowProps {
   setForm: React.Dispatch<React.SetStateAction<EditForm>>;
   error: string;
   saving: boolean;
+  token: string | null;
   setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
   setEditing: (id: string | null) => void;
   setCreating: (id: string | null) => void;
@@ -108,7 +115,7 @@ interface CategoryRowProps {
 }
 
 function CategoryRow({
-  node, depth, editing, creating, expanded, form, setForm, error, saving,
+  node, depth, editing, creating, expanded, form, setForm, error, saving, token,
   setExpanded, setEditing, setCreating, setError, onSaveEdit, onDelete, onCreate,
 }: CategoryRowProps) {
   const isExpanded = expanded.has(node.id);
@@ -175,14 +182,14 @@ function CategoryRow({
       {isEditing && (
         <div style={{ paddingLeft: `${(depth + 1) * 16}px` }}>
           <FormRow form={form} setForm={setForm} error={error} saving={saving}
-            onSubmit={() => onSaveEdit(node.id)} onCancel={handleCancel} />
+            onSubmit={() => onSaveEdit(node.id)} onCancel={handleCancel} token={token} />
         </div>
       )}
 
       {isExpanded && hasChildren && node.children.map(child => (
         <CategoryRow key={child.id} node={child} depth={depth + 1}
           editing={editing} creating={creating} expanded={expanded}
-          form={form} setForm={setForm} error={error} saving={saving}
+          form={form} setForm={setForm} error={error} saving={saving} token={token}
           setExpanded={setExpanded} setEditing={setEditing} setCreating={setCreating}
           setError={setError} onSaveEdit={onSaveEdit} onDelete={onDelete} onCreate={onCreate} />
       ))}
@@ -193,7 +200,7 @@ function CategoryRow({
             Nueva subcategoría en {node.nameEs}
           </p>
           <FormRow form={form} setForm={setForm} error={error} saving={saving}
-            onSubmit={() => onCreate(node.id)} onCancel={handleCancel} />
+            onSubmit={() => onCreate(node.id)} onCancel={handleCancel} token={token} />
         </div>
       )}
     </div>
@@ -265,7 +272,7 @@ export default function CategoryTree() {
   const handleCancel = () => { setEditing(null); setCreating(null); setError(''); };
 
   const rowProps = {
-    editing, creating, expanded, form, setForm, error, saving,
+    editing, creating, expanded, form, setForm, error, saving, token: effectiveToken,
     setExpanded, setEditing, setCreating, setError,
     onSaveEdit: handleSaveEdit, onDelete: handleDelete, onCreate: handleCreate,
   };
@@ -290,7 +297,7 @@ export default function CategoryTree() {
       {creating === '__root__' && (
         <div className="mb-4">
           <FormRow form={form} setForm={setForm} error={error} saving={saving}
-            onSubmit={() => handleCreate(null)} onCancel={handleCancel} />
+            onSubmit={() => handleCreate(null)} onCancel={handleCancel} token={effectiveToken} />
         </div>
       )}
 
