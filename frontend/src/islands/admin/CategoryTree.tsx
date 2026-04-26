@@ -146,6 +146,11 @@ function CategoryRow({
           {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
 
+        {node.imageUrl ? (
+          <img src={node.imageUrl} alt="" className="w-6 h-6 object-cover shrink-0 rounded-sm opacity-80" />
+        ) : (
+          <span className="w-6 h-6 shrink-0" />
+        )}
         <span className={['min-w-0 truncate font-sans text-[0.82rem]', node.active ? 'text-pe-charcoal' : 'text-pe-charcoal/35 line-through'].join(' ')}>
           {node.nameEs}
         </span>
