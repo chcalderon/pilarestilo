@@ -1051,6 +1051,7 @@ export interface CategoryDto {
   parentId: string | null;
   sortOrder: number;
   active: boolean;
+  featured: boolean;
   imageUrl?: string;
 }
 
@@ -1085,6 +1086,14 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
   }
 }
 
+export async function getFeaturedCategories(): Promise<CategoryDto[]> {
+  try {
+    return await apiFetch<CategoryDto[]>('/categories/featured');
+  } catch {
+    return [];
+  }
+}
+
 export async function createCategory(data: CreateCategoryRequest, token: string): Promise<CategoryDto> {
   return apiFetch<CategoryDto>('/categories', {
     method: 'POST',
@@ -1095,7 +1104,7 @@ export async function createCategory(data: CreateCategoryRequest, token: string)
 
 export async function updateCategory(
   id: string,
-  data: Partial<CreateCategoryRequest & { active: boolean }>,
+  data: Partial<CreateCategoryRequest & { active: boolean; featured: boolean }>,
   token: string
 ): Promise<CategoryDto> {
   return apiFetch<CategoryDto>(`/categories/${encodeURIComponent(id)}`, {

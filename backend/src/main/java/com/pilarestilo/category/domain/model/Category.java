@@ -17,6 +17,7 @@ public class Category {
     private UUID parentId;
     private int sortOrder;
     private boolean active;
+    private boolean featured;
     private String imageUrl;
     private Instant createdAt;
 
@@ -39,7 +40,7 @@ public class Category {
     }
 
     public void update(String slug, String nameEs, String nameEn,
-                       UUID parentId, int sortOrder, boolean active, String imageUrl) {
+                       UUID parentId, int sortOrder, boolean active, boolean featured, String imageUrl) {
         validate(slug, nameEs, nameEn);
         this.slug = slug.trim().toLowerCase();
         this.nameEs = nameEs.trim();
@@ -47,6 +48,7 @@ public class Category {
         this.parentId = parentId;
         this.sortOrder = sortOrder;
         this.active = active;
+        this.featured = featured;
         this.imageUrl = imageUrl;
     }
 
@@ -65,11 +67,13 @@ public class Category {
     public UUID getParentId() { return parentId; }
     public int getSortOrder() { return sortOrder; }
     public boolean isActive() { return active; }
+    public boolean isFeatured() { return featured; }
     public String getImageUrl() { return imageUrl; }
     public Instant getCreatedAt() { return createdAt; }
 
     // setters for persistence rehydration
     public void setId(UUID id) { this.id = id; }
     public void setActive(boolean active) { this.active = active; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

@@ -63,6 +63,11 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         return productJpa.countByCategoriesId(categoryId) > 0;
     }
 
+    @Override
+    public List<Category> findFeatured() {
+        return jpa.findByFeaturedTrueAndActiveTrueOrderBySortOrderAsc().stream().map(this::toDomain).toList();
+    }
+
     private CategoryEntity toEntity(Category c) {
         CategoryEntity e = new CategoryEntity();
         e.setId(c.getId());
@@ -72,6 +77,7 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         e.setParentId(c.getParentId());
         e.setSortOrder(c.getSortOrder());
         e.setActive(c.isActive());
+        e.setFeatured(c.isFeatured());
         e.setImageUrl(c.getImageUrl());
         e.setCreatedAt(c.getCreatedAt() != null ? c.getCreatedAt() : Instant.now());
         return e;
@@ -84,6 +90,7 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         );
         c.setId(e.getId());
         c.setActive(e.isActive());
+        c.setFeatured(e.isFeatured());
         c.setCreatedAt(e.getCreatedAt());
         return c;
     }

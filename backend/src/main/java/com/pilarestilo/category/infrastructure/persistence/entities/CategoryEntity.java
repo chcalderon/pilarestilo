@@ -30,6 +30,9 @@ public class CategoryEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(nullable = false)
+    private boolean featured;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
@@ -50,6 +53,8 @@ public class CategoryEntity {
     public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public boolean isFeatured() { return featured; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Instant getCreatedAt() { return createdAt; }

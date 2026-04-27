@@ -12,5 +12,6 @@ public record UpdateCategoryRequest(
         UUID parentId,
         @PositiveOrZero int sortOrder,
         boolean active,
+        boolean featured,
         String imageUrl
 ) {}

@@ -68,6 +68,7 @@ public class MigrateCategoryImagesUseCase {
                     cat.getParentId(),
                     cat.getSortOrder(),
                     cat.isActive(),
+                    cat.isFeatured(),
                     storedUrl
                 );
                 categoryRepository.save(cat);

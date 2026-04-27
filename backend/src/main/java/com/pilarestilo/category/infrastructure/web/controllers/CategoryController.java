@@ -21,17 +21,20 @@ public class CategoryController {
     private final UpdateCategoryUseCase updateCategory;
     private final ListCategoriesUseCase listCategories;
     private final GetCategoryTreeUseCase getTree;
+    private final GetFeaturedCategoriesUseCase getFeatured;
     private final DeleteCategoryUseCase deleteCategory;
 
     public CategoryController(CreateCategoryUseCase createCategory,
                               UpdateCategoryUseCase updateCategory,
                               ListCategoriesUseCase listCategories,
                               GetCategoryTreeUseCase getTree,
+                              GetFeaturedCategoriesUseCase getFeatured,
                               DeleteCategoryUseCase deleteCategory) {
         this.createCategory = createCategory;
         this.updateCategory = updateCategory;
         this.listCategories = listCategories;
         this.getTree = getTree;
+        this.getFeatured = getFeatured;
         this.deleteCategory = deleteCategory;
     }
 
@@ -43,6 +46,11 @@ public class CategoryController {
     @GetMapping("/tree")
     public List<CategoryTreeNode> tree() {
         return getTree.execute();
+    }
+
+    @GetMapping("/featured")
+    public List<CategoryDto> featured() {
+        return getFeatured.execute();
     }
 
     @PostMapping
@@ -58,7 +66,7 @@ public class CategoryController {
     public CategoryDto update(@PathVariable UUID id, @Valid @RequestBody UpdateCategoryRequest req) {
         return updateCategory.execute(
                 id, req.slug(), req.nameEs(), req.nameEn(),
-                req.parentId(), req.sortOrder(), req.active(), req.imageUrl()
+                req.parentId(), req.sortOrder(), req.active(), req.featured(), req.imageUrl()
         );
     }
 

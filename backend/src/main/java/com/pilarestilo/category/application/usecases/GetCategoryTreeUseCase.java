@@ -46,7 +46,7 @@ public class GetCategoryTreeUseCase {
                 .toList();
         return new CategoryTreeNode(
                 c.getId(), c.getParentId(), c.getSlug(), c.getNameEs(), c.getNameEn(),
-                c.getSortOrder(), c.isActive(), c.getImageUrl(), children
+                c.getSortOrder(), c.isActive(), c.isFeatured(), c.getImageUrl(), children
         );
     }
 }

@@ -12,12 +12,13 @@ public record CategoryDto(
         UUID parentId,
         int sortOrder,
         boolean active,
+        boolean featured,
         String imageUrl
 ) {
     public static CategoryDto from(Category c) {
         return new CategoryDto(
                 c.getId(), c.getSlug(), c.getNameEs(), c.getNameEn(),
-                c.getParentId(), c.getSortOrder(), c.isActive(), c.getImageUrl()
+                c.getParentId(), c.getSortOrder(), c.isActive(), c.isFeatured(), c.getImageUrl()
         );
     }
 }

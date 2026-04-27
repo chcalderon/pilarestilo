@@ -11,6 +11,7 @@ public record CategoryTreeNode(
         String nameEn,
         int sortOrder,
         boolean active,
+        boolean featured,
         String imageUrl,
         List<CategoryTreeNode> children
 ) {}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, ChevronDown, ChevronRight, Loader2, Check, X } from 'lucide-react';
+import { Plus, Edit3, Trash2, ChevronDown, ChevronRight, Loader2, Check, X, Star } from 'lucide-react';
 import {
   getCategoryTree, createCategory, updateCategory, deleteCategory,
   type CategoryTreeNode, type CategoryDto,
@@ -10,18 +10,18 @@ import { useToast, Toaster } from './Toast';
 
 type EditForm = {
   slug: string; nameEs: string; nameEn: string;
-  parentId: string; sortOrder: string; imageUrl: string; active: boolean;
+  parentId: string; sortOrder: string; imageUrl: string; active: boolean; featured: boolean;
 };
 
 const EMPTY_FORM: EditForm = {
-  slug: '', nameEs: '', nameEn: '', parentId: '', sortOrder: '0', imageUrl: '', active: true,
+  slug: '', nameEs: '', nameEn: '', parentId: '', sortOrder: '0', imageUrl: '', active: true, featured: false,
 };
 
 function fromDto(dto: CategoryDto): EditForm {
   return {
     slug: dto.slug, nameEs: dto.nameEs, nameEn: dto.nameEn,
     parentId: dto.parentId ?? '', sortOrder: String(dto.sortOrder),
-    imageUrl: dto.imageUrl ?? '', active: dto.active,
+    imageUrl: dto.imageUrl ?? '', active: dto.active, featured: dto.featured,
   };
 }
 
@@ -83,6 +83,10 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
           <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />
           Activa
+        </label>
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+          <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="accent-pe-rose" />
+          <Star size={11} className="text-amber-500" /> Destacada en inicio
         </label>
         <button onClick={onSubmit} disabled={saving}
           className="flex items-center gap-1 bg-pe-rose text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50">
@@ -159,6 +163,9 @@ function CategoryRow({
           <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/30 bg-pe-cream px-1.5 py-0.5">
             Inactiva
           </span>
+        )}
+        {node.featured && (
+          <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" title="Destacada en inicio" />
         )}
 
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
@@ -252,7 +259,7 @@ export default function CategoryTree() {
       await updateCategory(id, {
         slug: form.slug, nameEs: form.nameEs, nameEn: form.nameEn,
         parentId: form.parentId || undefined, sortOrder: Number(form.sortOrder),
-        imageUrl: form.imageUrl || undefined, active: form.active,
+        imageUrl: form.imageUrl || undefined, active: form.active, featured: form.featured,
       }, effectiveToken);
       setEditing(null);
       show('success', 'Categoría actualizada.');

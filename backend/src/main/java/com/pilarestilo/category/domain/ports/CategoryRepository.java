@@ -23,4 +23,6 @@ public interface CategoryRepository {
     boolean existsBySlug(String slug);
 
     boolean hasAssociatedProducts(UUID categoryId);
+
+    List<Category> findFeatured();
 }
