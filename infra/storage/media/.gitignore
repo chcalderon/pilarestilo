@@ -1,0 +1,4 @@
+# Ignore all uploaded media — these are runtime files managed on the server
+*
+!.gitignore
+!**/.gitignore
