@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, ChevronDown, ChevronRight, Loader2, Check, X, Star } from 'lucide-react';
+import { Plus, Edit3, Trash2, ChevronDown, ChevronRight, Loader2, Check, X, Star, GripVertical } from 'lucide-react';
 import {
-  getCategoryTree, createCategory, updateCategory, deleteCategory,
+  DndContext, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  getCategoryTree, createCategory, updateCategory, deleteCategory, reorderCategories,
   type CategoryTreeNode, type CategoryDto,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
@@ -104,6 +112,13 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
 
 // ─── CategoryRow ──────────────────────────────────────────────────────────────
 
+interface DragHandleProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  listeners?: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  attributes?: Record<string, any>;
+}
+
 interface CategoryRowProps {
   node: CategoryTreeNode;
   depth: number;
@@ -114,17 +129,19 @@ interface CategoryRowProps {
   setForm: React.Dispatch<React.SetStateAction<EditForm>>;
   saving: boolean;
   token: string | null;
+  dragHandle?: DragHandleProps;
   setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
   setEditing: (id: string | null) => void;
   setCreating: (id: string | null) => void;
   onSaveEdit: (id: string) => void;
   onDelete: (id: string, name: string) => void;
   onCreate: (parentId: string | null) => void;
+  onReorder: (items: { id: string; sortOrder: number }[]) => void;
 }
 
 function CategoryRow({
-  node, depth, editing, creating, expanded, form, setForm, saving, token,
-  setExpanded, setEditing, setCreating, onSaveEdit, onDelete, onCreate,
+  node, depth, editing, creating, expanded, form, setForm, saving, token, dragHandle,
+  setExpanded, setEditing, setCreating, onSaveEdit, onDelete, onCreate, onReorder,
 }: CategoryRowProps) {
   const isExpanded = expanded.has(node.id);
   const hasChildren = node.children.length > 0;
@@ -133,12 +150,29 @@ function CategoryRow({
 
   const handleCancel = () => { setEditing(null); setCreating(null); };
 
+  const childProps = {
+    editing, creating, expanded, form, setForm, saving, token,
+    setExpanded, setEditing, setCreating,
+    onSaveEdit, onDelete, onCreate, onReorder,
+  };
+
   return (
     <div>
       <div
         className="group flex items-center gap-2 rounded px-2 py-2 hover:bg-pe-cream/40 transition-colors"
         style={{ paddingLeft: `${(depth + 1) * 16}px` }}
       >
+        {/* Drag handle */}
+        <button
+          {...dragHandle?.listeners}
+          {...dragHandle?.attributes}
+          className="p-0.5 text-pe-charcoal/20 hover:text-pe-charcoal/60 transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
+          title="Arrastrar para reordenar"
+          tabIndex={-1}
+        >
+          <GripVertical size={13} />
+        </button>
+
         <button
           onClick={() => setExpanded(prev => {
             const next = new Set(prev);
@@ -202,13 +236,13 @@ function CategoryRow({
         </div>
       )}
 
-      {isExpanded && hasChildren && node.children.map(child => (
-        <CategoryRow key={child.id} node={child} depth={depth + 1}
-          editing={editing} creating={creating} expanded={expanded}
-          form={form} setForm={setForm} saving={saving} token={token}
-          setExpanded={setExpanded} setEditing={setEditing} setCreating={setCreating}
-          onSaveEdit={onSaveEdit} onDelete={onDelete} onCreate={onCreate} />
-      ))}
+      {isExpanded && hasChildren && (
+        <SortableContext items={node.children.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          {node.children.map(child => (
+            <SortableCategoryRow key={child.id} node={child} depth={depth + 1} {...childProps} />
+          ))}
+        </SortableContext>
+      )}
 
       {isCreatingChild && (
         <div style={{ paddingLeft: `${(depth + 2) * 16}px` }}>
@@ -219,6 +253,27 @@ function CategoryRow({
             onSubmit={() => onCreate(node.id)} onCancel={handleCancel} token={token} />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── SortableCategoryRow ──────────────────────────────────────────────────────
+
+function SortableCategoryRow(props: Omit<CategoryRowProps, 'dragHandle'>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.node.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : undefined,
+        position: 'relative',
+        zIndex: isDragging ? 1 : undefined,
+      }}
+    >
+      <CategoryRow {...props} dragHandle={{ listeners, attributes }} />
     </div>
   );
 }
@@ -237,6 +292,10 @@ export default function CategoryTree() {
   const [saving, setSaving]     = useState(false);
   const { toasts, show, dismiss } = useToast();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   async function loadTree() {
     setLoading(true);
     const data = await getCategoryTree();
@@ -249,6 +308,48 @@ export default function CategoryTree() {
   }
 
   useEffect(() => { loadTree(); }, []);
+
+  async function persistReorder(items: { id: string; sortOrder: number }[]) {
+    if (!effectiveToken) return;
+    try {
+      await reorderCategories(items, effectiveToken);
+    } catch {
+      show('error', 'Error al guardar el nuevo orden.');
+      await loadTree();
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Root level reorder
+    const rootIds = tree.map(n => n.id);
+    if (rootIds.includes(activeId) && rootIds.includes(overId)) {
+      const oldIdx = tree.findIndex(n => n.id === activeId);
+      const newIdx = tree.findIndex(n => n.id === overId);
+      const reordered = arrayMove(tree, oldIdx, newIdx);
+      setTree(reordered);
+      void persistReorder(reordered.map((n, i) => ({ id: n.id, sortOrder: i })));
+      return;
+    }
+
+    // Child level reorder — find which parent owns both
+    for (const root of tree) {
+      const childIds = root.children.map(c => c.id);
+      if (childIds.includes(activeId) && childIds.includes(overId)) {
+        const oldIdx = root.children.findIndex(c => c.id === activeId);
+        const newIdx = root.children.findIndex(c => c.id === overId);
+        const reorderedChildren = arrayMove(root.children, oldIdx, newIdx);
+        setTree(prev => prev.map(n => n.id === root.id ? { ...n, children: reorderedChildren } : n));
+        void persistReorder(reorderedChildren.map((c, i) => ({ id: c.id, sortOrder: i })));
+        return;
+      }
+    }
+  }
 
   async function handleSaveEdit(id: string) {
     if (!effectiveToken || !form.slug || !form.nameEs) {
@@ -306,6 +407,7 @@ export default function CategoryTree() {
     editing, creating, expanded, form, setForm, saving, token: effectiveToken,
     setExpanded, setEditing, setCreating,
     onSaveEdit: handleSaveEdit, onDelete: handleDelete, onCreate: handleCreate,
+    onReorder: persistReorder,
   };
 
   if (loading) {
@@ -332,15 +434,19 @@ export default function CategoryTree() {
         </div>
       )}
 
-      <div className="bg-pe-white border border-pe-black/6 shadow-sm py-1">
-        {tree.length === 0 ? (
-          <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
-            No hay categorías. Crea la primera.
-          </p>
-        ) : (
-          tree.map(node => <CategoryRow key={node.id} node={node} depth={0} {...rowProps} />)
-        )}
-      </div>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="bg-pe-white border border-pe-black/6 shadow-sm py-1">
+          {tree.length === 0 ? (
+            <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
+              No hay categorías. Crea la primera.
+            </p>
+          ) : (
+            <SortableContext items={tree.map(n => n.id)} strategy={verticalListSortingStrategy}>
+              {tree.map(node => <SortableCategoryRow key={node.id} node={node} depth={0} {...rowProps} />)}
+            </SortableContext>
+          )}
+        </div>
+      </DndContext>
 
       <Toaster toasts={toasts} dismiss={dismiss} />
     </div>

@@ -71,6 +71,8 @@ public class Category {
     public String getImageUrl() { return imageUrl; }
     public Instant getCreatedAt() { return createdAt; }
 
+    public void reorder(int sortOrder) { this.sortOrder = sortOrder; }
+
     // setters for persistence rehydration
     public void setId(UUID id) { this.id = id; }
     public void setActive(boolean active) { this.active = active; }

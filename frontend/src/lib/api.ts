@@ -1121,6 +1121,17 @@ export async function deleteCategory(id: string, token: string): Promise<void> {
   });
 }
 
+export async function reorderCategories(
+  items: { id: string; sortOrder: number }[],
+  token: string
+): Promise<void> {
+  await apiFetch<void>('/categories/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ items }),
+    headers: authHeaders(token),
+  });
+}
+
 // ─── Search API ───────────────────────────────────────────────────────────────
 
 export async function searchProducts(q: string, page = 0, size = 12): Promise<Page<ProductDto>> {

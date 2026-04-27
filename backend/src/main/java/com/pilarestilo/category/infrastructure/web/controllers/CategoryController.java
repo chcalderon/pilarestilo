@@ -4,6 +4,7 @@ import com.pilarestilo.category.application.dto.CategoryDto;
 import com.pilarestilo.category.application.dto.CategoryTreeNode;
 import com.pilarestilo.category.application.usecases.*;
 import com.pilarestilo.category.infrastructure.web.requests.CreateCategoryRequest;
+import com.pilarestilo.category.infrastructure.web.requests.ReorderCategoriesRequest;
 import com.pilarestilo.category.infrastructure.web.requests.UpdateCategoryRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ public class CategoryController {
 
     private final CreateCategoryUseCase createCategory;
     private final UpdateCategoryUseCase updateCategory;
+    private final ReorderCategoriesUseCase reorderCategories;
     private final ListCategoriesUseCase listCategories;
     private final GetCategoryTreeUseCase getTree;
     private final GetFeaturedCategoriesUseCase getFeatured;
@@ -26,12 +28,14 @@ public class CategoryController {
 
     public CategoryController(CreateCategoryUseCase createCategory,
                               UpdateCategoryUseCase updateCategory,
+                              ReorderCategoriesUseCase reorderCategories,
                               ListCategoriesUseCase listCategories,
                               GetCategoryTreeUseCase getTree,
                               GetFeaturedCategoriesUseCase getFeatured,
                               DeleteCategoryUseCase deleteCategory) {
         this.createCategory = createCategory;
         this.updateCategory = updateCategory;
+        this.reorderCategories = reorderCategories;
         this.listCategories = listCategories;
         this.getTree = getTree;
         this.getFeatured = getFeatured;
@@ -60,6 +64,14 @@ public class CategoryController {
                 req.parentId(), req.sortOrder(), req.imageUrl()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @PatchMapping("/reorder")
+    public ResponseEntity<Void> reorder(@Valid @RequestBody ReorderCategoriesRequest req) {
+        reorderCategories.execute(req.items().stream()
+                .map(i -> new ReorderCategoriesUseCase.Item(i.id(), i.sortOrder()))
+                .toList());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
