@@ -88,7 +88,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
     } catch {
       setError(
         es
-          ? 'No pudimos crear la cuenta. Intentá con otro email.'
+          ? 'No pudimos crear la cuenta. Intenta con otro email.'
           : 'Could not create account. Try a different email.'
       );
     } finally {
@@ -206,12 +206,12 @@ export default function RegisterForm({ locale, redirect }: Props) {
 
       {/* Login link */}
       <p className="font-sans text-[0.78rem] text-pe-charcoal/50 text-center">
-        {es ? '¿Ya tenés cuenta?' : 'Already have an account?'}{' '}
+        {es ? '¿Ya tienes cuenta?' : 'Already have an account?'}{' '}
         <a
           href={`/${locale}/auth/login`}
           className="text-pe-rose-deep hover:underline underline-offset-2"
         >
-          {es ? 'Iniciá sesión' : 'Sign in'}
+          {es ? 'Inicia sesión' : 'Sign in'}
         </a>
       </p>
     </form>

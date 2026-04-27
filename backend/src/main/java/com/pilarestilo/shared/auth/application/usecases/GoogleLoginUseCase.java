@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.infrastructure.services.MediaStorageService;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
@@ -16,10 +17,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 @Service
 public class GoogleLoginUseCase {
@@ -30,20 +27,20 @@ public class GoogleLoginUseCase {
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
     private final String googleClientId;
-    private final String mediaStoragePath;
+    private final MediaStorageService mediaStorageService;
 
     public GoogleLoginUseCase(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
             ObjectMapper objectMapper,
             @Value("${app.google.client-id}") String googleClientId,
-            @Value("${app.media.storage-path:./media}") String mediaStoragePath
+            MediaStorageService mediaStorageService
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.objectMapper = objectMapper;
         this.googleClientId = googleClientId;
-        this.mediaStoragePath = mediaStoragePath;
+        this.mediaStorageService = mediaStorageService;
     }
 
     public AuthTokenDto execute(String idToken) {
@@ -110,11 +107,8 @@ public class GoogleLoginUseCase {
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() != 200) return null;
 
-            Path dir = Paths.get(mediaStoragePath, "users");
-            Files.createDirectories(dir);
-            Path dest = dir.resolve(userId + ".jpg");
-            Files.copy(response.body(), dest, StandardCopyOption.REPLACE_EXISTING);
-            return "/api/media/users/" + userId + ".jpg";
+            String url = mediaStorageService.storeRaw(response.body(), "users", userId + ".jpg", "image/jpeg");
+            return url + "?v=" + System.currentTimeMillis();
         } catch (Exception e) {
             return null;
         }

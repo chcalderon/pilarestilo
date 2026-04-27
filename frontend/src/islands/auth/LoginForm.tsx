@@ -181,12 +181,12 @@ export default function LoginForm({ locale, redirect }: Props) {
 
       {/* Register link */}
       <p className="font-sans text-[0.78rem] text-pe-charcoal/50 text-center">
-        {es ? '¿No tenés cuenta?' : "Don't have an account?"}{' '}
+        {es ? '¿No tienes cuenta?' : "Don't have an account?"}{' '}
         <a
           href={`/${locale}/auth/register`}
           className="text-pe-rose-deep hover:underline underline-offset-2"
         >
-          {es ? 'Registrate' : 'Register'}
+          {es ? 'Regístrate' : 'Register'}
         </a>
       </p>
     </form>

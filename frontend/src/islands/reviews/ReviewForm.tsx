@@ -60,7 +60,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) { setError(locale === 'es' ? 'Seleccioná una puntuación' : 'Select a rating'); return; }
+    if (rating === 0) { setError(locale === 'es' ? 'Selecciona una puntuación' : 'Select a rating'); return; }
     if (!comment.trim()) { setError(locale === 'es' ? 'El comentario es obligatorio' : 'Comment is required'); return; }
     setSubmitting(true);
     setError('');
@@ -73,7 +73,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
       if (msg.includes('409') || msg.includes('already')) {
         setError(locale === 'es' ? 'Ya reseñaste este producto.' : 'You already reviewed this product.');
       } else {
-        setError(locale === 'es' ? 'Error al enviar. Intentá de nuevo.' : 'Error submitting. Try again.');
+        setError(locale === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error submitting. Try again.');
       }
     } finally {
       setSubmitting(false);

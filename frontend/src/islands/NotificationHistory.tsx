@@ -107,7 +107,7 @@ export default function NotificationHistory({ locale }: Props) {
 
       {!loading && page && page.content.length === 0 && (
         <div className="font-sans text-sm text-pe-charcoal/50 border border-pe-black/10 p-8 text-center">
-          {es ? 'No tenés notificaciones aún.' : "You don't have any notifications yet."}
+          {es ? 'No tienes notificaciones aún.' : "You don't have any notifications yet."}
         </div>
       )}
 

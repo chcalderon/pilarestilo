@@ -26,6 +26,8 @@ backend/src/main/java/com/pilarestilo/category/application/usecases/MigrateCateg
 ```
 backend/pom.xml                                                     (add S3 SDK dependency)
 backend/src/main/java/com/pilarestilo/shared/infrastructure/web/controllers/MediaUploadController.java
+backend/src/main/java/com/pilarestilo/shared/auth/application/usecases/UploadMyAvatarUseCase.java   (✅ done: migrated to MediaStorageService)
+backend/src/main/java/com/pilarestilo/shared/auth/application/usecases/GoogleLoginUseCase.java      (✅ done: migrated to MediaStorageService)
 ```
 
 ### New test files

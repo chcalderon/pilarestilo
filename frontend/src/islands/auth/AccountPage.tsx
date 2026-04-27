@@ -233,6 +233,30 @@ export default function AccountPage({ locale }: Props) {
     };
   }, [effectiveToken]);
 
+  const handleAvatarFile = useCallback(async (file: File) => {
+    if (!effectiveToken) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarFeedback({ type: 'error', text: es ? 'Solo se permiten imágenes.' : 'Only image files allowed.' });
+      return;
+    }
+    setAvatarUploading(true);
+    setAvatarFeedback(null);
+    try {
+      const res = await uploadMyAvatar(file, effectiveToken);
+      setAvatarUrl(res.avatarUrl);
+      const { setAuth, token: storeToken } = useAuthStore.getState();
+      const storeUser = useAuthStore.getState().user;
+      if (storeUser && storeToken) {
+        setAuth(storeToken, { ...storeUser, avatarUrl: res.avatarUrl });
+      }
+      setAvatarFeedback({ type: 'success', text: es ? 'Foto actualizada.' : 'Photo updated.' });
+    } catch {
+      setAvatarFeedback({ type: 'error', text: es ? 'No se pudo subir la foto.' : 'Could not upload photo.' });
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, [effectiveToken, es]);
+
   // Redirect if not logged in (after hydration)
   useEffect(() => {
     if (ready && !user) {
@@ -257,30 +281,6 @@ export default function AccountPage({ locale }: Props) {
       // no-op
     }
   }
-
-  const handleAvatarFile = useCallback(async (file: File) => {
-    if (!effectiveToken) return;
-    if (!file.type.startsWith('image/')) {
-      setAvatarFeedback({ type: 'error', text: es ? 'Solo se permiten imágenes.' : 'Only image files allowed.' });
-      return;
-    }
-    setAvatarUploading(true);
-    setAvatarFeedback(null);
-    try {
-      const res = await uploadMyAvatar(file, effectiveToken);
-      setAvatarUrl(res.avatarUrl);
-      const { setAuth, token: storeToken } = useAuthStore.getState();
-      const storeUser = useAuthStore.getState().user;
-      if (storeUser && storeToken) {
-        setAuth(storeToken, { ...storeUser, avatarUrl: res.avatarUrl });
-      }
-      setAvatarFeedback({ type: 'success', text: es ? 'Foto actualizada.' : 'Photo updated.' });
-    } catch {
-      setAvatarFeedback({ type: 'error', text: es ? 'No se pudo subir la foto.' : 'Could not upload photo.' });
-    } finally {
-      setAvatarUploading(false);
-    }
-  }, [effectiveToken, es]);
 
   async function handleSaveProfile() {
     if (!effectiveToken || profileSaving) return;
@@ -738,20 +738,22 @@ export default function AccountPage({ locale }: Props) {
         {tab === 'profile' && (
           <div className="max-w-2xl flex flex-col gap-5">
             {/* Avatar */}
-            <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-4">
+            <div
+              className={`bg-pe-white p-6 border transition-colors duration-200 flex flex-col gap-4 ${avatarDragging ? 'border-pe-rose bg-pe-rose/5' : 'border-pe-black/6'}`}
+              onDragOver={(e) => { e.preventDefault(); setAvatarDragging(true); }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setAvatarDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setAvatarDragging(false);
+                const file = e.dataTransfer.files[0];
+                if (file) void handleAvatarFile(file);
+              }}
+            >
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Foto de perfil' : 'Profile photo'}</p>
               <div className="flex items-center gap-5">
-                <div
-                  className={`relative w-20 h-20 rounded-full shrink-0 overflow-hidden border-2 transition-colors duration-200 ${avatarDragging ? 'border-pe-rose' : 'border-pe-black/10'}`}
-                  onDragOver={(e) => { e.preventDefault(); setAvatarDragging(true); }}
-                  onDragLeave={() => setAvatarDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setAvatarDragging(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) void handleAvatarFile(file);
-                  }}
-                >
+                <div className={`relative w-20 h-20 rounded-full shrink-0 overflow-hidden border-2 transition-colors duration-200 ${avatarDragging ? 'border-pe-rose' : 'border-pe-black/10'}`}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
@@ -767,7 +769,9 @@ export default function AccountPage({ locale }: Props) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="font-sans text-[0.72rem] text-pe-charcoal/50">
-                    {es ? 'Arrastrá una foto aquí o' : 'Drag a photo here or'}
+                    {avatarDragging
+                      ? (es ? 'Suelta la imagen aquí' : 'Drop the image here')
+                      : (es ? 'Arrastra una foto aquí o' : 'Drag a photo here or')}
                   </p>
                   <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-pe-black/15 font-sans text-[0.68rem] tracking-wider uppercase text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep transition-colors duration-200">
                     <Camera size={12} />
