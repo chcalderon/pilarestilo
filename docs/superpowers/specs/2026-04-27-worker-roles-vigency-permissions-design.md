@@ -7,7 +7,7 @@
 
 ## Overview
 
-Extend the user model with worker-specific roles, vigency dates, and a DB-stored permission matrix that controls both UI navigation and API access. The goal is a flexible RBAC foundation where ADMIN can assign workers, set their active dates, and view/edit which views each role can access.
+Extend the user model with worker-specific roles, vigency dates, and a DB-stored permission matrix. Permissions are embedded in the JWT at login time — no per-request DB lookup, no frontend fetch needed for navigation. ADMIN can assign workers, set their active dates, and view/edit which views each role can access. When the matrix changes, affected workers must re-login for changes to take effect (acceptable tradeoff — matrix changes are infrequent admin operations).
 
 ---
 
@@ -111,13 +111,7 @@ GET  /api/admin/permissions          — full matrix: all roles × all view_keys
 PUT  /api/admin/permissions          — replace matrix (array of {role, viewKey})
 ```
 
-### Current user permissions (authenticated)
-
-```
-GET /api/me/permissions   — returns list of view_keys the current user can access
-```
-
-All endpoints secured with `@PreAuthorize`. Worker management and permissions require `ADMIN`. `/api/me/permissions` requires any authenticated worker role.
+All endpoints secured with `@PreAuthorize`. Worker management and permissions require `ADMIN`.
 
 ---
 
@@ -152,15 +146,30 @@ Editable grid:
 
 ### Navigation Guard (frontend)
 
-On protected worker routes: fetch `/api/me/permissions`, then filter sidebar nav items to only show accessible views. Redirect to `/worker/waiting` or login if not eligible.
+Permissions are read directly from the JWT claim `permissions: string[]` — no API call needed. On mount, the auth store decodes the JWT and exposes the `permissions` array. The sidebar filters nav items against this list. Redirect to `/worker/waiting` or login if not eligible.
 
 ---
 
 ## Security Layers
 
-1. **DB permissions → UI navigation**: sidebar items rendered only if view_key in user's permissions list
-2. **`@PreAuthorize` on API endpoints**: enforces access at server level regardless of UI state
-3. **Vigency check in `AuthService`** (or a filter): validate dates on every authenticated request for worker roles
+1. **JWT claim `permissions`**: embedded at login by querying `role_permissions` for the user's role. Sidebar reads this claim — no DB hit per request.
+2. **`@PreAuthorize` on API endpoints**: hardcoded in Java, enforces access at server level regardless of JWT content. This is the real security boundary.
+3. **Vigency check on login**: `JwtTokenProvider` validates `workerVigencyStart`/`End` at token generation time. Expired vigency = token not issued. Frontend also checks the claim on mount to catch mid-session expiry.
+
+**JWT payload additions:**
+```json
+{
+  "sub": "uuid",
+  "role": "SELLER",
+  "permissions": ["dashboard", "productos", "caja"],
+  "vigencyStart": "2026-05-01",
+  "vigencyEnd": null
+}
+```
+
+**When matrix changes take effect:** Next login. ADMIN changing the matrix does not invalidate existing tokens — workers get new permissions on next login. Acceptable for an infrequent admin operation.
+
+**Token expiry window risk:** If a worker's vigency ends mid-session, their access token remains valid until it expires (default 1h). Mitigated by short access token TTL. Refresh token endpoint re-checks vigency on each refresh.
 
 ---
 
