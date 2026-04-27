@@ -38,6 +38,6 @@ public class RefreshTokenUseCase {
 
         String access  = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());
-        return AuthTokenDto.of(access, newRefresh, user.getId(), user.getEmail(), user.getRole().name());
+        return AuthTokenDto.of(access, newRefresh, user.getId(), user.getEmail(), user.getRole().name(), user.getFullName(), user.getAvatarUrl());
     }
 }

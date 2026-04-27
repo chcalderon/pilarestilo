@@ -92,12 +92,14 @@ public class UserRepositoryAdapter implements UserRepository {
         entity.setRole(user.getRole());
         entity.setActive(user.isActive());
         entity.setPasswordHash(user.getPasswordHash());
+        entity.setAvatarUrl(user.getAvatarUrl());
+        entity.setAvatarManuallySet(user.isAvatarManuallySet());
         entity.setCreatedAt(user.getCreatedAt());
         return entity;
     }
 
     private User toDomain(UserEntity entity) {
-        return User.reconstruct(
+        User user = User.reconstruct(
                 entity.getId(),
                 entity.getEmail(),
                 entity.getFullName(),
@@ -108,5 +110,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getPasswordHash(),
                 entity.getCreatedAt()
         );
+        user.updateAvatarUrl(entity.getAvatarUrl());
+        user.setAvatarManuallySet(entity.isAvatarManuallySet());
+        return user;
     }
 }

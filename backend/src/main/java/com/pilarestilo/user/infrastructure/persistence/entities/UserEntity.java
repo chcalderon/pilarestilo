@@ -35,6 +35,12 @@ public class UserEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "avatar_manually_set", nullable = false)
+    private boolean avatarManuallySet = false;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -63,6 +69,12 @@ public class UserEntity {
 
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+
+    public boolean isAvatarManuallySet() { return avatarManuallySet; }
+    public void setAvatarManuallySet(boolean avatarManuallySet) { this.avatarManuallySet = avatarManuallySet; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Eye, EyeOff, LogIn, Loader2, AlertCircle } from 'lucide-react';
-import { loginUser } from '../../lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { Eye, EyeOff, LogIn, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { loginUser, googleLogin } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
 
 interface Props {
@@ -14,9 +14,63 @@ export default function LoginForm({ locale, redirect }: Props) {
   const [showPass, setShowPass]     = useState(false);
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
+  const [merged, setMerged]         = useState(false);
   const { setAuth }                  = useAuthStore();
+  const googleBtnRef                 = useRef<HTMLDivElement>(null);
 
   const es = locale === 'es';
+
+  useEffect(() => {
+    const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) return;
+
+    function initGoogle() {
+      const g = (window as any).google;
+      if (!g?.accounts?.id) return;
+      g.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response: { credential: string }) => {
+          setLoading(true);
+          setError('');
+          try {
+            const data = await googleLogin(response.credential);
+            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl });
+            document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+            const isStaff = data.role === 'ADMIN' || data.role === 'SELLER';
+            const dest = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
+            if (data.accountMerged) {
+              setMerged(true);
+              setTimeout(() => { window.location.href = dest; }, 2500);
+            } else {
+              window.location.href = dest;
+            }
+          } catch {
+            setError(es ? 'No se pudo iniciar sesión con Google.' : 'Could not sign in with Google.');
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+      if (googleBtnRef.current) {
+        g.accounts.id.renderButton(googleBtnRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          width: googleBtnRef.current.offsetWidth || 320,
+          logo_alignment: 'left',
+        });
+      }
+    }
+
+    if ((window as any).google?.accounts?.id) {
+      initGoogle();
+    } else {
+      const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+      script?.addEventListener('load', initGoogle);
+      return () => script?.removeEventListener('load', initGoogle);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +78,7 @@ export default function LoginForm({ locale, redirect }: Props) {
     setError('');
     try {
       const data = await loginUser(email, password);
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role });
+      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       const isStaff = data.role === 'ADMIN' || data.role === 'SELLER';
       window.location.href = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
@@ -33,6 +87,24 @@ export default function LoginForm({ locale, redirect }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (merged) {
+    return (
+      <div className="flex flex-col items-center gap-5 py-10 text-center">
+        <CheckCircle2 size={44} className="text-pe-rose" />
+        <div>
+          <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
+            {es ? '¡Cuentas unificadas!' : 'Accounts linked!'}
+          </p>
+          <p className="font-sans text-[0.78rem] text-pe-charcoal/55 mt-1.5">
+            {es
+              ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
+              : 'Your existing account has been linked with Google. Redirecting…'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -96,6 +168,16 @@ export default function LoginForm({ locale, redirect }: Props) {
         {loading ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
         {loading ? (es ? 'Ingresando…' : 'Signing in…') : (es ? 'Iniciar sesión' : 'Sign in')}
       </button>
+
+      {/* Google Sign-In */}
+      <div className="flex items-center gap-3 my-1">
+        <div className="flex-1 h-px bg-pe-black/10"></div>
+        <span className="font-sans text-[0.7rem] tracking-[0.12em] uppercase text-pe-charcoal/40">
+          {es ? 'o continuar con' : 'or continue with'}
+        </span>
+        <div className="flex-1 h-px bg-pe-black/10"></div>
+      </div>
+      <div ref={googleBtnRef} className="flex justify-center"></div>
 
       {/* Register link */}
       <p className="font-sans text-[0.78rem] text-pe-charcoal/50 text-center">

@@ -29,7 +29,8 @@ public class GetMyProfileUseCase {
                 user.getPhone(),
                 user.getNotificationChannelPreference().name(),
                 user.getRole().name(),
-                user.isActive()
+                user.isActive(),
+                user.getAvatarUrl()
         );
     }
 }

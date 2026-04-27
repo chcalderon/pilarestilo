@@ -9,5 +9,6 @@ public record UserProfileDto(
         String phone,
         String notificationChannelPreference,
         String role,
-        boolean active
+        boolean active,
+        String avatarUrl
 ) {}

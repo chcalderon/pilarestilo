@@ -33,7 +33,8 @@ public class UpdateMyProfileUseCase {
                 saved.getPhone(),
                 saved.getNotificationChannelPreference().name(),
                 saved.getRole().name(),
-                saved.isActive()
+                saved.isActive(),
+                saved.getAvatarUrl()
         );
     }
 }

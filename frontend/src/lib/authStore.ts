@@ -5,6 +5,8 @@ export interface StoredUser {
   id: string;
   email: string;
   role: string;
+  fullName?: string;
+  avatarUrl?: string;
 }
 
 interface AuthState {

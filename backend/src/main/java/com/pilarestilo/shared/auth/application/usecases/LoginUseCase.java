@@ -34,6 +34,6 @@ public class LoginUseCase {
         }
         String access  = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
         String refresh = jwtTokenProvider.generateRefreshToken(user.getId());
-        return AuthTokenDto.of(access, refresh, user.getId(), user.getEmail(), user.getRole().name());
+        return AuthTokenDto.of(access, refresh, user.getId(), user.getEmail(), user.getRole().name(), user.getFullName(), user.getAvatarUrl());
     }
 }

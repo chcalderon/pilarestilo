@@ -753,9 +753,12 @@ export interface AuthTokenResponse {
   accessToken: string;
   refreshToken: string;
   tokenType: string;
+  accountMerged?: boolean;
   userId: string;
   email: string;
   role: string;
+  fullName?: string;
+  avatarUrl?: string;
 }
 
 export interface UserProfileDto {
@@ -766,6 +769,7 @@ export interface UserProfileDto {
   notificationChannelPreference?: 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
   role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
   active: boolean;
+  avatarUrl?: string | null;
 }
 
 export interface ReviewDto {
@@ -805,10 +809,29 @@ export async function registerUser(
   });
 }
 
-export async function getAuthMe(token: string): Promise<{ id: string; email: string; role: string }> {
-  return apiFetch<{ id: string; email: string; role: string }>('/auth/me', {
+export async function googleLogin(idToken: string): Promise<AuthTokenResponse> {
+  return apiFetch<AuthTokenResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  });
+}
+
+export async function getAuthMe(token: string): Promise<{ id: string; email: string; role: string; fullName?: string; avatarUrl?: string }> {
+  return apiFetch<{ id: string; email: string; role: string; fullName?: string; avatarUrl?: string }>('/auth/me/profile', {
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+export async function uploadMyAvatar(file: File, token: string): Promise<{ avatarUrl: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/auth/me/avatar`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<{ avatarUrl: string }>;
 }
 
 export async function getMyProfile(token: string): Promise<UserProfileDto> {

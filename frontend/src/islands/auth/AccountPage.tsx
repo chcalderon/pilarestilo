@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { User, Star, ShoppingBag, Trash2, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { User, Star, ShoppingBag, Trash2, Loader2, Camera } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import {
@@ -12,6 +12,7 @@ import {
   getPaymentByOrder,
   submitPaymentProof,
   uploadPaymentProofImage,
+  uploadMyAvatar,
   createGatewayCheckoutSession,
   simulateGatewayPaymentStatus,
   type ReviewDto,
@@ -79,6 +80,11 @@ export default function AccountPage({ locale }: Props) {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [ready, setReady] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarDragging, setAvatarDragging] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarFeedback, setAvatarFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const es = locale === 'es';
   const displayName = profile?.fullName?.trim() ? profile.fullName : (user?.email ?? '');
 
@@ -217,6 +223,7 @@ export default function AccountPage({ locale }: Props) {
         setProfileName(data.fullName ?? '');
         setProfilePhone(sanitizePhoneDraft(data.phone));
         setProfileNotificationChannel((data.notificationChannelPreference as NotificationChannelPreference) ?? 'AUTO');
+        setAvatarUrl(data.avatarUrl ?? null);
       })
       .finally(() => {
         if (!cancelled) setProfileLoading(false);
@@ -250,6 +257,30 @@ export default function AccountPage({ locale }: Props) {
       // no-op
     }
   }
+
+  const handleAvatarFile = useCallback(async (file: File) => {
+    if (!effectiveToken) return;
+    if (!file.type.startsWith('image/')) {
+      setAvatarFeedback({ type: 'error', text: es ? 'Solo se permiten imágenes.' : 'Only image files allowed.' });
+      return;
+    }
+    setAvatarUploading(true);
+    setAvatarFeedback(null);
+    try {
+      const res = await uploadMyAvatar(file, effectiveToken);
+      setAvatarUrl(res.avatarUrl);
+      const { setAuth, token: storeToken } = useAuthStore.getState();
+      const storeUser = useAuthStore.getState().user;
+      if (storeUser && storeToken) {
+        setAuth(storeToken, { ...storeUser, avatarUrl: res.avatarUrl });
+      }
+      setAvatarFeedback({ type: 'success', text: es ? 'Foto actualizada.' : 'Photo updated.' });
+    } catch {
+      setAvatarFeedback({ type: 'error', text: es ? 'No se pudo subir la foto.' : 'Could not upload photo.' });
+    } finally {
+      setAvatarUploading(false);
+    }
+  }, [effectiveToken, es]);
 
   async function handleSaveProfile() {
     if (!effectiveToken || profileSaving) return;
@@ -706,6 +737,62 @@ export default function AccountPage({ locale }: Props) {
 
         {tab === 'profile' && (
           <div className="max-w-2xl flex flex-col gap-5">
+            {/* Avatar */}
+            <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-4">
+              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Foto de perfil' : 'Profile photo'}</p>
+              <div className="flex items-center gap-5">
+                <div
+                  className={`relative w-20 h-20 rounded-full shrink-0 overflow-hidden border-2 transition-colors duration-200 ${avatarDragging ? 'border-pe-rose' : 'border-pe-black/10'}`}
+                  onDragOver={(e) => { e.preventDefault(); setAvatarDragging(true); }}
+                  onDragLeave={() => setAvatarDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setAvatarDragging(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) void handleAvatarFile(file);
+                  }}
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-pe-rose flex items-center justify-center text-pe-offwhite font-display text-2xl font-light">
+                      {displayName.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  {avatarUploading && (
+                    <div className="absolute inset-0 bg-pe-black/40 flex items-center justify-center">
+                      <Loader2 size={20} className="animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="font-sans text-[0.72rem] text-pe-charcoal/50">
+                    {es ? 'Arrastrá una foto aquí o' : 'Drag a photo here or'}
+                  </p>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-pe-black/15 font-sans text-[0.68rem] tracking-wider uppercase text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep transition-colors duration-200">
+                    <Camera size={12} />
+                    {es ? 'Elegir archivo' : 'Choose file'}
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleAvatarFile(file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  {avatarFeedback && (
+                    <span className={`font-sans text-[0.7rem] ${avatarFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                      {avatarFeedback.text}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Datos de perfil' : 'Profile details'}</p>
               <label className="font-sans text-[0.72rem] text-pe-charcoal/55">{es ? 'Nombre completo' : 'Full name'}</label>

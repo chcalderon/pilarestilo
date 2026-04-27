@@ -4,7 +4,9 @@ import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.application.dto.UserProfileDto;
 import com.pilarestilo.shared.auth.application.usecases.*;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
+import org.springframework.web.multipart.MultipartFile;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.ChangeMyPasswordRequest;
+import com.pilarestilo.shared.auth.infrastructure.web.requests.GoogleLoginRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.LoginRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RefreshRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RegisterRequest;
@@ -24,19 +26,25 @@ public class AuthController {
     private final GetMyProfileUseCase getMyProfileUseCase;
     private final UpdateMyProfileUseCase updateMyProfileUseCase;
     private final ChangeMyPasswordUseCase changeMyPasswordUseCase;
+    private final GoogleLoginUseCase googleLoginUseCase;
+    private final UploadMyAvatarUseCase uploadMyAvatarUseCase;
 
     public AuthController(RegisterUseCase registerUseCase,
                           LoginUseCase loginUseCase,
                           RefreshTokenUseCase refreshTokenUseCase,
                           GetMyProfileUseCase getMyProfileUseCase,
                           UpdateMyProfileUseCase updateMyProfileUseCase,
-                          ChangeMyPasswordUseCase changeMyPasswordUseCase) {
+                          ChangeMyPasswordUseCase changeMyPasswordUseCase,
+                          GoogleLoginUseCase googleLoginUseCase,
+                          UploadMyAvatarUseCase uploadMyAvatarUseCase) {
         this.registerUseCase = registerUseCase;
         this.loginUseCase = loginUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
         this.getMyProfileUseCase = getMyProfileUseCase;
         this.updateMyProfileUseCase = updateMyProfileUseCase;
         this.changeMyPasswordUseCase = changeMyPasswordUseCase;
+        this.googleLoginUseCase = googleLoginUseCase;
+        this.uploadMyAvatarUseCase = uploadMyAvatarUseCase;
     }
 
     @PostMapping("/register")
@@ -53,6 +61,11 @@ public class AuthController {
     @PostMapping("/refresh")
     public AuthTokenDto refresh(@RequestBody @Valid RefreshRequest req) {
         return refreshTokenUseCase.execute(req.refreshToken());
+    }
+
+    @PostMapping("/google")
+    public AuthTokenDto googleLogin(@RequestBody @Valid GoogleLoginRequest req) {
+        return googleLoginUseCase.execute(req.idToken());
     }
 
     @GetMapping("/me")
@@ -81,5 +94,13 @@ public class AuthController {
     public void changeMyPassword(@AuthenticationPrincipal AuthenticatedUser currentUser,
                                  @RequestBody @Valid ChangeMyPasswordRequest request) {
         changeMyPasswordUseCase.execute(currentUser.id(), request.currentPassword(), request.newPassword());
+    }
+
+    @PutMapping("/me/avatar")
+    public java.util.Map<String, String> uploadAvatar(
+            @AuthenticationPrincipal AuthenticatedUser currentUser,
+            @RequestParam("file") MultipartFile file) {
+        String url = uploadMyAvatarUseCase.execute(currentUser.id(), file);
+        return java.util.Map.of("avatarUrl", url);
     }
 }

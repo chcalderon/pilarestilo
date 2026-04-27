@@ -20,7 +20,7 @@ export default function AccountMenu({ locale }: Props) {
       if (token) {
         try {
           const me = await getAuthMe(token);
-          setAuth(token, { id: me.id, email: me.email, role: me.role });
+          setAuth(token, { id: me.id, email: me.email, role: me.role, fullName: me.fullName, avatarUrl: me.avatarUrl });
         } catch {
           clearAuth();
         }
@@ -68,7 +68,8 @@ export default function AccountMenu({ locale }: Props) {
     );
   }
 
-  const initials = user.email.substring(0, 2).toUpperCase();
+  const displayName = user.fullName?.trim().split(' ')[0] || user.email.split('@')[0];
+  const initials = (user.fullName?.trim() || user.email).substring(0, 2).toUpperCase();
 
   function handleLogout() {
     clearAuth();
@@ -84,10 +85,18 @@ export default function AccountMenu({ locale }: Props) {
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <span className="w-6 h-6 rounded-full bg-pe-rose flex items-center justify-center text-pe-offwhite text-[0.6rem] font-medium">
-          {initials}
-        </span>
-        <span className="hidden sm:inline max-w-[120px] truncate">{user.email.split('@')[0]}</span>
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt={displayName}
+            className="w-6 h-6 rounded-full object-cover"
+          />
+        ) : (
+          <span className="w-6 h-6 rounded-full bg-pe-rose flex items-center justify-center text-pe-offwhite text-[0.6rem] font-medium">
+            {initials}
+          </span>
+        )}
+        <span className="hidden sm:inline max-w-[120px] truncate">{displayName}</span>
         <ChevronDown size={11} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 

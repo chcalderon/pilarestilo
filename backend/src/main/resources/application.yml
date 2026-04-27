@@ -66,6 +66,8 @@ management:
 app:
   jwt:
     secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
   media:
     storage-path: ${MEDIA_STORAGE_PATH:./media}
   cache:

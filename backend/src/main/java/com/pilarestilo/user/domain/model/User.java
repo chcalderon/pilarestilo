@@ -17,6 +17,8 @@ public class User {
     private UserRole role;
     private boolean active;
     private String passwordHash;
+    private String avatarUrl;
+    private boolean avatarManuallySet;
     private Instant createdAt;
 
     private User() {}
@@ -106,7 +108,13 @@ public class User {
     public UserRole getRole() { return role; }
     public boolean isActive() { return active; }
     public String getPasswordHash() { return passwordHash; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public boolean isAvatarManuallySet() { return avatarManuallySet; }
     public Instant getCreatedAt() { return createdAt; }
+
+    public void updateAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public void markAvatarAsManual() { this.avatarManuallySet = true; }
+    public void setAvatarManuallySet(boolean avatarManuallySet) { this.avatarManuallySet = avatarManuallySet; }
 
     public void updateFullName(String newFullName) {
         if (newFullName == null || newFullName.isBlank()) {
