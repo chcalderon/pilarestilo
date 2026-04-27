@@ -166,7 +166,7 @@ function CategoryRow({
         <button
           {...dragHandle?.listeners}
           {...dragHandle?.attributes}
-          className="p-0.5 text-pe-charcoal/20 hover:text-pe-charcoal/60 transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
+          className="p-0.5 text-pe-charcoal/25 hover:text-pe-charcoal/60 transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
           title="Arrastrar para reordenar"
           tabIndex={-1}
         >
@@ -179,7 +179,7 @@ function CategoryRow({
             next.has(node.id) ? next.delete(node.id) : next.add(node.id);
             return next;
           })}
-          className={['p-0.5 text-pe-charcoal/30 hover:text-pe-charcoal transition-colors', hasChildren ? '' : 'invisible'].join(' ')}
+          className={['p-0.5 text-pe-charcoal/35 hover:text-pe-charcoal transition-colors', hasChildren ? '' : 'invisible'].join(' ')}
         >
           {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
