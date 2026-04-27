@@ -98,9 +98,9 @@
   .grain-strong::after { opacity: 0.26; }
   .rose-mesh {
     background:
-      radial-gradient(60% 40% at 18% 20%, rgba(232,201,204,0.65), transparent 60%),
-      radial-gradient(45% 35% at 82% 70%, rgba(183,110,121,0.18), transparent 65%),
-      radial-gradient(80% 60% at 50% 110%, rgba(198,169,107,0.14), transparent 70%),
+      radial-gradient(60% 40% at 18% 20%, rgba(232,201,204,0.28), transparent 60%),
+      radial-gradient(45% 35% at 82% 70%, rgba(183,110,121,0.10), transparent 65%),
+      radial-gradient(80% 60% at 50% 110%, rgba(198,169,107,0.08), transparent 70%),
       var(--pe-surface-card);
   }
 }
