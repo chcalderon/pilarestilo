@@ -1,0 +1,44 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Acceso pendiente">
+  <div class="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+    <div class="max-w-md">
+      <h1 class="font-display text-pe-black text-3xl font-light mb-4">
+        Tu acceso aún no está activo
+      </h1>
+      <p class="text-pe-charcoal/60 text-sm mb-8" id="vigency-message">
+        Tu acceso de trabajador comenzará pronto.
+      </p>
+      <button
+        id="logout-btn"
+        class="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors"
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { useAuthStore } from '../../lib/authStore';
+
+  const store = useAuthStore.getState();
+  const user = store.user;
+  if (user?.vigencyStart) {
+    const msg = document.getElementById('vigency-message');
+    if (msg) {
+      const date = new Date(user.vigencyStart + 'T00:00:00').toLocaleDateString('es-CL', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+      msg.textContent = `Tu acceso de trabajador comienza el ${date}.`;
+    }
+  }
+
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    useAuthStore.getState().clearAuth();
+    document.cookie = 'pe_token=; path=/; max-age=0; SameSite=Lax';
+    window.location.href = '/admin/login';
+  });
+</script>

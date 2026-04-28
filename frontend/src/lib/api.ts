@@ -760,6 +760,8 @@ export interface AuthTokenResponse {
   fullName?: string;
   avatarUrl?: string;
   permissions: string[];
+  vigencyStart?: string;
+  vigencyEnd?: string;
 }
 
 export interface UserProfileDto {

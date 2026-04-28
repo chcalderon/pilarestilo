@@ -8,6 +8,8 @@ export interface StoredUser {
   fullName?: string;
   avatarUrl?: string;
   permissions: string[];
+  vigencyStart?: string;
+  vigencyEnd?: string;
 }
 
 interface AuthState {

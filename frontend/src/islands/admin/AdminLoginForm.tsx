@@ -26,7 +26,7 @@ export default function AdminLoginForm({ redirect }: Props) {
         setError('Acceso denegado. Se requieren privilegios de administrador.');
         return;
       }
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, permissions: data.permissions ?? [] });
+      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = redirect ?? '/admin/';
     } catch {

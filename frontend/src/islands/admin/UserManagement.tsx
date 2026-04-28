@@ -1,5 +1,6 @@
 ﻿import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, ShieldCheck, ShieldOff, Trash2, Wallet, Repeat, Pencil, KeyRound } from 'lucide-react';
+import WorkerAssignmentModal from './WorkerAssignmentModal';
 import {
   deleteAdminUser,
   getAdminOrdersByCustomer,
@@ -156,6 +157,7 @@ export default function UserManagement() {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [modal, setModal] = useState<UserModalState | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [assigningWorker, setAssigningWorker] = useState<{ userId: string; fullName: string; role: string } | null>(null);
 
   const visibleUsers = useMemo(() => (tab === 'customers' ? customers : workers), [customers, workers, tab]);
   const visibleTotal = tab === 'customers' ? customersTotal : workersTotal;
@@ -562,6 +564,17 @@ export default function UserManagement() {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              setAssigningWorker({ userId: row.id, fullName: row.fullName, role: row.role });
+            }}
+            disabled={busyUserId !== null}
+            className="inline-flex items-center gap-1 px-2 py-1 text-[0.65rem] font-sans uppercase tracking-wider border border-pe-black/20 text-pe-charcoal hover:bg-pe-cream disabled:opacity-50"
+          >
+            Rol
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
               void handleToggleRole(row);
             }}
             disabled={busyUserId !== null}
@@ -667,6 +680,17 @@ export default function UserManagement() {
             className="inline-flex items-center gap-1 px-2 py-1 text-[0.65rem] font-sans uppercase tracking-wider border border-pe-black/20 text-pe-charcoal hover:bg-pe-cream disabled:opacity-50"
           >
             <KeyRound size={11} /> Reset pass
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAssigningWorker({ userId: row.id, fullName: row.fullName, role: row.role });
+            }}
+            disabled={busyUserId !== null}
+            className="inline-flex items-center gap-1 px-2 py-1 text-[0.65rem] font-sans uppercase tracking-wider border border-pe-black/20 text-pe-charcoal hover:bg-pe-cream disabled:opacity-50"
+          >
+            Rol
           </button>
           <button
             type="button"

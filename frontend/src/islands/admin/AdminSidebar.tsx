@@ -15,6 +15,7 @@ import {
   Image,
   Bell,
   Ticket,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
 
@@ -33,6 +34,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos', viewKey: 'caja' },
   { href: '/admin/discounts', icon: Ticket, label: 'Descuentos', viewKey: 'productos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios', viewKey: 'usuarios' },
+  { href: '/admin/roles-permisos', icon: ShieldCheck, label: 'Roles/Permisos', viewKey: 'roles_permisos' },
 ];
 
 const settingsSubmenuItems: Array<{

@@ -34,7 +34,7 @@ export default function LoginForm({ locale, redirect }: Props) {
           setError('');
           try {
             const data = await googleLogin(response.credential);
-            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [] });
+            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
             document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
             const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
             const dest = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
@@ -78,7 +78,7 @@ export default function LoginForm({ locale, redirect }: Props) {
     setError('');
     try {
       const data = await loginUser(email, password);
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [] });
+      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
       window.location.href = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
