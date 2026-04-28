@@ -44,6 +44,12 @@ public class UserEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Column(name = "worker_vigency_start")
+    private java.time.LocalDate workerVigencyStart;
+
+    @Column(name = "worker_vigency_end")
+    private java.time.LocalDate workerVigencyEnd;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -78,4 +84,9 @@ public class UserEntity {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public java.time.LocalDate getWorkerVigencyStart() { return workerVigencyStart; }
+    public void setWorkerVigencyStart(java.time.LocalDate d) { this.workerVigencyStart = d; }
+    public java.time.LocalDate getWorkerVigencyEnd() { return workerVigencyEnd; }
+    public void setWorkerVigencyEnd(java.time.LocalDate d) { this.workerVigencyEnd = d; }
 }

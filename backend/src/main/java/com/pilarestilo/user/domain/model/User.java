@@ -20,6 +20,8 @@ public class User {
     private String avatarUrl;
     private boolean avatarManuallySet;
     private Instant createdAt;
+    private java.time.LocalDate workerVigencyStart;
+    private java.time.LocalDate workerVigencyEnd;
 
     private User() {}
 
@@ -151,6 +153,11 @@ public class User {
 
     public void setId(UUID id) { this.id = id; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public java.time.LocalDate getWorkerVigencyStart() { return workerVigencyStart; }
+    public java.time.LocalDate getWorkerVigencyEnd() { return workerVigencyEnd; }
+    public void setWorkerVigencyStart(java.time.LocalDate date) { this.workerVigencyStart = date; }
+    public void setWorkerVigencyEnd(java.time.LocalDate date) { this.workerVigencyEnd = date; }
 
     private static String normalizePhone(String rawPhone) {
         if (rawPhone == null || rawPhone.isBlank()) {

@@ -95,6 +95,8 @@ public class UserRepositoryAdapter implements UserRepository {
         entity.setAvatarUrl(user.getAvatarUrl());
         entity.setAvatarManuallySet(user.isAvatarManuallySet());
         entity.setCreatedAt(user.getCreatedAt());
+        entity.setWorkerVigencyStart(user.getWorkerVigencyStart());
+        entity.setWorkerVigencyEnd(user.getWorkerVigencyEnd());
         return entity;
     }
 
@@ -112,6 +114,8 @@ public class UserRepositoryAdapter implements UserRepository {
         );
         user.updateAvatarUrl(entity.getAvatarUrl());
         user.setAvatarManuallySet(entity.isAvatarManuallySet());
+        user.setWorkerVigencyStart(entity.getWorkerVigencyStart());
+        user.setWorkerVigencyEnd(entity.getWorkerVigencyEnd());
         return user;
     }
 }
