@@ -31,6 +31,7 @@ openssl rand -base64 32
 | `GET` | `/api/auth/me/profile` | Return authenticated user profile details |
 | `PATCH` | `/api/auth/me/profile` | Update authenticated user profile (`fullName`, `phone`, `notificationChannelPreference`) |
 | `PATCH` | `/api/auth/me/password` | Change authenticated user password |
+| `PUT` | `/api/auth/me/avatar` | Upload authenticated user avatar |
 
 ---
 
@@ -46,6 +47,7 @@ openssl rand -base64 32
 - `GET /api/wishlist/shared/**`
 - `GET /api/categories/**`
 - `GET /api/media/**`
+- `GET /api/system-settings/public`
 - `/actuator/**`
 - `/api/actuator/**`
 
@@ -65,6 +67,35 @@ These are the explicit role checks currently present in controllers:
 
 | Endpoint | Rule |
 |---|---|
+| `GET /api/dashboard/stats` | `hasAnyRole('ADMIN','SUPERVISOR','SELLER','DESPACHADOR','ADMINISTRACION')` |
+| `GET /api/notifications` | `isAuthenticated()` (class-level on controller) |
+| `GET /api/notifications/unread-count` | `isAuthenticated()` (class-level on controller) |
+| `PUT /api/notifications/{id}/read` | `isAuthenticated()` (class-level on controller) |
+| `PUT /api/notifications/read-all` | `isAuthenticated()` (class-level on controller) |
+| `GET /api/customers/{customerId}/credit` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
+| `GET /api/customers/{customerId}/credit/movements` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
+| `POST /api/customers/{customerId}/credit/grant` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/customers/{customerId}/credit/use` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/caja/open` | `hasAnyRole('SELLER','ADMIN')` |
+| `POST /api/caja/close` | `hasAnyRole('SELLER','ADMIN')` |
+| `GET /api/caja/current` | `hasAnyRole('SELLER','ADMIN')` |
+| `POST /api/caja/movements` | `hasAnyRole('SELLER','ADMIN')` |
+| `GET /api/admin/caja` | `hasAnyRole('ADMIN','SUPERVISOR')` |
+| `GET /api/despachos` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `POST /api/despachos/{id}/claim` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `POST /api/despachos/{id}/unclaim` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `POST /api/despachos/{id}/dispatch` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `POST /api/despachos/{id}/deliver` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `POST /api/despachos/{id}/fail` | `hasAnyRole('DESPACHADOR','ADMIN')` |
+| `GET /api/admin/despachos` | `hasAnyRole('ADMIN','SUPERVISOR')` |
+| `POST /api/admin/despachos/seed` | `hasRole('ADMIN')` |
+| `POST /api/discounts` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/discounts/{id}` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/discounts` | `hasAnyRole('ADMIN','SELLER')` |
+| `DELETE /api/discounts/{id}` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/discounts/suggest-code` | `hasAnyRole('ADMIN','SELLER')` |
+| `GET /api/discounts/validate-for-user` | `isAuthenticated()` |
+| `GET /api/discounts/validate` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/products/{productId}/reviews` | `isAuthenticated()` |
 | `DELETE /api/reviews/{reviewId}` | `isAuthenticated()` |
 | `GET /api/reviews/mine` | `isAuthenticated()` |
@@ -89,6 +120,14 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/media/upload` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/media/upload-proof` | `isAuthenticated()` |
+| `POST /api/admin/media/migrate-category-images` | `hasRole('ADMIN')` |
+| `GET /api/system-settings` | `hasRole('ADMIN')` |
+| `PATCH /api/system-settings` | `hasRole('ADMIN')` |
+| `GET /api/admin/workers` | `hasRole('ADMIN')` |
+| `POST /api/admin/workers/{userId}/assign` | `hasRole('ADMIN')` |
+| `DELETE /api/admin/workers/{userId}/revoke` | `hasRole('ADMIN')` |
+| `GET /api/admin/permissions` | `hasRole('ADMIN')` |
+| `PUT /api/admin/permissions` | `hasRole('ADMIN')` |
 | `GET /api/users` | `hasRole('ADMIN')` |
 | `GET /api/users/{id}` | `hasRole('ADMIN')` |
 | `PATCH /api/users/{id}` | `hasRole('ADMIN')` (plus self-protection guards) |
@@ -99,9 +138,23 @@ Note: `GET /api/orders/{id}` - ADMIN/SELLER can read any order; CUSTOMER can onl
 
 Note: `GET /api/payments/order/{orderId}`, `PATCH /api/payments/{id}/proof`, and `POST /api/payments/{id}/gateway/checkout` apply ownership checks for `CUSTOMER` users. ADMIN/SELLER users can operate for support/admin workflows.
 
+Note: `GET /api/customers/{customerId}/credit` and `GET /api/customers/{customerId}/credit/movements` apply the same customer ownership guard for `CUSTOMER` users.
+
+Note: `POST /api/admin/despachos/seed` is designed for bootstrap/testing convenience and still requires admin role.
+
 Note: `/api/auth/me/profile` and `/api/auth/me/password` are authenticated via global security rules and use current principal id internally.
 
 Note: endpoints without method-level role guards still require authentication unless they are in the global public list.
+
+Sensitive endpoints currently authenticated (but not role-scoped) because they have no `@PreAuthorize`:
+
+- `POST /api/products`
+- `PUT /api/products/{id}`
+- `DELETE /api/products/{id}`
+- `POST /api/categories`
+- `PATCH /api/categories/reorder`
+- `PATCH /api/categories/{id}`
+- `DELETE /api/categories/{id}`
 
 ### Profile patch payload
 

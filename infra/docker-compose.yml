@@ -264,6 +264,8 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        PUBLIC_GOOGLE_CLIENT_ID: ${PUBLIC_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}
     container_name: pe_frontend
     restart: unless-stopped
     environment:
@@ -274,7 +276,7 @@ services:
       PUBLIC_WHATSAPP_PHONE: ${PUBLIC_WHATSAPP_PHONE:-+56900000000}
       PUBLIC_WHATSAPP_MESSAGE_ES: ${PUBLIC_WHATSAPP_MESSAGE_ES:-Hola Pilar Estilo, quiero ayuda con una compra.}
       PUBLIC_WHATSAPP_MESSAGE_EN: ${PUBLIC_WHATSAPP_MESSAGE_EN:-Hi Pilar Estilo, I need help with a purchase.}
-      PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      PUBLIC_GOOGLE_CLIENT_ID: ${PUBLIC_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}
     networks:
       - pe_net
 

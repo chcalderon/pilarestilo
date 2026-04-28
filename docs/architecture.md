@@ -89,9 +89,13 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `inventory`
 - `user`
 - `customercredit`
+- `cashregister`
+- `dispatch`
+- `dashboard`
 - `wishlist`
 - `notification`
-- `shared` (`auth`, `domain`, common infra)
+- `systemsettings`
+- `shared` (`auth`, `rbac`, `domain`, common infra)
 
 ### Media delivery
 
@@ -151,6 +155,17 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V26`: N8N webhook notification provider settings fields in `system_settings`
 - `V27`: N8N admin runtime settings (webhook URL, encrypted API key, token header name)
 - `V28`: `bank_transfer_bank_name` column in `system_settings` + `transfer_bank_name` snapshot field in `payments` with CHECK constraint enforcing full transfer snapshot for `BANK_TRANSFER` payments
+- `V29`: category seed restoration refresh
+- `V30`: discount code usage ledger (`discount_code_usages`)
+- `V31`: per-user discount assignment + persistent in-app notifications
+- `V32`: featured category flag support
+- `V33`: user avatar storage fields
+- `V34`: manual avatar override marker
+- `V35`: worker vigency range (`vigency_start`, `vigency_end`)
+- `V36`: role-permission matrix persistence
+- `V37`: seeded default role-permission matrix
+- `V38`: cash register schema (`cash_registers`, `cash_movements`)
+- `V39`: dispatch schema (`dispatches`)
 
 ---
 
