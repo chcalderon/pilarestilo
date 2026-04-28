@@ -23,10 +23,11 @@ export function RegisterPopoverTrigger({ es = true }: Props) {
       <button
         ref={buttonRef}
         onClick={handleOpen}
-        className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 hidden sm:flex items-center gap-1.5"
+        className="text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 hidden sm:flex items-center"
+        aria-label={es ? 'Registrarse' : 'Register'}
+        title={es ? 'Registrarse' : 'Register'}
       >
-        <UserPlus size={13} />
-        {es ? 'Registrarse' : 'Register'}
+        <UserPlus size={16} />
       </button>
 
       {open && (

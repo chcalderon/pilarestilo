@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { registerUser, loginUser } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
+import { registerUser, loginUser, googleLogin } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
 
 type Tab = "register" | "login";
@@ -10,13 +10,68 @@ interface Props {
 
 export function RegisterPopoverForm({ onSuccess }: Props) {
   const [tab, setTab] = useState<Tab>("register");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   const setAuth = useAuthStore(s => s.setAuth);
+
+  useEffect(() => {
+    const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) return;
+
+    function initGoogle() {
+      const g = (window as any).google;
+      if (!g?.accounts?.id) return;
+      g.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response: { credential: string }) => {
+          setLoading(true);
+          setError(null);
+          try {
+            const data = await googleLogin(response.credential);
+            setAuth(data.accessToken, {
+              id: data.userId,
+              email: data.email,
+              role: data.role,
+              fullName: data.fullName,
+              avatarUrl: data.avatarUrl,
+              permissions: data.permissions ?? [],
+              vigencyStart: data.vigencyStart,
+              vigencyEnd: data.vigencyEnd,
+            });
+            onSuccess();
+          } catch {
+            setError("No se pudo iniciar sesión con Google.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+      if (googleBtnRef.current) {
+        g.accounts.id.renderButton(googleBtnRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          width: googleBtnRef.current.offsetWidth || 280,
+          logo_alignment: "left",
+        });
+      }
+    }
+
+    if ((window as any).google?.accounts?.id) {
+      initGoogle();
+    } else {
+      const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+      script?.addEventListener("load", initGoogle);
+      return () => script?.removeEventListener("load", initGoogle);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +79,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
     setLoading(true);
     try {
       const data = tab === "register"
-        ? await registerUser(email, password)
+        ? await registerUser(email, password, fullName)
         : await loginUser(email, password);
       setAuth(data.accessToken, {
         id: data.userId,
@@ -65,6 +120,23 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+        {tab === "register" && (
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+              Nombre
+            </label>
+            <input
+              type="text"
+              required
+              autoComplete="name"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              disabled={loading}
+              className="border border-[var(--pe-border)] px-3 py-2 text-sm bg-[var(--pe-surface)] focus:outline-none focus:border-[var(--pe-foreground)] disabled:opacity-50"
+            />
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
             Email
@@ -139,6 +211,14 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
           ) : tab === "register" ? "Crear cuenta" : "Iniciar sesión"}
         </button>
       </form>
+
+      <div className="flex items-center gap-2 text-[var(--pe-muted)]">
+        <div className="flex-1 h-px bg-[var(--pe-border)]" />
+        <span className="text-[10px] tracking-widest uppercase">o</span>
+        <div className="flex-1 h-px bg-[var(--pe-border)]" />
+      </div>
+
+      <div ref={googleBtnRef} className="flex justify-center" />
     </div>
   );
 }
