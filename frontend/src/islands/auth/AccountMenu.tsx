@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { User, LogOut, ChevronDown, LogIn, UserPlus } from 'lucide-react';
+import { User, LogOut, ChevronDown, LogIn } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
 import { getAuthMe } from '../../lib/api';
+import { RegisterPopoverTrigger } from '@/components/auth/RegisterPopoverTrigger';
 
 interface Props {
   locale: 'es' | 'en';
@@ -57,13 +58,7 @@ export default function AccountMenu({ locale }: Props) {
           <LogIn size={13} />
           {es ? 'Entrar' : 'Sign in'}
         </a>
-        <a
-          href={`/${locale}/auth/register`}
-          className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 hidden sm:flex items-center gap-1.5"
-        >
-          <UserPlus size={13} />
-          {es ? 'Registrarse' : 'Register'}
-        </a>
+        <RegisterPopoverTrigger es={es} />
       </div>
     );
   }
