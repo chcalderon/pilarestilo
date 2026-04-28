@@ -756,7 +756,7 @@ export interface AuthTokenResponse {
   accountMerged?: boolean;
   userId: string;
   email: string;
-  role: string;
+  role: 'ADMIN' | 'SELLER' | 'CUSTOMER' | 'SUPERVISOR' | 'ADMINISTRACION' | 'DESPACHADOR';
   fullName?: string;
   avatarUrl?: string;
   permissions: string[];

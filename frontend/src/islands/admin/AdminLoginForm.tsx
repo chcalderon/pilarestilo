@@ -21,11 +21,12 @@ export default function AdminLoginForm({ redirect }: Props) {
     setError('');
     try {
       const data = await loginUser(email, password);
-      if (data.role !== 'ADMIN') {
+      const allowedRoles = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'];
+      if (!allowedRoles.includes(data.role)) {
         setError('Acceso denegado. Se requieren privilegios de administrador.');
         return;
       }
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role });
+      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, permissions: data.permissions ?? [] });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = redirect ?? '/admin/';
     } catch {
