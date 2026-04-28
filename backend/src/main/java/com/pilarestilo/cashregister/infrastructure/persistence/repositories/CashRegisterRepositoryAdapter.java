@@ -46,7 +46,7 @@ public class CashRegisterRepositoryAdapter implements CashRegisterRepository {
 
     @Override
     public Optional<CashRegister> findAnyOpenRegister() {
-        return jpaRepository.findFirstOpen().map(this::toDomain);
+        return jpaRepository.findFirstByStatusOrderByOpenedAtDesc(CashRegisterStatus.OPEN).map(this::toDomain);
     }
 
     @Override

@@ -6,5 +6,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CashMovementJpaRepository extends JpaRepository<CashMovementEntity, UUID> {
-    List<CashMovementEntity> findByCashRegisterId(UUID cashRegisterId);
+    List<CashMovementEntity> findByCashRegisterIdOrderByRecordedAtAsc(UUID cashRegisterId);
 }

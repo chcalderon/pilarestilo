@@ -23,7 +23,7 @@ public class CashMovementRepositoryAdapter implements CashMovementRepository {
 
     @Override
     public List<CashMovement> findByCashRegisterId(UUID cashRegisterId) {
-        return jpaRepository.findByCashRegisterId(cashRegisterId).stream().map(this::toDomain).toList();
+        return jpaRepository.findByCashRegisterIdOrderByRecordedAtAsc(cashRegisterId).stream().map(this::toDomain).toList();
     }
 
     private CashMovementEntity toEntity(CashMovement m) {
