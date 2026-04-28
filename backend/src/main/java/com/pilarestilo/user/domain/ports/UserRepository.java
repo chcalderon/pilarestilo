@@ -32,4 +32,6 @@ public interface UserRepository {
     boolean existsByEmail(String email);
 
     List<User> searchByQuery(String query, int limit);
+
+    Page<User> findByRoleIn(List<UserRole> roles, Pageable pageable);
 }

@@ -23,4 +23,6 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) " +
            "ORDER BY u.fullName")
     List<UserEntity> searchByNameOrEmail(@Param("q") String q, Pageable pageable);
+
+    Page<UserEntity> findByRoleIn(List<UserRole> roles, Pageable pageable);
 }

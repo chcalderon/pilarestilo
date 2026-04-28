@@ -82,6 +82,11 @@ public class UserRepositoryAdapter implements UserRepository {
             .stream().map(this::toDomain).toList();
     }
 
+    @Override
+    public Page<User> findByRoleIn(List<UserRole> roles, Pageable pageable) {
+        return jpaRepository.findByRoleIn(roles, pageable).map(this::toDomain);
+    }
+
     private UserEntity toEntity(User user) {
         UserEntity entity = new UserEntity();
         entity.setId(user.getId());
