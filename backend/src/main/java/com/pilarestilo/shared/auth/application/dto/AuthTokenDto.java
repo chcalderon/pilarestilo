@@ -1,5 +1,6 @@
 package com.pilarestilo.shared.auth.application.dto;
 
+import java.util.List;
 import java.util.UUID;
 
 public record AuthTokenDto(
@@ -11,16 +12,22 @@ public record AuthTokenDto(
         String role,
         String fullName,
         String avatarUrl,
-        boolean accountMerged
+        boolean accountMerged,
+        List<String> permissions
 ) {
     public static AuthTokenDto of(String accessToken, String refreshToken,
-                                   UUID userId, String email, String role, String fullName, String avatarUrl) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer", userId, email, role, fullName, avatarUrl, false);
+                                   UUID userId, String email, String role,
+                                   String fullName, String avatarUrl,
+                                   List<String> permissions) {
+        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+                userId, email, role, fullName, avatarUrl, false, permissions);
     }
 
     public static AuthTokenDto ofMerged(String accessToken, String refreshToken,
-                                        UUID userId, String email, String role, String fullName, String avatarUrl,
-                                        boolean accountMerged) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer", userId, email, role, fullName, avatarUrl, accountMerged);
+                                        UUID userId, String email, String role,
+                                        String fullName, String avatarUrl,
+                                        boolean accountMerged, List<String> permissions) {
+        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+                userId, email, role, fullName, avatarUrl, accountMerged, permissions);
     }
 }

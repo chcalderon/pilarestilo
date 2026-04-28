@@ -4,10 +4,13 @@ import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.domain.ports.PasswordEncoder;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class RegisterUseCase {
@@ -15,13 +18,16 @@ public class RegisterUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RolePermissionRepository rolePermissionRepository;
 
     public RegisterUseCase(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           JwtTokenProvider jwtTokenProvider) {
+                           JwtTokenProvider jwtTokenProvider,
+                           RolePermissionRepository rolePermissionRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.rolePermissionRepository = rolePermissionRepository;
     }
 
     public AuthTokenDto execute(String email, String rawPassword, String fullName) {
@@ -32,8 +38,9 @@ public class RegisterUseCase {
         User user = User.create(email, fullName, UserRole.CUSTOMER, hash);
         User saved = userRepository.save(user);
 
-        String access  = jwtTokenProvider.generateAccessToken(saved.getId(), saved.getEmail(), saved.getRole());
+        List<String> permissions = List.of(); // CUSTOMER has no worker permissions
+        String access  = jwtTokenProvider.generateAccessToken(saved.getId(), saved.getEmail(), saved.getRole(), permissions);
         String refresh = jwtTokenProvider.generateRefreshToken(saved.getId());
-        return AuthTokenDto.of(access, refresh, saved.getId(), saved.getEmail(), saved.getRole().name(), saved.getFullName(), saved.getAvatarUrl());
+        return AuthTokenDto.of(access, refresh, saved.getId(), saved.getEmail(), saved.getRole().name(), saved.getFullName(), saved.getAvatarUrl(), permissions);
     }
 }
