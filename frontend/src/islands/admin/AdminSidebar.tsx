@@ -25,14 +25,14 @@ interface Props {
 
 type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications';
 
-const navItems = [
-  { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/products', icon: Package, label: 'Productos' },
-  { href: '/admin/categories', icon: Tag, label: 'Categorias' },
-  { href: '/admin/reviews', icon: Star, label: 'Resenas' },
-  { href: '/admin/payments', icon: CreditCard, label: 'Pagos' },
-  { href: '/admin/discounts', icon: Ticket, label: 'Descuentos' },
-  { href: '/admin/users', icon: Users, label: 'Usuarios' },
+const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; viewKey: string }> = [
+  { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard', viewKey: 'dashboard' },
+  { href: '/admin/products', icon: Package, label: 'Productos', viewKey: 'productos' },
+  { href: '/admin/categories', icon: Tag, label: 'Categorias', viewKey: 'productos' },
+  { href: '/admin/reviews', icon: Star, label: 'Resenas', viewKey: 'productos' },
+  { href: '/admin/payments', icon: CreditCard, label: 'Pagos', viewKey: 'caja' },
+  { href: '/admin/discounts', icon: Ticket, label: 'Descuentos', viewKey: 'productos' },
+  { href: '/admin/users', icon: Users, label: 'Usuarios', viewKey: 'usuarios' },
 ];
 
 const settingsSubmenuItems: Array<{
@@ -52,6 +52,12 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   const [settingsExpanded, setSettingsExpanded] = useState(currentPath.startsWith('/admin/settings'));
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
   const { user, clearAuth } = useAuthStore();
+
+  const permissions = user?.permissions ?? [];
+  const visibleNavItems = user?.role === 'ADMIN'
+    ? navItems
+    : navItems.filter(item => permissions.includes(item.viewKey));
+  const showSettings = user?.role === 'ADMIN' || permissions.includes('configuracion');
 
   const isCollapsed = mobile ? false : collapsed;
   const settingsRouteActive = currentPath.startsWith('/admin/settings');
@@ -121,7 +127,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
 
       <nav className="flex-1 py-4 overflow-y-auto" aria-label="Navegacion admin">
         <ul className="flex flex-col gap-0.5 px-2">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
 
@@ -147,7 +153,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
             );
           })}
 
-          <li>
+          {showSettings && <li>
             <button
               type="button"
               onClick={handleSettingsToggle}
@@ -214,7 +220,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                 })}
               </ul>
             </div>
-          </li>
+          </li>}
         </ul>
       </nav>
 

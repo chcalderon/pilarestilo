@@ -34,9 +34,9 @@ export default function LoginForm({ locale, redirect }: Props) {
           setError('');
           try {
             const data = await googleLogin(response.credential);
-            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl });
+            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [] });
             document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-            const isStaff = data.role === 'ADMIN' || data.role === 'SELLER';
+            const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
             const dest = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
             if (data.accountMerged) {
               setMerged(true);
@@ -78,9 +78,9 @@ export default function LoginForm({ locale, redirect }: Props) {
     setError('');
     try {
       const data = await loginUser(email, password);
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl });
+      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [] });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      const isStaff = data.role === 'ADMIN' || data.role === 'SELLER';
+      const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
       window.location.href = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
     } catch {
       setError(es ? 'Email o contraseña incorrectos.' : 'Invalid email or password.');

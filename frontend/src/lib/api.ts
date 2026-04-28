@@ -132,7 +132,7 @@ export interface AdminUserDto {
   id: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'SELLER' | 'CUSTOMER';
+  role: 'ADMIN' | 'SELLER' | 'CUSTOMER' | 'SUPERVISOR' | 'ADMINISTRACION' | 'DESPACHADOR';
   active: boolean;
   createdAt: string;
 }
@@ -759,6 +759,7 @@ export interface AuthTokenResponse {
   role: string;
   fullName?: string;
   avatarUrl?: string;
+  permissions: string[];
 }
 
 export interface UserProfileDto {

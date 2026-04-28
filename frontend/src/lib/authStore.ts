@@ -7,6 +7,7 @@ export interface StoredUser {
   role: string;
   fullName?: string;
   avatarUrl?: string;
+  permissions: string[];
 }
 
 interface AuthState {
