@@ -50,14 +50,14 @@ export default function AccountMenu({ locale }: Props) {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <RegisterPopoverTrigger
           locale={locale}
           initialTab="login"
           variant="text"
           label="Log in"
           icon={<LogIn size={13} />}
-          className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 inline-flex items-center gap-1.5"
+          className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 inline-flex items-center gap-1.5 whitespace-nowrap"
         />
         <RegisterPopoverTrigger locale={locale} initialTab="register" />
       </div>
