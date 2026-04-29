@@ -86,7 +86,12 @@ export default function NavNotificationBell({ locale }: Props) {
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60_000);
-    return () => clearInterval(interval);
+    const onUpdated = () => { void fetchData(); };
+    window.addEventListener('pe:notifications:updated', onUpdated);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('pe:notifications:updated', onUpdated);
+    };
   }, [fetchData]);
 
   useEffect(() => {

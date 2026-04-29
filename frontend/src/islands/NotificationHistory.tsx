@@ -4,9 +4,14 @@ import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
   getNotifications,
   markAllNotificationsRead,
+  markNotificationRead,
   type InAppNotificationDto,
   type Page,
 } from '../lib/api';
+
+function dispatchUpdated() {
+  window.dispatchEvent(new CustomEvent('pe:notifications:updated'));
+}
 
 interface Props {
   locale: 'es' | 'en';
@@ -79,9 +84,20 @@ export default function NotificationHistory({ locale }: Props) {
     try {
       await markAllNotificationsRead(effectiveToken);
       await load(currentPage);
+      dispatchUpdated();
     } finally {
       setMarking(false);
     }
+  };
+
+  const handleMarkOne = async (n: InAppNotificationDto) => {
+    if (n.read || !effectiveToken) return;
+    setPage(prev => prev ? {
+      ...prev,
+      content: prev.content.map(x => x.id === n.id ? { ...x, read: true } : x),
+    } : prev);
+    await markNotificationRead(n.id, effectiveToken).catch(() => {});
+    dispatchUpdated();
   };
 
   const allRead = page?.content.every((n) => n.read) ?? true;
@@ -121,6 +137,7 @@ export default function NotificationHistory({ locale }: Props) {
           {page.content.map((n) => (
             <div
               key={n.id}
+              onClick={() => { void handleMarkOne(n); }}
               style={{
                 display: 'flex',
                 gap: '1rem',
@@ -128,6 +145,8 @@ export default function NotificationHistory({ locale }: Props) {
                 backgroundColor: n.read ? 'transparent' : 'rgba(183,110,121,0.07)',
                 border: '1px solid var(--pe-border)',
                 borderLeft: n.read ? '3px solid transparent' : `3px solid ${TYPE_COLORS[n.type] ?? '#B76E79'}`,
+                cursor: n.read ? 'default' : 'pointer',
+                transition: 'background-color 150ms',
               }}
             >
               <div style={{ flexShrink: 0, marginTop: '2px' }}>
@@ -154,10 +173,15 @@ export default function NotificationHistory({ locale }: Props) {
                   {n.body}
                 </p>
               </div>
-              <div style={{ flexShrink: 0, textAlign: 'right' }}>
+              <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                 <span className="font-sans text-pe-charcoal/60" style={{ fontSize: '0.65rem' }}>
                   {relativeTime(n.createdAt, es)}
                 </span>
+                {!n.read && (
+                  <span className="font-sans" style={{ fontSize: '0.58rem', color: '#B76E79', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {es ? 'Marcar leída' : 'Mark read'}
+                  </span>
+                )}
               </div>
             </div>
           ))}

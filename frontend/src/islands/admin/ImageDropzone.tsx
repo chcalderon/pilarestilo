@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Loader2, X } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
@@ -17,6 +17,10 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPreview(value);
+  }, [value]);
 
   const upload = async (file: File) => {
     setState('uploading');
@@ -56,46 +60,27 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
         </span>
       )}
 
-      {/* Preview — two views: banner crop + full image */}
       {preview && (
-        <div className="flex flex-col gap-1">
-          {/* Banner view */}
-          <div className="relative w-full">
-            <span className="absolute top-1 left-1.5 font-sans text-[0.55rem] uppercase tracking-wider text-white/70 bg-black/40 px-1 py-0.5 z-10">
-              Banner
-            </span>
-            <img
-              src={preview}
-              alt="Vista banner"
-              className="w-full h-20 object-cover"
-              loading="lazy"
-            />
-          </div>
-          {/* Full image view */}
-          <div className="relative w-full bg-pe-cream/60">
-            <span className="absolute top-1 left-1.5 font-sans text-[0.55rem] uppercase tracking-wider text-pe-charcoal/50 bg-white/60 px-1 py-0.5 z-10">
-              Completa
-            </span>
-            <img
-              src={preview}
-              alt="Vista completa"
-              className="w-full max-h-48 object-contain"
-              loading="lazy"
-            />
-            {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <Loader2 size={22} className="text-white animate-spin" />
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => { setPreview(undefined); onUpload(''); }}
-              className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white p-0.5 transition-colors"
-              title="Quitar imagen"
-            >
-              <X size={12} />
-            </button>
-          </div>
+        <div className="relative w-full bg-pe-cream/60">
+          <img
+            src={preview}
+            alt="Vista producto"
+            className="w-full max-h-48 object-contain"
+            loading="lazy"
+          />
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <Loader2 size={22} className="text-white animate-spin" />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { setPreview(undefined); onUpload(''); }}
+            className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white p-0.5 transition-colors"
+            title="Quitar imagen"
+          >
+            <X size={12} />
+          </button>
         </div>
       )}
 
