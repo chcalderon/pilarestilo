@@ -49,7 +49,7 @@ export function RegisterPopoverTrigger({
         <button
           ref={buttonRef}
           onClick={handleOpen}
-          className="text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 hidden sm:flex items-center"
+          className="text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 inline-flex items-center"
           aria-label={es ? "Registrarse" : "Register"}
           title={es ? "Registrarse" : "Register"}
         >

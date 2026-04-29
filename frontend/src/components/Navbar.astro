@@ -30,8 +30,8 @@ try {
 <header class="sticky top-0 z-50" id="site-header">
   <div id="nav-utility" class="border-b transition-colors duration-300 bg-pe-black border-pe-white/8">
     <div class="pe-container flex items-center justify-between h-9">
-      <p id="nav-shipping" class="pe-eyebrow text-pe-white/40 hidden sm:block">
-        {locale === 'es' ? 'Envíos a todo Chile' : 'Shipping across Chile'}
+      <p id="nav-shipping" class="pe-eyebrow text-pe-white/40 block max-w-[40vw] truncate pr-2 sm:max-w-none">
+        {locale === 'es' ? 'Despachos a todo Chile' : 'Shipping across Chile'}
       </p>
       <div class="flex items-center gap-5 ml-auto">
         <button
@@ -581,3 +581,4 @@ try {
 
   window.addEventListener('scroll', applyLogoScrollState, { passive: true });
 </script>
+

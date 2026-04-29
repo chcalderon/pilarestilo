@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { RegisterPopoverForm } from "./RegisterPopoverForm";
+import { X } from "lucide-react";
 
 interface AnchorRect {
   bottom: number;
@@ -40,8 +41,9 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
 
   // Focus first input on mount
   useEffect(() => {
-    const first = panelRef.current?.querySelector<HTMLElement>("input, button");
-    first?.focus();
+    const firstInput = panelRef.current?.querySelector<HTMLElement>("input, select, textarea");
+    const firstFocusable = panelRef.current?.querySelector<HTMLElement>("button, [href], [tabindex]:not([tabindex=\"-1\"])");
+    (firstInput ?? firstFocusable)?.focus();
   }, []);
 
   // Focus trap
@@ -93,10 +95,20 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
       style={isMobile ? mobileStyle : desktopStyle}
       className={
         isMobile
-          ? "bg-[var(--pe-surface)] border-t border-[var(--pe-border)] rounded-t-2xl p-6 shadow-xl"
-          : "bg-[var(--pe-surface)] border border-[var(--pe-border)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+          ? "relative bg-[var(--pe-surface)] border-t border-[var(--pe-border)] rounded-t-2xl p-6 pt-10 shadow-xl"
+          : "relative bg-[var(--pe-surface)] border border-[var(--pe-border)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       }
     >
+      {isMobile && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 text-[var(--pe-muted)] hover:text-[var(--pe-foreground)] transition-colors"
+          aria-label={locale === "es" ? "Cerrar" : "Close"}
+        >
+          <X size={16} />
+        </button>
+      )}
       <RegisterPopoverForm onSuccess={onClose} initialTab={initialTab} locale={locale} />
     </div>
   );
