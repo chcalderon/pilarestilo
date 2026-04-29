@@ -64,6 +64,8 @@ Translations:
 - Login/register islands obtain JWT from backend.
 - Token is persisted in Zustand and mirrored to `pe_token` cookie.
 - `src/middleware.ts` guards `/admin/**` server-side and requires `role === 'ADMIN'`.
+- In `AccountMenu`, guest CTA now uses `Log in` (popover-first UX) instead of direct navigation to `/auth/login`.
+- Auth popover can open directly on `login` tab and includes fallback links to full-page `/{locale}/auth/login` and `/{locale}/auth/register`.
 
 ---
 

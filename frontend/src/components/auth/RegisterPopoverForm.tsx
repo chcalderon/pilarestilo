@@ -6,10 +6,13 @@ type Tab = "register" | "login";
 
 interface Props {
   onSuccess: () => void;
+  initialTab?: Tab;
+  locale: "es" | "en";
 }
 
-export function RegisterPopoverForm({ onSuccess }: Props) {
-  const [tab, setTab] = useState<Tab>("register");
+export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale }: Props) {
+  const es = locale === "es";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +22,11 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
   const setAuth = useAuthStore(s => s.setAuth);
+
+  useEffect(() => {
+    setTab(initialTab);
+    setError(null);
+  }, [initialTab]);
 
   useEffect(() => {
     const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
@@ -46,7 +54,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
             });
             onSuccess();
           } catch {
-            setError("No se pudo iniciar sesión con Google.");
+            setError(es ? "No se pudo iniciar sesion con Google." : "Google sign-in failed.");
           } finally {
             setLoading(false);
           }
@@ -71,7 +79,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
       script?.addEventListener("load", initGoogle);
       return () => script?.removeEventListener("load", initGoogle);
     }
-  }, []);
+  }, [es, onSuccess, setAuth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,7 +101,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
       });
       onSuccess();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al procesar";
+      const msg = err instanceof Error ? err.message : (es ? "Error al procesar" : "Failed to process request");
       setError(msg);
     } finally {
       setLoading(false);
@@ -108,14 +116,14 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
           onClick={() => { setTab("register"); setError(null); }}
           className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "register" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
         >
-          Registrarse
+          {es ? "Registrarse" : "Register"}
         </button>
         <button
           type="button"
           onClick={() => { setTab("login"); setError(null); }}
           className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "login" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
         >
-          Iniciar sesión
+          {es ? "Iniciar sesion" : "Log in"}
         </button>
       </div>
 
@@ -123,7 +131,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
         {tab === "register" && (
           <div className="flex flex-col gap-1">
             <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
-              Nombre
+              {es ? "Nombre" : "Name"}
             </label>
             <input
               type="text"
@@ -154,7 +162,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
 
         <div className="flex flex-col gap-1">
           <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
-            Contraseña
+            {es ? "Contrasena" : "Password"}
           </label>
           <div className="relative">
             <input
@@ -171,7 +179,7 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
               type="button"
               onClick={() => setShowPassword(v => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--pe-muted)] hover:text-[var(--pe-foreground)]"
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-label={showPassword ? (es ? "Ocultar contrasena" : "Hide password") : (es ? "Mostrar contrasena" : "Show password")}
             >
               {showPassword ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -206,9 +214,9 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
               </svg>
-              Procesando
+              {es ? "Procesando" : "Processing"}
             </span>
-          ) : tab === "register" ? "Crear cuenta" : "Iniciar sesión"}
+          ) : tab === "register" ? (es ? "Crear cuenta" : "Create account") : (es ? "Iniciar sesion" : "Log in")}
         </button>
       </form>
 
@@ -219,6 +227,24 @@ export function RegisterPopoverForm({ onSuccess }: Props) {
       </div>
 
       <div ref={googleBtnRef} className="flex justify-center" />
+
+      <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
+        {tab === "login" ? (
+          <>
+            <span>{es ? "¿No tienes cuenta?" : "Don't have an account?"}</span>{" "}
+            <a href={`/${locale}/auth/register`} className="underline hover:text-[var(--pe-foreground)]">
+              {es ? "Registrarse" : "Register"}
+            </a>
+          </>
+        ) : (
+          <>
+            <span>{es ? "¿Ya tienes cuenta?" : "Already have an account?"}</span>{" "}
+            <a href={`/${locale}/auth/login`} className="underline hover:text-[var(--pe-foreground)]">
+              {es ? "Iniciar sesion" : "Log in"}
+            </a>
+          </>
+        )}
+      </div>
     </div>
   );
 }

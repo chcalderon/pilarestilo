@@ -179,15 +179,18 @@ Allowed values for `notificationChannelPreference`: `AUTO`, `WHATSAPP`, `EMAIL`,
 
 ## 5. Inline Register / Login Popover
 
-The storefront navbar exposes a `UserPlus` icon (`RegisterPopoverTrigger`) visible when the user is not authenticated. Clicking it opens an auth panel without navigating away from the current page.
+The storefront navbar exposes two guest auth triggers when the user is not authenticated:
+
+- Text CTA `Log in` that opens the popover directly in the `login` tab.
+- `UserPlus` icon that opens the popover in the `register` tab.
 
 **Components:**
 
 | File | Role |
 |---|---|
-| `frontend/src/components/auth/RegisterPopoverTrigger.tsx` | Icon button that owns open/close state |
+| `frontend/src/components/auth/RegisterPopoverTrigger.tsx` | Trigger button (text or icon) that owns open/close state |
 | `frontend/src/components/auth/RegisterPopoverPanel.tsx` | Panel mounted via `createPortal` to `document.body` |
-| `frontend/src/components/auth/RegisterPopoverForm.tsx` | Tabbed form (register / login) + Google sign-in |
+| `frontend/src/components/auth/RegisterPopoverForm.tsx` | Tabbed form (register / login) + Google sign-in + fallback links to full auth pages |
 
 **Behaviour:**
 
@@ -196,13 +199,13 @@ The storefront navbar exposes a `UserPlus` icon (`RegisterPopoverTrigger`) visib
 - Focus is trapped inside the panel; `Escape` and outside-click close it.
 - Register tab collects `fullName`, `email`, `password`; calls `registerUser(email, password, fullName)`.
 - Login tab collects `email`, `password`; calls `loginUser(email, password)`.
+- Popover footer includes links to `/{locale}/auth/login` and `/{locale}/auth/register` for full-page fallback UX.
 - Google sign-in rendered via Google Identity Services SDK (`window.google.accounts.id.renderButton`), matching the pattern in `LoginForm.tsx`.
 - On success, calls `setAuth(token, user)` and triggers `onSuccess()` (closes the panel; no page navigation).
 
-The panel is wired into `AccountMenu.tsx` — when the user is not authenticated the icon replaces the old `/register` link.
+The panel is wired into `AccountMenu.tsx` and replaces direct guest navigation to `/auth/login` from the header CTA.
 
 ---
-
 ## 6. Frontend Token Storage
 
 Frontend stores auth data in two places:
@@ -247,4 +250,5 @@ Registration currently enforces minimum length at API boundary:
 
 - `RegisterRequest.password` uses `@Size(min = 8)`
 - Passwords are hashed with BCrypt
+
 

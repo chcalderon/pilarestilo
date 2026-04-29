@@ -138,13 +138,14 @@ export default function NavNotificationBell({ locale }: Props) {
   const linkHov = dark ? '#d4929d' : '#8B4A55';
   const unreadDot = '#B76E79';
   const unreadBg = dark ? 'rgba(183,110,121,0.08)' : 'rgba(183,110,121,0.04)';
+  const unreadRecent = recent.filter((n) => !n.read);
 
   const handleNotifClick = async (n: InAppNotificationDto) => {
     setOpen(false);
     if (!n.read && effectiveToken) {
       await markNotificationRead(n.id, effectiveToken).catch(() => {});
       setUnreadCount(c => Math.max(0, c - 1));
-      setRecent(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+      setRecent(prev => prev.filter(x => x.id !== n.id));
     }
     const link = n.metadata?.link as string | undefined;
     if (link) window.location.href = link;
@@ -165,23 +166,17 @@ export default function NavNotificationBell({ locale }: Props) {
         </button>
       </div>
 
-      {recent.length === 0 && configAlerts.length === 0 && (
-        <div style={{ padding: '20px 16px', textAlign: 'center', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', color: subtext }}>
-          {es ? 'Sin notificaciones' : 'No notifications'}
-        </div>
-      )}
-
-      {recent.length > 0 && (
+      {unreadRecent.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '280px', overflowY: 'auto' }}>
-          {recent.map(n => (
-            <li key={n.id} style={{ borderBottom: `1px solid ${divider}`, backgroundColor: n.read ? 'transparent' : unreadBg }}>
+          {unreadRecent.map(n => (
+            <li key={n.id} style={{ borderBottom: `1px solid ${divider}`, backgroundColor: unreadBg }}>
               <button onClick={() => handleNotifClick(n)}
                 style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', transition: 'background-color 150ms' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: n.read ? 'transparent' : unreadDot, border: n.read ? `1px solid ${subtext}` : 'none' }} />
+                <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: unreadDot }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.4', color: text, fontWeight: n.read ? 400 : 500 }}>
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.4', color: text, fontWeight: 500 }}>
                     {n.title}
                   </p>
                   <p style={{ margin: '2px 0 0', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.66rem', color: subtext, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -199,7 +194,7 @@ export default function NavNotificationBell({ locale }: Props) {
 
       {configAlerts.length > 0 && (
         <>
-          {recent.length > 0 && <div style={{ height: '1px', backgroundColor: divider, margin: '0 16px' }} />}
+          {unreadRecent.length > 0 && <div style={{ height: '1px', backgroundColor: divider, margin: '0 16px' }} />}
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {configAlerts.map(a => (
               <li key={a.id} style={{ borderBottom: `1px solid ${divider}` }}>

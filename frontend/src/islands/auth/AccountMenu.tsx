@@ -10,10 +10,10 @@ interface Props {
 
 export default function AccountMenu({ locale }: Props) {
   const { user, token, setAuth, clearAuth } = useAuthStore();
-  const [open, setOpen]   = useState(false);
+  const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const ref               = useRef<HTMLDivElement>(null);
-  const es                = locale === 'es';
+  const ref = useRef<HTMLDivElement>(null);
+  const es = locale === 'es';
 
   // Validate stored token on mount
   useEffect(() => {
@@ -51,14 +51,15 @@ export default function AccountMenu({ locale }: Props) {
   if (!user) {
     return (
       <div className="flex items-center gap-4">
-        <a
-          href={`/${locale}/auth/login`}
-          className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 flex items-center gap-1.5"
-        >
-          <LogIn size={13} />
-          {es ? 'Entrar' : 'Sign in'}
-        </a>
-        <RegisterPopoverTrigger es={es} />
+        <RegisterPopoverTrigger
+          locale={locale}
+          initialTab="login"
+          variant="text"
+          label="Log in"
+          icon={<LogIn size={13} />}
+          className="font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 inline-flex items-center gap-1.5"
+        />
+        <RegisterPopoverTrigger locale={locale} initialTab="register" />
       </div>
     );
   }
@@ -125,7 +126,7 @@ export default function AccountMenu({ locale }: Props) {
             className="w-full flex items-center gap-2.5 px-4 py-2.5 font-sans text-[0.78rem] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] hover:bg-[var(--pe-dropdown-hover)] transition-colors duration-200 border-t border-[var(--pe-dropdown-border)]"
           >
             <LogOut size={13} />
-            {es ? 'Cerrar sesión' : 'Sign out'}
+            {es ? 'Cerrar sesion' : 'Sign out'}
           </button>
         </div>
       )}

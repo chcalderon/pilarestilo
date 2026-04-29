@@ -9,10 +9,12 @@ interface AnchorRect {
 
 interface Props {
   anchor: AnchorRect;
+  initialTab: "register" | "login";
+  locale: "es" | "en";
   onClose: () => void;
 }
 
-export function RegisterPopoverPanel({ anchor, onClose }: Props) {
+export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
@@ -87,7 +89,7 @@ export function RegisterPopoverPanel({ anchor, onClose }: Props) {
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Crear cuenta o iniciar sesión"
+      aria-label={locale === "es" ? "Crear cuenta o iniciar sesion" : "Create account or log in"}
       style={isMobile ? mobileStyle : desktopStyle}
       className={
         isMobile
@@ -95,7 +97,7 @@ export function RegisterPopoverPanel({ anchor, onClose }: Props) {
           : "bg-[var(--pe-surface)] border border-[var(--pe-border)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
       }
     >
-      <RegisterPopoverForm onSuccess={onClose} />
+      <RegisterPopoverForm onSuccess={onClose} initialTab={initialTab} locale={locale} />
     </div>
   );
 
