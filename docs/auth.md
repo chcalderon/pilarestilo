@@ -175,7 +175,35 @@ Allowed values for `notificationChannelPreference`: `AUTO`, `WHATSAPP`, `EMAIL`,
 
 ---
 
-## 5. Frontend Token Storage
+---
+
+## 5. Inline Register / Login Popover
+
+The storefront navbar exposes a `UserPlus` icon (`RegisterPopoverTrigger`) visible when the user is not authenticated. Clicking it opens an auth panel without navigating away from the current page.
+
+**Components:**
+
+| File | Role |
+|---|---|
+| `frontend/src/components/auth/RegisterPopoverTrigger.tsx` | Icon button that owns open/close state |
+| `frontend/src/components/auth/RegisterPopoverPanel.tsx` | Panel mounted via `createPortal` to `document.body` |
+| `frontend/src/components/auth/RegisterPopoverForm.tsx` | Tabbed form (register / login) + Google sign-in |
+
+**Behaviour:**
+
+- Desktop: anchored below the trigger button (`position: fixed`, width 320 px, `z-index 9999`).
+- Mobile (< 640 px): full-width bottom sheet.
+- Focus is trapped inside the panel; `Escape` and outside-click close it.
+- Register tab collects `fullName`, `email`, `password`; calls `registerUser(email, password, fullName)`.
+- Login tab collects `email`, `password`; calls `loginUser(email, password)`.
+- Google sign-in rendered via Google Identity Services SDK (`window.google.accounts.id.renderButton`), matching the pattern in `LoginForm.tsx`.
+- On success, calls `setAuth(token, user)` and triggers `onSuccess()` (closes the panel; no page navigation).
+
+The panel is wired into `AccountMenu.tsx` — when the user is not authenticated the icon replaces the old `/register` link.
+
+---
+
+## 6. Frontend Token Storage
 
 Frontend stores auth data in two places:
 

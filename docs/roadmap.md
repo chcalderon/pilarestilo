@@ -1,6 +1,6 @@
 # Pilar Estilo - Roadmap
 
-This roadmap is synced with the current codebase on `master` as of April 22, 2026.
+This roadmap is synced with the current codebase on `master` as of April 28, 2026.
 
 ## v1 - Initial Release (Completed)
 
@@ -123,3 +123,18 @@ This roadmap is synced with the current codebase on `master` as of April 22, 202
 - [x] Redis-backed hot-read cache baseline (optional profile) for categories + public store settings
 - [x] Horizontal backend scaling behind reverse proxy (`docker compose --scale backend=N`)
 - [x] Postgres read-replica routing baseline for catalog queries in `product-service`
+
+---
+
+## P8 - Operations and Worker Tools (Completed)
+
+- [x] Worker role system: `SELLER`, `DESPACHADOR`, `ADMINISTRACION`, `SUPERVISOR` worker roles with vigency dates (`vigencyStart` / `vigencyEnd`) enforced per-request
+- [x] RBAC permission matrix: granular named permissions (e.g. `despachos`) assignable per worker via `PUT /api/admin/permissions`; checked alongside role in `@PreAuthorize` expressions
+- [x] Worker management endpoints (`GET /api/admin/workers`, `POST /api/admin/workers/{id}/assign`, `DELETE /api/admin/workers/{id}/revoke`) and frontend `roles-permisos` admin page
+- [x] Discount user assignment: associate a discount code with a specific `CUSTOMER` user (`POST /api/discounts/{id}/assign-user`) so only that customer can apply it
+- [x] In-app notifications: `NotificationController` (`GET /api/notifications`, `/unread-count`, `PUT .../read`, `PUT .../read-all`) with types `DISCOUNT_CODE_ASSIGNED`, `ORDER_CONFIRMED`, `PAYMENT_RECEIVED`, `ORDER_PREPARING`, `ORDER_SHIPPED`; `NavNotificationBell` island in storefront navbar
+- [x] Cash register (Caja) module: open/close register, manual movements, paginated seller history (`GET /api/caja/history`) and cross-seller admin view (`GET /api/admin/caja`); admin `caja` page
+- [x] Dispatch (Despachos) module: claim/unclaim/dispatch/deliver/fail lifecycle for `DESPACHADOR` workers; admin dispatch queue and history (`GET /api/admin/despachos/history`) with `dispatchedBy` / `soldBy` enrichment; `DispatchAutoDeliveryScheduler` auto-confirms shipments older than 15 days
+- [x] Customer confirm-delivery endpoint (`PATCH /api/orders/{id}/confirm-delivery`) with symmetric dispatch `DELIVERED` update
+- [x] Role-aware dashboard stats (`GET /api/dashboard/stats`): sealed domain model with four role-specific payloads (Admin, Seller, Despachador, Administracion); Recharts revenue chart for admin; frontend `DashboardPage` island
+- [x] Inline register/login popover: `UserPlus` icon in storefront navbar opens anchored popover panel (desktop) / bottom sheet (mobile) with tabbed register+login form and Google Identity Services sign-in — no full-page navigation required

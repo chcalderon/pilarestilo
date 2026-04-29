@@ -11,6 +11,70 @@ Controller: `dashboard/infrastructure/web/DashboardController`
   - Access: `ADMIN`, `SUPERVISOR`, `SELLER`, `DESPACHADOR`, `ADMINISTRACION`
   - Purpose: role-aware KPI payload for worker dashboard cards
 
+Response is a flat JSON object with `@JsonInclude(NON_NULL)` — null fields are omitted per role.
+
+### Response shape by role
+
+**ADMIN / SUPERVISOR**
+
+```json
+{
+  "role": "ADMIN",
+  "dailySales":           { "amount": 0.00, "orderCount": 0 },
+  "weeklySales":          { "amount": 0.00, "orderCount": 0 },
+  "openCashRegisters":    0,
+  "pendingDispatches":    0,
+  "inProgressDispatches": 0,
+  "topProducts": [
+    { "productId": "uuid", "name": "Vestido X", "unitsSold": 12 }
+  ],
+  "dailyRevenueSeries": [
+    { "date": "2026-04-22", "amount": 0.00 }
+  ]
+}
+```
+
+**SELLER**
+
+```json
+{
+  "role": "SELLER",
+  "currentCaja": {
+    "status": "OPEN",
+    "openedAt": "2026-04-28T09:00:00",
+    "expectedBalance": 0.00,
+    "saleCount": 0,
+    "saleTotal": 0.00
+  },
+  "lastSale": { "amount": 0.00, "recordedAt": "2026-04-28T10:30:00" }
+}
+```
+
+`currentCaja` and `lastSale` are omitted when no register is open / no sales recorded.
+
+**DESPACHADOR**
+
+```json
+{
+  "role": "DESPACHADOR",
+  "pendingDispatches": 0,
+  "myDispatchedToday": 0,
+  "myInProgress":      0
+}
+```
+
+**ADMINISTRACION**
+
+```json
+{
+  "role": "ADMINISTRACION",
+  "activeWorkers": 0,
+  "expiringWorkers": [
+    { "userId": "uuid", "fullName": "Ana Pérez", "vigencyEnd": "2026-05-01" }
+  ]
+}
+```
+
 ## 2. Cash Register (Caja)
 
 Controllers:
