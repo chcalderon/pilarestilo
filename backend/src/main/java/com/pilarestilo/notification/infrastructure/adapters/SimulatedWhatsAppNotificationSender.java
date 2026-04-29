@@ -42,6 +42,12 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        EffectiveConfig config = resolveConfig();
+        logSimulated("ORDER_PREPARING", config.simulatedTo(), config.senderAlias(), orderId, recipient);
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         EffectiveConfig config = resolveConfig();
         logSimulated("ORDER_SHIPPED", config.simulatedTo(), config.senderAlias(), orderId, recipient);

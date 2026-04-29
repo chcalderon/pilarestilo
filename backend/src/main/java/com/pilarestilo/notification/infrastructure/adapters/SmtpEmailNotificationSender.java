@@ -86,6 +86,17 @@ public class SmtpEmailNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        String subject = String.format(Locale.ROOT, "Pedido %s en preparacion", shortId(orderId));
+        String body = String.format(
+                Locale.ROOT,
+                "Tu pedido %s esta en preparacion.%nTe avisaremos cuando sea despachado.",
+                orderId
+        );
+        send("ORDER_PREPARING", orderId, recipient, subject, body);
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         String subject = String.format(Locale.ROOT, "Pedido %s enviado", shortId(orderId));
         String body = String.format(

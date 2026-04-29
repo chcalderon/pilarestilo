@@ -2,7 +2,7 @@
 
 This guide describes how to connect Pilar Estilo with an external n8n instance for:
 
-- Transactional notifications (orders/payments/shipping)
+- Transactional notifications (orders/payments/preparation/shipping)
 - FAQ-style assistant flows for WhatsApp and social inbox channels
 
 ---
@@ -52,6 +52,7 @@ Current payload shape sent by backend:
 
 - `ORDER_CONFIRMATION`
 - `PAYMENT_RECEIVED`
+- `ORDER_PREPARING`
 - `ORDER_SHIPPED`
 
 `channelPreference` values:

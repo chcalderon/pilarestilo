@@ -57,6 +57,11 @@ public class N8nWebhookNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        sendWebhook("ORDER_PREPARING", orderId, recipient);
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         sendWebhook("ORDER_SHIPPED", orderId, recipient);
     }

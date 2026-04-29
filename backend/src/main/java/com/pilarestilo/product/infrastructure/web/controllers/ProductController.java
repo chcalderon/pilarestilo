@@ -61,9 +61,10 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String category,
             Pageable pageable) {
-        return listProductsUseCase.execute(condition, brand, minPrice, maxPrice, active, category, pageable);
+        return listProductsUseCase.execute(condition, brand, minPrice, maxPrice, active, inStock, category, pageable);
     }
 
     @GetMapping("/{id}")
@@ -91,8 +92,10 @@ public class ProductController {
     @GetMapping("/search")
     public Page<ProductDto> search(
             @RequestParam(required = false, defaultValue = "") String q,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean inStock,
             Pageable pageable) {
-        return searchProductsUseCase.execute(q, pageable);
+        return searchProductsUseCase.execute(q, active, inStock, pageable);
     }
 
     private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {

@@ -104,6 +104,9 @@ APP_CACHE_REDIS_ENABLED=true
 # Optional Kafka domain-events mode:
 # APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
 # DEPLOY_PROFILES=microservices,cache,kafka
+
+# Dispatch auto-delivery scheduler (default: every 30 minutes):
+# APP_DISPATCH_AUTO_DELIVERY_CRON=0 */30 * * * *
 ```
 
 Protect the file from other users:
@@ -181,15 +184,17 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale b
 ```
 
 With `microservices` profile enabled, Caddy routes:
-- `GET/HEAD /api/products*` to `product-service`
-- `GET/HEAD /api/inventory*` to `inventory-service`
-- `GET/HEAD /api/payments*` to `payment-service`
-- `/api/orders*` to `order-service`
+- `GET/HEAD /api/products*` to `product-service` (with `backend:8080` fallback, 2 s dial / 30 s response timeout)
+- `GET/HEAD /api/inventory*` to `inventory-service` (with `backend:8080` fallback)
+- `GET/HEAD /api/payments*` to `payment-service` (with `backend:8080` fallback)
+- `GET/HEAD /api/orders*` to `order-service` (with `backend:8080` fallback)
+- `POST/PATCH /api/orders*` to `backend:8080` only (auth/orchestration entrypoint)
+- All remaining `/api/*` traffic to `backend:8080` via round-robin DNS (`dynamic a backend 8080`)
 
 Additional gateway policies:
 - `/api/*` request body cap: `12MB`
-- unsupported API methods rejected with `405`
-- `/api/orders*` only allows `GET|HEAD|POST|PATCH` at gateway
+- unsupported HTTP methods rejected with `405` (checked before routing)
+- `/api/orders*` only allows `GET|HEAD|POST|PATCH` at gateway (PUT/DELETE/etc. return 405)
 
 Redis cache baseline:
 
@@ -448,11 +453,28 @@ npm run dev
 ### With Docker (recommended for full-stack testing)
 
 ```bash
-# From repo root — uses override file that skips Caddy and exposes ports directly
-docker compose -f infra/docker-compose.yml up --build
+# From repo root
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
 Access the app at `http://localhost` (Caddy on port 80 with `DOMAIN=localhost`).
+
+### Local Docker quick checklist
+
+```bash
+# 1) Start/update stack
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+
+# 2) Check service status
+docker compose -f infra/docker-compose.yml --env-file infra/.env ps
+
+# 3) Follow logs (all or targeted)
+docker compose -f infra/docker-compose.yml --env-file infra/.env logs -f
+docker compose -f infra/docker-compose.yml --env-file infra/.env logs -f backend frontend caddy
+
+# 4) Stop stack (keep volumes)
+docker compose -f infra/docker-compose.yml --env-file infra/.env down
+```
 
 ---
 
@@ -511,3 +533,29 @@ docker compose -f infra/docker-compose.yml up -d frontend
 ```
 
 Also clear your browser cache or use a hard refresh (`Ctrl+Shift+R`).
+
+### Payment notifications are created but email is not delivered
+
+**Symptom:** order/payment flow works and in-app notification appears, but no email arrives.
+
+**Quick checks:**
+
+1. Ensure notification provider is `EMAIL_SMTP` or `EMAIL_SENDGRID` in admin settings (`/admin/settings`).
+2. Check backend logs:
+   ```bash
+   docker compose -f infra/docker-compose.yml logs --tail=120 backend
+   ```
+   Look for:
+   - `[EMAIL:SMTP] send failed ...`
+   - `[EMAIL:SENDGRID] send failed ...`
+3. For SMTP specifically, verify host resolution from inside backend container:
+   ```bash
+   docker exec pe_backend getent hosts <smtp-host>
+   ```
+   If unresolved, fix DNS/host value first.
+4. Re-check SMTP fields in admin settings:
+   - `smtpHost`, `smtpPort`, `smtpUsername`, `smtpFromEmail`
+   - encrypted SMTP password present
+   - auth/tls flags match your provider
+
+If logs show `UnknownHostException`, the issue is DNS/host configuration, not the order/notification event flow.

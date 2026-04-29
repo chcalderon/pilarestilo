@@ -36,6 +36,21 @@ public class PaymentEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Column(name = "transfer_account_holder_name", length = 160)
+    private String transferAccountHolderName;
+
+    @Column(name = "transfer_account_email", length = 255)
+    private String transferAccountEmail;
+
+    @Column(name = "transfer_account_number", length = 120)
+    private String transferAccountNumber;
+
+    @Column(name = "transfer_bank_name", length = 120)
+    private String transferBankName;
+
+    @Column(name = "transfer_account_type", length = 80)
+    private String transferAccountType;
+
     public UUID getId() {
         return id;
     }
@@ -98,5 +113,45 @@ public class PaymentEntity {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTransferAccountHolderName() {
+        return transferAccountHolderName;
+    }
+
+    public void setTransferAccountHolderName(String transferAccountHolderName) {
+        this.transferAccountHolderName = transferAccountHolderName;
+    }
+
+    public String getTransferAccountEmail() {
+        return transferAccountEmail;
+    }
+
+    public void setTransferAccountEmail(String transferAccountEmail) {
+        this.transferAccountEmail = transferAccountEmail;
+    }
+
+    public String getTransferAccountNumber() {
+        return transferAccountNumber;
+    }
+
+    public void setTransferAccountNumber(String transferAccountNumber) {
+        this.transferAccountNumber = transferAccountNumber;
+    }
+
+    public String getTransferBankName() {
+        return transferBankName;
+    }
+
+    public void setTransferBankName(String transferBankName) {
+        this.transferBankName = transferBankName;
+    }
+
+    public String getTransferAccountType() {
+        return transferAccountType;
+    }
+
+    public void setTransferAccountType(String transferAccountType) {
+        this.transferAccountType = transferAccountType;
     }
 }

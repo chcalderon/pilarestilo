@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
-import { createOrder, getPublicStoreSettings, validateDiscountCodeForUser, type PaymentGatewayProvider, type DiscountCodeDto } from '../lib/api';
+import { createOrder, getProduct, getPublicStoreSettings, validateDiscountCodeForUser, type PaymentGatewayProvider, type DiscountCodeDto } from '../lib/api';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -33,6 +33,7 @@ const labels = {
     remove: 'Eliminar',
     quantity: 'Cantidad',
     checkoutError: 'No pudimos crear tu pedido. Inténtalo nuevamente.',
+    checkoutStockAdjusted: 'Actualizamos tu carrito: uno o más productos ya no tienen stock disponible.',
     checkoutSuccess: 'Pedido creado. Redirigiendo a tu cuenta...',
     continueShopping: 'Seguir comprando',
   },
@@ -59,6 +60,7 @@ const labels = {
     remove: 'Remove',
     quantity: 'Quantity',
     checkoutError: 'We could not create your order. Please try again.',
+    checkoutStockAdjusted: 'We updated your cart: one or more products are no longer in stock.',
     checkoutSuccess: 'Order created. Redirecting to your account...',
     continueShopping: 'Continue shopping',
   },
@@ -203,6 +205,35 @@ export default function CartPage({ locale }: Props) {
     setCheckingOut(true);
     setToast(null);
     try {
+      const stockAdjustments = await Promise.all(items.map(async (item) => {
+        const productId = item.productId ?? item.id;
+        try {
+          const latest = await getProduct(productId);
+          if (!latest.active || latest.stock <= 0) {
+            return { itemId: item.id, targetQty: 0 };
+          }
+          if (latest.stock < item.quantity) {
+            return { itemId: item.id, targetQty: latest.stock };
+          }
+          return null;
+        } catch {
+          return { itemId: item.id, targetQty: 0 };
+        }
+      }));
+
+      const effectiveAdjustments = stockAdjustments.filter((adjustment): adjustment is { itemId: string; targetQty: number } => adjustment !== null);
+      if (effectiveAdjustments.length > 0) {
+        for (const adjustment of effectiveAdjustments) {
+          if (adjustment.targetQty <= 0) {
+            removeItem(adjustment.itemId);
+          } else {
+            updateQuantity(adjustment.itemId, adjustment.targetQty);
+          }
+        }
+        showToast('error', l.checkoutStockAdjusted);
+        return;
+      }
+
       const order = await createOrder(
         {
           customerId: authUser.id,
@@ -218,8 +249,8 @@ export default function CartPage({ locale }: Props) {
       window.setTimeout(() => {
         window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
       }, 500);
-    } catch {
-      showToast('error', l.checkoutError);
+    } catch (error) {
+      showToast('error', error instanceof Error && error.message ? error.message : l.checkoutError);
     } finally {
       setCheckingOut(false);
     }

@@ -44,10 +44,10 @@ public class KafkaOrderNotificationListener {
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
     public void onOrderStatusChanged(OrderStatusChanged event) {
-        if (event.newStatus() == OrderStatus.SHIPPED) {
+        if (event.newStatus() == OrderStatus.PREPARING_ORDER) {
             userRepository.findById(event.customerId())
                     .ifPresentOrElse(
-                            user -> notificationSender.sendOrderShipped(
+                            user -> notificationSender.sendOrderPreparing(
                                     event.orderId(),
                                     NotificationRecipient.of(
                                             user.getPhone(),
@@ -55,8 +55,23 @@ public class KafkaOrderNotificationListener {
                                             user.getNotificationChannelPreference().name()
                                     )
                             ),
-                            () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
+                            () -> notificationSender.sendOrderPreparing(event.orderId(), NotificationRecipient.unknown())
                     );
+            return;
         }
+        if (event.newStatus() != OrderStatus.SHIPPED) return;
+
+        userRepository.findById(event.customerId())
+                .ifPresentOrElse(
+                        user -> notificationSender.sendOrderShipped(
+                                event.orderId(),
+                                NotificationRecipient.of(
+                                        user.getPhone(),
+                                        user.getEmail(),
+                                        user.getNotificationChannelPreference().name()
+                                )
+                        ),
+                        () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
+                );
     }
 }

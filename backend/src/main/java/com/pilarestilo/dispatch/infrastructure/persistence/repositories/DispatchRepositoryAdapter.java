@@ -7,6 +7,8 @@ import com.pilarestilo.dispatch.infrastructure.persistence.entities.DispatchEnti
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,7 +27,13 @@ public class DispatchRepositoryAdapter implements DispatchRepository {
     @Override public Optional<Dispatch> findByOrderId(UUID orderId) { return jpaRepository.findByOrderId(orderId).map(this::toDomain); }
     @Override public List<Dispatch> findByStatus(DispatchStatus status) { return jpaRepository.findByStatus(status).stream().map(this::toDomain).toList(); }
     @Override public List<Dispatch> findByDispatcherIdAndStatus(UUID dispatcherId, DispatchStatus status) { return jpaRepository.findByDispatcherIdAndStatus(dispatcherId, status).stream().map(this::toDomain).toList(); }
+    @Override public List<Dispatch> findByStatusAndDispatchedAtBefore(DispatchStatus status, LocalDateTime dispatchedBefore) {
+        return jpaRepository.findByStatusAndDispatchedAtBefore(status, dispatchedBefore).stream().map(this::toDomain).toList();
+    }
     @Override public Page<Dispatch> findAll(Pageable pageable) { return jpaRepository.findAll(pageable).map(this::toDomain); }
+    @Override public Page<Dispatch> findHistory(LocalDate from, LocalDate to, Pageable pageable) {
+        return jpaRepository.findHistoryByLocalDateRange(from, to, pageable).map(this::toDomain);
+    }
     @Override public boolean existsByOrderId(UUID orderId) { return jpaRepository.existsByOrderId(orderId); }
 
     private DispatchEntity toEntity(Dispatch d) {

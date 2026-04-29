@@ -34,10 +34,11 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String category,
             Pageable pageable
     ) {
-        return queryService.list(condition, brand, minPrice, maxPrice, active, category, pageable)
+        return queryService.list(condition, brand, minPrice, maxPrice, active, inStock, category, pageable)
                 .map(ProductMapper::toDto);
     }
 
@@ -53,9 +54,11 @@ public class ProductController {
     @GetMapping("/search")
     public Page<ProductDto> search(
             @RequestParam(required = false, defaultValue = "") String q,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean inStock,
             Pageable pageable
     ) {
-        return queryService.search(q, pageable).map(ProductMapper::toDto);
+        return queryService.search(q, active, inStock, pageable).map(ProductMapper::toDto);
     }
 
     @GetMapping("/_health")

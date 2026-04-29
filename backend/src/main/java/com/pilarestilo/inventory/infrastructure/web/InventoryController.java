@@ -36,7 +36,7 @@ public class InventoryController {
             @RequestParam(required = false, defaultValue = "2") int lowStockThreshold,
             Pageable pageable
     ) {
-        return listProductsUseCase.execute(condition, brand, null, null, active, category, pageable)
+        return listProductsUseCase.execute(condition, brand, null, null, active, null, category, pageable)
                 .map(product -> InventoryMapper.toDto(product, lowStockThreshold));
     }
 

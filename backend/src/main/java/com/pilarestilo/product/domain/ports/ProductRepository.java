@@ -20,7 +20,7 @@ public interface ProductRepository {
 
     void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount);
 
-    Page<Product> search(String term, Pageable pageable);
+    Page<Product> search(String term, Boolean active, Boolean inStock, Pageable pageable);
 
     record ProductFilter(
             String condition,
@@ -28,10 +28,11 @@ public interface ProductRepository {
             BigDecimal minPrice,
             BigDecimal maxPrice,
             Boolean active,
+            Boolean inStock,
             String categorySlug
     ) {
         public static ProductFilter empty() {
-            return new ProductFilter(null, null, null, null, null, null);
+            return new ProductFilter(null, null, null, null, null, null, null);
         }
     }
 }

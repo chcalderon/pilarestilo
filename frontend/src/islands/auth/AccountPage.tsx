@@ -9,6 +9,7 @@ import {
   getMyProfile,
   updateMyProfile,
   changeMyPassword,
+  confirmOrderDelivery,
   getPaymentByOrder,
   submitPaymentProof,
   uploadPaymentProofImage,
@@ -62,6 +63,7 @@ export default function AccountPage({ locale }: Props) {
   const [proofFeedbackByOrder, setProofFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
   const [gatewayCheckoutLoadingByOrder, setGatewayCheckoutLoadingByOrder] = useState<Record<string, boolean>>({});
   const [gatewaySimulatingByOrder, setGatewaySimulatingByOrder] = useState<Record<string, boolean>>({});
+  const [deliveryConfirmingByOrder, setDeliveryConfirmingByOrder] = useState<Record<string, boolean>>({});
   const [gatewayFeedbackByOrder, setGatewayFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
   const [gatewayReturnFeedback, setGatewayReturnFeedback] = useState<ProofFeedback | null>(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -461,6 +463,36 @@ export default function AccountPage({ locale }: Props) {
     }
   }
 
+  async function handleConfirmDelivery(orderId: string) {
+    if (!effectiveToken) return;
+    setDeliveryConfirmingByOrder((prev) => ({ ...prev, [orderId]: true }));
+    setGatewayFeedbackByOrder((prev) => ({ ...prev, [orderId]: undefined }));
+    try {
+      await confirmOrderDelivery(orderId, effectiveToken);
+      const page = await getMyOrders(effectiveToken, 0, 20);
+      setOrders(page.content ?? []);
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'success',
+          text: es ? 'Pedido marcado como recibido. Gracias por confirmar.' : 'Order marked as received. Thanks for confirming.',
+        },
+      }));
+    } catch (error) {
+      setGatewayFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'error',
+          text: error instanceof Error
+            ? error.message
+            : (es ? 'No se pudo confirmar la entrega.' : 'Could not confirm delivery.'),
+        },
+      }));
+    } finally {
+      setDeliveryConfirmingByOrder((prev) => ({ ...prev, [orderId]: false }));
+    }
+  }
+
   async function handleSubmitProof(orderId: string) {
     if (!effectiveToken) return;
 
@@ -799,7 +831,7 @@ export default function AccountPage({ locale }: Props) {
 
             <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Datos de perfil' : 'Profile details'}</p>
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">{es ? 'Nombre completo' : 'Full name'}</label>
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">{es ? 'Nombre completo' : 'Full name'}</label>
               <input
                 type="text"
                 value={profileName}
@@ -808,7 +840,7 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? 'Tu nombre completo' : 'Your full name'}
               />
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
               <input
                 type="tel"
                 value={profilePhone}
@@ -820,7 +852,7 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? '+56912345678' : '+14155550123'}
               />
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/55">
+              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">
                 {es ? 'Canal de notificaciones' : 'Notification channel'}
               </label>
               <select
@@ -834,7 +866,7 @@ export default function AccountPage({ locale }: Props) {
                 <option value="EMAIL">{es ? 'Correo' : 'Email'}</option>
                 <option value="BOTH">{es ? 'Ambos' : 'Both'}</option>
               </select>
-              <p className="font-sans text-[0.68rem] text-pe-charcoal/45">
+              <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
                 {es
                   ? 'Si completas tu WhatsApp y eliges un canal, enviaremos notificaciones de pedido segun tu preferencia.'
                   : 'If you provide WhatsApp and choose a channel, order notifications will follow your preference.'}
@@ -974,7 +1006,7 @@ export default function AccountPage({ locale }: Props) {
                       >
                         {review.approved ? (es ? 'Aprobada' : 'Approved') : (es ? 'Pendiente' : 'Pending')}
                       </span>
-                      <span className="font-sans text-[0.68rem] text-pe-charcoal/35">
+                      <span className="font-sans text-[0.68rem] text-pe-charcoal/70">
                         {new Date(review.createdAt).toLocaleDateString(es ? 'es-CL' : 'en-US')}
                       </span>
                     </div>
@@ -1027,6 +1059,7 @@ export default function AccountPage({ locale }: Props) {
                   const proofFeedback = proofFeedbackByOrder[order.id];
                   const isStartingGatewayCheckout = gatewayCheckoutLoadingByOrder[order.id] === true;
                   const isSimulatingGateway = gatewaySimulatingByOrder[order.id] === true;
+                  const isConfirmingDelivery = deliveryConfirmingByOrder[order.id] === true;
                   const gatewayFeedback = gatewayFeedbackByOrder[order.id];
                   const selectedFile = proofFilesByOrder[order.id];
                   const proofLink = proofLinksByOrder[order.id] ?? '';
@@ -1035,7 +1068,7 @@ export default function AccountPage({ locale }: Props) {
                     <li key={order.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-3">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div>
-                          <p className="font-sans text-[0.65rem] tracking-[0.16em] uppercase text-pe-charcoal/35">
+                          <p className="font-sans text-[0.65rem] tracking-[0.16em] uppercase text-pe-charcoal/70">
                             {es ? 'Pedido' : 'Order'}
                           </p>
                           <p className="font-mono text-[0.82rem] text-pe-charcoal/65 mt-0.5">{order.id}</p>
@@ -1071,7 +1104,7 @@ export default function AccountPage({ locale }: Props) {
                                     ? 'text-emerald-700'
                                     : node.state === 'current'
                                       ? 'text-pe-rose-deep'
-                                      : 'text-pe-charcoal/45',
+                                      : 'text-pe-charcoal/60',
                                 ].join(' ')}
                               >
                                 {orderTimelineLabel(node.step)}
@@ -1103,7 +1136,7 @@ export default function AccountPage({ locale }: Props) {
                             <span className="font-sans text-sm text-pe-charcoal/75">
                               {item.productName} x{item.quantity}
                             </span>
-                            <span className="font-sans text-sm text-pe-charcoal/55">
+                            <span className="font-sans text-sm text-pe-charcoal/70">
                               {formatMoney(item.unitPrice.amount, item.unitPrice.currency)}
                             </span>
                           </li>
@@ -1113,7 +1146,7 @@ export default function AccountPage({ locale }: Props) {
                       {order.paymentMethod === 'BANK_TRANSFER' && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/45">
+                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">
                               {es ? 'Comprobante de transferencia' : 'Transfer proof'}
                             </p>
                             {payment ? (
@@ -1121,7 +1154,7 @@ export default function AccountPage({ locale }: Props) {
                                 {paymentStatusLabel(payment.status)}
                               </span>
                             ) : (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/35">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/70">
                                 {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
                               </span>
                             )}
@@ -1133,28 +1166,28 @@ export default function AccountPage({ locale }: Props) {
                             || payment?.transferBankName
                             || payment?.transferAccountType) && (
                               <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-2">
-                                <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/45 mb-1.5">
+                                <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/60 mb-1.5">
                                   {es ? 'Datos transferencia (snapshot)' : 'Transfer details (snapshot)'}
                                 </p>
                                 <dl className="grid grid-cols-1 gap-1 font-sans text-[0.72rem] text-pe-charcoal/70">
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/45">{es ? 'Nombre' : 'Name'}</dt>
+                                    <dt className="text-pe-charcoal/60">{es ? 'Nombre' : 'Name'}</dt>
                                     <dd className="text-right">{payment?.transferAccountHolderName || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/45">{es ? 'Correo' : 'Email'}</dt>
+                                    <dt className="text-pe-charcoal/60">{es ? 'Correo' : 'Email'}</dt>
                                     <dd className="text-right">{payment?.transferAccountEmail || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/45">{es ? 'Cuenta' : 'Account'}</dt>
+                                    <dt className="text-pe-charcoal/60">{es ? 'Cuenta' : 'Account'}</dt>
                                     <dd className="text-right">{maskAccountNumber(payment?.transferAccountNumber)}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/45">{es ? 'Banco' : 'Bank'}</dt>
+                                    <dt className="text-pe-charcoal/60">{es ? 'Banco' : 'Bank'}</dt>
                                     <dd className="text-right">{payment?.transferBankName || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/45">{es ? 'Tipo' : 'Type'}</dt>
+                                    <dt className="text-pe-charcoal/60">{es ? 'Tipo' : 'Type'}</dt>
                                     <dd className="text-right">{payment?.transferAccountType || '-'}</dd>
                                   </div>
                                 </dl>
@@ -1211,7 +1244,7 @@ export default function AccountPage({ locale }: Props) {
                               </div>
 
                               {selectedFile && (
-                                <p className="font-sans text-[0.7rem] text-pe-charcoal/45">
+                                <p className="font-sans text-[0.7rem] text-pe-charcoal/60">
                                   {es ? 'Archivo:' : 'File:'} {selectedFile.name}
                                 </p>
                               )}
@@ -1219,7 +1252,7 @@ export default function AccountPage({ locale }: Props) {
                           )}
 
                           {payment?.status === 'UNDER_REVIEW' && (
-                            <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
+                            <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
                               {es ? 'Tu comprobante esta en revision del equipo.' : 'Your proof is being reviewed by our team.'}
                             </p>
                           )}
@@ -1235,7 +1268,7 @@ export default function AccountPage({ locale }: Props) {
                       {order.paymentMethod === 'PAYMENT_GATEWAY' && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/45">
+                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">
                               {es ? 'Estado pasarela' : 'Gateway status'}
                             </p>
                             {payment ? (
@@ -1243,7 +1276,7 @@ export default function AccountPage({ locale }: Props) {
                                 {paymentStatusLabel(payment.status)}
                               </span>
                             ) : (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/35">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/70">
                                 {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
                               </span>
                             )}
@@ -1292,7 +1325,20 @@ export default function AccountPage({ locale }: Props) {
                       )}
 
                       <div className="border-t border-pe-black/7 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <span className="font-sans text-[0.72rem] text-pe-charcoal/45">
+                        {order.status === 'SHIPPED' && (
+                          <button
+                            onClick={() => {
+                              void handleConfirmDelivery(order.id);
+                            }}
+                            disabled={isConfirmingDelivery}
+                            className="inline-flex items-center justify-center px-3 py-2 bg-emerald-700 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-emerald-800 transition-colors disabled:opacity-60"
+                          >
+                            {isConfirmingDelivery
+                              ? (es ? 'Confirmando...' : 'Confirming...')
+                              : (es ? 'Marcar como recibido' : 'Mark as received')}
+                          </button>
+                        )}
+                        <span className="font-sans text-[0.72rem] text-pe-charcoal/60">
                           {new Date(order.createdAt).toLocaleDateString(es ? 'es-CL' : 'en-US', {
                             day: '2-digit',
                             month: '2-digit',
@@ -1317,3 +1363,4 @@ export default function AccountPage({ locale }: Props) {
     </div>
   );
 }
+

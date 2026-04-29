@@ -8,56 +8,60 @@ function adminLoginForm(page: Page) {
   return page.locator('#login-form-mount form').first();
 }
 
+async function gotoApp(page: Page, path: string) {
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
+}
+
 test.describe('Home page', () => {
   test('Spanish home renders header and category nav', async ({ page }) => {
     test.slow();
-    await page.goto('/es/');
+    await gotoApp(page, '/es/');
     await expect(page).toHaveTitle(/Pilar Estilo/i);
     await expect(page.locator('header#site-header')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('#nav-cats-list')).toBeVisible({ timeout: 15000 });
   });
 
   test('English home shows English shipping text', async ({ page }) => {
-    await page.goto('/en/');
+    await gotoApp(page, '/en/');
     await expect(page).toHaveTitle(/Pilar Estilo/i);
-    await expect(page.getByText('Nationwide shipping')).toBeVisible();
+    await expect(page.getByText('Shipping across Chile')).toBeVisible();
   });
 
   test('Root / redirects to /es/', async ({ page }) => {
-    await page.goto('/');
+    await gotoApp(page, '/');
     await expect(page).toHaveURL(/\/es\//);
   });
 });
 
 test.describe('Products listing', () => {
   test('Products page loads without error', async ({ page }) => {
-    await page.goto('/es/products');
+    await gotoApp(page, '/es/products');
     await expect(page.locator('body')).not.toContainText('500');
   });
 
   test('Category query filter route loads', async ({ page }) => {
-    await page.goto('/es/products?category=zapatos');
+    await gotoApp(page, '/es/products?category=zapatos');
     await expect(page).toHaveURL(/\/es\/products\?category=zapatos/);
     await expect(page.locator('body')).not.toContainText('500');
   });
 
-  test('Category nav link exposes expected target', async ({ page }) => {
-    await page.goto('/es/');
-    const vestidosLink = page.locator('#nav-cats-list a[href="/es/categories/vestidos"]').first();
-    await expect(vestidosLink).toBeVisible({ timeout: 15000 });
-    const href = await vestidosLink.getAttribute('href');
-    expect(href).toBe('/es/categories/vestidos');
+  test('Category nav exposes products link', async ({ page }) => {
+    await gotoApp(page, '/es/');
+    const productsLink = page.locator('#nav-cats-list a[href="/es/products"]').first();
+    await expect(productsLink).toBeVisible({ timeout: 15000 });
+    const href = await productsLink.getAttribute('href');
+    expect(href).toBe('/es/products');
   });
 
   test('Products page shows product cards', async ({ page }) => {
-    await page.goto('/es/products');
+    await gotoApp(page, '/es/products');
     await expect(page.locator('article, [href*="/es/products/"]').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
 test.describe('Product detail', () => {
   test('Product detail loads from fixture product', async ({ page }) => {
-    await page.goto('/es/products/fixture-1');
+    await gotoApp(page, '/es/products/fixture-1');
     await expect(page.locator('body')).not.toContainText('500');
     await expect(page.locator('main')).toBeVisible();
   });
@@ -65,14 +69,14 @@ test.describe('Product detail', () => {
 
 test.describe('Cart', () => {
   test('Cart page loads', async ({ page }) => {
-    await page.goto('/es/cart');
+    await gotoApp(page, '/es/cart');
     await expect(page.locator('body')).not.toContainText('500');
   });
 });
 
 test.describe('Auth pages', () => {
   test('Login page renders email and password fields', async ({ page }) => {
-    await page.goto('/es/auth/login');
+    await gotoApp(page, '/es/auth/login');
     const form = authForm(page);
     await expect(form).toBeVisible();
     await expect(form.locator('input[autocomplete="email"]')).toBeVisible();
@@ -81,7 +85,7 @@ test.describe('Auth pages', () => {
   });
 
   test('Register page renders all fields', async ({ page }) => {
-    await page.goto('/es/auth/register');
+    await gotoApp(page, '/es/auth/register');
     const form = authForm(page);
     await expect(form).toBeVisible();
     await expect(form.locator('input[autocomplete="name"]')).toBeVisible();
@@ -91,12 +95,12 @@ test.describe('Auth pages', () => {
   });
 
   test('Login page links to register', async ({ page }) => {
-    await page.goto('/es/auth/login');
+    await gotoApp(page, '/es/auth/login');
     await expect(authForm(page).locator('a[href*="/auth/register"]')).toBeVisible();
   });
 
   test('Register page links to login', async ({ page }) => {
-    await page.goto('/es/auth/register');
+    await gotoApp(page, '/es/auth/register');
     await expect(authForm(page).locator('a[href*="/auth/login"]')).toBeVisible();
   });
 });
@@ -107,22 +111,22 @@ test.describe('Admin auth guard', () => {
   });
 
   test('Unauthenticated /admin/ redirects to /admin/login', async ({ page }) => {
-    await page.goto('/admin/');
+    await gotoApp(page, '/admin/');
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
   test('Unauthenticated /admin/products redirects to /admin/login', async ({ page }) => {
-    await page.goto('/admin/products');
+    await gotoApp(page, '/admin/products');
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
   test('Unauthenticated /admin/categories redirects to /admin/login', async ({ page }) => {
-    await page.goto('/admin/categories');
+    await gotoApp(page, '/admin/categories');
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
   test('Admin login page renders correctly', async ({ page }) => {
-    await page.goto('/admin/login');
+    await gotoApp(page, '/admin/login');
     const form = adminLoginForm(page);
     await expect(form).toBeVisible();
     await expect(form.locator('input[autocomplete="email"]')).toBeVisible();
@@ -136,7 +140,7 @@ test.describe('Auth + admin flow (requires running backend)', () => {
     const ts = Date.now();
     const email = `pw_${ts}@test.com`;
 
-    await page.goto('/es/auth/register');
+    await gotoApp(page, '/es/auth/register');
     const form = authForm(page);
     await form.locator('input[autocomplete="name"]').fill('Playwright Test');
     await form.locator('input[autocomplete="email"]').fill(email);
@@ -156,7 +160,7 @@ test.describe('Auth + admin flow (requires running backend)', () => {
 
   test('Admin login accesses dashboard and shows sidebar nav', async ({ page }) => {
     await page.context().clearCookies();
-    await page.goto('/admin/login');
+    await gotoApp(page, '/admin/login');
 
     const form = adminLoginForm(page);
     await form.locator('input[autocomplete="email"]').fill('admin@pilarestilo.com');
@@ -176,7 +180,7 @@ test.describe('Auth + admin flow (requires running backend)', () => {
 
   test('Customer credentials are blocked at admin login', async ({ page }) => {
     await page.context().clearCookies();
-    await page.goto('/admin/login');
+    await gotoApp(page, '/admin/login');
 
     const form = adminLoginForm(page);
     await form.locator('input[autocomplete="email"]').fill('cliente1@example.com');

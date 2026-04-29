@@ -17,7 +17,7 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 
 const [categories, productsPage] = await Promise.all([
   getCategories(),
-  getProducts({ category: slug, active: true, size: PAGE_SIZE, page }),
+  getProducts({ category: slug, active: true, inStock: true, size: PAGE_SIZE, page }),
 ]);
 
 const category = categories.find(c => c.slug === slug);

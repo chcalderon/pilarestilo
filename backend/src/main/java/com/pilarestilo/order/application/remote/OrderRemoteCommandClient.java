@@ -1,5 +1,7 @@
 package com.pilarestilo.order.application.remote;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.domain.enums.OrderStatus;
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Component
 public class OrderRemoteCommandClient {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final boolean writeEnabled;
     private final RestClient restClient;
@@ -45,6 +49,10 @@ public class OrderRemoteCommandClient {
                     .retrieve()
                     .body(OrderDto.class);
         } catch (RestClientResponseException ex) {
+            String detail = extractProblemDetail(ex.getResponseBodyAsString());
+            if (detail != null && !detail.isBlank()) {
+                throw new DomainException(detail);
+            }
             throw new DomainException("Could not create order in order-service (status " + ex.getStatusCode().value() + ")");
         } catch (Exception ex) {
             throw new DomainException("Could not create order in order-service");
@@ -62,10 +70,30 @@ public class OrderRemoteCommandClient {
             if (ex.getStatusCode().value() == 404) {
                 throw new DomainException("Order not found: " + orderId);
             }
+            String detail = extractProblemDetail(ex.getResponseBodyAsString());
+            if (detail != null && !detail.isBlank()) {
+                throw new DomainException(detail);
+            }
             throw new DomainException("Could not update order status in order-service (status " + ex.getStatusCode().value() + ")");
         } catch (Exception ex) {
             throw new DomainException("Could not update order status in order-service");
         }
+    }
+
+    private String extractProblemDetail(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(responseBody);
+            JsonNode detail = root.get("detail");
+            if (detail != null && !detail.isNull()) {
+                return detail.asText();
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+        return null;
     }
 
     private CreateOrderRequest toCreateRequest(CreateOrderCommand command) {

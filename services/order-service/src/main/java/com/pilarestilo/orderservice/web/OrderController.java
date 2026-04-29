@@ -79,11 +79,24 @@ public class OrderController {
     public ResponseEntity<OrderDto> create(@RequestBody CreateOrderRequest request,
                                            @AuthenticationPrincipal AuthenticatedUser currentUser) {
         try {
-            if (!currentUser.internalCall() && (request.customerId() == null || !request.customerId().equals(currentUser.id()))) {
-                throw new AccessDeniedException("You can only create orders for your own account");
+            if (currentUser == null) {
+                throw new AccessDeniedException("Authentication required");
             }
+            UUID effectiveCustomerId = currentUser.internalCall() ? request.customerId() : currentUser.id();
+            if (effectiveCustomerId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+            }
+            CreateOrderRequest effectiveRequest = new CreateOrderRequest(
+                    effectiveCustomerId,
+                    request.items(),
+                    request.paymentMethod(),
+                    request.notes(),
+                    request.discountAmount(),
+                    request.discountCurrency(),
+                    request.employeeDiscountEligible()
+            );
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(OrderMapper.toDto(commandService.create(request)));
+                    .body(OrderMapper.toDto(commandService.create(effectiveRequest)));
         } catch (NoSuchElementException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         } catch (IllegalArgumentException | IllegalStateException ex) {

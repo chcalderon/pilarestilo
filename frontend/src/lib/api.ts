@@ -70,6 +70,7 @@ export interface ProductFilter {
   minPrice?: number;
   maxPrice?: number;
   active?: boolean;
+  inStock?: boolean;
   page?: number;
   size?: number;
 }
@@ -126,6 +127,23 @@ export interface OrderDto {
   status: 'CREATED' | 'PENDING_PAYMENT' | 'PAYMENT_UNDER_REVIEW' | 'PAID' | 'PREPARING_ORDER' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DispatchHistoryRowDto {
+  id: string;
+  orderId: string;
+  dispatcherId: string | null;
+  dispatchedBy: string;
+  status: string;
+  carrier: string | null;
+  trackingCode: string | null;
+  scheduledDate?: string | null;
+  dispatchedAt?: string | null;
+  deliveredAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  orderCreatedAt?: string | null;
+  soldBy: string;
 }
 
 export interface AdminUserDto {
@@ -310,6 +328,41 @@ export interface CreditMovementDto {
   createdAt: string;
 }
 
+export type CashMovementType = 'SALE' | 'IN' | 'OUT' | 'REFUND';
+
+export interface CashMovementDto {
+  id: string;
+  type: CashMovementType;
+  amount: number;
+  description: string;
+  orderId?: string | null;
+  recordedAt: string;
+  recordedBy: string;
+}
+
+export interface CashRegisterDto {
+  id: string;
+  sellerId: string;
+  status: 'OPEN' | 'CLOSED';
+  openedAt: string;
+  closedAt?: string | null;
+  openingBalance: number;
+  closingBalance?: number | null;
+  expectedBalance: number;
+  difference?: number | null;
+  notes?: string | null;
+  movements: CashMovementDto[];
+}
+
+export interface CashRegisterHistoryFilter {
+  status?: 'OPEN' | 'CLOSED';
+  from?: string;
+  to?: string;
+  sellerId?: string;
+  page?: number;
+  size?: number;
+}
+
 export interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
@@ -447,26 +500,47 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const internalTimeoutMsRaw = Number((import.meta.env as Record<string, unknown>).INTERNAL_API_TIMEOUT_MS ?? 4000);
+  const internalTimeoutMs = Number.isFinite(internalTimeoutMsRaw) && internalTimeoutMsRaw > 0
+    ? internalTimeoutMsRaw
+    : 4000;
+  const shouldUseServerTimeout = typeof window === 'undefined' && !init?.signal;
+  const controller = shouldUseServerTimeout ? new AbortController() : null;
+  const timeoutId = controller
+    ? setTimeout(() => controller.abort(), internalTimeoutMs)
+    : null;
   const headers = {
     'Content-Type': 'application/json',
     ...(init?.headers ?? {}),
   };
-  const res = await fetch(url, {
-    ...init,
-    headers,
-  });
-  if (!res.ok) {
-    let detail = `API error ${res.status} for ${url}`;
-    try {
-      const body = await res.json() as { detail?: string; message?: string; error?: string };
-      detail = body.detail ?? body.message ?? body.error ?? detail;
-    } catch {
-      // Keep default detail when body is not JSON.
+  try {
+    const res = await fetch(url, {
+      ...init,
+      headers,
+      signal: controller?.signal ?? init?.signal,
+    });
+    if (!res.ok) {
+      let detail = `API error ${res.status} for ${url}`;
+      try {
+        const body = await res.json() as { detail?: string; message?: string; error?: string };
+        detail = body.detail ?? body.message ?? body.error ?? detail;
+      } catch {
+        // Keep default detail when body is not JSON.
+      }
+      throw new Error(detail);
     }
-    throw new Error(detail);
+    if (res.status === 204) return undefined as unknown as T;
+    return res.json() as Promise<T>;
+  } catch (error) {
+    if (controller && (error as { name?: string }).name === 'AbortError') {
+      throw new Error(`API timeout after ${internalTimeoutMs}ms for ${url}`);
+    }
+    throw error;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
-  if (res.status === 204) return undefined as unknown as T;
-  return res.json() as Promise<T>;
 }
 
 function buildQuery(params: Record<string, unknown>): string {
@@ -491,6 +565,16 @@ function normalizeProduct(raw: any): ProductDto {
   };
 }
 
+function hasSellableStock(product: ProductDto): boolean {
+  if (Array.isArray(product.variants) && product.variants.length > 0) {
+    return product.variants.some((variant) => Number(variant.stock ?? 0) > 0);
+  }
+  if (Array.isArray(product.sizeStocks) && product.sizeStocks.length > 0) {
+    return product.sizeStocks.some((sizeStock) => Number(sizeStock.stock ?? 0) > 0);
+  }
+  return Number(product.stock ?? 0) > 0;
+}
+
 function authHeaders(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -510,7 +594,9 @@ export async function getProducts(filter?: ProductFilter): Promise<Page<ProductD
   try {
     const query = buildQuery((filter ?? {}) as Record<string, unknown>);
     const page = await apiFetch<Page<unknown>>(`/products${query}`);
-    return { ...page, content: page.content.map(normalizeProduct) };
+    const normalized = page.content.map(normalizeProduct);
+    const content = filter?.inStock ? normalized.filter(hasSellableStock) : normalized;
+    return { ...page, content };
   } catch {
     return {
       content: FIXTURE_PRODUCTS,
@@ -534,17 +620,17 @@ export async function getProduct(id: string): Promise<ProductDto> {
 }
 
 export async function getFeaturedProducts(): Promise<ProductDto[]> {
-  const query = buildQuery({ active: true, size: 8, page: 0, sort: 'createdAt,desc' });
+  const query = buildQuery({ active: true, inStock: true, size: 8, page: 0, sort: 'createdAt,desc' });
 
   try {
     const firstPage = await apiFetch<Page<unknown>>(`/products${query}`);
-    return firstPage.content.map(normalizeProduct);
+    return firstPage.content.map(normalizeProduct).filter(hasSellableStock);
   } catch {
     // Retry once for transient upstream hiccups before falling back.
     await new Promise((resolve) => setTimeout(resolve, 180));
     try {
       const secondPage = await apiFetch<Page<unknown>>(`/products${query}`);
-      return secondPage.content.map(normalizeProduct);
+      return secondPage.content.map(normalizeProduct).filter(hasSellableStock);
     } catch {
       return FIXTURE_PRODUCTS.slice(0, 8);
     }
@@ -882,6 +968,19 @@ export async function createOrder(data: CreateOrderRequest, token: string): Prom
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export async function getOrderById(orderId: string, token: string): Promise<OrderDto> {
+  return apiFetch<OrderDto>(`/orders/${encodeURIComponent(orderId)}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function confirmOrderDelivery(orderId: string, token: string): Promise<OrderDto> {
+  return apiFetch<OrderDto>(`/orders/${encodeURIComponent(orderId)}/confirm-delivery`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+}
 export async function getAdminOrdersByCustomer(
   customerId: string,
   token: string,
@@ -1005,6 +1104,85 @@ export async function getCustomerCreditMovements(
 }
 
 // ─── Review API ───────────────────────────────────────────────────────────────
+
+export async function getCurrentCashRegister(token: string): Promise<CashRegisterDto> {
+  return apiFetch<CashRegisterDto>('/caja/current', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function openCashRegister(openingBalance: number, token: string): Promise<CashRegisterDto> {
+  return apiFetch<CashRegisterDto>('/caja/open', {
+    method: 'POST',
+    body: JSON.stringify({ openingBalance }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function closeCashRegister(
+  closingBalance: number,
+  token: string,
+  notes?: string
+): Promise<CashRegisterDto> {
+  return apiFetch<CashRegisterDto>('/caja/close', {
+    method: 'POST',
+    body: JSON.stringify({ closingBalance, notes }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function addCashMovement(
+  type: 'IN' | 'OUT',
+  amount: number,
+  description: string,
+  token: string
+): Promise<CashMovementDto> {
+  return apiFetch<CashMovementDto>('/caja/movements', {
+    method: 'POST',
+    body: JSON.stringify({ type, amount, description }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getCashRegisterHistory(
+  token: string,
+  filter?: CashRegisterHistoryFilter,
+  adminScope = false
+): Promise<Page<CashRegisterDto>> {
+  const query = buildQuery({
+    status: filter?.status,
+    from: filter?.from,
+    to: filter?.to,
+    sellerId: filter?.sellerId,
+    page: filter?.page ?? 0,
+    size: filter?.size ?? 10,
+    sort: 'openedAt,desc',
+  });
+  const path = adminScope ? '/admin/caja' : '/caja/history';
+  return apiFetch<Page<CashRegisterDto>>(`${path}${query}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function getDispatchHistory(
+  token: string,
+  filter?: {
+    from?: string;
+    to?: string;
+    page?: number;
+    size?: number;
+  }
+): Promise<Page<DispatchHistoryRowDto>> {
+  const query = buildQuery({
+    from: filter?.from,
+    to: filter?.to,
+    page: filter?.page ?? 0,
+    size: filter?.size ?? 20,
+  });
+  return apiFetch<Page<DispatchHistoryRowDto>>(`/admin/despachos/history${query}`, {
+    headers: authHeaders(token),
+  });
+}
 
 export async function getProductReviews(productId: string): Promise<ReviewDto[]> {
   try {
@@ -1162,9 +1340,10 @@ export async function reorderCategories(
 
 export async function searchProducts(q: string, page = 0, size = 12): Promise<Page<ProductDto>> {
   try {
-    const query = buildQuery({ q, page, size });
+    const query = buildQuery({ q, active: true, inStock: true, page, size });
     const res = await apiFetch<Page<unknown>>(`/products/search${query}`);
-    return { ...res, content: res.content.map(normalizeProduct) };
+    const content = res.content.map(normalizeProduct).filter(hasSellableStock);
+    return { ...res, content };
   } catch {
     const lower = q.toLowerCase();
     const matches = FIXTURE_PRODUCTS.filter(
@@ -1299,7 +1478,7 @@ export async function validateDiscountCodeForUser(
 
 export interface InAppNotificationDto {
   id: string;
-  type: 'DISCOUNT_CODE_ASSIGNED' | 'ORDER_CONFIRMED' | 'PAYMENT_RECEIVED' | 'ORDER_SHIPPED';
+  type: 'DISCOUNT_CODE_ASSIGNED' | 'ORDER_CONFIRMED' | 'PAYMENT_RECEIVED' | 'ORDER_PREPARING' | 'ORDER_SHIPPED';
   title: string;
   body: string;
   metadata: Record<string, unknown> | null;

@@ -10,6 +10,8 @@ public interface NotificationSender {
 
     void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient);
 
+    void sendOrderPreparing(UUID orderId, NotificationRecipient recipient);
+
     void sendOrderShipped(UUID orderId, NotificationRecipient recipient);
 
     void sendDiscountCodeAssigned(String code, NotificationRecipient recipient);

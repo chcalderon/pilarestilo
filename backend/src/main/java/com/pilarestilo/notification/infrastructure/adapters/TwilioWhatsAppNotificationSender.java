@@ -65,6 +65,11 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        send("ORDER_PREPARING", orderId, recipient);
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         send("ORDER_SHIPPED", orderId, recipient);
     }
@@ -172,6 +177,12 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
             case "PAYMENT_RECEIVED" -> String.format(
                     Locale.ROOT,
                     "%s: pago %s confirmado. Gracias por tu compra.",
+                    senderAlias,
+                    shortId(referenceId)
+            );
+            case "ORDER_PREPARING" -> String.format(
+                    Locale.ROOT,
+                    "%s: pedido %s en preparacion. Te avisaremos al despacharlo.",
                     senderAlias,
                     shortId(referenceId)
             );

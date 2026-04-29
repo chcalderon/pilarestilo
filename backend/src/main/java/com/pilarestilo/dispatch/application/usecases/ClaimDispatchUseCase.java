@@ -3,19 +3,32 @@ package com.pilarestilo.dispatch.application.usecases;
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
+import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
+import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.UUID;
 
 @Service
 public class ClaimDispatchUseCase {
     private final DispatchRepository dispatchRepository;
-    public ClaimDispatchUseCase(DispatchRepository dispatchRepository) { this.dispatchRepository = dispatchRepository; }
+    private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
 
+    public ClaimDispatchUseCase(DispatchRepository dispatchRepository,
+                                UpdateOrderStatusUseCase updateOrderStatusUseCase) {
+        this.dispatchRepository = dispatchRepository;
+        this.updateOrderStatusUseCase = updateOrderStatusUseCase;
+    }
+
+    @Transactional
     public DispatchDto execute(UUID dispatchId, UUID dispatcherId) {
         Dispatch d = dispatchRepository.findById(dispatchId)
                 .orElseThrow(() -> new DomainException("Dispatch not found"));
         d.claim(dispatcherId);
-        return DispatchDto.from(dispatchRepository.save(d));
+        Dispatch saved = dispatchRepository.save(d);
+        updateOrderStatusUseCase.execute(saved.getOrderId(), OrderStatus.PREPARING_ORDER);
+        return DispatchDto.from(saved);
     }
 }

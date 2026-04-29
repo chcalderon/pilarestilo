@@ -24,7 +24,21 @@ Endpoints:
 - `POST /api/caja/close` - close current worker cash register (`SELLER`, `ADMIN`)
 - `GET /api/caja/current` - current worker cash register state (`SELLER`, `ADMIN`)
 - `POST /api/caja/movements` - add manual IN/OUT movement (`SELLER`, `ADMIN`)
-- `GET /api/admin/caja` - paginated admin/supervisor list (`ADMIN`, `SUPERVISOR`)
+- `GET /api/caja/history` - paginated history for the authenticated seller/admin (`SELLER`, `ADMIN`)
+  - Optional filters:
+    - `status`: `OPEN` | `CLOSED`
+    - `from`: `YYYY-MM-DD` (openedAt lower bound)
+    - `to`: `YYYY-MM-DD` (openedAt upper bound)
+    - `page`, `size`, `sort`
+- `GET /api/admin/caja` - paginated cross-seller list (`ADMIN`, `SUPERVISOR`)
+  - Optional filters:
+    - `status`: `OPEN` | `CLOSED`
+    - `sellerId`: UUID
+    - `from`: `YYYY-MM-DD` (openedAt lower bound)
+    - `to`: `YYYY-MM-DD` (openedAt upper bound)
+    - `page`, `size`, `sort`
+
+The `GET /api/caja/history` endpoint is served by `ListSellerCashRegisterHistoryUseCase` and scopes results to the authenticated user's own registers. The admin list endpoint (`GET /api/admin/caja`) is served by `ListCashRegistersUseCase` and supports cross-seller filtering via `sellerId`.
 
 ## 3. Dispatch (Despachos)
 
@@ -41,8 +55,25 @@ Endpoints:
 - `POST /api/despachos/{id}/dispatch` (`DESPACHADOR`, `ADMIN`)
 - `POST /api/despachos/{id}/deliver` (`DESPACHADOR`, `ADMIN`)
 - `POST /api/despachos/{id}/fail` (`DESPACHADOR`, `ADMIN`)
-- `GET /api/admin/despachos` (`ADMIN`, `SUPERVISOR`)
+- `GET /api/admin/despachos` - paginated active dispatch queue (`ADMIN`, `SUPERVISOR`)
+- `GET /api/admin/despachos/history` - paginated dispatch history (`ADMIN`, or any authenticated user with `despachos` permission)
+  - Optional filters:
+    - `from`: `YYYY-MM-DD` (dispatchedAt / scheduledDate lower bound; defaults to first of current month)
+    - `to`: `YYYY-MM-DD` (inclusive upper bound; defaults to end of same month)
+    - `page`, `size`
+  - Returns `DispatchHistoryRowDto` with enriched fields: `dispatchedBy` (user full name), `soldBy` (seller full name or `"Web"`)
 - `POST /api/admin/despachos/seed` (`ADMIN`) for admin bootstrap/testing
+
+Order status side effects linked to dispatch actions:
+
+- `POST /api/despachos/{id}/claim` updates order status to `PREPARING_ORDER`
+- `POST /api/despachos/{id}/dispatch` updates order status to `SHIPPED`
+- `POST /api/despachos/{id}/deliver` updates order status to `DELIVERED`
+- `PATCH /api/orders/{id}/confirm-delivery` (`isAuthenticated()`) - customer self-confirms delivery; also sets dispatch to `DELIVERED` if not already
+
+### Auto-confirm scheduled job
+
+`DispatchAutoDeliveryScheduler` runs on the cron schedule configured via `app.dispatch.auto-delivery.cron` (default: every 30 minutes, `0 */30 * * * *`). It finds dispatches in `DISPATCHED` status whose `dispatchedAt` timestamp is older than 15 days and automatically transitions them to `DELIVERED`, updating the linked order status as well.
 
 ## 4. Worker Roles and Permission Matrix
 
@@ -84,6 +115,14 @@ All endpoints are authenticated via class-level `@PreAuthorize("isAuthenticated(
 - `GET /api/notifications/unread-count`
 - `PUT /api/notifications/{id}/read`
 - `PUT /api/notifications/read-all`
+
+Current in-app notification types:
+
+- `DISCOUNT_CODE_ASSIGNED`
+- `ORDER_CONFIRMED`
+- `PAYMENT_RECEIVED`
+- `ORDER_PREPARING`
+- `ORDER_SHIPPED`
 
 ## 7. Media Admin Operations
 

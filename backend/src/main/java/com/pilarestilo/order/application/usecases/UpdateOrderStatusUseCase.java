@@ -40,6 +40,9 @@ public class UpdateOrderStatusUseCase {
         if (orderRemoteCommandClient.isWriteEnabled()) {
             OrderDto previous = orderRemoteQueryClient.getById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
+            if (previous.status() == targetStatus) {
+                return previous;
+            }
             OrderDto updated = orderRemoteCommandClient.updateStatus(orderId, targetStatus);
             eventPublisher.publish(new OrderStatusChanged(
                     updated.id(),
@@ -55,6 +58,9 @@ public class UpdateOrderStatusUseCase {
                 .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
 
         OrderStatus previous = order.getStatus();
+        if (previous == targetStatus) {
+            return OrderMapper.toDto(order);
+        }
 
         switch (targetStatus) {
             case PENDING_PAYMENT -> order.markAsPendingPayment();

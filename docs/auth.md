@@ -80,6 +80,7 @@ These are the explicit role checks currently present in controllers:
 | `POST /api/caja/close` | `hasAnyRole('SELLER','ADMIN')` |
 | `GET /api/caja/current` | `hasAnyRole('SELLER','ADMIN')` |
 | `POST /api/caja/movements` | `hasAnyRole('SELLER','ADMIN')` |
+| `GET /api/caja/history` | `hasAnyRole('SELLER','ADMIN')` |
 | `GET /api/admin/caja` | `hasAnyRole('ADMIN','SUPERVISOR')` |
 | `GET /api/despachos` | `hasAnyRole('DESPACHADOR','ADMIN')` |
 | `POST /api/despachos/{id}/claim` | `hasAnyRole('DESPACHADOR','ADMIN')` |
@@ -88,7 +89,9 @@ These are the explicit role checks currently present in controllers:
 | `POST /api/despachos/{id}/deliver` | `hasAnyRole('DESPACHADOR','ADMIN')` |
 | `POST /api/despachos/{id}/fail` | `hasAnyRole('DESPACHADOR','ADMIN')` |
 | `GET /api/admin/despachos` | `hasAnyRole('ADMIN','SUPERVISOR')` |
+| `GET /api/admin/despachos/history` | `hasRole('ADMIN')` or `isAuthenticated()` with `despachos` permission |
 | `POST /api/admin/despachos/seed` | `hasRole('ADMIN')` |
+| `PATCH /api/orders/{id}/confirm-delivery` | `isAuthenticated()` (customer ownership enforced in use case) |
 | `POST /api/discounts` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/discounts/{id}` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/discounts` | `hasAnyRole('ADMIN','SELLER')` |

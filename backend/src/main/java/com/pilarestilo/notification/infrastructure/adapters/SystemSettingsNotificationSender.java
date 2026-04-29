@@ -58,6 +58,11 @@ public class SystemSettingsNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        resolveSender().sendOrderPreparing(orderId, recipient);
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         resolveSender().sendOrderShipped(orderId, recipient);
     }

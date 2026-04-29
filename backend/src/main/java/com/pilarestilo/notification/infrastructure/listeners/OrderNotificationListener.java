@@ -39,19 +39,40 @@ public class OrderNotificationListener {
 
     @EventListener
     public void onOrderStatusChanged(OrderStatusChanged event) {
-        if (event.newStatus() == OrderStatus.SHIPPED) {
+        if (event.newStatus() == OrderStatus.PREPARING_ORDER) {
             userRepository.findById(event.customerId())
-                .ifPresentOrElse(
-                    user -> {
-                        notificationSender.sendOrderShipped(
-                            event.orderId(),
-                            NotificationRecipient.of(user.getPhone(), user.getEmail(),
-                                user.getNotificationChannelPreference().name())
-                        );
-                        inAppNotificationPort.notifyOrderShipped(user.getId(), event.orderId());
-                    },
-                    () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
-                );
+                    .ifPresentOrElse(
+                            user -> {
+                                notificationSender.sendOrderPreparing(
+                                        event.orderId(),
+                                        NotificationRecipient.of(
+                                                user.getPhone(),
+                                                user.getEmail(),
+                                                user.getNotificationChannelPreference().name()
+                                        )
+                                );
+                                inAppNotificationPort.notifyOrderPreparing(user.getId(), event.orderId());
+                            },
+                            () -> notificationSender.sendOrderPreparing(event.orderId(), NotificationRecipient.unknown())
+                    );
+            return;
         }
+        if (event.newStatus() != OrderStatus.SHIPPED) return;
+
+        userRepository.findById(event.customerId())
+                .ifPresentOrElse(
+                        user -> {
+                            notificationSender.sendOrderShipped(
+                                    event.orderId(),
+                                    NotificationRecipient.of(
+                                            user.getPhone(),
+                                            user.getEmail(),
+                                            user.getNotificationChannelPreference().name()
+                                    )
+                            );
+                            inAppNotificationPort.notifyOrderShipped(user.getId(), event.orderId());
+                        },
+                        () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
+                );
     }
 }

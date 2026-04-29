@@ -24,6 +24,11 @@ public class LogNotificationSender implements NotificationSender {
     }
 
     @Override
+    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
+        log.info("[NOTIFICATION] ORDER_PREPARING orderId={} recipient={}", orderId, recipient.preferredEmailThenPhone());
+    }
+
+    @Override
     public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
         log.info("[NOTIFICATION] ORDER_SHIPPED orderId={} recipient={}", orderId, recipient.preferredEmailThenPhone());
     }

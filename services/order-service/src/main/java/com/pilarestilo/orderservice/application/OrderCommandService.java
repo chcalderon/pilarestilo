@@ -9,6 +9,8 @@ import com.pilarestilo.orderservice.persistence.PaymentEntity;
 import com.pilarestilo.orderservice.persistence.PaymentRepository;
 import com.pilarestilo.orderservice.persistence.ProductEntity;
 import com.pilarestilo.orderservice.persistence.ProductRepository;
+import com.pilarestilo.orderservice.persistence.SystemSettingsEntity;
+import com.pilarestilo.orderservice.persistence.SystemSettingsRepository;
 import com.pilarestilo.orderservice.web.dto.CreateOrderRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,17 +29,26 @@ public class OrderCommandService {
 
     private static final String DEFAULT_CURRENCY = "CLP";
     private static final String PAYMENT_STATUS_PENDING = "PENDING";
+    private static final String DEFAULT_TRANSFER_ACCOUNT_HOLDER = "Pilar Estilo";
+    private static final String DEFAULT_TRANSFER_ACCOUNT_EMAIL = "admin@pilarestilo.com";
+    private static final String DEFAULT_TRANSFER_ACCOUNT_NUMBER = "0000000000";
+    private static final String DEFAULT_TRANSFER_BANK_NAME = "Banco de Chile";
+    private static final String DEFAULT_TRANSFER_ACCOUNT_TYPE = "Cuenta Corriente";
+    private static final short DEFAULT_SYSTEM_SETTINGS_ID = 1;
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final PaymentRepository paymentRepository;
+    private final SystemSettingsRepository systemSettingsRepository;
 
     public OrderCommandService(OrderRepository orderRepository,
                                ProductRepository productRepository,
-                               PaymentRepository paymentRepository) {
+                               PaymentRepository paymentRepository,
+                               SystemSettingsRepository systemSettingsRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.paymentRepository = paymentRepository;
+        this.systemSettingsRepository = systemSettingsRepository;
     }
 
     @Transactional
@@ -220,6 +231,9 @@ public class OrderCommandService {
     }
 
     private void validateTransition(OrderStatus current, OrderStatus target) {
+        if (current == target) {
+            return;
+        }
         if (target == OrderStatus.CANCELLED) {
             if (current == OrderStatus.DELIVERED) {
                 throw new IllegalStateException("Cannot cancel a delivered order");
@@ -263,12 +277,62 @@ public class OrderCommandService {
         payment.setReviewedBy(null);
         payment.setReviewedAt(null);
         payment.setCreatedAt(now);
+        if (PaymentMethod.BANK_TRANSFER.name().equals(order.getPaymentMethod())) {
+            TransferSnapshot snapshot = resolveTransferSnapshot();
+            payment.setTransferAccountHolderName(snapshot.accountHolder());
+            payment.setTransferAccountEmail(snapshot.contactEmail());
+            payment.setTransferAccountNumber(snapshot.accountNumber());
+            payment.setTransferBankName(snapshot.bankName());
+            payment.setTransferAccountType(snapshot.accountType());
+        }
         paymentRepository.save(payment);
+    }
+
+    private TransferSnapshot resolveTransferSnapshot() {
+        return systemSettingsRepository.findById(DEFAULT_SYSTEM_SETTINGS_ID)
+                .map(this::toTransferSnapshot)
+                .orElseGet(this::defaultTransferSnapshot);
+    }
+
+    private TransferSnapshot toTransferSnapshot(SystemSettingsEntity settings) {
+        return new TransferSnapshot(
+                defaultIfBlank(settings.getBankTransferAccountHolder(), DEFAULT_TRANSFER_ACCOUNT_HOLDER),
+                defaultIfBlank(settings.getBankTransferContactEmail(), DEFAULT_TRANSFER_ACCOUNT_EMAIL),
+                defaultIfBlank(settings.getBankTransferAccountNumber(), DEFAULT_TRANSFER_ACCOUNT_NUMBER),
+                defaultIfBlank(settings.getBankTransferBankName(), DEFAULT_TRANSFER_BANK_NAME),
+                defaultIfBlank(settings.getBankTransferAccountType(), DEFAULT_TRANSFER_ACCOUNT_TYPE)
+        );
+    }
+
+    private TransferSnapshot defaultTransferSnapshot() {
+        return new TransferSnapshot(
+                DEFAULT_TRANSFER_ACCOUNT_HOLDER,
+                DEFAULT_TRANSFER_ACCOUNT_EMAIL,
+                DEFAULT_TRANSFER_ACCOUNT_NUMBER,
+                DEFAULT_TRANSFER_BANK_NAME,
+                DEFAULT_TRANSFER_ACCOUNT_TYPE
+        );
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        if (value == null || value.trim().isEmpty()) {
+            return fallback;
+        }
+        return value.trim();
     }
 
     private record OrderLineSnapshot(
             ProductEntity product,
             int quantity
+    ) {
+    }
+
+    private record TransferSnapshot(
+            String accountHolder,
+            String contactEmail,
+            String accountNumber,
+            String bankName,
+            String accountType
     ) {
     }
 }

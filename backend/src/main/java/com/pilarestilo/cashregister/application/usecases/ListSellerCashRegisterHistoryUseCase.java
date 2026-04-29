@@ -12,22 +12,23 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-public class ListCashRegistersUseCase {
+public class ListSellerCashRegisterHistoryUseCase {
+
     private final CashRegisterRepository cashRegisterRepository;
 
-    public ListCashRegistersUseCase(CashRegisterRepository cashRegisterRepository) {
+    public ListSellerCashRegisterHistoryUseCase(CashRegisterRepository cashRegisterRepository) {
         this.cashRegisterRepository = cashRegisterRepository;
     }
 
-    public Page<CashRegisterDto> execute(Pageable pageable,
+    public Page<CashRegisterDto> execute(UUID sellerId,
                                          CashRegisterStatus status,
-                                         UUID sellerId,
                                          LocalDate from,
-                                         LocalDate to) {
+                                         LocalDate to,
+                                         Pageable pageable) {
         LocalDateTime openedFrom = from != null ? from.atStartOfDay() : null;
         LocalDateTime openedTo = to != null ? to.plusDays(1).atStartOfDay().minusNanos(1) : null;
         return cashRegisterRepository
-                .findHistory(status, sellerId, openedFrom, openedTo, pageable)
+                .findHistoryForSeller(sellerId, status, openedFrom, openedTo, pageable)
                 .map(CashRegisterDto::from);
     }
 }

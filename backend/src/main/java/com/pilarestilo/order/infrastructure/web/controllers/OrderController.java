@@ -6,6 +6,7 @@ import com.pilarestilo.order.application.usecases.CreateOrderUseCase;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
 import com.pilarestilo.order.application.usecases.ListOrdersUseCase;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
+import com.pilarestilo.dispatch.application.usecases.ConfirmOrderDeliveryUseCase;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
 import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
@@ -33,23 +34,26 @@ public class OrderController {
     private final GetOrderUseCase getOrderUseCase;
     private final ListOrdersUseCase listOrdersUseCase;
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
+    private final ConfirmOrderDeliveryUseCase confirmOrderDeliveryUseCase;
 
     public OrderController(CreateOrderUseCase createOrderUseCase,
                             GetOrderUseCase getOrderUseCase,
                             ListOrdersUseCase listOrdersUseCase,
-                            UpdateOrderStatusUseCase updateOrderStatusUseCase) {
+                            UpdateOrderStatusUseCase updateOrderStatusUseCase,
+                            ConfirmOrderDeliveryUseCase confirmOrderDeliveryUseCase) {
         this.createOrderUseCase = createOrderUseCase;
         this.getOrderUseCase = getOrderUseCase;
         this.listOrdersUseCase = listOrdersUseCase;
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
+        this.confirmOrderDeliveryUseCase = confirmOrderDeliveryUseCase;
     }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrderRequest request,
                                            @AuthenticationPrincipal AuthenticatedUser currentUser) {
-        if (currentUser == null || !request.customerId().equals(currentUser.id())) {
-            throw new AccessDeniedException("You can only create orders for your own account");
+        if (currentUser == null) {
+            throw new AccessDeniedException("Authentication required");
         }
 
         List<CreateOrderCommand.OrderItemCommand> items = request.items().stream()
@@ -57,7 +61,7 @@ public class OrderController {
                 .toList();
 
         CreateOrderCommand command = new CreateOrderCommand(
-                request.customerId(),
+                currentUser.id(),
                 items,
                 PaymentMethod.valueOf(request.paymentMethod()),
                 request.notes(),
@@ -101,5 +105,15 @@ public class OrderController {
     public OrderDto updateStatus(@PathVariable UUID id,
                                   @Valid @RequestBody UpdateOrderStatusRequest request) {
         return updateOrderStatusUseCase.execute(id, request.status());
+    }
+
+    @PatchMapping("/{id}/confirm-delivery")
+    @PreAuthorize("isAuthenticated()")
+    public OrderDto confirmDelivery(@PathVariable UUID id,
+                                    @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        if (currentUser == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        return confirmOrderDeliveryUseCase.execute(id, currentUser.id());
     }
 }

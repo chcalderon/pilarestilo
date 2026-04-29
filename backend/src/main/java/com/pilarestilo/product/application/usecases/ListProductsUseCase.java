@@ -23,8 +23,8 @@ public class ListProductsUseCase {
     @Transactional(readOnly = true)
     public Page<ProductDto> execute(String condition, String brand,
                                      BigDecimal minPrice, BigDecimal maxPrice,
-                                     Boolean active, String categorySlug, Pageable pageable) {
-        ProductFilter filter = new ProductFilter(condition, brand, minPrice, maxPrice, active, categorySlug);
+                                     Boolean active, Boolean inStock, String categorySlug, Pageable pageable) {
+        ProductFilter filter = new ProductFilter(condition, brand, minPrice, maxPrice, active, inStock, categorySlug);
         return productRepository.findAll(filter, pageable).map(ProductMapper::toDto);
     }
 }

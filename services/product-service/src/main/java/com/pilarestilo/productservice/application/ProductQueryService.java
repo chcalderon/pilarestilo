@@ -3,6 +3,7 @@ package com.pilarestilo.productservice.application;
 import com.pilarestilo.productservice.persistence.ProductEntity;
 import com.pilarestilo.productservice.persistence.ProductRepository;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ public class ProductQueryService {
                                     BigDecimal minPrice,
                                     BigDecimal maxPrice,
                                     Boolean active,
+                                    Boolean inStock,
                                     String category,
                                     Pageable pageable) {
         Specification<ProductEntity> spec = (root, query, cb) -> {
@@ -48,6 +50,9 @@ public class ProductQueryService {
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));
+            }
+            if (Boolean.TRUE.equals(inStock)) {
+                predicates.add(buildInStockPredicate(root, query, cb));
             }
             if (category != null && !category.isBlank()) {
                 Join<Object, Object> categories = root.join("categories", jakarta.persistence.criteria.JoinType.INNER);
@@ -70,21 +75,45 @@ public class ProductQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductEntity> search(String queryText, Pageable pageable) {
+    public Page<ProductEntity> search(String queryText,
+                                      Boolean active,
+                                      Boolean inStock,
+                                      Pageable pageable) {
         String term = queryText == null ? "" : queryText.trim().toLowerCase();
-        if (term.isBlank()) {
-            return productRepository.findAll(pageable);
-        }
-
-        String pattern = "%" + term + "%";
         Specification<ProductEntity> spec = (root, query, cb) -> {
-            var namePredicate = cb.like(cb.lower(root.get("name")), pattern);
-            var brandPredicate = cb.like(cb.lower(root.get("brand")), pattern);
+            var predicates = new ArrayList<Predicate>();
+            if (active != null) {
+                predicates.add(cb.equal(root.get("active"), active));
+            }
+            if (Boolean.TRUE.equals(inStock)) {
+                predicates.add(buildInStockPredicate(root, query, cb));
+            }
+            if (!term.isBlank()) {
+                String pattern = "%" + term + "%";
+                var namePredicate = cb.like(cb.lower(root.get("name")), pattern);
+                var brandPredicate = cb.like(cb.lower(root.get("brand")), pattern);
+                predicates.add(cb.or(namePredicate, brandPredicate));
+            }
             if (query != null) {
                 query.distinct(true);
             }
-            return cb.or(namePredicate, brandPredicate);
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return productRepository.findAll(spec, pageable);
+    }
+
+    private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,
+                                            jakarta.persistence.criteria.CriteriaQuery<?> query,
+                                            jakarta.persistence.criteria.CriteriaBuilder cb) {
+        Join<Object, Object> variants = root.join("variants", JoinType.LEFT);
+        Join<Object, Object> sizeStocks = root.join("sizeStocks", JoinType.LEFT);
+        if (query != null) {
+            query.distinct(true);
+        }
+        return cb.or(
+                cb.greaterThan(root.get("stock"), 0),
+                cb.greaterThan(variants.get("stock"), 0),
+                cb.greaterThan(sizeStocks.get("stock"), 0)
+        );
     }
 }

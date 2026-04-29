@@ -13,6 +13,7 @@ import com.pilarestilo.product.infrastructure.persistence.entities.ProductSizeSt
 import com.pilarestilo.product.infrastructure.persistence.entities.ProductVariantEmbeddable;
 import com.pilarestilo.shared.application.Money;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,13 +72,21 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
-    public Page<Product> search(String term, Pageable pageable) {
+    public Page<Product> search(String term, Boolean active, Boolean inStock, Pageable pageable) {
         String pattern = "%" + term.toLowerCase() + "%";
         Specification<ProductEntity> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
             var namePred  = cb.like(cb.lower(root.get("name")),  pattern);
             var brandPred = cb.like(cb.lower(root.get("brand")), pattern);
+            predicates.add(cb.or(namePred, brandPred));
+            if (active != null) {
+                predicates.add(cb.equal(root.get("active"), active));
+            }
+            if (Boolean.TRUE.equals(inStock)) {
+                predicates.add(buildInStockPredicate(root, query, cb));
+            }
             if (query != null) query.distinct(true);
-            return cb.or(namePred, brandPred);
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
         return jpaRepository.findAll(spec, pageable).map(this::toDomain);
     }
@@ -103,6 +112,9 @@ public class ProductRepositoryAdapter implements ProductRepository {
             if (filter.active() != null) {
                 predicates.add(cb.equal(root.get("active"), filter.active()));
             }
+            if (Boolean.TRUE.equals(filter.inStock())) {
+                predicates.add(buildInStockPredicate(root, query, cb));
+            }
             if (filter.categorySlug() != null) {
                 Join<Object, Object> cats = root.join("categories", jakarta.persistence.criteria.JoinType.INNER);
                 predicates.add(cb.equal(cats.get("slug"), filter.categorySlug()));
@@ -111,6 +123,21 @@ public class ProductRepositoryAdapter implements ProductRepository {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,
+                                            jakarta.persistence.criteria.CriteriaQuery<?> query,
+                                            jakarta.persistence.criteria.CriteriaBuilder cb) {
+        Join<Object, Object> variants = root.join("variants", JoinType.LEFT);
+        Join<Object, Object> sizeStocks = root.join("sizeStocks", JoinType.LEFT);
+        if (query != null) {
+            query.distinct(true);
+        }
+        return cb.or(
+                cb.greaterThan(root.get("stock"), 0),
+                cb.greaterThan(variants.get("stock"), 0),
+                cb.greaterThan(sizeStocks.get("stock"), 0)
+        );
     }
 
     private ProductEntity toEntity(Product product) {

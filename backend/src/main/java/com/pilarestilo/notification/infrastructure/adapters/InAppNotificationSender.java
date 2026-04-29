@@ -24,8 +24,8 @@ public class InAppNotificationSender implements InAppNotificationPort {
     @Override
     public void notifyDiscountCodeAssigned(UUID userId, String code) {
         save(userId, NotificationType.DISCOUNT_CODE_ASSIGNED,
-            "Código de descuento exclusivo",
-            "Tienes un código de descuento exclusivo: " + code + ". Úsalo en tu próxima compra.",
+            "Codigo de descuento exclusivo",
+            "Tienes un codigo de descuento exclusivo: " + code + ". Usalo en tu proxima compra.",
             Map.of("code", code));
     }
 
@@ -46,10 +46,18 @@ public class InAppNotificationSender implements InAppNotificationPort {
     }
 
     @Override
+    public void notifyOrderPreparing(UUID userId, UUID orderId) {
+        save(userId, NotificationType.ORDER_PREPARING,
+            "Pedido en preparacion",
+            "Tu pedido esta en preparacion. Te avisaremos cuando sea despachado.",
+            Map.of("orderId", orderId.toString()));
+    }
+
+    @Override
     public void notifyOrderShipped(UUID userId, UUID orderId) {
         save(userId, NotificationType.ORDER_SHIPPED,
             "Pedido enviado",
-            "Tu pedido ya fue enviado. Pronto llegará a destino.",
+            "Tu pedido ya fue enviado. Pronto llegara a destino.",
             Map.of("orderId", orderId.toString()));
     }
 

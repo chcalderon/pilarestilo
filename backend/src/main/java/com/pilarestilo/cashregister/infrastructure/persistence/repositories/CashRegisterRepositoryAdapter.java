@@ -8,7 +8,9 @@ import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
 import com.pilarestilo.cashregister.infrastructure.persistence.entities.CashRegisterEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,6 +54,50 @@ public class CashRegisterRepositoryAdapter implements CashRegisterRepository {
     @Override
     public Page<CashRegister> findAll(Pageable pageable) {
         return jpaRepository.findAll(pageable).map(this::toDomain);
+    }
+
+    @Override
+    public Page<CashRegister> findHistoryForSeller(UUID sellerId,
+                                                   CashRegisterStatus status,
+                                                   LocalDateTime openedFrom,
+                                                   LocalDateTime openedTo,
+                                                   Pageable pageable) {
+        Specification<CashRegisterEntity> spec = buildHistorySpec(status, sellerId, openedFrom, openedTo);
+        return jpaRepository.findAll(spec, pageable).map(this::toDomain);
+    }
+
+    @Override
+    public Page<CashRegister> findHistory(CashRegisterStatus status,
+                                          UUID sellerId,
+                                          LocalDateTime openedFrom,
+                                          LocalDateTime openedTo,
+                                          Pageable pageable) {
+        Specification<CashRegisterEntity> spec = buildHistorySpec(status, sellerId, openedFrom, openedTo);
+        return jpaRepository.findAll(spec, pageable).map(this::toDomain);
+    }
+
+    private static Specification<CashRegisterEntity> buildHistorySpec(CashRegisterStatus status,
+                                                                      UUID sellerId,
+                                                                      LocalDateTime openedFrom,
+                                                                      LocalDateTime openedTo) {
+        return (root, query, cb) -> {
+            var predicates = cb.conjunction();
+
+            if (status != null) {
+                predicates.getExpressions().add(cb.equal(root.get("status"), status));
+            }
+            if (sellerId != null) {
+                predicates.getExpressions().add(cb.equal(root.get("sellerId"), sellerId));
+            }
+            if (openedFrom != null) {
+                predicates.getExpressions().add(cb.greaterThanOrEqualTo(root.get("openedAt"), openedFrom));
+            }
+            if (openedTo != null) {
+                predicates.getExpressions().add(cb.lessThanOrEqualTo(root.get("openedAt"), openedTo));
+            }
+
+            return predicates;
+        };
     }
 
     private CashRegisterEntity toEntity(CashRegister cr) {
