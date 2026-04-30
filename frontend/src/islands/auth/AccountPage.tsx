@@ -58,7 +58,6 @@ export default function AccountPage({ locale }: Props) {
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [paymentsByOrder, setPaymentsByOrder] = useState<Record<string, PaymentDto>>({});
   const [proofFilesByOrder, setProofFilesByOrder] = useState<Record<string, File | null>>({});
-  const [proofLinksByOrder, setProofLinksByOrder] = useState<Record<string, string>>({});
   const [proofSubmittingByOrder, setProofSubmittingByOrder] = useState<Record<string, boolean>>({});
   const [proofFeedbackByOrder, setProofFeedbackByOrder] = useState<Record<string, ProofFeedback | undefined>>({});
   const [gatewayCheckoutLoadingByOrder, setGatewayCheckoutLoadingByOrder] = useState<Record<string, boolean>>({});
@@ -497,7 +496,6 @@ export default function AccountPage({ locale }: Props) {
     if (!effectiveToken) return;
 
     const payment = paymentsByOrder[orderId];
-    const manualProofLink = (proofLinksByOrder[orderId] ?? '').trim();
     const selectedFile = proofFilesByOrder[orderId];
 
     if (!payment) {
@@ -508,12 +506,12 @@ export default function AccountPage({ locale }: Props) {
       return;
     }
 
-    if (!manualProofLink && !selectedFile) {
+    if (!selectedFile) {
       setProofFeedbackByOrder((prev) => ({
         ...prev,
         [orderId]: {
           type: 'error',
-          text: es ? 'Sube una imagen o pega un enlace del comprobante.' : 'Upload an image or paste a proof link.',
+          text: es ? 'Sube una imagen del comprobante.' : 'Upload a proof image.',
         },
       }));
       return;
@@ -523,16 +521,12 @@ export default function AccountPage({ locale }: Props) {
     setProofFeedbackByOrder((prev) => ({ ...prev, [orderId]: undefined }));
 
     try {
-      let proofReference = manualProofLink;
-      if (selectedFile) {
-        const upload = await uploadPaymentProofImage(selectedFile, effectiveToken);
-        proofReference = upload.url;
-      }
+      const upload = await uploadPaymentProofImage(selectedFile, effectiveToken);
+      const proofReference = upload.url;
 
       const updatedPayment = await submitPaymentProof(payment.id, proofReference, effectiveToken);
       setPaymentsByOrder((prev) => ({ ...prev, [orderId]: updatedPayment }));
       setProofFilesByOrder((prev) => ({ ...prev, [orderId]: null }));
-      setProofLinksByOrder((prev) => ({ ...prev, [orderId]: '' }));
       setProofFeedbackByOrder((prev) => ({
         ...prev,
         [orderId]: {
@@ -1062,7 +1056,6 @@ export default function AccountPage({ locale }: Props) {
                   const isConfirmingDelivery = deliveryConfirmingByOrder[order.id] === true;
                   const gatewayFeedback = gatewayFeedbackByOrder[order.id];
                   const selectedFile = proofFilesByOrder[order.id];
-                  const proofLink = proofLinksByOrder[order.id] ?? '';
 
                   return (
                     <li key={order.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-3">
@@ -1220,17 +1213,6 @@ export default function AccountPage({ locale }: Props) {
                                     }}
                                   />
                                 </label>
-
-                                <input
-                                  type="url"
-                                  value={proofLink}
-                                  onChange={(event) => {
-                                    const value = event.target.value;
-                                    setProofLinksByOrder((prev) => ({ ...prev, [order.id]: value }));
-                                  }}
-                                  placeholder={es ? 'o pega URL del comprobante' : 'or paste proof URL'}
-                                  className="w-full lg:w-auto lg:flex-1 border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
-                                />
 
                                 <button
                                   onClick={() => {
