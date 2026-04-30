@@ -428,7 +428,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile obser
 
 cd backend/
 mvn spring-boot:run -Dspring-boot.run.profiles=local
-# Uses src/main/resources/application-local.properties
+# Uses src/main/resources/application-local.yml
 # Connects to localhost:5432/pilarestilo by default
 ```
 

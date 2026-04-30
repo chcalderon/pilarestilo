@@ -9,11 +9,12 @@ This file reflects the event contracts currently defined in code.
 | `ProductCreated` | `productId`, `productName`, `occurredAt` | `product` | none |
 | `ProductUpdated` | `productId`, `productName`, `occurredAt` | `product` | none |
 | `OrderCreated` | `orderId`, `customerId`, `occurredAt` | `order` | payment registration, order confirmation notification |
-| `OrderStatusChanged` | `orderId`, `customerId`, `previousStatus`, `newStatus`, `occurredAt` | `order` | shipped notification |
+| `OrderStatusChanged` | `orderId`, `customerId`, `previousStatus`, `newStatus`, `occurredAt` | `order` | order preparing/shipped notifications, cash-register sale registration on `PAID`, dispatch creation on `PAID` |
 | `PaymentRegistered` | `paymentId`, `orderId`, `occurredAt` | `payment` | none |
 | `PaymentSubmitted` | `paymentId`, `proofReference`, `occurredAt` | `payment` | none |
 | `PaymentConfirmed` | `paymentId`, `orderId`, `occurredAt` | `payment` | `OrderInventorySaga` (status progression), payment notification |
 | `PaymentRejected` | `paymentId`, `orderId`, `reviewerId`, `occurredAt` | `payment` | `OrderInventorySaga` (cancel + stock compensation) |
+| `DiscountCodeAssigned` | `discountId`, `code`, `assignedUserId`, `occurredAt` | `discount` | discount assignment notification (in-app + outbound) |
 | `DiscountApplied` | `discountId`, `discountCode`, `orderId`, `discountAmount`, `occurredAt` | `discount` | none |
 | `StoreCreditGranted` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
 | `StoreCreditUsed` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
@@ -46,8 +47,8 @@ Kafka mode behavior:
   - registers `PENDING` payment
 
 - `payment/infrastructure/listeners/PaymentEventListener`
-  - listens `PaymentConfirmed`
-  - updates order status to `PAID`
+  - listens `PaymentConfirmed` and `PaymentRejected`
+  - triggers `OrderInventorySaga` status progression / compensation
 
 - `review/infrastructure/listeners/ReviewSummaryListener`
   - listens `ReviewCreated`, `ReviewApproved`, `ReviewDeleted`
@@ -55,9 +56,22 @@ Kafka mode behavior:
 
 - `notification/infrastructure/listeners/OrderNotificationListener`
   - listens `OrderCreated` and `OrderStatusChanged`
+  - sends order confirmation + preparing + shipped notifications
 
 - `notification/infrastructure/listeners/PaymentNotificationListener`
   - listens `PaymentConfirmed`
+
+- `notification/infrastructure/listeners/DiscountNotificationListener`
+  - listens `DiscountCodeAssigned`
+  - sends assignment notification + persists in-app notification
+
+- `cashregister/infrastructure/listeners/OrderPaidCashRegisterListener`
+  - listens `OrderStatusChanged`
+  - on `PAID`, records `SALE` movement in the open cash register (when available)
+
+- `dispatch/infrastructure/listeners/OrderPaidDispatchListener`
+  - listens `OrderStatusChanged`
+  - on `PAID`, creates `PENDING` dispatch if one does not exist
 
 Kafka listener equivalents are available under:
 

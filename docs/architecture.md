@@ -191,7 +191,8 @@ Caddy now applies a read-routing policy for catalog endpoints:
 - `GET`/`HEAD /api/products*` -> `product-service` (when `microservices` profile is running)
 - `GET`/`HEAD /api/inventory*` -> `inventory-service` (when `microservices` profile is running)
 - `GET`/`HEAD /api/payments*` -> `payment-service` (JWT auth enforced in `payment-service`)
-- `/api/orders*` -> `order-service` (public order traffic; JWT auth enforced in `order-service`)
+- `GET`/`HEAD /api/orders*` -> `order-service` (when `microservices` profile is running; with backend fallback)
+- `POST`/`PATCH /api/orders*` -> `backend` (auth/orchestration entrypoint; backend may delegate writes with `APP_ORDER_REMOTE_WRITE_ENABLED=true`)
 - remaining `/api/*` -> `backend` (dynamic DNS upstreams; supports horizontal scale with `--scale backend=N`)
 - all other routes -> `frontend`
 

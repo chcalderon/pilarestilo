@@ -164,7 +164,8 @@ When that profile is running, Caddy routes:
 - `GET/HEAD /api/products*` to `product-service`.
 - `GET/HEAD /api/inventory*` to `inventory-service`.
 - `GET/HEAD /api/payments*` to `payment-service`.
-- `/api/orders*` to `order-service`.
+- `GET/HEAD /api/orders*` to `order-service` (with backend fallback).
+- `POST/PATCH /api/orders*` to `backend` (auth/orchestration entrypoint).
 
 Optional inventory write delegation from backend to `inventory-service`:
 - Set `APP_INVENTORY_REMOTE_ENABLED=true`.
@@ -291,7 +292,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V27`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V39`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -314,6 +315,18 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - user notification channel preference (`V25`)
 - notification provider enum extension with `N8N_WEBHOOK` constraint (`V26`)
 - n8n webhook settings persisted in `system_settings` (`V27`)
+- bank transfer bank-name snapshot fields (`V28`)
+- category seed restoration refresh (`V29`)
+- discount code usage ledger (`V30`)
+- discount user assignment + in-app notifications (`V31`)
+- featured category flag support (`V32`)
+- user avatar storage fields (`V33`)
+- manual avatar override marker (`V34`)
+- worker vigency range (`V35`)
+- role-permission matrix persistence (`V36`)
+- seeded default role-permission matrix (`V37`)
+- cash register schema (`V38`)
+- dispatch schema (`V39`)
 
 ---
 
