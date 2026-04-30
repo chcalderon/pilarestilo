@@ -25,58 +25,6 @@ const categoryTiles = await getFeaturedCategories();
 <BaseLayout title={t('nav.home', locale)} locale={locale}>
   <Hero locale={locale} />
 
-  <!-- Category editorial tiles -->
-  <section class="py-16 bg-pe-offwhite" aria-labelledby="categories-heading">
-    <div class="pe-container">
-      <div class="text-center mb-10">
-        <span class="chapter-mark text-base">
-          {locale === 'es' ? 'Explorar' : 'Explore'}
-        </span>
-        <h2
-          id="categories-heading"
-          class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
-        >
-          {locale === 'es' ? 'Por Categoría' : 'By Category'}
-        </h2>
-      </div>
-
-      {categoryTiles.length === 0 ? (
-        <p class="text-center text-pe-charcoal/40 font-sans text-sm py-8">
-          {locale === 'es' ? 'Próximamente.' : 'Coming soon.'}
-        </p>
-      ) : (
-        <div class={`grid grid-cols-1 gap-4 ${categoryTiles.length === 1 ? 'md:grid-cols-1 max-w-md mx-auto' : categoryTiles.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
-          {categoryTiles.map((cat, i) => (
-            <a
-              href={`/${locale}/categories/${cat.slug}`}
-              class="group relative overflow-hidden aspect-[4/5] block fx-lift"
-            >
-              {cat.imageUrl ? (
-                <img
-                  src={cat.imageUrl}
-                  alt={locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                  width="600"
-                  height="750"
-                />
-              ) : (
-                <div class="w-full h-full bg-pe-cream"></div>
-              )}
-              <div class="absolute inset-0 bg-gradient-to-t from-pe-black/70 via-pe-black/20 to-transparent"></div>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-              <div class="absolute bottom-0 left-0 right-0 p-6">
-                <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light">
-                  {locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
-                </p>
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
-
   <!-- "Recién llegados" featured products -->
   <section class="py-16 bg-pe-cream" aria-labelledby="featured-heading">
     <div class="pe-container">
@@ -111,6 +59,248 @@ const categoryTiles = await getFeaturedCategories();
       </div>
     </div>
   </section>
+
+  <!-- Category editorial tiles -->
+  <section class="py-16 bg-pe-offwhite" aria-labelledby="categories-heading">
+    <div class="pe-container">
+      <div class="text-center mb-10">
+        <span class="chapter-mark text-base">
+          {locale === 'es' ? 'Explorar' : 'Explore'}
+        </span>
+        <h2
+          id="categories-heading"
+          class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
+        >
+          {locale === 'es' ? 'Por Categoría' : 'By Category'}
+        </h2>
+      </div>
+
+      {categoryTiles.length === 0 ? (
+        <p class="text-center text-pe-charcoal/40 font-sans text-sm py-8">
+          {locale === 'es' ? 'Próximamente.' : 'Coming soon.'}
+        </p>
+      ) : (
+        <div data-category-carousel-root class="relative">
+          <div class="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-pe-offwhite to-transparent z-[1]"></div>
+          <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-pe-offwhite to-transparent z-[1]"></div>
+
+          <div
+            data-category-carousel
+            class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={locale === 'es' ? 'Carrusel de categorías destacadas' : 'Featured categories carousel'}
+          >
+            {categoryTiles.map((cat, i) => (
+              <a
+                href={`/${locale}/categories/${cat.slug}`}
+                class="group relative overflow-hidden aspect-[4/5] shrink-0 basis-[82%] sm:basis-[48%] lg:basis-[32%] xl:basis-[30%] block snap-start fx-lift"
+              >
+                {cat.imageUrl ? (
+                  <img
+                    src={cat.imageUrl}
+                    alt={locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                    width="600"
+                    height="750"
+                  />
+                ) : (
+                  <div class="w-full h-full bg-pe-cream"></div>
+                )}
+                <div class="absolute inset-0 bg-gradient-to-t from-pe-black/70 via-pe-black/20 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6">
+                  <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light">
+                    {locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <div class="mt-6 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+              {categoryTiles.map((_, i) => (
+                <button
+                  type="button"
+                  data-carousel-dot={i}
+                  class={`h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'w-6 bg-pe-black' : 'w-3 bg-pe-black/25'}`}
+                  aria-label={locale === 'es' ? `Ir a categoría ${i + 1}` : `Go to category ${i + 1}`}
+                ></button>
+              ))}
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                data-carousel-prev
+                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+                aria-label={locale === 'es' ? 'Categoría anterior' : 'Previous category'}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <button
+                type="button"
+                data-carousel-next
+                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+                aria-label={locale === 'es' ? 'Siguiente categoría' : 'Next category'}
+              >
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <script is:inline>
+    (() => {
+      const roots = document.querySelectorAll('[data-category-carousel-root]');
+      if (!roots.length) return;
+
+      for (const root of roots) {
+        const track = root.querySelector('[data-category-carousel]');
+        const prev = root.querySelector('[data-carousel-prev]');
+        const next = root.querySelector('[data-carousel-next]');
+        const dots = Array.from(root.querySelectorAll('[data-carousel-dot]'));
+        if (!track || !prev || !next || dots.length === 0) continue;
+
+        const cards = Array.from(track.children);
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const AUTOPLAY_MS = 5000;
+        let ticking = false;
+        let autoplayId = null;
+        let interactionPaused = false;
+
+        const getStep = () => {
+          const first = cards[0];
+          if (!first) return track.clientWidth;
+          const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0');
+          return first.getBoundingClientRect().width + gap;
+        };
+
+        const getActiveIndex = () => {
+          const center = track.scrollLeft + track.clientWidth / 2;
+          let bestIdx = 0;
+          let bestDist = Number.POSITIVE_INFINITY;
+          cards.forEach((card, idx) => {
+            const cardCenter = card.offsetLeft + card.clientWidth / 2;
+            const dist = Math.abs(cardCenter - center);
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestIdx = idx;
+            }
+          });
+          return bestIdx;
+        };
+
+        const updateUI = () => {
+          const maxLeft = Math.max(track.scrollWidth - track.clientWidth, 0);
+          prev.disabled = track.scrollLeft <= 4;
+          next.disabled = track.scrollLeft >= maxLeft - 4;
+          const active = getActiveIndex();
+          dots.forEach((dot, idx) => {
+            dot.classList.toggle('w-6', idx === active);
+            dot.classList.toggle('bg-pe-black', idx === active);
+            dot.classList.toggle('w-3', idx !== active);
+            dot.classList.toggle('bg-pe-black/25', idx !== active);
+          });
+        };
+
+        const scrollToIndex = (idx) => {
+          const card = cards[idx];
+          if (!card) return;
+          track.scrollTo({ left: card.offsetLeft, behavior: reduceMotion ? 'auto' : 'smooth' });
+        };
+
+        const goNext = () => {
+          if (cards.length <= 1) return;
+          const maxLeft = Math.max(track.scrollWidth - track.clientWidth, 0);
+          if (track.scrollLeft >= maxLeft - 4) {
+            track.scrollTo({ left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+            return;
+          }
+          const nextIdx = (getActiveIndex() + 1) % cards.length;
+          scrollToIndex(nextIdx);
+        };
+
+        const stopAutoplay = () => {
+          if (autoplayId === null) return;
+          window.clearInterval(autoplayId);
+          autoplayId = null;
+        };
+
+        const startAutoplay = () => {
+          if (reduceMotion || cards.length <= 1 || interactionPaused || document.hidden) return;
+          stopAutoplay();
+          autoplayId = window.setInterval(goNext, AUTOPLAY_MS);
+        };
+
+        const pauseForInteraction = () => {
+          interactionPaused = true;
+          stopAutoplay();
+        };
+
+        const resumeAfterInteraction = () => {
+          interactionPaused = false;
+          startAutoplay();
+        };
+
+        prev.addEventListener('click', () => {
+          track.scrollBy({ left: -getStep(), behavior: reduceMotion ? 'auto' : 'smooth' });
+        });
+
+        next.addEventListener('click', () => {
+          track.scrollBy({ left: getStep(), behavior: reduceMotion ? 'auto' : 'smooth' });
+        });
+
+        dots.forEach((dot, idx) => {
+          dot.addEventListener('click', () => {
+            scrollToIndex(idx);
+          });
+        });
+
+        root.addEventListener('mouseenter', pauseForInteraction);
+        root.addEventListener('mouseleave', resumeAfterInteraction);
+        root.addEventListener('focusin', pauseForInteraction);
+        root.addEventListener('focusout', () => {
+          window.requestAnimationFrame(() => {
+            if (!root.contains(document.activeElement)) {
+              resumeAfterInteraction();
+            }
+          });
+        });
+        root.addEventListener('touchstart', pauseForInteraction, { passive: true });
+        root.addEventListener('touchend', () => {
+          window.setTimeout(resumeAfterInteraction, 1200);
+        });
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            stopAutoplay();
+            return;
+          }
+          startAutoplay();
+        });
+
+        track.addEventListener(
+          'scroll',
+          () => {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(() => {
+              updateUI();
+              ticking = false;
+            });
+          },
+          { passive: true }
+        );
+
+        window.addEventListener('resize', updateUI);
+        updateUI();
+        startAutoplay();
+      }
+    })();
+  </script>
 
   <!-- Brand quote band -->
   <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label="Brand statement">
