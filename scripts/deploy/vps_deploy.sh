@@ -60,6 +60,22 @@ if [[ -z "${OLLAMA_ENABLED}" ]]; then
   OLLAMA_ENABLED="true"
 fi
 
+OLLAMA_MODEL="${APP_PRODUCT_AI_OLLAMA_MODEL:-}"
+if [[ -z "${OLLAMA_MODEL}" ]]; then
+  OLLAMA_MODEL="$(read_env_value APP_PRODUCT_AI_OLLAMA_MODEL)"
+fi
+if [[ -z "${OLLAMA_MODEL}" ]]; then
+  OLLAMA_MODEL="gemma3"
+fi
+
+OLLAMA_AUTO_PULL_MODEL="${APP_PRODUCT_AI_OLLAMA_AUTO_PULL_MODEL:-}"
+if [[ -z "${OLLAMA_AUTO_PULL_MODEL}" ]]; then
+  OLLAMA_AUTO_PULL_MODEL="$(read_env_value APP_PRODUCT_AI_OLLAMA_AUTO_PULL_MODEL)"
+fi
+if [[ -z "${OLLAMA_AUTO_PULL_MODEL}" ]]; then
+  OLLAMA_AUTO_PULL_MODEL="true"
+fi
+
 if normalize_bool_true "${OLLAMA_ENABLED}"; then
   if [[ -z "${DEPLOY_PROFILES}" ]]; then
     DEPLOY_PROFILES="ai"
@@ -73,6 +89,8 @@ echo "[deploy] Branch: ${DEPLOY_BRANCH}"
 echo "[deploy] Profiles: ${DEPLOY_PROFILES:-<none>}"
 echo "[deploy] Skip build: ${SKIP_BUILD}"
 echo "[deploy] Ollama enabled: ${OLLAMA_ENABLED}"
+echo "[deploy] Ollama model: ${OLLAMA_MODEL}"
+echo "[deploy] Ollama auto-pull model: ${OLLAMA_AUTO_PULL_MODEL}"
 
 echo "[deploy] Syncing repository..."
 git fetch origin --prune
@@ -93,6 +111,31 @@ if [[ "${SKIP_BUILD}" == "true" ]]; then
   "${compose_cmd[@]}" up -d
 else
   "${compose_cmd[@]}" up -d --build
+fi
+
+if normalize_bool_true "${OLLAMA_ENABLED}" && normalize_bool_true "${OLLAMA_AUTO_PULL_MODEL}"; then
+  echo "[deploy] Ensuring Ollama model is available (${OLLAMA_MODEL})..."
+  if "${compose_cmd[@]}" ps --status running --services | grep -qx "ollama"; then
+    max_wait_seconds=120
+    waited_seconds=0
+    until "${compose_cmd[@]}" exec -T ollama sh -c "wget -qO- http://localhost:11434/api/version >/dev/null 2>&1"; do
+      if (( waited_seconds >= max_wait_seconds )); then
+        echo "[deploy] WARNING: Ollama API not ready after ${max_wait_seconds}s; continuing." >&2
+        break
+      fi
+      sleep 3
+      waited_seconds=$((waited_seconds + 3))
+    done
+
+    if "${compose_cmd[@]}" exec -T ollama ollama list | awk 'NR>1 {print $1}' | grep -Eq "^${OLLAMA_MODEL}(:|$)"; then
+      echo "[deploy] Ollama model already present: ${OLLAMA_MODEL}"
+    else
+      echo "[deploy] Pulling Ollama model: ${OLLAMA_MODEL}"
+      "${compose_cmd[@]}" exec -T ollama ollama pull "${OLLAMA_MODEL}"
+    fi
+  else
+    echo "[deploy] WARNING: Ollama service is not running; skipping model pull." >&2
+  fi
 fi
 
 echo "[deploy] Service status:"
