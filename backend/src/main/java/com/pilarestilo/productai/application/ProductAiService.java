@@ -198,7 +198,8 @@ public class ProductAiService {
                     inference.title(),
                     inference.description(),
                     inference.imagePrompt(),
-                    inference.engine()
+                    inference.engine(),
+                    inference.fallbackReason()
             );
         } catch (Exception ex) {
             throw new DomainException("No se pudo inferir contenido con IA: " + ex.getMessage());

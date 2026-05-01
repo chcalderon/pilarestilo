@@ -4,6 +4,7 @@ public record ProductAiInferenceDto(
         String title,
         String description,
         String imagePrompt,
-        String engine
+        String engine,
+        String fallbackReason
 ) {
 }

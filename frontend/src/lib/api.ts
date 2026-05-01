@@ -475,6 +475,7 @@ export interface ProductAiInferenceDto {
   description: string;
   imagePrompt: string;
   engine: string;
+  fallbackReason?: string | null;
 }
 
 export interface ProductAiImageTransformDto {

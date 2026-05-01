@@ -110,7 +110,7 @@ public class ProductAiOllamaClient {
             if (imagePrompt.isBlank()) {
                 imagePrompt = defaultImagePrompt(sourceFilename, brandHint);
             }
-            return new InferenceResult(title, description, imagePrompt, rawTextJson, "ollama");
+            return new InferenceResult(title, description, imagePrompt, rawTextJson, "ollama", null);
         } catch (RestClientResponseException ex) {
             return fallbackFromFilename(sourceFilename, brandHint, "ollama-http-" + ex.getStatusCode().value());
         } catch (Exception ex) {
@@ -233,7 +233,7 @@ public class ProductAiOllamaClient {
         String description = "Prenda seleccionada para catalogo boutique. Revisar y ajustar detalles finales antes de publicar.";
         String imagePrompt = defaultImagePrompt(sourceFilename, brandHint);
         String raw = "{\"fallback\":true,\"reason\":\"" + reason + "\"}";
-        return new InferenceResult(title, description, imagePrompt, raw, "ollama-fallback");
+        return new InferenceResult(title, description, imagePrompt, raw, "ollama-fallback", reason);
     }
 
     private String fallbackTitle(String sourceFilename, String brandHint) {
@@ -293,7 +293,8 @@ public class ProductAiOllamaClient {
             String description,
             String imagePrompt,
             String rawResponseJson,
-            String engine
+            String engine,
+            String fallbackReason
     ) {
     }
 

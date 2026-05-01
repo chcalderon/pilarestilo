@@ -273,6 +273,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     try {
       const file = await resolveImageFileForAi();
       const inference = await inferSingleProductAi(token, file, form.brand.trim() || undefined);
+      if (inference.engine === 'ollama-fallback') {
+        const reason = (inference.fallbackReason ?? 'unknown').trim();
+        throw new Error(`Inferencia IA en fallback: ${reason}. No se aplicaron cambios al formulario.`);
+      }
       setForm((prev) => ({
         ...prev,
         name: inference.title?.trim() || prev.name,
