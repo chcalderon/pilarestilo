@@ -1,6 +1,6 @@
 # IA Product Pipeline - Progress Log
 
-## 2026-04-30
+## 2026-05-01
 
 ### Completed
 
@@ -49,11 +49,28 @@
   - new `ProductAiOllamaClient` in backend Java for text inference (title/description/imagePrompt)
   - `Productos` 1-a-1 now calls endpoint `infer-single` (solo texto, sin transformacion de imagen, sin n8n)
   - `Publicaciones` jobs now use Ollama text inference + ChatGPT image transform (node bridge actual)
+- `Productos` 1-a-1 expanded with transform preview flow:
+  - new endpoint `POST /api/admin/product-ai/transform-single`
+  - prompt personalizable (con default de invierno + fidelidad de prenda)
+  - selector de proveedor en UI (`OPENAI` / `OLLAMA`)
+  - preview transformada + accion `Reemplazar imagen actual`
+  - enlace de descarga directa de preview en admin
+  - derivadas optimizadas (`master/web/thumb`) para carga web
+  - timeout de gateway extendido en Caddy para `POST /api/admin/product-ai/transform-single` (180s)
+- Hardening de inferencia Ollama en `Productos` 1-a-1:
+  - `keep_alive` configurable para mantener modelo caliente
+  - warmup de Ollama al inicio de backend
+  - warmup bloqueante opcional con timeout configurable (default activo en Docker)
+  - timeout de gateway extendido para `POST /api/admin/product-ai/infer-single` (300s)
+  - mensaje UX de timeout actualizado para explicar cold start (2-4 min)
+- Estado proveedor transformacion:
+  - `OPENAI`: operativo en pipeline actual (`transform-images.js`)
+  - `OLLAMA`: visible en UI como experimental, backend responde error controlado (aun no soportado por bridge actual)
 - n8n campaign workflow automation still pending (next stage).
 
 ### Next (PR4)
 
-1. Add a dedicated admin subflow to infer product form fields from a single image in `Productos` (quick mode).
+1. Implementar transformacion de imagen con proveedor local (Ollama/Comfy bridge) para reemplazar el fallback experimental.
 2. Add campaign queue entity + endpoint to pass approved assets to n8n webhook.
 3. Add first automated n8n campaign flow using approved assets.
 4. Add integration test coverage for `node_bridge` happy path + error/retry path.

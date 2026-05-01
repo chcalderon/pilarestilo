@@ -65,6 +65,16 @@ public class ProductAiController {
         return productAiService.inferSingleImage(file, brandHint);
     }
 
+    @PostMapping("/transform-single")
+    public ProductAiImageTransformDto transformSingle(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String provider,
+            @RequestParam(required = false) String prompt,
+            @RequestParam(required = false) String brandHint
+    ) {
+        return productAiService.transformSingleImage(file, provider, prompt, brandHint);
+    }
+
     @GetMapping("/jobs")
     public List<ProductAiJobSummaryDto> listJobs() {
         return productAiService.listJobs();

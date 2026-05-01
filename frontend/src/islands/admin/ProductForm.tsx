@@ -5,6 +5,7 @@ import {
   updateProduct,
   getCategories,
   inferSingleProductAi,
+  transformSingleProductAiImage,
   type ProductDto,
   type CreateProductRequest,
   type CategoryDto,
@@ -40,6 +41,7 @@ type VariantRow = {
 };
 
 const VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'UNICO'];
+const DEFAULT_TRANSFORM_PROMPT = 'Generar una imagen de tamano ideal para Instagram (la presenta una modelo en un fondo de boutique de lujo), para campana de invierno. Fijate bien en el diseno y color; mantener tambien textura y corte. Sin texto, sin logos, sin marcas de agua.';
 
 function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
   return rows.map((row) => ({
@@ -54,7 +56,11 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [useAiAssist, setUseAiAssist] = useState(false);
   const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
   const [aiRunning, setAiRunning] = useState(false);
+  const [aiTransformRunning, setAiTransformRunning] = useState(false);
   const [aiInfo, setAiInfo] = useState('');
+  const [aiTransformProvider, setAiTransformProvider] = useState<'OPENAI' | 'OLLAMA'>('OPENAI');
+  const [aiTransformPrompt, setAiTransformPrompt] = useState(DEFAULT_TRANSFORM_PROMPT);
+  const [aiTransformPreviewUrl, setAiTransformPreviewUrl] = useState('');
   const [useVariants, setUseVariants] = useState(false);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
@@ -101,6 +107,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setLastUploadedFile(null);
     setAiInfo('');
     setAiRunning(false);
+    setAiTransformRunning(false);
+    setAiTransformProvider('OPENAI');
+    setAiTransformPrompt(DEFAULT_TRANSFORM_PROMPT);
+    setAiTransformPreviewUrl('');
   }, [product]);
 
   useEffect(() => {
@@ -274,6 +284,40 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     } finally {
       setAiRunning(false);
     }
+  }
+
+  async function handleTransformWithAi() {
+    if (!token) {
+      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
+      return;
+    }
+    setApiError('');
+    setAiInfo('');
+    setAiTransformRunning(true);
+    try {
+      const file = await resolveImageFileForAi();
+      const transformed = await transformSingleProductAiImage(token, file, {
+        provider: aiTransformProvider,
+        prompt: aiTransformPrompt,
+        brandHint: form.brand.trim() || undefined,
+      });
+      const preview = transformed.processedWebUrl || transformed.processedMasterUrl;
+      setAiTransformPreviewUrl(preview);
+      setAiInfo(`Transformacion completada (${transformed.provider}). Revisa preview y confirma si quieres reemplazar la imagen actual.`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'No se pudo transformar la imagen con IA');
+    } finally {
+      setAiTransformRunning(false);
+    }
+  }
+
+  function handleApplyTransformPreview() {
+    if (!aiTransformPreviewUrl) {
+      return;
+    }
+    setForm((prev) => ({ ...prev, imageUrl: aiTransformPreviewUrl }));
+    setLastUploadedFile(null);
+    setAiInfo('Imagen transformada aplicada al formulario. Puedes guardar o ajustar antes de guardar.');
   }
 
   const inputClass =
@@ -505,8 +549,12 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               value={previewUrl || undefined}
               onUpload={url => {
                 setForm(prev => ({ ...prev, imageUrl: url }));
+                setAiTransformPreviewUrl('');
               }}
-              onUploadedFile={setLastUploadedFile}
+              onUploadedFile={(file) => {
+                setLastUploadedFile(file);
+                setAiTransformPreviewUrl('');
+              }}
               token={token ?? ''}
             />
           </div>
@@ -525,15 +573,79 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               Este flujo sugiere texto (titulo/descripcion/prompt) para este producto y no dispara n8n. La transformacion de imagen + campanas queda en Publicaciones.
             </p>
             {useAiAssist && (
-              <button
-                type="button"
-                onClick={() => void handleInferWithAi()}
-                disabled={aiRunning}
-                className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
-              >
-                {aiRunning ? <Loader2 size={13} className="animate-spin" /> : null}
-                {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => void handleInferWithAi()}
+                  disabled={aiRunning}
+                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                >
+                  {aiRunning ? <Loader2 size={13} className="animate-spin" /> : null}
+                  {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
+                </button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-1">
+                    <label className={labelClass + ' mb-1'}>Proveedor imagen IA</label>
+                    <select
+                      className={inputClass}
+                      value={aiTransformProvider}
+                      onChange={(e) => setAiTransformProvider(e.target.value as 'OPENAI' | 'OLLAMA')}
+                    >
+                      <option value="OPENAI">OpenAI</option>
+                      <option value="OLLAMA">Ollama (experimental)</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass + ' mb-1'}>Prompt transformacion (opcional)</label>
+                    <textarea
+                      className={inputClass + ' resize-none h-20'}
+                      value={aiTransformPrompt}
+                      onChange={(e) => setAiTransformPrompt(e.target.value)}
+                      placeholder={DEFAULT_TRANSFORM_PROMPT}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleTransformWithAi()}
+                  disabled={aiTransformRunning}
+                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                >
+                  {aiTransformRunning ? <Loader2 size={13} className="animate-spin" /> : null}
+                  {aiTransformRunning ? 'Transformando...' : 'Transformar imagen con IA'}
+                </button>
+
+                {aiTransformPreviewUrl && (
+                  <div className="border border-pe-black/12 bg-[#fffdfa] p-2.5 space-y-2">
+                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-charcoal/65">
+                      Preview transformada
+                    </p>
+                    <img
+                      src={aiTransformPreviewUrl}
+                      alt="Previsualizacion transformada"
+                      className="w-full max-w-[220px] h-auto border border-pe-black/15"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleApplyTransformPreview}
+                        className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/8 transition-colors"
+                      >
+                        Reemplazar imagen actual
+                      </button>
+                      <a
+                        href={aiTransformPreviewUrl}
+                        download
+                        className="inline-flex items-center gap-2 border border-pe-black/20 text-pe-charcoal font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
+                      >
+                        Descargar preview
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

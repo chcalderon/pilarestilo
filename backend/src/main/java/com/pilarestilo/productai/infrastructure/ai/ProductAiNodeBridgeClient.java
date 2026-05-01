@@ -157,7 +157,7 @@ public class ProductAiNodeBridgeClient {
                     workspace,
                     transformScript,
                     List.of(),
-                    buildTransformEnv(inputDir, outputDir)
+                    buildTransformEnv(inputDir, outputDir, "openai", null)
             );
 
             return uploadAndBuildResults(jobId, draft, stagedAssets, promptItems, textInferenceByAsset, outputDir);
@@ -237,23 +237,98 @@ public class ProductAiNodeBridgeClient {
         }
     }
 
-    private Map<String, String> buildTransformEnv(Path inputDir, Path outputDir) {
+    private Map<String, String> buildTransformEnv(Path inputDir, Path outputDir, String provider, String promptOverride) {
         Map<String, String> env = new HashMap<>();
         env.put("INPUT_IMAGES_DIR", inputDir.toAbsolutePath().toString());
         env.put("OUTPUT_IMAGES_DIR", outputDir.toAbsolutePath().toString());
         env.put("FINAL_OUTPUT_WIDTH", Integer.toString(Math.max(targetWidth, 1)));
         env.put("FINAL_OUTPUT_HEIGHT", Integer.toString(Math.max(targetHeight, 1)));
+        env.put("IMAGE_API_PROVIDER", nonBlank(provider, "openai"));
         env.put("IMAGE_API_BASE_URL", openAiBaseUrl);
         env.put("IMAGE_EDIT_MODEL", nonBlank(openAiImageModel, "gpt-image-1"));
         env.put("REQUEST_TIMEOUT_MS", Long.toString(Math.max(timeoutMs, 1_000)));
         env.put("TRANSFORM_DELAY_MS", "250");
         env.put("DEBUG_PROMPT", "false");
         env.put("MAX_IMAGES", "0");
+        if (promptOverride != null && !promptOverride.isBlank()) {
+            env.put("IMAGE_EDIT_PROMPT_OVERRIDE", promptOverride.trim());
+        }
         if (openAiApiKey != null && !openAiApiKey.isBlank()) {
             env.put("OPENAI_API_KEY", openAiApiKey);
             env.put("IMAGE_API_KEY", openAiApiKey);
         }
         return env;
+    }
+
+    public SingleTransformResult transformSingleImage(
+            UUID requestId,
+            byte[] sourceImageBytes,
+            String sourceFilename,
+            String provider,
+            String promptOverride
+    ) {
+        if (nodeProjectPath == null || nodeProjectPath.isBlank()) {
+            throw new DomainException("Node bridge is enabled but app.product-ai.node.project-path is empty");
+        }
+        if (sourceImageBytes == null || sourceImageBytes.length == 0) {
+            throw new DomainException("No se recibio imagen para transformar");
+        }
+
+        Path projectPath = Paths.get(nodeProjectPath).toAbsolutePath().normalize();
+        Path transformScript = projectPath.resolve(transformScriptName).normalize();
+        validateBridgePaths(projectPath, projectPath.resolve(generateScriptName).normalize(), transformScript);
+
+        String sourceExtension = resolveSourceExtension(sourceFilename);
+        Path workspaceRoot = Paths.get(workspaceRootPath).toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(workspaceRoot);
+        } catch (IOException ex) {
+            throw new DomainException("Could not create Product AI workspace root: " + workspaceRoot);
+        }
+
+        Path workspace = null;
+        try {
+            workspace = Files.createTempDirectory(workspaceRoot, "single-" + shortId(requestId) + "-");
+            Path inputDir = workspace.resolve("input-images");
+            Path outputDir = workspace.resolve("output-images");
+            Files.createDirectories(inputDir);
+            Files.createDirectories(outputDir);
+
+            String baseName = "single-" + shortId(requestId);
+            String sourceName = baseName + "." + sourceExtension;
+            Path inputPath = inputDir.resolve(sourceName);
+            Files.write(inputPath, sourceImageBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            runNodeScript(
+                    requestId,
+                    workspace,
+                    transformScript,
+                    List.of(),
+                    buildTransformEnv(inputDir, outputDir, provider, promptOverride)
+            );
+
+            String outputName = toMarketplaceName(sourceName);
+            Path outputPath = outputDir.resolve(outputName);
+            if (!Files.exists(outputPath)) {
+                throw new DomainException("Node bridge no genero imagen transformada");
+            }
+
+            byte[] masterBytes = Files.readAllBytes(outputPath);
+            String folder = "products/ai/single/" + shortId(requestId);
+            String prefix = "single-" + shortId(requestId);
+            StoredDerivatives derivatives = storeDerivatives(folder, prefix, masterBytes);
+            return new SingleTransformResult(
+                    derivatives.masterUrl(),
+                    derivatives.webUrl(),
+                    derivatives.thumbUrl()
+            );
+        } catch (IOException ex) {
+            throw new DomainException("Node bridge IO error en transformacion single: " + ex.getMessage());
+        } finally {
+            if (workspace != null) {
+                deleteRecursivelyQuietly(workspace);
+            }
+        }
     }
 
     private List<NodeBridgeAssetResult> uploadAndBuildResults(
@@ -324,8 +399,21 @@ public class ProductAiNodeBridgeClient {
         }
     }
 
+    public StoredDerivatives storeDerivatives(String folder, String prefix, byte[] masterBytes) {
+        byte[] webBytes = toJpeg(masterBytes, Math.max(webWidth, 1), Math.max(webHeight, 1), clampQuality(webJpegQuality));
+        byte[] thumbBytes = toJpeg(masterBytes, Math.max(thumbWidth, 1), Math.max(thumbHeight, 1), clampQuality(thumbJpegQuality));
+        String masterUrl = storeBytes(folder, prefix + "-master.png", "image/png", masterBytes);
+        String webUrl = storeBytes(folder, prefix + "-web.jpg", "image/jpeg", webBytes);
+        String thumbUrl = storeBytes(folder, prefix + "-thumb.jpg", "image/jpeg", thumbBytes);
+        return new StoredDerivatives(masterUrl, webUrl, thumbUrl);
+    }
+
     private String resolveSourceExtension(ProductAiAssetEntity asset) {
-        String filename = asset.getSourceFilename() == null ? "" : asset.getSourceFilename().toLowerCase(Locale.ROOT).trim();
+        return resolveSourceExtension(asset == null ? null : asset.getSourceFilename());
+    }
+
+    private String resolveSourceExtension(String sourceFilename) {
+        String filename = sourceFilename == null ? "" : sourceFilename.toLowerCase(Locale.ROOT).trim();
         int dotIdx = filename.lastIndexOf('.');
         String ext = dotIdx > -1 && dotIdx < filename.length() - 1 ? filename.substring(dotIdx + 1) : "";
         if ("jpeg".equals(ext)) {
@@ -335,6 +423,12 @@ public class ProductAiNodeBridgeClient {
             throw new DomainException("Unsupported image format for Product AI: " + nonBlank(ext, "unknown"));
         }
         return ext;
+    }
+
+    private String toMarketplaceName(String sourceName) {
+        int dotIdx = sourceName == null ? -1 : sourceName.lastIndexOf('.');
+        String base = dotIdx > 0 ? sourceName.substring(0, dotIdx) : nonBlank(sourceName, "image");
+        return base + "_marketplace.png";
     }
 
     public byte[] loadOriginalAssetBytes(String originalUrl) {
@@ -557,6 +651,20 @@ public class ProductAiNodeBridgeClient {
             String imagePrompt,
             String rawResponseJson,
             String engine
+    ) {
+    }
+
+    public record SingleTransformResult(
+            String processedMasterUrl,
+            String processedWebUrl,
+            String processedThumbUrl
+    ) {
+    }
+
+    public record StoredDerivatives(
+            String masterUrl,
+            String webUrl,
+            String thumbUrl
     ) {
     }
 }

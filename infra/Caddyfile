@@ -127,7 +127,7 @@
             respond "Method Not Allowed" 405
         }
 
-        # Product AI single-image inference can take longer on cold Ollama model load.
+        # Product AI single-image inference/transform can take longer on cold model/API calls.
         @product_ai_infer_single {
             method POST
             path /api/admin/product-ai/infer-single
@@ -138,7 +138,22 @@
                 fail_duration 15s
                 transport http {
                     dial_timeout 5s
-                    response_header_timeout 120s
+                    response_header_timeout 300s
+                }
+            }
+        }
+
+        @product_ai_transform_single {
+            method POST
+            path /api/admin/product-ai/transform-single
+        }
+        handle @product_ai_transform_single {
+            reverse_proxy backend:8080 {
+                lb_try_duration 5s
+                fail_duration 15s
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 180s
                 }
             }
         }

@@ -141,6 +141,33 @@ Response `200`:
 }
 ```
 
+### 4.3.c Transformacion de imagen 1-a-1 para `Productos` (preview + reemplazo, sin n8n)
+
+`POST /transform-single` (`multipart/form-data`)
+
+Campos:
+- `file`: imagen unica del producto.
+- `provider` (opcional): `OPENAI` (default) o `OLLAMA` (experimental).
+- `prompt` (opcional): prompt personalizado de transformacion.
+- `brandHint` (opcional): contexto de marca para prompt default.
+
+Response `200`:
+
+```json
+{
+  "processedMasterUrl": "/api/media/products/ai/single/....-master.png",
+  "processedWebUrl": "/api/media/products/ai/single/....-web.jpg",
+  "processedThumbUrl": "/api/media/products/ai/single/....-thumb.jpg",
+  "provider": "OPENAI",
+  "promptUsed": "Generar una imagen de tamano ideal para Instagram...",
+  "engine": "node_bridge"
+}
+```
+
+Notas:
+- El frontend usa `processedWebUrl` para preview en admin y permite reemplazar la imagen actual del formulario.
+- `OLLAMA` para transformacion de imagen no esta soportado aun por `transform-images.js`; backend devuelve error controlado.
+
 ### 4.4 Estado de job (polling)
 
 `GET /jobs/{jobId}`
@@ -319,7 +346,11 @@ Configuracion `application.yml`:
 - `APP_PRODUCT_AI_OLLAMA_ENABLED=true`
 - `APP_PRODUCT_AI_OLLAMA_BASE_URL=http://ollama:11434/api`
 - `APP_PRODUCT_AI_OLLAMA_MODEL=gemma3`
+- `APP_PRODUCT_AI_OLLAMA_KEEP_ALIVE=45m`
 - `APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP=true`
+- `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`
+- `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`
+- `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS=300000`
 - `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`
 - `APP_PRODUCT_AI_TIMEOUT_MS=60000`
 - `APP_PRODUCT_AI_MAX_ATTEMPTS=3`
@@ -371,8 +402,11 @@ docker exec pe_ollama ollama pull gemma3
 
 Comportamiento operacional:
 - Al iniciar backend se valida conectividad de Ollama y disponibilidad del modelo configurado.
+- Si `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`, se dispara warmup del modelo.
+- Si ademas `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`, backend espera warmup (hasta `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS`) para reducir error por cold start en la primera inferencia.
 - Si falta servicio/modelo y `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`, el backend levanta, pero el worker IA queda pausado hasta que Ollama este listo.
 - Si `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=true`, el backend aborta inicio cuando Ollama/modelo no estan disponibles.
+- En Docker local, el endpoint `POST /api/admin/product-ai/infer-single` usa timeout de gateway 300s para cubrir carga inicial del modelo.
 
 ## 9) Checklist de pruebas
 

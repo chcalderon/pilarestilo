@@ -477,6 +477,15 @@ export interface ProductAiInferenceDto {
   engine: string;
 }
 
+export interface ProductAiImageTransformDto {
+  processedMasterUrl: string;
+  processedWebUrl: string;
+  processedThumbUrl: string;
+  provider: string;
+  promptUsed: string;
+  engine: string;
+}
+
 // ─── Fixture Fallback ───────────────────────────────────────────────────────
 
 export const FIXTURE_PRODUCTS: ProductDto[] = [
@@ -1720,12 +1729,47 @@ export async function inferSingleProductAi(
   });
   if (!res.ok) {
     if (res.status === 504) {
-      throw new Error('La inferencia IA excedio el tiempo de espera del gateway. Reintenta en 10-20 segundos (modelo Ollama calentando).');
+      throw new Error('La inferencia IA excedio el tiempo de espera del gateway. En arranque frio Ollama puede tardar 2-4 minutos en cargar el modelo; reintenta luego.');
     }
     const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
     throw new Error(body.detail ?? body.message ?? `Infer failed (${res.status})`);
   }
   return res.json() as Promise<ProductAiInferenceDto>;
+}
+
+export async function transformSingleProductAiImage(
+  token: string,
+  file: File,
+  options?: Partial<{
+    provider: 'OPENAI' | 'OLLAMA';
+    prompt: string;
+    brandHint: string;
+  }>,
+): Promise<ProductAiImageTransformDto> {
+  const form = new FormData();
+  form.append('file', file);
+  if (options?.provider) {
+    form.append('provider', options.provider);
+  }
+  if (options?.prompt && options.prompt.trim()) {
+    form.append('prompt', options.prompt.trim());
+  }
+  if (options?.brandHint && options.brandHint.trim()) {
+    form.append('brandHint', options.brandHint.trim());
+  }
+  const res = await fetch(`${API_BASE}/admin/product-ai/transform-single`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: form,
+  });
+  if (!res.ok) {
+    if (res.status === 504) {
+      throw new Error('La transformacion IA excedio el tiempo de espera del gateway. Reintenta en 10-20 segundos.');
+    }
+    const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+    throw new Error(body.detail ?? body.message ?? `Transform failed (${res.status})`);
+  }
+  return res.json() as Promise<ProductAiImageTransformDto>;
 }
 
 export async function listProductAiJobs(token: string): Promise<ProductAiJobSummaryDto[]> {

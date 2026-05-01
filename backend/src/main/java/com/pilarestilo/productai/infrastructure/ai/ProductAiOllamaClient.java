@@ -25,6 +25,7 @@ public class ProductAiOllamaClient {
     private final String model;
     private final String systemPrompt;
     private final String fallbackStyleHint;
+    private final String keepAlive;
 
     public ProductAiOllamaClient(
             RestClient.Builder restClientBuilder,
@@ -33,7 +34,8 @@ public class ProductAiOllamaClient {
             @Value("${app.product-ai.ollama.base-url:http://localhost:11434/api}") String baseUrl,
             @Value("${app.product-ai.ollama.model:gemma3}") String model,
             @Value("${app.product-ai.ollama.system-prompt:}") String systemPrompt,
-            @Value("${app.product-ai.ollama.style-hint:boutique elegante, lujo accesible, segunda mano premium}") String fallbackStyleHint
+            @Value("${app.product-ai.ollama.style-hint:boutique elegante, lujo accesible, segunda mano premium}") String fallbackStyleHint,
+            @Value("${app.product-ai.ollama.keep-alive:45m}") String keepAlive
     ) {
         this.restClientBuilder = restClientBuilder;
         this.objectMapper = objectMapper;
@@ -42,6 +44,7 @@ public class ProductAiOllamaClient {
         this.model = model;
         this.systemPrompt = systemPrompt;
         this.fallbackStyleHint = fallbackStyleHint;
+        this.keepAlive = keepAlive;
     }
 
     public InferenceResult inferFromImage(byte[] imageBytes, String sourceFilename, String brandHint) {
@@ -59,6 +62,7 @@ public class ProductAiOllamaClient {
         payload.put("model", model);
         payload.put("stream", false);
         payload.put("format", "json");
+        payload.put("keep_alive", keepAlive);
         payload.put("messages", List.of(Map.of(
                 "role", "user",
                 "content", prompt,
@@ -150,6 +154,31 @@ public class ProductAiOllamaClient {
             return new ReadinessStatus(false, false, false, baseUrl, model, "ollama-http-" + ex.getStatusCode().value());
         } catch (Exception ex) {
             return new ReadinessStatus(false, false, false, baseUrl, model, "ollama-unreachable");
+        }
+    }
+
+    public void warmUp() {
+        if (!enabled) {
+            return;
+        }
+        try {
+            RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("model", model);
+            payload.put("stream", false);
+            payload.put("keep_alive", keepAlive);
+            payload.put("messages", List.of(Map.of(
+                    "role", "user",
+                    "content", "Responde solo: ok"
+            )));
+            restClient.post()
+                    .uri("/chat")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (Exception ignored) {
+            // Warm-up best effort. Main requests keep their own fallback/error handling.
         }
     }
 

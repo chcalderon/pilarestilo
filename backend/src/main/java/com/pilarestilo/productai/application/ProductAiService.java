@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ProductAiService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductAiService.class);
+    private static final String DEFAULT_PRODUCT_TRANSFORM_PROMPT = "Generar una imagen de tamano ideal para Instagram (la presenta una modelo en un fondo de boutique de lujo), para campana de invierno. Respetar estrictamente diseno, color, textura y corte de la prenda. Entregar sin texto, sin logos, sin marcas de agua, formato vertical 4:5.";
 
     private final ProductAiDraftJpaRepository draftRepository;
     private final ProductAiAssetJpaRepository assetRepository;
@@ -201,6 +202,50 @@ public class ProductAiService {
             );
         } catch (Exception ex) {
             throw new DomainException("No se pudo inferir contenido con IA: " + ex.getMessage());
+        }
+    }
+
+    public ProductAiImageTransformDto transformSingleImage(
+            MultipartFile file,
+            String providerRaw,
+            String promptOverride,
+            String brandHint
+    ) {
+        if (file == null || file.isEmpty()) {
+            throw new DomainException("Debes subir una imagen para transformar");
+        }
+        String extension = mediaStorageService.resolveExtension(file);
+        if (!Set.of("jpg", "png", "webp").contains(extension)) {
+            throw new DomainException("Formato no soportado para transformacion IA: " + extension + ". Usa jpg, png o webp.");
+        }
+
+        String provider = normalizeTransformProvider(providerRaw);
+        if ("ollama".equals(provider)) {
+            throw new DomainException("Transformacion de imagen con Ollama aun no soportada en este pipeline. Usa OpenAI para transformar; Ollama sigue activo para inferir texto.");
+        }
+
+        String prompt = resolveTransformPrompt(promptOverride, brandHint);
+        try {
+            byte[] bytes = file.getBytes();
+            ProductAiNodeBridgeClient.SingleTransformResult result = nodeBridgeClient.transformSingleImage(
+                    UUID.randomUUID(),
+                    bytes,
+                    file.getOriginalFilename(),
+                    provider,
+                    prompt
+            );
+            return new ProductAiImageTransformDto(
+                    result.processedMasterUrl(),
+                    result.processedWebUrl(),
+                    result.processedThumbUrl(),
+                    provider.toUpperCase(Locale.ROOT),
+                    prompt,
+                    "node_bridge"
+            );
+        } catch (DomainException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new DomainException("No se pudo transformar la imagen con IA: " + ex.getMessage());
         }
     }
 
@@ -574,6 +619,31 @@ public class ProductAiService {
         normalized = normalized.replaceAll("/+", "/");
         normalized = normalized.replaceAll("(^/+|/+$)", "");
         return normalized.isBlank() ? "lote" : normalized;
+    }
+
+    private String normalizeTransformProvider(String providerRaw) {
+        String normalized = providerRaw == null ? "" : providerRaw.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return "openai";
+        }
+        if (!Set.of("openai", "ollama").contains(normalized)) {
+            throw new DomainException("Proveedor IA no soportado: " + providerRaw + ". Usa OPENAI u OLLAMA.");
+        }
+        return normalized;
+    }
+
+    private String resolveTransformPrompt(String promptOverride, String brandHint) {
+        String prompt = promptOverride == null ? "" : promptOverride.trim();
+        if (prompt.isBlank()) {
+            prompt = DEFAULT_PRODUCT_TRANSFORM_PROMPT;
+            if (brandHint != null && !brandHint.isBlank()) {
+                prompt += " Marca sugerida: " + brandHint.trim() + ".";
+            }
+        }
+        if (prompt.length() > 1600) {
+            prompt = prompt.substring(0, 1600).trim();
+        }
+        return prompt;
     }
 
     private String nonBlank(String... values) {
