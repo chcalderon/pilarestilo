@@ -5,6 +5,7 @@ import { uploadMediaFile } from '../../lib/api';
 interface Props {
   value?: string;
   onUpload: (url: string) => void;
+  onUploadedFile?: (file: File | null) => void;
   folder: string;
   token: string;
   label?: string;
@@ -12,7 +13,7 @@ interface Props {
 
 type State = 'idle' | 'dragging' | 'uploading' | 'error';
 
-export default function ImageDropzone({ value, onUpload, folder, token, label }: Props) {
+export default function ImageDropzone({ value, onUpload, onUploadedFile, folder, token, label }: Props) {
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(value);
@@ -29,6 +30,7 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
       const url = await uploadMediaFile(file, folder, token);
       setPreview(url);
       onUpload(url);
+      onUploadedFile?.(file);
       setState('idle');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al subir imagen');
@@ -75,7 +77,7 @@ export default function ImageDropzone({ value, onUpload, folder, token, label }:
           )}
           <button
             type="button"
-            onClick={() => { setPreview(undefined); onUpload(''); }}
+            onClick={() => { setPreview(undefined); onUpload(''); onUploadedFile?.(null); }}
             className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white p-0.5 transition-colors"
             title="Quitar imagen"
           >

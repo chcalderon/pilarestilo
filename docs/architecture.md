@@ -61,7 +61,7 @@ PilarEstilo/
 
 ### Stack
 
-- Java 17 + Spring Boot 3.3
+- Java 17 + Spring Boot 3.5
 - Spring Security + JWT filter
 - Spring Data JPA + Hibernate
 - Spring Cache abstraction with optional Redis-backed cache manager
@@ -92,6 +92,7 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `cashregister`
 - `dispatch`
 - `dashboard`
+- `productai`
 - `wishlist`
 - `notification`
 - `systemsettings`
@@ -166,6 +167,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V37`: seeded default role-permission matrix
 - `V38`: cash register schema (`cash_registers`, `cash_movements`)
 - `V39`: dispatch schema (`dispatches`)
+- `V40`: product AI pipeline (`product_ai_drafts`, `product_ai_assets`, `product_ai_jobs`, `product_ai_outputs`)
 
 ---
 

@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import PublicacionesMediaPage from '../../islands/admin/PublicacionesMediaPage';
+---
+
+<AdminLayout
+  title="Publicaciones"
+  breadcrumbs={[{ label: 'Publicaciones e Imagenes' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Publicaciones e Imagenes</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      Flujo masivo de assets, procesamiento IA y orquestacion de campanas en n8n.
+    </p>
+  </div>
+
+  <PublicacionesMediaPage client:load />
+</AdminLayout>

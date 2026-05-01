@@ -13,7 +13,7 @@ on:
         required: false
         default: "master"
       compose_profiles:
-        description: "Optional COMPOSE_PROFILES value (example: cache,microservices,observability)"
+        description: "Optional COMPOSE_PROFILES value (example: cache,microservices,observability,ai)"
         required: false
         default: ""
       skip_build:

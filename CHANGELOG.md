@@ -7,6 +7,26 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Admin module `Publicaciones e Imagenes` at `/admin/publicaciones` with initial UX shell:
+  - `Carga masiva` tab for folder-based ingestion
+  - `Procesamiento IA` tab for job queue/status/retry/download actions
+  - `Campanas (n8n)` tab for campaign orchestration checklist and workflow staging
+- Product AI backend now supports real `node_bridge` execution against external project scripts (`generate-prompts.js` + `transform-images.js`) with persisted `master/web/thumb` processed assets.
+- Product AI frontend processing tab now supports direct `Aprobar/Publicar` action on successful jobs.
+- Admin `Productos` form now includes optional `nuevo flujo IA (1 imagen)` switch for one-by-one inference/autofill without n8n orchestration.
+- Product AI text inference migrated to backend Java + Ollama (`/api/admin/product-ai/infer-single`) for one-by-one product assistance.
+- Product AI batch jobs now enrich text with Ollama inference and keep image transformation in `Publicaciones` flow with ChatGPT image edits.
+- Product AI backend baseline (`/api/admin/product-ai`) with:
+  - `POST /drafts`
+  - `POST /drafts/{draftId}/images`
+  - `POST /jobs`
+  - `GET /jobs`
+  - `GET /jobs/{jobId}`
+  - `POST /jobs/{jobId}/retry`
+  - `POST /drafts/{draftId}/approve-publish`
+- Flyway migration `V40__product_ai_pipeline.sql` adds draft/asset/job/output tables for async AI processing.
+- Admin navigation now includes `Publicaciones` entry in sidebar and quick link on dashboard.
+- New project progress log for IA pipeline implementation: `docs/ai-product-pipeline-progress.md`.
 - Public store settings API now exposes `supportEmail` (resolved from admin SMTP/SendGrid sender settings) for storefront contact surfaces.
 - New localized storefront informational pages:
   - `/{locale}/about` (Sobre Pilar Estilo)

@@ -9,7 +9,7 @@ Luxury online boutique for curated new and second-hand branded clothing.
 | Layer | Tech |
 |---|---|
 | Frontend | Astro 4 + React islands + Tailwind CSS |
-| Backend | Java 17 + Spring Boot 3.3 + Hexagonal Architecture |
+| Backend | Java 17 + Spring Boot 3.5 + Hexagonal Architecture |
 | Database | PostgreSQL 16 |
 | Reverse Proxy | Caddy (auto-TLS) |
 | Container | Docker Compose |
@@ -107,6 +107,8 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [AI Product Pipeline Integration (PR1 Design)](docs/ai-product-pipeline-integration.md)
+- [AI Product Pipeline Progress](docs/ai-product-pipeline-progress.md)
 - [Domain Events](docs/domain-events.md)
 - [Payment Flow](docs/payment-flow.md)
 - [Deployment](docs/deployment.md)

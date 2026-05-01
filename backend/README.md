@@ -1,11 +1,11 @@
 # Pilar Estilo - Backend
 
-Spring Boot 3.3 API for Pilar Estilo.
+Spring Boot 3.5 API for Pilar Estilo.
 
 ## Stack
 
 - Java 17
-- Spring Boot 3.3
+- Spring Boot 3.5
 - Spring Security + JWT
 - Spring Data JPA + Hibernate
 - Flyway
@@ -45,6 +45,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | `notification` | Notification port + provider-based adapters (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`, `N8N_WEBHOOK`) + domain listeners |
 | `user` | User repository and user-facing data |
 | `systemsettings` | Admin-managed storefront/system configuration (channels + notifications + checkout payment-method toggles/providers) |
+| `productai` | AI-assisted product draft, asset ingestion, async processing jobs, and approve/publish flow |
 | `shared/kafka` | Optional Kafka domain-event transport (`KafkaDomainEventPublisher`, listener retry/DLQ config) |
 
 ---
@@ -120,6 +121,17 @@ Order query endpoints (extracted service, backend-to-backend):
 
 - `POST /api/media/upload` (ADMIN/SELLER)
 - `POST /api/media/upload-proof` (authenticated users; used by customer proof flow)
+
+### Product AI (admin)
+
+- `POST /api/admin/product-ai/drafts`
+- `POST /api/admin/product-ai/drafts/{draftId}/images`
+- `POST /api/admin/product-ai/jobs`
+- `GET /api/admin/product-ai/jobs`
+- `GET /api/admin/product-ai/jobs/{jobId}`
+- `POST /api/admin/product-ai/jobs/{jobId}/retry`
+- `POST /api/admin/product-ai/drafts/{draftId}/approve-publish`
+- `POST /api/admin/product-ai/infer-single` (inferencia texto IA 1-a-1 desde imagen, pensado para formulario de `Productos`)
 
 ### Actuator (ops)
 
@@ -264,6 +276,26 @@ Gateway-facing rate-limit filter (backend side):
 | `SPRING_PROFILES_ACTIVE` | No | `local` for dev profile |
 | `SERVER_PORT` | No | API port (default 8080) |
 
+Product AI runtime variables (when `APP_PRODUCT_AI_ENABLED=true`):
+- `APP_PRODUCT_AI_ENGINE` (`stub` or `node_bridge`)
+- `APP_PRODUCT_AI_NODE_PROJECT_PATH` (e.g. `E:/dev/pilarestilofotos`)
+- `APP_PRODUCT_AI_OPENAI_API_KEY`
+- `APP_PRODUCT_AI_OPENAI_BASE_URL`
+- `APP_PRODUCT_AI_OPENAI_MODEL`
+- `APP_PRODUCT_AI_OLLAMA_ENABLED`
+- `APP_PRODUCT_AI_OLLAMA_BASE_URL` (default `http://ollama:11434/api` in Docker network)
+- `APP_PRODUCT_AI_OLLAMA_MODEL`
+- `APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP` (default `true`)
+- `APP_PRODUCT_AI_OLLAMA_FAIL_FAST` (default `false`, set `true` para no levantar backend si falta modelo/servicio)
+- `APP_PRODUCT_AI_IMAGE_TARGET_WIDTH`, `APP_PRODUCT_AI_IMAGE_TARGET_HEIGHT`
+- `APP_PRODUCT_AI_IMAGE_WEB_WIDTH`, `APP_PRODUCT_AI_IMAGE_WEB_HEIGHT`, `APP_PRODUCT_AI_IMAGE_WEB_JPEG_QUALITY`
+- `APP_PRODUCT_AI_IMAGE_THUMB_WIDTH`, `APP_PRODUCT_AI_IMAGE_THUMB_HEIGHT`, `APP_PRODUCT_AI_IMAGE_THUMB_JPEG_QUALITY`
+
+For local Docker-network Ollama:
+- Start service: `docker compose -f infra/docker-compose.yml --env-file infra/.env --profile ai up -d ollama`
+- Pull model once: `docker exec pe_ollama ollama pull gemma3`
+- Backend valida conectividad/modelo al iniciar y, si no esta listo, el worker de jobs IA queda pausado (sin marcar jobs como error por esa causa).
+
 Current note:
 - Notification listeners now resolve a structured recipient (`phone` + `email`) so providers can choose the right channel safely.
 - Recipient resolution now includes per-user channel preference (`AUTO`, `WHATSAPP`, `EMAIL`, `BOTH`) from `/api/auth/me/profile`.
@@ -292,7 +324,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V39`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V40`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -327,6 +359,7 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - seeded default role-permission matrix (`V37`)
 - cash register schema (`V38`)
 - dispatch schema (`V39`)
+- product AI pipeline schema (`V40`)
 
 ---
 

@@ -152,6 +152,42 @@ app:
       login-max-requests: ${APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS:12}
       register-max-requests: ${APP_GATEWAY_RATE_LIMIT_REGISTER_MAX_REQUESTS:6}
       webhook-max-requests: ${APP_GATEWAY_RATE_LIMIT_WEBHOOK_MAX_REQUESTS:180}
+  product-ai:
+    enabled: ${APP_PRODUCT_AI_ENABLED:true}
+    engine: ${APP_PRODUCT_AI_ENGINE:stub}
+    max-attempts: ${APP_PRODUCT_AI_MAX_ATTEMPTS:3}
+    retry-backoff-ms: ${APP_PRODUCT_AI_RETRY_BACKOFF_MS:2000}
+    worker:
+      cron: ${APP_PRODUCT_AI_WORKER_CRON:*/20 * * * * *}
+      batch-size: ${APP_PRODUCT_AI_WORKER_BATCH_SIZE:5}
+    image:
+      target-width: ${APP_PRODUCT_AI_IMAGE_TARGET_WIDTH:1024}
+      target-height: ${APP_PRODUCT_AI_IMAGE_TARGET_HEIGHT:1280}
+      web-width: ${APP_PRODUCT_AI_IMAGE_WEB_WIDTH:1024}
+      web-height: ${APP_PRODUCT_AI_IMAGE_WEB_HEIGHT:1280}
+      web-jpeg-quality: ${APP_PRODUCT_AI_IMAGE_WEB_JPEG_QUALITY:0.88}
+      thumb-width: ${APP_PRODUCT_AI_IMAGE_THUMB_WIDTH:320}
+      thumb-height: ${APP_PRODUCT_AI_IMAGE_THUMB_HEIGHT:400}
+      thumb-jpeg-quality: ${APP_PRODUCT_AI_IMAGE_THUMB_JPEG_QUALITY:0.82}
+    node:
+      command: ${APP_PRODUCT_AI_NODE_COMMAND:node}
+      project-path: ${APP_PRODUCT_AI_NODE_PROJECT_PATH:}
+      generate-script: ${APP_PRODUCT_AI_NODE_GENERATE_SCRIPT:generate-prompts.js}
+      transform-script: ${APP_PRODUCT_AI_NODE_TRANSFORM_SCRIPT:transform-images.js}
+      workspace-root: ${APP_PRODUCT_AI_NODE_WORKSPACE_ROOT:./tmp/product-ai}
+    openai:
+      base-url: ${APP_PRODUCT_AI_OPENAI_BASE_URL:https://api.openai.com/v1}
+      api-key: ${APP_PRODUCT_AI_OPENAI_API_KEY:}
+      model: ${APP_PRODUCT_AI_OPENAI_MODEL:gpt-image-1}
+      timeout-ms: ${APP_PRODUCT_AI_TIMEOUT_MS:60000}
+    ollama:
+      enabled: ${APP_PRODUCT_AI_OLLAMA_ENABLED:true}
+      base-url: ${APP_PRODUCT_AI_OLLAMA_BASE_URL:http://localhost:11434/api}
+      model: ${APP_PRODUCT_AI_OLLAMA_MODEL:gemma3}
+      system-prompt: ${APP_PRODUCT_AI_OLLAMA_SYSTEM_PROMPT:}
+      style-hint: ${APP_PRODUCT_AI_OLLAMA_STYLE_HINT:boutique elegante, lujo accesible, segunda mano premium}
+      validate-on-startup: ${APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP:true}
+      fail-fast: ${APP_PRODUCT_AI_OLLAMA_FAIL_FAST:false}
 
 server:
   port: 8080

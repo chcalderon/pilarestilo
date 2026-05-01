@@ -138,3 +138,17 @@ This roadmap is synced with the current codebase on `master` as of April 28, 202
 - [x] Customer confirm-delivery endpoint (`PATCH /api/orders/{id}/confirm-delivery`) with symmetric dispatch `DELIVERED` update
 - [x] Role-aware dashboard stats (`GET /api/dashboard/stats`): sealed domain model with four role-specific payloads (Admin, Seller, Despachador, Administracion); Recharts revenue chart for admin; frontend `DashboardPage` island
 - [x] Inline register/login popover: `UserPlus` icon in storefront navbar opens anchored popover panel (desktop) / bottom sheet (mobile) with tabbed register+login form and Google Identity Services sign-in — no full-page navigation required
+
+---
+
+## P9 - Product AI Pipeline and Campaign Ops (In Progress)
+
+- [x] Technical design + API contracts documented (`docs/ai-product-pipeline-integration.md`)
+- [x] Admin UX split validated:
+  - `Productos` keeps individual fast flow
+  - new `Publicaciones e Imagenes` module for massive workflows
+- [x] Admin navigation and page shell added for `/admin/publicaciones`
+- [x] Backend `productai` module baseline (drafts/assets/jobs/retries + scheduler)
+- [x] Flyway `V40` schema for product AI pipeline
+- [x] Frontend job status wiring from `/admin/publicaciones` to backend APIs
+- [ ] n8n campaign workflow templates (Instagram/Facebook posting orchestration)

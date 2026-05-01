@@ -74,9 +74,10 @@ export default function AdminDashboard() {
         <p className="font-sans text-[0.65rem] tracking-[0.25em] uppercase text-pe-charcoal/35 mb-4">
           Accesos rápidos
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           {[
             { href: '/admin/products',   label: 'Gestionar productos',  sub: 'Crear, editar, eliminar' },
+            { href: '/admin/publicaciones', label: 'Publicaciones IA', sub: 'Lotes, assets y campanas n8n' },
             { href: '/admin/categories', label: 'Gestionar categorías', sub: 'Árbol de navegación' },
             { href: '/admin/reviews',    label: 'Moderar reseñas',      sub: 'Aprobar o rechazar' },
             { href: '/admin/payments',   label: 'Revisar pagos',        sub: 'Aprobar comprobantes' },
@@ -98,4 +99,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
 

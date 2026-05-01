@@ -4,6 +4,7 @@ import {
   createProduct,
   updateProduct,
   getCategories,
+  inferSingleProductAi,
   type ProductDto,
   type CreateProductRequest,
   type CategoryDto,
@@ -50,6 +51,10 @@ function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
 
 export default function ProductForm({ product, onSave, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [useAiAssist, setUseAiAssist] = useState(false);
+  const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
+  const [aiRunning, setAiRunning] = useState(false);
+  const [aiInfo, setAiInfo] = useState('');
   const [useVariants, setUseVariants] = useState(false);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
@@ -92,6 +97,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     }
     setErrors({});
     setApiError('');
+    setUseAiAssist(false);
+    setLastUploadedFile(null);
+    setAiInfo('');
+    setAiRunning(false);
   }, [product]);
 
   useEffect(() => {
@@ -226,6 +235,47 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     }
   }
 
+  async function resolveImageFileForAi(): Promise<File> {
+    if (lastUploadedFile) {
+      return lastUploadedFile;
+    }
+    const currentUrl = form.imageUrl.trim();
+    if (!currentUrl) {
+      throw new Error('Primero sube una imagen para usar el flujo IA');
+    }
+    const response = await fetch(currentUrl);
+    if (!response.ok) {
+      throw new Error('No se pudo leer la imagen actual para procesarla con IA');
+    }
+    const blob = await response.blob();
+    const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+    return new File([blob], `producto-ia.${ext}`, { type: blob.type || 'image/jpeg' });
+  }
+
+  async function handleInferWithAi() {
+    if (!token) {
+      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
+      return;
+    }
+    setApiError('');
+    setAiInfo('');
+    setAiRunning(true);
+    try {
+      const file = await resolveImageFileForAi();
+      const inference = await inferSingleProductAi(token, file, form.brand.trim() || undefined);
+      setForm((prev) => ({
+        ...prev,
+        name: inference.title?.trim() || prev.name,
+        description: inference.description?.trim() || prev.description,
+      }));
+      setAiInfo(`IA completada (${inference.engine}). Texto sugerido aplicado; revisa y guarda manualmente.`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'No se pudo procesar la imagen con IA');
+    } finally {
+      setAiRunning(false);
+    }
+  }
+
   const inputClass =
     'w-full font-sans text-[0.82rem] border border-pe-black/30 px-2.5 py-1.5 bg-[#fffdfa] text-[#1A1A1A] focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
   const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 mb-1';
@@ -252,6 +302,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         </div>
 
         {apiError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 mb-4">{apiError}</div>}
+        {aiInfo && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
@@ -455,8 +506,35 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               onUpload={url => {
                 setForm(prev => ({ ...prev, imageUrl: url }));
               }}
+              onUploadedFile={setLastUploadedFile}
               token={token ?? ''}
             />
+          </div>
+
+          <div className="border border-pe-black/12 bg-pe-white p-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-[#B76E79]"
+                checked={useAiAssist}
+                onChange={(e) => setUseAiAssist(e.target.checked)}
+              />
+              <span className="font-sans text-sm text-[#1A1A1A]">Usar nuevo flujo IA (1 imagen)</span>
+            </label>
+            <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+              Este flujo sugiere texto (titulo/descripcion/prompt) para este producto y no dispara n8n. La transformacion de imagen + campanas queda en Publicaciones.
+            </p>
+            {useAiAssist && (
+              <button
+                type="button"
+                onClick={() => void handleInferWithAi()}
+                disabled={aiRunning}
+                className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+              >
+                {aiRunning ? <Loader2 size={13} className="animate-spin" /> : null}
+                {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
+              </button>
+            )}
           </div>
 
           {categories.length > 0 && (

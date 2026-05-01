@@ -410,6 +410,73 @@ export interface MediaUploadDto {
   size: number;
 }
 
+export type ProductAiJobStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
+
+export interface ProductAiDraftDto {
+  draftId: string;
+  productId: string | null;
+  status: 'DRAFT' | 'READY' | 'PUBLISHED';
+  createdAt: string;
+}
+
+export interface ProductAiUploadedAssetDto {
+  assetId: string;
+  originalUrl: string;
+  filename: string;
+}
+
+export interface ProductAiUploadResultDto {
+  draftId: string;
+  uploaded: ProductAiUploadedAssetDto[];
+}
+
+export interface ProductAiJobItemDto {
+  assetId: string;
+  title: string;
+  description: string;
+  imagePrompt: string;
+  processedMasterUrl: string | null;
+  processedWebUrl: string | null;
+  processedThumbUrl: string | null;
+}
+
+export interface ProductAiJobDto {
+  jobId: string;
+  draftId: string;
+  status: ProductAiJobStatus;
+  progress: number;
+  attempt: number;
+  maxAttempts: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  items: ProductAiJobItemDto[];
+}
+
+export interface ProductAiJobSummaryDto {
+  jobId: string;
+  draftId: string;
+  status: ProductAiJobStatus;
+  progress: number;
+  attempt: number;
+  maxAttempts: number;
+  updatedAt: string;
+}
+
+export interface ProductAiPublishResultDto {
+  productId: string;
+  status: 'PUBLISHED';
+  publishedAt: string;
+}
+
+export interface ProductAiInferenceDto {
+  title: string;
+  description: string;
+  imagePrompt: string;
+  engine: string;
+}
+
 // ─── Fixture Fallback ───────────────────────────────────────────────────────
 
 export const FIXTURE_PRODUCTS: ProductDto[] = [
@@ -1563,6 +1630,140 @@ export async function uploadMediaFile(file: File, folder: string, token: string)
   }
   const data = await res.json() as MediaUploadDto;
   return data.url;
+}
+
+export async function createProductAiDraft(
+  token: string,
+  data?: Partial<{
+    name: string;
+    brand: string;
+    condition: 'NEW' | 'USED';
+    priceAmount: number;
+    priceCurrency: string;
+  }>
+): Promise<ProductAiDraftDto> {
+  return apiFetch<ProductAiDraftDto>('/admin/product-ai/drafts', {
+    method: 'POST',
+    body: JSON.stringify(data ?? {}),
+    headers: authHeaders(token),
+  });
+}
+
+export async function uploadProductAiDraftImages(
+  draftId: string,
+  files: File[],
+  token: string,
+  sourceFolder?: string,
+): Promise<ProductAiUploadResultDto> {
+  if (files.length === 0) {
+    throw new Error('Debes seleccionar al menos una imagen');
+  }
+  const form = new FormData();
+  for (const file of files) {
+    form.append('files', file);
+  }
+  if (sourceFolder && sourceFolder.trim()) {
+    form.append('sourceFolder', sourceFolder.trim());
+  }
+
+  const res = await fetch(`${API_BASE}/admin/product-ai/drafts/${encodeURIComponent(draftId)}/images`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: form,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+    throw new Error(body.detail ?? body.message ?? `Upload failed (${res.status})`);
+  }
+
+  return res.json() as Promise<ProductAiUploadResultDto>;
+}
+
+export async function startProductAiJob(
+  token: string,
+  draftId: string,
+  options?: Partial<{
+    targetWidth: number;
+    targetHeight: number;
+    strictGarmentFidelity: boolean;
+    forbidTextLogoWatermark: boolean;
+  }>
+): Promise<ProductAiJobDto> {
+  return apiFetch<ProductAiJobDto>('/admin/product-ai/jobs', {
+    method: 'POST',
+    body: JSON.stringify({
+      draftId,
+      targetWidth: options?.targetWidth ?? 1024,
+      targetHeight: options?.targetHeight ?? 1280,
+      strictGarmentFidelity: options?.strictGarmentFidelity ?? true,
+      forbidTextLogoWatermark: options?.forbidTextLogoWatermark ?? true,
+    }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function inferSingleProductAi(
+  token: string,
+  file: File,
+  brandHint?: string,
+): Promise<ProductAiInferenceDto> {
+  const form = new FormData();
+  form.append('file', file);
+  if (brandHint && brandHint.trim()) {
+    form.append('brandHint', brandHint.trim());
+  }
+  const res = await fetch(`${API_BASE}/admin/product-ai/infer-single`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: form,
+  });
+  if (!res.ok) {
+    if (res.status === 504) {
+      throw new Error('La inferencia IA excedio el tiempo de espera del gateway. Reintenta en 10-20 segundos (modelo Ollama calentando).');
+    }
+    const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+    throw new Error(body.detail ?? body.message ?? `Infer failed (${res.status})`);
+  }
+  return res.json() as Promise<ProductAiInferenceDto>;
+}
+
+export async function listProductAiJobs(token: string): Promise<ProductAiJobSummaryDto[]> {
+  return apiFetch<ProductAiJobSummaryDto[]>('/admin/product-ai/jobs', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function getProductAiJob(jobId: string, token: string): Promise<ProductAiJobDto> {
+  return apiFetch<ProductAiJobDto>(`/admin/product-ai/jobs/${encodeURIComponent(jobId)}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function retryProductAiJob(jobId: string, token: string): Promise<ProductAiJobDto> {
+  return apiFetch<ProductAiJobDto>(`/admin/product-ai/jobs/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export async function approvePublishProductAiDraft(
+  draftId: string,
+  token: string,
+  payload?: Partial<{
+    selectedAssetId: string;
+    override: {
+      name?: string;
+      description?: string;
+      brand?: string;
+    };
+  }>
+): Promise<ProductAiPublishResultDto> {
+  return apiFetch<ProductAiPublishResultDto>(`/admin/product-ai/drafts/${encodeURIComponent(draftId)}/approve-publish`, {
+    method: 'POST',
+    body: JSON.stringify(payload ?? {}),
+    headers: authHeaders(token),
+  });
 }
 
 export async function migrateCategoryImages(token: string): Promise<{
