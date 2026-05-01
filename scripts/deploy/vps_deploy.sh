@@ -4,6 +4,9 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/opt/pilarestilo}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-master}"
 SKIP_BUILD="${SKIP_BUILD:-false}"
+FORCE_RECREATE="${FORCE_RECREATE:-true}"
+REMOVE_ORPHANS="${REMOVE_ORPHANS:-true}"
+RELOAD_CADDY="${RELOAD_CADDY:-true}"
 
 COMPOSE_FILE="infra/docker-compose.yml"
 ENV_FILE="infra/.env"
@@ -88,6 +91,9 @@ echo "[deploy] App dir: ${APP_DIR}"
 echo "[deploy] Branch: ${DEPLOY_BRANCH}"
 echo "[deploy] Profiles: ${DEPLOY_PROFILES:-<none>}"
 echo "[deploy] Skip build: ${SKIP_BUILD}"
+echo "[deploy] Force recreate: ${FORCE_RECREATE}"
+echo "[deploy] Remove orphans: ${REMOVE_ORPHANS}"
+echo "[deploy] Reload caddy: ${RELOAD_CADDY}"
 echo "[deploy] Ollama enabled: ${OLLAMA_ENABLED}"
 echo "[deploy] Ollama model: ${OLLAMA_MODEL}"
 echo "[deploy] Ollama auto-pull model: ${OLLAMA_AUTO_PULL_MODEL}"
@@ -107,11 +113,17 @@ echo "[deploy] Pulling updated base images (best effort)..."
 "${compose_cmd[@]}" pull || true
 
 echo "[deploy] Applying stack changes..."
-if [[ "${SKIP_BUILD}" == "true" ]]; then
-  "${compose_cmd[@]}" up -d
-else
-  "${compose_cmd[@]}" up -d --build
+compose_up_args=(up -d)
+if [[ "${SKIP_BUILD}" != "true" ]]; then
+  compose_up_args+=(--build)
 fi
+if normalize_bool_true "${FORCE_RECREATE}"; then
+  compose_up_args+=(--force-recreate)
+fi
+if normalize_bool_true "${REMOVE_ORPHANS}"; then
+  compose_up_args+=(--remove-orphans)
+fi
+"${compose_cmd[@]}" "${compose_up_args[@]}"
 
 if normalize_bool_true "${OLLAMA_ENABLED}" && normalize_bool_true "${OLLAMA_AUTO_PULL_MODEL}"; then
   echo "[deploy] Ensuring Ollama model is available (${OLLAMA_MODEL})..."
@@ -135,6 +147,18 @@ if normalize_bool_true "${OLLAMA_ENABLED}" && normalize_bool_true "${OLLAMA_AUTO
     fi
   else
     echo "[deploy] WARNING: Ollama service is not running; skipping model pull." >&2
+  fi
+fi
+
+if normalize_bool_true "${RELOAD_CADDY}"; then
+  echo "[deploy] Reloading Caddy config..."
+  if "${compose_cmd[@]}" ps --status running --services | grep -qx "caddy"; then
+    if ! "${compose_cmd[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile; then
+      echo "[deploy] WARNING: caddy reload failed; restarting caddy container." >&2
+      "${compose_cmd[@]}" restart caddy
+    fi
+  else
+    echo "[deploy] WARNING: Caddy service is not running; skipping reload." >&2
   fi
 fi
 
