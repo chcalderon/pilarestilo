@@ -25,10 +25,54 @@ if [[ -z "${DEPLOY_PROFILES:-}" ]]; then
   DEPLOY_PROFILES=$(grep -E '^DEPLOY_PROFILES=' "${ENV_FILE}" | cut -d'=' -f2- | tr -d '[:space:]' || true)
 fi
 
+read_env_value() {
+  local key="$1"
+  local value=""
+  value=$(grep -E "^${key}=" "${ENV_FILE}" | tail -n 1 | cut -d'=' -f2- || true)
+  printf '%s' "${value}"
+}
+
+normalize_bool_true() {
+  local raw="$1"
+  local normalized
+  normalized=$(printf '%s' "${raw}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+  [[ "${normalized}" == "true" || "${normalized}" == "1" || "${normalized}" == "yes" || "${normalized}" == "on" ]]
+}
+
+profile_exists() {
+  local needle="$1"
+  local csv="$2"
+  local item
+  IFS=',' read -r -a items <<< "${csv}"
+  for item in "${items[@]}"; do
+    if [[ "$(printf '%s' "${item}" | tr -d '[:space:]')" == "${needle}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+OLLAMA_ENABLED="${APP_PRODUCT_AI_OLLAMA_ENABLED:-}"
+if [[ -z "${OLLAMA_ENABLED}" ]]; then
+  OLLAMA_ENABLED="$(read_env_value APP_PRODUCT_AI_OLLAMA_ENABLED)"
+fi
+if [[ -z "${OLLAMA_ENABLED}" ]]; then
+  OLLAMA_ENABLED="true"
+fi
+
+if normalize_bool_true "${OLLAMA_ENABLED}"; then
+  if [[ -z "${DEPLOY_PROFILES}" ]]; then
+    DEPLOY_PROFILES="ai"
+  elif ! profile_exists "ai" "${DEPLOY_PROFILES}"; then
+    DEPLOY_PROFILES="${DEPLOY_PROFILES},ai"
+  fi
+fi
+
 echo "[deploy] App dir: ${APP_DIR}"
 echo "[deploy] Branch: ${DEPLOY_BRANCH}"
 echo "[deploy] Profiles: ${DEPLOY_PROFILES:-<none>}"
 echo "[deploy] Skip build: ${SKIP_BUILD}"
+echo "[deploy] Ollama enabled: ${OLLAMA_ENABLED}"
 
 echo "[deploy] Syncing repository..."
 git fetch origin --prune
