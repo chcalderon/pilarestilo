@@ -79,6 +79,10 @@ type FormState = {
   sendgridToFallback: string;
   sendgridApiKey: string;
   clearSendgridApiKey: boolean;
+  productAiInferDefaultBrand: string;
+  productAiInferDefaultCondition: 'NEW' | 'USED';
+  productAiInferBasePrice: string;
+  productAiInferListPriceMultiplier: string;
   smtpHost: string;
   smtpPort: string;
   smtpUsername: string;
@@ -283,6 +287,13 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     sendgridToFallback: settings.sendgridToFallback ?? '',
     sendgridApiKey: '',
     clearSendgridApiKey: false,
+    productAiInferDefaultBrand: settings.productAiInferDefaultBrand ?? 'Pilar Estilo',
+    productAiInferDefaultCondition: settings.productAiInferDefaultCondition === 'NEW' ? 'NEW' : 'USED',
+    productAiInferBasePrice: settings.productAiInferBasePrice != null ? String(settings.productAiInferBasePrice) : '24990',
+    productAiInferListPriceMultiplier:
+      settings.productAiInferListPriceMultiplier != null
+        ? String(settings.productAiInferListPriceMultiplier)
+        : '1.35',
     smtpHost: settings.smtpHost ?? '',
     smtpPort: settings.smtpPort ? String(settings.smtpPort) : '',
     smtpUsername: settings.smtpUsername ?? '',
@@ -406,6 +417,10 @@ export default function SystemSettingsPanel() {
     sendgridToFallback: '',
     sendgridApiKey: '',
     clearSendgridApiKey: false,
+    productAiInferDefaultBrand: 'Pilar Estilo',
+    productAiInferDefaultCondition: 'USED',
+    productAiInferBasePrice: '24990',
+    productAiInferListPriceMultiplier: '1.35',
     smtpHost: '',
     smtpPort: '',
     smtpUsername: '',
@@ -612,8 +627,27 @@ export default function SystemSettingsPanel() {
 
     const portTrimmed = form.smtpPort.trim();
     const smtpPort = portTrimmed ? Number(portTrimmed) : undefined;
+    const aiInferBasePriceTrimmed = form.productAiInferBasePrice.trim();
+    const aiInferBasePrice = aiInferBasePriceTrimmed ? Number(aiInferBasePriceTrimmed) : undefined;
+    const aiInferListMultiplierTrimmed = form.productAiInferListPriceMultiplier.trim();
+    const aiInferListMultiplier = aiInferListMultiplierTrimmed ? Number(aiInferListMultiplierTrimmed) : undefined;
     if (smtpPort !== undefined && (!Number.isFinite(smtpPort) || smtpPort <= 0 || smtpPort > 65535)) {
       setFeedback({ tone: 'error', text: 'El puerto SMTP debe estar entre 1 y 65535.' });
+      return;
+    }
+    if (aiInferBasePrice !== undefined && (!Number.isFinite(aiInferBasePrice) || aiInferBasePrice < 1000)) {
+      setFeedback({ tone: 'error', text: 'El precio base sugerido IA debe ser mayor o igual a 1000.' });
+      return;
+    }
+    if (
+      aiInferListMultiplier !== undefined &&
+      (!Number.isFinite(aiInferListMultiplier) || aiInferListMultiplier < 1 || aiInferListMultiplier > 5)
+    ) {
+      setFeedback({ tone: 'error', text: 'El multiplicador de precio lista IA debe estar entre 1.00 y 5.00.' });
+      return;
+    }
+    if (!form.productAiInferDefaultBrand.trim()) {
+      setFeedback({ tone: 'error', text: 'La marca por defecto para inferencia IA no puede quedar vacia.' });
       return;
     }
 
@@ -694,6 +728,10 @@ export default function SystemSettingsPanel() {
       sendgridToFallback: form.sendgridToFallback.trim(),
       sendgridApiKey: form.sendgridApiKey.trim(),
       clearSendgridApiKey: form.clearSendgridApiKey,
+      productAiInferDefaultBrand: form.productAiInferDefaultBrand.trim(),
+      productAiInferDefaultCondition: form.productAiInferDefaultCondition,
+      productAiInferBasePrice: aiInferBasePrice,
+      productAiInferListPriceMultiplier: aiInferListMultiplier,
       smtpHost: form.smtpHost.trim(),
       smtpPort,
       smtpUsername: form.smtpUsername.trim(),
@@ -812,6 +850,66 @@ export default function SystemSettingsPanel() {
               placeholder="https://facebook.com/tu_pagina"
             />
           </label>
+
+          <div className="md:col-span-2 mt-2 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+              Defaults inferencia IA (Productos)
+            </p>
+            <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+              Se aplican al usar “Inferir texto con IA” en el formulario de productos.
+            </p>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Marca por defecto</span>
+                <input
+                  type="text"
+                  value={form.productAiInferDefaultBrand}
+                  onChange={(e) => updateField('productAiInferDefaultBrand', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="Pilar Estilo"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Condicion por defecto</span>
+                <select
+                  value={form.productAiInferDefaultCondition}
+                  onChange={(e) => updateField('productAiInferDefaultCondition', e.target.value as 'NEW' | 'USED')}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                >
+                  <option value="USED">Usado</option>
+                  <option value="NEW">Nuevo</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Precio base sugerido (CLP)</span>
+                <input
+                  type="number"
+                  min="1000"
+                  step="1000"
+                  value={form.productAiInferBasePrice}
+                  onChange={(e) => updateField('productAiInferBasePrice', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="24990"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Multiplicador precio lista</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.01"
+                  value={form.productAiInferListPriceMultiplier}
+                  onChange={(e) => updateField('productAiInferListPriceMultiplier', e.target.value)}
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  placeholder="1.35"
+                />
+              </label>
+            </div>
+          </div>
         </div>
       </section>
       )}

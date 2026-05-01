@@ -129,6 +129,7 @@ Response `202`:
 Campos:
 - `file`: imagen unica del producto.
 - `brandHint` (opcional): ayuda contextual para mejorar titulo/descripcion.
+- Si `brandHint` viene vacio, frontend usa `productAiInferDefaultBrand` desde `/api/admin/settings`.
 
 Response `200`:
 
@@ -137,7 +138,8 @@ Response `200`:
   "title": "Blazer beige lino",
   "description": "Blazer de lino en excelente estado...",
   "imagePrompt": "Transformar imagen ... 4:5 ...",
-  "engine": "ollama"
+  "engine": "ollama",
+  "fallbackReason": "quality-fallback:moondream:latest->gemma3:latest"
 }
 ```
 
@@ -345,14 +347,21 @@ Configuracion `application.yml`:
 - `APP_PRODUCT_AI_OPENAI_MODEL=gpt-image-1`
 - `APP_PRODUCT_AI_OLLAMA_ENABLED=true`
 - `APP_PRODUCT_AI_OLLAMA_BASE_URL=http://ollama:11434/api`
-- `APP_PRODUCT_AI_OLLAMA_MODEL=gemma3`
+- `APP_PRODUCT_AI_OLLAMA_MODEL=moondream:latest`
 - `APP_PRODUCT_AI_OLLAMA_AUTO_PULL_MODEL=true`
 - `APP_PRODUCT_AI_OLLAMA_KEEP_ALIVE=45m`
+- `APP_PRODUCT_AI_OLLAMA_INFER_MAX_DIMENSION=1024`
+- `APP_PRODUCT_AI_OLLAMA_INFER_JPEG_QUALITY=0.82`
+- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_ENABLED=true`
+- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL=gemma3:latest`
 - `APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP=true`
 - `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`
 - `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`
 - `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS=300000`
 - `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`
+- `OLLAMA_KEEP_ALIVE=45m`
+- `OLLAMA_NUM_PARALLEL=1`
+- `OLLAMA_MAX_LOADED_MODELS=1`
 - `APP_PRODUCT_AI_TIMEOUT_MS=60000`
 - `APP_PRODUCT_AI_MAX_ATTEMPTS=3`
 - `APP_PRODUCT_AI_RETRY_BACKOFF_MS=2000`
@@ -398,13 +407,16 @@ Ollama en red Docker (perfil `ai`):
 
 ```bash
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile ai up -d ollama
-docker exec pe_ollama ollama pull gemma3
+docker exec pe_ollama ollama pull moondream:latest
+# opcional (fallback de calidad):
+docker exec pe_ollama ollama pull gemma3:latest
 ```
 
 Comportamiento operacional:
 - Al iniciar backend se valida conectividad de Ollama y disponibilidad del modelo configurado.
 - Si `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`, se dispara warmup del modelo.
 - Si ademas `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`, backend espera warmup (hasta `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS`) para reducir error por cold start en la primera inferencia.
+- En inferencia individual/productos se valida calidad minima de `title/description`; si la respuesta del modelo principal sale generica (ej: placeholders/instrucciones), backend reintenta automaticamente con `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL`.
 - Si falta servicio/modelo y `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`, el backend levanta, pero el worker IA queda pausado hasta que Ollama este listo.
 - Si `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=true`, el backend aborta inicio cuando Ollama/modelo no estan disponibles.
 - En Docker local, el endpoint `POST /api/admin/product-ai/infer-single` usa timeout de gateway 300s para cubrir carga inicial del modelo.

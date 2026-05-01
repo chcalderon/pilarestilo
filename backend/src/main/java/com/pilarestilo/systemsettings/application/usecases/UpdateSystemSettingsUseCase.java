@@ -119,6 +119,10 @@ public class UpdateSystemSettingsUseCase {
                 command.sendgridFromEmail(),
                 command.sendgridSenderName(),
                 command.sendgridToFallback(),
+                command.productAiInferDefaultBrand(),
+                command.productAiInferDefaultCondition(),
+                command.productAiInferBasePrice(),
+                command.productAiInferListPriceMultiplier(),
                 command.updatedBy()
         );
 

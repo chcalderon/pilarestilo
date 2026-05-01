@@ -5,6 +5,8 @@ import com.pilarestilo.systemsettings.domain.enums.MediaStorageProvider;
 import com.pilarestilo.systemsettings.domain.enums.NotificationProvider;
 import com.pilarestilo.systemsettings.domain.enums.PaymentGatewayProvider;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -64,6 +66,10 @@ public class SystemSettings {
     private String sendgridFromEmail;
     private String sendgridSenderName;
     private String sendgridToFallback;
+    private String productAiInferDefaultBrand;
+    private String productAiInferDefaultCondition;
+    private Integer productAiInferBasePrice;
+    private BigDecimal productAiInferListPriceMultiplier;
     private Instant updatedAt;
     private String updatedBy;
 
@@ -98,6 +104,10 @@ public class SystemSettings {
         settings.whatsappTwilioSenderAlias = "Pilar Estilo";
         settings.sendgridApiBaseUrl = "https://api.sendgrid.com";
         settings.sendgridSenderName = "Pilar Estilo";
+        settings.productAiInferDefaultBrand = "Pilar Estilo";
+        settings.productAiInferDefaultCondition = "USED";
+        settings.productAiInferBasePrice = 24990;
+        settings.productAiInferListPriceMultiplier = new BigDecimal("1.35");
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
         return settings;
@@ -155,6 +165,10 @@ public class SystemSettings {
             String sendgridFromEmail,
             String sendgridSenderName,
             String sendgridToFallback,
+            String productAiInferDefaultBrand,
+            String productAiInferDefaultCondition,
+            Integer productAiInferBasePrice,
+            BigDecimal productAiInferListPriceMultiplier,
             Instant updatedAt,
             String updatedBy
     ) {
@@ -212,6 +226,10 @@ public class SystemSettings {
         settings.sendgridFromEmail = normalizeNullable(sendgridFromEmail);
         settings.sendgridSenderName = normalizeNullable(sendgridSenderName);
         settings.sendgridToFallback = normalizeNullable(sendgridToFallback);
+        settings.productAiInferDefaultBrand = normalizeInferDefaultBrand(productAiInferDefaultBrand);
+        settings.productAiInferDefaultCondition = normalizeInferDefaultCondition(productAiInferDefaultCondition);
+        settings.productAiInferBasePrice = normalizeInferBasePrice(productAiInferBasePrice);
+        settings.productAiInferListPriceMultiplier = normalizeInferListPriceMultiplier(productAiInferListPriceMultiplier);
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
@@ -269,6 +287,10 @@ public class SystemSettings {
             String sendgridFromEmail,
             String sendgridSenderName,
             String sendgridToFallback,
+            String productAiInferDefaultBrand,
+            String productAiInferDefaultCondition,
+            Integer productAiInferBasePrice,
+            BigDecimal productAiInferListPriceMultiplier,
             String updatedBy
     ) {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
@@ -321,6 +343,10 @@ public class SystemSettings {
         this.sendgridFromEmail = normalizeNullable(sendgridFromEmail);
         this.sendgridSenderName = normalizeNullable(sendgridSenderName);
         this.sendgridToFallback = normalizeNullable(sendgridToFallback);
+        this.productAiInferDefaultBrand = normalizeInferDefaultBrand(productAiInferDefaultBrand);
+        this.productAiInferDefaultCondition = normalizeInferDefaultCondition(productAiInferDefaultCondition);
+        this.productAiInferBasePrice = normalizeInferBasePrice(productAiInferBasePrice);
+        this.productAiInferListPriceMultiplier = normalizeInferListPriceMultiplier(productAiInferListPriceMultiplier);
         validateConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
@@ -391,9 +417,54 @@ public class SystemSettings {
                 .collect(Collectors.joining(","));
     }
 
+    private static String normalizeInferDefaultBrand(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return "Pilar Estilo";
+        }
+        if (normalized.length() > 120) {
+            return normalized.substring(0, 120).trim();
+        }
+        return normalized;
+    }
+
+    private static String normalizeInferDefaultCondition(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return "USED";
+        }
+        String upper = normalized.toUpperCase();
+        if (!upper.equals("NEW") && !upper.equals("USED")) {
+            throw new DomainException("Product AI default condition must be NEW or USED");
+        }
+        return upper;
+    }
+
+    private static Integer normalizeInferBasePrice(Integer value) {
+        if (value == null) {
+            return 24990;
+        }
+        if (value < 1000) {
+            throw new DomainException("Product AI base price must be >= 1000");
+        }
+        return value;
+    }
+
+    private static BigDecimal normalizeInferListPriceMultiplier(BigDecimal value) {
+        BigDecimal normalized = value == null ? new BigDecimal("1.35") : value;
+        if (normalized.compareTo(new BigDecimal("1.00")) < 0) {
+            throw new DomainException("Product AI list-price multiplier must be >= 1.00");
+        }
+        if (normalized.compareTo(new BigDecimal("5.00")) > 0) {
+            throw new DomainException("Product AI list-price multiplier must be <= 5.00");
+        }
+        return normalized.setScale(2, RoundingMode.HALF_UP);
+    }
+
     private void validateConfiguration() {
         validateMediaConfiguration();
         validatePaymentConfiguration();
+        validateProductAiInferConfiguration();
     }
 
     private void validateMediaConfiguration() {
@@ -426,6 +497,21 @@ public class SystemSettings {
         }
         if (paymentMethodGatewayEnabled && (paymentGatewayProviders == null || paymentGatewayProviders.isEmpty())) {
             throw new DomainException("At least one payment gateway provider must be enabled");
+        }
+    }
+
+    private void validateProductAiInferConfiguration() {
+        if (productAiInferDefaultBrand == null || productAiInferDefaultBrand.isBlank()) {
+            throw new DomainException("Product AI default brand cannot be blank");
+        }
+        if (!"NEW".equals(productAiInferDefaultCondition) && !"USED".equals(productAiInferDefaultCondition)) {
+            throw new DomainException("Product AI default condition must be NEW or USED");
+        }
+        if (productAiInferBasePrice == null || productAiInferBasePrice < 1000) {
+            throw new DomainException("Product AI base price must be >= 1000");
+        }
+        if (productAiInferListPriceMultiplier == null || productAiInferListPriceMultiplier.compareTo(new BigDecimal("1.00")) < 0) {
+            throw new DomainException("Product AI list-price multiplier must be >= 1.00");
         }
     }
 
@@ -481,6 +567,10 @@ public class SystemSettings {
     public String getSendgridFromEmail() { return sendgridFromEmail; }
     public String getSendgridSenderName() { return sendgridSenderName; }
     public String getSendgridToFallback() { return sendgridToFallback; }
+    public String getProductAiInferDefaultBrand() { return productAiInferDefaultBrand; }
+    public String getProductAiInferDefaultCondition() { return productAiInferDefaultCondition; }
+    public Integer getProductAiInferBasePrice() { return productAiInferBasePrice; }
+    public BigDecimal getProductAiInferListPriceMultiplier() { return productAiInferListPriceMultiplier; }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getUpdatedBy() { return updatedBy; }
 }

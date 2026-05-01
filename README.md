@@ -55,6 +55,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 ## Latest updates (April 2026)
 
 - Product cards now support dual pricing (`listPrice` struck-through + discounted sale price) across home, category, listing, wishlist, and search contexts.
+- Product AI single-image infer now pre-fills brand/condition/price defaults from admin system settings, and Ollama inference includes automatic quality fallback between primary/fallback models.
 - Existing catalog rows are backfilled with default `listPrice` values via DB migration so discount visuals render immediately in storefront cards.
 - Logged-in customers can now leave quick star-only ratings directly from product cards (no comment required in quick flow).
 - Admin product management now supports `Grilla` and `Cards` modes with responsive/mobile improvements.

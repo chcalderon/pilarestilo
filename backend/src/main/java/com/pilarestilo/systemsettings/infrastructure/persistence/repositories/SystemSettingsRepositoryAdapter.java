@@ -82,6 +82,10 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setSendgridFromEmail(settings.getSendgridFromEmail());
         entity.setSendgridSenderName(settings.getSendgridSenderName());
         entity.setSendgridToFallback(settings.getSendgridToFallback());
+        entity.setProductAiInferDefaultBrand(settings.getProductAiInferDefaultBrand());
+        entity.setProductAiInferDefaultCondition(settings.getProductAiInferDefaultCondition());
+        entity.setProductAiInferBasePrice(settings.getProductAiInferBasePrice());
+        entity.setProductAiInferListPriceMultiplier(settings.getProductAiInferListPriceMultiplier());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -140,6 +144,10 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getSendgridFromEmail(),
                 entity.getSendgridSenderName(),
                 entity.getSendgridToFallback(),
+                entity.getProductAiInferDefaultBrand(),
+                entity.getProductAiInferDefaultCondition(),
+                entity.getProductAiInferBasePrice(),
+                entity.getProductAiInferListPriceMultiplier(),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

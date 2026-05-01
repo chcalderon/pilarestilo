@@ -4,6 +4,7 @@ import {
   createProduct,
   updateProduct,
   getCategories,
+  getSystemSettings,
   inferSingleProductAi,
   transformSingleProductAiImage,
   type ProductDto,
@@ -42,6 +43,30 @@ type VariantRow = {
 
 const VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'UNICO'];
 const DEFAULT_TRANSFORM_PROMPT = 'Generar una imagen de tamano ideal para Instagram (la presenta una modelo en un fondo de boutique de lujo), para campana de invierno. Fijate bien en el diseno y color; mantener tambien textura y corte. Sin texto, sin logos, sin marcas de agua.';
+const DEFAULT_INFERRED_BRAND = 'Pilar Estilo';
+const DEFAULT_INFERRED_CONDITION: 'NEW' | 'USED' = 'USED';
+const DEFAULT_INFERRED_BASE_PRICE = 24990;
+const DEFAULT_INFERRED_LIST_MULTIPLIER = 1.35;
+
+function roundPriceToThousand(value: number): number {
+  return Math.max(1000, Math.round(value / 1000) * 1000);
+}
+
+function inferSuggestedPriceFromCopy(title: string, description: string, basePrice: number): number {
+  const text = `${title} ${description}`.toLowerCase();
+  if (text.includes('abrigo') || text.includes('parka') || text.includes('chaqueta')) return roundPriceToThousand(basePrice * 1.4);
+  if (text.includes('blazer')) return roundPriceToThousand(basePrice * 1.16);
+  if (text.includes('vestido')) return roundPriceToThousand(basePrice * 1.12);
+  if (text.includes('falda') || text.includes('pantalon') || text.includes('jeans')) return roundPriceToThousand(basePrice * 0.9);
+  if (text.includes('blusa') || text.includes('camisa') || text.includes('top')) return roundPriceToThousand(basePrice * 0.8);
+  if (text.includes('poleron') || text.includes('sweater') || text.includes('chaleco')) return roundPriceToThousand(basePrice * 0.96);
+  if (text.includes('premium') || text.includes('lujo') || text.includes('vintage')) return roundPriceToThousand(basePrice * 1.3);
+  return roundPriceToThousand(basePrice);
+}
+
+function inferSuggestedListPrice(basePrice: number, multiplier: number): number {
+  return roundPriceToThousand(basePrice * multiplier);
+}
 
 function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
   return rows.map((row) => ({
@@ -61,6 +86,17 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [aiTransformProvider, setAiTransformProvider] = useState<'OPENAI' | 'OLLAMA'>('OPENAI');
   const [aiTransformPrompt, setAiTransformPrompt] = useState(DEFAULT_TRANSFORM_PROMPT);
   const [aiTransformPreviewUrl, setAiTransformPreviewUrl] = useState('');
+  const [aiInferDefaults, setAiInferDefaults] = useState<{
+    brand: string;
+    condition: 'NEW' | 'USED';
+    basePrice: number;
+    listMultiplier: number;
+  }>({
+    brand: DEFAULT_INFERRED_BRAND,
+    condition: DEFAULT_INFERRED_CONDITION,
+    basePrice: DEFAULT_INFERRED_BASE_PRICE,
+    listMultiplier: DEFAULT_INFERRED_LIST_MULTIPLIER,
+  });
   const [useVariants, setUseVariants] = useState(false);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
@@ -72,6 +108,36 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    getSystemSettings(token)
+      .then((settings) => {
+        if (cancelled) return;
+        const condition = settings.productAiInferDefaultCondition === 'NEW' ? 'NEW' : 'USED';
+        const basePrice =
+          typeof settings.productAiInferBasePrice === 'number' && settings.productAiInferBasePrice >= 1000
+            ? settings.productAiInferBasePrice
+            : DEFAULT_INFERRED_BASE_PRICE;
+        const listMultiplier =
+          typeof settings.productAiInferListPriceMultiplier === 'number' &&
+          settings.productAiInferListPriceMultiplier >= 1 &&
+          settings.productAiInferListPriceMultiplier <= 5
+            ? settings.productAiInferListPriceMultiplier
+            : DEFAULT_INFERRED_LIST_MULTIPLIER;
+        setAiInferDefaults({
+          brand: settings.productAiInferDefaultBrand?.trim() || DEFAULT_INFERRED_BRAND,
+          condition,
+          basePrice,
+          listMultiplier,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   useEffect(() => {
     if (product) {
@@ -272,16 +338,34 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setAiRunning(true);
     try {
       const file = await resolveImageFileForAi();
-      const inference = await inferSingleProductAi(token, file, form.brand.trim() || undefined);
+      const inference = await inferSingleProductAi(token, file, form.brand.trim() || aiInferDefaults.brand);
       if (inference.engine === 'ollama-fallback') {
         const reason = (inference.fallbackReason ?? 'unknown').trim();
         throw new Error(`Inferencia IA en fallback: ${reason}. No se aplicaron cambios al formulario.`);
       }
-      setForm((prev) => ({
-        ...prev,
-        name: inference.title?.trim() || prev.name,
-        description: inference.description?.trim() || prev.description,
-      }));
+      const suggestedBasePrice = inferSuggestedPriceFromCopy(
+        inference.title ?? '',
+        inference.description ?? '',
+        aiInferDefaults.basePrice
+      );
+      setForm((prev) => {
+        const shouldApplyDefaultCondition = !product && prev.condition === DEFAULT_INFERRED_CONDITION;
+        return {
+          ...prev,
+          name: inference.title?.trim() || prev.name,
+          description: inference.description?.trim() || prev.description,
+          brand: prev.brand.trim().length > 0 ? prev.brand : aiInferDefaults.brand,
+          condition: shouldApplyDefaultCondition ? aiInferDefaults.condition : prev.condition,
+          amount:
+            prev.amount.trim().length > 0
+              ? prev.amount
+              : String(suggestedBasePrice),
+          listAmount:
+            prev.listAmount.trim().length > 0
+              ? prev.listAmount
+              : String(inferSuggestedListPrice(suggestedBasePrice, aiInferDefaults.listMultiplier)),
+        };
+      });
       setAiInfo(`IA completada (${inference.engine}). Texto sugerido aplicado; revisa y guarda manualmente.`);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'No se pudo procesar la imagen con IA');

@@ -48,6 +48,10 @@ public class ProductAiOllamaClient {
     }
 
     public InferenceResult inferFromImage(byte[] imageBytes, String sourceFilename, String brandHint) {
+        return inferFromImage(imageBytes, sourceFilename, brandHint, null);
+    }
+
+    public InferenceResult inferFromImage(byte[] imageBytes, String sourceFilename, String brandHint, String modelOverride) {
         if (!enabled) {
             return fallbackFromFilename(sourceFilename, brandHint, "ollama-disabled");
         }
@@ -55,11 +59,12 @@ public class ProductAiOllamaClient {
             return fallbackFromFilename(sourceFilename, brandHint, "empty-image");
         }
 
+        String requestedModel = resolveRequestedModel(modelOverride);
         String base64Image = Base64.getEncoder().encodeToString(imageBytes);
         String prompt = buildUserPrompt(sourceFilename, brandHint);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", model);
+        payload.put("model", requestedModel);
         payload.put("stream", false);
         payload.put("format", "json");
         payload.put("keep_alive", keepAlive);
@@ -206,17 +211,26 @@ public class ProductAiOllamaClient {
         return modelName.trim().toLowerCase(Locale.ROOT);
     }
 
+    private String resolveRequestedModel(String modelOverride) {
+        if (modelOverride == null || modelOverride.isBlank()) {
+            return model;
+        }
+        return modelOverride.trim();
+    }
+
     private String buildUserPrompt(String sourceFilename, String brandHint) {
         return """
                 Analiza la imagen de una prenda para ecommerce de moda boutique.
                 Responde SOLO JSON con llaves: title, description, imagePrompt.
                 Reglas:
-                - Español chileno neutro, sin emojis.
-                - title: corto, comercial, max 90 chars, sin simbolos raros.
-                - description: 2 frases maximo, orientada a venta.
+                - Espanol chileno neutro, sin emojis.
+                - title: comercial, concreto, entre 2 y 7 palabras, max 90 chars, sin simbolos raros.
+                - description: exactamente 2 frases completas, 20-45 palabras en total, orientada a venta.
                 - imagePrompt: instruccion para editar imagen con modelo femenina elegante, fondo exterior boutique, formato 4:5.
                 - En imagePrompt obliga: sin texto, sin logos, sin marcas de agua, fidelidad estricta de color/textura/diseno/corte de la prenda.
                 - Si no estas seguro de una talla o marca, no inventes.
+                - No escribas metainstrucciones ni frases como "corto", "2 frases", "maximo", "completa", "placeholder" o "N/A".
+                - Si no puedes inferir bien, entrega una propuesta comercial util, nunca instrucciones para otro modelo.
                 Contexto:
                 - archivo fuente: %s
                 - marca sugerida: %s

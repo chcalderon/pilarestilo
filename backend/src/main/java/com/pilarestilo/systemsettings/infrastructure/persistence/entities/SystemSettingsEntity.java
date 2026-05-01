@@ -164,6 +164,18 @@ public class SystemSettingsEntity {
     @Column(name = "sendgrid_to_fallback", length = 255)
     private String sendgridToFallback;
 
+    @Column(name = "product_ai_infer_default_brand", length = 120)
+    private String productAiInferDefaultBrand;
+
+    @Column(name = "product_ai_infer_default_condition", length = 10)
+    private String productAiInferDefaultCondition;
+
+    @Column(name = "product_ai_infer_base_price")
+    private Integer productAiInferBasePrice;
+
+    @Column(name = "product_ai_infer_list_price_multiplier", precision = 6, scale = 2)
+    private java.math.BigDecimal productAiInferListPriceMultiplier;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -306,6 +318,14 @@ public class SystemSettingsEntity {
     public void setSendgridSenderName(String sendgridSenderName) { this.sendgridSenderName = sendgridSenderName; }
     public String getSendgridToFallback() { return sendgridToFallback; }
     public void setSendgridToFallback(String sendgridToFallback) { this.sendgridToFallback = sendgridToFallback; }
+    public String getProductAiInferDefaultBrand() { return productAiInferDefaultBrand; }
+    public void setProductAiInferDefaultBrand(String productAiInferDefaultBrand) { this.productAiInferDefaultBrand = productAiInferDefaultBrand; }
+    public String getProductAiInferDefaultCondition() { return productAiInferDefaultCondition; }
+    public void setProductAiInferDefaultCondition(String productAiInferDefaultCondition) { this.productAiInferDefaultCondition = productAiInferDefaultCondition; }
+    public Integer getProductAiInferBasePrice() { return productAiInferBasePrice; }
+    public void setProductAiInferBasePrice(Integer productAiInferBasePrice) { this.productAiInferBasePrice = productAiInferBasePrice; }
+    public java.math.BigDecimal getProductAiInferListPriceMultiplier() { return productAiInferListPriceMultiplier; }
+    public void setProductAiInferListPriceMultiplier(java.math.BigDecimal productAiInferListPriceMultiplier) { this.productAiInferListPriceMultiplier = productAiInferListPriceMultiplier; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public String getUpdatedBy() { return updatedBy; }

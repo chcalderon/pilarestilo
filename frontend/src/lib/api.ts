@@ -225,6 +225,10 @@ export interface SystemSettingsDto {
   sendgridSenderName?: string | null;
   sendgridToFallback?: string | null;
   sendgridApiKeyConfigured: boolean;
+  productAiInferDefaultBrand?: string | null;
+  productAiInferDefaultCondition?: 'NEW' | 'USED' | null;
+  productAiInferBasePrice?: number | null;
+  productAiInferListPriceMultiplier?: number | null;
   smtpHost?: string | null;
   smtpPort?: number | null;
   smtpUsername?: string | null;
@@ -286,6 +290,10 @@ export interface UpdateSystemSettingsRequest {
   sendgridToFallback?: string;
   sendgridApiKey?: string;
   clearSendgridApiKey?: boolean;
+  productAiInferDefaultBrand?: string;
+  productAiInferDefaultCondition?: 'NEW' | 'USED';
+  productAiInferBasePrice?: number;
+  productAiInferListPriceMultiplier?: number;
   smtpHost?: string;
   smtpPort?: number;
   smtpUsername?: string;
