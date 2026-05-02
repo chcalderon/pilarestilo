@@ -332,16 +332,12 @@ Configuracion `application.yml`:
 - `app.product-ai.image.thumb-width`
 - `app.product-ai.image.thumb-height`
 - `app.product-ai.image.thumb-jpeg-quality`
-- `app.product-ai.node.command`
-- `app.product-ai.node.project-path`
-- `app.product-ai.node.generate-script`
-- `app.product-ai.node.transform-script`
-- `app.product-ai.node.workspace-root`
+- `app.product-ai.node.*` (solo si se habilita modo legado `node_bridge`)
 
 ## 7) Variables de entorno requeridas
 
 - `APP_PRODUCT_AI_ENABLED=true`
-- `APP_PRODUCT_AI_ENGINE=node_bridge`
+- `APP_PRODUCT_AI_ENGINE=ollama_backend`
 - `APP_PRODUCT_AI_OPENAI_API_KEY=...`
 - `APP_PRODUCT_AI_OPENAI_BASE_URL=https://api.openai.com/v1`
 - `APP_PRODUCT_AI_OPENAI_MODEL=gpt-image-1`
@@ -374,11 +370,7 @@ Configuracion `application.yml`:
 - `APP_PRODUCT_AI_IMAGE_THUMB_WIDTH=320`
 - `APP_PRODUCT_AI_IMAGE_THUMB_HEIGHT=400`
 - `APP_PRODUCT_AI_IMAGE_THUMB_JPEG_QUALITY=0.82`
-- `APP_PRODUCT_AI_NODE_COMMAND=node`
-- `APP_PRODUCT_AI_NODE_PROJECT_PATH=E:/dev/pilarestilofotos`
-- `APP_PRODUCT_AI_NODE_GENERATE_SCRIPT=generate-prompts.js`
-- `APP_PRODUCT_AI_NODE_TRANSFORM_SCRIPT=transform-images.js`
-- `APP_PRODUCT_AI_NODE_WORKSPACE_ROOT=./tmp/product-ai`
+- `APP_PRODUCT_AI_NODE_*` (solo si se usa modo legado `node_bridge`)
 
 ## 8) Comandos de ejecucion local (propuestos)
 
@@ -485,11 +477,11 @@ Comportamiento operacional:
   - migracion `V40__product_ai_pipeline.sql`
   - endpoints `/api/admin/product-ai/*`
   - scheduler async (`ProductAiJobScheduler`)
-- Integrado motor real `node_bridge` con proyecto externo `E:\dev\pilarestilofotos`:
-  - ejecuta `generate-prompts.js` y `transform-images.js` por `job_id`
-  - genera y persiste derivados `master/web/thumb` por cada asset
-  - aplica compresion JPEG para `web` y `thumb`
-  - valida formatos de entrada compatibles (`jpg/png/webp`)
+- Modo actual recomendado: `ollama_backend` (backend-only):
+  - inferencia de texto con Ollama desde backend
+  - pipeline masivo sin dependencia de proyecto externo
+  - `master/web/thumb` se mantienen desde backend (sin transform externo)
+  - `node_bridge` queda disponible solo como modo legado opcional
 - Implementada conexion frontend real en `/admin/publicaciones`:
   - crear draft
   - subir lote de imagenes

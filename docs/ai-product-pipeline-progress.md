@@ -39,16 +39,16 @@
 - `Productos` ahora incluye switch de UX para flujo individual:
   - `carga manual` tradicional
   - `nuevo flujo IA (1 imagen)` para inferir texto/imagen sin pasar por n8n
-- PR3 backend integration completed (`node_bridge`):
-  - bridge to external project `E:\dev\pilarestilofotos`
-  - runs `generate-prompts.js` + `transform-images.js` in async worker
+- PR3 backend integration completed (`node_bridge`, legado opcional):
+  - modo previo dependia de proyecto externo `E:\dev\pilarestilofotos`
+  - ejecutaba `generate-prompts.js` + `transform-images.js` en worker async
   - persists processed URLs `master/web/thumb` per asset
   - web and thumb derivatives are JPEG-compressed for faster admin/catalog load
   - guards duplicate publish on already-published drafts
 - Incremental Java migration applied:
   - new `ProductAiOllamaClient` in backend Java for text inference (title/description/imagePrompt)
   - `Productos` 1-a-1 now calls endpoint `infer-single` (solo texto, sin transformacion de imagen, sin n8n)
-  - `Publicaciones` jobs now use Ollama text inference + ChatGPT image transform (node bridge actual)
+  - `Publicaciones` jobs now support backend-only mode (`ollama_backend`) sin referencia externa
 - `Productos` 1-a-1 expanded with transform preview flow:
   - new endpoint `POST /api/admin/product-ai/transform-single`
   - prompt personalizable (con default de invierno + fidelidad de prenda)

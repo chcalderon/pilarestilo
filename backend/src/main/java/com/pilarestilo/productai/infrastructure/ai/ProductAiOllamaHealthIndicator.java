@@ -21,10 +21,10 @@ public class ProductAiOllamaHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-        if (!"node_bridge".equalsIgnoreCase(productAiEngine)) {
+        if (!usesOllamaEngine()) {
             return Health.up()
                     .withDetail("enabled", false)
-                    .withDetail("reason", "engine-not-node-bridge")
+                    .withDetail("reason", "engine-not-ollama")
                     .build();
         }
 
@@ -48,5 +48,9 @@ public class ProductAiOllamaHealthIndicator implements HealthIndicator {
                 .withDetail("baseUrl", readiness.baseUrl())
                 .build();
     }
-}
 
+    private boolean usesOllamaEngine() {
+        return "node_bridge".equalsIgnoreCase(productAiEngine)
+                || "ollama_backend".equalsIgnoreCase(productAiEngine);
+    }
+}

@@ -2,8 +2,11 @@ package com.pilarestilo.productai.infrastructure.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -14,18 +17,25 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class ProductAiOllamaClient {
 
-    private final RestClient.Builder restClientBuilder;
+    private static final Logger log = LoggerFactory.getLogger(ProductAiOllamaClient.class);
+
     private final ObjectMapper objectMapper;
+    private final RestClient restClient;
     private final boolean enabled;
     private final String baseUrl;
     private final String model;
     private final String systemPrompt;
     private final String fallbackStyleHint;
     private final String keepAlive;
+    private final int numPredict;
+    private final int numCtx;
+    private final double temperature;
 
     public ProductAiOllamaClient(
             RestClient.Builder restClientBuilder,
@@ -35,9 +45,12 @@ public class ProductAiOllamaClient {
             @Value("${app.product-ai.ollama.model:gemma3}") String model,
             @Value("${app.product-ai.ollama.system-prompt:}") String systemPrompt,
             @Value("${app.product-ai.ollama.style-hint:boutique elegante, lujo accesible, segunda mano premium}") String fallbackStyleHint,
-            @Value("${app.product-ai.ollama.keep-alive:45m}") String keepAlive
+            @Value("${app.product-ai.ollama.keep-alive:45m}") String keepAlive,
+            @Value("${app.product-ai.ollama.num-predict:220}") int numPredict,
+            @Value("${app.product-ai.ollama.num-ctx:2048}") int numCtx,
+            @Value("${app.product-ai.ollama.temperature:0.2}") double temperature,
+            @Value("${app.product-ai.timeout-ms:60000}") long timeoutMs
     ) {
-        this.restClientBuilder = restClientBuilder;
         this.objectMapper = objectMapper;
         this.enabled = enabled;
         this.baseUrl = baseUrl;
@@ -45,6 +58,18 @@ public class ProductAiOllamaClient {
         this.systemPrompt = systemPrompt;
         this.fallbackStyleHint = fallbackStyleHint;
         this.keepAlive = keepAlive;
+        this.numPredict = Math.max(32, numPredict);
+        this.numCtx = Math.max(512, numCtx);
+        this.temperature = Math.max(0.0d, Math.min(1.0d, temperature));
+
+        int safeTimeoutMs = (int) Math.max(5_000L, Math.min(timeoutMs, Integer.MAX_VALUE));
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(safeTimeoutMs);
+        requestFactory.setReadTimeout(safeTimeoutMs);
+        this.restClient = restClientBuilder
+                .baseUrl(baseUrl)
+                .requestFactory(requestFactory)
+                .build();
     }
 
     public InferenceResult inferFromImage(byte[] imageBytes, String sourceFilename, String brandHint) {
@@ -66,15 +91,19 @@ public class ProductAiOllamaClient {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", requestedModel);
         payload.put("stream", false);
-        payload.put("format", "json");
+        payload.put("format", responseSchema());
         payload.put("keep_alive", keepAlive);
+        payload.put("options", Map.of(
+                "num_predict", numPredict,
+                "num_ctx", numCtx,
+                "temperature", temperature
+        ));
         payload.put("messages", List.of(Map.of(
                 "role", "user",
                 "content", prompt,
                 "images", List.of(base64Image)
         )));
         if (systemPrompt != null && !systemPrompt.isBlank()) {
-            payload.put("options", Map.of("num_predict", 420));
             payload.put("messages", List.of(
                     Map.of("role", "system", "content", systemPrompt),
                     Map.of("role", "user", "content", prompt, "images", List.of(base64Image))
@@ -82,7 +111,6 @@ public class ProductAiOllamaClient {
         }
 
         try {
-            RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
             JsonNode responseNode = restClient.post()
                     .uri("/chat")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -92,14 +120,60 @@ public class ProductAiOllamaClient {
             if (responseNode == null) {
                 return fallbackFromFilename(sourceFilename, brandHint, "empty-ollama-response");
             }
-            String rawTextJson = responseNode.path("message").path("content").asText("");
+            if ("length".equalsIgnoreCase(responseNode.path("done_reason").asText(""))) {
+                return fallbackFromFilename(sourceFilename, brandHint, "ollama-length");
+            }
+            JsonNode contentNode = responseNode.path("message").path("content");
+            String rawTextJson;
+            if (contentNode.isObject() || contentNode.isArray()) {
+                rawTextJson = contentNode.toString();
+            } else {
+                rawTextJson = contentNode.asText("");
+            }
+            rawTextJson = normalizePotentialJson(rawTextJson);
             if (rawTextJson.isBlank()) {
                 return fallbackFromFilename(sourceFilename, brandHint, "missing-ollama-content");
             }
-            JsonNode parsed;
-            try {
-                parsed = objectMapper.readTree(rawTextJson);
-            } catch (Exception ex) {
+            JsonNode parsed = parseLenientJson(rawTextJson);
+            if (parsed == null) {
+                ParsedFields rescued = extractFieldsFromRawText(rawTextJson);
+                if (rescued.hasAnyValue()) {
+                    String rescuedTitle = normalizeTitle(rescued.title());
+                    String rescuedDescription = normalizeDescription(rescued.description());
+                    String rescuedImagePrompt = normalizePrompt(rescued.imagePrompt());
+
+                    if (rescuedTitle.isBlank()) {
+                        rescuedTitle = fallbackTitle(sourceFilename, brandHint);
+                    }
+                    if (rescuedDescription.isBlank()) {
+                        rescuedDescription = "Prenda de boutique en excelente estado, lista para publicar.";
+                    }
+                    if (rescuedImagePrompt.isBlank()) {
+                        rescuedImagePrompt = defaultImagePrompt(sourceFilename, brandHint);
+                    }
+
+                    log.warn(
+                            "product_ai_ollama_non_json_rescued model={} done_reason={} preview={}",
+                            requestedModel,
+                            responseNode.path("done_reason").asText(""),
+                            preview(rawTextJson)
+                    );
+                    return new InferenceResult(
+                            rescuedTitle,
+                            rescuedDescription,
+                            rescuedImagePrompt,
+                            rawTextJson,
+                            "ollama",
+                            "rescued-non-json"
+                    );
+                }
+
+                log.warn(
+                        "product_ai_ollama_invalid_json model={} done_reason={} preview={}",
+                        requestedModel,
+                        responseNode.path("done_reason").asText(""),
+                        preview(rawTextJson)
+                );
                 return fallbackFromFilename(sourceFilename, brandHint, "invalid-ollama-json");
             }
 
@@ -119,7 +193,7 @@ public class ProductAiOllamaClient {
         } catch (RestClientResponseException ex) {
             return fallbackFromFilename(sourceFilename, brandHint, "ollama-http-" + ex.getStatusCode().value());
         } catch (Exception ex) {
-            return fallbackFromFilename(sourceFilename, brandHint, "ollama-error");
+            return fallbackFromFilename(sourceFilename, brandHint, classifyClientErrorReason(ex));
         }
     }
 
@@ -128,7 +202,6 @@ public class ProductAiOllamaClient {
             return new ReadinessStatus(true, true, true, baseUrl, model, "ollama-disabled");
         }
         try {
-            RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
             JsonNode responseNode = restClient.get()
                     .uri("/tags")
                     .retrieve()
@@ -167,7 +240,6 @@ public class ProductAiOllamaClient {
             return;
         }
         try {
-            RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("model", model);
             payload.put("stream", false);
@@ -185,6 +257,154 @@ public class ProductAiOllamaClient {
         } catch (Exception ignored) {
             // Warm-up best effort. Main requests keep their own fallback/error handling.
         }
+    }
+
+    private String classifyClientErrorReason(Exception ex) {
+        if (ex == null) {
+            return "ollama-error";
+        }
+        String className = ex.getClass().getSimpleName().toLowerCase(Locale.ROOT);
+        String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase(Locale.ROOT);
+        if (className.contains("timeout")
+                || message.contains("timed out")
+                || message.contains("timeout awaiting response headers")
+                || message.contains("read timed out")) {
+            return "ollama-timeout";
+        }
+        return "ollama-error";
+    }
+
+    private Map<String, Object> responseSchema() {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", Map.of(
+                "title", Map.of("type", "string"),
+                "description", Map.of("type", "string"),
+                "imagePrompt", Map.of("type", "string")
+        ));
+        schema.put("required", List.of("title", "description", "imagePrompt"));
+        schema.put("additionalProperties", false);
+        return schema;
+    }
+
+    private String normalizePotentialJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.trim();
+        if (normalized.startsWith("```")) {
+            normalized = normalized
+                    .replace("```json", "")
+                    .replace("```JSON", "")
+                    .replace("```", "")
+                    .trim();
+        }
+        int firstObject = normalized.indexOf('{');
+        int lastObject = normalized.lastIndexOf('}');
+        if (firstObject >= 0 && lastObject > firstObject) {
+            String candidate = normalized.substring(firstObject, lastObject + 1).trim();
+            if (!candidate.isBlank()) {
+                return candidate;
+            }
+        }
+        return normalized;
+    }
+
+    private JsonNode parseLenientJson(String rawTextJson) {
+        JsonNode direct = tryReadTree(rawTextJson);
+        if (direct != null) {
+            return unwrapCommonPayload(direct);
+        }
+
+        String relaxed = relaxJson(rawTextJson);
+        JsonNode relaxedNode = tryReadTree(relaxed);
+        if (relaxedNode != null) {
+            return unwrapCommonPayload(relaxedNode);
+        }
+        return null;
+    }
+
+    private JsonNode unwrapCommonPayload(JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        JsonNode current = node;
+        if (current.isTextual()) {
+            JsonNode nested = tryReadTree(current.asText(""));
+            if (nested != null) {
+                current = nested;
+            }
+        }
+        if (current.path("response").isObject()) {
+            return current.path("response");
+        }
+        if (current.path("data").isObject()) {
+            return current.path("data");
+        }
+        if (current.path("result").isObject()) {
+            return current.path("result");
+        }
+        return current;
+    }
+
+    private JsonNode tryReadTree(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(text);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String relaxJson(String input) {
+        if (input == null) {
+            return "";
+        }
+        String relaxed = input.trim();
+        relaxed = relaxed.replaceAll(",\\s*([}\\]])", "$1");
+        relaxed = relaxed.replace('\'', '"');
+        return relaxed;
+    }
+
+    private ParsedFields extractFieldsFromRawText(String text) {
+        if (text == null || text.isBlank()) {
+            return ParsedFields.empty();
+        }
+
+        String title = extractLabeledValue(text, "(?im)^(?:title|titulo|nombre)\\s*[:=\\-]\\s*(.+)$");
+        String description = extractLabeledValue(text, "(?im)^(?:description|descripcion)\\s*[:=\\-]\\s*(.+)$");
+        String imagePrompt = extractLabeledValue(text, "(?im)^(?:imageprompt|image_prompt|promptimagen|prompt_imagen|prompt)\\s*[:=\\-]\\s*(.+)$");
+
+        if (title.isBlank() && description.isBlank() && imagePrompt.isBlank()) {
+            return ParsedFields.empty();
+        }
+        return new ParsedFields(title, description, imagePrompt);
+    }
+
+    private String extractLabeledValue(String text, String regex) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+        if (!matcher.find()) {
+            return "";
+        }
+        String value = matcher.group(1);
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
+    }
+
+    private String preview(String text) {
+        if (text == null) {
+            return "";
+        }
+        String compact = text.replaceAll("\\s+", " ").trim();
+        if (compact.length() <= 220) {
+            return compact;
+        }
+        return compact.substring(0, 220) + "...";
     }
 
     private boolean matchesModel(String requestedModel, String availableModel) {
@@ -320,5 +540,21 @@ public class ProductAiOllamaClient {
             String model,
             String reason
     ) {
+    }
+
+    private record ParsedFields(
+            String title,
+            String description,
+            String imagePrompt
+    ) {
+        static ParsedFields empty() {
+            return new ParsedFields("", "", "");
+        }
+
+        boolean hasAnyValue() {
+            return (title != null && !title.isBlank())
+                    || (description != null && !description.isBlank())
+                    || (imagePrompt != null && !imagePrompt.isBlank());
+        }
     }
 }

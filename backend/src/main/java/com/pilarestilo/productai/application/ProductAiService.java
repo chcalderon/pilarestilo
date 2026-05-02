@@ -253,6 +253,22 @@ public class ProductAiService {
         String prompt = resolveTransformPrompt(promptOverride, brandHint);
         try {
             byte[] bytes = file.getBytes();
+            if (!"node_bridge".equalsIgnoreCase(productAiEngine)) {
+                UUID requestId = UUID.randomUUID();
+                ProductAiNodeBridgeClient.StoredDerivatives derivatives = nodeBridgeClient.storeDerivatives(
+                        "products/ai/single/" + shortId(requestId),
+                        "single-" + shortId(requestId),
+                        bytes
+                );
+                return new ProductAiImageTransformDto(
+                        derivatives.masterUrl(),
+                        derivatives.webUrl(),
+                        derivatives.thumbUrl(),
+                        "BACKEND_PASSTHROUGH",
+                        prompt,
+                        "backend"
+                );
+            }
             ProductAiNodeBridgeClient.SingleTransformResult result = nodeBridgeClient.transformSingleImage(
                     UUID.randomUUID(),
                     bytes,
@@ -410,7 +426,7 @@ public class ProductAiService {
 
     @Transactional
     public int processDueJobs() {
-        if ("node_bridge".equalsIgnoreCase(productAiEngine)) {
+        if (usesOllamaEngine()) {
             ProductAiOllamaClient.ReadinessStatus readiness = ollamaClient.checkReadiness();
             if (!readiness.ready()) {
                 maybeLogReadinessWarning(readiness);
@@ -449,6 +465,8 @@ public class ProductAiService {
 
             if ("node_bridge".equalsIgnoreCase(productAiEngine)) {
                 processViaNodeBridge(job, draft, assets);
+            } else if ("ollama_backend".equalsIgnoreCase(productAiEngine)) {
+                processViaBackendOllama(job, draft, assets);
             } else {
                 processViaStub(job, draft, assets);
             }
@@ -465,6 +483,42 @@ public class ProductAiService {
         } catch (Exception ex) {
             log.error("product_ai_job_failed jobId={} draftId={}: {}", job.getId(), draft.getId(), ex.getMessage(), ex);
             markJobError(job, "PROCESSING_ERROR", ex.getMessage());
+        }
+    }
+
+    private void processViaBackendOllama(ProductAiJobEntity job, ProductAiDraftEntity draft, List<ProductAiAssetEntity> assets) {
+        int total = assets.size();
+        int index = 0;
+        for (ProductAiAssetEntity asset : assets) {
+            byte[] sourceBytes = nodeBridgeClient.loadOriginalAssetBytes(asset.getOriginalUrl());
+            ProductAiOllamaClient.InferenceResult inferred = inferWithQualityFallback(
+                    optimizeImageForOllamaInference(sourceBytes),
+                    asset.getSourceFilename(),
+                    draft.getBrand()
+            );
+
+            ProductAiOutputEntity output = new ProductAiOutputEntity();
+            output.setId(UUID.randomUUID());
+            output.setJobId(job.getId());
+            output.setAssetId(asset.getId());
+            output.setTitle(inferred.title());
+            output.setDescription(inferred.description());
+            output.setImagePrompt(inferred.imagePrompt());
+            output.setRawResponseJson(inferred.rawResponseJson());
+            output.setCreatedAt(Instant.now());
+            outputRepository.save(output);
+
+            // Backend-only mode keeps original media URLs and avoids external node transform pipeline.
+            asset.setProcessedMasterUrl(asset.getOriginalUrl());
+            asset.setProcessedWebUrl(asset.getOriginalUrl());
+            asset.setProcessedThumbUrl(asset.getOriginalUrl());
+            assetRepository.save(asset);
+
+            index++;
+            int progress = Math.min(99, (int) Math.round((index * 100.0) / total));
+            job.setProgress(progress);
+            job.setUpdatedAt(Instant.now());
+            jobRepository.save(job);
         }
     }
 
@@ -695,11 +749,27 @@ public class ProductAiService {
         if (isInferenceQualityAcceptable(primary)) {
             return primary;
         }
+        if (isInfrastructureFailure(primary)) {
+            return primary;
+        }
 
         String fallbackModel = normalizeModelName(ollamaQualityFallbackModel);
         String primaryModel = normalizeModelName(ollamaPrimaryModel);
         if (!ollamaQualityFallbackEnabled || fallbackModel.isBlank() || fallbackModel.equals(primaryModel)) {
-            return primary;
+            log.warn(
+                    "product_ai_ollama_quality_gate_bypassed source={} model={} reason=no_fallback_configured title='{}'",
+                    sourceFilename,
+                    primaryModel,
+                    normalizeText(primary.title())
+            );
+            return new ProductAiOllamaClient.InferenceResult(
+                    primary.title(),
+                    primary.description(),
+                    primary.imagePrompt(),
+                    primary.rawResponseJson(),
+                    primary.engine(),
+                    "quality-warning-no-fallback"
+            );
         }
 
         log.info(
@@ -737,6 +807,29 @@ public class ProductAiService {
                 "ollama-fallback",
                 "quality-rejected:" + primaryModel + "->" + fallbackModel
         );
+    }
+
+    private boolean isInfrastructureFailure(ProductAiOllamaClient.InferenceResult inference) {
+        if (inference == null) {
+            return false;
+        }
+        String reason = normalizeText(inference.fallbackReason()).toLowerCase(Locale.ROOT);
+        if (reason.isBlank()) {
+            return false;
+        }
+        return reason.startsWith("ollama-timeout")
+                || reason.startsWith("ollama-http-")
+                || reason.startsWith("ollama-error")
+                || reason.startsWith("ollama-unreachable");
+    }
+
+    private boolean usesOllamaEngine() {
+        return "node_bridge".equalsIgnoreCase(productAiEngine)
+                || "ollama_backend".equalsIgnoreCase(productAiEngine);
+    }
+
+    private String shortId(UUID id) {
+        return id == null ? "na" : id.toString().substring(0, 8);
     }
 
     private boolean isInferenceQualityAcceptable(ProductAiOllamaClient.InferenceResult inference) {

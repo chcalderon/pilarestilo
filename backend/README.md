@@ -277,8 +277,7 @@ Gateway-facing rate-limit filter (backend side):
 | `SERVER_PORT` | No | API port (default 8080) |
 
 Product AI runtime variables (when `APP_PRODUCT_AI_ENABLED=true`):
-- `APP_PRODUCT_AI_ENGINE` (`stub` or `node_bridge`)
-- `APP_PRODUCT_AI_NODE_PROJECT_PATH` (e.g. `E:/dev/pilarestilofotos`)
+- `APP_PRODUCT_AI_ENGINE` (`stub`, `ollama_backend`, or legacy `node_bridge`)
 - `APP_PRODUCT_AI_OPENAI_API_KEY`
 - `APP_PRODUCT_AI_OPENAI_BASE_URL`
 - `APP_PRODUCT_AI_OPENAI_MODEL`

@@ -45,7 +45,7 @@ public class ProductAiOllamaStartupValidator implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!validateOnStartup || !"node_bridge".equalsIgnoreCase(productAiEngine)) {
+        if (!validateOnStartup || !usesOllamaEngine()) {
             return;
         }
 
@@ -131,5 +131,10 @@ public class ProductAiOllamaStartupValidator implements ApplicationRunner {
         }
 
         log.warn("{} El primer infer puede tardar mas por cold start.", message);
+    }
+
+    private boolean usesOllamaEngine() {
+        return "node_bridge".equalsIgnoreCase(productAiEngine)
+                || "ollama_backend".equalsIgnoreCase(productAiEngine);
     }
 }
