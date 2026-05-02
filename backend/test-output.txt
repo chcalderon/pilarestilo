@@ -1,0 +1,595 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------< com.pilarestilo:pilar-estilo-backend >----------------
+[INFO] Building pilar-estilo-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ pilar-estilo-backend ---
+[INFO] Deleting E:\dev\PilarEstilo\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ pilar-estilo-backend ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 41 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ pilar-estilo-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 404 source files with javac [debug parameters release 25] to target\classes
+[INFO] /E:/dev/PilarEstilo/backend/src/main/java/com/pilarestilo/shared/auth/infrastructure/JwtAuthenticationFilter.java: E:\dev\PilarEstilo\backend\src\main\java\com\pilarestilo\shared\auth\infrastructure\JwtAuthenticationFilter.java uses unchecked or unsafe operations.
+[INFO] /E:/dev/PilarEstilo/backend/src/main/java/com/pilarestilo/shared/auth/infrastructure/JwtAuthenticationFilter.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ pilar-estilo-backend ---
+[INFO] skip non existing resourceDirectory E:\dev\PilarEstilo\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ pilar-estilo-backend ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 33 source files with javac [debug parameters release 25] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.5:test (default-test) @ pilar-estilo-backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.pilarestilo.cashregister.application.usecases.ListCashRegistersUseCaseTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\chcal\.m2\repository\net\bytebuddy\byte-buddy-agent\1.17.8\byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.755 s -- in com.pilarestilo.cashregister.application.usecases.ListCashRegistersUseCaseTest
+[INFO] Running com.pilarestilo.cashregister.application.usecases.ListSellerCashRegisterHistoryUseCaseTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.pilarestilo.cashregister.application.usecases.ListSellerCashRegisterHistoryUseCaseTest
+[INFO] Running com.pilarestilo.cashregister.domain.CashRegisterTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.pilarestilo.cashregister.domain.CashRegisterTest
+[INFO] Running com.pilarestilo.category.application.usecases.MigrateCategoryImagesUseCaseTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.364 s -- in com.pilarestilo.category.application.usecases.MigrateCategoryImagesUseCaseTest
+[INFO] Running com.pilarestilo.discount.application.usecases.ValidateDiscountForUserUseCaseTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in com.pilarestilo.discount.application.usecases.ValidateDiscountForUserUseCaseTest
+[INFO] Running com.pilarestilo.discount.domain.DiscountTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.pilarestilo.discount.domain.DiscountTest
+[INFO] Running com.pilarestilo.dispatch.application.usecases.AutoConfirmDeliveredDispatchesUseCaseTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.150 s -- in com.pilarestilo.dispatch.application.usecases.AutoConfirmDeliveredDispatchesUseCaseTest
+[INFO] Running com.pilarestilo.dispatch.application.usecases.ConfirmOrderDeliveryUseCaseTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.pilarestilo.dispatch.application.usecases.ConfirmOrderDeliveryUseCaseTest
+[INFO] Running com.pilarestilo.dispatch.domain.DispatchTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.pilarestilo.dispatch.domain.DispatchTest
+[INFO] Running com.pilarestilo.notification.application.usecases.GetUnreadCountUseCaseTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.pilarestilo.notification.application.usecases.GetUnreadCountUseCaseTest
+[INFO] Running com.pilarestilo.notification.domain.InAppNotificationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.pilarestilo.notification.domain.InAppNotificationTest
+[INFO] Running com.pilarestilo.order.application.sagas.OrderInventorySagaTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.086 s -- in com.pilarestilo.order.application.sagas.OrderInventorySagaTest
+[INFO] Running com.pilarestilo.order.domain.OrderTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.pilarestilo.order.domain.OrderTest
+[INFO] Running com.pilarestilo.payment.application.ProcessPaymentGatewayWebhookUseCaseTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in com.pilarestilo.payment.application.ProcessPaymentGatewayWebhookUseCaseTest
+[INFO] Running com.pilarestilo.payment.application.ReviewPaymentUseCaseTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.pilarestilo.payment.application.ReviewPaymentUseCaseTest
+[INFO] Running com.pilarestilo.payment.domain.PaymentTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.pilarestilo.payment.domain.PaymentTest
+[INFO] Running com.pilarestilo.payment.infrastructure.listeners.PaymentEventListenerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.pilarestilo.payment.infrastructure.listeners.PaymentEventListenerTest
+[INFO] Running com.pilarestilo.product.application.CreateProductUseCaseTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.106 s -- in com.pilarestilo.product.application.CreateProductUseCaseTest
+[INFO] Running com.pilarestilo.rbac.application.LoginWithPermissionsTest
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+12:43:06.594 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.pilarestilo.rbac.application.LoginWithPermissionsTest]: LoginWithPermissionsTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+12:43:06.799 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.pilarestilo.PilarEstiloApplication for test class com.pilarestilo.rbac.application.LoginWithPermissionsTest
+12:43:06.944 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+12:43:06.947 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+12:43:06.964 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 1.20.1
+12:43:07.165 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+12:43:07.386 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Npipe socket (npipe:////./pipe/docker_engine)
+12:43:07.387 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+12:43:07.404 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.4.0
+  API Version: 1.54
+  Operating System: Docker Desktop
+  Total Memory: 15918 MB
+12:43:07.540 [main] INFO tc.testcontainers/ryuk:0.8.1 -- Creating container for image: testcontainers/ryuk:0.8.1
+12:43:07.746 [main] INFO tc.testcontainers/ryuk:0.8.1 -- Container testcontainers/ryuk:0.8.1 is starting: 93c513d14f7c5e13caed674e0ee609002055c07f80c80f48e0407b275a15c1a4
+12:43:08.130 [main] INFO tc.testcontainers/ryuk:0.8.1 -- Container testcontainers/ryuk:0.8.1 started in PT0.5892256S
+12:43:08.135 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+12:43:08.135 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+12:43:08.136 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+12:43:08.136 [main] INFO tc.postgres:16 -- Creating container for image: postgres:16
+12:43:08.218 [main] INFO tc.postgres:16 -- Container postgres:16 is starting: 7840999bcb49eec0e6258815388d4af017fb0d87bf4a4a34ce3b50e9e36e9518
+12:43:09.376 [main] INFO tc.postgres:16 -- Container postgres:16 started in PT1.2396659S
+12:43:09.377 [main] INFO tc.postgres:16 -- Container is started (JDBC URL: jdbc:postgresql://localhost:62644/testdb?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.14)
+
+2026-05-02T12:43:09.721-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] c.p.r.a.LoginWithPermissionsTest         : Starting LoginWithPermissionsTest using Java 25.0.2 with PID 6104 (started by chcal in E:\dev\PilarEstilo\backend)
+2026-05-02T12:43:09.723-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] c.p.r.a.LoginWithPermissionsTest         : No active profile set, falling back to 1 default profile: "default"
+2026-05-02T12:43:12.388-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-02T12:43:12.390-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-02T12:43:12.645-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 245 ms. Found 21 JPA repository interfaces.
+2026-05-02T12:43:12.662-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-02T12:43:12.663-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-05-02T12:43:12.719-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.cashregister.infrastructure.persistence.repositories.CashMovementJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.719-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.cashregister.infrastructure.persistence.repositories.CashRegisterJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.719-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.category.infrastructure.persistence.repositories.CategoryJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.719-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.customercredit.infrastructure.persistence.repositories.CreditMovementJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.customercredit.infrastructure.persistence.repositories.CustomerCreditJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.discount.infrastructure.persistence.repositories.DiscountCodeUsageJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.discount.infrastructure.persistence.repositories.DiscountJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.dispatch.infrastructure.persistence.repositories.DispatchJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.notification.infrastructure.persistence.repositories.NotificationJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.payment.infrastructure.persistence.repositories.PaymentJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiAssetJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiDraftJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiJobJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiOutputJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.720-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.product.infrastructure.persistence.repositories.ProductJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.721-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.review.infrastructure.persistence.repositories.ReviewJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.721-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.shared.rbac.infrastructure.persistence.repositories.RolePermissionJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.721-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.systemsettings.infrastructure.persistence.repositories.SystemSettingsJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.722-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.user.infrastructure.persistence.repositories.UserJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.722-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.wishlist.infrastructure.persistence.repositories.WishlistJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:12.722-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 50 ms. Found 0 Redis repository interfaces.
+2026-05-02T12:43:13.478-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-02T12:43:13.594-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@301c0aae
+2026-05-02T12:43:13.595-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-02T12:43:13.621-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:62644/testdb?loggerLevel=OFF (PostgreSQL 16.13)
+2026-05-02T12:43:13.845-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-05-02T12:43:13.849-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 41 migrations (execution time 00:00.189s)
+2026-05-02T12:43:13.867-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-05-02T12:43:13.904-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-05-02T12:43:13.919-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-05-02T12:43:13.967-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - seed"
+2026-05-02T12:43:13.989-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - categories"
+2026-05-02T12:43:14.019-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - reviews"
+2026-05-02T12:43:14.041-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - auth"
+2026-05-02T12:43:14.060-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - seed v2"
+2026-05-02T12:43:14.088-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - search"
+2026-05-02T12:43:14.113-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - product sizes"
+2026-05-02T12:43:14.131-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - wishlist"
+2026-05-02T12:43:14.151-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - chile catalog defaults"
+2026-05-02T12:43:14.184-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "11 - product images from backend media"
+2026-05-02T12:43:14.211-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "12 - user active flag"
+2026-05-02T12:43:14.229-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "13 - system settings"
+2026-05-02T12:43:14.245-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "14 - user phone"
+2026-05-02T12:43:14.263-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "15 - product list price"
+2026-05-02T12:43:14.280-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "16 - seed product list price defaults"
+2026-05-02T12:43:14.296-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "17 - notification provider settings"
+2026-05-02T12:43:14.319-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "18 - seed more products"
+2026-05-02T12:43:14.339-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "19 - wishlist share links"
+2026-05-02T12:43:14.357-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "20 - product variants"
+2026-05-02T12:43:14.375-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "21 - media storage provider settings"
+2026-05-02T12:43:14.393-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "22 - payment method settings"
+2026-05-02T12:43:14.411-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "23 - bank transfer settings and payment snapshot"
+2026-05-02T12:43:14.435-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "24 - payment gateway mercadopago settings"
+2026-05-02T12:43:14.452-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "25 - user notification channel preference"
+2026-05-02T12:43:14.476-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "26 - notification provider n8n webhook"
+2026-05-02T12:43:14.493-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "27 - notification n8n settings"
+2026-05-02T12:43:14.510-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "28 - bank transfer bank name"
+2026-05-02T12:43:14.530-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "29 - restore seed categories"
+2026-05-02T12:43:14.547-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "30 - discount code usages"
+2026-05-02T12:43:14.565-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "31 - discount user assignment and notifications"
+2026-05-02T12:43:14.588-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "32 - category featured"
+2026-05-02T12:43:14.602-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "33 - user avatar"
+2026-05-02T12:43:14.618-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "34 - user avatar manually set"
+2026-05-02T12:43:14.632-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "35 - worker vigency"
+2026-05-02T12:43:14.646-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "36 - role permissions"
+2026-05-02T12:43:14.664-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "37 - seed role permissions"
+2026-05-02T12:43:14.681-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "38 - cash register"
+2026-05-02T12:43:14.704-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "39 - dispatches"
+2026-05-02T12:43:14.726-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "40 - product ai pipeline"
+2026-05-02T12:43:14.760-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "41 - product ai infer form defaults"
+2026-05-02T12:43:14.777-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 41 migrations to schema "public", now at version v41 (execution time 00:00.352s)
+2026-05-02T12:43:14.898-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-02T12:43:14.938-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.49.Final
+2026-05-02T12:43:14.965-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-02T12:43:15.058-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-02T12:43:15.122-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.13
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-02T12:43:16.031-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-02T12:43:16.073-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-02T12:43:16.431-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by io.opentelemetry.internal.shaded.jctools.util.UnsafeAccess (file:/C:/Users/chcal/.m2/repository/io/opentelemetry/opentelemetry-sdk-trace/1.49.0/opentelemetry-sdk-trace-1.49.0.jar)
+WARNING: Please consider reporting this to the maintainers of class io.opentelemetry.internal.shaded.jctools.util.UnsafeAccess
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+2026-05-02T12:43:18.686-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/api/actuator'
+2026-05-02T12:43:18.738-04:00  WARN 6104 --- [pilar-estilo-backend] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 83e56c06-6fcc-4f1c-b97a-0867e8155af5
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-05-02T12:43:18.748-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-05-02T12:43:19.368-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] c.p.r.a.LoginWithPermissionsTest         : Started LoginWithPermissionsTest in 9.964 seconds (process running for 15.649)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.58 s -- in com.pilarestilo.rbac.application.LoginWithPermissionsTest
+[INFO] Running com.pilarestilo.rbac.domain.RolePermissionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.pilarestilo.rbac.domain.RolePermissionTest
+[INFO] Running com.pilarestilo.rbac.infrastructure.RolePermissionRepositoryAdapterTest
+2026-05-02T12:43:20.027-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.pilarestilo.rbac.infrastructure.RolePermissionRepositoryAdapterTest]: RolePermissionRepositoryAdapterTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-05-02T12:43:20.058-04:00  WARN 6104 --- [pilar-estilo-backend] [   scheduling-1] com.zaxxer.hikari.pool.ProxyConnection   : HikariPool-1 - Connection org.postgresql.jdbc.PgConnection@301c0aae marked as broken because of SQLSTATE(08006), ErrorCode(0)
+
+org.postgresql.util.PSQLException: An I/O error occurred while sending to the backend.
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:456) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:526) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:436) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgPreparedStatement.executeWithFlags(PgPreparedStatement.java:196) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgPreparedStatement.executeQuery(PgPreparedStatement.java:139) ~[postgresql-42.7.10.jar:42.7.10]
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52) ~[HikariCP-6.3.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java) ~[HikariCP-6.3.3.jar:na]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.executeQuery(DeferredResultSetAccess.java:251) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.getResultSet(DeferredResultSetAccess.java:172) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.<init>(JdbcValuesResultSetImpl.java:74) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.resolveJdbcValuesSource(JdbcSelectExecutorStandardImpl.java:355) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.doExecuteQuery(JdbcSelectExecutorStandardImpl.java:137) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.executeQuery(JdbcSelectExecutorStandardImpl.java:102) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.executeQuery(JdbcSelectExecutor.java:91) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:165) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.lambda$new$1(ConcreteSqmSelectQueryPlan.java:149) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.withCacheableSqmInterpretation(ConcreteSqmSelectQueryPlan.java:439) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.performList(ConcreteSqmSelectQueryPlan.java:359) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.QuerySqmImpl.doList(QuerySqmImpl.java:364) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.spi.AbstractSelectionQuery.list(AbstractSelectionQuery.java:143) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.Query.getResultList(Query.java:120) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.springframework.data.jpa.repository.query.JpaQueryExecution$CollectionExecution.doExecute(JpaQueryExecution.java:132) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.JpaQueryExecution.execute(JpaQueryExecution.java:95) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.AbstractJpaQuery.doExecute(AbstractJpaQuery.java:160) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.AbstractJpaQuery.execute(AbstractJpaQuery.java:148) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.doInvoke(RepositoryMethodInvoker.java:170) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.invoke(RepositoryMethodInvoker.java:158) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.doInvoke(QueryExecutorMethodInterceptor.java:170) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.invoke(QueryExecutorMethodInterceptor.java:149) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.data.projection.DefaultMethodInvokingMethodInterceptor.invoke(DefaultMethodInvokingMethodInterceptor.java:69) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:138) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.data.jpa.repository.support.CrudMethodMetadataPostProcessor$CrudMethodMetadataPopulatingMethodInterceptor.invoke(CrudMethodMetadataPostProcessor.java:136) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.2.18.jar:6.2.18]
+	at jdk.proxy2/jdk.proxy2.$Proxy238.findDuePending(Unknown Source) ~[na:na]
+	at com.pilarestilo.productai.application.ProductAiService.processDueJobs(ProductAiService.java:382) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728) ~[spring-aop-6.2.18.jar:6.2.18]
+	at com.pilarestilo.productai.application.ProductAiService$$SpringCGLIB$$0.processDueJobs(<generated>) ~[classes/:na]
+	at com.pilarestilo.productai.infrastructure.jobs.ProductAiJobScheduler.run(ProductAiJobScheduler.java:22) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at io.micrometer.observation.Observation.observe(Observation.java:498) ~[micrometer-observation-1.15.11.jar:1.15.11]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:87) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.concurrent.ReschedulingRunnable.run(ReschedulingRunnable.java:96) ~[spring-context-6.2.18.jar:6.2.18]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: java.net.SocketException: Se ha anulado una conexión establecida por el software en su equipo host.
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:57) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.tryWrite(NioSocketImpl.java:402) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.implWrite(NioSocketImpl.java:418) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.write(NioSocketImpl.java:448) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl$2.write(NioSocketImpl.java:821) ~[na:na]
+	at java.base/java.net.Socket$SocketOutputStream.implWrite(Socket.java:1086) ~[na:na]
+	at java.base/java.net.Socket$SocketOutputStream.write(Socket.java:1076) ~[na:na]
+	at org.postgresql.util.internal.PgBufferedOutputStream.flushBuffer(PgBufferedOutputStream.java:41) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.util.internal.PgBufferedOutputStream.flush(PgBufferedOutputStream.java:48) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.PGStream.flush(PGStream.java:708) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.sendSync(QueryExecutorImpl.java:1678) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:427) ~[postgresql-42.7.10.jar:42.7.10]
+	... 67 common frames omitted
+
+2026-05-02T12:43:20.065-04:00  WARN 6104 --- [pilar-estilo-backend] [   scheduling-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 0, SQLState: 08006
+2026-05-02T12:43:20.065-04:00 ERROR 6104 --- [pilar-estilo-backend] [   scheduling-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : An I/O error occurred while sending to the backend.
+2026-05-02T12:43:20.077-04:00 ERROR 6104 --- [pilar-estilo-backend] [   scheduling-1] o.s.t.i.TransactionInterceptor           : Application exception overridden by rollback exception
+
+org.springframework.dao.DataAccessResourceFailureException: JDBC exception executing SQL [select paje1_0.id,paje1_0.attempt,paje1_0.created_at,paje1_0.draft_id,paje1_0.error_code,paje1_0.error_message,paje1_0.finished_at,paje1_0.max_attempts,paje1_0.next_retry_at,paje1_0.progress,paje1_0.started_at,paje1_0.status,paje1_0.updated_at from product_ai_jobs paje1_0 where paje1_0.status='PENDING' and (paje1_0.next_retry_at is null or paje1_0.next_retry_at<=?) order by paje1_0.created_at fetch first ? rows only] [An I/O error occurred while sending to the backend.] [n/a]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.convertHibernateAccessException(HibernateJpaDialect.java:278) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.convertHibernateAccessException(HibernateJpaDialect.java:256) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.translateExceptionIfPossible(HibernateJpaDialect.java:241) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.translateExceptionIfPossible(AbstractEntityManagerFactoryBean.java:560) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.dao.support.ChainedPersistenceExceptionTranslator.translateExceptionIfPossible(ChainedPersistenceExceptionTranslator.java:61) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.dao.support.DataAccessUtils.translateIfNecessary(DataAccessUtils.java:343) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:160) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.data.jpa.repository.support.CrudMethodMetadataPostProcessor$CrudMethodMetadataPopulatingMethodInterceptor.invoke(CrudMethodMetadataPostProcessor.java:136) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.2.18.jar:6.2.18]
+	at jdk.proxy2/jdk.proxy2.$Proxy238.findDuePending(Unknown Source) ~[na:na]
+	at com.pilarestilo.productai.application.ProductAiService.processDueJobs(ProductAiService.java:382) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728) ~[spring-aop-6.2.18.jar:6.2.18]
+	at com.pilarestilo.productai.application.ProductAiService$$SpringCGLIB$$0.processDueJobs(<generated>) ~[classes/:na]
+	at com.pilarestilo.productai.infrastructure.jobs.ProductAiJobScheduler.run(ProductAiJobScheduler.java:22) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at io.micrometer.observation.Observation.observe(Observation.java:498) ~[micrometer-observation-1.15.11.jar:1.15.11]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:87) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.concurrent.ReschedulingRunnable.run(ReschedulingRunnable.java:96) ~[spring-context-6.2.18.jar:6.2.18]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: org.hibernate.exception.JDBCConnectionException: JDBC exception executing SQL [select paje1_0.id,paje1_0.attempt,paje1_0.created_at,paje1_0.draft_id,paje1_0.error_code,paje1_0.error_message,paje1_0.finished_at,paje1_0.max_attempts,paje1_0.next_retry_at,paje1_0.progress,paje1_0.started_at,paje1_0.status,paje1_0.updated_at from product_ai_jobs paje1_0 where paje1_0.status='PENDING' and (paje1_0.next_retry_at is null or paje1_0.next_retry_at<=?) order by paje1_0.created_at fetch first ? rows only] [An I/O error occurred while sending to the backend.] [n/a]
+	at org.hibernate.exception.internal.SQLStateConversionDelegate.convert(SQLStateConversionDelegate.java:100) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.exception.internal.StandardSQLExceptionConverter.convert(StandardSQLExceptionConverter.java:58) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExceptionHelper.java:108) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.engine.jdbc.spi.SqlExceptionHelper.convert(SqlExceptionHelper.java:94) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.executeQuery(DeferredResultSetAccess.java:269) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.getResultSet(DeferredResultSetAccess.java:172) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.<init>(JdbcValuesResultSetImpl.java:74) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.resolveJdbcValuesSource(JdbcSelectExecutorStandardImpl.java:355) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.doExecuteQuery(JdbcSelectExecutorStandardImpl.java:137) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.executeQuery(JdbcSelectExecutorStandardImpl.java:102) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.executeQuery(JdbcSelectExecutor.java:91) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:165) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.lambda$new$1(ConcreteSqmSelectQueryPlan.java:149) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.withCacheableSqmInterpretation(ConcreteSqmSelectQueryPlan.java:439) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.performList(ConcreteSqmSelectQueryPlan.java:359) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.sqm.internal.QuerySqmImpl.doList(QuerySqmImpl.java:364) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.spi.AbstractSelectionQuery.list(AbstractSelectionQuery.java:143) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.query.Query.getResultList(Query.java:120) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.springframework.data.jpa.repository.query.JpaQueryExecution$CollectionExecution.doExecute(JpaQueryExecution.java:132) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.JpaQueryExecution.execute(JpaQueryExecution.java:95) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.AbstractJpaQuery.doExecute(AbstractJpaQuery.java:160) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.jpa.repository.query.AbstractJpaQuery.execute(AbstractJpaQuery.java:148) ~[spring-data-jpa-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.doInvoke(RepositoryMethodInvoker.java:170) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.invoke(RepositoryMethodInvoker.java:158) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.doInvoke(QueryExecutorMethodInterceptor.java:170) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.invoke(QueryExecutorMethodInterceptor.java:149) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.data.projection.DefaultMethodInvokingMethodInterceptor.invoke(DefaultMethodInvokingMethodInterceptor.java:69) ~[spring-data-commons-3.5.11.jar:3.5.11]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:380) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:138) ~[spring-tx-6.2.18.jar:6.2.18]
+	... 32 common frames omitted
+Caused by: org.postgresql.util.PSQLException: An I/O error occurred while sending to the backend.
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:456) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:526) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:436) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgPreparedStatement.executeWithFlags(PgPreparedStatement.java:196) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.jdbc.PgPreparedStatement.executeQuery(PgPreparedStatement.java:139) ~[postgresql-42.7.10.jar:42.7.10]
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52) ~[HikariCP-6.3.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java) ~[HikariCP-6.3.3.jar:na]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.executeQuery(DeferredResultSetAccess.java:251) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	... 60 common frames omitted
+Caused by: java.net.SocketException: Se ha anulado una conexión establecida por el software en su equipo host.
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:57) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.tryWrite(NioSocketImpl.java:402) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.implWrite(NioSocketImpl.java:418) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.write(NioSocketImpl.java:448) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl$2.write(NioSocketImpl.java:821) ~[na:na]
+	at java.base/java.net.Socket$SocketOutputStream.implWrite(Socket.java:1086) ~[na:na]
+	at java.base/java.net.Socket$SocketOutputStream.write(Socket.java:1076) ~[na:na]
+	at org.postgresql.util.internal.PgBufferedOutputStream.flushBuffer(PgBufferedOutputStream.java:41) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.util.internal.PgBufferedOutputStream.flush(PgBufferedOutputStream.java:48) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.PGStream.flush(PGStream.java:708) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.sendSync(QueryExecutorImpl.java:1678) ~[postgresql-42.7.10.jar:42.7.10]
+	at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:427) ~[postgresql-42.7.10.jar:42.7.10]
+	... 67 common frames omitted
+
+2026-05-02T12:43:20.092-04:00 ERROR 6104 --- [pilar-estilo-backend] [   scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+org.springframework.orm.jpa.JpaSystemException: Unable to rollback against JDBC Connection
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.convertHibernateAccessException(HibernateJpaDialect.java:348) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.convertHibernateAccessException(HibernateJpaDialect.java:256) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.vendor.HibernateJpaDialect.translateExceptionIfPossible(HibernateJpaDialect.java:241) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.orm.jpa.JpaTransactionManager.doRollback(JpaTransactionManager.java:594) ~[spring-orm-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.processRollback(AbstractPlatformTransactionManager.java:897) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.rollback(AbstractPlatformTransactionManager.java:866) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.completeTransactionAfterThrowing(TransactionAspectSupport.java:716) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:384) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.18.jar:6.2.18]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728) ~[spring-aop-6.2.18.jar:6.2.18]
+	at com.pilarestilo.productai.application.ProductAiService$$SpringCGLIB$$0.processDueJobs(<generated>) ~[classes/:na]
+	at com.pilarestilo.productai.infrastructure.jobs.ProductAiJobScheduler.run(ProductAiJobScheduler.java:22) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at io.micrometer.observation.Observation.observe(Observation.java:498) ~[micrometer-observation-1.15.11.jar:1.15.11]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.config.Task$OutcomeTrackingRunnable.run(Task.java:87) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.2.18.jar:6.2.18]
+	at org.springframework.scheduling.concurrent.ReschedulingRunnable.run(ReschedulingRunnable.java:96) ~[spring-context-6.2.18.jar:6.2.18]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:309) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1474) ~[na:na]
+Caused by: org.hibernate.TransactionException: Unable to rollback against JDBC Connection
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.rollback(AbstractLogicalConnectionImplementor.java:137) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.rollback(JdbcResourceLocalTransactionCoordinatorImpl.java:289) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.hibernate.engine.transaction.internal.TransactionImpl.rollback(TransactionImpl.java:142) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	at org.springframework.orm.jpa.JpaTransactionManager.doRollback(JpaTransactionManager.java:590) ~[spring-orm-6.2.18.jar:6.2.18]
+	... 24 common frames omitted
+Caused by: java.sql.SQLException: Connection is closed
+	at com.zaxxer.hikari.pool.ProxyConnection$ClosedConnection.lambda$getClosedConnection$0(ProxyConnection.java:562) ~[HikariCP-6.3.3.jar:na]
+	at jdk.proxy3/jdk.proxy3.$Proxy184.rollback(Unknown Source) ~[na:na]
+	at com.zaxxer.hikari.pool.ProxyConnection.rollback(ProxyConnection.java:386) ~[HikariCP-6.3.3.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyConnection.rollback(HikariProxyConnection.java) ~[HikariCP-6.3.3.jar:na]
+	at org.hibernate.resource.jdbc.internal.AbstractLogicalConnectionImplementor.rollback(AbstractLogicalConnectionImplementor.java:127) ~[hibernate-core-6.6.49.Final.jar:6.6.49.Final]
+	... 27 common frames omitted
+
+2026-05-02T12:43:20.120-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.pilarestilo.PilarEstiloApplication for test class com.pilarestilo.rbac.infrastructure.RolePermissionRepositoryAdapterTest
+2026-05-02T12:43:20.123-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] tc.postgres:16                           : Creating container for image: postgres:16
+2026-05-02T12:43:20.227-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] tc.postgres:16                           : Container postgres:16 is starting: 8c2474b54c39bedeebbb5ed1bcc59152cc9038283a025422ded969a14bcc8920
+2026-05-02T12:43:21.503-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] tc.postgres:16                           : Container postgres:16 started in PT1.3800758S
+2026-05-02T12:43:21.503-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] tc.postgres:16                           : Container is started (JDBC URL: jdbc:postgresql://localhost:50199/testdb?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::               (v3.5.14)
+
+2026-05-02T12:43:21.524-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .r.i.RolePermissionRepositoryAdapterTest : Starting RolePermissionRepositoryAdapterTest using Java 25.0.2 with PID 6104 (started by chcal in E:\dev\PilarEstilo\backend)
+2026-05-02T12:43:21.524-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .r.i.RolePermissionRepositoryAdapterTest : No active profile set, falling back to 1 default profile: "default"
+2026-05-02T12:43:21.852-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-02T12:43:21.853-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-02T12:43:21.961-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 106 ms. Found 21 JPA repository interfaces.
+2026-05-02T12:43:21.962-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-02T12:43:21.963-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-05-02T12:43:22.002-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.cashregister.infrastructure.persistence.repositories.CashMovementJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.002-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.cashregister.infrastructure.persistence.repositories.CashRegisterJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.002-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.category.infrastructure.persistence.repositories.CategoryJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.002-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.customercredit.infrastructure.persistence.repositories.CreditMovementJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.customercredit.infrastructure.persistence.repositories.CustomerCreditJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.discount.infrastructure.persistence.repositories.DiscountCodeUsageJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.discount.infrastructure.persistence.repositories.DiscountJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.dispatch.infrastructure.persistence.repositories.DispatchJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.notification.infrastructure.persistence.repositories.NotificationJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.payment.infrastructure.persistence.repositories.PaymentJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiAssetJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiDraftJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiJobJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.productai.infrastructure.persistence.repositories.ProductAiOutputJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.product.infrastructure.persistence.repositories.ProductJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.review.infrastructure.persistence.repositories.ReviewJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.shared.rbac.infrastructure.persistence.repositories.RolePermissionJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.systemsettings.infrastructure.persistence.repositories.SystemSettingsJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.user.infrastructure.persistence.repositories.UserJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.003-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.pilarestilo.wishlist.infrastructure.persistence.repositories.WishlistJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-02T12:43:22.004-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 39 ms. Found 0 Redis repository interfaces.
+2026-05-02T12:43:22.096-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-05-02T12:43:22.114-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@367f761b
+2026-05-02T12:43:22.115-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-05-02T12:43:22.117-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:50199/testdb?loggerLevel=OFF (PostgreSQL 16.13)
+2026-05-02T12:43:22.147-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-05-02T12:43:22.148-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 41 migrations (execution time 00:00.018s)
+2026-05-02T12:43:22.161-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-05-02T12:43:22.196-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-05-02T12:43:22.202-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-05-02T12:43:22.242-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - seed"
+2026-05-02T12:43:22.266-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - categories"
+2026-05-02T12:43:22.293-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - reviews"
+2026-05-02T12:43:22.317-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - auth"
+2026-05-02T12:43:22.335-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - seed v2"
+2026-05-02T12:43:22.366-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - search"
+2026-05-02T12:43:22.397-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - product sizes"
+2026-05-02T12:43:22.420-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - wishlist"
+2026-05-02T12:43:22.440-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - chile catalog defaults"
+2026-05-02T12:43:22.472-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "11 - product images from backend media"
+2026-05-02T12:43:22.500-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "12 - user active flag"
+2026-05-02T12:43:22.519-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "13 - system settings"
+2026-05-02T12:43:22.542-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "14 - user phone"
+2026-05-02T12:43:22.562-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "15 - product list price"
+2026-05-02T12:43:22.583-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "16 - seed product list price defaults"
+2026-05-02T12:43:22.602-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "17 - notification provider settings"
+2026-05-02T12:43:22.626-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "18 - seed more products"
+2026-05-02T12:43:22.645-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "19 - wishlist share links"
+2026-05-02T12:43:22.665-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "20 - product variants"
+2026-05-02T12:43:22.688-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "21 - media storage provider settings"
+2026-05-02T12:43:22.711-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "22 - payment method settings"
+2026-05-02T12:43:22.732-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "23 - bank transfer settings and payment snapshot"
+2026-05-02T12:43:22.758-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "24 - payment gateway mercadopago settings"
+2026-05-02T12:43:22.777-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "25 - user notification channel preference"
+2026-05-02T12:43:22.797-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "26 - notification provider n8n webhook"
+2026-05-02T12:43:22.819-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "27 - notification n8n settings"
+2026-05-02T12:43:22.838-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "28 - bank transfer bank name"
+2026-05-02T12:43:22.864-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "29 - restore seed categories"
+2026-05-02T12:43:22.885-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "30 - discount code usages"
+2026-05-02T12:43:22.909-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "31 - discount user assignment and notifications"
+2026-05-02T12:43:22.935-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "32 - category featured"
+2026-05-02T12:43:22.953-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "33 - user avatar"
+2026-05-02T12:43:22.970-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "34 - user avatar manually set"
+2026-05-02T12:43:22.988-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "35 - worker vigency"
+2026-05-02T12:43:23.010-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "36 - role permissions"
+2026-05-02T12:43:23.031-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "37 - seed role permissions"
+2026-05-02T12:43:23.047-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "38 - cash register"
+2026-05-02T12:43:23.068-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "39 - dispatches"
+2026-05-02T12:43:23.088-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "40 - product ai pipeline"
+2026-05-02T12:43:23.118-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "41 - product ai infer form defaults"
+2026-05-02T12:43:23.129-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 41 migrations to schema "public", now at version v41 (execution time 00:00.392s)
+2026-05-02T12:43:23.179-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-02T12:43:23.180-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-02T12:43:23.187-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-02T12:43:23.194-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 16.13
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-02T12:43:23.307-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-02T12:43:23.327-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-02T12:43:23.854-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/api/actuator'
+2026-05-02T12:43:23.866-04:00  WARN 6104 --- [pilar-estilo-backend] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: dc188745-2a8f-4e5f-898a-be1c1a39f63f
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-05-02T12:43:23.867-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-05-02T12:43:23.994-04:00  INFO 6104 --- [pilar-estilo-backend] [           main] .r.i.RolePermissionRepositoryAdapterTest : Started RolePermissionRepositoryAdapterTest in 2.489 seconds (process running for 20.275)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.357 s -- in com.pilarestilo.rbac.infrastructure.RolePermissionRepositoryAdapterTest
+[INFO] Running com.pilarestilo.shared.application.MoneyTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.pilarestilo.shared.application.MoneyTest
+[INFO] Running com.pilarestilo.shared.infrastructure.adapters.LocalFileStorageAdapterTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in com.pilarestilo.shared.infrastructure.adapters.LocalFileStorageAdapterTest
+[INFO] Running com.pilarestilo.shared.infrastructure.services.MediaStorageServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.319 s -- in com.pilarestilo.shared.infrastructure.services.MediaStorageServiceTest
+[INFO] Running com.pilarestilo.user.domain.UserVigencyTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.pilarestilo.user.domain.UserVigencyTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 93, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  32.110 s
+[INFO] Finished at: 2026-05-02T12:43:25-04:00
+[INFO] ------------------------------------------------------------------------
