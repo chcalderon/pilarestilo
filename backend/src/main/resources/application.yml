@@ -174,25 +174,6 @@ app:
       api-key: ${APP_PRODUCT_AI_OPENAI_API_KEY:}
       model: ${APP_PRODUCT_AI_OPENAI_MODEL:gpt-image-1}
       timeout-ms: ${APP_PRODUCT_AI_TIMEOUT_MS:180000}
-    ollama:
-      enabled: ${APP_PRODUCT_AI_OLLAMA_ENABLED:true}
-      base-url: ${APP_PRODUCT_AI_OLLAMA_BASE_URL:http://localhost:11434/api}
-      model: ${APP_PRODUCT_AI_OLLAMA_MODEL:moondream:latest}
-      system-prompt: ${APP_PRODUCT_AI_OLLAMA_SYSTEM_PROMPT:}
-      style-hint: ${APP_PRODUCT_AI_OLLAMA_STYLE_HINT:boutique elegante, lujo accesible, segunda mano premium}
-      keep-alive: ${APP_PRODUCT_AI_OLLAMA_KEEP_ALIVE:45m}
-      num-predict: ${APP_PRODUCT_AI_OLLAMA_NUM_PREDICT:220}
-      num-ctx: ${APP_PRODUCT_AI_OLLAMA_NUM_CTX:2048}
-      temperature: ${APP_PRODUCT_AI_OLLAMA_TEMPERATURE:0.2}
-      infer-max-dimension: ${APP_PRODUCT_AI_OLLAMA_INFER_MAX_DIMENSION:1024}
-      infer-jpeg-quality: ${APP_PRODUCT_AI_OLLAMA_INFER_JPEG_QUALITY:0.82}
-      quality-fallback-enabled: ${APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_ENABLED:false}
-      quality-fallback-model: ${APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL:moondream:latest}
-      validate-on-startup: ${APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP:true}
-      warmup-on-startup: ${APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP:true}
-      warmup-blocking-on-startup: ${APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP:true}
-      warmup-timeout-ms: ${APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS:300000}
-      fail-fast: ${APP_PRODUCT_AI_OLLAMA_FAIL_FAST:false}
 
 server:
   port: 8080

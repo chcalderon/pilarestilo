@@ -83,7 +83,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [aiRunning, setAiRunning] = useState(false);
   const [aiTransformRunning, setAiTransformRunning] = useState(false);
   const [aiInfo, setAiInfo] = useState('');
-  const [aiTransformProvider, setAiTransformProvider] = useState<'OPENAI' | 'OLLAMA'>('OPENAI');
   const [aiTransformPrompt, setAiTransformPrompt] = useState(DEFAULT_TRANSFORM_PROMPT);
   const [aiTransformPreviewUrl, setAiTransformPreviewUrl] = useState('');
   const [aiInferDefaults, setAiInferDefaults] = useState<{
@@ -174,7 +173,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setAiInfo('');
     setAiRunning(false);
     setAiTransformRunning(false);
-    setAiTransformProvider('OPENAI');
     setAiTransformPrompt(DEFAULT_TRANSFORM_PROMPT);
     setAiTransformPreviewUrl('');
   }, [product]);
@@ -339,10 +337,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     try {
       const file = await resolveImageFileForAi();
       const inference = await inferSingleProductAi(token, file, form.brand.trim() || aiInferDefaults.brand);
-      if (inference.engine === 'ollama-fallback') {
-        const reason = (inference.fallbackReason ?? 'unknown').trim();
-        throw new Error(`Inferencia IA en fallback: ${reason}. No se aplicaron cambios al formulario.`);
-      }
       const suggestedBasePrice = inferSuggestedPriceFromCopy(
         inference.title ?? '',
         inference.description ?? '',
@@ -366,7 +360,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               : String(inferSuggestedListPrice(suggestedBasePrice, aiInferDefaults.listMultiplier)),
         };
       });
-      setAiInfo(`IA completada (${inference.engine}). Texto sugerido aplicado; revisa y guarda manualmente.`);
+      setAiInfo('IA completada (OpenAI). Texto sugerido aplicado; revisa y guarda manualmente.');
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'No se pudo procesar la imagen con IA');
     } finally {
@@ -385,7 +379,6 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     try {
       const file = await resolveImageFileForAi();
       const transformed = await transformSingleProductAiImage(token, file, {
-        provider: aiTransformProvider,
         prompt: aiTransformPrompt,
         brandHint: form.brand.trim() || undefined,
       });
@@ -657,8 +650,11 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               />
               <span className="font-sans text-sm text-[#1A1A1A]">Usar nuevo flujo IA (1 imagen)</span>
             </label>
+            <p className="inline-flex w-fit items-center rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-1 font-sans text-[0.62rem] font-medium tracking-[0.1em] uppercase text-emerald-700">
+              OpenAI Only
+            </p>
             <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
-              Este flujo sugiere texto (titulo/descripcion/prompt) para este producto y no dispara n8n. La transformacion de imagen + campanas queda en Publicaciones.
+              Este flujo sugiere texto y transforma imagen para este producto con OpenAI. Publicaciones reutiliza el mismo pipeline para mantener consistencia de resultados.
             </p>
             {useAiAssist && (
               <div className="space-y-2">
@@ -672,27 +668,14 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
                 </button>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-1">
-                    <label className={labelClass + ' mb-1'}>Proveedor imagen IA</label>
-                    <select
-                      className={inputClass}
-                      value={aiTransformProvider}
-                      onChange={(e) => setAiTransformProvider(e.target.value as 'OPENAI' | 'OLLAMA')}
-                    >
-                      <option value="OPENAI">OpenAI</option>
-                      <option value="OLLAMA">Ollama (experimental)</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelClass + ' mb-1'}>Prompt transformacion (opcional)</label>
-                    <textarea
-                      className={inputClass + ' resize-none h-20'}
-                      value={aiTransformPrompt}
-                      onChange={(e) => setAiTransformPrompt(e.target.value)}
-                      placeholder={DEFAULT_TRANSFORM_PROMPT}
-                    />
-                  </div>
+                <div>
+                  <label className={labelClass + ' mb-1'}>Prompt transformacion (opcional)</label>
+                  <textarea
+                    className={inputClass + ' resize-none h-20'}
+                    value={aiTransformPrompt}
+                    onChange={(e) => setAiTransformPrompt(e.target.value)}
+                    placeholder={DEFAULT_TRANSFORM_PROMPT}
+                  />
                 </div>
 
                 <button

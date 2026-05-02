@@ -1738,7 +1738,7 @@ export async function inferSingleProductAi(
   });
   if (!res.ok) {
     if (res.status === 504) {
-      throw new Error('La inferencia IA excedio el tiempo de espera del gateway. En arranque frio Ollama puede tardar 2-4 minutos en cargar el modelo; reintenta luego.');
+      throw new Error('La inferencia IA excedio el tiempo de espera del gateway. Reintenta en 15-30 segundos.');
     }
     const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
     throw new Error(body.detail ?? body.message ?? `Infer failed (${res.status})`);
@@ -1750,7 +1750,7 @@ export async function transformSingleProductAiImage(
   token: string,
   file: File,
   options?: Partial<{
-    provider: 'OPENAI' | 'OLLAMA';
+    provider: 'OPENAI';
     prompt: string;
     brandHint: string;
   }>,
