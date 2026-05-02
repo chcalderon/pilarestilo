@@ -7,6 +7,16 @@ The format is inspired by Keep a Changelog.
 ## [Unreleased]
 
 ### Added
+- Product AI OpenAI client now uses separate models for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`). Legacy `APP_PRODUCT_AI_OPENAI_MODEL` kept as fallback for `image-model`.
+
+### Changed
+- Product AI engine default changed to `openai_backend`; Ollama stack removed from Docker Compose and no longer supported in the pipeline.
+- OpenAI API errors now include the message from the response body (extracted via `error.message` field) instead of just the HTTP status code, improving debuggability.
+
+### Removed
+- Ollama service and `ai` Docker Compose profile removed. Product AI text inference and image generation now exclusively use OpenAI.
+
+
 - Admin module `Publicaciones e Imagenes` at `/admin/publicaciones` with initial UX shell:
   - `Carga masiva` tab for folder-based ingestion
   - `Procesamiento IA` tab for job queue/status/retry/download actions

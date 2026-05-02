@@ -319,7 +319,9 @@ Configuracion `application.yml`:
 - `app.product-ai.engine` (`node_bridge|openai_java`)
 - `app.product-ai.openai.base-url`
 - `app.product-ai.openai.api-key`
-- `app.product-ai.openai.model`
+- `app.product-ai.openai.infer-model` (text inference, default `gpt-4.1-mini`)
+- `app.product-ai.openai.image-model` (image generation, default `gpt-image-1`)
+- `app.product-ai.openai.model` (legacy; used as fallback for `image-model` when `image-model` is blank)
 - `app.product-ai.timeout-ms`
 - `app.product-ai.max-attempts`
 - `app.product-ai.retry-backoff-ms`
@@ -337,28 +339,13 @@ Configuracion `application.yml`:
 ## 7) Variables de entorno requeridas
 
 - `APP_PRODUCT_AI_ENABLED=true`
-- `APP_PRODUCT_AI_ENGINE=ollama_backend`
+- `APP_PRODUCT_AI_ENGINE=openai_backend`
 - `APP_PRODUCT_AI_OPENAI_API_KEY=...`
 - `APP_PRODUCT_AI_OPENAI_BASE_URL=https://api.openai.com/v1`
-- `APP_PRODUCT_AI_OPENAI_MODEL=gpt-image-1`
-- `APP_PRODUCT_AI_OLLAMA_ENABLED=true`
-- `APP_PRODUCT_AI_OLLAMA_BASE_URL=http://ollama:11434/api`
-- `APP_PRODUCT_AI_OLLAMA_MODEL=moondream:latest`
-- `APP_PRODUCT_AI_OLLAMA_AUTO_PULL_MODEL=true`
-- `APP_PRODUCT_AI_OLLAMA_KEEP_ALIVE=45m`
-- `APP_PRODUCT_AI_OLLAMA_INFER_MAX_DIMENSION=1024`
-- `APP_PRODUCT_AI_OLLAMA_INFER_JPEG_QUALITY=0.82`
-- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_ENABLED=true`
-- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL=gemma3:latest`
-- `APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP=true`
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS=300000`
-- `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`
-- `OLLAMA_KEEP_ALIVE=45m`
-- `OLLAMA_NUM_PARALLEL=1`
-- `OLLAMA_MAX_LOADED_MODELS=1`
-- `APP_PRODUCT_AI_TIMEOUT_MS=60000`
+- `APP_PRODUCT_AI_OPENAI_INFER_MODEL=gpt-4.1-mini`
+- `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL=gpt-image-1`
+- `APP_PRODUCT_AI_OPENAI_MODEL=gpt-image-1` (legacy fallback para `image-model`)
+- `APP_PRODUCT_AI_TIMEOUT_MS=180000`
 - `APP_PRODUCT_AI_MAX_ATTEMPTS=3`
 - `APP_PRODUCT_AI_RETRY_BACKOFF_MS=2000`
 - `APP_PRODUCT_AI_WORKER_CRON=*/20 * * * * *`
@@ -395,23 +382,10 @@ Stack completo:
 docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 ```
 
-Ollama en red Docker (perfil `ai`):
-
-```bash
-docker compose -f infra/docker-compose.yml --env-file infra/.env --profile ai up -d ollama
-docker exec pe_ollama ollama pull moondream:latest
-# opcional (fallback de calidad):
-docker exec pe_ollama ollama pull gemma3:latest
-```
-
 Comportamiento operacional:
-- Al iniciar backend se valida conectividad de Ollama y disponibilidad del modelo configurado.
-- Si `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP=true`, se dispara warmup del modelo.
-- Si ademas `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP=true`, backend espera warmup (hasta `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS`) para reducir error por cold start en la primera inferencia.
-- En inferencia individual/productos se valida calidad minima de `title/description`; si la respuesta del modelo principal sale generica (ej: placeholders/instrucciones), backend reintenta automaticamente con `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL`.
-- Si falta servicio/modelo y `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=false`, el backend levanta, pero el worker IA queda pausado hasta que Ollama este listo.
-- Si `APP_PRODUCT_AI_OLLAMA_FAIL_FAST=true`, el backend aborta inicio cuando Ollama/modelo no estan disponibles.
-- En Docker local, el endpoint `POST /api/admin/product-ai/infer-single` usa timeout de gateway 300s para cubrir carga inicial del modelo.
+- Backend llama a OpenAI para inferencia de texto (`infer-model`) y generacion de imagen (`image-model`).
+- Errores de API OpenAI incluyen el mensaje del cuerpo de la respuesta (`error.message`) ademas del codigo HTTP.
+- El engine `node_bridge` queda disponible como modo legado opcional para proyectos externos existentes.
 
 ## 9) Checklist de pruebas
 

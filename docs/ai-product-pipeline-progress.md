@@ -68,9 +68,18 @@
   - `OLLAMA`: visible en UI como experimental, backend responde error controlado (aun no soportado por bridge actual)
 - n8n campaign workflow automation still pending (next stage).
 
+### OpenAI migration (2026-05-01)
+
+- Ollama stack eliminado del pipeline de Product AI.
+- Engine default: `openai_backend` (antes `ollama_backend`).
+- `ProductAiOpenAiClient` ahora usa modelos separados:
+  - `APP_PRODUCT_AI_OPENAI_INFER_MODEL` (default `gpt-4.1-mini`) para inferencia de texto.
+  - `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL` (default `gpt-image-1`) para generacion de imagen.
+  - `APP_PRODUCT_AI_OPENAI_MODEL` conservado como fallback legacy para `image-model`.
+- Errores de API OpenAI ahora exponen `error.message` del cuerpo de la respuesta.
+
 ### Next (PR4)
 
-1. Implementar transformacion de imagen con proveedor local (Ollama/Comfy bridge) para reemplazar el fallback experimental.
-2. Add campaign queue entity + endpoint to pass approved assets to n8n webhook.
-3. Add first automated n8n campaign flow using approved assets.
-4. Add integration test coverage for `node_bridge` happy path + error/retry path.
+1. Add campaign queue entity + endpoint to pass approved assets to n8n webhook.
+2. Add first automated n8n campaign flow using approved assets.
+3. Add integration test coverage for `openai_backend` happy path + error/retry path.

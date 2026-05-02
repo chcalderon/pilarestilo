@@ -92,7 +92,7 @@ DOMAIN=pilarestilo.com                          # your real domain
 
 # Docker Compose profiles activated by vps_deploy.sh.
 # Standard full stack (includes extracted microservices + Redis):
-DEPLOY_PROFILES=microservices,cache,ai
+DEPLOY_PROFILES=microservices,cache
 
 # Enable backend-to-microservice delegation once microservices are running:
 APP_INVENTORY_REMOTE_ENABLED=true
@@ -103,7 +103,7 @@ APP_CACHE_REDIS_ENABLED=true
 
 # Optional Kafka domain-events mode:
 # APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
-# DEPLOY_PROFILES=microservices,cache,kafka,ai
+# DEPLOY_PROFILES=microservices,cache,kafka
 
 # Dispatch auto-delivery scheduler (default: every 30 minutes):
 # APP_DISPATCH_AUTO_DELIVERY_CRON=0 */30 * * * *
@@ -162,7 +162,7 @@ The script:
 
 To override profiles for a single run without editing `.env`:
 ```bash
-DEPLOY_PROFILES=microservices,cache,ai bash scripts/deploy/vps_deploy.sh
+DEPLOY_PROFILES=microservices,cache bash scripts/deploy/vps_deploy.sh
 ```
 
 Manual profile examples (without deploy script):
@@ -175,9 +175,6 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile cache
 
 # Kafka broker for domain-events mode
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile kafka up -d
-
-# Local Ollama service for Product AI text inference
-docker compose -f infra/docker-compose.yml --env-file infra/.env --profile ai up -d ollama
 
 # Distributed tracing stack (OTel Collector + Tempo)
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d

@@ -32,19 +32,27 @@ public class ProductAiOpenAiClient {
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
     private final String apiKey;
-    private final String model;
+    private final String inferModel;
+    private final String imageModel;
 
     public ProductAiOpenAiClient(
             RestClient.Builder restClientBuilder,
             ObjectMapper objectMapper,
             @Value("${app.product-ai.openai.base-url:https://api.openai.com/v1}") String baseUrl,
             @Value("${app.product-ai.openai.api-key:}") String apiKey,
-            @Value("${app.product-ai.openai.model:gpt-image-1}") String model,
+            @Value("${app.product-ai.openai.infer-model:gpt-4.1-mini}") String inferModel,
+            @Value("${app.product-ai.openai.image-model:}") String imageModel,
+            @Value("${app.product-ai.openai.model:gpt-image-1}") String legacyModel,
             @Value("${app.product-ai.timeout-ms:180000}") long timeoutMs
     ) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey == null ? "" : apiKey.trim();
-        this.model = model == null || model.isBlank() ? "gpt-image-1" : model.trim();
+        this.inferModel = inferModel == null || inferModel.isBlank() ? "gpt-4.1-mini" : inferModel.trim();
+        String resolvedImageModel = imageModel == null ? "" : imageModel.trim();
+        if (resolvedImageModel.isBlank()) {
+            resolvedImageModel = legacyModel == null || legacyModel.isBlank() ? "gpt-image-1" : legacyModel.trim();
+        }
+        this.imageModel = resolvedImageModel;
 
         int safeTimeoutMs = (int) Math.max(10_000L, Math.min(timeoutMs, Integer.MAX_VALUE));
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
@@ -67,7 +75,7 @@ public class ProductAiOpenAiClient {
         String imageDataUrl = "data:image/jpeg;base64," + encoded;
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", model);
+        payload.put("model", inferModel);
         payload.put("input", List.of(Map.of(
                 "role", "user",
                 "content", List.of(
@@ -129,7 +137,8 @@ public class ProductAiOpenAiClient {
                     parsed == null ? "openai-non-json" : null
             );
         } catch (RestClientResponseException ex) {
-            throw new DomainException("OpenAI inferencia fallo (" + ex.getStatusCode().value() + ")");
+            String apiMessage = extractApiErrorMessage(ex);
+            throw new DomainException("OpenAI inferencia fallo (" + ex.getStatusCode().value() + "): " + apiMessage);
         } catch (DomainException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -156,7 +165,7 @@ public class ProductAiOpenAiClient {
         };
 
         MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
-        form.add("model", model);
+        form.add("model", imageModel);
         form.add("prompt", normalizedPrompt);
         form.add("size", "1024x1536");
         form.add("quality", "medium");
@@ -180,7 +189,8 @@ public class ProductAiOpenAiClient {
             }
             return Base64.getDecoder().decode(b64Node.asText("").getBytes(StandardCharsets.UTF_8));
         } catch (RestClientResponseException ex) {
-            throw new DomainException("OpenAI transformacion fallo (" + ex.getStatusCode().value() + ")");
+            String apiMessage = extractApiErrorMessage(ex);
+            throw new DomainException("OpenAI transformacion fallo (" + ex.getStatusCode().value() + "): " + apiMessage);
         } catch (DomainException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -403,6 +413,30 @@ public class ProductAiOpenAiClient {
             value = value.substring(0, 1600).trim();
         }
         return value;
+    }
+
+    private String extractApiErrorMessage(RestClientResponseException ex) {
+        if (ex == null) {
+            return "sin detalle";
+        }
+        String body = ex.getResponseBodyAsString();
+        if (body == null || body.isBlank()) {
+            return "sin detalle";
+        }
+        try {
+            JsonNode node = objectMapper.readTree(body);
+            String message = node.path("error").path("message").asText("");
+            if (!message.isBlank()) {
+                return message.trim();
+            }
+        } catch (Exception ignored) {
+            // fallback to compact body preview below
+        }
+        String compact = body.replaceAll("\\s+", " ").trim();
+        if (compact.length() > 240) {
+            return compact.substring(0, 240) + "...";
+        }
+        return compact;
     }
 
     public record InferenceResult(
