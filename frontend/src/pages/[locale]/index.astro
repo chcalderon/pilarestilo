@@ -1,4 +1,4 @@
-﻿---
+---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import ProductCard from '../../components/ProductCard.astro';
@@ -18,12 +18,13 @@ try {
 } catch {
   // fixture fallback already set
 }
+
 const token = Astro.cookies.get('pe_token')?.value;
 const categoryTree = await getCategoryTree();
 
-// Collect all featured+active nodes at any depth, with their own children as pills
 function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
   const result: typeof categoryTree = [];
+
   for (const node of nodes) {
     if (node.featured && node.active) {
       result.push(node);
@@ -31,21 +32,23 @@ function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
       result.push(...collectFeatured(node.children));
     }
   }
+
   return result;
 }
+
 const categoryTiles = collectFeatured(categoryTree);
 ---
 
 <BaseLayout title={t('nav.home', locale)} locale={locale}>
   <Hero locale={locale} />
 
-  <!-- "Recién llegados" featured products -->
   <section class="py-16 bg-pe-cream" aria-labelledby="featured-heading">
     <div class="pe-container">
       <div class="text-center mb-12">
         <span class="chapter-mark text-base">
           {locale === 'es' ? 'Novedades' : 'New arrivals'}
         </span>
+
         <h2
           id="featured-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
@@ -74,13 +77,13 @@ const categoryTiles = collectFeatured(categoryTree);
     </div>
   </section>
 
-  <!-- Category editorial tiles -->
   <section class="py-16 bg-pe-offwhite" aria-labelledby="categories-heading">
     <div class="pe-container">
       <div class="text-center mb-10">
         <span class="chapter-mark text-base">
           {locale === 'es' ? 'Explorar' : 'Explore'}
         </span>
+
         <h2
           id="categories-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
@@ -94,87 +97,99 @@ const categoryTiles = collectFeatured(categoryTree);
           {locale === 'es' ? 'Próximamente.' : 'Coming soon.'}
         </p>
       ) : (
-        <div data-category-carousel-root class="relative">
-          <div class="relative overflow-hidden">
-            <div class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2]" style="background: linear-gradient(to right, var(--pe-surface), transparent)"></div>
-            <div class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[2]" style="background: linear-gradient(to left, var(--pe-surface), transparent)"></div>
+        <div data-pe-carousel class="pe-carousel relative overflow-hidden">
+          <div
+            class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2]"
+            style="background: linear-gradient(to right, var(--pe-surface), transparent)"
+          ></div>
 
           <div
-            data-category-carousel
-            class="flex gap-4 pb-3 px-1 will-change-transform"
-            aria-label={locale === 'es' ? 'Carrusel de categorías destacadas' : 'Featured categories carousel'}
-          >
-            {categoryTiles.map((cat, i) => {
-              const name = locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs);
-              const subs = (cat.children ?? []).filter(s => s.active).slice(0, 4);
-              return (
-                <div class="group relative overflow-hidden aspect-[4/5] shrink-0 basis-[82%] sm:basis-[48%] lg:basis-[32%] xl:basis-[30%] snap-start fx-lift">
-                  {/* Full-card link for parent category */}
-                  <a href={`/${locale}/categories/${cat.slug}`} class="absolute inset-0 block z-0" tabindex="0" aria-label={name}>
-                    {cat.imageUrl ? (
-                      <img
-                        src={cat.imageUrl}
-                        alt={name}
-                        loading={i === 0 ? 'eager' : 'lazy'}
-                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                        width="600"
-                        height="750"
-                      />
-                    ) : (
-                      <div class="w-full h-full bg-pe-cream"></div>
-                    )}
-                    <div class="absolute inset-0 bg-gradient-to-t from-pe-black/75 via-pe-black/20 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                  </a>
-                  {/* Card text + subcategory pills (above the link) */}
-                  <div class="absolute bottom-0 left-0 right-0 p-5 z-10 pointer-events-none">
-                    <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light leading-tight">
-                      {name}
-                    </p>
-                    {subs.length > 0 && (
-                      <div class="flex flex-wrap gap-1.5 mt-2 pointer-events-auto">
-                        {subs.map(sub => (
-                          <a
-                            href={`/${locale}/categories/${sub.slug}`}
-                            class="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-offwhite/60 border border-pe-offwhite/22 px-2 py-0.5 hover:text-pe-offwhite hover:border-pe-offwhite/50 transition-colors"
-                          >
-                            {locale === 'es' ? sub.nameEs : (sub.nameEn || sub.nameEs)}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[2]"
+            style="background: linear-gradient(to left, var(--pe-surface), transparent)"
+          ></div>
+
+          <div class="overflow-hidden px-1 pb-3">
+            <div data-pe-carousel-track class="pe-carousel-track">
+              {categoryTiles.map((cat, i) => {
+                const name = locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs);
+                const subs = (cat.children ?? []).filter(s => s.active).slice(0, 4);
+
+                return (
+                  <article class="pe-carousel-slide group relative overflow-hidden aspect-[4/5] fx-lift">
+                    <a
+                      href={`/${locale}/categories/${cat.slug}`}
+                      class="absolute inset-0 block z-0"
+                      aria-label={name}
+                    >
+                      {cat.imageUrl ? (
+                        <img
+                          src={cat.imageUrl}
+                          alt={name}
+                          loading={i === 0 ? 'eager' : 'lazy'}
+                          class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                          width="600"
+                          height="750"
+                          draggable="false"
+                        />
+                      ) : (
+                        <div class="w-full h-full bg-pe-cream"></div>
+                      )}
+
+                      <div class="absolute inset-0 bg-gradient-to-t from-pe-black/75 via-pe-black/20 to-transparent"></div>
+                      <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                    </a>
+
+                    <div class="absolute bottom-0 left-0 right-0 p-5 z-10 pointer-events-none">
+                      <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light leading-tight">
+                        {name}
+                      </p>
+
+                      {subs.length > 0 && (
+                        <div class="flex flex-wrap gap-1.5 mt-2 pointer-events-auto">
+                          {subs.map(sub => (
+                            <a
+                              href={`/${locale}/categories/${sub.slug}`}
+                              class="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-offwhite/60 border border-pe-offwhite/22 px-2 py-0.5 hover:text-pe-offwhite hover:border-pe-offwhite/50 transition-colors"
+                            >
+                              {locale === 'es' ? sub.nameEs : (sub.nameEn || sub.nameEs)}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
 
           <div class="mt-6 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
+            <div data-pe-carousel-dots class="flex items-center gap-2">
               {categoryTiles.map((_, i) => (
                 <button
                   type="button"
-                  data-carousel-dot={i}
+                  data-pe-carousel-dot={i}
                   class={`h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'w-6' : 'w-3'}`}
                   style={i === 0 ? 'background-color: var(--pe-ink)' : 'background-color: color-mix(in srgb, var(--pe-ink) 28%, transparent)'}
                   aria-label={locale === 'es' ? `Ir a categoría ${i + 1}` : `Go to category ${i + 1}`}
                 ></button>
               ))}
             </div>
+
             <div class="flex items-center gap-2">
               <button
                 type="button"
-                data-carousel-prev
-                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+                data-pe-carousel-prev
+                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
                 aria-label={locale === 'es' ? 'Categoría anterior' : 'Previous category'}
               >
                 <span aria-hidden="true">←</span>
               </button>
+
               <button
                 type="button"
-                data-carousel-next
-                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
+                data-pe-carousel-next
+                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
                 aria-label={locale === 'es' ? 'Siguiente categoría' : 'Next category'}
               >
                 <span aria-hidden="true">→</span>
@@ -186,170 +201,366 @@ const categoryTiles = collectFeatured(categoryTree);
     </div>
   </section>
 
+  <style>
+    .pe-carousel {
+      --pe-carousel-gap: 1rem;
+      cursor: grab;
+      user-select: none;
+      touch-action: pan-y;
+    }
+
+    .pe-carousel.is-dragging {
+      cursor: grabbing;
+    }
+
+    .pe-carousel-track {
+      display: flex;
+      gap: var(--pe-carousel-gap);
+      transform: translate3d(0, 0, 0);
+      transition: transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .pe-carousel-track.is-resetting,
+    .pe-carousel-track.is-dragging {
+      transition: none;
+    }
+
+    .pe-carousel-slide {
+      flex: 0 0 82%;
+    }
+
+    .pe-carousel-slide.is-clone {
+      pointer-events: none;
+    }
+
+    @media (min-width: 640px) {
+      .pe-carousel-slide {
+        flex-basis: calc((100% - var(--pe-carousel-gap)) / 2);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .pe-carousel-slide {
+        flex-basis: calc((100% - (var(--pe-carousel-gap) * 2)) / 3);
+      }
+    }
+  </style>
+
   <script is:inline>
-    (() => {
-      const roots = document.querySelectorAll('[data-category-carousel-root]');
-      if (!roots.length) return;
+    (function () {
+      function setupCarousel(root) {
+        if (root.dataset.peCarouselReady === 'true') return;
+        root.dataset.peCarouselReady = 'true';
 
-      for (const root of roots) {
-        const track = root.querySelector('[data-category-carousel]');
-        const prev = root.querySelector('[data-carousel-prev]');
-        const next = root.querySelector('[data-carousel-next]');
-        const dots = Array.from(root.querySelectorAll('[data-carousel-dot]'));
-        if (!track || !prev || !next || dots.length === 0) continue;
+        var track = root.querySelector('[data-pe-carousel-track]');
+        var prevButton = root.querySelector('[data-pe-carousel-prev]');
+        var nextButton = root.querySelector('[data-pe-carousel-next]');
+        var dots = Array.prototype.slice.call(root.querySelectorAll('[data-pe-carousel-dot]'));
 
-        const cards = Array.from(track.children);
-        if (cards.length === 0) continue;
+        if (!track || !prevButton || !nextButton) return;
 
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const AUTOPLAY_MS = 4000;
-        let currentIdx = 0;
-        let autoplayId = null;
-        let interactionPaused = false;
+        var originalSlides = Array.prototype.slice.call(track.children);
+        var originalCount = originalSlides.length;
 
-        // Always use transform mode — scroll-based gets clamped when content fits.
-        track.style.transition = reduceMotion ? 'none' : 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)';
-        track.style.transform = 'translateX(0px)';
+        if (originalCount <= 1) {
+          prevButton.style.display = 'none';
+          nextButton.style.display = 'none';
+          return;
+        }
 
-        const getCardStep = () => {
-          const first = cards[0];
-          if (!first) return track.clientWidth;
-          const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0');
-          return first.getBoundingClientRect().width + gap;
-        };
+        var cloneCount = Math.min(3, originalCount);
+        var index = cloneCount;
+        var timer = null;
+        var autoplayMs = 4000;
+        var startX = 0;
+        var currentX = 0;
+        var dragDelta = 0;
+        var isDragging = false;
+        var hasDragged = false;
+        var pressedLink = null;
 
-        // How many cards fit in the visible area (so we don't scroll past the last "page")
-        const getVisibleCount = () => {
-          const step = getCardStep();
-          if (step <= 0) return 1;
-          return Math.max(1, Math.floor(track.clientWidth / step));
-        };
+        function buildInfiniteSlides() {
+          var firstClones = originalSlides.slice(0, cloneCount).map(function (slide) {
+            var clone = slide.cloneNode(true);
+            clone.classList.add('is-clone');
+            clone.setAttribute('aria-hidden', 'true');
+            return clone;
+          });
 
-        const getMaxIdx = () => Math.max(0, cards.length - getVisibleCount());
+          var lastClones = originalSlides.slice(-cloneCount).map(function (slide) {
+            var clone = slide.cloneNode(true);
+            clone.classList.add('is-clone');
+            clone.setAttribute('aria-hidden', 'true');
+            return clone;
+          });
 
-        const updateDots = () => {
-          dots.forEach((dot, i) => {
-            dot.classList.toggle('w-6', i === currentIdx);
-            dot.classList.toggle('w-3', i !== currentIdx);
-            dot.style.backgroundColor = i === currentIdx
+          lastClones.forEach(function (clone) {
+            track.insertBefore(clone, track.firstChild);
+          });
+
+          firstClones.forEach(function (clone) {
+            track.appendChild(clone);
+          });
+        }
+
+        function getGap() {
+          var styles = window.getComputedStyle(track);
+          return parseFloat(styles.columnGap || styles.gap || '0') || 0;
+        }
+
+        function getStep() {
+          var slide = track.children[0];
+          if (!slide) return 0;
+
+          return slide.getBoundingClientRect().width + getGap();
+        }
+
+        function getRealIndex() {
+          return (index - cloneCount + originalCount) % originalCount;
+        }
+
+        function setTransform(withTransition) {
+          var step = getStep();
+          var offset = index * step - dragDelta;
+
+          track.classList.toggle('is-resetting', !withTransition);
+          track.style.transform = 'translate3d(-' + offset + 'px, 0, 0)';
+
+          if (!withTransition) {
+            requestAnimationFrame(function () {
+              track.classList.remove('is-resetting');
+            });
+          }
+
+          updateDots();
+        }
+
+        function updateDots() {
+          var activeIndex = getRealIndex();
+
+          dots.forEach(function (dot, dotIndex) {
+            var active = dotIndex === activeIndex;
+
+            dot.classList.toggle('w-6', active);
+            dot.classList.toggle('w-3', !active);
+
+            dot.style.backgroundColor = active
               ? 'var(--pe-ink)'
               : 'color-mix(in srgb, var(--pe-ink) 28%, transparent)';
           });
-        };
+        }
 
-        const updateButtons = () => {
-          prev.disabled = currentIdx === 0;
-          next.disabled = currentIdx >= getMaxIdx();
-        };
+        function goTo(newIndex) {
+          dragDelta = 0;
+          index = newIndex;
+          setTransform(true);
+        }
 
-        const applyTransform = () => {
-          track.style.transform = `translateX(${-currentIdx * getCardStep()}px)`;
-        };
+        function next() {
+          goTo(index + 1);
+        }
 
-        const goTo = (idx) => {
-          const maxIdx = getMaxIdx();
-          // Wrap around when going past the last page
-          if (idx > maxIdx) idx = 0;
-          if (idx < 0) idx = maxIdx;
-          currentIdx = idx;
-          applyTransform();
-          updateDots();
-          updateButtons();
-        };
+        function prev() {
+          goTo(index - 1);
+        }
 
-        const goNext = () => { if (cards.length > 1) goTo(currentIdx + 1); };
-        const goPrev = () => { if (cards.length > 1) goTo(currentIdx - 1); };
+        function normalizeAfterTransition() {
+          if (index >= cloneCount + originalCount) {
+            index = cloneCount;
+            setTransform(false);
+          }
 
-        const stopAutoplay = () => {
-          if (autoplayId === null) return;
-          window.clearInterval(autoplayId);
-          autoplayId = null;
-        };
-        const startAutoplay = () => {
-          if (reduceMotion || cards.length <= 1 || interactionPaused || document.hidden) return;
+          if (index < cloneCount) {
+            index = cloneCount + originalCount - 1;
+            setTransform(false);
+          }
+        }
+
+        function stopAutoplay() {
+          if (timer !== null) {
+            window.clearInterval(timer);
+            timer = null;
+          }
+        }
+
+        function startAutoplay() {
           stopAutoplay();
-          autoplayId = window.setInterval(goNext, AUTOPLAY_MS);
-        };
-        const pauseForInteraction = () => { interactionPaused = true; stopAutoplay(); };
-        const resumeAfterInteraction = () => { interactionPaused = false; startAutoplay(); };
 
-        prev.addEventListener('click', goPrev);
-        next.addEventListener('click', goNext);
-        dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+          if (document.hidden) return;
 
-        root.addEventListener('mouseenter', pauseForInteraction);
-        root.addEventListener('mouseleave', resumeAfterInteraction);
-        root.addEventListener('focusin', pauseForInteraction);
-        root.addEventListener('focusout', () => {
-          window.requestAnimationFrame(() => {
-            if (!root.contains(document.activeElement)) resumeAfterInteraction();
+          timer = window.setInterval(function () {
+            next();
+          }, autoplayMs);
+        }
+
+        function pauseAutoplay() {
+          stopAutoplay();
+        }
+
+        function resumeAutoplay() {
+          startAutoplay();
+        }
+
+        function onPointerDown(event) {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+          isDragging = true;
+          hasDragged = false;
+          pressedLink = event.target.closest('a[href]');
+          startX = event.clientX;
+          currentX = startX;
+          dragDelta = 0;
+
+          root.classList.add('is-dragging');
+          track.classList.add('is-dragging');
+          pauseAutoplay();
+
+          if (root.setPointerCapture) {
+            root.setPointerCapture(event.pointerId);
+          }
+        }
+
+        function onPointerMove(event) {
+          if (!isDragging) return;
+
+          currentX = event.clientX;
+          dragDelta = currentX - startX;
+
+          if (Math.abs(dragDelta) > 8) {
+            hasDragged = true;
+          }
+
+          setTransform(false);
+        }
+
+        function onPointerUp(event) {
+          if (!isDragging) return;
+
+          isDragging = false;
+          root.classList.remove('is-dragging');
+          track.classList.remove('is-dragging');
+
+          if (root.releasePointerCapture) {
+            try {
+              root.releasePointerCapture(event.pointerId);
+            } catch {}
+          }
+
+          if (!hasDragged && pressedLink) {
+            var href = pressedLink.getAttribute('href');
+
+            pressedLink = null;
+            dragDelta = 0;
+            resumeAutoplay();
+
+            if (href) {
+              window.location.href = href;
+            }
+
+            return;
+          }
+
+          var threshold = Math.max(45, getStep() * 0.16);
+
+          if (dragDelta < -threshold) {
+            next();
+          } else if (dragDelta > threshold) {
+            prev();
+          } else {
+            dragDelta = 0;
+            setTransform(true);
+          }
+
+          pressedLink = null;
+          dragDelta = 0;
+          resumeAutoplay();
+        }
+
+        buildInfiniteSlides();
+
+        prevButton.addEventListener('click', function () {
+          prev();
+          startAutoplay();
+        });
+
+        nextButton.addEventListener('click', function () {
+          next();
+          startAutoplay();
+        });
+
+        dots.forEach(function (dot, dotIndex) {
+          dot.addEventListener('click', function () {
+            index = cloneCount + dotIndex;
+            dragDelta = 0;
+            setTransform(true);
+            startAutoplay();
           });
         });
 
-        // Touch swipe support
-        let touchStartX = null;
-        let touchStartIdx = 0;
-        let touchActive = false;
-        track.addEventListener('touchstart', (e) => {
-          pauseForInteraction();
-          touchStartX = e.touches[0].clientX;
-          touchStartIdx = currentIdx;
-          touchActive = true;
-          track.style.transition = 'none';
-        }, { passive: true });
-        track.addEventListener('touchmove', (e) => {
-          if (!touchActive) return;
-          const dx = e.touches[0].clientX - touchStartX;
-          const offset = -touchStartIdx * getCardStep() + dx;
-          track.style.transform = `translateX(${offset}px)`;
-        }, { passive: true });
-        track.addEventListener('touchend', (e) => {
-          if (!touchActive) return;
-          touchActive = false;
-          const dx = (e.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
-          const step = getCardStep();
-          const threshold = step * 0.25;
-          track.style.transition = reduceMotion ? 'none' : 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
-          let target = touchStartIdx;
-          if (dx <= -threshold) target = touchStartIdx + 1;
-          else if (dx >= threshold) target = touchStartIdx - 1;
-          target = Math.max(0, Math.min(getMaxIdx(), target));
-          goTo(target);
-          window.setTimeout(resumeAfterInteraction, 1200);
+        track.addEventListener('transitionend', normalizeAfterTransition);
+
+        root.addEventListener('mouseenter', pauseAutoplay);
+        root.addEventListener('mouseleave', resumeAutoplay);
+        root.addEventListener('focusin', pauseAutoplay);
+        root.addEventListener('focusout', resumeAutoplay);
+
+        root.addEventListener('pointerdown', onPointerDown);
+        root.addEventListener('pointermove', onPointerMove);
+        root.addEventListener('pointerup', onPointerUp);
+        root.addEventListener('pointercancel', onPointerUp);
+        root.addEventListener('pointerleave', function (event) {
+          if (isDragging) onPointerUp(event);
         });
 
-        document.addEventListener('visibilitychange', () => {
-          document.hidden ? stopAutoplay() : startAutoplay();
+        window.addEventListener('resize', function () {
+          dragDelta = 0;
+          setTransform(false);
         });
 
-        window.addEventListener('resize', () => {
-          // Clamp index in case viewport shrank/grew
-          if (currentIdx > getMaxIdx()) currentIdx = 0;
-          applyTransform();
-          updateButtons();
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+            stopAutoplay();
+          } else {
+            startAutoplay();
+          }
         });
 
-        updateDots();
-        updateButtons();
+        setTransform(false);
         startAutoplay();
       }
-    })();
+
+      function initCarousels() {
+        var carousels = document.querySelectorAll('[data-pe-carousel]');
+        carousels.forEach(setupCarousel);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCarousels);
+      } else {
+        initCarousels();
+      }
+
+      document.addEventListener('astro:page-load', initCarousels);
+    }());
   </script>
 
-  <!-- Brand quote band -->
   <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label="Brand statement">
     <div class="absolute inset-0 opacity-10" aria-hidden="true">
       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-pe-gold/40"></div>
     </div>
+
     <div class="pe-container relative z-10">
       <p class="pe-script text-pe-rose" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
         {locale === 'es' ? 'Lujo con Propósito' : 'Luxury with Purpose'}
       </p>
+
       <p class="font-display text-pe-offwhite/70 font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
         {locale === 'es'
           ? 'Cada pieza tiene una historia. La nuestra es de calidad, cuidado y moda consciente.'
           : 'Every piece has a story. Ours is about quality, care, and mindful fashion.'}
       </p>
+
       <div class="rose-rule mt-10 max-w-xs mx-auto" aria-hidden="true"></div>
     </div>
   </section>
