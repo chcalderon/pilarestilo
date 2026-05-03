@@ -121,7 +121,6 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   const [roleChangeError, setRoleChangeError] = useState('');
 
   useEffect(() => {
-    if (!isCustomer) return;
     getCustomerCredit(user.id, token)
       .then((c) => {
         if (!c) return;
@@ -129,7 +128,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
         setCreditCurrency(c.balanceCurrency ?? 'CLP');
       })
       .catch(() => {});
-  }, [user.id, token, isCustomer]);
+  }, [user.id, token]);
 
   const moneyFormat = (n: number) =>
     new Intl.NumberFormat('es-CL', {
@@ -489,9 +488,8 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
             )}
           </SectionCard>
 
-          {/* Crédito — clientes only */}
-          {isCustomer && (
-            <SectionCard label="Crédito">
+          {/* Crédito */}
+          <SectionCard label="Crédito">
               <div className="flex items-center justify-between">
                 <span className="text-[0.7rem] text-pe-charcoal/50 dark:text-white/40">
                   Saldo actual
@@ -535,8 +533,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
                 </button>
                 <OkBadge show={creditOk} />
               </div>
-            </SectionCard>
-          )}
+          </SectionCard>
 
           {/* Rol laboral — trabajadores only */}
           {!isCustomer && (
