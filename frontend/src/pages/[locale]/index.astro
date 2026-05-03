@@ -95,12 +95,13 @@ const categoryTiles = collectFeatured(categoryTree);
         </p>
       ) : (
         <div data-category-carousel-root class="relative">
-          <div class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[1]" style="background: linear-gradient(to right, var(--pe-surface), transparent)"></div>
-          <div class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[1]" style="background: linear-gradient(to left, var(--pe-surface), transparent)"></div>
+          <div class="relative overflow-hidden">
+            <div class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2]" style="background: linear-gradient(to right, var(--pe-surface), transparent)"></div>
+            <div class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[2]" style="background: linear-gradient(to left, var(--pe-surface), transparent)"></div>
 
           <div
             data-category-carousel
-            class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            class="flex gap-4 pb-3 px-1 will-change-transform"
             aria-label={locale === 'es' ? 'Carrusel de categorías destacadas' : 'Featured categories carousel'}
           >
             {categoryTiles.map((cat, i) => {
@@ -146,6 +147,7 @@ const categoryTiles = collectFeatured(categoryTree);
                 </div>
               );
             })}
+          </div>
           </div>
 
           <div class="mt-6 flex items-center justify-between gap-4">
@@ -204,21 +206,10 @@ const categoryTiles = collectFeatured(categoryTree);
         let currentIdx = 0;
         let autoplayId = null;
         let interactionPaused = false;
-        let useTransform = false;
 
-        // When all cards fit in the viewport, scroll is clamped to 0 and does nothing.
-        // In that case we slide the track via CSS transform instead.
-        const checkMode = () => {
-          useTransform = track.scrollWidth <= track.clientWidth + 4;
-          if (useTransform) {
-            root.style.overflow = 'hidden';
-            track.style.transition = reduceMotion ? 'none' : 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)';
-          } else {
-            root.style.overflow = '';
-            track.style.transform = '';
-            track.style.transition = '';
-          }
-        };
+        // Always use transform mode — scroll-based gets clamped when content fits.
+        track.style.transition = reduceMotion ? 'none' : 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)';
+        track.style.transform = 'translateX(0px)';
 
         const getCardStep = () => {
           const first = cards[0];
@@ -226,6 +217,15 @@ const categoryTiles = collectFeatured(categoryTree);
           const gap = parseFloat(window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0');
           return first.getBoundingClientRect().width + gap;
         };
+
+        // How many cards fit in the visible area (so we don't scroll past the last "page")
+        const getVisibleCount = () => {
+          const step = getCardStep();
+          if (step <= 0) return 1;
+          return Math.max(1, Math.floor(track.clientWidth / step));
+        };
+
+        const getMaxIdx = () => Math.max(0, cards.length - getVisibleCount());
 
         const updateDots = () => {
           dots.forEach((dot, i) => {
@@ -238,30 +238,27 @@ const categoryTiles = collectFeatured(categoryTree);
         };
 
         const updateButtons = () => {
-          if (useTransform) {
-            prev.disabled = currentIdx === 0;
-            next.disabled = currentIdx >= cards.length - 1;
-          } else {
-            const maxLeft = Math.max(track.scrollWidth - track.clientWidth, 0);
-            prev.disabled = track.scrollLeft <= 4;
-            next.disabled = track.scrollLeft >= maxLeft - 4;
-          }
+          prev.disabled = currentIdx === 0;
+          next.disabled = currentIdx >= getMaxIdx();
+        };
+
+        const applyTransform = () => {
+          track.style.transform = `translateX(${-currentIdx * getCardStep()}px)`;
         };
 
         const goTo = (idx) => {
-          currentIdx = ((idx % cards.length) + cards.length) % cards.length;
-          if (useTransform) {
-            track.style.transform = `translateX(${-currentIdx * getCardStep()}px)`;
-          } else {
-            const card = cards[currentIdx];
-            if (card) track.scrollTo({ left: card.offsetLeft, behavior: reduceMotion ? 'auto' : 'smooth' });
-          }
+          const maxIdx = getMaxIdx();
+          // Wrap around when going past the last page
+          if (idx > maxIdx) idx = 0;
+          if (idx < 0) idx = maxIdx;
+          currentIdx = idx;
+          applyTransform();
           updateDots();
           updateButtons();
         };
 
-        const goNext = () => { if (cards.length > 1) goTo((currentIdx + 1) % cards.length); };
-        const goPrev = () => { if (cards.length > 1) goTo((currentIdx - 1 + cards.length) % cards.length); };
+        const goNext = () => { if (cards.length > 1) goTo(currentIdx + 1); };
+        const goPrev = () => { if (cards.length > 1) goTo(currentIdx - 1); };
 
         const stopAutoplay = () => {
           if (autoplayId === null) return;
@@ -288,38 +285,50 @@ const categoryTiles = collectFeatured(categoryTree);
             if (!root.contains(document.activeElement)) resumeAfterInteraction();
           });
         });
-        root.addEventListener('touchstart', pauseForInteraction, { passive: true });
-        root.addEventListener('touchend', () => window.setTimeout(resumeAfterInteraction, 1200));
 
-        // Sync currentIdx from scroll position (scroll-based mode only)
-        let ticking = false;
-        track.addEventListener('scroll', () => {
-          if (useTransform || ticking) return;
-          ticking = true;
-          window.requestAnimationFrame(() => {
-            const center = track.scrollLeft + track.clientWidth / 2;
-            let bestIdx = 0, bestDist = Infinity;
-            cards.forEach((card, i) => {
-              const dist = Math.abs((card.offsetLeft + card.clientWidth / 2) - center);
-              if (dist < bestDist) { bestDist = dist; bestIdx = i; }
-            });
-            currentIdx = bestIdx;
-            updateDots();
-            updateButtons();
-            ticking = false;
-          });
+        // Touch swipe support
+        let touchStartX = null;
+        let touchStartIdx = 0;
+        let touchActive = false;
+        track.addEventListener('touchstart', (e) => {
+          pauseForInteraction();
+          touchStartX = e.touches[0].clientX;
+          touchStartIdx = currentIdx;
+          touchActive = true;
+          track.style.transition = 'none';
         }, { passive: true });
+        track.addEventListener('touchmove', (e) => {
+          if (!touchActive) return;
+          const dx = e.touches[0].clientX - touchStartX;
+          const offset = -touchStartIdx * getCardStep() + dx;
+          track.style.transform = `translateX(${offset}px)`;
+        }, { passive: true });
+        track.addEventListener('touchend', (e) => {
+          if (!touchActive) return;
+          touchActive = false;
+          const dx = (e.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
+          const step = getCardStep();
+          const threshold = step * 0.25;
+          track.style.transition = reduceMotion ? 'none' : 'transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94)';
+          let target = touchStartIdx;
+          if (dx <= -threshold) target = touchStartIdx + 1;
+          else if (dx >= threshold) target = touchStartIdx - 1;
+          target = Math.max(0, Math.min(getMaxIdx(), target));
+          goTo(target);
+          window.setTimeout(resumeAfterInteraction, 1200);
+        });
 
         document.addEventListener('visibilitychange', () => {
           document.hidden ? stopAutoplay() : startAutoplay();
         });
 
         window.addEventListener('resize', () => {
-          checkMode();
-          goTo(currentIdx);
+          // Clamp index in case viewport shrank/grew
+          if (currentIdx > getMaxIdx()) currentIdx = 0;
+          applyTransform();
+          updateButtons();
         });
 
-        checkMode();
         updateDots();
         updateButtons();
         startAutoplay();
