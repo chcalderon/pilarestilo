@@ -141,7 +141,7 @@ export default function DataTable<T>({
       )}
 
       {isMobile ? (
-        <div className="bg-pe-white border border-pe-black/6 shadow-sm divide-y divide-pe-black/6">
+        <div className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] shadow-sm divide-y divide-[var(--pe-border)]">
           {loading ? (
             <div className="py-16 text-center">
               <Loader2 size={22} className="animate-spin text-pe-rose/50 inline-block" />
@@ -199,8 +199,8 @@ export default function DataTable<T>({
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-pe-white border border-pe-black/6 shadow-sm">
-          <table className="w-full min-w-max" role="grid">
+        <div className="overflow-x-auto bg-[var(--pe-surface-card)] border border-[var(--pe-border)] shadow-sm">
+          <table className="w-full table-fixed" role="grid">
             <thead>
               <tr>
                 {selectable && (

@@ -31,27 +31,28 @@ function initials(name: string): string {
 
 function SectionCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-pe-black/8 dark:border-white/8 bg-white/60 dark:bg-white/5 p-4 space-y-3">
-      <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-white/40">{label}</p>
+    <div className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-surface-soft)] p-4 space-y-3">
+      <p className="text-[10px] tracking-widest uppercase opacity-50">{label}</p>
       {children}
     </div>
   );
 }
 
+// Uses CSS vars so it adapts to both light (data-theme='light') and dark (data-theme='dark')
 const inputCls =
-  'w-full bg-transparent border border-pe-black/12 dark:border-white/12 rounded-sm px-3 py-2 text-sm text-pe-charcoal dark:text-white/90 outline-none focus:ring-1 focus:ring-pe-black/20 dark:focus:ring-white/20 placeholder:text-pe-charcoal/30 disabled:opacity-50';
+  'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-sm px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
 
-const labelCls =
-  'text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-white/40';
+const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
 
+// --pe-ink = #1A1A1A light / #F8F4EF dark → auto-inverts for bg/text
 const btnPrimary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm bg-pe-black text-pe-cream dark:bg-pe-cream dark:text-pe-black hover:bg-pe-charcoal dark:hover:bg-white/80 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
 
 const btnSecondary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-pe-black/15 dark:border-white/15 text-pe-charcoal dark:text-white/80 hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-red-200/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
 function OkBadge({ show }: { show: boolean }) {
   if (!show) return null;
@@ -92,7 +93,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   const [pwError, setPwError] = useState('');
   const [pwOk, setPwOk] = useState(false);
 
-  // Credit (customers only)
+  // Credit
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditCurrency, setCreditCurrency] = useState('CLP');
   const [creditAmount, setCreditAmount] = useState('50000');
@@ -101,7 +102,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   const [creditError, setCreditError] = useState('');
   const [creditOk, setCreditOk] = useState(false);
 
-  // Worker role (workers only)
+  // Worker role
   const [workerRole, setWorkerRole] = useState<WorkerRole>(
     WORKER_ROLES.includes(user.role as WorkerRole) ? (user.role as WorkerRole) : WORKER_ROLES[0],
   );
@@ -292,33 +293,33 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
         onClick={onClose}
       />
 
-      {/* Drawer panel */}
-      <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] bg-[#FDFAF7] dark:bg-[#141414] shadow-2xl overflow-y-auto">
+      {/* Drawer panel — bg uses CSS var so it adapts to data-theme */}
+      <div className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-start justify-between p-5 pb-4 border-b border-pe-black/6 dark:border-white/6 shrink-0">
+        <div className="flex items-start justify-between p-5 pb-4 border-b border-[var(--pe-border)] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-pe-black dark:bg-pe-cream flex items-center justify-center text-pe-cream dark:text-pe-black font-display text-base font-medium shrink-0">
+            <div className="w-12 h-12 rounded-full bg-[var(--pe-ink)] flex items-center justify-center text-[var(--pe-surface)] font-display text-base font-medium shrink-0">
               {initials(user.fullName)}
             </div>
             <div>
-              <p className="font-display text-pe-black dark:text-white/90 text-base leading-tight">
+              <p className="font-display text-base leading-tight">
                 {user.fullName}
               </p>
-              <p className="font-sans text-[0.7rem] text-pe-charcoal/50 dark:text-white/40 mt-0.5">
+              <p className="font-sans text-[0.7rem] opacity-45 mt-0.5">
                 {user.email}
               </p>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-green-500' : 'bg-amber-500'}`}
                 />
-                <span className="text-[0.65rem] font-sans uppercase tracking-widest text-pe-charcoal/50 dark:text-white/40">
+                <span className="text-[0.65rem] font-sans uppercase tracking-widest opacity-50">
                   {active ? 'Activo' : 'Bloqueado'}
                 </span>
                 {user.createdAt && (
                   <>
-                    <span className="text-pe-charcoal/20 dark:text-white/20">·</span>
-                    <span className="text-[0.65rem] font-sans text-pe-charcoal/40 dark:text-white/30">
+                    <span className="opacity-20">·</span>
+                    <span className="text-[0.65rem] font-sans opacity-35">
                       {new Date(user.createdAt).toLocaleDateString('es-CL')}
                     </span>
                   </>
@@ -328,7 +329,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-sm text-pe-charcoal/40 hover:text-pe-black dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-sm opacity-40 hover:opacity-100 transition-opacity"
           >
             <X size={18} />
           </button>
@@ -339,7 +340,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
 
           {/* Own-account guard */}
           {isSelf && (
-            <p className="text-[0.7rem] font-sans text-pe-charcoal/50 dark:text-white/40 border border-pe-black/8 dark:border-white/8 rounded-md px-3 py-2">
+            <p className="text-[0.7rem] font-sans opacity-55 border border-[var(--pe-border)] rounded-md px-3 py-2">
               No puedes modificar tu propia cuenta desde aquí. Usa{' '}
               <a href="/es/account?tab=profile" className="underline">
                 Mi cuenta
@@ -391,10 +392,10 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
           <SectionCard label="Estado de cuenta">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-pe-charcoal dark:text-white/80">
+                <p className="text-sm">
                   {active ? 'Cuenta activa' : 'Cuenta bloqueada'}
                 </p>
-                <p className="text-[0.7rem] text-pe-charcoal/50 dark:text-white/40 mt-0.5">
+                <p className="text-[0.7rem] opacity-50 mt-0.5">
                   Bloquear impide el acceso a la cuenta
                 </p>
               </div>
@@ -405,13 +406,13 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
                 }}
                 disabled={isSelf || statusSaving}
                 aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
-                className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
-                  active ? 'bg-green-500' : 'bg-pe-black/20 dark:bg-white/20'
+                className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
+                  active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
-                    active ? 'translate-x-5' : 'translate-x-0.5'
+                  className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    active ? 'translate-x-[20px]' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -430,7 +431,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               type="button"
               onClick={() => setPwOpen((v) => !v)}
               disabled={isSelf}
-              className="flex items-center justify-between w-full text-sm text-pe-charcoal dark:text-white/80 disabled:opacity-40"
+              className="flex items-center justify-between w-full text-sm disabled:opacity-40"
             >
               <span>Restablecer contraseña</span>
               {pwOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -453,7 +454,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
                     <button
                       type="button"
                       onClick={() => setShowPw((v) => !v)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-pe-charcoal/40 hover:text-pe-charcoal"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-80"
                     >
                       {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
@@ -490,49 +491,49 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
 
           {/* Crédito */}
           <SectionCard label="Crédito">
-              <div className="flex items-center justify-between">
-                <span className="text-[0.7rem] text-pe-charcoal/50 dark:text-white/40">
-                  Saldo actual
-                </span>
-                <span className="font-display text-pe-black dark:text-white/90">
-                  {creditBalance !== null ? moneyFormat(creditBalance) : '—'}
-                </span>
-              </div>
-              <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Monto a otorgar (CLP)</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={creditAmount}
-                  onChange={(e) => {
-                    setCreditAmount(e.target.value);
-                    setCreditError('');
-                  }}
-                  className={inputCls}
-                  placeholder="50000"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Motivo</span>
-                <input
-                  type="text"
-                  value={creditReason}
-                  onChange={(e) => setCreditReason(e.target.value)}
-                  className={inputCls}
-                />
-              </label>
-              {creditError && <p className="text-[0.7rem] text-red-500">{creditError}</p>}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={saveCredit}
-                  disabled={creditSaving}
-                  className={btnPrimary}
-                >
-                  {creditSaving ? 'Otorgando...' : 'Otorgar crédito'}
-                </button>
-                <OkBadge show={creditOk} />
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[0.7rem] opacity-50">
+                Saldo actual
+              </span>
+              <span className="font-display">
+                {creditBalance !== null ? moneyFormat(creditBalance) : '—'}
+              </span>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelCls}>Monto a otorgar (CLP)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={creditAmount}
+                onChange={(e) => {
+                  setCreditAmount(e.target.value);
+                  setCreditError('');
+                }}
+                className={inputCls}
+                placeholder="50000"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={labelCls}>Motivo</span>
+              <input
+                type="text"
+                value={creditReason}
+                onChange={(e) => setCreditReason(e.target.value)}
+                className={inputCls}
+              />
+            </label>
+            {creditError && <p className="text-[0.7rem] text-red-500">{creditError}</p>}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={saveCredit}
+                disabled={creditSaving}
+                className={btnPrimary}
+              >
+                {creditSaving ? 'Otorgando...' : 'Otorgar crédito'}
+              </button>
+              <OkBadge show={creditOk} />
+            </div>
           </SectionCard>
 
           {/* Rol laboral — trabajadores only */}
@@ -540,18 +541,24 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
             <SectionCard label="Rol laboral">
               <label className="flex flex-col gap-1.5">
                 <span className={labelCls}>Rol</span>
-                <select
-                  value={workerRole}
-                  onChange={(e) => setWorkerRole(e.target.value as WorkerRole)}
-                  disabled={isSelf || roleSaving}
-                  className={inputCls}
-                >
-                  {WORKER_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={workerRole}
+                    onChange={(e) => setWorkerRole(e.target.value as WorkerRole)}
+                    disabled={isSelf || roleSaving}
+                    className={`${inputCls} appearance-none pr-8 cursor-pointer`}
+                  >
+                    {WORKER_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={14}
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40"
+                  />
+                </div>
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className={labelCls}>Inicio vigencia</span>
@@ -597,8 +604,8 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
           )}
 
           {/* Footer — zona de riesgo */}
-          <div className="border-t border-pe-black/6 dark:border-white/6 pt-4 space-y-3">
-            <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 dark:text-white/30">
+          <div className="border-t border-[var(--pe-border)] pt-4 space-y-3">
+            <p className="text-[10px] tracking-widest uppercase opacity-40">
               Zona de riesgo
             </p>
             <div className="flex flex-wrap gap-2">

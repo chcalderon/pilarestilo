@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pencil, RefreshCw, ShieldCheck, ShieldOff, Trash2, Wallet } from 'lucide-react';
+import { Pencil, RefreshCw, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 import UserEditDrawer from './UserEditDrawer';
 import {
   getAdminOrdersByCustomer,
@@ -203,6 +203,7 @@ export default function UserManagement() {
     {
       key: 'email',
       header: 'Cliente',
+      width: '220px',
       render: (row) => (
         <div className="flex flex-col">
           <span className="font-sans text-[0.78rem] text-pe-charcoal">{row.fullName}</span>
@@ -213,7 +214,7 @@ export default function UserManagement() {
     {
       key: 'status',
       header: 'Estado',
-      width: '130px',
+      width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
           row.active ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'].join(' ')}
@@ -225,7 +226,7 @@ export default function UserManagement() {
     {
       key: 'creditAvailable',
       header: 'Credito',
-      width: '130px',
+      width: '100px',
       render: (row) => {
         const m = metricsByUser[row.id];
         if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">Cargando...</span>;
@@ -235,7 +236,7 @@ export default function UserManagement() {
     {
       key: 'creditUsed',
       header: 'Uso',
-      width: '120px',
+      width: '90px',
       render: (row) => {
         const m = metricsByUser[row.id];
         if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
@@ -245,7 +246,7 @@ export default function UserManagement() {
     {
       key: 'payments',
       header: 'Pagos',
-      width: '140px',
+      width: '130px',
       render: (row) => {
         const m = metricsByUser[row.id];
         if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
@@ -259,7 +260,7 @@ export default function UserManagement() {
     {
       key: 'actions',
       header: 'Acciones',
-      width: '100%',
+      width: '150px',
       render: (row) => (
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -270,15 +271,6 @@ export default function UserManagement() {
             className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
           >
             <Pencil size={13} /> Editar
-          </button>
-          <button
-            type="button"
-            title="Gestionar crédito"
-            onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm bg-pe-black text-pe-cream hover:bg-pe-charcoal disabled:opacity-45 transition-all"
-          >
-            <Wallet size={13} /> Crédito
           </button>
           <button
             type="button"
@@ -307,6 +299,7 @@ export default function UserManagement() {
     {
       key: 'email',
       header: 'Trabajador',
+      width: '220px',
       render: (row) => (
         <div className="flex flex-col">
           <span className="font-sans text-[0.78rem] text-pe-charcoal">{row.fullName}</span>
@@ -317,13 +310,13 @@ export default function UserManagement() {
     {
       key: 'benefit',
       header: 'Beneficio',
-      width: '160px',
+      width: '140px',
       render: () => <span className="font-sans text-[0.72rem] text-pe-rose-deep">Descuento compra 10%</span>,
     },
     {
       key: 'status',
       header: 'Estado',
-      width: '130px',
+      width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
           row.active ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'].join(' ')}
@@ -335,7 +328,7 @@ export default function UserManagement() {
     {
       key: 'payments',
       header: 'Pagos',
-      width: '140px',
+      width: '130px',
       render: (row) => {
         const m = metricsByUser[row.id];
         if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
@@ -349,7 +342,7 @@ export default function UserManagement() {
     {
       key: 'actions',
       header: 'Acciones',
-      width: '100%',
+      width: '150px',
       render: (row) => (
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -395,15 +388,15 @@ export default function UserManagement() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <article className="bg-pe-white border border-pe-black/8 p-4">
+        <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
           <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Clientes</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.customers}</p>
         </article>
-        <article className="bg-pe-white border border-pe-black/8 p-4">
+        <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
           <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Trabajadores</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.workers}</p>
         </article>
-        <article className="bg-pe-white border border-pe-black/8 p-4">
+        <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
           <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Usuarios bloqueados</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.blocked}</p>
         </article>
