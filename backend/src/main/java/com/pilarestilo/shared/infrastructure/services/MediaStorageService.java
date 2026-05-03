@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.Normalizer;
@@ -27,23 +28,27 @@ public class MediaStorageService {
     private final LocalFileStorageAdapter localAdapter;
     private final S3StorageAdapter s3Adapter;
     private final SystemSettingsRepository settingsRepo;
+    private final ImageOptimizerService imageOptimizer;
 
     public MediaStorageService(LocalFileStorageAdapter localAdapter,
                                S3StorageAdapter s3Adapter,
-                               SystemSettingsRepository settingsRepo) {
+                               SystemSettingsRepository settingsRepo,
+                               ImageOptimizerService imageOptimizer) {
         this.localAdapter = localAdapter;
         this.s3Adapter = s3Adapter;
         this.settingsRepo = settingsRepo;
+        this.imageOptimizer = imageOptimizer;
     }
 
     public String store(MultipartFile file, String folder) {
-        String extension = resolveExtension(file);
-        String baseName = sanitizeBaseName(extractBaseName(file.getOriginalFilename()));
-        String filename = buildFilename(baseName, extension);
         try {
-            return activeAdapter().store(file.getInputStream(), folder, filename, file.getContentType());
+            byte[] raw = file.getBytes();
+            ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, file.getContentType());
+            String baseName = sanitizeBaseName(extractBaseName(file.getOriginalFilename()));
+            String filename = buildFilename(baseName, optimized.extension());
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
         } catch (IOException e) {
-            throw new RuntimeException("Could not read uploaded file", e);
+            throw new RuntimeException("Could not process uploaded file", e);
         }
     }
 
