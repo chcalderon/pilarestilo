@@ -14,7 +14,7 @@
 ### Stack detectado en repo
 
 - Frontend: Astro 4 + React islands + Tailwind + Zustand.
-- Backend: Java 17 + Spring Boot 3.5.x + Spring Security JWT + JPA/Hibernate + Flyway.
+- Backend: Java 25 + Spring Boot 3.5.x + Spring Security JWT + JPA/Hibernate + Flyway.
 - DB: PostgreSQL 16.
 - Storage media: Local filesystem y S3-compatible via `MediaStorageService`.
 - Mensajeria/eventos: `DomainEventPublisher` (in-process) + Kafka opcional.

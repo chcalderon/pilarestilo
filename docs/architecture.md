@@ -61,7 +61,7 @@ PilarEstilo/
 
 ### Stack
 
-- Java 17 + Spring Boot 3.5
+- Java 25 + Spring Boot 3.5
 - Spring Security + JWT filter
 - Spring Data JPA + Hibernate
 - Spring Cache abstraction with optional Redis-backed cache manager
