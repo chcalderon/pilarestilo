@@ -203,7 +203,7 @@ function CategoryRow({
         )}
 
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-          {depth === 0 && (
+          {depth < 3 && (
             <button
               onClick={() => { setCreating(node.id); setForm({ ...EMPTY_FORM }); setEditing(null); }}
               className="p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
@@ -337,18 +337,25 @@ export default function CategoryTree() {
       return;
     }
 
-    // Child level reorder — find which parent owns both
-    for (const root of tree) {
-      const childIds = root.children.map(c => c.id);
-      if (childIds.includes(activeId) && childIds.includes(overId)) {
-        const oldIdx = root.children.findIndex(c => c.id === activeId);
-        const newIdx = root.children.findIndex(c => c.id === overId);
-        const reorderedChildren = arrayMove(root.children, oldIdx, newIdx);
-        setTree(prev => prev.map(n => n.id === root.id ? { ...n, children: reorderedChildren } : n));
-        void persistReorder(reorderedChildren.map((c, i) => ({ id: c.id, sortOrder: i })));
-        return;
+    // Recursive search: find the parent whose direct children include both ids
+    function reorderInTree(nodes: CategoryTreeNode[]): CategoryTreeNode[] | null {
+      for (const node of nodes) {
+        const childIds = node.children.map(c => c.id);
+        if (childIds.includes(activeId) && childIds.includes(overId)) {
+          const oldIdx = node.children.findIndex(c => c.id === activeId);
+          const newIdx = node.children.findIndex(c => c.id === overId);
+          const reorderedChildren = arrayMove(node.children, oldIdx, newIdx);
+          void persistReorder(reorderedChildren.map((c, i) => ({ id: c.id, sortOrder: i })));
+          return nodes.map(n => n.id === node.id ? { ...n, children: reorderedChildren } : n);
+        }
+        const updated = reorderInTree(node.children);
+        if (updated) return nodes.map(n => n.id === node.id ? { ...n, children: updated } : n);
       }
+      return null;
     }
+
+    const updated = reorderInTree(tree);
+    if (updated) setTree(updated);
   }
 
   async function handleSaveEdit(id: string) {
