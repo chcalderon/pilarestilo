@@ -20,8 +20,20 @@ try {
 }
 const token = Astro.cookies.get('pe_token')?.value;
 const categoryTree = await getCategoryTree();
-// Featured root categories only; children used for subcategory pills
-const categoryTiles = categoryTree.filter(c => c.featured && c.active);
+
+// Collect all featured+active nodes at any depth, with their own children as pills
+function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
+  const result: typeof categoryTree = [];
+  for (const node of nodes) {
+    if (node.featured && node.active) {
+      result.push(node);
+    } else if (node.children?.length) {
+      result.push(...collectFeatured(node.children));
+    }
+  }
+  return result;
+}
+const categoryTiles = collectFeatured(categoryTree);
 ---
 
 <BaseLayout title={t('nav.home', locale)} locale={locale}>
