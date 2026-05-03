@@ -31,3 +31,5 @@ infra/postgres/
 # Logs
 *.log
 .worktrees/
+
+.continue/
