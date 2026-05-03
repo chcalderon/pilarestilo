@@ -9,7 +9,7 @@ Luxury online boutique for curated new and second-hand branded clothing.
 | Layer | Tech |
 |---|---|
 | Frontend | Astro 4 + React islands + Tailwind CSS |
-| Backend | Java 17 + Spring Boot 3.5 + Hexagonal Architecture |
+| Backend | Java 25 + Spring Boot 3.5 + Hexagonal Architecture |
 | Database | PostgreSQL 16 |
 | Reverse Proxy | Caddy (auto-TLS) |
 | Container | Docker Compose |

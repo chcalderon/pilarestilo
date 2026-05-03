@@ -4,7 +4,7 @@ Spring Boot 3.5 API for Pilar Estilo.
 
 ## Stack
 
-- Java 17
+- Java 25
 - Spring Boot 3.5
 - Spring Security + JWT
 - Spring Data JPA + Hibernate

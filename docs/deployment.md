@@ -424,7 +424,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile obser
 
 **Backend:**
 ```bash
-# Prerequisites: Java 17+, Maven 3.9+, PostgreSQL running locally
+# Prerequisites: Java 25+, Maven 3.9+, PostgreSQL running locally
 
 cd backend/
 mvn spring-boot:run -Dspring-boot.run.profiles=local

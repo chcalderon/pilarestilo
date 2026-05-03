@@ -10,6 +10,8 @@ target/
 *.jar
 *.war
 .mvn/wrapper/maven-wrapper.jar
+test-output.txt
+test-*.txt
 
 # Environment
 .env
