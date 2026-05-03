@@ -245,11 +245,6 @@ const categoryTiles = collectFeatured(categoryTree);
 
         const goNext = () => {
           if (cards.length <= 1) return;
-          const maxLeft = Math.max(track.scrollWidth - track.clientWidth, 0);
-          if (track.scrollLeft >= maxLeft - 4) {
-            track.scrollTo({ left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
-            return;
-          }
           const nextIdx = (getActiveIndex() + 1) % cards.length;
           scrollToIndex(nextIdx);
         };
