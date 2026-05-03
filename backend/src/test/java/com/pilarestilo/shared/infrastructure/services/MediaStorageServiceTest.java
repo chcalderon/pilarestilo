@@ -4,6 +4,7 @@ import com.pilarestilo.shared.infrastructure.adapters.LocalFileStorageAdapter;
 import com.pilarestilo.shared.infrastructure.adapters.S3StorageAdapter;
 import com.pilarestilo.systemsettings.domain.model.SystemSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,7 +21,17 @@ class MediaStorageServiceTest {
     @Mock LocalFileStorageAdapter localAdapter;
     @Mock S3StorageAdapter s3Adapter;
     @Mock SystemSettingsRepository settingsRepo;
+    @Mock ImageOptimizerService imageOptimizer;
     @InjectMocks MediaStorageService service;
+
+    private static final byte[] FAKE_BYTES = "data".getBytes();
+    private static final ImageOptimizerService.OptimizedImage OPTIMIZED =
+            new ImageOptimizerService.OptimizedImage(FAKE_BYTES, "jpg");
+
+    @BeforeEach
+    void stubOptimizer() throws Exception {
+        when(imageOptimizer.optimize(any(), anyString())).thenReturn(OPTIMIZED);
+    }
 
     @Test
     void usesLocalAdapterWhenProviderIsLocal() throws Exception {
@@ -31,10 +42,10 @@ class MediaStorageServiceTest {
         when(localAdapter.store(any(), anyString(), anyString(), anyString()))
             .thenReturn("/api/media/products/test.jpg");
 
-        var file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", "data".getBytes());
+        var file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", FAKE_BYTES);
         service.store(file, "products");
 
-        verify(localAdapter).store(any(), eq("products"), anyString(), eq("image/jpeg"));
+        verify(localAdapter).store(any(), eq("products"), anyString(), eq("image/jpg"));
         verifyNoInteractions(s3Adapter);
     }
 
@@ -47,10 +58,10 @@ class MediaStorageServiceTest {
         when(s3Adapter.store(any(), anyString(), anyString(), anyString()))
             .thenReturn("https://bucket.example.com/products/test.jpg");
 
-        var file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", "data".getBytes());
+        var file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", FAKE_BYTES);
         service.store(file, "products");
 
-        verify(s3Adapter).store(any(), eq("products"), anyString(), eq("image/jpeg"));
+        verify(s3Adapter).store(any(), eq("products"), anyString(), eq("image/jpg"));
         verifyNoInteractions(localAdapter);
     }
 }
