@@ -4,7 +4,7 @@ import ProductCard from '../../../components/ProductCard.astro';
 import Button from '../../../components/Button.astro';
 import Icon from '../../../components/Icon.astro';
 import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
-import { getProducts, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
+import { getProducts, getCategories, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -49,6 +49,10 @@ try {
 }
 const token = Astro.cookies.get('pe_token')?.value;
 
+let allCategories: Awaited<ReturnType<typeof getCategories>> = [];
+try { allCategories = await getCategories(); } catch { /* fallback to empty */ }
+const currentCategory = category ? allCategories.find(c => c.slug === category) ?? null : null;
+
 const activeFilters: { label: string; clearKey: string }[] = [];
 if (condition) activeFilters.push({ label: condition === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale), clearKey: 'condition' });
 if (brand) activeFilters.push({ label: brand, clearKey: 'brand' });
@@ -56,37 +60,49 @@ if (category) activeFilters.push({ label: category, clearKey: 'category' });
 
 const clearUrl = `/${locale}/products`;
 
-const categories = [
-  { slug: 'invierno',   labelEs: 'Invierno',    labelEn: 'Winter' },
-  { slug: 'verano',     labelEs: 'Verano',       labelEn: 'Summer' },
-  { slug: 'vestidos',   labelEs: 'Vestidos',     labelEn: 'Dresses' },
-  { slug: 'zapatos',    labelEs: 'Zapatos',      labelEn: 'Shoes' },
-  { slug: 'pantalones', labelEs: 'Pantalones',   labelEn: 'Trousers' },
-  { slug: 'carteras',   labelEs: 'Carteras',     labelEn: 'Bags' },
-  { slug: 'accesorios', labelEs: 'Accesorios',   labelEn: 'Accessories' },
-];
+const categories = allCategories.filter(c => c.active);
 ---
 
 <BaseLayout title={t('nav.products', locale)} locale={locale}>
   <div class="bg-pe-offwhite min-h-screen">
 
     <!-- Page header band -->
-    <div class="bg-pe-cream border-b border-pe-black/6 py-8">
-      <div class="pe-container">
+    <div class="relative overflow-hidden border-b border-[var(--pe-border)]" style="background-color: var(--pe-surface-soft)">
+      {currentCategory?.imageUrl && (
+        <img
+          src={currentCategory.imageUrl}
+          alt={locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs)}
+          class="absolute inset-0 w-full h-full object-cover opacity-15"
+          loading="eager"
+        />
+      )}
+      <div class="relative pe-container py-10">
         <!-- Breadcrumbs -->
         <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-charcoal/40 mb-3" aria-label="Breadcrumb">
           <a href={`/${locale}/`} class="hover:text-pe-rose-deep transition-colors duration-200">
             {locale === 'es' ? 'Inicio' : 'Home'}
           </a>
           <span aria-hidden="true"><Icon name="chevron-right" size={10} /></span>
-          <span class="text-pe-charcoal/70" aria-current="page">
-            {category ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category) : (locale === 'es' ? 'Todos los productos' : 'All products')}
-          </span>
+          {currentCategory ? (
+            <>
+              <a href={`/${locale}/products`} class="hover:text-pe-rose-deep transition-colors duration-200">
+                {locale === 'es' ? 'Productos' : 'Products'}
+              </a>
+              <span aria-hidden="true"><Icon name="chevron-right" size={10} /></span>
+              <span class="text-pe-charcoal/70" aria-current="page">
+                {locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs)}
+              </span>
+            </>
+          ) : (
+            <span class="text-pe-charcoal/70" aria-current="page">
+              {locale === 'es' ? 'Todos los productos' : 'All products'}
+            </span>
+          )}
         </nav>
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <h1 class="font-display text-pe-black text-3xl md:text-4xl font-light">
-            {category
-              ? (categories.find(c => c.slug === category)?.[locale === 'es' ? 'labelEs' : 'labelEn'] ?? category)
+            {currentCategory
+              ? (locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs))
               : (locale === 'es' ? 'Colección' : 'Collection')}
           </h1>
           <p class="font-sans text-[0.78rem] text-pe-charcoal/50">
@@ -128,7 +144,7 @@ const categories = [
                         category === cat.slug ? 'text-pe-rose-deep font-medium' : 'text-pe-charcoal/60',
                       ]}
                     >
-                      {locale === 'es' ? cat.labelEs : cat.labelEn}
+                      {locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
                     </a>
                   </li>
                 ))}

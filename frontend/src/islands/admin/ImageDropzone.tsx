@@ -13,6 +13,44 @@ interface Props {
 
 type State = 'idle' | 'dragging' | 'uploading' | 'error';
 
+const MAX_DIMENSION = 1400;
+const JPEG_QUALITY = 0.85;
+const COMPRESS_THRESHOLD = 600 * 1024; // 600 KB
+
+async function compressImage(file: File): Promise<File> {
+  if (file.size <= COMPRESS_THRESHOLD && !file.type.startsWith('image/')) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width <= MAX_DIMENSION && height <= MAX_DIMENSION && file.size <= COMPRESS_THRESHOLD) {
+        resolve(file);
+        return;
+      }
+      const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height, 1);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+        },
+        'image/jpeg',
+        JPEG_QUALITY,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 export default function ImageDropzone({ value, onUpload, onUploadedFile, folder, token, label }: Props) {
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState('');
@@ -27,10 +65,11 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
     setState('uploading');
     setError('');
     try {
-      const url = await uploadMediaFile(file, folder, token);
+      const ready = await compressImage(file);
+      const url = await uploadMediaFile(ready, folder, token);
       setPreview(url);
       onUpload(url);
-      onUploadedFile?.(file);
+      onUploadedFile?.(ready);
       setState('idle');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al subir imagen');

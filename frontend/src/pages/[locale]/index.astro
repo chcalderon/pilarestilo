@@ -4,7 +4,7 @@ import Hero from '../../components/Hero.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import Button from '../../components/Button.astro';
 import { SUPPORTED_LOCALES, type Locale, t } from '../../i18n/index';
-import { getFeaturedProducts, getFeaturedCategories, FIXTURE_PRODUCTS } from '../../lib/api';
+import { getFeaturedProducts, getCategoryTree, FIXTURE_PRODUCTS } from '../../lib/api';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -19,7 +19,9 @@ try {
   // fixture fallback already set
 }
 const token = Astro.cookies.get('pe_token')?.value;
-const categoryTiles = await getFeaturedCategories();
+const categoryTree = await getCategoryTree();
+// Featured root categories only; children used for subcategory pills
+const categoryTiles = categoryTree.filter(c => c.featured && c.active);
 ---
 
 <BaseLayout title={t('nav.home', locale)} locale={locale}>
@@ -81,40 +83,57 @@ const categoryTiles = await getFeaturedCategories();
         </p>
       ) : (
         <div data-category-carousel-root class="relative">
-          <div class="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-pe-offwhite to-transparent z-[1]"></div>
-          <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-pe-offwhite to-transparent z-[1]"></div>
+          <div class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[1]" style="background: linear-gradient(to right, var(--pe-surface), transparent)"></div>
+          <div class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[1]" style="background: linear-gradient(to left, var(--pe-surface), transparent)"></div>
 
           <div
             data-category-carousel
             class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             aria-label={locale === 'es' ? 'Carrusel de categorías destacadas' : 'Featured categories carousel'}
           >
-            {categoryTiles.map((cat, i) => (
-              <a
-                href={`/${locale}/categories/${cat.slug}`}
-                class="group relative overflow-hidden aspect-[4/5] shrink-0 basis-[82%] sm:basis-[48%] lg:basis-[32%] xl:basis-[30%] block snap-start fx-lift"
-              >
-                {cat.imageUrl ? (
-                  <img
-                    src={cat.imageUrl}
-                    alt={locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                    width="600"
-                    height="750"
-                  />
-                ) : (
-                  <div class="w-full h-full bg-pe-cream"></div>
-                )}
-                <div class="absolute inset-0 bg-gradient-to-t from-pe-black/70 via-pe-black/20 to-transparent"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                <div class="absolute bottom-0 left-0 right-0 p-6">
-                  <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light">
-                    {locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
-                  </p>
+            {categoryTiles.map((cat, i) => {
+              const name = locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs);
+              const subs = (cat.children ?? []).filter(s => s.active).slice(0, 4);
+              return (
+                <div class="group relative overflow-hidden aspect-[4/5] shrink-0 basis-[82%] sm:basis-[48%] lg:basis-[32%] xl:basis-[30%] snap-start fx-lift">
+                  {/* Full-card link for parent category */}
+                  <a href={`/${locale}/categories/${cat.slug}`} class="absolute inset-0 block z-0" tabindex="0" aria-label={name}>
+                    {cat.imageUrl ? (
+                      <img
+                        src={cat.imageUrl}
+                        alt={name}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                        width="600"
+                        height="750"
+                      />
+                    ) : (
+                      <div class="w-full h-full bg-pe-cream"></div>
+                    )}
+                    <div class="absolute inset-0 bg-gradient-to-t from-pe-black/75 via-pe-black/20 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-pe-rose scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+                  </a>
+                  {/* Card text + subcategory pills (above the link) */}
+                  <div class="absolute bottom-0 left-0 right-0 p-5 z-10 pointer-events-none">
+                    <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light leading-tight">
+                      {name}
+                    </p>
+                    {subs.length > 0 && (
+                      <div class="flex flex-wrap gap-1.5 mt-2 pointer-events-auto">
+                        {subs.map(sub => (
+                          <a
+                            href={`/${locale}/categories/${sub.slug}`}
+                            class="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-offwhite/60 border border-pe-offwhite/22 px-2 py-0.5 hover:text-pe-offwhite hover:border-pe-offwhite/50 transition-colors"
+                          >
+                            {locale === 'es' ? sub.nameEs : (sub.nameEn || sub.nameEs)}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </a>
-            ))}
+              );
+            })}
           </div>
 
           <div class="mt-6 flex items-center justify-between gap-4">
