@@ -18,14 +18,23 @@ public class SearchProductsUseCase {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDto> execute(String term, Boolean active, Boolean inStock, Pageable pageable) {
+    public Page<ProductDto> execute(String term,
+                                    Boolean active,
+                                    Boolean inStock,
+                                    String condition,
+                                    String categorySlug,
+                                    Pageable pageable) {
         String sanitized = term == null ? "" : term.trim();
-        if (sanitized.isEmpty()) {
+        boolean hasFilterParam =
+                (condition != null && !condition.isBlank()) ||
+                (categorySlug != null && !categorySlug.isBlank());
+        if (sanitized.isEmpty() && !hasFilterParam) {
             return productRepository.findAll(
                             new ProductRepository.ProductFilter(null, null, null, null, active, inStock, null),
                             pageable)
                     .map(ProductMapper::toDto);
         }
-        return productRepository.search(sanitized, active, inStock, pageable).map(ProductMapper::toDto);
+        return productRepository.search(sanitized, active, inStock, condition, categorySlug, pageable)
+                .map(ProductMapper::toDto);
     }
 }

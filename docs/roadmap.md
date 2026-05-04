@@ -1,6 +1,6 @@
 # Pilar Estilo - Roadmap
 
-This roadmap is synced with the current codebase on `master` as of April 28, 2026.
+This roadmap is synced with the current codebase on `master` as of May 3, 2026.
 
 ## v1 - Initial Release (Completed)
 
@@ -151,4 +151,18 @@ This roadmap is synced with the current codebase on `master` as of April 28, 202
 - [x] Backend `productai` module baseline (drafts/assets/jobs/retries + scheduler)
 - [x] Flyway `V40` schema for product AI pipeline
 - [x] Frontend job status wiring from `/admin/publicaciones` to backend APIs
+- [x] OpenAI migration: `ProductAiOpenAiClient` uses separate models for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`); Ollama removed from pipeline and Docker Compose
+- [x] Flyway `V41` adds Product AI infer-default admin settings fields
 - [ ] n8n campaign workflow templates (Instagram/Facebook posting orchestration)
+
+---
+
+## UX Improvements (Ongoing)
+
+- [x] Admin user management: `UserEditDrawer` slide-out panel replaces modal dialogs
+- [x] Admin credit section visible for all user types (not just CUSTOMER)
+- [x] Admin category tree supports up to 4 levels of subcategories
+- [x] Server-side image optimization on upload (`ImageOptimizerService`)
+- [x] Storefront product detail: subcategory pills + product header image
+- [x] Landing carousel: CSS transform-only mode, touch swipe, dark-mode dots, 4s index-based autoplay
+- [x] Landing category carousel: featured nodes at any tree depth

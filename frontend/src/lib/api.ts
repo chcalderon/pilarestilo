@@ -1423,16 +1423,48 @@ export async function reorderCategories(
 
 // ─── Search API ───────────────────────────────────────────────────────────────
 
-export async function searchProducts(q: string, page = 0, size = 12): Promise<Page<ProductDto>> {
+export interface ProductSearchParams {
+  q?: string;
+  active?: boolean;
+  inStock?: boolean;
+  condition?: 'NEW' | 'USED';
+  category?: string;
+  page?: number;
+  size?: number;
+}
+
+export async function searchProducts(
+  qOrParams: string | ProductSearchParams,
+  page = 0,
+  size = 12,
+): Promise<Page<ProductDto>> {
+  // Backwards-compat: accept legacy positional (q, page, size) signature for
+  // storefront search overlay while admin uses the params-object form.
+  const params: ProductSearchParams =
+    typeof qOrParams === 'string'
+      ? { q: qOrParams, active: true, inStock: true, page, size }
+      : qOrParams;
+  const trimmedQ = (params.q ?? '').trim();
+  const queryString = buildQuery({
+    ...(trimmedQ ? { q: trimmedQ } : {}),
+    ...(params.active !== undefined ? { active: params.active } : {}),
+    ...(params.inStock !== undefined ? { inStock: params.inStock } : {}),
+    ...(params.condition ? { condition: params.condition } : {}),
+    ...(params.category ? { category: params.category } : {}),
+    page: params.page ?? 0,
+    size: params.size ?? 20,
+  });
   try {
-    const query = buildQuery({ q, active: true, inStock: true, page, size });
-    const res = await apiFetch<Page<unknown>>(`/products/search${query}`);
-    const content = res.content.map(normalizeProduct).filter(hasSellableStock);
+    const res = await apiFetch<Page<unknown>>(`/products/search${queryString}`);
+    const normalized = res.content.map(normalizeProduct);
+    const content = params.inStock ? normalized.filter(hasSellableStock) : normalized;
     return { ...res, content };
   } catch {
-    const lower = q.toLowerCase();
-    const matches = FIXTURE_PRODUCTS.filter(
-      p => p.name.toLowerCase().includes(lower) || p.brand.toLowerCase().includes(lower)
+    const lower = trimmedQ.toLowerCase();
+    const matches = FIXTURE_PRODUCTS.filter(p =>
+      lower
+        ? p.name.toLowerCase().includes(lower) || p.brand.toLowerCase().includes(lower)
+        : true,
     );
     return { content: matches, totalElements: matches.length, totalPages: 1, size: matches.length, number: 0 };
   }

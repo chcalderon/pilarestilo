@@ -76,4 +76,29 @@ class ProductControllerIT {
         mvc.perform(get("/api/products").param("condition", "USED"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void search_by_text_returns_ok() throws Exception {
+        mvc.perform(get("/api/products/search").param("q", "vestido"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists());
+    }
+
+    @Test
+    void search_with_active_and_condition_filters_returns_ok() throws Exception {
+        mvc.perform(get("/api/products/search")
+                        .param("q", "")
+                        .param("active", "true")
+                        .param("condition", "USED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists());
+    }
+
+    @Test
+    void search_with_category_filter_returns_ok() throws Exception {
+        mvc.perform(get("/api/products/search")
+                        .param("category", "vestidos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists());
+    }
 }

@@ -94,8 +94,10 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "") String q,
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) String condition,
+            @RequestParam(required = false) String category,
             Pageable pageable) {
-        return searchProductsUseCase.execute(q, active, inStock, pageable);
+        return searchProductsUseCase.execute(q, active, inStock, condition, category, pageable);
     }
 
     private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {

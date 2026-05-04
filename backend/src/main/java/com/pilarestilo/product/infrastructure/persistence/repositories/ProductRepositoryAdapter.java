@@ -72,18 +72,38 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
-    public Page<Product> search(String term, Boolean active, Boolean inStock, Pageable pageable) {
-        String pattern = "%" + term.toLowerCase() + "%";
+    public Page<Product> search(String term,
+                                Boolean active,
+                                Boolean inStock,
+                                String condition,
+                                String categorySlug,
+                                Pageable pageable) {
+        String trimmedTerm = term == null ? "" : term.trim();
+        String pattern = trimmedTerm.isEmpty() ? null : "%" + trimmedTerm.toLowerCase() + "%";
         Specification<ProductEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            var namePred  = cb.like(cb.lower(root.get("name")),  pattern);
-            var brandPred = cb.like(cb.lower(root.get("brand")), pattern);
-            predicates.add(cb.or(namePred, brandPred));
+            if (pattern != null) {
+                Join<Object, Object> textCats = root.join("categories", JoinType.LEFT);
+                var namePred = cb.like(cb.lower(root.get("name")), pattern);
+                var brandPred = cb.like(cb.lower(root.get("brand")), pattern);
+                var descPred = cb.like(cb.lower(root.get("description")), pattern);
+                var catEsPred = cb.like(cb.lower(textCats.get("nameEs")), pattern);
+                var catEnPred = cb.like(cb.lower(textCats.get("nameEn")), pattern);
+                var catSlugPred = cb.like(cb.lower(textCats.get("slug")), pattern);
+                predicates.add(cb.or(namePred, brandPred, descPred, catEsPred, catEnPred, catSlugPred));
+            }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));
             }
             if (Boolean.TRUE.equals(inStock)) {
                 predicates.add(buildInStockPredicate(root, query, cb));
+            }
+            if (condition != null && !condition.isBlank()) {
+                predicates.add(cb.equal(root.get("condition"), ProductCondition.valueOf(condition)));
+            }
+            if (categorySlug != null && !categorySlug.isBlank()) {
+                Join<Object, Object> filterCats = root.join("categories", JoinType.INNER);
+                predicates.add(cb.equal(filterCats.get("slug"), categorySlug));
             }
             if (query != null) query.distinct(true);
             return cb.and(predicates.toArray(new Predicate[0]));

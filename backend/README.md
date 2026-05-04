@@ -277,33 +277,17 @@ Gateway-facing rate-limit filter (backend side):
 | `SERVER_PORT` | No | API port (default 8080) |
 
 Product AI runtime variables (when `APP_PRODUCT_AI_ENABLED=true`):
-- `APP_PRODUCT_AI_ENGINE` (`stub`, `ollama_backend`, or legacy `node_bridge`)
+- `APP_PRODUCT_AI_ENGINE` (`stub`, `openai_backend` [default], or legacy `node_bridge`)
 - `APP_PRODUCT_AI_OPENAI_API_KEY`
 - `APP_PRODUCT_AI_OPENAI_BASE_URL`
-- `APP_PRODUCT_AI_OPENAI_MODEL`
-- `APP_PRODUCT_AI_OLLAMA_ENABLED`
-- `APP_PRODUCT_AI_OLLAMA_BASE_URL` (default `http://ollama:11434/api` in Docker network)
-- `APP_PRODUCT_AI_OLLAMA_MODEL` (default `moondream:latest`)
-- `APP_PRODUCT_AI_OLLAMA_KEEP_ALIVE` (default `45m`)
-- `APP_PRODUCT_AI_OLLAMA_INFER_MAX_DIMENSION` (default `1024`)
-- `APP_PRODUCT_AI_OLLAMA_INFER_JPEG_QUALITY` (default `0.82`)
-- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_ENABLED` (default `true`)
-- `APP_PRODUCT_AI_OLLAMA_QUALITY_FALLBACK_MODEL` (default `gemma3:latest`)
-- `APP_PRODUCT_AI_OLLAMA_VALIDATE_ON_STARTUP` (default `true`)
-- `APP_PRODUCT_AI_OLLAMA_FAIL_FAST` (default `false`, set `true` para no levantar backend si falta modelo/servicio)
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_ON_STARTUP` (default `true`)
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_BLOCKING_ON_STARTUP` (default `true`)
-- `APP_PRODUCT_AI_OLLAMA_WARMUP_TIMEOUT_MS` (default `300000`)
+- `APP_PRODUCT_AI_OPENAI_INFER_MODEL` (text inference model, default `gpt-4.1-mini`)
+- `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL` (image generation model, default `gpt-image-1`)
+- `APP_PRODUCT_AI_OPENAI_MODEL` (legacy fallback for image model if `IMAGE_MODEL` not set)
 - `APP_PRODUCT_AI_IMAGE_TARGET_WIDTH`, `APP_PRODUCT_AI_IMAGE_TARGET_HEIGHT`
 - `APP_PRODUCT_AI_IMAGE_WEB_WIDTH`, `APP_PRODUCT_AI_IMAGE_WEB_HEIGHT`, `APP_PRODUCT_AI_IMAGE_WEB_JPEG_QUALITY`
 - `APP_PRODUCT_AI_IMAGE_THUMB_WIDTH`, `APP_PRODUCT_AI_IMAGE_THUMB_HEIGHT`, `APP_PRODUCT_AI_IMAGE_THUMB_JPEG_QUALITY`
-- `OLLAMA_KEEP_ALIVE`, `OLLAMA_NUM_PARALLEL`, `OLLAMA_MAX_LOADED_MODELS`
 
-For local Docker-network Ollama:
-- Start service: `docker compose -f infra/docker-compose.yml --env-file infra/.env --profile ai up -d ollama`
-- Pull model once: `docker exec pe_ollama ollama pull moondream:latest`
-- Optional quality fallback model: `docker exec pe_ollama ollama pull gemma3:latest`
-- Backend valida conectividad/modelo al iniciar y, si no esta listo, el worker de jobs IA queda pausado (sin marcar jobs como error por esa causa).
+Note: Ollama is no longer supported. The `ai` Docker Compose profile has been removed. All product AI inference and image generation now exclusively use OpenAI.
 
 Current note:
 - Notification listeners now resolve a structured recipient (`phone` + `email`) so providers can choose the right channel safely.
@@ -370,6 +354,7 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - cash register schema (`V38`)
 - dispatch schema (`V39`)
 - product AI pipeline schema (`V40`)
+- Product AI infer-default admin settings fields (`V41`)
 
 ---
 

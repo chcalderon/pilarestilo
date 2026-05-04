@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Save, X } from 'lucide-react';
+import { Loader2, Save, X, ChevronDown, ChevronRight, FolderOpen, Folder, Tag } from 'lucide-react';
 import {
   createProduct,
   updateProduct,
@@ -13,6 +13,140 @@ import {
   type ProductVariantDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
+
+type CatNode = CategoryDto & { children: CatNode[] };
+
+function buildCategoryTree(cats: CategoryDto[]): CatNode[] {
+  const map = new Map<string, CatNode>();
+  cats.forEach(c => map.set(c.id, { ...c, children: [] }));
+  const roots: CatNode[] = [];
+  cats.forEach(c => {
+    const node = map.get(c.id)!;
+    if (c.parentId && map.has(c.parentId)) {
+      map.get(c.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sort = (nodes: CatNode[]) => {
+    nodes.sort((a, b) => a.sortOrder - b.sortOrder);
+    nodes.forEach(n => sort(n.children));
+    return nodes;
+  };
+  return sort(roots);
+}
+
+function collectSelectedDescendantCount(node: CatNode, selected: string[]): number {
+  let count = 0;
+  for (const child of node.children) {
+    if (selected.includes(child.id)) count += 1;
+    count += collectSelectedDescendantCount(child, selected);
+  }
+  return count;
+}
+
+function CategoryTreeItem({
+  node,
+  depth,
+  selected,
+  onToggle,
+  expanded,
+  onToggleExpand,
+}: {
+  node: CatNode;
+  depth: number;
+  selected: string[];
+  onToggle: (id: string) => void;
+  expanded: Set<string>;
+  onToggleExpand: (id: string) => void;
+}) {
+  const hasChildren = node.children.length > 0;
+  const isOpen = expanded.has(node.id);
+  const isSelected = selected.includes(node.id);
+  const descendantsSelected = hasChildren ? collectSelectedDescendantCount(node, selected) : 0;
+
+  // Visual hierarchy by depth — stronger contrast, clearer rhythm
+  const rowClass =
+    depth === 0
+      ? 'text-[0.82rem] font-semibold text-[#1A1A1A] dark:text-[#E8DCC8] tracking-tight'
+      : depth === 1
+        ? 'text-[0.78rem] font-medium text-[#2A2A2A] dark:text-[#D6C8B5]'
+        : depth === 2
+          ? 'text-[0.74rem] text-[#4A4A4A] dark:text-[#C2B49E]'
+          : 'text-[0.7rem] text-[#6A6A6A] dark:text-[#A89C88]';
+
+  const indent = depth * 16;
+
+  return (
+    <div>
+      <div
+        className={[
+          'flex items-center gap-1.5 py-1 pr-2 group transition-colors rounded-sm',
+          isSelected
+            ? 'bg-[#B76E79]/8 dark:bg-[#E4B8BF]/12'
+            : 'hover:bg-[#B76E79]/5 dark:hover:bg-[#E4B8BF]/8',
+        ].join(' ')}
+        style={{ paddingLeft: `${indent + 4}px` }}
+      >
+        {/* Chevron toggle for parents, spacer for leaves */}
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggleExpand(node.id)}
+            className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-charcoal/45 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+            aria-label={isOpen ? 'Contraer' : 'Expandir'}
+          >
+            {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          </button>
+        ) : (
+          <span className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-charcoal/25 dark:text-[#D6C8B5]/30">
+            <Tag size={9} />
+          </span>
+        )}
+
+        <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+          <input
+            type="checkbox"
+            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
+            checked={isSelected}
+            onChange={() => onToggle(node.id)}
+          />
+          {hasChildren && (
+            <span className="shrink-0 text-pe-charcoal/45 dark:text-[#D6C8B5]/55 group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors">
+              {isOpen ? <FolderOpen size={12} /> : <Folder size={12} />}
+            </span>
+          )}
+          <span className={`font-sans leading-snug truncate group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors ${rowClass}`}>
+            {node.nameEs}
+          </span>
+          {hasChildren && (
+            <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-charcoal/40 dark:text-[#D6C8B5]/45">
+              {descendantsSelected > 0
+                ? `${descendantsSelected}/${node.children.length}`
+                : node.children.length}
+            </span>
+          )}
+        </label>
+      </div>
+
+      {hasChildren && isOpen && (
+        <div>
+          {node.children.map(child => (
+            <CategoryTreeItem
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              selected={selected}
+              onToggle={onToggle}
+              expanded={expanded}
+              onToggleExpand={onToggleExpand}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   product?: ProductDto | null;
@@ -100,13 +234,39 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
   const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [expandedCatIds, setExpandedCatIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => {});
+    getCategories()
+      .then(cats => {
+        setCategories(cats);
+        // Auto-expand all parent categories so user sees the full structure on first open
+        const parentIds = new Set(cats.filter(c => c.parentId).map(c => c.parentId as string));
+        setExpandedCatIds(parentIds);
+      })
+      .catch(() => {});
   }, []);
+
+  function toggleCategoryExpanded(id: string) {
+    setExpandedCatIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function expandAllCategories() {
+    const parentIds = new Set(categories.filter(c => c.parentId).map(c => c.parentId as string));
+    setExpandedCatIds(parentIds);
+  }
+
+  function collapseAllCategories() {
+    setExpandedCatIds(new Set());
+  }
 
   useEffect(() => {
     if (!token) return;
@@ -402,32 +562,30 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }
 
   const inputClass =
-    'w-full font-sans text-[0.82rem] border border-pe-black/30 px-2.5 py-1.5 bg-[#fffdfa] text-[#1A1A1A] focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
-  const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 mb-1';
-  const errorClass = 'font-sans text-xs text-red-500 mt-1';
-  const previewUrl = form.imageUrl.trim() || '/api/media/products/product-001.jpg';
+    'w-full font-sans text-[0.82rem] border border-pe-black/30 dark:border-[#3F2A2F] px-2.5 py-1.5 bg-[#fffdfa] dark:bg-[#1F1518] text-[#1A1A1A] dark:text-[#E8DCC8] placeholder-pe-charcoal/40 dark:placeholder-[#D6C8B5]/35 focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
+  const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 dark:text-[#D6C8B5]/65 mb-1';
+  const errorClass = 'font-sans text-xs text-red-500 dark:text-red-300 mt-1';
 
-  const rootCats = categories.filter((c) => !c.parentId);
-  const childCats = categories.filter((c) => c.parentId);
+  const categoryTree = buildCategoryTree(categories);
 
   return (
-    <div className="fixed inset-0 bg-[#1A1A1A]/68 z-50 flex items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true">
-      <div className="bg-[#F8F4EF] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20">
+    <div className="fixed inset-0 bg-[#1A1A1A]/68 dark:bg-black/72 z-50 flex items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true">
+      <div className="bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-xl font-light">
+          <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] dark:text-[#E8DCC8] text-xl font-light">
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <button
             onClick={onCancel}
-            className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 hover:text-[#B76E79] transition-colors"
+            className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 dark:text-[#D6C8B5]/45 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
             aria-label="Cerrar formulario"
           >
             <X size={16} />
           </button>
         </div>
 
-        {apiError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 mb-4">{apiError}</div>}
-        {aiInfo && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
+        {apiError && <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm px-4 py-2 mb-4">{apiError}</div>}
+        {aiInfo && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
@@ -549,7 +707,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   checked={useVariants}
                   onChange={(e) => setUseVariants(e.target.checked)}
                 />
-                <span className="font-sans text-sm text-[#1A1A1A]">Gestionar por variantes</span>
+                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Gestionar por variantes</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -558,19 +716,19 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   checked={form.active}
                   onChange={(e) => setForm({ ...form, active: e.target.checked })}
                 />
-                <span className="font-sans text-sm text-[#1A1A1A]">Activo</span>
+                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Activo</span>
               </label>
             </div>
           </div>
 
           {useVariants && (
-            <div className="border border-pe-black/12 bg-pe-white p-3 space-y-3">
+            <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <p className={labelClass + ' mb-0'}>Variantes (color + talla + stock)</p>
                 <button
                   type="button"
                   onClick={addVariantRow}
-                  className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
+                  className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
                 >
                   + Agregar
                 </button>
@@ -608,7 +766,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                     <button
                       type="button"
                       onClick={() => removeVariantRow(index)}
-                      className="sm:col-span-2 border border-red-300 text-red-500 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
+                      className="sm:col-span-2 border border-red-300 dark:border-red-800/50 text-red-500 dark:text-red-300 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >
                       Quitar
                     </button>
@@ -616,8 +774,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 ))}
               </div>
 
-              <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
-                Stock total calculado automaticamente: <strong>{variantTotalStock}</strong>
+              <p className="font-sans text-[0.68rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/55">
+                Stock total calculado automaticamente: <strong className="text-[#1A1A1A] dark:text-[#E8DCC8]">{variantTotalStock}</strong>
               </p>
               {errors.variants && <p className={errorClass}>{errors.variants}</p>}
             </div>
@@ -627,7 +785,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             <label className={labelClass}>Imagen del producto</label>
             <ImageDropzone
               folder="products"
-              value={previewUrl || undefined}
+              value={form.imageUrl.trim() || undefined}
               onUpload={url => {
                 setForm(prev => ({ ...prev, imageUrl: url }));
                 setAiTransformPreviewUrl('');
@@ -640,7 +798,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             />
           </div>
 
-          <div className="border border-pe-black/12 bg-pe-white p-3 space-y-2">
+          <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -648,12 +806,12 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 checked={useAiAssist}
                 onChange={(e) => setUseAiAssist(e.target.checked)}
               />
-              <span className="font-sans text-sm text-[#1A1A1A]">Usar nuevo flujo IA (1 imagen)</span>
+              <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Usar nuevo flujo IA (1 imagen)</span>
             </label>
-            <p className="inline-flex w-fit items-center rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-1 font-sans text-[0.62rem] font-medium tracking-[0.1em] uppercase text-emerald-700">
+            <p className="inline-flex w-fit items-center rounded-full border border-emerald-300/70 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 font-sans text-[0.62rem] font-medium tracking-[0.1em] uppercase text-emerald-700 dark:text-emerald-300">
               OpenAI Only
             </p>
-            <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+            <p className="font-sans text-[0.72rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/55">
               Este flujo sugiere texto y transforma imagen para este producto con OpenAI. Publicaciones reutiliza el mismo pipeline para mantener consistencia de resultados.
             </p>
             {useAiAssist && (
@@ -662,7 +820,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   type="button"
                   onClick={() => void handleInferWithAi()}
                   disabled={aiRunning}
-                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
                 >
                   {aiRunning ? <Loader2 size={13} className="animate-spin" /> : null}
                   {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
@@ -682,34 +840,34 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   type="button"
                   onClick={() => void handleTransformWithAi()}
                   disabled={aiTransformRunning}
-                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
                 >
                   {aiTransformRunning ? <Loader2 size={13} className="animate-spin" /> : null}
                   {aiTransformRunning ? 'Transformando...' : 'Transformar imagen con IA'}
                 </button>
 
                 {aiTransformPreviewUrl && (
-                  <div className="border border-pe-black/12 bg-[#fffdfa] p-2.5 space-y-2">
-                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-charcoal/65">
+                  <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1A1012] p-2.5 space-y-2">
+                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-charcoal/65 dark:text-[#D6C8B5]/65">
                       Preview transformada
                     </p>
                     <img
                       src={aiTransformPreviewUrl}
                       alt="Previsualizacion transformada"
-                      className="w-full max-w-[220px] h-auto border border-pe-black/15"
+                      className="w-full max-w-[220px] h-auto border border-pe-black/15 dark:border-[#3F2A2F]"
                     />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleApplyTransformPreview}
-                        className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/8 transition-colors"
+                        className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/8 transition-colors"
                       >
                         Reemplazar imagen actual
                       </button>
                       <a
                         href={aiTransformPreviewUrl}
                         download
-                        className="inline-flex items-center gap-2 border border-pe-black/20 text-pe-charcoal font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
+                        className="inline-flex items-center gap-2 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal dark:text-[#D6C8B5] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
                       >
                         Descargar preview
                       </a>
@@ -722,42 +880,47 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
           {categories.length > 0 && (
             <div>
-              <p className={labelClass}>Categorias</p>
-              <div className="border border-[#EDE3D8] p-3 max-h-48 overflow-y-auto space-y-3">
-                {rootCats.map((root) => (
-                  <div key={root.id}>
-                    <label className="flex items-center gap-2 cursor-pointer mb-1">
-                      <input
-                        type="checkbox"
-                        className="w-3.5 h-3.5 accent-[#B76E79]"
-                        checked={selectedCatIds.includes(root.id)}
-                        onChange={() => toggleCategory(root.id)}
-                      />
-                      <span className="font-sans text-sm font-medium text-[#1A1A1A]">{root.nameEs}</span>
-                    </label>
-                    <div className="ml-5 space-y-1">
-                      {childCats
-                        .filter((c) => c.parentId === root.id)
-                        .map((child) => (
-                          <label key={child.id} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="w-3.5 h-3.5 accent-[#B76E79]"
-                              checked={selectedCatIds.includes(child.id)}
-                              onChange={() => toggleCategory(child.id)}
-                            />
-                            <span className="font-sans text-xs text-[#3A3A3A]">{child.nameEs}</span>
-                          </label>
-                        ))}
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between mb-1.5 gap-2">
+                <p className={labelClass + ' mb-0'}>Categorias</p>
+                <div className="flex items-center gap-2">
+                  {selectedCatIds.length > 0 && (
+                    <span className="font-sans text-[0.65rem] text-[#B76E79] dark:text-[#E4B8BF]">
+                      {selectedCatIds.length} {selectedCatIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={expandAllCategories}
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/50 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                  >
+                    Expandir
+                  </button>
+                  <span className="font-sans text-[0.6rem] text-pe-charcoal/30 dark:text-[#D6C8B5]/25">|</span>
+                  <button
+                    type="button"
+                    onClick={collapseAllCategories}
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/50 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                  >
+                    Contraer
+                  </button>
+                </div>
+              </div>
+              <div className="border border-[#EDE3D8] dark:border-[#3F2A2F] bg-[#FDFAF6] dark:bg-[#1F1518] py-1.5 max-h-60 overflow-y-auto">
+                {categoryTree.map(root => (
+                  <CategoryTreeItem
+                    key={root.id}
+                    node={root}
+                    depth={0}
+                    selected={selectedCatIds}
+                    onToggle={toggleCategory}
+                    expanded={expandedCatIds}
+                    onToggleExpand={toggleCategoryExpanded}
+                  />
                 ))}
               </div>
-              {selectedCatIds.length > 0 && (
-                <p className="text-[10px] text-[#B76E79] mt-1">
-                  {selectedCatIds.length} {selectedCatIds.length === 1 ? 'categoria seleccionada' : 'categorias seleccionadas'}
-                </p>
-              )}
+              <p className="font-sans text-[0.6rem] text-pe-charcoal/45 dark:text-[#D6C8B5]/45 mt-1">
+                Selecciona una o varias categorias. Marca categorias hoja (sin hijos) para clasificar el producto con precision.
+              </p>
             </div>
           )}
 
@@ -782,7 +945,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 border border-[#3A3A3A]/20 text-[#1A1A1A] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
             >
               <X size={14} />
               Cancelar

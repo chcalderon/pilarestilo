@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Plus,
   RefreshCw,
@@ -9,8 +9,16 @@ import {
   PackageSearch,
   ChevronLeft,
   ChevronRight,
+  Search,
+  X,
 } from 'lucide-react';
-import { getProducts, deleteProduct, getCategories, type ProductDto, type CategoryDto } from '../../lib/api';
+import {
+  searchProducts,
+  deleteProduct,
+  getCategories,
+  type ProductDto,
+  type CategoryDto,
+} from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
@@ -21,6 +29,83 @@ const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 const VIEW_MODE_KEY = 'pe-admin-products-view';
 const PAGE_SIZE_KEY = 'pe-admin-products-page-size';
+
+interface ParsedQuery {
+  q: string;
+  active?: boolean;
+  condition?: 'NEW' | 'USED';
+  category?: string;
+  matchedTokens: string[];
+}
+
+function normalizeToken(token: string): string {
+  return token
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
+const ACTIVE_TRUE = new Set(['activo', 'activa', 'activos', 'activas', 'enabled', 'visible']);
+const ACTIVE_FALSE = new Set(['inactivo', 'inactiva', 'inactivos', 'inactivas', 'disabled', 'oculto', 'oculta']);
+const CONDITION_NEW = new Set(['nuevo', 'nueva', 'nuevos', 'nuevas', 'new']);
+const CONDITION_USED = new Set(['usado', 'usada', 'usados', 'usadas', 'used', 'segundamano']);
+
+/**
+ * Smart parser: extracts magic-word filters from the search input and returns
+ * remaining free text as `q`. Magic words consumed (not echoed in q):
+ *   - activo / inactivo → active=true|false
+ *   - nuevo / usado     → condition=NEW|USED
+ *   - <category nameEs> → category=<slug> (exact normalized match against catalog)
+ */
+function parseSearchInput(input: string, categories: CategoryDto[]): ParsedQuery {
+  const trimmed = input.trim();
+  if (!trimmed) return { q: '', matchedTokens: [] };
+
+  const catBySlug = new Map<string, string>();
+  const catByName = new Map<string, string>();
+  for (const c of categories) {
+    catBySlug.set(normalizeToken(c.slug), c.slug);
+    catByName.set(normalizeToken(c.nameEs), c.slug);
+    catByName.set(normalizeToken(c.nameEn), c.slug);
+  }
+
+  const tokens = trimmed.split(/\s+/);
+  const remaining: string[] = [];
+  const matchedTokens: string[] = [];
+  let active: boolean | undefined;
+  let condition: 'NEW' | 'USED' | undefined;
+  let category: string | undefined;
+
+  for (const raw of tokens) {
+    const norm = normalizeToken(raw);
+    if (ACTIVE_TRUE.has(norm)) {
+      active = true;
+      matchedTokens.push(raw);
+    } else if (ACTIVE_FALSE.has(norm)) {
+      active = false;
+      matchedTokens.push(raw);
+    } else if (CONDITION_NEW.has(norm)) {
+      condition = 'NEW';
+      matchedTokens.push(raw);
+    } else if (CONDITION_USED.has(norm)) {
+      condition = 'USED';
+      matchedTokens.push(raw);
+    } else if (!category && (catBySlug.has(norm) || catByName.has(norm))) {
+      category = catBySlug.get(norm) ?? catByName.get(norm);
+      matchedTokens.push(raw);
+    } else {
+      remaining.push(raw);
+    }
+  }
+
+  return {
+    q: remaining.join(' '),
+    active,
+    condition,
+    category,
+    matchedTokens,
+  };
+}
 
 export default function ProductTable() {
   const { token } = useAuthStore();
@@ -35,9 +120,8 @@ export default function ProductTable() {
   const [editTarget, setEditTarget] = useState<ProductDto | null | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [filterCondition, setFilterCondition] = useState('');
-  const [filterBrand, setFilterBrand] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -94,22 +178,39 @@ export default function ProductTable() {
     };
   }, []);
 
+  // Debounce search input → query (250ms)
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(searchInput), 250);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
+
+  const parsed = useMemo(
+    () => parseSearchInput(debouncedSearch, categories),
+    [debouncedSearch, categories],
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getProducts({
+      const res = await searchProducts({
+        q: parsed.q,
+        active: parsed.active,
+        condition: parsed.condition,
+        category: parsed.category,
         page,
         size: pageSize,
-        condition: (filterCondition as 'NEW' | 'USED') || undefined,
-        brand: filterBrand || undefined,
-        category: filterCategory || undefined,
       });
       setProducts(res.content);
       setTotal(res.totalElements);
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filterCondition, filterBrand, filterCategory]);
+  }, [page, pageSize, parsed.q, parsed.active, parsed.condition, parsed.category]);
 
   useEffect(() => {
     load();
@@ -467,6 +568,38 @@ export default function ProductTable() {
     );
   }
 
+  // Active filter chips: visible feedback for parsed magic words.
+  const activeChips: { label: string; onClear: () => void }[] = [];
+  if (parsed.active === true) activeChips.push({ label: 'Activos', onClear: () => clearMagic('activo') });
+  if (parsed.active === false) activeChips.push({ label: 'Inactivos', onClear: () => clearMagic('inactivo') });
+  if (parsed.condition === 'NEW') activeChips.push({ label: 'Nuevos', onClear: () => clearMagic('nuevo') });
+  if (parsed.condition === 'USED') activeChips.push({ label: 'Usados', onClear: () => clearMagic('usado') });
+  if (parsed.category) {
+    const cat = categories.find((c) => c.slug === parsed.category);
+    activeChips.push({
+      label: cat?.nameEs ?? parsed.category,
+      onClear: () => clearMagic(parsed.category!),
+    });
+  }
+
+  function clearMagic(token: string) {
+    // Remove first matched magic-word token (case-insensitive, accent-insensitive)
+    const norm = normalizeToken(token);
+    const tokens = searchInput.split(/\s+/);
+    const idx = tokens.findIndex((t) => {
+      const n = normalizeToken(t);
+      if (norm === 'activo') return ACTIVE_TRUE.has(n);
+      if (norm === 'inactivo') return ACTIVE_FALSE.has(n);
+      if (norm === 'nuevo') return CONDITION_NEW.has(n);
+      if (norm === 'usado') return CONDITION_USED.has(n);
+      return n === norm;
+    });
+    if (idx >= 0) {
+      tokens.splice(idx, 1);
+      setSearchInput(tokens.join(' ').trim());
+    }
+  }
+
   return (
     <div>
       {editTarget !== undefined && (
@@ -504,36 +637,31 @@ export default function ProductTable() {
       )}
 
       <div className="mb-4 flex flex-col gap-2">
-        {/* Fila 1: filtros */}
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={filterCondition}
-            onChange={(e) => { setFilterCondition(e.target.value); setPage(0); }}
-            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
-          >
-            <option value="">Todas las condiciones</option>
-            <option value="NEW">Nuevo</option>
-            <option value="USED">Usado</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="Filtrar por marca..."
-            value={filterBrand}
-            onChange={(e) => { setFilterBrand(e.target.value); setPage(0); }}
-            className="w-[180px] font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal placeholder:text-pe-charcoal/30 focus:outline-none focus:border-pe-rose/50 transition-colors"
-          />
-
-          <select
-            value={filterCategory}
-            onChange={(e) => { setFilterCategory(e.target.value); setPage(0); }}
-            className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-3 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
-          >
-            <option value="">Todas las categorias</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug}>{cat.nameEs}</option>
-            ))}
-          </select>
+        {/* Unified search input */}
+        <div className="flex flex-wrap items-stretch gap-2">
+          <div className="relative flex-1 min-w-[260px]">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-charcoal/35 dark:text-[#D6C8B5]/45 pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, marca, descripcion, categoria... (ej: vestido activo nuevo)"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/30 dark:placeholder:text-[#D6C8B5]/35 focus:outline-none focus:border-pe-rose/50 transition-colors"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+                aria-label="Limpiar busqueda"
+                title="Limpiar"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
 
           <button
             onClick={load}
@@ -545,7 +673,27 @@ export default function ProductTable() {
           </button>
         </div>
 
-        {/* Fila 2: vista + paginación + acción */}
+        {/* Active filter chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/40 dark:text-[#D6C8B5]/45">
+              Filtros activos:
+            </span>
+            {activeChips.map((chip) => (
+              <button
+                key={chip.label}
+                onClick={chip.onClear}
+                className="inline-flex items-center gap-1 bg-pe-rose/10 dark:bg-[#E4B8BF]/12 border border-pe-rose/30 dark:border-[#E4B8BF]/30 text-pe-rose-deep dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
+                title={`Quitar filtro ${chip.label}`}
+              >
+                {chip.label}
+                <X size={10} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* View mode + page size + new product */}
         <div className="flex flex-wrap items-center gap-2">
           {!isMobileViewport && (
             <div className="inline-flex border border-pe-black/12 bg-pe-white">

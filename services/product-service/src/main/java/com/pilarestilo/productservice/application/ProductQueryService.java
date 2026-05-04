@@ -78,6 +78,8 @@ public class ProductQueryService {
     public Page<ProductEntity> search(String queryText,
                                       Boolean active,
                                       Boolean inStock,
+                                      String condition,
+                                      String category,
                                       Pageable pageable) {
         String term = queryText == null ? "" : queryText.trim().toLowerCase();
         Specification<ProductEntity> spec = (root, query, cb) -> {
@@ -90,9 +92,19 @@ public class ProductQueryService {
             }
             if (!term.isBlank()) {
                 String pattern = "%" + term + "%";
+                Join<Object, Object> textCats = root.join("categories", JoinType.LEFT);
                 var namePredicate = cb.like(cb.lower(root.get("name")), pattern);
                 var brandPredicate = cb.like(cb.lower(root.get("brand")), pattern);
-                predicates.add(cb.or(namePredicate, brandPredicate));
+                var descPredicate = cb.like(cb.lower(root.get("description")), pattern);
+                var catSlugPredicate = cb.like(cb.lower(textCats.get("slug")), pattern);
+                predicates.add(cb.or(namePredicate, brandPredicate, descPredicate, catSlugPredicate));
+            }
+            if (condition != null && !condition.isBlank()) {
+                predicates.add(cb.equal(root.get("condition"), condition));
+            }
+            if (category != null && !category.isBlank()) {
+                Join<Object, Object> filterCats = root.join("categories", JoinType.INNER);
+                predicates.add(cb.equal(filterCats.get("slug"), category));
             }
             if (query != null) {
                 query.distinct(true);

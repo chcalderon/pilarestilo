@@ -20,7 +20,12 @@ public interface ProductRepository {
 
     void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount);
 
-    Page<Product> search(String term, Boolean active, Boolean inStock, Pageable pageable);
+    Page<Product> search(String term,
+                         Boolean active,
+                         Boolean inStock,
+                         String condition,
+                         String categorySlug,
+                         Pageable pageable);
 
     record ProductFilter(
             String condition,

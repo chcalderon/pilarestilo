@@ -6,26 +6,39 @@ The format is inspired by Keep a Changelog.
 
 ## [Unreleased]
 
+## [2026-05-03] - UX improvements, image optimization, and carousel overhaul
+
 ### Added
-- Product AI OpenAI client now uses separate models for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`). Legacy `APP_PRODUCT_AI_OPENAI_MODEL` kept as fallback for `image-model`.
+- Server-side image optimization on upload: images stored via `POST /api/media/upload` are auto-resized and JPEG-compressed before persisting (`ImageOptimizerService`).
+- Flyway `V41__product_ai_infer_form_defaults.sql` adds Product AI infer-default fields to `system_settings` (`productAiInferDefaultBrand`, `productAiInferDefaultCondition`, `productAiInferBasePrice`, `productAiInferListPriceMultiplier`).
+- Product AI admin system settings now exposes infer-default fields; `ProductForm` auto-fills brand, condition, and price after 1-image AI inference.
+- Storefront product detail now shows subcategory pills (ancestry breadcrumb chain) and a product header image from the first media asset.
+- Landing page category carousel now renders featured category nodes at any tree depth (not limited to root-level featured categories).
 
 ### Changed
-- Product AI engine default changed to `openai_backend`; Ollama stack removed from Docker Compose and no longer supported in the pipeline.
-- OpenAI API errors now include the message from the response body (extracted via `error.message` field) instead of just the HTTP status code, improving debuggability.
+- Admin user management redesigned: `UserEditDrawer` slide-out panel replaces modal dialogs; unified edit UX with refined palette.
+- Admin credit section is now visible for all user types (previously hidden for non-`CUSTOMER` roles).
+- Admin category tree now supports up to 4 levels of subcategories (previously limited to 3).
+- Landing carousel now uses CSS `transform`-only transitions with touch-swipe support, dark-mode dot indicators, and 4-second autoplay advancing by computed index (not scroll position).
 
-### Removed
-- Ollama service and `ai` Docker Compose profile removed. Product AI text inference and image generation now exclusively use OpenAI.
+### Fixed
+- `MediaStorageServiceTest` now correctly injects `ImageOptimizerService` mock.
 
+### Verified
+- Backend test suite passes (`mvn test`) with 98 tests after Java 25 migration and all recent changes.
 
-- Admin module `Publicaciones e Imagenes` at `/admin/publicaciones` with initial UX shell:
+## [2026-05-01] - Product AI pipeline: Publicaciones module and OpenAI migration
+
+### Added
+- Product AI OpenAI client now uses separate model configs for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`). Legacy `APP_PRODUCT_AI_OPENAI_MODEL` kept as fallback for image model.
+- Admin module `Publicaciones e Imagenes` at `/admin/publicaciones` with UX shell:
   - `Carga masiva` tab for folder-based ingestion
-  - `Procesamiento IA` tab for job queue/status/retry/download actions
+  - `Procesamiento IA` tab for job queue, status, retry, and download actions
   - `Campanas (n8n)` tab for campaign orchestration checklist and workflow staging
 - Product AI backend now supports real `node_bridge` execution against external project scripts (`generate-prompts.js` + `transform-images.js`) with persisted `master/web/thumb` processed assets.
-- Product AI frontend processing tab now supports direct `Aprobar/Publicar` action on successful jobs.
-- Admin `Productos` form now includes optional `nuevo flujo IA (1 imagen)` switch for one-by-one inference/autofill without n8n orchestration.
-- Product AI text inference migrated to backend Java + Ollama (`/api/admin/product-ai/infer-single`) for one-by-one product assistance.
-- Product AI batch jobs now enrich text with Ollama inference and keep image transformation in `Publicaciones` flow with ChatGPT image edits.
+- Product AI frontend processing tab supports direct `Aprobar/Publicar` action on successful jobs.
+- Admin `Productos` form includes optional `nuevo flujo IA (1 imagen)` switch for one-by-one inference/autofill without n8n orchestration.
+- Product AI text inference backend (`/api/admin/product-ai/infer-single`) for one-by-one product assistance from admin `Productos` form.
 - Product AI backend baseline (`/api/admin/product-ai`) with:
   - `POST /drafts`
   - `POST /drafts/{draftId}/images`
@@ -34,8 +47,8 @@ The format is inspired by Keep a Changelog.
   - `GET /jobs/{jobId}`
   - `POST /jobs/{jobId}/retry`
   - `POST /drafts/{draftId}/approve-publish`
-- Flyway migration `V40__product_ai_pipeline.sql` adds draft/asset/job/output tables for async AI processing.
-- Admin navigation now includes `Publicaciones` entry in sidebar and quick link on dashboard.
+- Flyway `V40__product_ai_pipeline.sql` adds draft/asset/job/output tables for async AI processing.
+- Admin navigation includes `Publicaciones` entry in sidebar and quick link on dashboard.
 - New project progress log for IA pipeline implementation: `docs/ai-product-pipeline-progress.md`.
 - Public store settings API now exposes `supportEmail` (resolved from admin SMTP/SendGrid sender settings) for storefront contact surfaces.
 - New localized storefront informational pages:
@@ -47,6 +60,17 @@ The format is inspired by Keep a Changelog.
 - Postgres read-replica routing baseline for catalog queries in `product-service` (read-only transaction routing).
 - Redis-backed cache baseline for hot storefront reads (`/api/categories`, `/api/categories/tree`, `/api/system-settings/public`) with opt-in runtime toggle.
 - Optional Docker `cache` profile with Redis service (`pe_redis`) and persisted volume (`pe_redis_data`).
+
+### Changed
+- Product AI engine default changed to `openai_backend`; Ollama stack removed from Docker Compose and no longer supported in the pipeline.
+- OpenAI API errors now surface `error.message` from response body for improved debuggability.
+
+### Removed
+- Ollama service and `ai` Docker Compose profile removed. Product AI text inference and image generation now exclusively use OpenAI.
+
+## [2026-04-28] - Platform features completion (P3–P8)
+
+### Added
 - Notification provider runtime settings in `system_settings` with migration `V17__notification_provider_settings.sql`.
 - Admin system settings UI now includes provider selector cards (`LOG`, `WHATSAPP_SIMULATED`, `WHATSAPP_TWILIO`, `EMAIL_SENDGRID`, `EMAIL_SMTP`) and provider-specific forms.
 - Encrypted-at-rest storage for Twilio auth token and SendGrid API key in admin-managed system settings.

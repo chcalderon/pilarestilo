@@ -103,6 +103,7 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - Backend serves static product media via `/api/media/**`.
 - `MediaResourceConfig` maps that route to `app.media.storage-path` (filesystem).
 - Docker Compose binds that path to `infra/storage/media` for persistence.
+- `MediaStorageService` runs uploaded images through `ImageOptimizerService` before persisting: auto-resize + JPEG compression applied on every `POST /api/media/upload`.
 
 ---
 
@@ -168,6 +169,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V38`: cash register schema (`cash_registers`, `cash_movements`)
 - `V39`: dispatch schema (`dispatches`)
 - `V40`: product AI pipeline (`product_ai_drafts`, `product_ai_assets`, `product_ai_jobs`, `product_ai_outputs`)
+- `V41`: Product AI infer-default fields in `system_settings` (`productAiInferDefaultBrand`, `productAiInferDefaultCondition`, `productAiInferBasePrice`, `productAiInferListPriceMultiplier`)
 
 ---
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Loader2, X } from 'lucide-react';
+import { Upload, Loader2, X, ImageIcon } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
 interface Props {
@@ -101,58 +101,99 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
         </span>
       )}
 
-      {preview && (
-        <div className="relative w-full bg-pe-cream/60">
-          <img
-            src={preview}
-            alt="Vista producto"
-            className="w-full max-h-48 object-contain"
-            loading="lazy"
-          />
-          {uploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <Loader2 size={22} className="text-white animate-spin" />
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => { setPreview(undefined); onUpload(''); onUploadedFile?.(null); }}
-            className="absolute top-1.5 right-1.5 bg-black/50 hover:bg-black/70 text-white p-0.5 transition-colors"
-            title="Quitar imagen"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      )}
-
-      {/* Drop zone — always visible for uploading/changing */}
+      {/*
+        Fixed-height container — always 192px tall so the form never shifts
+        when an image is loaded or removed.
+      */}
       <div
+        className={[
+          'relative h-48 w-full overflow-hidden cursor-pointer select-none',
+          !preview
+            ? [
+                'border-2 border-dashed transition-colors',
+                dragging
+                  ? 'border-pe-rose bg-pe-rose/5 dark:bg-pe-rose/10'
+                  : state === 'error'
+                    ? 'border-red-400 bg-red-50/30 dark:bg-red-900/20'
+                    : 'border-pe-black/20 bg-pe-cream/30 hover:border-pe-rose/40 dark:border-[#3F2A2F] dark:bg-[#1F1518] dark:hover:border-[#E4B8BF]/40',
+              ].join(' ')
+            : 'bg-pe-cream/40 dark:bg-[#0F0A0C]',
+        ].join(' ')}
         onClick={() => !uploading && inputRef.current?.click()}
         onDragEnter={e => { e.preventDefault(); setState('dragging'); }}
         onDragOver={e => { e.preventDefault(); setState('dragging'); }}
         onDragLeave={() => setState('idle')}
         onDrop={onDrop}
-        className={[
-          'cursor-pointer border-2 border-dashed transition-colors select-none',
-          'flex items-center justify-center gap-2 px-4 py-3',
-          dragging ? 'border-pe-rose bg-pe-rose/5' : 'border-pe-black/15 hover:border-pe-rose/40',
-          state === 'error' ? 'border-red-400' : '',
-        ].join(' ')}
+        role="button"
+        aria-label={preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto'}
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
       >
-        {uploading ? (
-          <Loader2 size={16} className="animate-spin text-pe-rose" />
+        {preview ? (
+          /* Image fits container without cropping (preserve full product view) */
+          <img
+            src={preview}
+            alt="Vista previa del producto"
+            className="w-full h-full object-contain"
+            decoding="async"
+          />
         ) : (
-          <Upload size={14} className="text-pe-charcoal/35 shrink-0" />
+          /* Placeholder — shown when no image yet */
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+            <ImageIcon size={28} className="text-pe-charcoal/20 dark:text-[#D6C8B5]/30" strokeWidth={1.25} />
+            <span className="font-sans text-[0.68rem] text-pe-charcoal/35 dark:text-[#D6C8B5]/55 text-center px-6 leading-relaxed whitespace-pre-line">
+              {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
+            </span>
+          </div>
         )}
-        <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
-          {uploading
-            ? 'Subiendo...'
-            : dragging
-              ? 'Suelta para subir'
-              : preview
-                ? 'Arrastra o haz clic para cambiar'
-                : 'Arrastra o haz clic para subir'}
-        </span>
+
+        {/* Drag-over overlay when image already present */}
+        {preview && dragging && (
+          <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-pe-rose bg-pe-rose/10 pointer-events-none">
+            <span className="font-sans text-[0.72rem] text-pe-rose font-medium">Suelta para reemplazar</span>
+          </div>
+        )}
+
+        {/* Upload spinner */}
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+            <Loader2 size={22} className="text-white animate-spin" />
+          </div>
+        )}
+
+        {/* Controls overlay — visible on hover when image exists */}
+        {preview && !uploading && !dragging && (
+          <div className="absolute inset-0 flex flex-col justify-between p-2 opacity-0 hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 via-transparent to-transparent">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  setPreview(undefined);
+                  onUpload('');
+                  onUploadedFile?.(null);
+                }}
+                className="bg-black/55 hover:bg-black/80 text-white p-1 transition-colors"
+                title="Quitar imagen"
+                aria-label="Quitar imagen"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 text-white/75">
+              <Upload size={11} />
+              <span className="font-sans text-[0.62rem]">Clic o arrastra para cambiar</span>
+            </div>
+          </div>
+        )}
+
+        {/* No-image upload hint overlay on hover */}
+        {!preview && !uploading && !dragging && (
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-1.5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+            <Upload size={11} className="text-pe-charcoal/40 dark:text-[#D6C8B5]/55" />
+            <span className="font-sans text-[0.6rem] text-pe-charcoal/40 dark:text-[#D6C8B5]/55">Clic para seleccionar</span>
+          </div>
+        )}
       </div>
 
       {state === 'error' && (

@@ -56,9 +56,11 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "") String q,
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) String condition,
+            @RequestParam(required = false) String category,
             Pageable pageable
     ) {
-        return queryService.search(q, active, inStock, pageable).map(ProductMapper::toDto);
+        return queryService.search(q, active, inStock, condition, category, pageable).map(ProductMapper::toDto);
     }
 
     @GetMapping("/_health")

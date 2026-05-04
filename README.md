@@ -52,8 +52,17 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile obser
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
 ```
 
-## Latest updates (April 2026)
+## Latest updates (April–May 2026)
 
+- Java 17 → 25 migration complete; backend test suite passes with 98 tests.
+- Admin user management redesigned with `UserEditDrawer` slide-out panel replacing modal dialogs; refined palette throughout the UX.
+- Admin credit section now visible for all user types (previously hidden for non-`CUSTOMER` roles).
+- Server-side image optimization on upload: all images stored via `POST /api/media/upload` are auto-resized and JPEG-compressed before persisting (`ImageOptimizerService`).
+- Storefront product detail now shows subcategory pills (ancestry breadcrumb chain) and a product header image from the first media asset.
+- Admin category tree now supports up to 4 levels of subcategories (previously limited to 3).
+- Landing carousel now uses CSS `transform`-only transitions with touch-swipe support, dark-mode dot indicators, and 4-second autoplay advancing by computed index (not scroll position).
+- Landing page category carousel now renders featured category nodes at any tree depth (not limited to root-level featured categories).
+- Product AI: `ProductAiOpenAiClient` now uses separate model configs for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`); Ollama stack removed from Docker Compose and pipeline.
 - Product cards now support dual pricing (`listPrice` struck-through + discounted sale price) across home, category, listing, wishlist, and search contexts.
 - Product AI single-image infer now pre-fills brand/condition/price defaults from admin system settings, and Ollama inference includes automatic quality fallback between primary/fallback models.
 - Existing catalog rows are backfilled with default `listPrice` values via DB migration so discount visuals render immediately in storefront cards.
