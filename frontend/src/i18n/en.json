@@ -125,9 +125,9 @@
   },
   "delivery": {
     "title": "Estimated delivery",
-    "santiago": "Ships within Santiago in 24-48h",
-    "rm": "Ships within Metropolitan Region in 2-3 business days",
-    "regiones": "Ships to Chilean regions in 3-7 business days"
+    "santiago": "Local delivery 24-48h (Los Andes, San Felipe, Calle Larga, Rinconada)",
+    "rm": "Valparaíso Region and Metropolitan Region 2-4 business days",
+    "regiones": "Other Chilean regions 3-7 business days"
   },
   "cuotas": {
     "title": "Installment plans available",

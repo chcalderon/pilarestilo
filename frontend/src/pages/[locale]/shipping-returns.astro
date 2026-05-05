@@ -13,14 +13,14 @@ const isEs = locale === 'es';
 
 const shippingZones = isEs
   ? [
-      { zone: 'Santiago', eta: '24 a 48 horas habiles', note: 'Despacho prioritario en zona urbana.' },
-      { zone: 'Region Metropolitana', eta: '2 a 4 dias habiles', note: 'Tiempo sujeto a comuna y disponibilidad.' },
-      { zone: 'Regiones', eta: '3 a 7 dias habiles', note: 'Con numero de seguimiento una vez despachado.' },
+      { zone: 'Zona local', eta: '24 a 48 horas habiles', note: 'Los Andes, San Felipe, Calle Larga y Rinconada. Entrega prioritaria.' },
+      { zone: 'V Region y RM', eta: '2 a 4 dias habiles', note: 'Region de Valparaiso y Region Metropolitana via Starken o ChilExpress.' },
+      { zone: 'Otras regiones', eta: '3 a 7 dias habiles', note: 'Resto de Chile via Starken o ChilExpress, con numero de seguimiento.' },
     ]
   : [
-      { zone: 'Santiago', eta: '24 to 48 business hours', note: 'Priority urban dispatch.' },
-      { zone: 'Metropolitan Region', eta: '2 to 4 business days', note: 'Timing depends on district and availability.' },
-      { zone: 'Other regions', eta: '3 to 7 business days', note: 'Tracking number shared after dispatch.' },
+      { zone: 'Local zone', eta: '24 to 48 business hours', note: 'Los Andes, San Felipe, Calle Larga and Rinconada. Priority delivery.' },
+      { zone: 'Valparaiso & Metropolitan Region', eta: '2 to 4 business days', note: 'Shipped via Starken or ChilExpress.' },
+      { zone: 'Other regions', eta: '3 to 7 business days', note: 'Rest of Chile via Starken or ChilExpress, tracking number provided.' },
     ];
 
 const returns = isEs
@@ -75,6 +75,20 @@ const returns = isEs
             </article>
           ))}
         </div>
+
+        <article class="mt-8 bg-pe-cream/60 border border-pe-rose/20 p-6 md:p-7">
+          <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-2">
+            {isEs ? 'Modalidad de despacho' : 'Shipping method'}
+          </p>
+          <h3 class="font-display text-xl text-pe-black font-light mb-2">
+            {isEs ? 'Starken o ChilExpress (envío por pagar)' : 'Starken or ChilExpress (cash on delivery)'}
+          </h3>
+          <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">
+            {isEs
+              ? 'El costo de envío se paga al retirar en sucursal del courier. Despachamos desde Los Andes; te enviamos el número de seguimiento una vez en tránsito.'
+              : 'Shipping cost is paid at pickup at the courier branch. Dispatched from Los Andes; tracking number shared once the parcel is in transit.'}
+          </p>
+        </article>
       </div>
     </section>
 

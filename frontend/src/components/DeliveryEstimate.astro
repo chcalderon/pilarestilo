@@ -11,9 +11,18 @@ interface Props {
 const { zone = 'SANTIAGO', locale = 'es' } = Astro.props;
 
 const estimates: Record<ShippingZone, { es: string; en: string }> = {
-  SANTIAGO: { es: 'Envio en Santiago 24-48 hs', en: 'Ships within Santiago in 24-48h' },
-  RM: { es: 'Envio en Region Metropolitana 2-3 dias habiles', en: 'Ships within Metropolitan Region in 2-3 business days' },
-  REGIONES: { es: 'Envio a regiones 3-7 dias habiles', en: 'Ships to Chilean regions in 3-7 business days' },
+  SANTIAGO: {
+    es: 'Envio local 24-48 hs (Los Andes, San Felipe, Calle Larga, Rinconada)',
+    en: 'Local delivery 24-48h (Los Andes, San Felipe, Calle Larga, Rinconada)',
+  },
+  RM: {
+    es: 'V Region y Region Metropolitana 2-4 dias habiles',
+    en: 'Valparaiso Region and Metropolitan Region 2-4 business days',
+  },
+  REGIONES: {
+    es: 'Otras regiones 3-7 dias habiles',
+    en: 'Other Chilean regions 3-7 business days',
+  },
 };
 
 const copy = estimates[zone] ?? estimates.SANTIAGO;
