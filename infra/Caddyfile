@@ -158,6 +158,27 @@
             }
         }
 
+        # Bulk media optimization / migration endpoints can scan + rewrite
+        # many files on disk and update DB rows. Allow up to 10 minutes.
+        @media_admin_long {
+            method POST
+            path /api/admin/media/optimize-all
+            path /api/admin/media/optimize-products
+            path /api/admin/media/optimize-categories
+            path /api/admin/media/optimize-existing
+            path /api/admin/media/migrate-category-images
+        }
+        handle @media_admin_long {
+            reverse_proxy backend:8080 {
+                lb_try_duration 5s
+                fail_duration 15s
+                transport http {
+                    dial_timeout 5s
+                    response_header_timeout 600s
+                }
+            }
+        }
+
         # API - proxy all remaining /api/* requests to the Spring Boot backend
         handle /api/* {
             reverse_proxy {
