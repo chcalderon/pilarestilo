@@ -4,7 +4,6 @@ import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.domain.ports.PasswordEncoder;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
-import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
@@ -18,16 +17,13 @@ public class RegisterUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RolePermissionRepository rolePermissionRepository;
 
     public RegisterUseCase(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           JwtTokenProvider jwtTokenProvider,
-                           RolePermissionRepository rolePermissionRepository) {
+                           JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.rolePermissionRepository = rolePermissionRepository;
     }
 
     public AuthTokenDto execute(String email, String rawPassword, String fullName) {

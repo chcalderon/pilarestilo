@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             String email = claims.get("email", String.class);
             UserRole role = UserRole.valueOf(claims.get("role", String.class));
+            @SuppressWarnings("unchecked")
             List<String> permissions = claims.get("permissions", List.class);
             if (permissions == null) permissions = List.of();
 

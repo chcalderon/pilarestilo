@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DashboardStatsRepositoryAdapterIT {
 
     @Container
+    @SuppressWarnings("resource") // lifecycle managed by @Testcontainers, not try-with-resources
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("pilarestilo_test")
             .withUsername("test")
