@@ -6,7 +6,6 @@ import com.pilarestilo.product.application.usecases.*;
 import com.pilarestilo.product.infrastructure.web.requests.CreateProductRequest;
 import com.pilarestilo.product.infrastructure.web.requests.ProductVariantRequest;
 import com.pilarestilo.product.infrastructure.web.requests.UpdateProductRequest;
-import com.pilarestilo.product.application.usecases.SearchProductsUseCase;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

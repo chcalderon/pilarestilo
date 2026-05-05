@@ -10,7 +10,7 @@ interface Props {
   onSubmitted?: () => void;
 }
 
-export default function ReviewForm({ productId, token, userId, locale = 'es', onSubmitted }: Props) {
+export default function ReviewForm({ productId, token, locale = 'es', onSubmitted }: Props) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [title, setTitle] = useState('');

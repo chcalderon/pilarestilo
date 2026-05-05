@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, CreditCard, Star, Loader2 } from 'lucide-react';
+import { Package, CreditCard, Star } from 'lucide-react';
 import { getProducts, getPendingPayments, getAdminReviews } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 

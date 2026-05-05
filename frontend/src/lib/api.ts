@@ -1861,3 +1861,32 @@ export async function migrateCategoryImages(token: string): Promise<{
     headers: authHeaders(token),
   });
 }
+
+export interface OptimizeFolderResult {
+  processed: number;
+  renamed: number;
+  skipped: number;
+  failed: number;
+  bytesSaved: number;
+  errors: string[];
+}
+
+export interface OptimizeOthersResult {
+  processed: number;
+  skipped: number;
+  failed: number;
+  bytesSaved: number;
+}
+
+export interface OptimizeAllResult {
+  products: OptimizeFolderResult;
+  categories: OptimizeFolderResult;
+  others: OptimizeOthersResult;
+}
+
+export async function optimizeAllMedia(token: string): Promise<OptimizeAllResult> {
+  return apiFetch<OptimizeAllResult>('/admin/media/optimize-all', {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}

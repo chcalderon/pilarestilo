@@ -17,7 +17,7 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
+    const handler = () => {
       setOpen(true);
     };
     window.addEventListener('open-search', handler as EventListener);

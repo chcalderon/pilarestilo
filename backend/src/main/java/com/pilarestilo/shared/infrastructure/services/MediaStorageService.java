@@ -52,6 +52,17 @@ public class MediaStorageService {
         }
     }
 
+    public String storeOptimizedBytes(byte[] raw, String contentType, String folder, String baseFilename) {
+        try {
+            ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, contentType);
+            String baseName = sanitizeBaseName(extractBaseName(baseFilename));
+            String filename = buildFilename(baseName, optimized.extension());
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
+        } catch (IOException e) {
+            throw new RuntimeException("Could not process raw bytes", e);
+        }
+    }
+
     public String storeRaw(InputStream data, String folder, String filename, String contentType) {
         return activeAdapter().store(data, folder, filename, contentType);
     }

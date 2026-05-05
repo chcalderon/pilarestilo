@@ -194,6 +194,17 @@ Controller: `shared/infrastructure/web/controllers/MediaAdminController`
 
 - `POST /api/admin/media/migrate-category-images` (`ADMIN`)
   - Purpose: migrate external category image URLs into current media storage provider.
+- `POST /api/admin/media/optimize-products` (`ADMIN`)
+  - Purpose: scans `products/` folder, converts PNG to JPEG, re-encodes existing JPEGs through `ImageOptimizerService`, and updates product `image_url` records to the new filenames.
+  - Returns `{ processed, renamed, skipped, failed, bytesSaved, errors }`.
+- `POST /api/admin/media/optimize-categories` (`ADMIN`)
+  - Purpose: same as `optimize-products` but scoped to the `categories/` folder; updates `categories.image_url`.
+  - Returns `{ processed, renamed, skipped, failed, bytesSaved, errors }`.
+- `POST /api/admin/media/optimize-existing` (`ADMIN`)
+  - Purpose: walks the entire media root and re-encodes every JPEG via `ImageOptimizerService.reencodeJpeg` (max 1800px, quality 0.90). Returns `{ processed, skipped, failed, bytesSaved }`. Idempotent.
+- `POST /api/admin/media/optimize-all` (`ADMIN`)
+  - Purpose: one-shot button. Runs `optimize-products`, `optimize-categories`, then walks the rest of the media root for any remaining JPEGs (excluding `products/` and `categories/`).
+  - Returns `{ products, categories, others }` aggregated. Designed for the single-use cleanup button in the admin Media settings panel.
 
 ## 8. Frontend Surfaces Linked to These Modules
 

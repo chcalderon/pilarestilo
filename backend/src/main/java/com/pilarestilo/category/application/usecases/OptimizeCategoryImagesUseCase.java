@@ -1,6 +1,6 @@
-package com.pilarestilo.product.application.usecases;
+package com.pilarestilo.category.application.usecases;
 
-import com.pilarestilo.product.infrastructure.persistence.repositories.ProductJpaRepository;
+import com.pilarestilo.category.infrastructure.persistence.repositories.CategoryJpaRepository;
 import com.pilarestilo.shared.infrastructure.services.ImageOptimizerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,36 +17,36 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class OptimizeProductImagesUseCase {
+public class OptimizeCategoryImagesUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(OptimizeProductImagesUseCase.class);
+    private static final Logger log = LoggerFactory.getLogger(OptimizeCategoryImagesUseCase.class);
     private static final Set<String> SKIP_EXTENSIONS = Set.of("gif", "webp", "avif");
 
-    private final ProductJpaRepository productRepo;
+    private final CategoryJpaRepository categoryRepo;
     private final ImageOptimizerService imageOptimizer;
     private final Path mediaRoot;
 
-    public OptimizeProductImagesUseCase(
-            ProductJpaRepository productRepo,
+    public OptimizeCategoryImagesUseCase(
+            CategoryJpaRepository categoryRepo,
             ImageOptimizerService imageOptimizer,
             @Value("${app.media.storage-path:./media}") String mediaStoragePath) {
-        this.productRepo = productRepo;
+        this.categoryRepo = categoryRepo;
         this.imageOptimizer = imageOptimizer;
         this.mediaRoot = Paths.get(mediaStoragePath).toAbsolutePath().normalize();
     }
 
     @Transactional
     public Result execute() {
-        Path productsDir = mediaRoot.resolve("products");
-        if (!Files.exists(productsDir)) {
-            return new Result(0, 0, 0, 0, 0L, List.of());
+        Path categoriesDir = mediaRoot.resolve("categories");
+        if (!Files.exists(categoriesDir)) {
+            return new Result(0, 0, 0, 0, 0, List.of());
         }
 
         int processed = 0, renamed = 0, skipped = 0, failed = 0;
         long bytesSaved = 0L;
         List<String> errors = new ArrayList<>();
 
-        try (var stream = Files.list(productsDir)) {
+        try (var stream = Files.list(categoriesDir)) {
             List<Path> files = stream.filter(Files::isRegularFile).toList();
 
             for (Path file : files) {
@@ -74,20 +74,20 @@ public class OptimizeProductImagesUseCase {
                     } else if (ext.equals("png")) {
                         byte[] jpegBytes = imageOptimizer.reencodeJpeg(original);
                         String newFilename = filename.substring(0, filename.lastIndexOf('.')) + ".jpg";
-                        Path newFile = productsDir.resolve(newFilename);
+                        Path newFile = categoriesDir.resolve(newFilename);
 
                         Files.write(newFile, jpegBytes);
                         Files.delete(file);
                         bytesSaved += Math.max(0, original.length - jpegBytes.length);
 
-                        String oldUrl = "/api/media/products/" + filename;
-                        String newUrl = "/api/media/products/" + newFilename;
+                        String oldUrl = "/api/media/categories/" + filename;
+                        String newUrl = "/api/media/categories/" + newFilename;
 
-                        int updated = updateProductImageUrl(oldUrl, newUrl);
+                        int updated = updateCategoryImageUrl(oldUrl, newUrl);
                         if (updated > 0) {
-                            log.info("Renamed {} → {} (updated {} product records)", filename, newFilename, updated);
+                            log.info("Renamed {} -> {} (updated {} category records)", filename, newFilename, updated);
                         } else {
-                            log.warn("Renamed file {} → {} but no product referenced it", filename, newFilename);
+                            log.warn("Renamed file {} -> {} but no category referenced it", filename, newFilename);
                         }
                         processed++;
                         renamed++;
@@ -102,19 +102,19 @@ public class OptimizeProductImagesUseCase {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Could not list products media directory", e);
+            throw new RuntimeException("Could not list categories media directory", e);
         }
 
         return new Result(processed, renamed, skipped, failed, bytesSaved, errors);
     }
 
-    private int updateProductImageUrl(String oldUrl, String newUrl) {
-        var matches = productRepo.findAll().stream()
-                .filter(p -> oldUrl.equals(p.getImageUrl()))
+    private int updateCategoryImageUrl(String oldUrl, String newUrl) {
+        var matches = categoryRepo.findAll().stream()
+                .filter(c -> oldUrl.equals(c.getImageUrl()))
                 .toList();
-        matches.forEach(p -> p.setImageUrl(newUrl));
+        matches.forEach(c -> c.setImageUrl(newUrl));
         if (!matches.isEmpty()) {
-            productRepo.saveAll(matches);
+            categoryRepo.saveAll(matches);
         }
         return matches.size();
     }

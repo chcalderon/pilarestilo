@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -49,17 +48,13 @@ public class MigrateCategoryImagesUseCase {
                     .uri(URI.create(imageUrl))
                     .timeout(Duration.ofSeconds(10))
                     .GET().build();
-                var response = HTTP.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                var response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
                 String contentType = response.headers().firstValue("content-type").orElse("image/jpeg");
-                String ext = mediaStorageService.extensionFromContentType(contentType);
-                if (ext.isBlank()) ext = "jpg";
-                String filename = "category-" + cat.getId() + "." + ext;
+                String baseFilename = "category-" + cat.getId();
 
-                String storedUrl;
-                try (InputStream body = response.body()) {
-                    storedUrl = mediaStorageService.storeRaw(body, "categories", filename, contentType);
-                }
+                String storedUrl = mediaStorageService.storeOptimizedBytes(
+                    response.body(), contentType, "categories", baseFilename);
 
                 cat.update(
                     cat.getSlug(),

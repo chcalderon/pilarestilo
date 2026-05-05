@@ -15,7 +15,9 @@ import {
 import {
   getSystemSettings,
   migrateCategoryImages,
+  optimizeAllMedia,
   type MediaStorageProvider,
+  type OptimizeAllResult,
   type PaymentGatewayProvider,
   updateSystemSettings,
   type NotificationProvider,
@@ -367,6 +369,9 @@ export default function SystemSettingsPanel() {
   const [settings, setSettings] = useState<SystemSettingsDto | null>(null);
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState<{ migrated: number; failed: number } | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizeResult, setOptimizeResult] = useState<OptimizeAllResult | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>({
     whatsappNumber: '',
     instagramUrl: '',
@@ -513,6 +518,30 @@ export default function SystemSettingsPanel() {
     } finally {
       setMigrating(false);
     }
+  };
+
+  const handleOptimizeAll = async () => {
+    if (!effectiveToken || optimizing) return;
+    if (!confirm('Esto reescribira todas las imagenes existentes (productos + categorias + resto). El proceso puede tardar varios minutos. Continuar?')) {
+      return;
+    }
+    setOptimizing(true);
+    setOptimizeResult(null);
+    setOptimizeError(null);
+    try {
+      const result = await optimizeAllMedia(effectiveToken);
+      setOptimizeResult(result);
+    } catch (err) {
+      setOptimizeError(err instanceof Error ? err.message : 'Error al optimizar imagenes');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const hasProviderRequiringSmtp = form.notificationProvider === 'EMAIL_SMTP';
@@ -1259,6 +1288,48 @@ export default function SystemSettingsPanel() {
                 ? 'Error al ejecutar la migración.'
                 : `Migradas: ${migrateResult.migrated} · Fallidas: ${migrateResult.failed}`}
             </p>
+          )}
+        </div>
+
+        <div className="pt-4 border-t border-pe-black/8">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+            Optimización de imágenes existentes
+          </p>
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+            Reescribe en disco las imágenes pesadas ya almacenadas (productos + categorías + resto).
+            Reencodea JPEG y convierte PNG → JPEG, actualizando referencias en la base de datos.
+            Idempotente: ejecutar de nuevo solo procesa lo que aún se pueda achicar. Pensado para corrida única tras la migración inicial.
+          </p>
+          <button
+            type="button"
+            onClick={handleOptimizeAll}
+            disabled={optimizing}
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+          >
+            {optimizing ? <Loader2 size={13} className="animate-spin" /> : null}
+            {optimizing ? 'Optimizando...' : 'Optimizar imágenes existentes'}
+          </button>
+          {optimizeError && (
+            <p className="font-sans text-[0.72rem] mt-2 text-red-500">{optimizeError}</p>
+          )}
+          {optimizeResult && (
+            <div className="mt-2 space-y-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+              <p>
+                <strong>Productos:</strong> procesadas {optimizeResult.products.processed} ·
+                renombradas {optimizeResult.products.renamed} · saltadas {optimizeResult.products.skipped} ·
+                fallidas {optimizeResult.products.failed} · ahorro {formatBytes(optimizeResult.products.bytesSaved)}
+              </p>
+              <p>
+                <strong>Categorías:</strong> procesadas {optimizeResult.categories.processed} ·
+                renombradas {optimizeResult.categories.renamed} · saltadas {optimizeResult.categories.skipped} ·
+                fallidas {optimizeResult.categories.failed} · ahorro {formatBytes(optimizeResult.categories.bytesSaved)}
+              </p>
+              <p>
+                <strong>Otros:</strong> procesadas {optimizeResult.others.processed} ·
+                saltadas {optimizeResult.others.skipped} · fallidas {optimizeResult.others.failed} ·
+                ahorro {formatBytes(optimizeResult.others.bytesSaved)}
+              </p>
+            </div>
           )}
         </div>
       </section>
