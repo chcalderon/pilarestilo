@@ -1,7 +1,6 @@
 package com.pilarestilo.cashregister.infrastructure.listeners;
 
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
-import com.pilarestilo.cashregister.domain.model.CashRegister;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;

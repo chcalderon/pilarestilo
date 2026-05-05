@@ -1,6 +1,5 @@
 package com.pilarestilo.rbac.infrastructure;
 
-import com.pilarestilo.shared.rbac.domain.model.RolePermission;
 import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
 import com.pilarestilo.user.domain.enums.UserRole;
 import org.junit.jupiter.api.Test;
