@@ -261,6 +261,9 @@ export default function DataTable<T>({
                           className={tdBase}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                              return;
+                            }
                             toggleRow(id);
                           }}
                         >
