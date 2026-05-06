@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/Button.astro';
 import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+import { getPublicShippingConfig } from '../../lib/api';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -11,17 +12,26 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 
 const isEs = locale === 'es';
 
-const shippingZones = isEs
-  ? [
-      { zone: 'Zona local', eta: '24 a 48 horas habiles', note: 'Los Andes, San Felipe, Calle Larga y Rinconada. Entrega prioritaria.' },
-      { zone: 'V Region y RM', eta: '2 a 4 dias habiles', note: 'Region de Valparaiso y Region Metropolitana via Starken o ChilExpress.' },
-      { zone: 'Otras regiones', eta: '3 a 7 dias habiles', note: 'Resto de Chile via Starken o ChilExpress, con numero de seguimiento.' },
-    ]
-  : [
-      { zone: 'Local zone', eta: '24 to 48 business hours', note: 'Los Andes, San Felipe, Calle Larga and Rinconada. Priority delivery.' },
-      { zone: 'Valparaiso & Metropolitan Region', eta: '2 to 4 business days', note: 'Shipped via Starken or ChilExpress.' },
-      { zone: 'Other regions', eta: '3 to 7 business days', note: 'Rest of Chile via Starken or ChilExpress, tracking number provided.' },
-    ];
+const shippingConfig = await getPublicShippingConfig();
+const activeZones = shippingConfig.zones.filter((z) => z.active);
+const inactiveZones = shippingConfig.zones.filter((z) => !z.active);
+const activeCouriers = shippingConfig.couriers.filter((c) => c.active);
+
+function buildZoneNote(comunas: string[], extra: string): string {
+  const head = comunas.length > 0 ? comunas.join(', ') + (extra ? '. ' : '') : '';
+  return (head + extra).trim();
+}
+
+const shippingZones = activeZones.map((z) => ({
+  zone: isEs ? z.titleEs : z.titleEn,
+  eta: isEs ? z.etaEs : z.etaEn,
+  note: buildZoneNote(z.comunas, isEs ? 'Despacho disponible.' : 'Shipping available.'),
+}));
+
+const unavailableZones = inactiveZones.map((z) => isEs ? z.titleEs : z.titleEn);
+
+const couriersLabel = activeCouriers.map((c) => c.name).join(' o ') || (isEs ? 'courier autorizado' : 'authorized courier');
+const paymentLabel = isEs ? 'Envío por pagar' : 'Cash on delivery (shipping cost)';
 
 const returns = isEs
   ? [
@@ -81,13 +91,18 @@ const returns = isEs
             {isEs ? 'Modalidad de despacho' : 'Shipping method'}
           </p>
           <h3 class="font-display text-xl text-pe-black font-light mb-2">
-            {isEs ? 'Starken o ChilExpress (envío por pagar)' : 'Starken or ChilExpress (cash on delivery)'}
+            {couriersLabel} ({paymentLabel.toLowerCase()})
           </h3>
           <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">
             {isEs
-              ? 'El costo de envío se paga al retirar en sucursal del courier. Despachamos desde Los Andes; te enviamos el número de seguimiento una vez en tránsito.'
-              : 'Shipping cost is paid at pickup at the courier branch. Dispatched from Los Andes; tracking number shared once the parcel is in transit.'}
+              ? `El costo de envío se paga al retirar en sucursal del courier. Despachamos desde Los Andes; te enviamos el número de seguimiento una vez en tránsito.`
+              : `Shipping cost is paid at pickup at the courier branch. Dispatched from Los Andes; tracking number shared once the parcel is in transit.`}
           </p>
+          {unavailableZones.length > 0 && (
+            <p class="mt-3 font-sans text-[0.72rem] text-pe-charcoal/60 italic">
+              {isEs ? 'Zonas temporalmente no disponibles' : 'Zones currently unavailable'}: {unavailableZones.join(', ')}.
+            </p>
+          )}
         </article>
       </div>
     </section>

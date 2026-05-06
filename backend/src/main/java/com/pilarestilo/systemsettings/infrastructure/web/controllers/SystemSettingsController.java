@@ -110,6 +110,9 @@ public class SystemSettingsController {
                 request.clearSmtpPassword(),
                 request.smtpAuthEnabled(),
                 request.smtpStarttlsEnabled(),
+                request.shippingZonesJson(),
+                request.shippingCouriersJson(),
+                request.shippingPaymentMode(),
                 updatedBy
         ));
     }

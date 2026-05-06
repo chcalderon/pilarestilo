@@ -1,31 +1,21 @@
 ---
 import type { Locale } from '../i18n/index';
-
-type ShippingZone = 'SANTIAGO' | 'RM' | 'REGIONES';
+import { getPublicShippingConfig, type ShippingZoneCode } from '../lib/api';
 
 interface Props {
-  zone?: ShippingZone;
+  zone?: ShippingZoneCode;
   locale?: Locale;
 }
 
-const { zone = 'SANTIAGO', locale = 'es' } = Astro.props;
+const { zone = 'LOCAL', locale = 'es' } = Astro.props;
 
-const estimates: Record<ShippingZone, { es: string; en: string }> = {
-  SANTIAGO: {
-    es: 'Envio local 24-48 hs (Los Andes, San Felipe, Calle Larga, Rinconada)',
-    en: 'Local delivery 24-48h (Los Andes, San Felipe, Calle Larga, Rinconada)',
-  },
-  RM: {
-    es: 'V Region y Region Metropolitana 2-4 dias habiles',
-    en: 'Valparaiso Region and Metropolitan Region 2-4 business days',
-  },
-  REGIONES: {
-    es: 'Otras regiones 3-7 dias habiles',
-    en: 'Other Chilean regions 3-7 business days',
-  },
-};
+const config = await getPublicShippingConfig();
+const matchedZone = config.zones.find((z) => z.code === zone) ?? config.zones[0];
 
-const copy = estimates[zone] ?? estimates.SANTIAGO;
+const isEs = locale === 'es';
+const title = isEs ? matchedZone?.titleEs : matchedZone?.titleEn;
+const eta = isEs ? matchedZone?.etaEs : matchedZone?.etaEn;
+const copyLine = [title, eta].filter(Boolean).join(' · ') || (isEs ? 'Despacho disponible' : 'Shipping available');
 ---
 
 <div class="flex items-start gap-3 text-sm">
@@ -38,11 +28,9 @@ const copy = estimates[zone] ?? estimates.SANTIAGO;
     <circle cx="18.5" cy="18.5" r="2.5"/>
   </svg>
   <div>
-    <p class="text-[#1A1A1A] font-medium">
-      {locale === 'es' ? copy.es : copy.en}
-    </p>
+    <p class="text-[#1A1A1A] font-medium">{copyLine}</p>
     <p class="text-[10px] tracking-wide text-[#3A3A3A]/50 mt-0.5">
-      {locale === 'es' ? 'Entrega estimada' : 'Estimated delivery'}
+      {isEs ? 'Entrega estimada' : 'Estimated delivery'}
     </p>
   </div>
 </div>

@@ -66,7 +66,7 @@ public class ProductEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "shipping_origin_zone", nullable = false, length = 16)
-    private ShippingOriginZone shippingOriginZone = ShippingOriginZone.SANTIAGO;
+    private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(

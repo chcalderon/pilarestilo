@@ -4,6 +4,7 @@ import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.systemsettings.domain.enums.MediaStorageProvider;
 import com.pilarestilo.systemsettings.domain.enums.NotificationProvider;
 import com.pilarestilo.systemsettings.domain.enums.PaymentGatewayProvider;
+import com.pilarestilo.systemsettings.domain.enums.ShippingPaymentMode;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -70,8 +71,31 @@ public class SystemSettings {
     private String productAiInferDefaultCondition;
     private Integer productAiInferBasePrice;
     private BigDecimal productAiInferListPriceMultiplier;
+    private String shippingZonesJson;
+    private String shippingCouriersJson;
+    private ShippingPaymentMode shippingPaymentMode;
     private Instant updatedAt;
     private String updatedBy;
+
+    public static final String DEFAULT_SHIPPING_ZONES_JSON =
+            "[" +
+            "{\"code\":\"LOCAL\",\"titleEs\":\"Zona local\",\"titleEn\":\"Local zone\"," +
+            "\"etaEs\":\"24-48 hs\",\"etaEn\":\"24-48h\"," +
+            "\"comunas\":[\"Los Andes\",\"San Felipe\",\"Calle Larga\",\"Rinconada\"]," +
+            "\"active\":true,\"sortOrder\":1}," +
+            "{\"code\":\"REGIONAL\",\"titleEs\":\"V Region y RM\",\"titleEn\":\"Valparaiso Region and Metropolitan Region\"," +
+            "\"etaEs\":\"2-4 dias habiles\",\"etaEn\":\"2-4 business days\"," +
+            "\"comunas\":[],\"active\":true,\"sortOrder\":2}," +
+            "{\"code\":\"NACIONAL\",\"titleEs\":\"Otras regiones\",\"titleEn\":\"Other Chilean regions\"," +
+            "\"etaEs\":\"3-7 dias habiles\",\"etaEn\":\"3-7 business days\"," +
+            "\"comunas\":[],\"active\":true,\"sortOrder\":3}" +
+            "]";
+
+    public static final String DEFAULT_SHIPPING_COURIERS_JSON =
+            "[" +
+            "{\"id\":\"starken\",\"name\":\"Starken\",\"logoUrl\":null,\"active\":true}," +
+            "{\"id\":\"chilexpress\",\"name\":\"ChilExpress\",\"logoUrl\":null,\"active\":true}" +
+            "]";
 
     private SystemSettings() {}
 
@@ -108,6 +132,9 @@ public class SystemSettings {
         settings.productAiInferDefaultCondition = "USED";
         settings.productAiInferBasePrice = 24990;
         settings.productAiInferListPriceMultiplier = new BigDecimal("1.35");
+        settings.shippingZonesJson = DEFAULT_SHIPPING_ZONES_JSON;
+        settings.shippingCouriersJson = DEFAULT_SHIPPING_COURIERS_JSON;
+        settings.shippingPaymentMode = ShippingPaymentMode.POR_PAGAR;
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
         return settings;
@@ -169,6 +196,9 @@ public class SystemSettings {
             String productAiInferDefaultCondition,
             Integer productAiInferBasePrice,
             BigDecimal productAiInferListPriceMultiplier,
+            String shippingZonesJson,
+            String shippingCouriersJson,
+            String shippingPaymentMode,
             Instant updatedAt,
             String updatedBy
     ) {
@@ -230,6 +260,9 @@ public class SystemSettings {
         settings.productAiInferDefaultCondition = normalizeInferDefaultCondition(productAiInferDefaultCondition);
         settings.productAiInferBasePrice = normalizeInferBasePrice(productAiInferBasePrice);
         settings.productAiInferListPriceMultiplier = normalizeInferListPriceMultiplier(productAiInferListPriceMultiplier);
+        settings.shippingZonesJson = normalizeShippingZonesJson(shippingZonesJson);
+        settings.shippingCouriersJson = normalizeShippingCouriersJson(shippingCouriersJson);
+        settings.shippingPaymentMode = normalizeShippingPaymentMode(shippingPaymentMode);
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
@@ -291,6 +324,9 @@ public class SystemSettings {
             String productAiInferDefaultCondition,
             Integer productAiInferBasePrice,
             BigDecimal productAiInferListPriceMultiplier,
+            String shippingZonesJson,
+            String shippingCouriersJson,
+            String shippingPaymentMode,
             String updatedBy
     ) {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
@@ -347,6 +383,9 @@ public class SystemSettings {
         this.productAiInferDefaultCondition = normalizeInferDefaultCondition(productAiInferDefaultCondition);
         this.productAiInferBasePrice = normalizeInferBasePrice(productAiInferBasePrice);
         this.productAiInferListPriceMultiplier = normalizeInferListPriceMultiplier(productAiInferListPriceMultiplier);
+        this.shippingZonesJson = normalizeShippingZonesJson(shippingZonesJson);
+        this.shippingCouriersJson = normalizeShippingCouriersJson(shippingCouriersJson);
+        this.shippingPaymentMode = normalizeShippingPaymentMode(shippingPaymentMode);
         validateConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
@@ -448,6 +487,36 @@ public class SystemSettings {
             throw new DomainException("Product AI base price must be >= 1000");
         }
         return value;
+    }
+
+    private static String normalizeShippingZonesJson(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return DEFAULT_SHIPPING_ZONES_JSON;
+        }
+        if (!normalized.startsWith("[") || !normalized.endsWith("]")) {
+            throw new DomainException("Shipping zones must be a JSON array");
+        }
+        return normalized;
+    }
+
+    private static String normalizeShippingCouriersJson(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return DEFAULT_SHIPPING_COURIERS_JSON;
+        }
+        if (!normalized.startsWith("[") || !normalized.endsWith("]")) {
+            throw new DomainException("Shipping couriers must be a JSON array");
+        }
+        return normalized;
+    }
+
+    private static ShippingPaymentMode normalizeShippingPaymentMode(String value) {
+        try {
+            return ShippingPaymentMode.fromRaw(value);
+        } catch (IllegalArgumentException ex) {
+            throw new DomainException("Unsupported shipping payment mode: " + value);
+        }
     }
 
     private static BigDecimal normalizeInferListPriceMultiplier(BigDecimal value) {
@@ -571,6 +640,9 @@ public class SystemSettings {
     public String getProductAiInferDefaultCondition() { return productAiInferDefaultCondition; }
     public Integer getProductAiInferBasePrice() { return productAiInferBasePrice; }
     public BigDecimal getProductAiInferListPriceMultiplier() { return productAiInferListPriceMultiplier; }
+    public String getShippingZonesJson() { return shippingZonesJson; }
+    public String getShippingCouriersJson() { return shippingCouriersJson; }
+    public ShippingPaymentMode getShippingPaymentMode() { return shippingPaymentMode; }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getUpdatedBy() { return updatedBy; }
 }

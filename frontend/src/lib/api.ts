@@ -42,7 +42,7 @@ export interface ProductDto {
   updatedAt: string;
   avgRating?: number;
   reviewCount?: number;
-  shippingOriginZone?: 'SANTIAGO' | 'RM' | 'REGIONES';
+  shippingOriginZone?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
   variants?: ProductVariantDto[];
@@ -181,6 +181,28 @@ export type MediaStorageProvider =
 export type PaymentGatewayProvider =
   | 'MERCADO_PAGO';
 
+export type ShippingZoneCode = 'LOCAL' | 'REGIONAL' | 'NACIONAL';
+
+export type ShippingPaymentMode = 'POR_PAGAR';
+
+export interface ShippingZoneConfig {
+  code: ShippingZoneCode;
+  titleEs: string;
+  titleEn: string;
+  etaEs: string;
+  etaEn: string;
+  comunas: string[];
+  active: boolean;
+  sortOrder: number;
+}
+
+export interface CourierConfig {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  active: boolean;
+}
+
 export interface SystemSettingsDto {
   whatsappNumber: string;
   instagramUrl?: string | null;
@@ -236,6 +258,9 @@ export interface SystemSettingsDto {
   smtpAuthEnabled: boolean;
   smtpStarttlsEnabled: boolean;
   smtpPasswordConfigured: boolean;
+  shippingZonesJson?: string | null;
+  shippingCouriersJson?: string | null;
+  shippingPaymentMode?: ShippingPaymentMode;
   updatedAt?: string;
   updatedBy?: string | null;
 }
@@ -302,6 +327,9 @@ export interface UpdateSystemSettingsRequest {
   clearSmtpPassword?: boolean;
   smtpAuthEnabled: boolean;
   smtpStarttlsEnabled: boolean;
+  shippingZonesJson?: string;
+  shippingCouriersJson?: string;
+  shippingPaymentMode?: ShippingPaymentMode;
 }
 
 export interface PublicStoreSettingsDto {
@@ -317,6 +345,9 @@ export interface PublicStoreSettingsDto {
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;
   paymentGatewayProviders: PaymentGatewayProvider[];
+  shippingZonesJson?: string | null;
+  shippingCouriersJson?: string | null;
+  shippingPaymentMode?: ShippingPaymentMode;
 }
 
 export interface CustomerCreditDto {
@@ -1146,6 +1177,77 @@ export async function getPublicStoreSettings(): Promise<PublicStoreSettingsDto |
   } catch {
     return null;
   }
+}
+
+export interface PublicShippingConfig {
+  zones: ShippingZoneConfig[];
+  couriers: CourierConfig[];
+  paymentMode: ShippingPaymentMode;
+}
+
+const FALLBACK_SHIPPING_ZONES: ShippingZoneConfig[] = [
+  { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
+    etaEs: '24-48 hs', etaEn: '24-48h',
+    comunas: ['Los Andes', 'San Felipe', 'Calle Larga', 'Rinconada'],
+    active: true, sortOrder: 1 },
+  { code: 'REGIONAL', titleEs: 'V Región y RM', titleEn: 'Valparaíso Region and Metropolitan Region',
+    etaEs: '2-4 días hábiles', etaEn: '2-4 business days',
+    comunas: [], active: true, sortOrder: 2 },
+  { code: 'NACIONAL', titleEs: 'Otras regiones', titleEn: 'Other Chilean regions',
+    etaEs: '3-7 días hábiles', etaEn: '3-7 business days',
+    comunas: [], active: true, sortOrder: 3 },
+];
+
+const FALLBACK_SHIPPING_COURIERS: CourierConfig[] = [
+  { id: 'starken', name: 'Starken', logoUrl: null, active: true },
+  { id: 'chilexpress', name: 'ChilExpress', logoUrl: null, active: true },
+];
+
+export async function getPublicShippingConfig(): Promise<PublicShippingConfig> {
+  const settings = await getPublicStoreSettings();
+  let zones: ShippingZoneConfig[] = FALLBACK_SHIPPING_ZONES;
+  let couriers: CourierConfig[] = FALLBACK_SHIPPING_COURIERS;
+  const paymentMode: ShippingPaymentMode = settings?.shippingPaymentMode ?? 'POR_PAGAR';
+
+  if (settings?.shippingZonesJson) {
+    try {
+      const parsed = JSON.parse(settings.shippingZonesJson);
+      if (Array.isArray(parsed)) {
+        zones = parsed
+          .map((z: Partial<ShippingZoneConfig>) => ({
+            code: (z.code as ShippingZoneCode) ?? 'LOCAL',
+            titleEs: z.titleEs ?? '',
+            titleEn: z.titleEn ?? '',
+            etaEs: z.etaEs ?? '',
+            etaEn: z.etaEn ?? '',
+            comunas: Array.isArray(z.comunas) ? z.comunas.filter((c): c is string => typeof c === 'string') : [],
+            active: z.active !== false,
+            sortOrder: typeof z.sortOrder === 'number' ? z.sortOrder : 0,
+          }))
+          .sort((a, b) => a.sortOrder - b.sortOrder);
+      }
+    } catch {
+      // keep fallback
+    }
+  }
+  if (settings?.shippingCouriersJson) {
+    try {
+      const parsed = JSON.parse(settings.shippingCouriersJson);
+      if (Array.isArray(parsed)) {
+        couriers = parsed
+          .map((c: Partial<CourierConfig>) => ({
+            id: c.id ?? '',
+            name: c.name ?? '',
+            logoUrl: c.logoUrl ?? null,
+            active: c.active !== false,
+          }))
+          .filter((c) => c.id && c.name);
+      }
+    } catch {
+      // keep fallback
+    }
+  }
+  return { zones, couriers, paymentMode };
 }
 
 export async function getCustomerCredit(customerId: string, token: string): Promise<CustomerCreditDto | null> {

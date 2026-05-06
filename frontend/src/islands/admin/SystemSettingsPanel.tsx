@@ -16,9 +16,12 @@ import {
   getSystemSettings,
   migrateCategoryImages,
   optimizeAllMedia,
+  type CourierConfig,
   type MediaStorageProvider,
   type OptimizeAllResult,
   type PaymentGatewayProvider,
+  type ShippingPaymentMode,
+  type ShippingZoneConfig,
   updateSystemSettings,
   type NotificationProvider,
   type SystemSettingsDto,
@@ -93,6 +96,9 @@ type FormState = {
   smtpStarttlsEnabled: boolean;
   smtpPassword: string;
   clearSmtpPassword: boolean;
+  shippingZones: ShippingZoneConfig[];
+  shippingCouriers: CourierConfig[];
+  shippingPaymentMode: ShippingPaymentMode;
 };
 
 type ProviderOption = {
@@ -115,7 +121,7 @@ type PaymentGatewayProviderOption = {
   subtitle: string;
 };
 
-type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications';
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping';
 
 const PROVIDER_OPTIONS: ProviderOption[] = [
   {
@@ -207,7 +213,66 @@ const CHILE_BANK_OPTIONS = [
   'Scotiabank Chile',
 ];
 
-const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications'];
+const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications', 'shipping'];
+
+const DEFAULT_SHIPPING_ZONES: ShippingZoneConfig[] = [
+  { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
+    etaEs: '24-48 hs', etaEn: '24-48h',
+    comunas: ['Los Andes', 'San Felipe', 'Calle Larga', 'Rinconada'],
+    active: true, sortOrder: 1 },
+  { code: 'REGIONAL', titleEs: 'V Region y RM', titleEn: 'Valparaiso Region and Metropolitan Region',
+    etaEs: '2-4 dias habiles', etaEn: '2-4 business days',
+    comunas: [], active: true, sortOrder: 2 },
+  { code: 'NACIONAL', titleEs: 'Otras regiones', titleEn: 'Other Chilean regions',
+    etaEs: '3-7 dias habiles', etaEn: '3-7 business days',
+    comunas: [], active: true, sortOrder: 3 },
+];
+
+const DEFAULT_SHIPPING_COURIERS: CourierConfig[] = [
+  { id: 'starken', name: 'Starken', logoUrl: null, active: true },
+  { id: 'chilexpress', name: 'ChilExpress', logoUrl: null, active: true },
+];
+
+function parseShippingZones(raw: string | null | undefined): ShippingZoneConfig[] {
+  if (!raw) return DEFAULT_SHIPPING_ZONES;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_SHIPPING_ZONES;
+    return parsed.map((z: Partial<ShippingZoneConfig>) => ({
+      code: (z.code as ShippingZoneConfig['code']) ?? 'LOCAL',
+      titleEs: z.titleEs ?? '',
+      titleEn: z.titleEn ?? '',
+      etaEs: z.etaEs ?? '',
+      etaEn: z.etaEn ?? '',
+      comunas: Array.isArray(z.comunas) ? z.comunas.filter((c): c is string => typeof c === 'string') : [],
+      active: z.active !== false,
+      sortOrder: typeof z.sortOrder === 'number' ? z.sortOrder : 0,
+    }));
+  } catch {
+    return DEFAULT_SHIPPING_ZONES;
+  }
+}
+
+function parseShippingCouriers(raw: string | null | undefined): CourierConfig[] {
+  if (!raw) return DEFAULT_SHIPPING_COURIERS;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_SHIPPING_COURIERS;
+    return parsed.map((c: Partial<CourierConfig>) => ({
+      id: c.id ?? '',
+      name: c.name ?? '',
+      logoUrl: c.logoUrl ?? null,
+      active: c.active !== false,
+    })).filter((c) => c.id && c.name);
+  } catch {
+    return DEFAULT_SHIPPING_COURIERS;
+  }
+}
+
+function slugifyCourierId(name: string): string {
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
 
 function normalizeBankName(value: string) {
   return value
@@ -304,6 +369,9 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     smtpStarttlsEnabled: settings.smtpStarttlsEnabled ?? true,
     smtpPassword: '',
     clearSmtpPassword: false,
+    shippingZones: parseShippingZones(settings.shippingZonesJson),
+    shippingCouriers: parseShippingCouriers(settings.shippingCouriersJson),
+    shippingPaymentMode: settings.shippingPaymentMode ?? 'POR_PAGAR',
   };
 }
 
@@ -434,6 +502,9 @@ export default function SystemSettingsPanel() {
     smtpStarttlsEnabled: true,
     smtpPassword: '',
     clearSmtpPassword: false,
+    shippingZones: DEFAULT_SHIPPING_ZONES,
+    shippingCouriers: DEFAULT_SHIPPING_COURIERS,
+    shippingPaymentMode: 'POR_PAGAR',
   });
 
   async function loadSettings() {
@@ -769,6 +840,9 @@ export default function SystemSettingsPanel() {
       clearSmtpPassword: form.clearSmtpPassword,
       smtpAuthEnabled: form.smtpAuthEnabled,
       smtpStarttlsEnabled: form.smtpStarttlsEnabled,
+      shippingZonesJson: JSON.stringify(form.shippingZones),
+      shippingCouriersJson: JSON.stringify(form.shippingCouriers),
+      shippingPaymentMode: form.shippingPaymentMode,
     };
 
     setSaving(true);
@@ -1442,6 +1516,273 @@ export default function SystemSettingsPanel() {
             clearText="Se eliminara el Secret Access Key al guardar."
           />
         </section>
+      )}
+
+      {activeSettingsTab === 'shipping' && (
+      <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+        <h2 className="font-display text-2xl text-pe-black font-light">Envios</h2>
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          Configura zonas de despacho, comunas cubiertas, couriers y modalidad de pago de envio.
+        </p>
+
+        <div className="mt-5 rounded-sm border border-pe-rose/20 bg-pe-cream/40 px-4 py-3">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-rose-deep mb-1">
+            Modalidad de pago envio
+          </p>
+          <p className="font-sans text-[0.84rem] text-pe-black font-medium">
+            Envio por pagar (cliente paga al retirar en sucursal del courier)
+          </p>
+          <p className="mt-1 font-sans text-[0.7rem] text-pe-charcoal/60">
+            Aplicada globalmente a todas las zonas. Tienda despacha desde Los Andes.
+          </p>
+        </div>
+
+        <div className="mt-6">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-3">
+            Zonas de envio
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            {form.shippingZones.map((zone, idx) => (
+              <article
+                key={zone.code}
+                className={`relative border bg-pe-white p-4 transition-colors ${
+                  zone.active ? 'border-pe-black/15' : 'border-pe-black/10 opacity-60'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-sans text-[0.6rem] tracking-[0.18em] uppercase text-pe-rose-deep font-semibold">
+                    {zone.code}
+                  </span>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={zone.active}
+                      onChange={(e) => {
+                        const next = [...form.shippingZones];
+                        next[idx] = { ...zone, active: e.target.checked };
+                        updateField('shippingZones', next);
+                      }}
+                      className="w-3.5 h-3.5 accent-pe-rose"
+                      aria-label={`Zona ${zone.code} activa`}
+                    />
+                    <span className="font-sans text-[0.62rem] text-pe-charcoal/65">
+                      {zone.active ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                      Titulo (ES)
+                    </span>
+                    <input
+                      type="text"
+                      value={zone.titleEs}
+                      onChange={(e) => {
+                        const next = [...form.shippingZones];
+                        next[idx] = { ...zone, titleEs: e.target.value };
+                        updateField('shippingZones', next);
+                      }}
+                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-1">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                      Titulo (EN)
+                    </span>
+                    <input
+                      type="text"
+                      value={zone.titleEn}
+                      onChange={(e) => {
+                        const next = [...form.shippingZones];
+                        next[idx] = { ...zone, titleEn: e.target.value };
+                        updateField('shippingZones', next);
+                      }}
+                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex flex-col gap-1">
+                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                        ETA (ES)
+                      </span>
+                      <input
+                        type="text"
+                        value={zone.etaEs}
+                        onChange={(e) => {
+                          const next = [...form.shippingZones];
+                          next[idx] = { ...zone, etaEs: e.target.value };
+                          updateField('shippingZones', next);
+                        }}
+                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                        placeholder="24-48 hs"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                        ETA (EN)
+                      </span>
+                      <input
+                        type="text"
+                        value={zone.etaEn}
+                        onChange={(e) => {
+                          const next = [...form.shippingZones];
+                          next[idx] = { ...zone, etaEn: e.target.value };
+                          updateField('shippingZones', next);
+                        }}
+                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                        placeholder="24-48h"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="pt-1">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55 mb-1.5 block">
+                      Comunas
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {zone.comunas.map((comuna) => (
+                        <span
+                          key={comuna}
+                          className="inline-flex items-center gap-1 border border-pe-rose/30 bg-pe-rose/5 px-2 py-1 font-sans text-[0.68rem] text-pe-charcoal"
+                        >
+                          {comuna}
+                          <button
+                            type="button"
+                            aria-label={`Quitar ${comuna}`}
+                            onClick={() => {
+                              const next = [...form.shippingZones];
+                              next[idx] = { ...zone, comunas: zone.comunas.filter((c) => c !== comuna) };
+                              updateField('shippingZones', next);
+                            }}
+                            className="text-pe-charcoal/45 hover:text-pe-rose transition-colors leading-none text-[0.85rem]"
+                          >
+                            x
+                          </button>
+                        </span>
+                      ))}
+                      {zone.comunas.length === 0 && (
+                        <span className="font-sans text-[0.65rem] text-pe-charcoal/45 italic">
+                          Sin comunas
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Agregar comuna y Enter"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          e.preventDefault();
+                          const value = e.currentTarget.value.trim();
+                          if (zone.comunas.includes(value)) {
+                            e.currentTarget.value = '';
+                            return;
+                          }
+                          const next = [...form.shippingZones];
+                          next[idx] = { ...zone, comunas: [...zone.comunas, value] };
+                          updateField('shippingZones', next);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                      className="w-full border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.75rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-pe-black/8">
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+              Couriers de despacho
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                updateField('shippingCouriers', [
+                  ...form.shippingCouriers,
+                  { id: `courier-${Date.now()}`, name: '', logoUrl: null, active: true },
+                ]);
+              }}
+              className="font-sans text-[0.62rem] tracking-[0.1em] uppercase text-pe-rose-deep hover:text-pe-rose transition-colors border border-pe-rose/30 px-2.5 py-1"
+            >
+              + Agregar courier
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {form.shippingCouriers.map((courier, idx) => (
+              <article
+                key={courier.id || idx}
+                className={`grid grid-cols-1 sm:grid-cols-12 gap-2 items-center border bg-pe-white p-3 ${
+                  courier.active ? 'border-pe-black/12' : 'border-pe-black/8 opacity-60'
+                }`}
+              >
+                <input
+                  type="text"
+                  value={courier.name}
+                  placeholder="Nombre courier"
+                  onChange={(e) => {
+                    const next = [...form.shippingCouriers];
+                    const newName = e.target.value;
+                    next[idx] = { ...courier, name: newName, id: courier.id || slugifyCourierId(newName) };
+                    updateField('shippingCouriers', next);
+                  }}
+                  className="sm:col-span-4 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                />
+                <input
+                  type="url"
+                  value={courier.logoUrl ?? ''}
+                  placeholder="Logo URL (opcional)"
+                  onChange={(e) => {
+                    const next = [...form.shippingCouriers];
+                    next[idx] = { ...courier, logoUrl: e.target.value.trim() || null };
+                    updateField('shippingCouriers', next);
+                  }}
+                  className="sm:col-span-5 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                />
+                <label className="sm:col-span-2 inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courier.active}
+                    onChange={(e) => {
+                      const next = [...form.shippingCouriers];
+                      next[idx] = { ...courier, active: e.target.checked };
+                      updateField('shippingCouriers', next);
+                    }}
+                    className="w-3.5 h-3.5 accent-pe-rose"
+                    aria-label={`Courier ${courier.name} activo`}
+                  />
+                  <span className="font-sans text-[0.66rem] text-pe-charcoal/65">
+                    {courier.active ? 'Activo' : 'Pausado'}
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  aria-label={`Quitar courier ${courier.name}`}
+                  onClick={() => {
+                    const next = form.shippingCouriers.filter((_, i) => i !== idx);
+                    updateField('shippingCouriers', next);
+                  }}
+                  className="sm:col-span-1 font-sans text-[0.62rem] tracking-[0.08em] uppercase text-pe-charcoal/55 hover:text-pe-rose transition-colors border border-pe-black/12 hover:border-pe-rose/40 px-2 py-1.5"
+                >
+                  Quitar
+                </button>
+              </article>
+            ))}
+            {form.shippingCouriers.length === 0 && (
+              <p className="font-sans text-[0.72rem] text-pe-charcoal/55 italic">
+                No hay couriers configurados.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
       )}
 
       {activeSettingsTab === 'notifications' && (

@@ -71,5 +71,8 @@ public record UpdateSystemSettingsRequest(
         @Size(max = 255) String smtpPassword,
         Boolean clearSmtpPassword,
         @NotNull Boolean smtpAuthEnabled,
-        @NotNull Boolean smtpStarttlsEnabled
+        @NotNull Boolean smtpStarttlsEnabled,
+        String shippingZonesJson,
+        String shippingCouriersJson,
+        @Size(max = 32) String shippingPaymentMode
 ) {}

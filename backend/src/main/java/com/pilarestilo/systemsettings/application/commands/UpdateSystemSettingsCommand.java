@@ -64,5 +64,8 @@ public record UpdateSystemSettingsCommand(
         Boolean clearSmtpPassword,
         Boolean smtpAuthEnabled,
         Boolean smtpStarttlsEnabled,
+        String shippingZonesJson,
+        String shippingCouriersJson,
+        String shippingPaymentMode,
         String updatedBy
 ) {}

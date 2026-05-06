@@ -123,6 +123,9 @@ public class UpdateSystemSettingsUseCase {
                 command.productAiInferDefaultCondition(),
                 command.productAiInferBasePrice(),
                 command.productAiInferListPriceMultiplier(),
+                command.shippingZonesJson(),
+                command.shippingCouriersJson(),
+                command.shippingPaymentMode(),
                 command.updatedBy()
         );
 

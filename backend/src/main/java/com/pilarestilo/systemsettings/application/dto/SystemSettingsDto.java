@@ -58,6 +58,9 @@ public record SystemSettingsDto(
         boolean smtpAuthEnabled,
         boolean smtpStarttlsEnabled,
         boolean smtpPasswordConfigured,
+        String shippingZonesJson,
+        String shippingCouriersJson,
+        String shippingPaymentMode,
         Instant updatedAt,
         String updatedBy
 ) {}

@@ -14,5 +14,8 @@ public record PublicStoreSettingsDto(
         String bankTransferAccountType,
         boolean paymentMethodBankTransferEnabled,
         boolean paymentMethodGatewayEnabled,
-        List<String> paymentGatewayProviders
+        List<String> paymentGatewayProviders,
+        String shippingZonesJson,
+        String shippingCouriersJson,
+        String shippingPaymentMode
 ) {}

@@ -176,6 +176,15 @@ public class SystemSettingsEntity {
     @Column(name = "product_ai_infer_list_price_multiplier", precision = 6, scale = 2)
     private java.math.BigDecimal productAiInferListPriceMultiplier;
 
+    @Column(name = "shipping_zones_json", columnDefinition = "TEXT")
+    private String shippingZonesJson;
+
+    @Column(name = "shipping_couriers_json", columnDefinition = "TEXT")
+    private String shippingCouriersJson;
+
+    @Column(name = "shipping_payment_mode", length = 32)
+    private String shippingPaymentMode;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -326,6 +335,12 @@ public class SystemSettingsEntity {
     public void setProductAiInferBasePrice(Integer productAiInferBasePrice) { this.productAiInferBasePrice = productAiInferBasePrice; }
     public java.math.BigDecimal getProductAiInferListPriceMultiplier() { return productAiInferListPriceMultiplier; }
     public void setProductAiInferListPriceMultiplier(java.math.BigDecimal productAiInferListPriceMultiplier) { this.productAiInferListPriceMultiplier = productAiInferListPriceMultiplier; }
+    public String getShippingZonesJson() { return shippingZonesJson; }
+    public void setShippingZonesJson(String shippingZonesJson) { this.shippingZonesJson = shippingZonesJson; }
+    public String getShippingCouriersJson() { return shippingCouriersJson; }
+    public void setShippingCouriersJson(String shippingCouriersJson) { this.shippingCouriersJson = shippingCouriersJson; }
+    public String getShippingPaymentMode() { return shippingPaymentMode; }
+    public void setShippingPaymentMode(String shippingPaymentMode) { this.shippingPaymentMode = shippingPaymentMode; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public String getUpdatedBy() { return updatedBy; }

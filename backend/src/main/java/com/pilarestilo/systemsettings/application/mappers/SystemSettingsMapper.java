@@ -64,6 +64,9 @@ public final class SystemSettingsMapper {
                 settings.isSmtpAuthEnabled(),
                 settings.isSmtpStarttlsEnabled(),
                 settings.getSmtpPasswordEncrypted() != null && !settings.getSmtpPasswordEncrypted().isBlank(),
+                settings.getShippingZonesJson(),
+                settings.getShippingCouriersJson(),
+                settings.getShippingPaymentMode().name(),
                 settings.getUpdatedAt(),
                 settings.getUpdatedBy()
         );
@@ -82,7 +85,10 @@ public final class SystemSettingsMapper {
                 settings.getBankTransferAccountType(),
                 settings.isPaymentMethodBankTransferEnabled(),
                 settings.isPaymentMethodGatewayEnabled(),
-                settings.getPaymentGatewayProviders().stream().map(Enum::name).toList()
+                settings.getPaymentGatewayProviders().stream().map(Enum::name).toList(),
+                settings.getShippingZonesJson(),
+                settings.getShippingCouriersJson(),
+                settings.getShippingPaymentMode().name()
         );
     }
 

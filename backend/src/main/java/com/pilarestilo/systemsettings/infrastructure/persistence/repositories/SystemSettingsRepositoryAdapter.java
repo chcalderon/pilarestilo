@@ -86,6 +86,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setProductAiInferDefaultCondition(settings.getProductAiInferDefaultCondition());
         entity.setProductAiInferBasePrice(settings.getProductAiInferBasePrice());
         entity.setProductAiInferListPriceMultiplier(settings.getProductAiInferListPriceMultiplier());
+        entity.setShippingZonesJson(settings.getShippingZonesJson());
+        entity.setShippingCouriersJson(settings.getShippingCouriersJson());
+        entity.setShippingPaymentMode(settings.getShippingPaymentMode().name());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -148,6 +151,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getProductAiInferDefaultCondition(),
                 entity.getProductAiInferBasePrice(),
                 entity.getProductAiInferListPriceMultiplier(),
+                entity.getShippingZonesJson(),
+                entity.getShippingCouriersJson(),
+                entity.getShippingPaymentMode(),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

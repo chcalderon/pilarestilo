@@ -27,7 +27,7 @@ interface Props {
   mobile?: boolean;
 }
 
-type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications';
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping';
 
 const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; viewKey: string }> = [
   { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard', viewKey: 'dashboard' },
@@ -51,6 +51,7 @@ const settingsSubmenuItems: Array<{
 }> = [
   { href: '/admin/settings?tab=store', tab: 'store', icon: Store, label: 'Canales tienda' },
   { href: '/admin/settings?tab=payments', tab: 'payments', icon: Wallet, label: 'Pagos' },
+  { href: '/admin/settings?tab=shipping', tab: 'shipping', icon: Truck, label: 'Envios' },
   { href: '/admin/settings?tab=media', tab: 'media', icon: Image, label: 'Media' },
   { href: '/admin/settings?tab=notifications', tab: 'notifications', icon: Bell, label: 'Notificaciones' },
 ];

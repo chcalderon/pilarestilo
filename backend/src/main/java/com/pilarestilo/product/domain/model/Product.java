@@ -33,7 +33,7 @@ public class Product {
     private Instant updatedAt;
     private java.math.BigDecimal avgRating = java.math.BigDecimal.ZERO;
     private int reviewCount = 0;
-    private ShippingOriginZone shippingOriginZone = ShippingOriginZone.SANTIAGO;
+    private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
     private List<ProductSizeStock> sizeStocks = new ArrayList<>();
     private List<ProductVariant> variants = new ArrayList<>();
     private Set<UUID> categoryIds = new HashSet<>();
