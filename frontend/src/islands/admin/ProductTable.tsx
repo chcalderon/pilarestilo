@@ -117,6 +117,8 @@ export default function ProductTable() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<string | undefined>(undefined);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [editTarget, setEditTarget] = useState<ProductDto | null | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -189,10 +191,27 @@ export default function ProductTable() {
     setPage(0);
   }, [debouncedSearch]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [createdFrom, createdTo]);
+
   const parsed = useMemo(
     () => parseSearchInput(debouncedSearch, categories),
     [debouncedSearch, categories],
   );
+
+  const sortParam = useMemo(() => {
+    if (!sortKey) return undefined;
+    const sortFieldByKey: Record<string, string> = {
+      name: 'name',
+      brand: 'brand',
+      price: 'priceAmount',
+      createdAt: 'createdAt',
+    };
+    const sortField = sortFieldByKey[sortKey];
+    if (!sortField) return undefined;
+    return `${sortField},${sortDir}`;
+  }, [sortKey, sortDir]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -202,6 +221,9 @@ export default function ProductTable() {
         active: parsed.active,
         condition: parsed.condition,
         category: parsed.category,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
+        sort: sortParam,
         page,
         size: pageSize,
       });
@@ -210,13 +232,14 @@ export default function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, parsed.q, parsed.active, parsed.condition, parsed.category]);
+  }, [page, pageSize, parsed.q, parsed.active, parsed.condition, parsed.category, createdFrom, createdTo, sortParam]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   function handleSort(key: string) {
+    setPage(0);
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -268,6 +291,8 @@ export default function ProductTable() {
     if (row.listPrice.amount <= row.price.amount) return null;
     return Math.round((1 - row.price.amount / row.listPrice.amount) * 100);
   };
+  const fmtCreatedAt = (value: string) =>
+    new Date(value).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   const actionButtonClass =
     'inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors';
@@ -380,6 +405,17 @@ export default function ProductTable() {
           ].join(' ')}
         >
           {row.active ? 'Si' : 'No'}
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Ingreso',
+      sortable: true,
+      width: '110px',
+      render: (row) => (
+        <span className="font-sans text-[0.74rem] text-pe-charcoal/65">
+          {fmtCreatedAt(row.createdAt)}
         </span>
       ),
     },
@@ -542,6 +578,9 @@ export default function ProductTable() {
                     {(row.variants?.length ?? 0) > 0 ? ` · ${row.variants!.length} var` : ''}
                   </p>
                 </div>
+                <p className="mt-2 font-sans text-[0.68rem] uppercase tracking-[0.08em] text-pe-charcoal/45">
+                  Ingreso {fmtCreatedAt(row.createdAt)}
+                </p>
 
                 <div className="mt-4 flex gap-2">
                   <button
@@ -579,6 +618,18 @@ export default function ProductTable() {
     activeChips.push({
       label: cat?.nameEs ?? parsed.category,
       onClear: () => clearMagic(parsed.category!),
+    });
+  }
+  if (createdFrom) {
+    activeChips.push({
+      label: `Desde ${createdFrom}`,
+      onClear: () => setCreatedFrom(''),
+    });
+  }
+  if (createdTo) {
+    activeChips.push({
+      label: `Hasta ${createdTo}`,
+      onClear: () => setCreatedTo(''),
     });
   }
 
@@ -671,6 +722,43 @@ export default function ProductTable() {
           >
             <RefreshCw size={15} />
           </button>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+              Fecha desde
+            </span>
+            <input
+              type="date"
+              value={createdFrom}
+              onChange={(e) => setCreatedFrom(e.target.value)}
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+              Fecha hasta
+            </span>
+            <input
+              type="date"
+              value={createdTo}
+              onChange={(e) => setCreatedTo(e.target.value)}
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+            />
+          </label>
+          {(createdFrom || createdTo) && (
+            <button
+              onClick={() => {
+                setCreatedFrom('');
+                setCreatedTo('');
+              }}
+              className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] text-pe-charcoal/50 hover:text-pe-rose transition-colors px-2 py-2"
+            >
+              <X size={12} />
+              Limpiar fechas
+            </button>
+          )}
         </div>
 
         {/* Active filter chips */}

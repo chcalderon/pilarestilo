@@ -27,10 +27,9 @@
 - No crear framework nuevo de cola: se usa DB-backed jobs + worker Spring (`@Scheduled`), opcional evento de dominio al cerrar job.
 - Reusar autenticacion/roles existentes: endpoints bajo `/api/admin/**` con `ADMIN` y `SELLER`.
 - Reusar upload actual para media: originales y procesadas en carpetas dedicadas.
-- Integrar el proyecto Node existente como motor IA intercambiable:
-  - `engine=node_bridge` (invoca script Node existente).
-  - `engine=openai_java` (port progresivo a Java con `RestClient`).
-- Recomendacion inicial: partir con `node_bridge` por time-to-market, luego portar a Java manteniendo contrato de puerto.
+- Ejecutar Product AI backend-only desde Java:
+  - `engine=openai_backend` para inferencia + transformacion OpenAI.
+  - `engine=stub` para pruebas locales sin dependencia de OpenAI.
 
 ## 3) Factibilidad (autorrelleno + carga masiva)
 
@@ -138,8 +137,8 @@ Response `200`:
   "title": "Blazer beige lino",
   "description": "Blazer de lino en excelente estado...",
   "imagePrompt": "Transformar imagen ... 4:5 ...",
-  "engine": "ollama",
-  "fallbackReason": "quality-fallback:moondream:latest->gemma3:latest"
+  "engine": "openai_backend",
+  "fallbackReason": null
 }
 ```
 
@@ -149,7 +148,7 @@ Response `200`:
 
 Campos:
 - `file`: imagen unica del producto.
-- `provider` (opcional): `OPENAI` (default) o `OLLAMA` (experimental).
+- `provider` (opcional): `OPENAI` (default, unico soportado actualmente).
 - `prompt` (opcional): prompt personalizado de transformacion.
 - `brandHint` (opcional): contexto de marca para prompt default.
 
@@ -162,13 +161,12 @@ Response `200`:
   "processedThumbUrl": "/api/media/products/ai/single/....-thumb.jpg",
   "provider": "OPENAI",
   "promptUsed": "Generar una imagen de tamano ideal para Instagram...",
-  "engine": "node_bridge"
+  "engine": "openai_backend"
 }
 ```
 
 Notas:
 - El frontend usa `processedWebUrl` para preview en admin y permite reemplazar la imagen actual del formulario.
-- `OLLAMA` para transformacion de imagen no esta soportado aun por `transform-images.js`; backend devuelve error controlado.
 
 ### 4.4 Estado de job (polling)
 
@@ -288,15 +286,11 @@ frontend/src/islands/admin/product-ai/
   ProductAiBeforeAfter.tsx
 ```
 
-### Scripts (bridge opcional)
+### Scripts (estado actual)
 
 ```text
-scripts/ai-product-pipeline/
-  package.json
-  src/
-    index.ts
-    generate-copy.ts
-    transform-image.ts
+No se requiere bridge externo para Product AI en el estado actual.
+El procesamiento corre en backend Java (`ProductAiService` + `ProductAiOpenAiClient`).
 ```
 
 ## 6) Migraciones y configuracion (propuesta)
@@ -316,7 +310,7 @@ Nueva migracion `V40__product_ai_pipeline.sql`:
 Configuracion `application.yml`:
 
 - `app.product-ai.enabled`
-- `app.product-ai.engine` (`node_bridge|openai_java`)
+- `app.product-ai.engine` (`openai_backend|stub`)
 - `app.product-ai.openai.base-url`
 - `app.product-ai.openai.api-key`
 - `app.product-ai.openai.infer-model` (text inference, default `gpt-4.1-mini`)
@@ -334,7 +328,6 @@ Configuracion `application.yml`:
 - `app.product-ai.image.thumb-width`
 - `app.product-ai.image.thumb-height`
 - `app.product-ai.image.thumb-jpeg-quality`
-- `app.product-ai.node.*` (solo si se habilita modo legado `node_bridge`)
 
 ## 7) Variables de entorno requeridas
 
@@ -357,7 +350,6 @@ Configuracion `application.yml`:
 - `APP_PRODUCT_AI_IMAGE_THUMB_WIDTH=320`
 - `APP_PRODUCT_AI_IMAGE_THUMB_HEIGHT=400`
 - `APP_PRODUCT_AI_IMAGE_THUMB_JPEG_QUALITY=0.82`
-- `APP_PRODUCT_AI_NODE_*` (solo si se usa modo legado `node_bridge`)
 
 ## 8) Comandos de ejecucion local (propuestos)
 
@@ -385,7 +377,6 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
 Comportamiento operacional:
 - Backend llama a OpenAI para inferencia de texto (`infer-model`) y generacion de imagen (`image-model`).
 - Errores de API OpenAI incluyen el mensaje del cuerpo de la respuesta (`error.message`) ademas del codigo HTTP.
-- El engine `node_bridge` queda disponible como modo legado opcional para proyectos externos existentes.
 
 ## 9) Checklist de pruebas
 
@@ -451,11 +442,10 @@ Comportamiento operacional:
   - migracion `V40__product_ai_pipeline.sql`
   - endpoints `/api/admin/product-ai/*`
   - scheduler async (`ProductAiJobScheduler`)
-- Modo actual recomendado: `ollama_backend` (backend-only):
-  - inferencia de texto con Ollama desde backend
+- Modo actual recomendado: `openai_backend` (backend-only):
+  - inferencia de texto y transformacion con OpenAI desde backend
   - pipeline masivo sin dependencia de proyecto externo
-  - `master/web/thumb` se mantienen desde backend (sin transform externo)
-  - `node_bridge` queda disponible solo como modo legado opcional
+  - `master/web/thumb` se mantienen desde backend
 - Implementada conexion frontend real en `/admin/publicaciones`:
   - crear draft
   - subir lote de imagenes

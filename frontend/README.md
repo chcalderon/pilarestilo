@@ -99,6 +99,7 @@ Translations:
   - `Grilla` (table workflow)
   - `Cards` (visual workflow), persisted in local storage (`pe-admin-products-view`)
 - Product admin filters now include `Categoria` in addition to `Condicion` and `Marca`.
+- Product admin now includes `Fecha ingreso` column in grid view, sortable ascending/descending, plus date-range filters (`Fecha desde` / `Fecha hasta`) with native calendar inputs.
 - `DataTable` has mobile card rendering for better usability on phones.
 - Admin layout now includes a mobile navigation drawer with menu button + overlay close behavior.
 - Admin action buttons were refreshed with consistent Lucide icon usage in core management flows.

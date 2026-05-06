@@ -4,6 +4,7 @@ import com.pilarestilo.productservice.application.ProductQueryService;
 import com.pilarestilo.productservice.web.dto.ProductDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -36,9 +38,11 @@ public class ProductController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable
     ) {
-        return queryService.list(condition, brand, minPrice, maxPrice, active, inStock, category, pageable)
+        return queryService.list(condition, brand, minPrice, maxPrice, active, inStock, category, createdFrom, createdTo, pageable)
                 .map(ProductMapper::toDto);
     }
 
@@ -58,9 +62,11 @@ public class ProductController {
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String condition,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable
     ) {
-        return queryService.search(q, active, inStock, condition, category, pageable).map(ProductMapper::toDto);
+        return queryService.search(q, active, inStock, condition, category, createdFrom, createdTo, pageable).map(ProductMapper::toDto);
     }
 
     @GetMapping("/_health")

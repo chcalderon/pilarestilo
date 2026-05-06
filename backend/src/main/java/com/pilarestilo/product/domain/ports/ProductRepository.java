@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,8 @@ public interface ProductRepository {
                          Boolean inStock,
                          String condition,
                          String categorySlug,
+                         LocalDate createdFrom,
+                         LocalDate createdTo,
                          Pageable pageable);
 
     record ProductFilter(
@@ -34,10 +37,12 @@ public interface ProductRepository {
             BigDecimal maxPrice,
             Boolean active,
             Boolean inStock,
-            String categorySlug
+            String categorySlug,
+            LocalDate createdFrom,
+            LocalDate createdTo
     ) {
         public static ProductFilter empty() {
-            return new ProductFilter(null, null, null, null, null, null, null);
+            return new ProductFilter(null, null, null, null, null, null, null, null, null);
         }
     }
 }

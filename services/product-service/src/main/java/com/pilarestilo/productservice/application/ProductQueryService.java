@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -32,6 +34,8 @@ public class ProductQueryService {
                                     Boolean active,
                                     Boolean inStock,
                                     String category,
+                                    LocalDate createdFrom,
+                                    LocalDate createdTo,
                                     Pageable pageable) {
         Specification<ProductEntity> spec = (root, query, cb) -> {
             var predicates = new ArrayList<Predicate>();
@@ -61,6 +65,7 @@ public class ProductQueryService {
                     query.distinct(true);
                 }
             }
+            appendCreatedAtPredicates(predicates, root, cb, createdFrom, createdTo);
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -80,6 +85,8 @@ public class ProductQueryService {
                                       Boolean inStock,
                                       String condition,
                                       String category,
+                                      LocalDate createdFrom,
+                                      LocalDate createdTo,
                                       Pageable pageable) {
         String term = queryText == null ? "" : queryText.trim().toLowerCase();
         Specification<ProductEntity> spec = (root, query, cb) -> {
@@ -106,12 +113,32 @@ public class ProductQueryService {
                 Join<Object, Object> filterCats = root.join("categories", JoinType.INNER);
                 predicates.add(cb.equal(filterCats.get("slug"), category));
             }
+            appendCreatedAtPredicates(predicates, root, cb, createdFrom, createdTo);
             if (query != null) {
                 query.distinct(true);
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
         return productRepository.findAll(spec, pageable);
+    }
+
+    private void appendCreatedAtPredicates(ArrayList<Predicate> predicates,
+                                           jakarta.persistence.criteria.Root<ProductEntity> root,
+                                           jakarta.persistence.criteria.CriteriaBuilder cb,
+                                           LocalDate createdFrom,
+                                           LocalDate createdTo) {
+        if (createdFrom != null) {
+            predicates.add(cb.greaterThanOrEqualTo(
+                    root.get("createdAt"),
+                    createdFrom.atStartOfDay().toInstant(ZoneOffset.UTC)
+            ));
+        }
+        if (createdTo != null) {
+            predicates.add(cb.lessThan(
+                    root.get("createdAt"),
+                    createdTo.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+            ));
+        }
     }
 
     private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,

@@ -101,4 +101,23 @@ class ProductControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").exists());
     }
+
+    @Test
+    void list_with_created_at_range_returns_ok() throws Exception {
+        mvc.perform(get("/api/products")
+                        .param("createdFrom", "2026-01-01")
+                        .param("createdTo", "2026-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists());
+    }
+
+    @Test
+    void search_with_created_at_range_and_sort_returns_ok() throws Exception {
+        mvc.perform(get("/api/products/search")
+                        .param("createdFrom", "2026-01-01")
+                        .param("createdTo", "2026-12-31")
+                        .param("sort", "createdAt,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").exists());
+    }
 }

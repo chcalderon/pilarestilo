@@ -9,11 +9,13 @@ import com.pilarestilo.product.infrastructure.web.requests.UpdateProductRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,8 +64,21 @@ public class ProductController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable) {
-        return listProductsUseCase.execute(condition, brand, minPrice, maxPrice, active, inStock, category, pageable);
+        return listProductsUseCase.execute(
+                condition,
+                brand,
+                minPrice,
+                maxPrice,
+                active,
+                inStock,
+                category,
+                createdFrom,
+                createdTo,
+                pageable
+        );
     }
 
     @GetMapping("/{id}")
@@ -95,8 +110,10 @@ public class ProductController {
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) String condition,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable) {
-        return searchProductsUseCase.execute(q, active, inStock, condition, category, pageable);
+        return searchProductsUseCase.execute(q, active, inStock, condition, category, createdFrom, createdTo, pageable);
     }
 
     private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {

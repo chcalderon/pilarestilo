@@ -68,6 +68,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - Existing catalog rows are backfilled with default `listPrice` values via DB migration so discount visuals render immediately in storefront cards.
 - Logged-in customers can now leave quick star-only ratings directly from product cards (no comment required in quick flow).
 - Admin product management now supports `Grilla` and `Cards` modes with responsive/mobile improvements.
+- Admin product grid now includes `Fecha ingreso`, with asc/desc sorting and date-range filtering (`desde`/`hasta`) via calendar inputs.
 - Storefront mobile header now keeps action icons clear of the logo through a dedicated small-screen layout.
 - Storefront category navigation is now a mobile slider with `<` / `>` controls and smooth step scrolling.
 - Spanish storefront and wishlist UI copy was normalized to UTF-8 (accent/mojibake fixes).

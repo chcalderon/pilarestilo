@@ -39,33 +39,26 @@
 - `Productos` ahora incluye switch de UX para flujo individual:
   - `carga manual` tradicional
   - `nuevo flujo IA (1 imagen)` para inferir texto/imagen sin pasar por n8n
-- PR3 backend integration completed (`node_bridge`, legado opcional):
-  - modo previo dependia de proyecto externo `E:\dev\pilarestilofotos`
-  - ejecutaba `generate-prompts.js` + `transform-images.js` en worker async
-  - persists processed URLs `master/web/thumb` per asset
-  - web and thumb derivatives are JPEG-compressed for faster admin/catalog load
-  - guards duplicate publish on already-published drafts
-- Incremental Java migration applied:
-  - new `ProductAiOllamaClient` in backend Java for text inference (title/description/imagePrompt)
-  - `Productos` 1-a-1 now calls endpoint `infer-single` (solo texto, sin transformacion de imagen, sin n8n)
-  - `Publicaciones` jobs now support backend-only mode (`ollama_backend`) sin referencia externa
+- PR3 backend integration completed (backend-only):
+  - pipeline sin dependencia de proyecto externo
+  - `master/web/thumb` se persisten por asset
+  - `web` y `thumb` se comprimen para carga mas rapida en admin/catalogo
+  - se evita publish duplicado en drafts ya publicados
+- Product AI migration consolidada en Java:
+  - `ProductAiOpenAiClient` para inferencia (title/description/imagePrompt)
+  - `Productos` 1-a-1 usa `infer-single`
+  - `Publicaciones` jobs operan en modo backend-only (`openai_backend`)
 - `Productos` 1-a-1 expanded with transform preview flow:
   - new endpoint `POST /api/admin/product-ai/transform-single`
   - prompt personalizable (con default de invierno + fidelidad de prenda)
-  - selector de proveedor en UI (`OPENAI` / `OLLAMA`)
+  - proveedor soportado en UI: `OPENAI`
   - preview transformada + accion `Reemplazar imagen actual`
   - enlace de descarga directa de preview en admin
   - derivadas optimizadas (`master/web/thumb`) para carga web
   - timeout de gateway extendido en Caddy para `POST /api/admin/product-ai/transform-single` (180s)
-- Hardening de inferencia Ollama en `Productos` 1-a-1:
-  - `keep_alive` configurable para mantener modelo caliente
-  - warmup de Ollama al inicio de backend
-  - warmup bloqueante opcional con timeout configurable (default activo en Docker)
-  - timeout de gateway extendido para `POST /api/admin/product-ai/infer-single` (300s)
-  - mensaje UX de timeout actualizado para explicar cold start (2-4 min)
+- timeout de gateway extendido para `POST /api/admin/product-ai/infer-single` (300s)
 - Estado proveedor transformacion:
-  - `OPENAI`: operativo en pipeline actual (`transform-images.js`)
-  - `OLLAMA`: visible en UI como experimental, backend responde error controlado (aun no soportado por bridge actual)
+  - `OPENAI`: operativo en pipeline actual.
 - n8n campaign workflow automation still pending (next stage).
 
 ### OpenAI migration (2026-05-01)

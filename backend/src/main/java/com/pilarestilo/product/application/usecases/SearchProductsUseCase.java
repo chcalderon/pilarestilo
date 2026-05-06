@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @Service
 public class SearchProductsUseCase {
 
@@ -23,18 +25,41 @@ public class SearchProductsUseCase {
                                     Boolean inStock,
                                     String condition,
                                     String categorySlug,
+                                    LocalDate createdFrom,
+                                    LocalDate createdTo,
                                     Pageable pageable) {
         String sanitized = term == null ? "" : term.trim();
         boolean hasFilterParam =
                 (condition != null && !condition.isBlank()) ||
-                (categorySlug != null && !categorySlug.isBlank());
+                (categorySlug != null && !categorySlug.isBlank()) ||
+                createdFrom != null ||
+                createdTo != null;
         if (sanitized.isEmpty() && !hasFilterParam) {
             return productRepository.findAll(
-                            new ProductRepository.ProductFilter(null, null, null, null, active, inStock, null),
+                            new ProductRepository.ProductFilter(
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    active,
+                                    inStock,
+                                    null,
+                                    null,
+                                    null
+                            ),
                             pageable)
                     .map(ProductMapper::toDto);
         }
-        return productRepository.search(sanitized, active, inStock, condition, categorySlug, pageable)
+        return productRepository.search(
+                        sanitized,
+                        active,
+                        inStock,
+                        condition,
+                        categorySlug,
+                        createdFrom,
+                        createdTo,
+                        pageable
+                )
                 .map(ProductMapper::toDto);
     }
 }

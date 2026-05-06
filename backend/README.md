@@ -81,6 +81,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `GET /api/products`
 - `GET /api/products/{id}`
 - `GET /api/products/search?q=...`
+- `GET /api/products/search?...&createdFrom=YYYY-MM-DD&createdTo=YYYY-MM-DD&sort=createdAt,desc`
 - `GET /api/inventory/products`
 - `GET /api/inventory/products/{id}`
 - `GET /api/categories`
@@ -277,7 +278,7 @@ Gateway-facing rate-limit filter (backend side):
 | `SERVER_PORT` | No | API port (default 8080) |
 
 Product AI runtime variables (when `APP_PRODUCT_AI_ENABLED=true`):
-- `APP_PRODUCT_AI_ENGINE` (`stub`, `openai_backend` [default], or legacy `node_bridge`)
+- `APP_PRODUCT_AI_ENGINE` (`stub` or `openai_backend` [default])
 - `APP_PRODUCT_AI_OPENAI_API_KEY`
 - `APP_PRODUCT_AI_OPENAI_BASE_URL`
 - `APP_PRODUCT_AI_OPENAI_INFER_MODEL` (text inference model, default `gpt-4.1-mini`)

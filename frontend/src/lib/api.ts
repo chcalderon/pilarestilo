@@ -1531,6 +1531,9 @@ export interface ProductSearchParams {
   inStock?: boolean;
   condition?: 'NEW' | 'USED';
   category?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  sort?: string;
   page?: number;
   size?: number;
 }
@@ -1553,6 +1556,9 @@ export async function searchProducts(
     ...(params.inStock !== undefined ? { inStock: params.inStock } : {}),
     ...(params.condition ? { condition: params.condition } : {}),
     ...(params.category ? { category: params.category } : {}),
+    ...(params.createdFrom ? { createdFrom: params.createdFrom } : {}),
+    ...(params.createdTo ? { createdTo: params.createdTo } : {}),
+    ...(params.sort ? { sort: params.sort } : {}),
     page: params.page ?? 0,
     size: params.size ?? 20,
   });

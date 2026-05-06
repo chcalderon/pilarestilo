@@ -166,3 +166,4 @@ This roadmap is synced with the current codebase on `master` as of May 3, 2026.
 - [x] Storefront product detail: subcategory pills + product header image
 - [x] Landing carousel: CSS transform-only mode, touch swipe, dark-mode dots, 4s index-based autoplay
 - [x] Landing category carousel: featured nodes at any tree depth
+- [x] Admin products: sortable `Fecha ingreso` column and date-range filters (`desde` / `hasta`) with calendar inputs

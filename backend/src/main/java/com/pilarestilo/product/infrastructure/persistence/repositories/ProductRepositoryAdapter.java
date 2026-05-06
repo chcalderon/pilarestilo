@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +79,8 @@ public class ProductRepositoryAdapter implements ProductRepository {
                                 Boolean inStock,
                                 String condition,
                                 String categorySlug,
+                                LocalDate createdFrom,
+                                LocalDate createdTo,
                                 Pageable pageable) {
         String trimmedTerm = term == null ? "" : term.trim();
         String pattern = trimmedTerm.isEmpty() ? null : "%" + trimmedTerm.toLowerCase() + "%";
@@ -105,6 +109,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 Join<Object, Object> filterCats = root.join("categories", JoinType.INNER);
                 predicates.add(cb.equal(filterCats.get("slug"), categorySlug));
             }
+            appendCreatedAtPredicates(predicates, root, cb, createdFrom, createdTo);
             if (query != null) query.distinct(true);
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -140,6 +145,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 predicates.add(cb.equal(cats.get("slug"), filter.categorySlug()));
                 if (query != null) query.distinct(true);
             }
+            appendCreatedAtPredicates(predicates, root, cb, filter.createdFrom(), filter.createdTo());
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -158,6 +164,25 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 cb.greaterThan(variants.get("stock"), 0),
                 cb.greaterThan(sizeStocks.get("stock"), 0)
         );
+    }
+
+    private void appendCreatedAtPredicates(List<Predicate> predicates,
+                                           jakarta.persistence.criteria.Root<ProductEntity> root,
+                                           jakarta.persistence.criteria.CriteriaBuilder cb,
+                                           LocalDate createdFrom,
+                                           LocalDate createdTo) {
+        if (createdFrom != null) {
+            predicates.add(cb.greaterThanOrEqualTo(
+                    root.get("createdAt"),
+                    createdFrom.atStartOfDay().toInstant(ZoneOffset.UTC)
+            ));
+        }
+        if (createdTo != null) {
+            predicates.add(cb.lessThan(
+                    root.get("createdAt"),
+                    createdTo.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC)
+            ));
+        }
     }
 
     private ProductEntity toEntity(Product product) {
