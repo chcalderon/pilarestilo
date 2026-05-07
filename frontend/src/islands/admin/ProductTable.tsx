@@ -709,7 +709,7 @@ export default function ProductTable() {
               placeholder="Buscar por nombre, marca, descripcion, categoria... (ej: vestido activo nuevo)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/30 dark:placeholder:text-[#D6C8B5]/35 focus:outline-none focus:border-pe-rose/50 transition-colors"
+              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/45 dark:placeholder:text-[#D6C8B5]/50 focus:outline-none focus:border-pe-rose/50 transition-colors"
             />
             {searchInput && (
               <button
