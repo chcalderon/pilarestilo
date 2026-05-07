@@ -1,6 +1,6 @@
 # Pilar Estilo - Roadmap
 
-This roadmap is synced with the current codebase on `master` as of May 3, 2026.
+This roadmap is synced with the current codebase on `master` as of May 7, 2026.
 
 ## v1 - Initial Release (Completed)
 
@@ -170,3 +170,4 @@ This roadmap is synced with the current codebase on `master` as of May 3, 2026.
 - [x] Admin products: composite size flow from multi-select (`M` + `L` => `M-L`) with extended sizes (`XXL`, `XXXL`) and stock consistency by variant
 - [x] Admin products: `Tomar foto` uses direct camera capture workflow (desktop/mobile) with graceful file-picker fallback
 - [x] Admin products: unsaved-change close confirmation moved from browser alert to in-app modal UX
+- [x] Admin settings: Shipping tab with configurable zones (`shipping_zones_json`), couriers (`shipping_couriers_json`), and payment mode (`shipping_payment_mode`); Flyway V42+V43; storefront `shipping-returns` page and `DeliveryEstimate` component now fetch live zone/ETA data
