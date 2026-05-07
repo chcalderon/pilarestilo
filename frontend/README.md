@@ -100,6 +100,10 @@ Translations:
   - `Cards` (visual workflow), persisted in local storage (`pe-admin-products-view`)
 - Product admin filters now include `Categoria` in addition to `Condicion` and `Marca`.
 - Product admin now includes `Fecha ingreso` column in grid view, sortable ascending/descending, plus date-range filters (`Fecha desde` / `Fecha hasta`) with native calendar inputs.
+- Product admin form now groups AI actions under `Utilitarios IA` (collapsible chevron section).
+- Product admin form now supports direct camera capture in `Tomar foto` (real camera preview + capture) with file-picker fallback when camera is unavailable.
+- Product admin variants now compose size automatically from multi-select per row (`M` + `L` => `M-L`), including `XXL`/`XXXL`.
+- Product admin close flow now uses in-app unsaved-changes confirmation modal (instead of browser `confirm`).
 - `DataTable` has mobile card rendering for better usability on phones.
 - Admin layout now includes a mobile navigation drawer with menu button + overlay close behavior.
 - Admin action buttons were refreshed with consistent Lucide icon usage in core management flows.

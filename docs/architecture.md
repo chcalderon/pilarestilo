@@ -170,6 +170,10 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V39`: dispatch schema (`dispatches`)
 - `V40`: product AI pipeline (`product_ai_drafts`, `product_ai_assets`, `product_ai_jobs`, `product_ai_outputs`)
 - `V41`: Product AI infer-default fields in `system_settings` (`productAiInferDefaultBrand`, `productAiInferDefaultCondition`, `productAiInferBasePrice`, `productAiInferListPriceMultiplier`)
+- `V42`: shipping settings baseline
+- `V43`: shipping origin/zone rename alignment
+- `V44`: product stock synchronization from variants
+- `V45`: expanded size columns for composite sizes (`product_variants.size`, `product_size_stocks.size`)
 
 ---
 

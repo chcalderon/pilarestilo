@@ -64,11 +64,13 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - Landing page category carousel now renders featured category nodes at any tree depth (not limited to root-level featured categories).
 - Product AI: `ProductAiOpenAiClient` now uses separate model configs for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`); Ollama stack removed from Docker Compose and pipeline.
 - Product cards now support dual pricing (`listPrice` struck-through + discounted sale price) across home, category, listing, wishlist, and search contexts.
-- Product AI single-image infer now pre-fills brand/condition/price defaults from admin system settings, and Ollama inference includes automatic quality fallback between primary/fallback models.
+- Product AI single-image infer now pre-fills brand/condition/price defaults from admin system settings.
 - Existing catalog rows are backfilled with default `listPrice` values via DB migration so discount visuals render immediately in storefront cards.
 - Logged-in customers can now leave quick star-only ratings directly from product cards (no comment required in quick flow).
 - Admin product management now supports `Grilla` and `Cards` modes with responsive/mobile improvements.
 - Admin product grid now includes `Fecha ingreso`, with asc/desc sorting and date-range filtering (`desde`/`hasta`) via calendar inputs.
+- Admin product form now enforces cleaner interaction UX: `Activo` toggles only from checkbox click, unsaved changes use a styled confirmation modal (instead of browser alert), and AI tools are grouped under `Utilitarios IA`.
+- Admin product variants now support composite sizes from multi-select per row (for example `M` + `L` => `M-L`), including `XXL`/`XXXL` and direct camera capture workflow (`Tomar foto`) for mobile/desktop.
 - Storefront mobile header now keeps action icons clear of the logo through a dedicated small-screen layout.
 - Storefront category navigation is now a mobile slider with `<` / `>` controls and smooth step scrolling.
 - Spanish storefront and wishlist UI copy was normalized to UTF-8 (accent/mojibake fixes).

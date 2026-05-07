@@ -33,7 +33,7 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 | Module | Responsibility |
 |---|---|
 | `shared/auth` | JWT issuance/validation, auth filter, login/register/refresh/me + self profile/password |
-| `product` | Product CRUD, catalog filters, search, rating summary fields, sizeStocks projection, and variant combinations (`color + size + stock`) |
+| `product` | Product CRUD, catalog filters, search, rating summary fields, sizeStocks projection, and variant combinations (`color + size + stock`) with normalized composite sizes (e.g. `S-M`, `L-XL`) |
 | `category` | Category tree and taxonomy |
 | `review` | Product reviews + moderation workflow |
 | `order` | Order aggregate and status transitions |
@@ -319,7 +319,7 @@ mvn verify    # includes integration tests (Testcontainers)
 
 ## Database migrations
 
-Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V41`, including:
+Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `V45`, including:
 
 - search indexes (`V7`)
 - per-size stock schema (`V8`)
@@ -356,6 +356,10 @@ Flyway scripts in `src/main/resources/db/migration` currently run from `V1` to `
 - dispatch schema (`V39`)
 - product AI pipeline schema (`V40`)
 - Product AI infer-default admin settings fields (`V41`)
+- shipping settings baseline (`V42`)
+- shipping origin/zone rename alignment (`V43`)
+- product stock synchronization from variants (`V44`)
+- expanded size columns for composite sizes in variants and size stocks (`V45`)
 
 ---
 

@@ -167,3 +167,6 @@ This roadmap is synced with the current codebase on `master` as of May 3, 2026.
 - [x] Landing carousel: CSS transform-only mode, touch swipe, dark-mode dots, 4s index-based autoplay
 - [x] Landing category carousel: featured nodes at any tree depth
 - [x] Admin products: sortable `Fecha ingreso` column and date-range filters (`desde` / `hasta`) with calendar inputs
+- [x] Admin products: composite size flow from multi-select (`M` + `L` => `M-L`) with extended sizes (`XXL`, `XXXL`) and stock consistency by variant
+- [x] Admin products: `Tomar foto` uses direct camera capture workflow (desktop/mobile) with graceful file-picker fallback
+- [x] Admin products: unsaved-change close confirmation moved from browser alert to in-app modal UX

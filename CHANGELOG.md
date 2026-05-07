@@ -6,6 +6,16 @@ The format is inspired by Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+- Product size normalization rules (`ProductSizeRules`) now support composite sizes (`S-M`, `L-XL`, `S-M-L`) with catalog tokens `XS,S,M,L,XL,XXL,XXXL,UNICO`.
+- Flyway `V44__sync_product_stock_from_variants.sql` and `V45__expand_size_columns_for_composite_sizes.sql` added to keep real stock aligned and allow longer composite-size values.
+
+### Changed
+- Admin product form variants now build composite size from multi-select per row (instead of manual "agregar compuesta"), with improved `UNICO` behavior.
+- Admin product form `Tomar foto` now uses direct camera capture (`getUserMedia`) with preview/capture modal and file-picker fallback.
+- Admin product form close confirmation now uses an in-app modal for unsaved changes (replacing browser alert/confirm).
+- Admin product variants row layout adjusted so `Quitar` action stays readable and aligned in desktop/tablet breakpoints.
+
 ## [2026-05-03] - UX improvements, image optimization, and carousel overhaul
 
 ### Added
