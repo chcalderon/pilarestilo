@@ -15,7 +15,9 @@ public record CreateOrderRequest(
 ) {
     public record OrderItemRequest(
             UUID productId,
-            int quantity
+            int quantity,
+            String variantColor,
+            String variantSize
     ) {
     }
 }

@@ -98,7 +98,12 @@ public class OrderRemoteCommandClient {
 
     private CreateOrderRequest toCreateRequest(CreateOrderCommand command) {
         List<CreateOrderRequest.OrderItemRequest> items = command.items().stream()
-                .map(item -> new CreateOrderRequest.OrderItemRequest(item.productId(), item.quantity()))
+                .map(item -> new CreateOrderRequest.OrderItemRequest(
+                        item.productId(),
+                        item.quantity(),
+                        item.variantColor(),
+                        item.variantSize()
+                ))
                 .toList();
 
         BigDecimal discountAmount = command.discountAmount() == null ? null : command.discountAmount().amount();
@@ -126,7 +131,9 @@ public class OrderRemoteCommandClient {
     ) {
         private record OrderItemRequest(
                 UUID productId,
-                int quantity
+                int quantity,
+                String variantColor,
+                String variantSize
         ) {
         }
     }

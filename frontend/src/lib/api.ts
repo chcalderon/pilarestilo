@@ -17,13 +17,13 @@ export interface MoneyDto {
 }
 
 export interface SizeStockDto {
-  size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'UNICO';
+  size: string;
   stock: number;
 }
 
 export interface ProductVariantDto {
   color: string;
-  size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'UNICO';
+  size: string;
   stock: number;
 }
 
@@ -405,6 +405,8 @@ export interface CashRegisterHistoryFilter {
 export interface CreateOrderItemRequest {
   productId: string;
   quantity: number;
+  variantColor?: string;
+  variantSize?: string;
 }
 
 export interface CreateOrderRequest {
@@ -682,6 +684,9 @@ function normalizeProduct(raw: any): ProductDto {
 }
 
 function hasSellableStock(product: ProductDto): boolean {
+  if (Number.isFinite(Number(product.stock))) {
+    return Number(product.stock) > 0;
+  }
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     return product.variants.some((variant) => Number(variant.stock ?? 0) > 0);
   }

@@ -11,10 +11,10 @@ public class ProductMapper {
 
     public static ProductDto toDto(Product product) {
         List<ProductDto.SizeStockDto> sizeStocks = product.getSizeStocks().stream()
-                .map(s -> new ProductDto.SizeStockDto(s.getSize().name(), s.getStock()))
+                .map(s -> new ProductDto.SizeStockDto(s.getSize(), s.getStock()))
                 .toList();
         List<ProductDto.VariantDto> variants = product.getVariants().stream()
-                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize().name(), v.getStock()))
+                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize(), v.getStock()))
                 .toList();
 
         List<String> slugs = product.getCategorySlugs();

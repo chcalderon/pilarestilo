@@ -38,8 +38,13 @@ public class InventoryService {
 
     @Transactional
     public void reserve(UUID productId, int qty) {
+        reserve(productId, qty, null, null);
+    }
+
+    @Transactional
+    public void reserve(UUID productId, int qty, String variantColor, String variantSize) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, "reserve");
+            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, variantColor, variantSize, "reserve");
             return;
         }
         reserveLocal(productId, qty);
@@ -48,7 +53,7 @@ public class InventoryService {
     @Transactional
     public void release(UUID productId, int qty) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, "release");
+            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, null, null, "release");
             return;
         }
         releaseLocal(productId, qty);
@@ -62,7 +67,7 @@ public class InventoryService {
         if (!remoteWriteEnabled) {
             return;
         }
-        invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, "confirm");
+        invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, null, null, "confirm");
     }
 
     private void reserveLocal(UUID productId, int qty) {
@@ -81,12 +86,17 @@ public class InventoryService {
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
     }
 
-    private void invokeRemoteCommand(String path, UUID productId, int qty, String operation) {
+    private void invokeRemoteCommand(String path,
+                                     UUID productId,
+                                     int qty,
+                                     String variantColor,
+                                     String variantSize,
+                                     String operation) {
         try {
             remoteInventoryClient.post()
                     .uri(path)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new InventoryCommandRequest(productId, qty))
+                    .body(new InventoryCommandRequest(productId, qty, variantColor, variantSize))
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientResponseException ex) {
@@ -103,7 +113,9 @@ public class InventoryService {
 
     private record InventoryCommandRequest(
             UUID productId,
-            int qty
+            int qty,
+            String variantColor,
+            String variantSize
     ) {
     }
 }

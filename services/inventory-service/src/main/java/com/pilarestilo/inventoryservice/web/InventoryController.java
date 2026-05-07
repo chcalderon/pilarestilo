@@ -67,19 +67,34 @@ public class InventoryController {
     @PostMapping("/commands/reserve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reserve(@RequestBody InventoryCommandRequest request) {
-        executeCommand(() -> commandService.reserve(request.productId(), request.qty()));
+        executeCommand(() -> commandService.reserve(
+                request.productId(),
+                request.qty(),
+                request.variantColor(),
+                request.variantSize()
+        ));
     }
 
     @PostMapping("/commands/release")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void release(@RequestBody InventoryCommandRequest request) {
-        executeCommand(() -> commandService.release(request.productId(), request.qty()));
+        executeCommand(() -> commandService.release(
+                request.productId(),
+                request.qty(),
+                request.variantColor(),
+                request.variantSize()
+        ));
     }
 
     @PostMapping("/commands/confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirm(@RequestBody InventoryCommandRequest request) {
-        executeCommand(() -> commandService.confirm(request.productId(), request.qty()));
+        executeCommand(() -> commandService.confirm(
+                request.productId(),
+                request.qty(),
+                request.variantColor(),
+                request.variantSize()
+        ));
     }
 
     private void executeCommand(Runnable command) {

@@ -9,6 +9,11 @@ interface Props {
   locale: Locale;
 }
 
+interface StockConflict {
+  type: 'OUT_OF_STOCK' | 'INSUFFICIENT_STOCK';
+  availableQty: number;
+}
+
 const labels = {
   es: {
     title: 'Carrito',
@@ -33,7 +38,14 @@ const labels = {
     remove: 'Eliminar',
     quantity: 'Cantidad',
     checkoutError: 'No pudimos crear tu pedido. Inténtalo nuevamente.',
-    checkoutStockAdjusted: 'Actualizamos tu carrito: uno o más productos ya no tienen stock disponible.',
+    checkoutStockAdjusted: 'Uno o más productos fueron comprados por otro cliente mientras navegabas.',
+    checkoutStockReviewHint: 'Revisa los productos marcados, elimina los que están sin stock o ajusta la cantidad disponible.',
+    checkoutBlockedByStock: 'No puedes finalizar la compra mientras existan conflictos de stock en el carrito.',
+    outOfStockBadge: 'Sin stock',
+    limitedStockBadge: 'Stock insuficiente',
+    availableStockPrefix: 'Disponible',
+    removeUnavailable: 'Eliminar',
+    findReplacement: 'Buscar otro',
     checkoutSuccess: 'Pedido creado. Redirigiendo a tu cuenta...',
     continueShopping: 'Seguir comprando',
   },
@@ -60,7 +72,14 @@ const labels = {
     remove: 'Remove',
     quantity: 'Quantity',
     checkoutError: 'We could not create your order. Please try again.',
-    checkoutStockAdjusted: 'We updated your cart: one or more products are no longer in stock.',
+    checkoutStockAdjusted: 'One or more products were purchased by another customer while you were browsing.',
+    checkoutStockReviewHint: 'Review highlighted products, remove out-of-stock items, or adjust quantity before checkout.',
+    checkoutBlockedByStock: 'You cannot complete checkout while stock conflicts remain in your cart.',
+    outOfStockBadge: 'Out of stock',
+    limitedStockBadge: 'Limited stock',
+    availableStockPrefix: 'Available',
+    removeUnavailable: 'Remove',
+    findReplacement: 'Find another',
     checkoutSuccess: 'Order created. Redirecting to your account...',
     continueShopping: 'Continue shopping',
   },
@@ -92,6 +111,7 @@ export default function CartPage({ locale }: Props) {
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCodeDto | null>(null);
   const [discountApplying, setDiscountApplying] = useState(false);
   const [discountError, setDiscountError] = useState('');
+  const [stockConflicts, setStockConflicts] = useState<Record<string, StockConflict>>({});
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
   const isEmployee = authUser?.role === 'SELLER';
@@ -102,6 +122,7 @@ export default function CartPage({ locale }: Props) {
       : Math.min(appliedDiscount.value, subtotal)
     : 0;
   const total = Math.max(0, subtotal - employeeDiscountAmount - appliedDiscountAmount);
+  const stockConflictCount = Object.keys(stockConflicts).length;
 
   const priceFormat = (amount: number, currency: string) =>
     new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
@@ -113,6 +134,48 @@ export default function CartPage({ locale }: Props) {
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message });
     window.setTimeout(() => setToast(null), 3200);
+  }
+
+  function clearItemConflict(itemId: string) {
+    setStockConflicts((current) => {
+      if (!current[itemId]) return current;
+      const next = { ...current };
+      delete next[itemId];
+      return next;
+    });
+  }
+
+  async function findStockConflicts(): Promise<Record<string, StockConflict>> {
+    const checks = await Promise.all(items.map(async (item) => {
+      const productId = item.productId ?? item.id;
+      try {
+        const latest = await getProduct(productId);
+        if (!latest.active || latest.stock <= 0) {
+          return {
+            itemId: item.id,
+            conflict: { type: 'OUT_OF_STOCK' as const, availableQty: 0 },
+          };
+        }
+        if (latest.stock < item.quantity) {
+          return {
+            itemId: item.id,
+            conflict: { type: 'INSUFFICIENT_STOCK' as const, availableQty: latest.stock },
+          };
+        }
+        return null;
+      } catch {
+        return {
+          itemId: item.id,
+          conflict: { type: 'OUT_OF_STOCK' as const, availableQty: 0 },
+        };
+      }
+    }));
+
+    return checks.reduce<Record<string, StockConflict>>((acc, entry) => {
+      if (!entry) return acc;
+      acc[entry.itemId] = entry.conflict;
+      return acc;
+    }, {});
   }
 
   useEffect(() => {
@@ -156,6 +219,31 @@ export default function CartPage({ locale }: Props) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    setStockConflicts((current) => {
+      const next = Object.entries(current).reduce<Record<string, StockConflict>>((acc, [itemId, conflict]) => {
+        const item = items.find((candidate) => candidate.id === itemId);
+        if (!item) return acc;
+        if (conflict.type === 'INSUFFICIENT_STOCK' && item.quantity <= conflict.availableQty) {
+          return acc;
+        }
+        acc[itemId] = conflict;
+        return acc;
+      }, {});
+
+      if (Object.keys(next).length === Object.keys(current).length) {
+        const sameEntries = Object.entries(next).every(([itemId, conflict]) => {
+          const previous = current[itemId];
+          return previous
+            && previous.type === conflict.type
+            && previous.availableQty === conflict.availableQty;
+        });
+        if (sameEntries) return current;
+      }
+      return next;
+    });
+  }, [items]);
 
   const selectedGatewayProviderLabel = useMemo(() => {
     if (!paymentGatewayProviders.length) return '';
@@ -205,39 +293,24 @@ export default function CartPage({ locale }: Props) {
     setCheckingOut(true);
     setToast(null);
     try {
-      const stockAdjustments = await Promise.all(items.map(async (item) => {
-        const productId = item.productId ?? item.id;
-        try {
-          const latest = await getProduct(productId);
-          if (!latest.active || latest.stock <= 0) {
-            return { itemId: item.id, targetQty: 0 };
-          }
-          if (latest.stock < item.quantity) {
-            return { itemId: item.id, targetQty: latest.stock };
-          }
-          return null;
-        } catch {
-          return { itemId: item.id, targetQty: 0 };
-        }
-      }));
-
-      const effectiveAdjustments = stockAdjustments.filter((adjustment): adjustment is { itemId: string; targetQty: number } => adjustment !== null);
-      if (effectiveAdjustments.length > 0) {
-        for (const adjustment of effectiveAdjustments) {
-          if (adjustment.targetQty <= 0) {
-            removeItem(adjustment.itemId);
-          } else {
-            updateQuantity(adjustment.itemId, adjustment.targetQty);
-          }
-        }
+      const conflicts = await findStockConflicts();
+      if (Object.keys(conflicts).length > 0) {
+        setStockConflicts(conflicts);
         showToast('error', l.checkoutStockAdjusted);
         return;
       }
 
+      setStockConflicts({});
+
       const order = await createOrder(
         {
           customerId: authUser.id,
-          items: items.map((item) => ({ productId: item.productId ?? item.id, quantity: item.quantity })),
+          items: items.map((item) => ({
+            productId: item.productId ?? item.id,
+            quantity: item.quantity,
+            variantColor: item.variantColor,
+            variantSize: item.variantSize,
+          })),
           paymentMethod,
           discountCode: appliedDiscount?.code,
         },
@@ -250,6 +323,14 @@ export default function CartPage({ locale }: Props) {
         window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
       }, 500);
     } catch (error) {
+      if (error instanceof Error && /insufficient stock/i.test(error.message)) {
+        const conflicts = await findStockConflicts();
+        if (Object.keys(conflicts).length > 0) {
+          setStockConflicts(conflicts);
+          showToast('error', l.checkoutBlockedByStock);
+          return;
+        }
+      }
       showToast('error', error instanceof Error && error.message ? error.message : l.checkoutError);
     } finally {
       setCheckingOut(false);
@@ -290,65 +371,120 @@ export default function CartPage({ locale }: Props) {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 flex flex-col gap-4">
-              {items.map((item) => (
-                <div key={item.id} className="bg-pe-white flex gap-4 p-4">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-20 h-24 object-cover flex-shrink-0"
-                    width="80"
-                    height="96"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <span className="font-sans text-[10px] tracking-[0.3em] uppercase text-pe-gold">
-                      {item.brand}
-                    </span>
-                    <p className="font-display text-pe-black text-sm font-semibold truncate">
-                      {item.name}
-                    </p>
-                    {item.variantLabel && (
-                      <p className="font-sans text-[11px] tracking-wide text-pe-charcoal/55">
-                        {item.variantLabel}
-                      </p>
-                    )}
-                    <p className="font-sans text-pe-black text-sm">
-                      {priceFormat(item.price.amount, item.price.currency)}
-                    </p>
+              {items.map((item) => {
+                const conflict = stockConflicts[item.id];
+                const hasStockConflict = Boolean(conflict);
 
-                    <div className="mt-auto flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2" aria-label={l.quantity}>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
-                          aria-label="Decrease quantity"
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex gap-4 p-4 border ${
+                      hasStockConflict
+                        ? 'bg-[#fff6f7] border-[#cb6070]/45'
+                        : 'bg-pe-white border-transparent'
+                    }`}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-20 h-24 object-cover flex-shrink-0"
+                      width="80"
+                      height="96"
+                    />
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <span className="font-sans text-[10px] tracking-[0.3em] uppercase text-pe-gold">
+                        {item.brand}
+                      </span>
+                      <p className="font-display text-pe-black text-sm font-semibold truncate">
+                        {item.name}
+                      </p>
+                      {item.variantLabel && (
+                        <p className="font-sans text-[11px] tracking-wide text-pe-charcoal/55">
+                          {item.variantLabel}
+                        </p>
+                      )}
+                      <p className="font-sans text-pe-black text-sm">
+                        {priceFormat(item.price.amount, item.price.currency)}
+                      </p>
+                      {conflict && (
+                        <div
+                          role="status"
+                          aria-live="polite"
+                          className="mt-2 border border-[#cb6070]/45 bg-[#ffe9ec] px-2.5 py-2"
                         >
-                          -
-                        </button>
-                        <span className="font-sans text-sm w-5 text-center">{item.quantity}</span>
+                          <p className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#8f2d3b]">
+                            {conflict.type === 'OUT_OF_STOCK' ? l.outOfStockBadge : l.limitedStockBadge}
+                          </p>
+                          <p className="font-sans text-xs text-[#732731] mt-1">
+                            {conflict.type === 'OUT_OF_STOCK'
+                              ? l.checkoutStockAdjusted
+                              : `${l.availableStockPrefix}: ${conflict.availableQty}`}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                clearItemConflict(item.id);
+                                removeItem(item.id);
+                              }}
+                              className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-[#8f2d3b]/40 text-[#8f2d3b] hover:bg-[#8f2d3b] hover:text-white transition-colors"
+                            >
+                              {l.removeUnavailable}
+                            </button>
+                            <a
+                              href={`/${locale}/products`}
+                              className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-pe-black/20 text-pe-charcoal/70 hover:border-pe-gold hover:text-pe-gold transition-colors"
+                            >
+                              {l.findReplacement}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-auto flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2" aria-label={l.quantity}>
+                          <button
+                            onClick={() => {
+                              clearItemConflict(item.id);
+                              updateQuantity(item.id, item.quantity - 1);
+                            }}
+                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
+                            aria-label="Decrease quantity"
+                          >
+                            -
+                          </button>
+                          <span className="font-sans text-sm w-5 text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => {
+                              clearItemConflict(item.id);
+                              updateQuantity(item.id, item.quantity + 1);
+                            }}
+                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
+                            aria-label="Increase quantity"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <span className="font-sans text-sm font-semibold">
+                          {priceFormat(item.price.amount * item.quantity, item.price.currency)}
+                        </span>
+
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
-                          aria-label="Increase quantity"
+                          onClick={() => {
+                            clearItemConflict(item.id);
+                            removeItem(item.id);
+                          }}
+                          className="font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors"
+                          aria-label={`${l.remove} ${item.name}`}
                         >
-                          +
+                          {l.remove}
                         </button>
                       </div>
-
-                      <span className="font-sans text-sm font-semibold">
-                        {priceFormat(item.price.amount * item.quantity, item.price.currency)}
-                      </span>
-
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors"
-                        aria-label={`${l.remove} ${item.name}`}
-                      >
-                        {l.remove}
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="lg:col-span-1">
@@ -363,6 +499,17 @@ export default function CartPage({ locale }: Props) {
                     {priceFormat(subtotal, items[0]?.price.currency ?? 'CLP')}
                   </span>
                 </div>
+
+                {stockConflictCount > 0 && (
+                  <div className="mb-4 border border-[#cb6070]/45 bg-[#fff0f2] px-3 py-2">
+                    <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-[#8f2d3b]">
+                      {`${stockConflictCount} ${l.outOfStockBadge}`}
+                    </p>
+                    <p className="font-sans text-[0.72rem] text-[#732731] mt-1">
+                      {l.checkoutStockReviewHint}
+                    </p>
+                  </div>
+                )}
 
                 {isEmployee && (
                   <div className="flex justify-between font-sans text-sm mb-4">
@@ -509,7 +656,7 @@ export default function CartPage({ locale }: Props) {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={checkingOut}
+                  disabled={checkingOut || stockConflictCount > 0}
                   className="w-full bg-pe-gold text-pe-black font-sans text-xs tracking-widest uppercase py-3 hover:bg-opacity-90 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {checkingOut ? (
@@ -521,6 +668,12 @@ export default function CartPage({ locale }: Props) {
                     l.checkout
                   )}
                 </button>
+
+                {stockConflictCount > 0 && (
+                  <p className="mt-2 font-sans text-[0.68rem] text-[#8f2d3b]">
+                    {l.checkoutBlockedByStock}
+                  </p>
+                )}
 
                 <a
                   href={`/${locale}/products`}

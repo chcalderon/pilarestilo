@@ -6,6 +6,7 @@ import AddToCartButton from '../islands/AddToCartButton';
 import QuickRateStars from '../islands/reviews/QuickRateStars';
 import WishlistButton from '../islands/wishlist/WishlistButton';
 import RatingStars from './RatingStars.astro';
+import { summarizeVariantSizes } from '../lib/productVariants';
 
 export interface Props {
   product: ProductDto;
@@ -45,6 +46,7 @@ const conditionLabel =
     : t('product.condition.used', locale);
 
 const isNew = product.condition === 'NEW';
+const sizesSummary = summarizeVariantSizes(product.variants);
 ---
 
 <article class="group relative flex flex-col bg-pe-white overflow-hidden fx-lift cursor-rose" aria-label={product.name}>
@@ -87,6 +89,11 @@ const isNew = product.condition === 'NEW';
     <a href={`/${locale}/products/${product.id}`} class="hover:text-pe-rose-deep transition-colors duration-200">
       <h3 class="font-display text-pe-black text-[1.05rem] font-normal leading-snug line-clamp-2">{product.name}</h3>
     </a>
+    {sizesSummary && (
+      <p class="font-sans text-[0.62rem] tracking-[0.12em] uppercase text-pe-charcoal/45">
+        {locale === 'es' ? 'Tallas' : 'Sizes'}: {sizesSummary}
+      </p>
+    )}
 
     <div class="min-h-[1.2rem]">
       <RatingStars value={product.avgRating ?? 0} size={12} />

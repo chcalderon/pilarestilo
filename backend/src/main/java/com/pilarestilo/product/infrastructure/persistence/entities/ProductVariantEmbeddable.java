@@ -9,7 +9,7 @@ public class ProductVariantEmbeddable {
     @Column(name = "color", nullable = false, length = 80)
     private String color;
 
-    @Column(name = "size", nullable = false, length = 8)
+    @Column(name = "size", nullable = false, length = 32)
     private String size;
 
     @Column(name = "stock", nullable = false)

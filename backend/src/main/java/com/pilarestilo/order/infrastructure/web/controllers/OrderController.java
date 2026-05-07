@@ -57,7 +57,12 @@ public class OrderController {
         }
 
         List<CreateOrderCommand.OrderItemCommand> items = request.items().stream()
-                .map(i -> new CreateOrderCommand.OrderItemCommand(i.productId(), i.quantity()))
+                .map(i -> new CreateOrderCommand.OrderItemCommand(
+                        i.productId(),
+                        i.quantity(),
+                        i.variantColor(),
+                        i.variantSize()
+                ))
                 .toList();
 
         CreateOrderCommand command = new CreateOrderCommand(

@@ -40,15 +40,18 @@ public class OrderCommandService {
     private final ProductRepository productRepository;
     private final PaymentRepository paymentRepository;
     private final SystemSettingsRepository systemSettingsRepository;
+    private final InventoryCommandClient inventoryCommandClient;
 
     public OrderCommandService(OrderRepository orderRepository,
                                ProductRepository productRepository,
                                PaymentRepository paymentRepository,
-                               SystemSettingsRepository systemSettingsRepository) {
+                               SystemSettingsRepository systemSettingsRepository,
+                               InventoryCommandClient inventoryCommandClient) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.paymentRepository = paymentRepository;
         this.systemSettingsRepository = systemSettingsRepository;
+        this.inventoryCommandClient = inventoryCommandClient;
     }
 
     @Transactional
@@ -58,7 +61,7 @@ public class OrderCommandService {
         Instant now = Instant.now();
 
         List<OrderLineSnapshot> lines = loadOrderLines(request.items());
-        reserveStock(lines, now);
+        reserveStock(lines);
 
         String currency = resolveCurrency(lines);
         BigDecimal subtotal = calculateSubtotal(lines);
@@ -143,20 +146,25 @@ public class OrderCommandService {
             if (item.quantity() <= 0) {
                 throw new IllegalArgumentException("Quantity must be greater than zero");
             }
+            if ((item.variantColor() == null) != (item.variantSize() == null)) {
+                throw new IllegalArgumentException("variantColor and variantSize must be provided together");
+            }
 
             ProductEntity product = productRepository.findById(item.productId())
                     .orElseThrow(() -> new NoSuchElementException("Product not found: " + item.productId()));
-            lines.add(new OrderLineSnapshot(product, item.quantity()));
+            lines.add(new OrderLineSnapshot(product, item.quantity(), item.variantColor(), item.variantSize()));
         }
         return lines;
     }
 
-    private void reserveStock(List<OrderLineSnapshot> lines, Instant now) {
+    private void reserveStock(List<OrderLineSnapshot> lines) {
         for (OrderLineSnapshot line : lines) {
-            int updated = productRepository.reserveStockAndTouch(line.product().getId(), line.quantity(), now);
-            if (updated == 0) {
-                throw new IllegalStateException("Insufficient stock for product: " + line.product().getId());
-            }
+            inventoryCommandClient.reserve(
+                    line.product().getId(),
+                    line.quantity(),
+                    line.variantColor(),
+                    line.variantSize()
+            );
         }
     }
 
@@ -323,7 +331,9 @@ public class OrderCommandService {
 
     private record OrderLineSnapshot(
             ProductEntity product,
-            int quantity
+            int quantity,
+            String variantColor,
+            String variantSize
     ) {
     }
 

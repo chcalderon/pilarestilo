@@ -204,9 +204,9 @@ public class Product {
         }
         Set<String> uniqueKeys = new HashSet<>();
         for (ProductVariant variant : variants) {
-            String key = variant.getColor().trim().toLowerCase(Locale.ROOT) + "::" + variant.getSize().name();
+            String key = variant.getColor().trim().toLowerCase(Locale.ROOT) + "::" + variant.getSize();
             if (!uniqueKeys.add(key)) {
-                throw new DomainException("Duplicated product variant combination: " + variant.getColor() + " / " + variant.getSize().name());
+                throw new DomainException("Duplicated product variant combination: " + variant.getColor() + " / " + variant.getSize());
             }
         }
     }
@@ -217,7 +217,7 @@ public class Product {
         }
 
         int totalStock = variants.stream().mapToInt(ProductVariant::getStock).sum();
-        Map<com.pilarestilo.product.domain.enums.ProductSize, Integer> bySize = new LinkedHashMap<>();
+        Map<String, Integer> bySize = new LinkedHashMap<>();
         for (ProductVariant variant : variants) {
             bySize.merge(variant.getSize(), variant.getStock(), Integer::sum);
         }

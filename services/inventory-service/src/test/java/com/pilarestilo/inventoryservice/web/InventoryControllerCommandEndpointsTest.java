@@ -40,7 +40,7 @@ class InventoryControllerCommandEndpointsTest {
                         .content(payload()))
                 .andExpect(status().isNoContent());
 
-        verify(commandService).reserve(PRODUCT_ID, 1);
+        verify(commandService).reserve(PRODUCT_ID, 1, null, null);
     }
 
     @Test
@@ -50,7 +50,7 @@ class InventoryControllerCommandEndpointsTest {
                         .content(payload()))
                 .andExpect(status().isNoContent());
 
-        verify(commandService).release(PRODUCT_ID, 1);
+        verify(commandService).release(PRODUCT_ID, 1, null, null);
     }
 
     @Test
@@ -60,13 +60,13 @@ class InventoryControllerCommandEndpointsTest {
                         .content(payload()))
                 .andExpect(status().isNoContent());
 
-        verify(commandService).confirm(PRODUCT_ID, 1);
+        verify(commandService).confirm(PRODUCT_ID, 1, null, null);
     }
 
     @Test
     void reserveMapsDomainValidationToBadRequest() throws Exception {
         doThrow(new IllegalArgumentException("Quantity must be greater than zero"))
-                .when(commandService).reserve(any(UUID.class), anyInt());
+                .when(commandService).reserve(any(UUID.class), anyInt(), any(), any());
 
         mockMvc.perform(post("/api/inventory/commands/reserve")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -77,7 +77,7 @@ class InventoryControllerCommandEndpointsTest {
     @Test
     void reserveMapsMissingProductToNotFound() throws Exception {
         doThrow(new NoSuchElementException("Product not found"))
-                .when(commandService).reserve(any(UUID.class), anyInt());
+                .when(commandService).reserve(any(UUID.class), anyInt(), any(), any());
 
         mockMvc.perform(post("/api/inventory/commands/reserve")
                         .contentType(MediaType.APPLICATION_JSON)

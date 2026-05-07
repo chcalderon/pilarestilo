@@ -10,5 +10,8 @@ public record OrderItemRequest(
         UUID productId,
 
         @Positive(message = "quantity must be positive")
-        int quantity
+        int quantity,
+
+        String variantColor,
+        String variantSize
 ) {}

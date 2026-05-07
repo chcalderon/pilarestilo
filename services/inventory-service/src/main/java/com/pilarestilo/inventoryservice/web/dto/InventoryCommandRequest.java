@@ -4,6 +4,8 @@ import java.util.UUID;
 
 public record InventoryCommandRequest(
         UUID productId,
-        int qty
+        int qty,
+        String variantColor,
+        String variantSize
 ) {
 }

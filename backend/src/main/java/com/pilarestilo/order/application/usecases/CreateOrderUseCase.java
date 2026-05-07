@@ -81,7 +81,12 @@ public class CreateOrderUseCase {
         }
 
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
-            inventoryService.reserve(itemCmd.productId(), itemCmd.quantity());
+            inventoryService.reserve(
+                    itemCmd.productId(),
+                    itemCmd.quantity(),
+                    itemCmd.variantColor(),
+                    itemCmd.variantSize()
+            );
         }
 
         BigDecimal subtotalAmount = orderItems.stream()

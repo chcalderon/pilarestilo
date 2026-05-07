@@ -6,7 +6,7 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 public class ProductSizeStockEmbeddable {
 
-    @Column(name = "size", nullable = false, length = 8)
+    @Column(name = "size", nullable = false, length = 32)
     private String size;
 
     @Column(name = "stock", nullable = false)

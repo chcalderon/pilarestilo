@@ -21,5 +21,10 @@ public record CreateOrderCommand(
         this(customerId, items, paymentMethod, notes, discountAmount, employeeDiscountEligible, null);
     }
 
-    public record OrderItemCommand(UUID productId, int quantity) {}
+    public record OrderItemCommand(
+            UUID productId,
+            int quantity,
+            String variantColor,
+            String variantSize
+    ) {}
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCartStore } from '../../lib/cartStore';
 import type { Locale } from '../../i18n/index';
 import type { ProductVariantDto } from '../../lib/api';
+import { summarizeVariantSizes } from '../../lib/productVariants';
 
 interface Props {
   productId: string;
@@ -39,6 +40,7 @@ export default function ProductVariantSelector({
   const labels = {
     selectColor: locale === 'es' ? 'Color' : 'Color',
     selectSize: locale === 'es' ? 'Talla' : 'Size',
+    availableSizes: locale === 'es' ? 'Tallas disponibles' : 'Available sizes',
     addToCart: locale === 'es' ? 'Agregar al Carrito' : 'Add to Cart',
     outOfStock: locale === 'es' ? 'Sin Stock' : 'Out of Stock',
     added: locale === 'es' ? 'Agregado' : 'Added',
@@ -52,6 +54,7 @@ export default function ProductVariantSelector({
   );
 
   const hasVariants = normalizedVariants.length > 0;
+  const allSizesSummary = useMemo(() => summarizeVariantSizes(normalizedVariants), [normalizedVariants]);
   const colorOptions = useMemo(() => {
     const seen = new Set<string>();
     const colors: string[] = [];
@@ -79,6 +82,10 @@ export default function ProductVariantSelector({
     if (!selectedColor) return [];
     return normalizedVariants.filter((v) => v.color.trim() === selectedColor);
   }, [normalizedVariants, selectedColor]);
+  const selectedColorSizesSummary = useMemo(() => {
+    const unique = Array.from(new Set(sizeOptions.map((v) => v.size)));
+    return unique.join('-');
+  }, [sizeOptions]);
 
   useEffect(() => {
     if (!hasVariants) return;
@@ -96,7 +103,8 @@ export default function ProductVariantSelector({
     [normalizedVariants, selectedColor, selectedSize]
   );
 
-  const outOfStock = hasVariants ? !selectedVariant || selectedVariant.stock === 0 : stock === 0;
+  const depletedByGlobalStock = stock <= 0;
+  const outOfStock = depletedByGlobalStock || (hasVariants ? !selectedVariant || selectedVariant.stock === 0 : stock === 0);
   const canAdd = hasVariants ? Boolean(selectedVariant) && !outOfStock : !outOfStock;
 
   const handleAdd = () => {
@@ -150,9 +158,12 @@ export default function ProductVariantSelector({
                     key={color}
                     type="button"
                     onClick={() => setSelectedColor(color)}
+                    disabled={depletedByGlobalStock}
                     className={[
                       'px-3 py-2 text-xs tracking-wider border transition-colors',
-                      isSelected
+                      depletedByGlobalStock
+                        ? 'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed'
+                        : isSelected
                         ? 'border-[#B76E79] bg-[#B76E79] text-white'
                         : 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]',
                     ].join(' ')}
@@ -168,6 +179,11 @@ export default function ProductVariantSelector({
             <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
               {labels.selectSize}
             </p>
+            {allSizesSummary && (
+              <p className="text-[10px] tracking-[0.08em] uppercase text-[#3A3A3A]/45 mb-2">
+                {labels.availableSizes}: {selectedColorSizesSummary || allSizesSummary}
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               {sizeOptions.map((variant) => {
                 const isSelected = selectedSize === variant.size;
@@ -176,11 +192,11 @@ export default function ProductVariantSelector({
                   <button
                     key={`${variant.color}-${variant.size}`}
                     type="button"
-                    disabled={noStock}
+                    disabled={depletedByGlobalStock || noStock}
                     onClick={() => setSelectedSize(variant.size)}
                     className={[
-                      'w-12 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
-                      noStock
+                      'min-w-12 px-2 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
+                      depletedByGlobalStock || noStock
                         ? 'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed line-through'
                         : isSelected
                         ? 'border-[#B76E79] bg-[#B76E79] text-white'

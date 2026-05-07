@@ -9,6 +9,7 @@ import CuotasDisplay from '../../../components/CuotasDisplay.astro';
 import DeliveryEstimate from '../../../components/DeliveryEstimate.astro';
 import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
 import { getProduct } from '../../../lib/api';
+import { summarizeVariantSizes } from '../../../lib/productVariants';
 
 const { locale, id } = Astro.params as { locale: Locale; id: string };
 
@@ -52,6 +53,7 @@ const conditionLabel =
     : t('product.condition.used', locale);
 
 const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | 'REGIONES';
+const sizesSummary = summarizeVariantSizes(product.variants);
 ---
 
 <BaseLayout title={product.name} description={product.description} locale={locale}>
@@ -127,6 +129,11 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
 
           <!-- Add to cart + wishlist action row -->
           <div class="flex flex-col gap-2 mt-2">
+            {sizesSummary && (
+              <p class="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3A3A3A]/55">
+                {locale === 'es' ? 'Tallas disponibles' : 'Available sizes'}: {sizesSummary}
+              </p>
+            )}
             <ProductVariantSelector
               client:load
               productId={product.id}

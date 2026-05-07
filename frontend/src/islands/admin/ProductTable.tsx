@@ -19,6 +19,7 @@ import {
   type ProductDto,
   type CategoryDto,
 } from '../../lib/api';
+import { summarizeVariantSizes } from '../../lib/productVariants';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
@@ -293,6 +294,7 @@ export default function ProductTable() {
   };
   const fmtCreatedAt = (value: string) =>
     new Date(value).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formatSizesSummary = (row: ProductDto) => summarizeVariantSizes(row.variants);
 
   const actionButtonClass =
     'inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors';
@@ -373,7 +375,8 @@ export default function ProductTable() {
       header: 'Stock',
       width: '64px',
       render: (row) => {
-        const variantCount = row.variants?.length ?? 0;
+        const combinationCount = row.variants?.length ?? 0;
+        const sizesSummary = formatSizesSummary(row);
         return (
           <div className="flex flex-col leading-tight">
             <span
@@ -384,9 +387,14 @@ export default function ProductTable() {
             >
               {row.stock}
             </span>
-            {variantCount > 0 && (
+            {combinationCount > 0 && (
               <span className="font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/45">
-                {variantCount} var
+                {combinationCount} comb.
+              </span>
+            )}
+            {sizesSummary && (
+              <span className="font-sans text-[0.6rem] uppercase tracking-[0.08em] text-pe-charcoal/40">
+                {sizesSummary}
               </span>
             )}
           </div>
@@ -575,7 +583,8 @@ export default function ProductTable() {
                     ].join(' ')}
                   >
                     Stock {row.stock}
-                    {(row.variants?.length ?? 0) > 0 ? ` · ${row.variants!.length} var` : ''}
+                    {(row.variants?.length ?? 0) > 0 ? ` · ${row.variants!.length} comb.` : ''}
+                    {formatSizesSummary(row) ? ` · ${formatSizesSummary(row)}` : ''}
                   </p>
                 </div>
                 <p className="mt-2 font-sans text-[0.68rem] uppercase tracking-[0.08em] text-pe-charcoal/45">

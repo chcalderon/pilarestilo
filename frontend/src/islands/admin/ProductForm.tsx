@@ -171,11 +171,18 @@ const EMPTY_FORM = {
 type VariantSize = ProductVariantDto['size'];
 type VariantRow = {
   color: string;
+  sizes: VariantSize[];
+  stock: string;
+};
+
+type FlatVariantRow = {
+  color: string;
   size: VariantSize;
   stock: string;
 };
 
-const VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'UNICO'];
+const BASE_VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'UNICO'];
+const ALLOWED_SIZE_TOKENS = new Set(BASE_VARIANT_SIZES);
 const DEFAULT_TRANSFORM_PROMPT = 'Generar una imagen de tamano ideal para Instagram (la presenta una modelo en un fondo de boutique de lujo), para campana de invierno. Fijate bien en el diseno y color; mantener tambien textura y corte. Sin texto, sin logos, sin marcas de agua.';
 const DEFAULT_INFERRED_BRAND = 'Pilar Estilo';
 const DEFAULT_INFERRED_CONDITION: 'NEW' | 'USED' = 'USED';
@@ -205,14 +212,107 @@ function inferSuggestedListPrice(basePrice: number, multiplier: number): number 
 function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
   return rows.map((row) => ({
     color: row.color.trim(),
-    size: row.size,
+    size: composeSizeFromSelections(row.sizes),
     stock: Number(row.stock),
+  }));
+}
+
+function parseSafeStock(value: string | number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.floor(parsed);
+}
+
+function sizeSortValue(size: string): number[] {
+  const tokens = size.split('-').filter(Boolean);
+  if (tokens.length === 0) return [999];
+  return tokens.map((token) => {
+    const rank = BASE_VARIANT_SIZES.indexOf(token as VariantSize);
+    return rank >= 0 ? rank : 999;
+  });
+}
+
+function compareVariantSizes(a: string, b: string): number {
+  const aParts = sizeSortValue(a);
+  const bParts = sizeSortValue(b);
+  const max = Math.max(aParts.length, bParts.length);
+  for (let index = 0; index < max; index += 1) {
+    const diff = (aParts[index] ?? 999) - (bParts[index] ?? 999);
+    if (diff !== 0) return diff;
+  }
+  if (aParts.length !== bParts.length) return aParts.length - bParts.length;
+  return a.localeCompare(b);
+}
+
+function normalizeSizeLabel(raw: string): string | null {
+  const compact = raw.toUpperCase().replace(/\s+/g, '');
+  if (!compact) return null;
+  if (!/^[A-Z-]+$/.test(compact)) return null;
+  const tokens = compact.split('-').filter(Boolean);
+  if (tokens.length === 0) return null;
+  if (tokens.some((token) => !ALLOWED_SIZE_TOKENS.has(token as VariantSize))) return null;
+  if (tokens.includes('UNICO') && tokens.length > 1) return null;
+  if (new Set(tokens).size !== tokens.length) return null;
+  return tokens.join('-');
+}
+
+function orderVariantSizes(sizes: VariantSize[]): VariantSize[] {
+  const unique = Array.from(new Set(sizes));
+  return unique.sort(compareVariantSizes);
+}
+
+function parseSizeSelections(size: string): VariantSize[] {
+  const normalized = normalizeSizeLabel(size);
+  if (!normalized) return ['UNICO'];
+  return orderVariantSizes(normalized.split('-') as VariantSize[]);
+}
+
+function composeSizeFromSelections(sizes: VariantSize[]): VariantSize {
+  const normalized = orderVariantSizes(sizes);
+  if (normalized.length === 0) return 'UNICO';
+  return normalized.join('-') as VariantSize;
+}
+
+function toVariantRows(rows: FlatVariantRow[]): VariantRow[] {
+  return rows.map((row) => ({
+    color: row.color.trim() || 'Base',
+    sizes: parseSizeSelections(row.size),
+    stock: String(parseSafeStock(row.stock)),
+  }));
+}
+
+function reconcileRowsWithRealStock(rows: FlatVariantRow[], realStock: number): FlatVariantRow[] {
+  const target = Math.max(0, Math.floor(realStock));
+  const normalized = (rows.length ? rows : [{ color: 'Base', size: 'UNICO' as VariantSize, stock: '0' }]).map((row) => ({
+    color: row.color.trim() || 'Base',
+    size: row.size || 'UNICO',
+    stock: String(parseSafeStock(row.stock)),
+  }));
+
+  const working = normalized.map((row) => ({ ...row, stockValue: parseSafeStock(row.stock) }));
+  let currentTotal = working.reduce((sum, row) => sum + row.stockValue, 0);
+
+  if (currentTotal < target) {
+    working[0].stockValue += target - currentTotal;
+  } else if (currentTotal > target) {
+    let remainingToDiscount = currentTotal - target;
+    for (let index = working.length - 1; index >= 0 && remainingToDiscount > 0; index -= 1) {
+      const discount = Math.min(working[index].stockValue, remainingToDiscount);
+      working[index].stockValue -= discount;
+      remainingToDiscount -= discount;
+    }
+  }
+
+  return working.map((row) => ({
+    color: row.color,
+    size: row.size,
+    stock: String(row.stockValue),
   }));
 }
 
 export default function ProductForm({ product, onSave, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
-  const [useAiAssist, setUseAiAssist] = useState(false);
+  const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
   const [aiRunning, setAiRunning] = useState(false);
   const [aiTransformRunning, setAiTransformRunning] = useState(false);
@@ -230,14 +330,16 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     basePrice: DEFAULT_INFERRED_BASE_PRICE,
     listMultiplier: DEFAULT_INFERRED_LIST_MULTIPLIER,
   });
-  const [useVariants, setUseVariants] = useState(false);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
+  const [stockSyncHint, setStockSyncHint] = useState('');
   const [selectedCatIds, setSelectedCatIds] = useState<string[]>([]);
+  const [initialSnapshot, setInitialSnapshot] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [expandedCatIds, setExpandedCatIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
 
   useEffect(() => {
     getCategories()
@@ -300,12 +402,17 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
   useEffect(() => {
     if (product) {
-      const existingVariants: VariantRow[] = (product.variants ?? []).map((variant) => ({
+      const existingFlatVariants: FlatVariantRow[] = (product.variants ?? []).map((variant) => ({
         color: variant.color,
         size: variant.size,
         stock: String(variant.stock),
       }));
-      setForm({
+      const seededRows = existingFlatVariants.length > 0
+        ? existingFlatVariants
+        : [{ color: 'Base', size: 'UNICO' as VariantSize, stock: String(product.stock) }];
+      const reconciledRows = reconcileRowsWithRealStock(seededRows, product.stock);
+      const incomingTotal = existingFlatVariants.reduce((sum, row) => sum + parseSafeStock(row.stock), 0);
+      const nextForm = {
         name: product.name,
         description: product.description,
         amount: String(product.price.amount),
@@ -316,44 +423,45 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
-      });
-      setUseVariants(existingVariants.length > 0);
-      setVariantRows(existingVariants);
-      setSelectedCatIds([]);
+      };
+      const nextRows = toVariantRows(reconciledRows);
+      setForm(nextForm);
+      setVariantRows(nextRows);
+      setStockSyncHint(
+        incomingTotal !== product.stock
+          ? 'Stock sincronizado con disponibilidad real. Revisa color, talla y stock antes de guardar.'
+          : ''
+      );
+      const nextCatIds: string[] = [];
+      setSelectedCatIds(nextCatIds);
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds));
     } else {
-      setForm({ ...EMPTY_FORM });
-      setUseVariants(false);
-      setVariantRows([]);
-      setSelectedCatIds([]);
+      const nextForm = { ...EMPTY_FORM };
+      const nextRows = [{ color: 'Base', sizes: ['UNICO'], stock: EMPTY_FORM.stock }];
+      const nextCatIds: string[] = [];
+      setForm(nextForm);
+      setVariantRows(nextRows);
+      setStockSyncHint('');
+      setSelectedCatIds(nextCatIds);
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds));
     }
     setErrors({});
     setApiError('');
-    setUseAiAssist(false);
+    setAiToolsOpen(false);
     setLastUploadedFile(null);
     setAiInfo('');
     setAiRunning(false);
     setAiTransformRunning(false);
     setAiTransformPrompt(DEFAULT_TRANSFORM_PROMPT);
     setAiTransformPreviewUrl('');
+    setUnsavedConfirmOpen(false);
   }, [product]);
-
-  useEffect(() => {
-    if (!useVariants) return;
-    if (variantRows.length > 0) return;
-    const baseStock = Number(form.stock);
-    setVariantRows([
-      {
-        color: 'Base',
-        size: 'UNICO',
-        stock: String(Number.isFinite(baseStock) ? Math.max(baseStock, 0) : 0),
-      },
-    ]);
-  }, [useVariants, variantRows.length, form.stock]);
 
   useEffect(() => {
     if (product?.categorySlugs && categories.length > 0) {
       const ids = categories.filter((c) => product.categorySlugs!.includes(c.slug)).map((c) => c.id);
       setSelectedCatIds(ids);
+      setInitialSnapshot(makeSnapshot(form, variantRows, ids));
     }
   }, [categories, product]);
 
@@ -362,7 +470,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }
 
   function addVariantRow() {
-    setVariantRows((prev) => [...prev, { color: '', size: 'UNICO', stock: '0' }]);
+    setVariantRows((prev) => [...prev, { color: '', sizes: ['UNICO'], stock: '0' }]);
   }
 
   function updateVariantRow(index: number, patch: Partial<VariantRow>) {
@@ -371,15 +479,36 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     );
   }
 
+  function toggleVariantSize(index: number, size: VariantSize) {
+    setVariantRows((prev) =>
+      prev.map((row, rowIndex) => {
+        if (rowIndex !== index) return row;
+        const normalizedSize = normalizeSizeLabel(size);
+        if (!normalizedSize) return row;
+        if (normalizedSize === 'UNICO') {
+          return {
+            ...row,
+            sizes: row.sizes.includes('UNICO') ? [] : ['UNICO'],
+          };
+        }
+        const hasSize = row.sizes.includes(normalizedSize);
+        const withoutUnico = row.sizes.filter((current) => current !== 'UNICO');
+        const nextSizes = hasSize
+          ? row.sizes.filter((current) => current !== normalizedSize)
+          : [...withoutUnico, normalizedSize];
+        return {
+          ...row,
+          sizes: orderVariantSizes(nextSizes),
+        };
+      })
+    );
+  }
+
   function removeVariantRow(index: number) {
     setVariantRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
   }
 
-  const variantTotalStock = variantRows.reduce((sum, row) => {
-    const value = Number(row.stock);
-    if (!Number.isFinite(value) || value < 0) return sum;
-    return sum + value;
-  }, 0);
+  const variantTotalStock = normalizeVariantRows(variantRows).reduce((sum, row) => sum + Number(row.stock), 0);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -394,36 +523,98 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         e.listAmount = 'El precio lista debe ser mayor al precio oferta';
       }
     }
-    if (useVariants) {
-      if (variantRows.length === 0) {
-        e.variants = 'Debes agregar al menos una variante';
-      } else {
-        const seen = new Set<string>();
-        for (let idx = 0; idx < variantRows.length; idx += 1) {
-          const row = variantRows[idx];
-          if (!row.color.trim()) {
-            e.variants = `Color requerido en variante ${idx + 1}`;
+    if (variantRows.length === 0) {
+      e.combinations = 'Debes agregar al menos una combinacion';
+    } else {
+      const seen = new Set<string>();
+      for (let idx = 0; idx < variantRows.length; idx += 1) {
+        const row = variantRows[idx];
+        if (!row.color.trim()) {
+          e.combinations = `Color requerido en fila ${idx + 1}`;
+          break;
+        }
+        if (row.sizes.length === 0) {
+          e.combinations = `Selecciona al menos una talla en fila ${idx + 1}`;
+          break;
+        }
+        const normalizedRowSizes: string[] = [];
+        for (const size of row.sizes) {
+          const normalized = normalizeSizeLabel(size);
+          if (!normalized) {
+            e.combinations = `Talla invalida en fila ${idx + 1}: ${size}`;
             break;
           }
-          if (!row.stock || isNaN(Number(row.stock)) || Number(row.stock) < 0) {
-            e.variants = `Stock valido requerido en variante ${idx + 1}`;
-            break;
-          }
-          const key = `${row.color.trim().toLowerCase()}::${row.size}`;
-          if (seen.has(key)) {
-            e.variants = 'No se permiten variantes duplicadas (color + talla)';
-            break;
-          }
-          seen.add(key);
+          normalizedRowSizes.push(normalized);
+        }
+        if (e.combinations) break;
+        if (!row.stock || isNaN(Number(row.stock)) || Number(row.stock) < 0) {
+          e.combinations = `Stock valido requerido en fila ${idx + 1}`;
+          break;
+        }
+        const key = `${row.color.trim().toLowerCase()}::${normalizedRowSizes.join('-')}`;
+        if (seen.has(key)) {
+          e.combinations = 'No se permiten combinaciones duplicadas (color + talla)';
+          break;
+        }
+        seen.add(key);
+        if (e.combinations) {
+          break;
         }
       }
-    } else if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0) {
-      e.stock = 'Stock valido requerido';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
+  function makeSnapshot(nextForm: typeof form, nextRows: VariantRow[], nextCatIds: string[]): string {
+    const variants = normalizeVariantRows(nextRows)
+      .map((variant) => ({
+        color: variant.color.trim().toLowerCase(),
+        size: variant.size,
+        stock: Number(variant.stock),
+      }))
+      .sort((a, b) => `${a.color}::${a.size}`.localeCompare(`${b.color}::${b.size}`));
+    const cats = [...nextCatIds].sort();
+    return JSON.stringify({
+      name: nextForm.name.trim(),
+      description: nextForm.description.trim(),
+      amount: nextForm.amount.trim(),
+      listAmount: nextForm.listAmount.trim(),
+      imageUrl: nextForm.imageUrl.trim(),
+      condition: nextForm.condition,
+      brand: nextForm.brand.trim(),
+      active: nextForm.active,
+      categories: cats,
+      variants,
+    });
+  }
+
+  const currentSnapshot = makeSnapshot(form, variantRows, selectedCatIds);
+  const isDirty = initialSnapshot.length > 0 && currentSnapshot !== initialSnapshot;
+  function handleAttemptClose() {
+    if (!isDirty) {
+      onCancel();
+      return;
+    }
+    setUnsavedConfirmOpen(true);
+  }
+
+  function handleDiscardAndClose() {
+    setUnsavedConfirmOpen(false);
+    onCancel();
+  }
+
+  useEffect(() => {
+    if (!unsavedConfirmOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setUnsavedConfirmOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [unsavedConfirmOpen]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
@@ -437,7 +628,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setApiError('');
 
     try {
-      const normalizedVariants = useVariants ? normalizeVariantRows(variantRows) : undefined;
+      const normalizedVariants = normalizeVariantRows(variantRows);
       const payload: CreateProductRequest = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -448,7 +639,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         imageUrl: form.imageUrl.trim() || '/api/media/products/product-001.jpg',
         condition: form.condition,
         brand: form.brand.trim(),
-        stock: useVariants ? variantTotalStock : Number(form.stock),
+        stock: variantTotalStock,
         active: form.active,
         categoryIds: selectedCatIds,
         variants: normalizedVariants,
@@ -569,14 +760,26 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const categoryTree = buildCategoryTree(categories);
 
   return (
-    <div className="fixed inset-0 bg-[#1A1A1A]/68 dark:bg-black/72 z-50 flex items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true">
-      <div className="bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]">
+    <div
+      className="fixed inset-0 bg-[#1A1A1A]/68 dark:bg-black/72 z-50 flex items-center justify-center p-2 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          handleAttemptClose();
+        }
+      }}
+    >
+      <div
+        className="bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] dark:text-[#E8DCC8] text-xl font-light">
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <button
-            onClick={onCancel}
+            onClick={handleAttemptClose}
             className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 dark:text-[#D6C8B5]/45 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
             aria-label="Cerrar formulario"
           >
@@ -650,8 +853,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               {errors.amount && <p className={errorClass}>{errors.amount}</p>}
             </div>
             <div className="col-span-1">
-              <label htmlFor="pf-list-price" className={labelClass}>
-                Precio lista (tachado)
+              <label htmlFor="pf-list-price" className={labelClass + ' line-through decoration-1'}>
+                Precio
               </label>
               <input
                 id="pf-list-price"
@@ -666,120 +869,150 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               {errors.listAmount && <p className={errorClass}>{errors.listAmount}</p>}
             </div>
             <div className="col-span-2 sm:col-span-2 lg:col-span-1">
-              <label htmlFor="pf-condition" className={labelClass}>
+              <label className={labelClass}>
                 Condicion
               </label>
-              <select
-                id="pf-condition"
-                className={inputClass}
-                value={form.condition}
-                onChange={(e) => setForm({ ...form, condition: e.target.value as 'NEW' | 'USED' })}
-              >
-                <option value="NEW">Nuevo</option>
-                <option value="USED">Usado</option>
-              </select>
+              <div className="grid grid-cols-2 border border-pe-black/30 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1F1518]">
+                {[
+                  { value: 'NEW' as const, label: 'Nuevo' },
+                  { value: 'USED' as const, label: 'Usado' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, condition: option.value })}
+                    className={[
+                      'px-3 py-2 font-sans text-[0.72rem] uppercase tracking-[0.1em] transition-colors',
+                      form.condition === option.value
+                        ? 'bg-[#B76E79] text-white'
+                        : 'text-pe-charcoal/70 dark:text-[#D6C8B5]/65 hover:bg-[#B76E79]/10',
+                    ].join(' ')}
+                    aria-pressed={form.condition === option.value}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label htmlFor="pf-stock" className={labelClass}>
-                Stock {useVariants ? '(total variantes)' : ''}
+              <label htmlFor="pf-stock-total" className={labelClass}>
+                Stock total
               </label>
               <input
-                id="pf-stock"
+                id="pf-stock-total"
                 type="number"
                 min="0"
                 step="1"
                 className={inputClass}
-                value={useVariants ? String(variantTotalStock) : form.stock}
-                onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                required
-                disabled={useVariants}
+                value={String(variantTotalStock)}
+                readOnly
+                disabled
               />
-              {errors.stock && <p className={errorClass}>{errors.stock}</p>}
+              <p className="font-sans text-[0.66rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55 mt-1">
+                Se calcula automaticamente desde color + talla(s) + stock por talla.
+              </p>
             </div>
             <div className="flex flex-col justify-end pb-1 gap-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 accent-[#B76E79]"
-                  checked={useVariants}
-                  onChange={(e) => setUseVariants(e.target.checked)}
-                />
-                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Gestionar por variantes</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   className="w-4 h-4 accent-[#B76E79]"
                   checked={form.active}
                   onChange={(e) => setForm({ ...form, active: e.target.checked })}
                 />
-                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Activo</span>
-              </label>
+                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8] select-none">Activo</span>
+              </div>
             </div>
           </div>
 
-          {useVariants && (
-            <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className={labelClass + ' mb-0'}>Variantes (color + talla + stock)</p>
-                <button
-                  type="button"
-                  onClick={addVariantRow}
-                  className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
-                >
-                  + Agregar
-                </button>
-              </div>
+          <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className={labelClass + ' mb-0'}>Color + talla + stock</p>
+              <button
+                type="button"
+                onClick={addVariantRow}
+                className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
+              >
+                + Agregar
+              </button>
+            </div>
 
-              <div className="space-y-2">
-                {variantRows.map((row, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+            <div className="space-y-2">
+              {variantRows.map((row, index) => (
+                <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-black/10 dark:border-[#3F2A2F] p-2">
+                  <div className="sm:col-span-3 space-y-1">
+                    <p className={labelClass + ' mb-0'}>Color</p>
                     <input
                       type="text"
-                      className={`sm:col-span-5 ${inputClass}`}
+                      className={inputClass}
                       placeholder="Color"
                       value={row.color}
                       onChange={(e) => updateVariantRow(index, { color: e.target.value })}
                     />
-                    <select
-                      className={`sm:col-span-3 ${inputClass}`}
-                      value={row.size}
-                      onChange={(e) => updateVariantRow(index, { size: e.target.value as VariantSize })}
-                    >
-                      {VARIANT_SIZES.map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
+                  </div>
+                  <div className="sm:col-span-5 space-y-1">
+                    <p className={labelClass + ' mb-0'}>Talla(s)</p>
+                    <div className="flex flex-wrap gap-1">
+                      {BASE_VARIANT_SIZES.map((size) => {
+                        const selected = row.sizes.includes(size);
+                        return (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => toggleVariantSize(index, size)}
+                            className={[
+                              'px-2 py-1 font-sans text-[0.62rem] uppercase tracking-[0.08em] border transition-colors',
+                              selected
+                                ? 'border-[#B76E79] bg-[#B76E79]/12 text-[#8E4F58] dark:text-[#E4B8BF]'
+                                : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
+                            ].join(' ')}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="font-sans text-[0.62rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/60">
+                      Valor guardado: <span className="font-semibold">{row.sizes.length > 0 ? composeSizeFromSelections(row.sizes) : '-'}</span>
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <p className={labelClass + ' mb-0'}>Stock</p>
                     <input
                       type="number"
                       min="0"
                       step="1"
-                      className={`sm:col-span-2 ${inputClass}`}
+                      className={inputClass}
                       value={row.stock}
                       onChange={(e) => updateVariantRow(index, { stock: e.target.value })}
                     />
+                  </div>
+                  <div className="sm:col-span-2 sm:pt-[1.22rem]">
                     <button
                       type="button"
                       onClick={() => removeVariantRow(index)}
-                      className="sm:col-span-2 border border-red-300 dark:border-red-800/50 text-red-500 dark:text-red-300 text-[0.66rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="w-full h-[36px] inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-500 dark:text-red-300 text-[0.62rem] uppercase tracking-[0.1em] px-2 whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >
                       Quitar
                     </button>
                   </div>
-                ))}
-              </div>
-
-              <p className="font-sans text-[0.68rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/55">
-                Stock total calculado automaticamente: <strong className="text-[#1A1A1A] dark:text-[#E8DCC8]">{variantTotalStock}</strong>
-              </p>
-              {errors.variants && <p className={errorClass}>{errors.variants}</p>}
+                </div>
+              ))}
             </div>
-          )}
+            <p className="font-sans text-[0.62rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55">
+              Selecciona una o mas tallas por fila. Si eliges varias, se guardan como talla compuesta (ej: M + L = M-L).
+            </p>
+
+            {stockSyncHint && (
+              <p className="font-sans text-[0.68rem] text-amber-700 dark:text-amber-300">
+                {stockSyncHint}
+              </p>
+            )}
+            {errors.combinations && <p className={errorClass}>{errors.combinations}</p>}
+          </div>
 
           <div>
             <label className={labelClass}>Imagen del producto</label>
@@ -799,22 +1032,16 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           </div>
 
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="w-4 h-4 accent-[#B76E79]"
-                checked={useAiAssist}
-                onChange={(e) => setUseAiAssist(e.target.checked)}
-              />
-              <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Usar nuevo flujo IA (1 imagen)</span>
-            </label>
-            <p className="inline-flex w-fit items-center rounded-full border border-emerald-300/70 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 font-sans text-[0.62rem] font-medium tracking-[0.1em] uppercase text-emerald-700 dark:text-emerald-300">
-              OpenAI Only
-            </p>
-            <p className="font-sans text-[0.72rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/55">
-              Este flujo sugiere texto y transforma imagen para este producto con OpenAI. Publicaciones reutiliza el mismo pipeline para mantener consistencia de resultados.
-            </p>
-            {useAiAssist && (
+            <button
+              type="button"
+              onClick={() => setAiToolsOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between text-left"
+              aria-expanded={aiToolsOpen}
+            >
+              <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Utilitarios IA</span>
+              {aiToolsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+            {aiToolsOpen && (
               <div className="space-y-2">
                 <button
                   type="button"
@@ -944,7 +1171,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
             </button>
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleAttemptClose}
               className="flex-1 inline-flex items-center justify-center gap-1.5 border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
             >
               <X size={14} />
@@ -953,6 +1180,46 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           </div>
         </form>
       </div>
+      {unsavedConfirmOpen && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/55 flex items-center justify-center p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setUnsavedConfirmOpen(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-sm border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
+              Salir sin guardar
+            </h3>
+            <p className="font-sans text-[0.82rem] text-pe-charcoal/75 dark:text-[#D6C8B5]/75 leading-relaxed">
+              Tienes cambios sin guardar en este producto. Si sales ahora, los cambios se perderan.
+            </p>
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => setUnsavedConfirmOpen(false)}
+                className="flex-1 inline-flex items-center justify-center border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
+              >
+                Seguir editando
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardAndClose}
+                className="flex-1 inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-600 dark:text-red-300 font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              >
+                Salir sin guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+

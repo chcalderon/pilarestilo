@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Loader2, X, ImageIcon } from 'lucide-react';
+import { Upload, Loader2, X, ImageIcon, Camera } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
 interface Props {
@@ -55,11 +55,31 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(value);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const cameraVideoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     setPreview(value);
   }, [value]);
+
+  const stopCameraStream = () => {
+    if (!cameraStreamRef.current) return;
+    for (const track of cameraStreamRef.current.getTracks()) {
+      track.stop();
+    }
+    cameraStreamRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCameraStream();
+    };
+  }, []);
 
   const upload = async (file: File) => {
     setState('uploading');
@@ -88,6 +108,74 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
     const file = e.target.files?.[0];
     if (file) void upload(file);
     e.currentTarget.value = '';
+  };
+
+  const onCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void upload(file);
+    e.currentTarget.value = '';
+  };
+
+  const closeCamera = () => {
+    setCameraOpen(false);
+    setCameraError('');
+    stopCameraStream();
+  };
+
+  const openCamera = async () => {
+    if (uploading) return;
+    setCameraError('');
+    setCameraStarting(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStarting(false);
+      cameraInputRef.current?.click();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+      setCameraStarting(false);
+    } catch {
+      setCameraStarting(false);
+      setCameraError('No se pudo abrir la camara. Puedes seleccionar una imagen manualmente.');
+      cameraInputRef.current?.click();
+    }
+  };
+
+  useEffect(() => {
+    if (!cameraOpen || !cameraVideoRef.current || !cameraStreamRef.current) return;
+    const video = cameraVideoRef.current;
+    video.srcObject = cameraStreamRef.current;
+    void video.play().catch(() => {});
+  }, [cameraOpen]);
+
+  const captureCameraPhoto = async () => {
+    const video = cameraVideoRef.current;
+    if (!video || !cameraStreamRef.current) return;
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 960;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setCameraError('No se pudo capturar la foto. Intenta nuevamente.');
+      return;
+    }
+    ctx.drawImage(video, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) {
+      setCameraError('No se pudo capturar la foto. Intenta nuevamente.');
+      return;
+    }
+    const filename = `camera-${Date.now()}.jpg`;
+    const capturedFile = new File([blob], filename, { type: 'image/jpeg' });
+    closeCamera();
+    void upload(capturedFile);
   };
 
   const dragging = state === 'dragging';
@@ -196,8 +284,21 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
         )}
       </div>
 
+      <button
+        type="button"
+        onClick={() => void openCamera()}
+        className="inline-flex items-center justify-center gap-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+        disabled={uploading || cameraStarting}
+      >
+        {cameraStarting ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+        {cameraStarting ? 'Abriendo camara...' : 'Tomar foto'}
+      </button>
+
       {state === 'error' && (
         <p className="font-sans text-[0.65rem] text-red-500">{error}</p>
+      )}
+      {cameraError && (
+        <p className="font-sans text-[0.65rem] text-amber-600 dark:text-amber-300">{cameraError}</p>
       )}
       <input
         ref={inputRef}
@@ -206,6 +307,49 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
         className="hidden"
         onChange={onChange}
       />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={onCameraChange}
+      />
+
+      {cameraOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-4">
+          <div className="w-full max-w-[720px] bg-pe-white dark:bg-[#1B1215] border border-pe-black/20 dark:border-[#3F2A2F] p-3 space-y-3">
+            <p className="font-sans text-[0.72rem] uppercase tracking-[0.1em] text-pe-charcoal/70 dark:text-[#D6C8B5]/75">
+              Camara
+            </p>
+            <div className="w-full bg-black">
+              <video
+                ref={cameraVideoRef}
+                className="w-full max-h-[65vh] object-contain"
+                playsInline
+                muted
+                autoPlay
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="px-3 py-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:border-[#B76E79]/40 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void captureCameraPhoto()}
+                className="px-3 py-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:bg-[#B76E79]/10 transition-colors"
+              >
+                Capturar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

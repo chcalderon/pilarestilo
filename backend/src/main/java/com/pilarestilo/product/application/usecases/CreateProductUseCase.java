@@ -4,7 +4,6 @@ import com.pilarestilo.product.application.dto.ProductDto;
 import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.product.application.mappers.ProductMapper;
 import com.pilarestilo.product.domain.enums.ProductCondition;
-import com.pilarestilo.product.domain.enums.ProductSize;
 import com.pilarestilo.product.domain.events.ProductCreated;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.model.ProductVariant;
@@ -77,12 +76,10 @@ public class CreateProductUseCase {
     }
 
     private ProductVariant toVariant(ProductVariantInput input) {
-        ProductSize size;
         try {
-            size = ProductSize.valueOf(input.size().trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
+            return new ProductVariant(input.color(), input.size(), input.stock());
+        } catch (DomainException ex) {
             throw new DomainException("Invalid product variant size: " + input.size());
         }
-        return new ProductVariant(input.color(), size, input.stock());
     }
 }
