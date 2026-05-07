@@ -99,7 +99,7 @@ const storeSettings = await getPublicStoreSettings();
         root.setAttribute('data-os', detectOs());
         const mode = getMode();
         const storedTheme = getStoredTheme();
-        const initialTheme = storedTheme ?? getSystemTheme();
+        const initialTheme = storedTheme ?? 'dark';
         if (!storedTheme) {
           safeSet(STORAGE_THEME_KEY, initialTheme);
         }

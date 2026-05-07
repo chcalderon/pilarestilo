@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-07T00:00:00Z",
+  "title": "Design System: Pilar Estilo",
+  "extensions": {
+    "colorMeta": {
+      "rose":        { "role": "primary",   "displayName": "Rosa Empolvado",  "canonical": "oklch(60% 0.09 355)",  "tonalRamp": ["oklch(20% 0.09 355)", "oklch(30% 0.09 355)", "oklch(40% 0.09 355)", "oklch(50% 0.09 355)", "oklch(60% 0.09 355)", "oklch(72% 0.07 355)", "oklch(83% 0.05 355)", "oklch(93% 0.02 355)"] },
+      "rose-deep":   { "role": "primary",   "displayName": "Rosa Profundo",   "canonical": "oklch(43% 0.09 354)",  "tonalRamp": ["oklch(15% 0.09 354)", "oklch(25% 0.09 354)", "oklch(35% 0.09 354)", "oklch(43% 0.09 354)", "oklch(52% 0.08 354)", "oklch(63% 0.07 354)", "oklch(76% 0.05 354)", "oklch(88% 0.03 354)"] },
+      "rose-soft":   { "role": "primary",   "displayName": "Rosa Suave",      "canonical": "oklch(86% 0.04 355)",  "tonalRamp": ["oklch(30% 0.04 355)", "oklch(45% 0.04 355)", "oklch(58% 0.04 355)", "oklch(68% 0.04 355)", "oklch(76% 0.04 355)", "oklch(83% 0.04 355)", "oklch(86% 0.04 355)", "oklch(95% 0.02 355)"] },
+      "gold":        { "role": "secondary", "displayName": "Oro Cálido",      "canonical": "oklch(73% 0.09 80)",   "tonalRamp": ["oklch(20% 0.09 80)", "oklch(32% 0.09 80)", "oklch(44% 0.09 80)", "oklch(56% 0.09 80)", "oklch(68% 0.09 80)", "oklch(77% 0.07 80)", "oklch(87% 0.04 80)", "oklch(94% 0.02 80)"] },
+      "ink":         { "role": "neutral",   "displayName": "Tinta",           "canonical": "oklch(15% 0.005 350)", "tonalRamp": ["oklch(10% 0.005 350)", "oklch(20% 0.005 350)", "oklch(30% 0.005 350)", "oklch(40% 0.005 350)", "oklch(55% 0.005 350)", "oklch(70% 0.005 350)", "oklch(83% 0.005 350)", "oklch(93% 0.005 350)"] },
+      "charcoal":    { "role": "neutral",   "displayName": "Carbón",          "canonical": "oklch(30% 0.005 350)", "tonalRamp": ["oklch(12% 0.005 350)", "oklch(22% 0.005 350)", "oklch(30% 0.005 350)", "oklch(42% 0.005 350)", "oklch(56% 0.005 350)", "oklch(69% 0.005 350)", "oklch(81% 0.005 350)", "oklch(92% 0.005 350)"] },
+      "warm-cream":  { "role": "neutral",   "displayName": "Crema Cálida",    "canonical": "oklch(93% 0.01 70)",   "tonalRamp": ["oklch(30% 0.01 70)", "oklch(45% 0.01 70)", "oklch(58% 0.01 70)", "oklch(68% 0.01 70)", "oklch(78% 0.01 70)", "oklch(86% 0.01 70)", "oklch(93% 0.01 70)", "oklch(97% 0.005 70)"] },
+      "mid-cream":   { "role": "neutral",   "displayName": "Crema Media",     "canonical": "oklch(86% 0.02 70)",   "tonalRamp": ["oklch(25% 0.02 70)", "oklch(38% 0.02 70)", "oklch(51% 0.02 70)", "oklch(62% 0.02 70)", "oklch(72% 0.02 70)", "oklch(80% 0.02 70)", "oklch(86% 0.02 70)", "oklch(95% 0.01 70)"] },
+      "parchment":   { "role": "neutral",   "displayName": "Parchment",       "canonical": "oklch(95% 0.01 80)",   "tonalRamp": ["oklch(28% 0.01 80)", "oklch(42% 0.01 80)", "oklch(55% 0.01 80)", "oklch(67% 0.01 80)", "oklch(78% 0.01 80)", "oklch(87% 0.01 80)", "oklch(93% 0.01 80)", "oklch(95% 0.01 80)"] },
+      "pure-white":  { "role": "neutral",   "displayName": "Blanco Puro",     "canonical": "oklch(100% 0 0)",      "tonalRamp": ["oklch(20% 0 0)", "oklch(35% 0 0)", "oklch(50% 0 0)", "oklch(65% 0 0)", "oklch(78% 0 0)", "oklch(88% 0 0)", "oklch(95% 0 0)", "oklch(100% 0 0)"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Hero headlines, landing section titles, category heroes. Cormorant only. Never bold." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles, secondary section names. Cormorant regular." },
+      "title":    { "displayName": "Title",    "purpose": "Brand names in cards, column headers, admin section labels. Montserrat uppercase." },
+      "body":     { "displayName": "Body",     "purpose": "Product descriptions, informational text. Max 65ch. Montserrat light." },
+      "label":    { "displayName": "Label",    "purpose": "CTA buttons, condition badges, filter tags, input placeholders. Montserrat uppercase wide-tracking. Signature of the system." }
+    },
+    "shadows": [
+      { "name": "card-lift",  "value": "0 18px 40px -22px rgba(143, 79, 88, 0.35)", "purpose": "Product card hover only. Rose-tinted lift. Never at rest." },
+      { "name": "editorial",  "value": "0 30px 60px -30px rgba(26, 26, 26, 0.25)",  "purpose": "Modals, drawers, overlays. Soft and diffuse." }
+    ],
+    "motion": [
+      { "name": "ease-editorial",  "value": "cubic-bezier(0.22, 0.61, 0.36, 1)", "purpose": "Default easing for entrances. Snappy start, graceful settle." },
+      { "name": "ease-out-gentle", "value": "cubic-bezier(0.4, 0, 0.2, 1)",      "purpose": "State transitions (hover, focus). Standard material-style." },
+      { "name": "duration-micro",  "value": "150ms",  "purpose": "Color/opacity state changes (focus, hover color)." },
+      { "name": "duration-short",  "value": "200ms",  "purpose": "Button hover, badge fade, icon swap." },
+      { "name": "duration-medium", "value": "350ms",  "purpose": "Card hover lift, drawer open." },
+      { "name": "duration-long",   "value": "900ms",  "purpose": "Page entrance animations (fade-up). Once per session." }
+    ],
+    "breakpoints": [
+      { "name": "sm",  "value": "640px",  "note": "Mobile breakpoint — single column product grid." },
+      { "name": "md",  "value": "768px",  "note": "Tablet — 2-column grid, drawer nav." },
+      { "name": "lg",  "value": "1024px", "note": "Desktop — 3-4 column grid, full sidebar nav." },
+      { "name": "xl",  "value": "1280px", "note": "Wide — editorial hero layouts, max-w-6xl content container." },
+      { "name": "2xl", "value": "1536px", "note": "Max container. Content does not expand past this." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main conversion action. Rose, sharp, uppercase-tracked label.",
+      "html": "<button class=\"ds-btn-primary\">AGREGAR AL CARRO</button>",
+      "css": ".ds-btn-primary { background: #B76E79; color: #FFFFFF; padding: 14px 48px; border: none; border-radius: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; cursor: pointer; transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: #8E4F58; } .ds-btn-primary:focus-visible { outline: 2px solid #B76E79; outline-offset: 3px; } .ds-btn-primary:disabled { opacity: 0.38; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action. Ink border, no fill. Hover softens to rose.",
+      "html": "<button class=\"ds-btn-ghost\">VER MÁS</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #1A1A1A; padding: 13px 47px; border: 1px solid #1A1A1A; border-radius: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.28em; text-transform: uppercase; cursor: pointer; transition: color 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-ghost:hover { color: #B76E79; border-color: #B76E79; } .ds-btn-ghost:focus-visible { outline: 2px solid #B76E79; outline-offset: 3px; } .ds-btn-ghost:disabled { opacity: 0.38; cursor: not-allowed; }"
+    },
+    {
+      "name": "Badge USADO",
+      "kind": "chip",
+      "refersTo": "badge-used",
+      "description": "Condition badge for second-hand items. Rose-warm; the piece has history.",
+      "html": "<span class=\"ds-badge ds-badge--used\">USADO</span>",
+      "css": ".ds-badge { display: inline-block; font-family: 'Montserrat', system-ui, sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 8px; border-radius: 0; line-height: 1.4; } .ds-badge--used { background: #E8C9CC; color: #8E4F58; }"
+    },
+    {
+      "name": "Badge NUEVO",
+      "kind": "chip",
+      "refersTo": "badge-new",
+      "description": "Condition badge for new items. Ink on cream — immediate contrast.",
+      "html": "<span class=\"ds-badge ds-badge--new\">NUEVO</span>",
+      "css": ".ds-badge { display: inline-block; font-family: 'Montserrat', system-ui, sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; padding: 3px 8px; border-radius: 0; line-height: 1.4; } .ds-badge--new { background: #1A1A1A; color: #F2EAE0; }"
+    },
+    {
+      "name": "Product Card",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Core commerce unit. 3:4 image aspect ratio, rose-tinted lift on hover. Brand above name. Dual pricing with discount percent in rose.",
+      "html": "<div class=\"ds-product-card\"><div class=\"ds-product-card__img-wrap\"><div class=\"ds-product-card__img\"></div><span class=\"ds-badge ds-badge--used\">USADO</span></div><div class=\"ds-product-card__body\"><p class=\"ds-product-card__brand\">PILAR ESTILO</p><p class=\"ds-product-card__name\">Vestido tejido gris oscuro</p><div class=\"ds-product-card__price\"><s class=\"ds-product-card__list-price\">$12.000</s><span class=\"ds-product-card__sale-price\">$10.000</span><span class=\"ds-product-card__discount\">-17%</span></div></div></div>",
+      "css": ".ds-product-card { background: #FFFFFF; cursor: pointer; transition: transform 0.35s cubic-bezier(0.22,0.61,0.36,1), box-shadow 0.35s cubic-bezier(0.22,0.61,0.36,1); } .ds-product-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -22px rgba(143,79,88,0.35); } .ds-product-card__img-wrap { position: relative; aspect-ratio: 3/4; overflow: hidden; background: #E3D2BE; } .ds-product-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s cubic-bezier(0.22,0.61,0.36,1); } .ds-product-card:hover .ds-product-card__img { transform: scale(1.04); } .ds-badge { position: absolute; top: 10px; left: 10px; } .ds-product-card__body { padding: 12px 4px 16px; } .ds-product-card__brand { font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.65rem; font-weight: 500; letter-spacing: 0.28em; color: #B76E79; text-transform: uppercase; margin-bottom: 4px; } .ds-product-card__name { font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.8rem; font-weight: 300; color: #1A1A1A; line-height: 1.4; margin-bottom: 8px; } .ds-product-card__price { display: flex; align-items: baseline; gap: 6px; } .ds-product-card__list-price { font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.7rem; color: #3A3A3A; opacity: 0.5; text-decoration: line-through; } .ds-product-card__sale-price { font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.85rem; font-weight: 500; color: #1A1A1A; } .ds-product-card__discount { font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.65rem; font-weight: 500; color: #B76E79; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": null,
+      "description": "Sharp-edged, minimal border. Focus shifts border to rose/50. Placeholder at 45% opacity.",
+      "html": "<div class=\"ds-input-wrap\"><svg class=\"ds-input-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#3A3A3A\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.35-4.35\"/></svg><input class=\"ds-input\" type=\"text\" placeholder=\"Buscar por nombre, marca, categoría...\"></div>",
+      "css": ".ds-input-wrap { position: relative; display: flex; align-items: center; } .ds-input-icon { position: absolute; left: 12px; pointer-events: none; opacity: 0.45; } .ds-input { width: 100%; font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.78rem; font-weight: 300; color: #1A1A1A; background: #FFFFFF; border: 1px solid rgba(26,26,26,0.15); border-radius: 0; padding: 10px 12px 10px 36px; outline: none; transition: border-color 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-input::placeholder { color: rgba(58,58,58,0.45); } .ds-input:focus { border-color: rgba(183,110,121,0.5); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": null,
+      "description": "Category and filter selection. Sharp border at rest. Ink fill when selected.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-chip\">Vestidos</button><button class=\"ds-chip ds-chip--selected\">Blusas</button><button class=\"ds-chip\">Abrigos</button></div>",
+      "css": ".ds-chip { background: transparent; color: #3A3A3A; border: 1px solid rgba(58,58,58,0.3); border-radius: 0; font-family: 'Montserrat',system-ui,sans-serif; font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; padding: 6px 14px; cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s; } .ds-chip:hover { border-color: #B76E79; color: #B76E79; } .ds-chip--selected { background: #1A1A1A; color: #F2EAE0; border-color: #1A1A1A; } .ds-chip--selected:hover { background: #3A3A3A; border-color: #3A3A3A; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Vitrina Curada",
+    "overview": "Pilar Estilo es la vitrina de una boutique de barrio que llegó al mundo digital sin perder su alma. La persona detrás de la curaduría eligió cada pieza: la fotografió, la describió, decidió que merece estar ahí. El sistema de diseño debe hacer sentir ese criterio en cada pantalla.\n\nLa paleta es parchment y crema cálida con un acento de rosa empolvado: el color de un probador con buena luz. El oro aparece apenas, como un pendiente. La tipografía es Cormorant para los títulos y Montserrat en letra pequeña, espaciada, casi como etiquetas de percha.\n\nEste sistema rechaza la grilla infinita sin jerarquía, el lujo frío e inaccesible, la familiaridad genérica del retail americano, y cualquier cosa que haga pensar 'lo armó una IA esta tarde'.",
+    "keyCharacteristics": [
+      "Superficie parchment dominante; el rosa es acento, nunca fondo",
+      "Tipografía serif de peso ligero para display; sans espaciada para labels y CTA",
+      "Bordes rectos (radius: 0); la curvatura viene del contenido, no del chrome",
+      "Sombras reservadas para hover de producto y modales abiertos",
+      "Ritmo asimétrico: mismo padding en todas partes es monotonía"
+    ],
+    "rules": [
+      { "name": "La Regla del Acento Único",    "body": "El rosa aparece en ≤10% de cualquier pantalla. Su rareza es el punto.", "section": "colors" },
+      { "name": "La Regla del Oro Escaso",       "body": "El dorado aparece máximo 2-3 veces por pantalla. Si puedes contar más de 3 instancias, elimina todas menos una.", "section": "colors" },
+      { "name": "La Regla del Serif Ligero",     "body": "Cormorant en weight 300-400, nunca bold. Si un título necesita fuerza, gánala con tamaño, no con peso.", "section": "typography" },
+      { "name": "La Regla del Uppercase Espaciado", "body": "Montserrat en labels y CTAs va siempre en uppercase con letter-spacing ≥0.18em. Sin uppercase y sin tracking, el texto pequeño es invisible.", "section": "typography" },
+      { "name": "La Regla Plano-por-Defecto",    "body": "Ningún elemento tiene sombra en reposo excepto modales/drawers abiertos. El hover del producto siempre gana.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar Cormorant en weight 300-400 para todos los headings display",
+      "Do mantener el rosa empolvado en ≤10% de cualquier pantalla",
+      "Do usar radius 0 en todos los elementos interactivos",
+      "Do reservar las sombras para hover de producto y modales abiertos",
+      "Do animar solo con transform y opacity",
+      "Do usar ease-out con curvas como cubic-bezier(0.22, 0.61, 0.36, 1) para entradas",
+      "Do escribir labels, badges y CTAs en uppercase con letter-spacing ≥0.18em",
+      "Do presentar el producto como protagonista: imagen 3:4, nombre breve, precio claro",
+      "Do destacar el origen circular como valor: el badge USADO es un argumento, no una disculpa"
+    ],
+    "donts": [
+      "Don't usar gradiente de texto (background-clip: text)",
+      "Don't usar border-left o border-right mayor a 1px como acento de color",
+      "Don't anidar cards",
+      "Don't hacer que el sistema parezca fast fashion masivo (Shein, H&M, Forever 21)",
+      "Don't hacer que parezca lujo inaccesible (Gucci, Louis Vuitton)",
+      "Don't hacer que parezca marketplace genérico (MercadoLibre, Falabella)",
+      "Don't disculpar la naturaleza de segunda mano del inventario",
+      "Don't usar glassmorfismo",
+      "Don't usar el hero-metric template (número grande + gradiente acento)",
+      "Don't poner más de 3 instancias del color dorado en una misma pantalla",
+      "Don't usar emoji como iconos de interfaz"
+    ]
+  }
+}

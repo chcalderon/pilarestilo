@@ -57,6 +57,30 @@ const sizesSummary = summarizeVariantSizes(product.variants);
 ---
 
 <BaseLayout title={product.name} description={product.description} locale={locale}>
+  <style>
+    @keyframes pe-fade-in {
+      from { opacity: 0; transform: scale(1.025); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pe-slide-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .pe-product-img {
+      animation: pe-fade-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .pe-detail-item {
+      animation: pe-slide-up 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: var(--delay, 0ms);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pe-product-img,
+      .pe-detail-item { animation: none; }
+    }
+  </style>
+
   <div class="py-12 min-h-screen" style="background-color: var(--pe-surface)">
     <div class="pe-container">
       <!-- Breadcrumb -->
@@ -71,29 +95,32 @@ const sizesSummary = summarizeVariantSizes(product.variants);
       <!-- Product grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <!-- Image -->
-        <div class="aspect-[3/4] overflow-hidden bg-[#EDE3D8] relative">
+        <div class="aspect-[3/4] overflow-hidden bg-[#EDE3D8] relative pe-product-img">
           <img
             src={product.imageUrl}
             alt={product.name}
             class="w-full h-full object-cover"
             width="600"
             height="800"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
           />
         </div>
 
         <!-- Details panel -->
         <div class="lg:sticky lg:top-24 flex flex-col gap-6">
           <!-- Brand + condition -->
-          <div class="flex items-center justify-between">
-            <span class="font-sans text-[10px] tracking-[0.4em] uppercase text-[#B76E79] font-semibold">
+          <div class="pe-detail-item flex items-center justify-between" style="--delay: 60ms">
+            <span class="font-sans text-[10px] tracking-[0.4em] uppercase text-[#B76E79] font-medium">
               {product.brand}
             </span>
             <span
               class:list={[
                 'font-sans text-[9px] tracking-wider uppercase px-2.5 py-1 border',
                 product.condition === 'NEW'
-                  ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
-                  : 'bg-pe-rose-soft text-black border-pe-rose/45',
+                  ? 'bg-[#1A1A1A] text-[#F2EAE0] border-[#1A1A1A]'
+                  : 'bg-[#E8C9CC] text-[#8E4F58] border-[#E8C9CC]',
               ]}
             >
               {conditionLabel}
@@ -101,19 +128,22 @@ const sizesSummary = summarizeVariantSizes(product.variants);
           </div>
 
           <!-- Name -->
-          <h1 class="font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-3xl md:text-4xl font-light italic leading-tight">
+          <h1
+            class="pe-detail-item font-['Cormorant_Garamond',serif] text-[#1A1A1A] text-3xl md:text-4xl font-light italic leading-tight"
+            style="--delay: 140ms"
+          >
             {product.name}
           </h1>
 
           <!-- Rating stars -->
           {(product.avgRating ?? 0) > 0 && (
-            <a href="#resenas" class="flex items-center gap-2">
+            <a href="#resenas" class="pe-detail-item flex items-center gap-2" style="--delay: 210ms">
               <RatingStars value={product.avgRating ?? 0} count={product.reviewCount} />
             </a>
           )}
 
           <!-- Price -->
-          <div class="flex items-baseline gap-3">
+          <div class="pe-detail-item flex items-baseline gap-3" style="--delay: 280ms">
             {hasDiscount && (
               <span class="font-sans text-base text-[#3A3A3A]/45 line-through tabular-nums">
                 {listPriceFormatted}
@@ -123,12 +153,12 @@ const sizesSummary = summarizeVariantSizes(product.variants);
               {priceFormatted}
             </span>
             {discountPct !== null && (
-              <span class="font-sans text-xs uppercase tracking-[0.12em] text-emerald-700">-{discountPct}%</span>
+              <span class="font-sans text-xs uppercase tracking-[0.12em] text-[#B76E79]">-{discountPct}%</span>
             )}
           </div>
 
           <!-- Add to cart + wishlist action row -->
-          <div class="flex flex-col gap-2 mt-2">
+          <div class="pe-detail-item flex flex-col gap-2 mt-2" style="--delay: 380ms">
             {sizesSummary && (
               <p class="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3A3A3A]/55">
                 {locale === 'es' ? 'Tallas disponibles' : 'Available sizes'}: {sizesSummary}
@@ -157,17 +187,21 @@ const sizesSummary = summarizeVariantSizes(product.variants);
           </div>
 
           <!-- Divider -->
-          <div class="w-full h-px bg-[#EDE3D8]"></div>
+          <div class="pe-detail-item w-full h-px bg-[#EDE3D8]" style="--delay: 440ms"></div>
 
           <!-- Cuotas -->
-          <CuotasDisplay priceAmount={product.price.amount} locale={locale} />
+          <div class="pe-detail-item" style="--delay: 480ms">
+            <CuotasDisplay priceAmount={product.price.amount} locale={locale} />
+          </div>
 
           <!-- Delivery estimate -->
-          <DeliveryEstimate zone={zone} locale={locale} />
+          <div class="pe-detail-item" style="--delay: 530ms">
+            <DeliveryEstimate zone={zone} locale={locale} />
+          </div>
 
           <!-- Description -->
-          <div>
-            <p class="text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-2">
+          <div class="pe-detail-item" style="--delay: 580ms">
+            <p class="font-sans text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-3">
               {locale === 'es' ? 'Descripción' : 'Description'}
             </p>
             <p class="font-sans text-[#3A3A3A] leading-relaxed text-sm">
@@ -176,8 +210,15 @@ const sizesSummary = summarizeVariantSizes(product.variants);
           </div>
 
           <!-- Back link -->
-          <a href={`/${locale}/products`} class="text-xs tracking-widest uppercase text-[#3A3A3A]/50 hover:text-[#B76E79] transition-colors mt-2">
-            ← {locale === 'es' ? 'Volver al catálogo' : 'Back to catalogue'}
+          <a
+            href={`/${locale}/products`}
+            class="pe-detail-item inline-flex items-center gap-1.5 text-xs tracking-widest uppercase text-[#3A3A3A]/50 hover:text-[#B76E79] transition-colors mt-2"
+            style="--delay: 640ms"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M8.5 2.5L4 7l4.5 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="miter"/>
+            </svg>
+            {locale === 'es' ? 'Volver al catálogo' : 'Back to catalogue'}
           </a>
         </div>
       </div>

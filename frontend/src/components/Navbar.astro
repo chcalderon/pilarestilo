@@ -254,7 +254,7 @@ try {
     justify-content: center;
     width: min(78vw, 760px);
     height: 190px;
-    transition: width 320ms ease, height 320ms ease;
+    transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1), height 360ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .nav-logo-layer {
@@ -272,8 +272,12 @@ try {
     max-width: min(78vw, 760px);
     filter: drop-shadow(0 1px 2px rgba(26, 26, 26, 0.28));
     z-index: 1;
-    transition: none;
     transform: translate(-50%, -50%) scale(1.14);
+    /* compact→expanded: full logo fades IN with delay (compact fades out first) */
+    transition:
+      opacity 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+      transform 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+      visibility 0ms linear 0ms;
   }
 
   .nav-logo-compact {
@@ -283,12 +287,16 @@ try {
     transform: translate(-50%, -50%) scale(0.96);
     filter: drop-shadow(0 1px 2px rgba(26, 26, 26, 0.24));
     z-index: 2;
-    transition: opacity 320ms ease, transform 320ms ease;
+    /* compact→expanded: compact logo fades OUT quickly */
+    transition:
+      opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0ms linear 200ms;
   }
 
   #site-header:not(.logo-compact) #nav-main-row {
     height: 200px;
-    transition: height 320ms ease;
+    transition: height 360ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   #site-header.logo-compact #nav-main-row {
@@ -306,14 +314,24 @@ try {
 
   #site-header.logo-compact .nav-logo-full {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
+    transform: translate(-50%, -50%) scale(0.94);
     visibility: hidden;
+    /* expanded→compact: full logo fades OUT */
+    transition:
+      opacity 260ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1),
+      visibility 0ms linear 260ms;
   }
 
   #site-header.logo-compact .nav-logo-compact {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
     visibility: visible;
+    /* expanded→compact: compact logo fades IN with delay (full fades out first) */
+    transition:
+      opacity 380ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+      transform 380ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+      visibility 0ms linear 0ms;
   }
 
   #site-header:not(.logo-compact) .nav-logo-full {
@@ -323,6 +341,16 @@ try {
 
   #site-header:not(.logo-compact) .nav-logo-compact {
     visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-logo-full,
+    .nav-logo-compact,
+    #site-header.logo-compact .nav-logo-full,
+    #site-header.logo-compact .nav-logo-compact {
+      transition: opacity 0.01ms, transform 0.01ms, visibility 0ms !important;
+      animation: none !important;
+    }
   }
 
   @keyframes nav-logo-fade-in {
@@ -572,7 +600,7 @@ try {
     header.classList.toggle('logo-compact', nextCompact);
     transitionUnlockTimer = window.setTimeout(() => {
       transitionLocked = false;
-    }, 260);
+    }, 420);
   }
 
   function applyLogoScrollState() {
