@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
 import ProductCard from '../../components/ProductCard.astro';
@@ -21,6 +21,36 @@ try {
 
 const token = Astro.cookies.get('pe_token')?.value;
 const categoryTree = await getCategoryTree();
+const featuredProducts = featured.slice(0, 8);
+const brandPillars = locale === 'es'
+  ? [
+      {
+        title: 'Curaduria real',
+        body: 'Cada prenda se publica solo despues de una seleccion manual de estilo y estado.',
+      },
+      {
+        title: 'Circular y premium',
+        body: 'Moda consciente, piezas unicas y marcas seleccionadas con mirada editorial.',
+      },
+      {
+        title: 'Compra clara',
+        body: 'Precio, condicion y stock visibles para decidir rapido y comprar con confianza.',
+      },
+    ]
+  : [
+      {
+        title: 'Real curation',
+        body: 'Every garment is listed only after a manual review for style and condition.',
+      },
+      {
+        title: 'Circular and premium',
+        body: 'Mindful fashion, unique pieces, and selected brands with an editorial eye.',
+      },
+      {
+        title: 'Clear purchase',
+        body: 'Price, condition, and stock stay visible so customers can decide quickly.',
+      },
+    ];
 
 function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
   const result: typeof categoryTree = [];
@@ -28,7 +58,9 @@ function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
   for (const node of nodes) {
     if (node.featured && node.active) {
       result.push(node);
-    } else if (node.children?.length) {
+    }
+
+    if (node.children?.length) {
       result.push(...collectFeatured(node.children));
     }
   }
@@ -42,6 +74,26 @@ const categoryTiles = collectFeatured(categoryTree);
 <BaseLayout title={t('nav.home', locale)} locale={locale}>
   <Hero locale={locale} />
 
+  <section class="py-10 md:py-12 bg-pe-offwhite border-y border-pe-black/8" aria-label={locale === 'es' ? 'Valor de Pilar Estilo' : 'Pilar Estilo value'}>
+    <div class="pe-container">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        {brandPillars.map((pillar, i) => (
+          <article class="pe-home-pillar">
+            <p class="font-sans text-[0.65rem] tracking-[0.24em] uppercase text-pe-rose/90">
+              {String(i + 1).padStart(2, '0')}
+            </p>
+            <h2 class="font-display text-pe-black text-2xl md:text-[1.9rem] font-light mt-2 leading-tight">
+              {pillar.title}
+            </h2>
+            <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/65 mt-3 max-w-[36ch]">
+              {pillar.body}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
   <section class="py-16 bg-pe-cream" aria-labelledby="featured-heading">
     <div class="pe-container">
       <div class="text-center mb-12">
@@ -53,13 +105,19 @@ const categoryTiles = collectFeatured(categoryTree);
           id="featured-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
         >
-          {locale === 'es' ? 'Recién Llegados' : 'Recently Added'}
+          {locale === 'es' ? 'Recien Llegados' : 'Recently Added'}
         </h2>
+
+        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/55 max-w-[58ch] mx-auto mt-4">
+          {locale === 'es'
+            ? 'Una seleccion breve para descubrir primero lo mas nuevo de la vitrina.'
+            : 'A short edit to discover the newest arrivals first.'}
+        </p>
       </div>
 
-      {featured.length > 0 ? (
+      {featuredProducts.length > 0 ? (
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 fx-stagger">
-          {featured.map((product) => (
+          {featuredProducts.map((product) => (
             <ProductCard product={product} locale={locale} priority={true} token={token} />
           ))}
         </div>
@@ -71,7 +129,7 @@ const categoryTiles = collectFeatured(categoryTree);
 
       <div class="text-center mt-12">
         <Button href={`/${locale}/products`} variant="outline" trailingIcon="arrow-right">
-          {locale === 'es' ? 'Ver toda la colección' : 'View full collection'}
+          {locale === 'es' ? 'Ver toda la coleccion' : 'View full collection'}
         </Button>
       </div>
     </div>
@@ -88,16 +146,22 @@ const categoryTiles = collectFeatured(categoryTree);
           id="categories-heading"
           class="font-display text-pe-black text-3xl md:text-4xl font-light mt-3"
         >
-          {locale === 'es' ? 'Por Categoría' : 'By Category'}
+          {locale === 'es' ? 'Por Categoria' : 'By Category'}
         </h2>
+
+        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/55 max-w-[60ch] mx-auto mt-4">
+          {locale === 'es'
+            ? 'Explora familias de productos con subcategorias para llegar mas rapido a lo que buscas.'
+            : 'Browse product families with subcategories to get faster to what you are looking for.'}
+        </p>
       </div>
 
       {categoryTiles.length === 0 ? (
         <p class="text-center text-pe-charcoal/40 font-sans text-sm py-8">
-          {locale === 'es' ? 'Próximamente.' : 'Coming soon.'}
+          {locale === 'es' ? 'Proximamente.' : 'Coming soon.'}
         </p>
       ) : (
-        <div data-pe-carousel class="pe-carousel relative overflow-hidden">
+        <div data-pe-carousel class="pe-carousel relative overflow-hidden" role="region" aria-label={locale === 'es' ? 'Carrusel de categorias' : 'Category carousel'}>
           <div
             class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2]"
             style="background: linear-gradient(to right, var(--pe-surface), transparent)"
@@ -163,7 +227,7 @@ const categoryTiles = collectFeatured(categoryTree);
             </div>
           </div>
 
-          <div class="mt-6 flex items-center justify-between gap-4">
+          <div data-pe-carousel-controls class="mt-6 flex items-center justify-between gap-4">
             <div data-pe-carousel-dots class="flex items-center gap-2">
               {categoryTiles.map((_, i) => (
                 <button
@@ -171,7 +235,8 @@ const categoryTiles = collectFeatured(categoryTree);
                   data-pe-carousel-dot={i}
                   class={`h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'w-6' : 'w-3'}`}
                   style={i === 0 ? 'background-color: var(--pe-ink)' : 'background-color: color-mix(in srgb, var(--pe-ink) 28%, transparent)'}
-                  aria-label={locale === 'es' ? `Ir a categoría ${i + 1}` : `Go to category ${i + 1}`}
+                  aria-label={locale === 'es' ? `Ir a categoria ${i + 1}` : `Go to category ${i + 1}`}
+                  aria-pressed={i === 0 ? 'true' : 'false'}
                 ></button>
               ))}
             </div>
@@ -179,20 +244,33 @@ const categoryTiles = collectFeatured(categoryTree);
             <div class="flex items-center gap-2">
               <button
                 type="button"
+                data-pe-carousel-toggle
+                data-label-play={locale === 'es' ? 'Reproducir' : 'Play'}
+                data-label-pause={locale === 'es' ? 'Pausar' : 'Pause'}
+                data-hint={locale === 'es' ? 'Click corto abre categoria. Mantener presionado no abre enlace.' : 'Short click opens category. Long press does not open link.'}
+                class="min-w-[8.2rem] h-10 px-4 inline-flex items-center justify-center border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors font-sans text-[0.62rem] tracking-[0.2em] uppercase"
+                aria-pressed="false"
+                title={locale === 'es' ? 'Click corto abre categoria. Mantener presionado no abre enlace.' : 'Short click opens category. Long press does not open link.'}
+              >
+                {locale === 'es' ? 'Pausar' : 'Pause'}
+              </button>
+
+              <button
+                type="button"
                 data-pe-carousel-prev
                 class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
-                aria-label={locale === 'es' ? 'Categoría anterior' : 'Previous category'}
+                aria-label={locale === 'es' ? 'Categoria anterior' : 'Previous category'}
               >
-                <span aria-hidden="true">←</span>
+                <span aria-hidden="true">&larr;</span>
               </button>
 
               <button
                 type="button"
                 data-pe-carousel-next
                 class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
-                aria-label={locale === 'es' ? 'Siguiente categoría' : 'Next category'}
+                aria-label={locale === 'es' ? 'Siguiente categoria' : 'Next category'}
               >
-                <span aria-hidden="true">→</span>
+                <span aria-hidden="true">&rarr;</span>
               </button>
             </div>
           </div>
@@ -226,6 +304,20 @@ const categoryTiles = collectFeatured(categoryTree);
       transition: none;
     }
 
+    .pe-home-pillar + .pe-home-pillar {
+      border-top: 1px solid color-mix(in srgb, var(--pe-border) 70%, transparent);
+      padding-top: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .pe-home-pillar + .pe-home-pillar {
+        border-top: 0;
+        border-left: 1px solid color-mix(in srgb, var(--pe-border) 70%, transparent);
+        padding-top: 0;
+        padding-left: 2rem;
+      }
+    }
+
     .pe-carousel-slide {
       flex: 0 0 82%;
     }
@@ -256,6 +348,8 @@ const categoryTiles = collectFeatured(categoryTree);
         var track = root.querySelector('[data-pe-carousel-track]');
         var prevButton = root.querySelector('[data-pe-carousel-prev]');
         var nextButton = root.querySelector('[data-pe-carousel-next]');
+        var toggleButton = root.querySelector('[data-pe-carousel-toggle]');
+        var controls = root.querySelector('[data-pe-carousel-controls]');
         var dots = Array.prototype.slice.call(root.querySelectorAll('[data-pe-carousel-dot]'));
 
         if (!track || !prevButton || !nextButton) return;
@@ -279,6 +373,25 @@ const categoryTiles = collectFeatured(categoryTree);
         var isDragging = false;
         var hasDragged = false;
         var pressedLink = null;
+        var downLink = null;
+        var pointerDownAt = 0;
+        var suppressClickOnce = false;
+        var longPressMs = 420;
+        var autoplayEnabled = true;
+
+        function syncToggleButton() {
+          if (!toggleButton) return;
+
+          var playLabel = toggleButton.getAttribute('data-label-play') || 'Play';
+          var pauseLabel = toggleButton.getAttribute('data-label-pause') || 'Pause';
+          var hint = toggleButton.getAttribute('data-hint') || '';
+          var buttonLabel = autoplayEnabled ? pauseLabel : playLabel;
+
+          toggleButton.textContent = buttonLabel;
+          toggleButton.setAttribute('aria-pressed', autoplayEnabled ? 'true' : 'false');
+          toggleButton.setAttribute('aria-label', buttonLabel);
+          toggleButton.setAttribute('title', hint);
+        }
 
         function buildInfiniteSlides() {
           var firstClones = originalSlides.slice(0, cloneCount).map(function (slide) {
@@ -344,6 +457,8 @@ const categoryTiles = collectFeatured(categoryTree);
 
             dot.classList.toggle('w-6', active);
             dot.classList.toggle('w-3', !active);
+            dot.setAttribute('aria-pressed', active ? 'true' : 'false');
+            dot.setAttribute('aria-current', active ? 'true' : 'false');
 
             dot.style.backgroundColor = active
               ? 'var(--pe-ink)'
@@ -387,6 +502,7 @@ const categoryTiles = collectFeatured(categoryTree);
         function startAutoplay() {
           stopAutoplay();
 
+          if (!autoplayEnabled) return;
           if (document.hidden) return;
 
           timer = window.setInterval(function () {
@@ -402,12 +518,35 @@ const categoryTiles = collectFeatured(categoryTree);
           startAutoplay();
         }
 
+        function toggleAutoplay() {
+          autoplayEnabled = !autoplayEnabled;
+          syncToggleButton();
+
+          if (autoplayEnabled) {
+            startAutoplay();
+          } else {
+            stopAutoplay();
+          }
+        }
+
         function onPointerDown(event) {
           if (event.pointerType === 'mouse' && event.button !== 0) return;
+          var target = null;
+          if (event.target instanceof Element) {
+            target = event.target;
+          } else if (event.target && event.target.parentElement) {
+            target = event.target.parentElement;
+          }
+          if (target && target.closest('[data-pe-carousel-controls]')) return;
+
+          downLink = target ? target.closest('a[href]') : null;
+          pointerDownAt = Date.now();
+          suppressClickOnce = false;
+          if (downLink) return;
 
           isDragging = true;
           hasDragged = false;
-          pressedLink = event.target.closest('a[href]');
+          pressedLink = target ? target.closest('a[href]') : null;
           startX = event.clientX;
           currentX = startX;
           dragDelta = 0;
@@ -447,17 +586,18 @@ const categoryTiles = collectFeatured(categoryTree);
             } catch {}
           }
 
+          var pressElapsed = Date.now() - pointerDownAt;
+
           if (!hasDragged && pressedLink) {
-            var href = pressedLink.getAttribute('href');
+            // Keep native link behavior for short click/tap.
+            // For long press, block navigation to avoid accidental open.
+            if (pressElapsed >= longPressMs) {
+              suppressClickOnce = true;
+            }
 
             pressedLink = null;
             dragDelta = 0;
             resumeAutoplay();
-
-            if (href) {
-              window.location.href = href;
-            }
-
             return;
           }
 
@@ -472,12 +612,60 @@ const categoryTiles = collectFeatured(categoryTree);
             setTransform(true);
           }
 
+          suppressClickOnce = hasDragged;
           pressedLink = null;
           dragDelta = 0;
           resumeAutoplay();
         }
 
+        function onKeydown(event) {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            prev();
+            startAutoplay();
+          } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            next();
+            startAutoplay();
+          }
+        }
+
         buildInfiniteSlides();
+        root.setAttribute('tabindex', '0');
+        syncToggleButton();
+
+        if (controls) {
+          controls.addEventListener('pointerdown', function (event) {
+            event.stopPropagation();
+          });
+        }
+
+        root.addEventListener('click', function (event) {
+          var clickTarget = null;
+          if (event.target instanceof Element) {
+            clickTarget = event.target;
+          } else if (event.target && event.target.parentElement) {
+            clickTarget = event.target.parentElement;
+          }
+
+          var clickLink = clickTarget ? clickTarget.closest('a[href]') : null;
+          if (clickLink && downLink && clickLink === downLink) {
+            var heldMs = Date.now() - pointerDownAt;
+            downLink = null;
+            if (heldMs >= longPressMs) {
+              event.preventDefault();
+              event.stopPropagation();
+              return;
+            }
+          } else {
+            downLink = null;
+          }
+
+          if (!suppressClickOnce) return;
+          suppressClickOnce = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }, true);
 
         prevButton.addEventListener('click', function () {
           prev();
@@ -488,6 +676,12 @@ const categoryTiles = collectFeatured(categoryTree);
           next();
           startAutoplay();
         });
+
+        if (toggleButton) {
+          toggleButton.addEventListener('click', function () {
+            toggleAutoplay();
+          });
+        }
 
         dots.forEach(function (dot, dotIndex) {
           dot.addEventListener('click', function () {
@@ -500,15 +694,11 @@ const categoryTiles = collectFeatured(categoryTree);
 
         track.addEventListener('transitionend', normalizeAfterTransition);
 
-        root.addEventListener('mouseenter', pauseAutoplay);
-        root.addEventListener('mouseleave', resumeAutoplay);
-        root.addEventListener('focusin', pauseAutoplay);
-        root.addEventListener('focusout', resumeAutoplay);
-
         root.addEventListener('pointerdown', onPointerDown);
         root.addEventListener('pointermove', onPointerMove);
         root.addEventListener('pointerup', onPointerUp);
         root.addEventListener('pointercancel', onPointerUp);
+        root.addEventListener('keydown', onKeydown);
         root.addEventListener('pointerleave', function (event) {
           if (isDragging) onPointerUp(event);
         });
@@ -552,7 +742,7 @@ const categoryTiles = collectFeatured(categoryTree);
 
     <div class="pe-container relative z-10">
       <p class="pe-script text-pe-rose" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
-        {locale === 'es' ? 'Lujo con Propósito' : 'Luxury with Purpose'}
+        {locale === 'es' ? 'Lujo con Proposito' : 'Luxury with Purpose'}
       </p>
 
       <p class="font-display text-pe-offwhite/70 font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
