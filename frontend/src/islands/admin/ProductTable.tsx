@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  assignHeroModelFromProduct,
   searchProducts,
   deleteProduct,
   getCategories,
@@ -123,6 +124,8 @@ export default function ProductTable() {
   const [editTarget, setEditTarget] = useState<ProductDto | null | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [heroAssigningKey, setHeroAssigningKey] = useState<string | null>(null);
+  const [heroAssignmentFeedback, setHeroAssignmentFeedback] = useState<string>('');
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categories, setCategories] = useState<CategoryDto[]>([]);
@@ -264,6 +267,27 @@ export default function ProductTable() {
     } finally {
       setDeleting(false);
       setDeleteConfirm(null);
+    }
+  }
+
+  async function handleAssignHeroModel(slot: 'left' | 'right', product: ProductDto) {
+    if (!effectiveToken) {
+      alert('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
+      return;
+    }
+    const key = `${product.id}:${slot}`;
+    setHeroAssigningKey(key);
+    setHeroAssignmentFeedback('');
+    try {
+      await assignHeroModelFromProduct(slot, product.id, effectiveToken);
+      setHeroAssignmentFeedback(
+        `Hero ${slot === 'left' ? 'izquierdo' : 'derecho'} actualizado desde "${product.name}".`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo asignar la imagen al hero.';
+      alert(message);
+    } finally {
+      setHeroAssigningKey(null);
     }
   }
 
@@ -430,9 +454,9 @@ export default function ProductTable() {
     {
       key: 'actions',
       header: 'Acciones',
-      width: '180px',
+      width: '320px',
       render: (row) => (
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -452,6 +476,26 @@ export default function ProductTable() {
           >
             <Trash2 size={13} />
             Eliminar
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleAssignHeroModel('left', row);
+            }}
+            disabled={heroAssigningKey !== null}
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+          >
+            {heroAssigningKey === `${row.id}:left` ? '...' : 'Hero Izq'}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleAssignHeroModel('right', row);
+            }}
+            disabled={heroAssigningKey !== null}
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+          >
+            {heroAssigningKey === `${row.id}:right` ? '...' : 'Hero Der'}
           </button>
         </div>
       ),
@@ -591,21 +635,39 @@ export default function ProductTable() {
                   Ingreso {fmtCreatedAt(row.createdAt)}
                 </p>
 
-                <div className="mt-4 flex gap-2">
-                  <button
-                    onClick={() => setEditTarget(row)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-black/12 text-pe-charcoal text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:border-pe-rose/50 hover:text-pe-rose-deep transition-colors"
-                  >
-                    <PencilLine size={12} />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(row.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 border border-red-300 text-red-500 text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={12} />
-                    Eliminar
-                  </button>
+                <div className="mt-4 space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditTarget(row)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-black/12 text-pe-charcoal text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:border-pe-rose/50 hover:text-pe-rose-deep transition-colors"
+                    >
+                      <PencilLine size={12} />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(row.id)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-red-300 text-red-500 text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                      Eliminar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => void handleAssignHeroModel('left', row)}
+                      disabled={heroAssigningKey !== null}
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                    >
+                      {heroAssigningKey === `${row.id}:left` ? 'Asignando...' : 'Hero Izq'}
+                    </button>
+                    <button
+                      onClick={() => void handleAssignHeroModel('right', row)}
+                      disabled={heroAssigningKey !== null}
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                    >
+                      {heroAssigningKey === `${row.id}:right` ? 'Asignando...' : 'Hero Der'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>
@@ -787,6 +849,12 @@ export default function ProductTable() {
                 <X size={10} />
               </button>
             ))}
+          </div>
+        )}
+
+        {heroAssignmentFeedback && (
+          <div className="rounded-sm border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-emerald-700">
+            {heroAssignmentFeedback}
           </div>
         )}
 

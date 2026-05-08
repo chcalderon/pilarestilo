@@ -3,6 +3,7 @@ package com.pilarestilo.shared.infrastructure.cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.Cache;
@@ -17,10 +18,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -38,9 +40,10 @@ public class CacheConfiguration implements CachingConfigurer {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(Math.max(30L, ttlSeconds)))
                 .disableCachingNullValues()
+                .computePrefixWith(cacheName -> "pe:v3:" + cacheName + "::")
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                                new GenericJackson2JsonRedisSerializer()
+                                new JdkSerializationRedisSerializer()
                         )
                 );
 
@@ -64,13 +67,43 @@ public class CacheConfiguration implements CachingConfigurer {
         );
     }
 
+    @Bean
+    @ConditionalOnProperty(prefix = "app.cache.redis", name = "enabled", havingValue = "true")
+    public ApplicationRunner clearManagedCachesOnStartup(CacheManager cacheManager) {
+        return args -> {
+            List<String> managedCaches = List.of(
+                    CacheNames.PUBLIC_STORE_SETTINGS,
+                    CacheNames.CATEGORY_LIST,
+                    CacheNames.CATEGORY_TREE
+            );
+            for (String cacheName : managedCaches) {
+                Cache cache = cacheManager.getCache(cacheName);
+                if (cache == null) {
+                    continue;
+                }
+                try {
+                    cache.clear();
+                } catch (RuntimeException e) {
+                    log.warn("Cache startup clear failed on '{}': {}", cacheName, e.getMessage());
+                }
+            }
+            log.info("Managed caches cleared on startup: {}", managedCaches);
+        };
+    }
+
     @Override
     public CacheErrorHandler errorHandler() {
         return new SimpleCacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
-                log.warn("Cache GET error on '{}' key='{}': {} — treating as cache miss",
+                log.warn("Cache GET error on '{}' key='{}': {} - treating as cache miss and clearing stale cache",
                         cache.getName(), key, e.getMessage());
+                try {
+                    cache.clear();
+                } catch (RuntimeException clearError) {
+                    log.warn("Cache stale entry clear failed on '{}': {}",
+                            cache.getName(), clearError.getMessage());
+                }
             }
 
             @Override
@@ -90,3 +123,4 @@ public class CacheConfiguration implements CachingConfigurer {
         };
     }
 }
+

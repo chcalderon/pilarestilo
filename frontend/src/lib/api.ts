@@ -2003,3 +2003,49 @@ export async function optimizeAllMedia(token: string): Promise<OptimizeAllResult
     headers: authHeaders(token),
   });
 }
+
+export type HeroModelSlot = 'left' | 'right';
+
+export interface HeroModelSlotDto {
+  slot: HeroModelSlot;
+  url: string;
+  updatedAt: number;
+}
+
+export interface HeroModelsDto {
+  left: HeroModelSlotDto;
+  right: HeroModelSlotDto;
+}
+
+export async function getHeroModels(token: string): Promise<HeroModelsDto> {
+  return apiFetch<HeroModelsDto>('/admin/media/hero-models', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function uploadHeroModel(slot: HeroModelSlot, file: File, token: string): Promise<HeroModelSlotDto> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${API_BASE}/admin/media/hero-models/${encodeURIComponent(slot)}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { detail?: string; message?: string };
+    throw new Error(body.detail ?? body.message ?? `Error al subir modelo (${res.status})`);
+  }
+  return res.json() as Promise<HeroModelSlotDto>;
+}
+
+export async function assignHeroModelFromProduct(
+  slot: HeroModelSlot,
+  productId: string,
+  token: string,
+): Promise<HeroModelSlotDto> {
+  return apiFetch<HeroModelSlotDto>(`/admin/media/hero-models/${encodeURIComponent(slot)}/assign`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ productId }),
+  });
+}

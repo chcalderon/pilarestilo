@@ -13,21 +13,26 @@ import {
   ShieldX,
 } from 'lucide-react';
 import {
+  getHeroModels,
   getSystemSettings,
   migrateCategoryImages,
   optimizeAllMedia,
   type CourierConfig,
+  type HeroModelSlot,
+  type HeroModelsDto,
   type MediaStorageProvider,
   type OptimizeAllResult,
   type PaymentGatewayProvider,
   type ShippingPaymentMode,
   type ShippingZoneConfig,
+  uploadHeroModel,
   updateSystemSettings,
   type NotificationProvider,
   type SystemSettingsDto,
   type UpdateSystemSettingsRequest,
 } from '../../lib/api';
 import { readAuthTokenCookie, useAuthStore } from '../../lib/authStore';
+import ImageDropzone from './ImageDropzone';
 
 type FeedbackState = {
   tone: 'success' | 'error';
@@ -270,7 +275,7 @@ function parseShippingCouriers(raw: string | null | undefined): CourierConfig[] 
 }
 
 function slugifyCourierId(name: string): string {
-  return name.normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
@@ -385,6 +390,20 @@ function formatTimestamp(value?: string) {
   }).format(date);
 }
 
+function formatEpochTimestamp(value?: number) {
+  if (!value || value <= 0) return 'Sin registro';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Sin registro';
+  return new Intl.DateTimeFormat('es-CL', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date);
+}
+
+function heroSlotLabel(slot: HeroModelSlot) {
+  return slot === 'left' ? 'Modelo izquierda' : 'Modelo derecha';
+}
+
 function SecurityHint({
   configured,
   clearFlag,
@@ -440,6 +459,9 @@ export default function SystemSettingsPanel() {
   const [optimizing, setOptimizing] = useState(false);
   const [optimizeResult, setOptimizeResult] = useState<OptimizeAllResult | null>(null);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [heroModels, setHeroModels] = useState<HeroModelsDto | null>(null);
+  const [heroLoading, setHeroLoading] = useState(false);
+  const [heroUploadSlot, setHeroUploadSlot] = useState<HeroModelSlot | null>(null);
   const [form, setForm] = useState<FormState>({
     whatsappNumber: '',
     instagramUrl: '',
@@ -520,6 +542,7 @@ export default function SystemSettingsPanel() {
       const data = await getSystemSettings(effectiveToken);
       setSettings(data);
       setForm(buildFormFromSettings(data));
+      void loadHeroModels(effectiveToken);
     } catch (error) {
       const text = error instanceof Error ? error.message : '';
       setFeedback({
@@ -528,6 +551,20 @@ export default function SystemSettingsPanel() {
       });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadHeroModels(tokenToUse?: string) {
+    const adminToken = tokenToUse ?? effectiveToken;
+    if (!adminToken) return;
+    setHeroLoading(true);
+    try {
+      const models = await getHeroModels(adminToken);
+      setHeroModels(models);
+    } catch {
+      setHeroModels(null);
+    } finally {
+      setHeroLoading(false);
     }
   }
 
@@ -606,6 +643,34 @@ export default function SystemSettingsPanel() {
       setOptimizeError(err instanceof Error ? err.message : 'Error al optimizar imagenes');
     } finally {
       setOptimizing(false);
+    }
+  };
+
+  const handleHeroUpload = async (slot: HeroModelSlot, file: File) => {
+    if (!effectiveToken) {
+      throw new Error('No hay sesion admin activa.');
+    }
+    setHeroUploadSlot(slot);
+    setFeedback(null);
+    try {
+      const saved = await uploadHeroModel(slot, file, effectiveToken);
+      setHeroModels((prev) => {
+        const next = prev ?? {
+          left: { slot: 'left', url: '/api/media/hero-models/hero-left.png', updatedAt: 0 },
+          right: { slot: 'right', url: '/api/media/hero-models/hero-right.png', updatedAt: 0 },
+        };
+        return slot === 'left' ? { ...next, left: saved } : { ...next, right: saved };
+      });
+      setFeedback({ tone: 'success', text: `Imagen de ${heroSlotLabel(slot).toLowerCase()} actualizada.` });
+      return saved;
+    } catch (error) {
+      setFeedback({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'No se pudo subir la imagen del hero.',
+      });
+      throw error instanceof Error ? error : new Error('No se pudo subir la imagen del hero.');
+    } finally {
+      setHeroUploadSlot(null);
     }
   };
 
@@ -1339,6 +1404,71 @@ export default function SystemSettingsPanel() {
           </span>
         </div>
 
+        <div className="mt-5 border border-pe-black/10 bg-pe-offwhite/50 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+                Modelos del hero (home)
+              </p>
+              <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/65">
+                Arrastra y suelta 2 imagenes propias (izquierda/derecha). Cada slot sobrescribe la anterior.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadHeroModels()}
+              disabled={heroLoading}
+              className="inline-flex items-center gap-1 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            >
+              {heroLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Recargar
+            </button>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {(['left', 'right'] as HeroModelSlot[]).map((slot) => {
+              const data = slot === 'left' ? heroModels?.left : heroModels?.right;
+              const fallbackUrl = slot === 'left'
+                ? '/api/media/hero-models/hero-left.png'
+                : '/api/media/hero-models/hero-right.png';
+              const previewUrl = `${data?.url ?? fallbackUrl}?v=${data?.updatedAt ?? 0}`;
+              return (
+                <article key={slot} className="border border-pe-black/10 bg-pe-white p-3">
+                  <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                    {heroSlotLabel(slot)}
+                  </p>
+                  <div className="mt-2 h-36 w-full overflow-hidden border border-pe-black/10 bg-pe-black/3">
+                    <img
+                      src={previewUrl}
+                      alt={heroSlotLabel(slot)}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="mt-2 font-sans text-[0.68rem] text-pe-charcoal/55">
+                    Actualizada: {formatEpochTimestamp(data?.updatedAt)}
+                  </p>
+                  <div className="mt-2">
+                    <ImageDropzone
+                      label={heroUploadSlot === slot ? 'Subiendo...' : 'Arrastra o selecciona imagen'}
+                      folder="hero-models"
+                      value={previewUrl}
+                      allowClear={false}
+                      preserveOriginalFile
+                      token={effectiveToken ?? ''}
+                      customUpload={async (file) => {
+                        const saved = await handleHeroUpload(slot, file);
+                        return `${saved.url ?? fallbackUrl}?v=${saved.updatedAt ?? Date.now()}`;
+                      }}
+                      onUpload={() => {}}
+                    />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="pt-4 border-t border-pe-black/8">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
             Migración de imágenes
@@ -1371,7 +1501,7 @@ export default function SystemSettingsPanel() {
           </p>
           <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
             Reescribe en disco las imágenes pesadas ya almacenadas (productos + categorías + resto).
-            Reencodea JPEG y convierte PNG → JPEG, actualizando referencias en la base de datos.
+            Reencodea JPEG y convierte PNG a JPEG, actualizando referencias en la base de datos.
             Idempotente: ejecutar de nuevo solo procesa lo que aún se pueda achicar. Pensado para corrida única tras la migración inicial.
           </p>
           <button
@@ -2240,3 +2370,4 @@ export default function SystemSettingsPanel() {
     </div>
   );
 }
+

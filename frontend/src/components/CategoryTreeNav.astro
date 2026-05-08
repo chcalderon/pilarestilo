@@ -1,0 +1,274 @@
+---
+import type { Locale } from '../i18n/index';
+import type { CategoryTreeNode } from '../lib/api';
+
+interface Props {
+  nodes: CategoryTreeNode[];
+  locale: Locale;
+  routeMode: 'categories' | 'products';
+  viewMode: 'header' | 'sidebar';
+  selectedSlug?: string;
+  level?: number;
+  maxDepth?: number;
+  openSlugs?: string[];
+  forceExpanded?: boolean;
+  defaultOpenAll?: boolean;
+  condition?: 'NEW' | 'USED';
+  brand?: string;
+}
+
+const {
+  nodes,
+  locale,
+  routeMode,
+  viewMode,
+  selectedSlug,
+  level = 0,
+  maxDepth = 3,
+  openSlugs = [],
+  forceExpanded = false,
+  defaultOpenAll = false,
+  condition,
+  brand,
+} = Astro.props;
+
+const safeNodes = (nodes ?? [])
+  .filter((node) => node.active)
+  .slice()
+  .sort((a, b) => {
+    const orderDiff = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    if (orderDiff !== 0) return orderDiff;
+    const aName = locale === 'es' ? a.nameEs : (a.nameEn || a.nameEs);
+    const bName = locale === 'es' ? b.nameEs : (b.nameEn || b.nameEs);
+    return aName.localeCompare(bName, locale === 'es' ? 'es' : 'en', { sensitivity: 'base' });
+  });
+const safeLevel = Math.max(0, level);
+const openSlugSet = new Set(openSlugs);
+const allowChildren = safeLevel < Math.max(0, maxDepth);
+
+const labelOf = (node: CategoryTreeNode) =>
+  locale === 'es' ? node.nameEs : (node.nameEn || node.nameEs);
+
+const hrefFor = (slug: string) => {
+  if (routeMode === 'categories') {
+    return `/${locale}/categories/${slug}`;
+  }
+  const params = new URLSearchParams();
+  params.set('category', slug);
+  if (condition) params.set('condition', condition);
+  if (brand) params.set('brand', brand);
+  return `/${locale}/products?${params.toString()}`;
+};
+---
+
+<ul
+  class:list={[
+    'cat-tree-nav',
+    viewMode === 'header' ? 'cat-tree-nav--header' : 'cat-tree-nav--sidebar',
+    `cat-tree-nav--lvl-${Math.min(safeLevel, 4)}`,
+  ]}
+  role="list"
+>
+  {safeNodes.map((node) => {
+    const children = (node.children ?? []).filter((child) => child.active);
+    const hasChildren = allowChildren && children.length > 0;
+    const isSelected = selectedSlug === node.slug;
+    const shouldOpen = defaultOpenAll || (viewMode === 'sidebar' && (isSelected || openSlugSet.has(node.slug)));
+    return (
+      <li class:list={['cat-tree-item', isSelected && 'is-selected']}>
+        {hasChildren && forceExpanded ? (
+          <div class="cat-tree-expanded-group">
+            <a
+              href={hrefFor(node.slug)}
+              class:list={[
+                'cat-tree-link',
+                'cat-tree-link--all',
+                'cat-tree-link--group',
+                isSelected && 'is-selected',
+              ]}
+            >
+              {labelOf(node)}
+            </a>
+
+            <Astro.self
+              nodes={children}
+              locale={locale}
+              routeMode={routeMode}
+              viewMode={viewMode}
+              selectedSlug={selectedSlug}
+              level={safeLevel + 1}
+              maxDepth={maxDepth}
+              openSlugs={openSlugs}
+              forceExpanded={forceExpanded}
+              defaultOpenAll={defaultOpenAll}
+              condition={condition}
+              brand={brand}
+            />
+          </div>
+        ) : hasChildren ? (
+          <details class="cat-tree-branch" open={shouldOpen ? true : undefined}>
+            <summary class="cat-tree-summary">
+              <span class="cat-tree-title">{labelOf(node)}</span>
+              <span class="cat-tree-caret" aria-hidden="true">▾</span>
+            </summary>
+
+            <div class="cat-tree-branch-body">
+              <a
+                href={hrefFor(node.slug)}
+                class:list={[
+                  'cat-tree-link',
+                  'cat-tree-link--all',
+                  isSelected && 'is-selected',
+                ]}
+              >
+                {locale === 'es' ? `Ver todo en ${labelOf(node)}` : `View all in ${labelOf(node)}`}
+              </a>
+
+              <Astro.self
+                nodes={children}
+                locale={locale}
+                routeMode={routeMode}
+                viewMode={viewMode}
+                selectedSlug={selectedSlug}
+                level={safeLevel + 1}
+                maxDepth={maxDepth}
+                openSlugs={openSlugs}
+                forceExpanded={forceExpanded}
+                defaultOpenAll={defaultOpenAll}
+                condition={condition}
+                brand={brand}
+              />
+            </div>
+          </details>
+        ) : (
+          <a
+            href={hrefFor(node.slug)}
+            class:list={['cat-tree-link', isSelected && 'is-selected']}
+          >
+            {labelOf(node)}
+          </a>
+        )}
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .cat-tree-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cat-tree-item {
+    margin: 0;
+  }
+
+  .cat-tree-link,
+  .cat-tree-summary {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    text-decoration: none;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.73rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--pe-charcoal) 72%, transparent);
+    transition: color 200ms ease, background-color 200ms ease;
+  }
+
+  .cat-tree-link:hover,
+  .cat-tree-summary:hover {
+    color: var(--pe-rose-deep);
+  }
+
+  .cat-tree-link.is-selected,
+  .cat-tree-item.is-selected > .cat-tree-link,
+  .cat-tree-item.is-selected > .cat-tree-branch > .cat-tree-summary .cat-tree-title {
+    color: var(--pe-rose-deep);
+    font-weight: 600;
+  }
+
+  .cat-tree-branch > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .cat-tree-branch > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .cat-tree-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cat-tree-caret {
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: transform 200ms ease;
+    color: color-mix(in srgb, var(--pe-charcoal) 55%, transparent);
+  }
+
+  .cat-tree-branch[open] > .cat-tree-summary .cat-tree-caret {
+    transform: rotate(180deg);
+  }
+
+  .cat-tree-branch-body {
+    display: grid;
+    gap: 0.25rem;
+    padding-top: 0.2rem;
+  }
+
+  .cat-tree-link--all {
+    font-size: 0.66rem;
+    letter-spacing: 0.13em;
+    color: color-mix(in srgb, var(--pe-rose) 74%, var(--pe-charcoal) 26%);
+    padding: 0.28rem 0.45rem;
+    border-left: 1px solid color-mix(in srgb, var(--pe-rose) 30%, transparent);
+  }
+  .cat-tree-link--group {
+    font-size: 0.71rem;
+    letter-spacing: 0.1em;
+  }
+  .cat-tree-expanded-group {
+    display: grid;
+    gap: 0.24rem;
+  }
+
+  .cat-tree-nav--header .cat-tree-link,
+  .cat-tree-nav--header .cat-tree-summary {
+    padding: 0.34rem 0.45rem;
+    border-radius: 0.38rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 0.8rem;
+  }
+
+  .cat-tree-nav--header .cat-tree-link:hover,
+  .cat-tree-nav--header .cat-tree-summary:hover {
+    background-color: color-mix(in srgb, var(--pe-rose) 12%, transparent);
+  }
+
+  .cat-tree-nav--sidebar .cat-tree-link,
+  .cat-tree-nav--sidebar .cat-tree-summary {
+    padding: 0.18rem 0;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 0.78rem;
+  }
+
+  .cat-tree-nav--lvl-1,
+  .cat-tree-nav--lvl-2,
+  .cat-tree-nav--lvl-3,
+  .cat-tree-nav--lvl-4 {
+    border-left: 1px solid color-mix(in srgb, var(--pe-border) 70%, transparent);
+    margin-left: 0.45rem;
+    padding-left: 0.62rem;
+  }
+</style>

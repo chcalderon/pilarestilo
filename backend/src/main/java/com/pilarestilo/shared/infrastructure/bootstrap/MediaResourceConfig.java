@@ -29,14 +29,31 @@ public class MediaResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String location = this.mediaRoot.toUri().toString();
-        if (!location.endsWith("/")) {
-            location = location + "/";
-        }
+        String mediaRootLocation = normalizedLocation(this.mediaRoot);
+        String heroModelsLocation = normalizedLocation(this.mediaRoot.resolve("hero-models"));
+
+        registry
+                .addResourceHandler("/api/media/hero-models/**")
+                .addResourceLocations(heroModelsLocation)
+                .setCacheControl(CacheControl.noStore());
+
+        // Backward compatibility for previously persisted hero URLs.
+        registry
+                .addResourceHandler("/api/media/hero-left.png", "/api/media/hero-right.png")
+                .addResourceLocations(heroModelsLocation)
+                .setCacheControl(CacheControl.noStore());
 
         registry
                 .addResourceHandler("/api/media/**")
-                .addResourceLocations(location)
+                .addResourceLocations(mediaRootLocation)
                 .setCacheControl(CacheControl.maxAge(Duration.ofDays(7)).cachePublic());
+    }
+
+    private String normalizedLocation(Path path) {
+        String location = path.toUri().toString();
+        if (!location.endsWith("/")) {
+            return location + "/";
+        }
+        return location;
     }
 }

@@ -9,6 +9,9 @@ interface Props {
   folder: string;
   token: string;
   label?: string;
+  customUpload?: (file: File) => Promise<string>;
+  allowClear?: boolean;
+  preserveOriginalFile?: boolean;
 }
 
 type State = 'idle' | 'dragging' | 'uploading' | 'error';
@@ -51,7 +54,17 @@ async function compressImage(file: File): Promise<File> {
   });
 }
 
-export default function ImageDropzone({ value, onUpload, onUploadedFile, folder, token, label }: Props) {
+export default function ImageDropzone({
+  value,
+  onUpload,
+  onUploadedFile,
+  folder,
+  token,
+  label,
+  customUpload,
+  allowClear = true,
+  preserveOriginalFile = false,
+}: Props) {
   const [state, setState] = useState<State>('idle');
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(value);
@@ -85,8 +98,10 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
     setState('uploading');
     setError('');
     try {
-      const ready = await compressImage(file);
-      const url = await uploadMediaFile(ready, folder, token);
+      const ready = preserveOriginalFile ? file : await compressImage(file);
+      const url = customUpload
+        ? await customUpload(ready)
+        : await uploadMediaFile(ready, folder, token);
       setPreview(url);
       onUpload(url);
       onUploadedFile?.(ready);
@@ -253,20 +268,22 @@ export default function ImageDropzone({ value, onUpload, onUploadedFile, folder,
         {preview && !uploading && !dragging && (
           <div className="absolute inset-0 flex flex-col justify-between p-2 opacity-0 hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 via-transparent to-transparent">
             <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  setPreview(undefined);
-                  onUpload('');
-                  onUploadedFile?.(null);
-                }}
-                className="bg-black/55 hover:bg-black/80 text-white p-1 transition-colors"
-                title="Quitar imagen"
-                aria-label="Quitar imagen"
-              >
-                <X size={13} />
-              </button>
+              {allowClear && (
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setPreview(undefined);
+                    onUpload('');
+                    onUploadedFile?.(null);
+                  }}
+                  className="bg-black/55 hover:bg-black/80 text-white p-1 transition-colors"
+                  title="Quitar imagen"
+                  aria-label="Quitar imagen"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-white/75">
               <Upload size={11} />

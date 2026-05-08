@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Save, X, ChevronDown, ChevronRight, FolderOpen, Folder, Tag } from 'lucide-react';
 import {
+  assignHeroModelFromProduct,
   createProduct,
   updateProduct,
   getCategories,
@@ -339,6 +340,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [heroAssigningSlot, setHeroAssigningSlot] = useState<'left' | 'right' | null>(null);
+  const [heroAssignFeedback, setHeroAssignFeedback] = useState('');
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -454,6 +457,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setAiTransformRunning(false);
     setAiTransformPrompt(DEFAULT_TRANSFORM_PROMPT);
     setAiTransformPreviewUrl('');
+    setHeroAssignFeedback('');
+    setHeroAssigningSlot(null);
     setUnsavedConfirmOpen(false);
   }, [product]);
 
@@ -752,6 +757,26 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setAiInfo('Imagen transformada aplicada al formulario. Puedes guardar o ajustar antes de guardar.');
   }
 
+  async function handleAssignHeroFromCurrentProduct(slot: 'left' | 'right') {
+    if (!product?.id) return;
+    if (!token) {
+      setApiError('Tu sesion de administracion expiro. Vuelve a iniciar sesion.');
+      return;
+    }
+    setHeroAssigningSlot(slot);
+    setHeroAssignFeedback('');
+    try {
+      await assignHeroModelFromProduct(slot, product.id, token);
+      setHeroAssignFeedback(
+        `Modelo ${slot === 'left' ? 'izquierdo' : 'derecho'} del hero actualizado desde este producto.`,
+      );
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'No se pudo asignar la imagen del producto al hero');
+    } finally {
+      setHeroAssigningSlot(null);
+    }
+  }
+
   const inputClass =
     'w-full font-sans text-[0.82rem] border border-pe-black/30 dark:border-[#3F2A2F] px-2.5 py-1.5 bg-[#fffdfa] dark:bg-[#1F1518] text-[#1A1A1A] dark:text-[#E8DCC8] placeholder-pe-charcoal/40 dark:placeholder-[#D6C8B5]/35 focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
   const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 dark:text-[#D6C8B5]/65 mb-1';
@@ -789,6 +814,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
         {apiError && <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm px-4 py-2 mb-4">{apiError}</div>}
         {aiInfo && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
+        {heroAssignFeedback && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 text-sm px-4 py-2 mb-4">{heroAssignFeedback}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
@@ -1029,6 +1055,26 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               }}
               token={token ?? ''}
             />
+            {product?.id && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleAssignHeroFromCurrentProduct('left')}
+                  disabled={heroAssigningSlot !== null}
+                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                >
+                  {heroAssigningSlot === 'left' ? 'Asignando...' : 'Usar como Hero Izq'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleAssignHeroFromCurrentProduct('right')}
+                  disabled={heroAssigningSlot !== null}
+                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                >
+                  {heroAssigningSlot === 'right' ? 'Asignando...' : 'Usar como Hero Der'}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-2">

@@ -3,8 +3,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import Button from '../../../components/Button.astro';
 import Icon from '../../../components/Icon.astro';
+import CategoryTreeNav from '../../../components/CategoryTreeNav.astro';
 import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
-import { getProducts, getCategories, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
+import { getProducts, getCategoryTree, type CategoryTreeNode, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -49,18 +50,49 @@ try {
 }
 const token = Astro.cookies.get('pe_token')?.value;
 
-let allCategories: Awaited<ReturnType<typeof getCategories>> = [];
-try { allCategories = await getCategories(); } catch { /* fallback to empty */ }
-const currentCategory = category ? allCategories.find(c => c.slug === category) ?? null : null;
+let categoryTree: CategoryTreeNode[] = [];
+try {
+  categoryTree = (await getCategoryTree()).filter((node) => node.active);
+} catch {
+  // fallback to empty
+}
+
+function findNodeAndPath(
+  nodes: CategoryTreeNode[],
+  targetSlug: string,
+  path: string[] = [],
+): { node: CategoryTreeNode; path: string[] } | null {
+  for (const node of nodes) {
+    const currentPath = [...path, node.slug];
+    if (node.slug === targetSlug) {
+      return { node, path: currentPath };
+    }
+    if (node.children?.length) {
+      const result = findNodeAndPath(node.children.filter((child) => child.active), targetSlug, currentPath);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+const categoryMatch = category ? findNodeAndPath(categoryTree, category) : null;
+const currentCategory = categoryMatch?.node ?? null;
+const openCategorySlugs = categoryMatch?.path ?? [];
 
 const activeFilters: { label: string; clearKey: string }[] = [];
 if (condition) activeFilters.push({ label: condition === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale), clearKey: 'condition' });
 if (brand) activeFilters.push({ label: brand, clearKey: 'brand' });
-if (category) activeFilters.push({ label: category, clearKey: 'category' });
+if (category) {
+  activeFilters.push({
+    label: currentCategory
+      ? (locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs))
+      : category,
+    clearKey: 'category',
+  });
+}
 
 const clearUrl = `/${locale}/products`;
 
-const categories = allCategories.filter(c => c.active);
 ---
 
 <BaseLayout title={t('nav.products', locale)} locale={locale}>
@@ -120,9 +152,23 @@ const categories = allCategories.filter(c => c.active);
           <form method="get" class="flex flex-col gap-6">
             <!-- Categories -->
             <div>
-              <h3 class="pe-eyebrow mb-3">
-                {locale === 'es' ? 'Categorías' : 'Categories'}
-              </h3>
+              <div class="mb-3 flex items-center justify-between gap-2">
+                <h3 class="pe-eyebrow">
+                  {locale === 'es' ? 'Categorías' : 'Categories'}
+                </h3>
+                <button
+                  type="button"
+                  id="products-cat-tree-toggle"
+                  class="inline-flex items-center justify-center w-6 h-6 border border-pe-black/15 text-pe-charcoal/55 hover:text-pe-rose-deep hover:border-pe-rose/40 transition-colors"
+                  aria-expanded="true"
+                  aria-label={locale === 'es' ? 'Contraer categorías' : 'Collapse categories'}
+                  data-label-expand={locale === 'es' ? 'Expandir categorías' : 'Expand categories'}
+                  data-label-collapse={locale === 'es' ? 'Contraer categorías' : 'Collapse categories'}
+                  title={locale === 'es' ? 'Contraer categorías' : 'Collapse categories'}
+                >
+                  <span data-icon aria-hidden="true">▾</span>
+                </button>
+              </div>
               <ul class="flex flex-col gap-1" role="list">
                 <li>
                   <a
@@ -135,19 +181,20 @@ const categories = allCategories.filter(c => c.active);
                     {locale === 'es' ? 'Todo' : 'All'}
                   </a>
                 </li>
-                {categories.map(cat => (
-                  <li>
-                    <a
-                      href={`/${locale}/products?category=${cat.slug}${condition ? `&condition=${condition}` : ''}${brand ? `&brand=${brand}` : ''}`}
-                      class:list={[
-                        'block font-sans text-[0.78rem] py-1 hover:text-pe-rose-deep transition-colors duration-200',
-                        category === cat.slug ? 'text-pe-rose-deep font-medium' : 'text-pe-charcoal/60',
-                      ]}
-                    >
-                      {locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs)}
-                    </a>
-                  </li>
-                ))}
+                <li class="pt-1">
+                  <CategoryTreeNav
+                    nodes={categoryTree}
+                    locale={locale}
+                    routeMode="products"
+                    viewMode="sidebar"
+                    selectedSlug={category ?? undefined}
+                    openSlugs={openCategorySlugs}
+                    maxDepth={3}
+                    defaultOpenAll={true}
+                    condition={condition ?? undefined}
+                    brand={brand}
+                  />
+                </li>
               </ul>
             </div>
 
@@ -264,3 +311,38 @@ const categories = allCategories.filter(c => c.active);
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const toggleButton = document.getElementById('products-cat-tree-toggle') as HTMLButtonElement | null;
+  if (toggleButton) {
+    const sidebar = toggleButton.closest('aside');
+    const treeRoot = sidebar?.querySelector('.cat-tree-nav--sidebar') as HTMLElement | null;
+    const icon = toggleButton.querySelector('[data-icon]') as HTMLElement | null;
+    const initialBranches = treeRoot
+      ? Array.from(treeRoot.querySelectorAll('details.cat-tree-branch')) as HTMLDetailsElement[]
+      : [];
+
+    if (initialBranches.length === 0) {
+      toggleButton.disabled = true;
+      toggleButton.classList.add('opacity-40', 'cursor-not-allowed');
+    }
+
+    const setExpanded = (expanded: boolean) => {
+      if (!treeRoot) return;
+      const branches = Array.from(treeRoot.querySelectorAll('details.cat-tree-branch')) as HTMLDetailsElement[];
+      branches.forEach((branch) => { branch.open = expanded; });
+      toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      const nextLabel = expanded
+        ? (toggleButton.dataset.labelCollapse ?? 'Collapse categories')
+        : (toggleButton.dataset.labelExpand ?? 'Expand categories');
+      toggleButton.setAttribute('aria-label', nextLabel);
+      toggleButton.title = nextLabel;
+      if (icon) icon.textContent = expanded ? '▾' : '▸';
+    };
+
+    toggleButton.addEventListener('click', () => {
+      const expanded = toggleButton.getAttribute('aria-expanded') === 'true';
+      setExpanded(!expanded);
+    });
+  }
+</script>
