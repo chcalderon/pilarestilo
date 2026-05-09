@@ -341,7 +341,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build b
 
 ```bash
 docker exec pe_postgres pg_dump -U pilar pilarestilo > /opt/backups/pilarestilo_$(date +%Y%m%d_%H%M%S).sql
-tar -czf /opt/backups/pilarestilo_media_$(date +%Y%m%d_%H%M%S).tar.gz -C /opt/PilarEstilo/infra/storage media
+tar -czf /opt/backups/pilarestilo_media_$(date +%Y%m%d_%H%M%S).tar.gz -C /opt/pilarestilo/infra/storage media
 ```
 
 ### Automated backup with cron
@@ -359,7 +359,7 @@ Add this line to run a backup every day at 02:00 and keep the last 30 days:
 
 ```cron
 0 2 * * * docker exec pe_postgres pg_dump -U pilar pilarestilo > /opt/backups/pilarestilo_$(date +\%Y\%m\%d_\%H\%M\%S).sql && find /opt/backups -name "*.sql" -mtime +30 -delete
-10 2 * * * tar -czf /opt/backups/pilarestilo_media_$(date +\%Y\%m\%d_\%H\%M\%S).tar.gz -C /opt/PilarEstilo/infra/storage media && find /opt/backups -name "pilarestilo_media_*.tar.gz" -mtime +30 -delete
+10 2 * * * tar -czf /opt/backups/pilarestilo_media_$(date +\%Y\%m\%d_\%H\%M\%S).tar.gz -C /opt/pilarestilo/infra/storage media && find /opt/backups -name "pilarestilo_media_*.tar.gz" -mtime +30 -delete
 ```
 
 ### Offsite backup

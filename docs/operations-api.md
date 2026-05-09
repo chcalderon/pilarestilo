@@ -205,6 +205,15 @@ Controller: `shared/infrastructure/web/controllers/MediaAdminController`
 - `POST /api/admin/media/optimize-all` (`ADMIN`)
   - Purpose: one-shot button. Runs `optimize-products`, `optimize-categories`, then walks the rest of the media root for any remaining JPEGs (excluding `products/` and `categories/`).
   - Returns `{ products, categories, others }` aggregated. Designed for the single-use cleanup button in the admin Media settings panel.
+- `POST /api/admin/media/resize-products-categories-15cm` (`ADMIN`)
+  - Purpose: downscale `products/` + `categories/` source files to 15 cm @ 300 DPI equivalent (long side 1772 px), preserving aspect ratio.
+  - Returns `{ processed, resized, skipped, failed, targetLongSidePx }`.
+- `GET /api/admin/media/hero-models` (`ADMIN`)
+  - Purpose: returns current hero model media slots (`left`, `right`) with URLs + last update timestamp.
+- `POST /api/admin/media/hero-models/{slot}` (`ADMIN`, multipart)
+  - Purpose: upload and normalize hero image for a specific slot (`left` or `right`) as PNG.
+- `POST /api/admin/media/hero-models/{slot}/assign` (`ADMIN`)
+  - Purpose: assign hero slot from an existing product image (`productId`) or external URL (`imageUrl`), normalizing it into managed media storage.
 
 ## 8. Frontend Surfaces Linked to These Modules
 

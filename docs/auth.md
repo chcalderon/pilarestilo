@@ -27,6 +27,7 @@ openssl rand -base64 32
 | `POST` | `/api/auth/register` | Create `CUSTOMER` account |
 | `POST` | `/api/auth/login` | Issue access + refresh tokens |
 | `POST` | `/api/auth/refresh` | Rotate access token |
+| `POST` | `/api/auth/google` | Login/register through Google ID token |
 | `GET` | `/api/auth/me` | Return current authenticated user |
 | `GET` | `/api/auth/me/profile` | Return authenticated user profile details |
 | `PATCH` | `/api/auth/me/profile` | Update authenticated user profile (`fullName`, `phone`, `notificationChannelPreference`) |
@@ -158,6 +159,7 @@ Sensitive endpoints currently authenticated (but not role-scoped) because they h
 - `PATCH /api/categories/reorder`
 - `PATCH /api/categories/{id}`
 - `DELETE /api/categories/{id}`
+- `PUT /api/auth/me/avatar`
 
 ### Profile patch payload
 
@@ -217,7 +219,7 @@ Logout clears both.
 
 ---
 
-## 6. Admin SSR Guard
+## 7. Admin SSR Guard
 
 `frontend/src/middleware.ts` protects `/admin/**` (except `/admin/login`):
 
@@ -230,7 +232,7 @@ Backend authorization remains the second protection layer.
 
 ---
 
-## 7. Seed Admin Account
+## 8. Seed Admin Account
 
 | Email | Password | Role |
 |---|---|---|
@@ -244,7 +246,7 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'your-email@domain.com';
 
 ---
 
-## 8. Password Policy
+## 9. Password Policy
 
 Registration currently enforces minimum length at API boundary:
 

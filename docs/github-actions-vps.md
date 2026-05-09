@@ -21,10 +21,10 @@ Run this once on the VPS:
 ```bash
 sudo mkdir -p /opt
 cd /opt
-sudo git clone https://github.com/<your-user>/<your-repo>.git PilarEstilo
-sudo chown -R $USER:$USER /opt/PilarEstilo
+sudo git clone https://github.com/<your-user>/<your-repo>.git pilarestilo
+sudo chown -R $USER:$USER /opt/pilarestilo
 
-cd /opt/PilarEstilo
+cd /opt/pilarestilo
 cp infra/.env.example infra/.env
 nano infra/.env
 ```
@@ -68,7 +68,7 @@ Create:
 - `VPS_PORT`: SSH port (usually `22`)
 - `VPS_USER`: deploy user on VPS
 - `VPS_SSH_KEY`: private key content from `gha_vps_deploy_key`
-- `VPS_APP_DIR`: app directory on VPS (example: `/opt/PilarEstilo`)
+- `VPS_APP_DIR`: app directory on VPS (example: `/opt/pilarestilo`)
 - `VPS_COMPOSE_PROFILES` (optional): example `cache,microservices`
 
 ## 5. How deploy works
@@ -93,7 +93,7 @@ From `Actions -> Deploy VPS -> Run workflow` you can set:
 
 ## 7. First run checklist
 
-- VPS has `/opt/PilarEstilo/infra/.env`
+- VPS has `/opt/pilarestilo/infra/.env`
 - SSH user can run Docker without sudo
 - All required GitHub secrets are configured
 - Branch `master` exists and is up to date
@@ -103,7 +103,7 @@ From `Actions -> Deploy VPS -> Run workflow` you can set:
 If needed, deploy a previous commit from VPS:
 
 ```bash
-cd /opt/PilarEstilo
+cd /opt/pilarestilo
 git checkout <commit-sha>
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```

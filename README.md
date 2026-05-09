@@ -126,6 +126,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - [Payment Flow](docs/payment-flow.md)
 - [Deployment](docs/deployment.md)
 - [GitHub Actions VPS Deploy](docs/github-actions-vps.md)
+- [Documentation Source Diff (2026-05-09)](docs/documentation-source-diff-2026-05-09.md)
 - [Roadmap](docs/roadmap.md)
 - [Changelog](CHANGELOG.md)
 - [Frontend README](frontend/README.md)

@@ -146,7 +146,7 @@ Flyway manages all schema changes. Migrations live in `backend/src/main/resource
 | `APP_PRODUCT_AI_ENGINE` | `stub` \| `openai_backend` |
 | `APP_PRODUCT_AI_OPENAI_INFER_MODEL` | Text model (default: `gpt-4.1-mini`) |
 | `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL` | Image model (default: `gpt-image-1`) |
-| `APP_INVENTORY_REMOTE_ENABLED` | Delegate inventory reads to microservice |
+| `APP_INVENTORY_REMOTE_ENABLED` | Delegate inventory write commands (`reserve/release/confirm`) to microservice |
 | `APP_ORDER_REMOTE_ENABLED` | Delegate order reads to microservice |
 | `APP_PAYMENT_REMOTE_ENABLED` | Delegate payment reads to microservice |
 | `APP_CACHE_REDIS_ENABLED` | Redis hot-read cache for categories + settings |
