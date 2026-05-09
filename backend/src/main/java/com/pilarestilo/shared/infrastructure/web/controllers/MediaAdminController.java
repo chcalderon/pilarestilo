@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 
 @RestController
 @RequestMapping("/api/admin/media")
@@ -47,11 +49,13 @@ public class MediaAdminController {
     private static final Set<String> JPEG_EXTENSIONS = Set.of("jpg", "jpeg");
     private static final Set<String> SKIP_FOLDERS = Set.of("products", "categories");
     private static final Set<String> SOURCE_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp", "gif", "avif");
+    private static final Set<String> RESIZE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
     private static final String HERO_MODELS_FOLDER = "hero-models";
     private static final String LEFT_SLOT = "left";
     private static final String RIGHT_SLOT = "right";
     private static final String HERO_LEFT_FILENAME = "hero-left.png";
     private static final String HERO_RIGHT_FILENAME = "hero-right.png";
+    private static final int RESIZE_15CM_TARGET_PX = 1772; // 15 cm at 300 DPI
 
     private final MigrateCategoryImagesUseCase migrateUseCase;
     private final OptimizeProductImagesUseCase optimizeProductImagesUseCase;
@@ -108,6 +112,12 @@ public class MediaAdminController {
         OptimizeCategoryImagesUseCase.Result categories = safeRunCategories();
         OptimizeResult others = walkAndReencode(true);
         return ResponseEntity.ok(new OptimizeAllResult(products, categories, others));
+    }
+
+    @PostMapping("/resize-products-categories-15cm")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResizeResult> resizeProductsAndCategoriesTo15cm() throws IOException {
+        return ResponseEntity.ok(resizeProductsAndCategories(RESIZE_15CM_TARGET_PX));
     }
 
     @GetMapping("/hero-models")
@@ -216,6 +226,95 @@ public class MediaAdminController {
         }
 
         return new OptimizeResult(processed.get(), skipped.get(), failed.get(), bytesSaved.get());
+    }
+
+    private ResizeResult resizeProductsAndCategories(int targetLongSidePx) throws IOException {
+        AtomicInteger processed = new AtomicInteger();
+        AtomicInteger resized = new AtomicInteger();
+        AtomicInteger skipped = new AtomicInteger();
+        AtomicInteger failed = new AtomicInteger();
+
+        if (!Files.exists(mediaRoot)) {
+            return new ResizeResult(0, 0, 0, 0, targetLongSidePx);
+        }
+
+        Path productsFolder = mediaRoot.resolve("products").normalize();
+        Path categoriesFolder = mediaRoot.resolve("categories").normalize();
+        processResizeFolder(productsFolder, targetLongSidePx, processed, resized, skipped, failed);
+        processResizeFolder(categoriesFolder, targetLongSidePx, processed, resized, skipped, failed);
+
+        return new ResizeResult(
+                processed.get(),
+                resized.get(),
+                skipped.get(),
+                failed.get(),
+                targetLongSidePx);
+    }
+
+    private void processResizeFolder(
+            Path folder,
+            int targetLongSidePx,
+            AtomicInteger processed,
+            AtomicInteger resized,
+            AtomicInteger skipped,
+            AtomicInteger failed) throws IOException {
+        if (!folder.startsWith(mediaRoot)) {
+            return;
+        }
+        if (!Files.exists(folder)) {
+            return;
+        }
+        try (var stream = Files.walk(folder)) {
+            stream.filter(Files::isRegularFile).forEach(file -> {
+                String name = file.getFileName().toString().toLowerCase();
+                String ext = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : "";
+                if (!RESIZE_EXTENSIONS.contains(ext)) {
+                    skipped.incrementAndGet();
+                    return;
+                }
+                try {
+                    byte[] original = Files.readAllBytes(file);
+                    BufferedImage source = ImageIO.read(new ByteArrayInputStream(original));
+                    if (source == null) {
+                        failed.incrementAndGet();
+                        return;
+                    }
+                    int width = source.getWidth();
+                    int height = source.getHeight();
+                    int longSide = Math.max(width, height);
+                    processed.incrementAndGet();
+                    if (longSide <= targetLongSidePx) {
+                        skipped.incrementAndGet();
+                        return;
+                    }
+                    double scale = (double) targetLongSidePx / (double) longSide;
+                    int targetWidth = Math.max(1, (int) Math.round(width * scale));
+                    int targetHeight = Math.max(1, (int) Math.round(height * scale));
+                    int imageType = "png".equals(ext) ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
+                    BufferedImage scaled = new BufferedImage(targetWidth, targetHeight, imageType);
+                    Graphics2D graphics = scaled.createGraphics();
+                    try {
+                        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        graphics.drawImage(source, 0, 0, targetWidth, targetHeight, null);
+                    } finally {
+                        graphics.dispose();
+                    }
+                    String format = "png".equals(ext) ? "png" : "jpeg";
+                    ByteArrayOutputStream output = new ByteArrayOutputStream();
+                    boolean written = ImageIO.write(scaled, format, output);
+                    if (!written) {
+                        failed.incrementAndGet();
+                        return;
+                    }
+                    Files.write(file, output.toByteArray(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+                    resized.incrementAndGet();
+                } catch (IOException e) {
+                    failed.incrementAndGet();
+                }
+            });
+        }
     }
 
     private HeroModelsResponse currentHeroModels() {
@@ -368,6 +467,7 @@ public class MediaAdminController {
     }
 
     public record OptimizeResult(int processed, int skipped, int failed, long bytesSaved) {}
+    public record ResizeResult(int processed, int resized, int skipped, int failed, int targetLongSidePx) {}
     public record OptimizeAllResult(
             OptimizeProductImagesUseCase.Result products,
             OptimizeCategoryImagesUseCase.Result categories,

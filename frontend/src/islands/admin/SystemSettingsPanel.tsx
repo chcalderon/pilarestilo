@@ -17,12 +17,14 @@ import {
   getSystemSettings,
   migrateCategoryImages,
   optimizeAllMedia,
+  resizeProductsCategoriesTo15cm,
   type CourierConfig,
   type HeroModelSlot,
   type HeroModelsDto,
   type MediaStorageProvider,
   type OptimizeAllResult,
   type PaymentGatewayProvider,
+  type ResizeProductsCategoriesResult,
   type ShippingPaymentMode,
   type ShippingZoneConfig,
   uploadHeroModel,
@@ -459,6 +461,9 @@ export default function SystemSettingsPanel() {
   const [optimizing, setOptimizing] = useState(false);
   const [optimizeResult, setOptimizeResult] = useState<OptimizeAllResult | null>(null);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [resizingTo15cm, setResizingTo15cm] = useState(false);
+  const [resizeTo15cmResult, setResizeTo15cmResult] = useState<ResizeProductsCategoriesResult | null>(null);
+  const [resizeTo15cmError, setResizeTo15cmError] = useState<string | null>(null);
   const [heroModels, setHeroModels] = useState<HeroModelsDto | null>(null);
   const [heroLoading, setHeroLoading] = useState(false);
   const [heroUploadSlot, setHeroUploadSlot] = useState<HeroModelSlot | null>(null);
@@ -643,6 +648,24 @@ export default function SystemSettingsPanel() {
       setOptimizeError(err instanceof Error ? err.message : 'Error al optimizar imagenes');
     } finally {
       setOptimizing(false);
+    }
+  };
+
+  const handleResizeTo15cm = async () => {
+    if (!effectiveToken || resizingTo15cm) return;
+    if (!confirm('Esto redimensionara imagenes de productos y categorias a 15 cm maximo por lado mayor, manteniendo proporcion. Continuar?')) {
+      return;
+    }
+    setResizingTo15cm(true);
+    setResizeTo15cmResult(null);
+    setResizeTo15cmError(null);
+    try {
+      const result = await resizeProductsCategoriesTo15cm(effectiveToken);
+      setResizeTo15cmResult(result);
+    } catch (err) {
+      setResizeTo15cmError(err instanceof Error ? err.message : 'Error al redimensionar imagenes');
+    } finally {
+      setResizingTo15cm(false);
     }
   };
 
@@ -1534,6 +1557,34 @@ export default function SystemSettingsPanel() {
                 ahorro {formatBytes(optimizeResult.others.bytesSaved)}
               </p>
             </div>
+          )}
+        </div>
+
+        <div className="pt-4 border-t border-pe-black/8">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+            Redimensionar imagenes de productos y categorias (15 cm)
+          </p>
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+            Ajusta el lado mayor de cada imagen a 15 cm (1772 px), conservando la relacion de aspecto.
+          </p>
+          <button
+            type="button"
+            onClick={handleResizeTo15cm}
+            disabled={resizingTo15cm}
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+          >
+            {resizingTo15cm ? <Loader2 size={13} className="animate-spin" /> : null}
+            {resizingTo15cm ? 'Redimensionando...' : 'Redimensionar productos y categorias'}
+          </button>
+          {resizeTo15cmError && (
+            <p className="font-sans text-[0.72rem] mt-2 text-red-500">{resizeTo15cmError}</p>
+          )}
+          {resizeTo15cmResult && (
+            <p className="font-sans text-[0.72rem] mt-2 text-pe-charcoal/70">
+              Procesadas {resizeTo15cmResult.processed} · Redimensionadas {resizeTo15cmResult.resized} ·
+              Saltadas {resizeTo15cmResult.skipped} · Fallidas {resizeTo15cmResult.failed} ·
+              objetivo {resizeTo15cmResult.targetLongSidePx}px.
+            </p>
           )}
         </div>
       </section>

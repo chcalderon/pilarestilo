@@ -1997,8 +1997,23 @@ export interface OptimizeAllResult {
   others: OptimizeOthersResult;
 }
 
+export interface ResizeProductsCategoriesResult {
+  processed: number;
+  resized: number;
+  skipped: number;
+  failed: number;
+  targetLongSidePx: number;
+}
+
 export async function optimizeAllMedia(token: string): Promise<OptimizeAllResult> {
   return apiFetch<OptimizeAllResult>('/admin/media/optimize-all', {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export async function resizeProductsCategoriesTo15cm(token: string): Promise<ResizeProductsCategoriesResult> {
+  return apiFetch<ResizeProductsCategoriesResult>('/admin/media/resize-products-categories-15cm', {
     method: 'POST',
     headers: authHeaders(token),
   });
