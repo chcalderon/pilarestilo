@@ -17,7 +17,8 @@ import java.util.Set;
 @Service
 public class ImageOptimizerService {
 
-    private static final int MAX_DIMENSION = 1800;
+    private static final int DEFAULT_MAX_DIMENSION = 1800;
+    private static final int PRODUCTS_CATEGORIES_MAX_DIMENSION = 1772; // 15 cm at 300 DPI
     private static final float JPEG_QUALITY = 0.90f;
     private static final Set<String> PASSTHROUGH_TYPES = Set.of("image/gif", "image/webp", "image/avif");
 
@@ -32,6 +33,14 @@ public class ImageOptimizerService {
      * @return optimized bytes + "jpg" extension, or original bytes + original extension for passthrough types
      */
     public OptimizedImage optimize(byte[] imageBytes, String contentType) throws IOException {
+        return optimize(imageBytes, contentType, DEFAULT_MAX_DIMENSION);
+    }
+
+    public OptimizedImage optimizeForProductsAndCategories(byte[] imageBytes, String contentType) throws IOException {
+        return optimize(imageBytes, contentType, PRODUCTS_CATEGORIES_MAX_DIMENSION);
+    }
+
+    private OptimizedImage optimize(byte[] imageBytes, String contentType, int maxDimension) throws IOException {
         String lct = contentType == null ? "" : contentType.toLowerCase();
         if (PASSTHROUGH_TYPES.contains(lct)) {
             String ext = switch (lct) {
@@ -50,8 +59,8 @@ public class ImageOptimizerService {
         int w = source.getWidth();
         int h = source.getHeight();
 
-        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-            double scale = Math.min((double) MAX_DIMENSION / w, (double) MAX_DIMENSION / h);
+        if (w > maxDimension || h > maxDimension) {
+            double scale = Math.min((double) maxDimension / w, (double) maxDimension / h);
             w = Math.max(1, (int) Math.round(w * scale));
             h = Math.max(1, (int) Math.round(h * scale));
         }
@@ -82,8 +91,8 @@ public class ImageOptimizerService {
         int w = source.getWidth();
         int h = source.getHeight();
 
-        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-            double scale = Math.min((double) MAX_DIMENSION / w, (double) MAX_DIMENSION / h);
+        if (w > DEFAULT_MAX_DIMENSION || h > DEFAULT_MAX_DIMENSION) {
+            double scale = Math.min((double) DEFAULT_MAX_DIMENSION / w, (double) DEFAULT_MAX_DIMENSION / h);
             w = Math.max(1, (int) Math.round(w * scale));
             h = Math.max(1, (int) Math.round(h * scale));
         }

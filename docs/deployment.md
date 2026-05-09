@@ -160,6 +160,9 @@ The script:
 4. Flyway migrations run automatically on backend startup.
 5. Product media is mounted from `infra/storage/media` → `/app/media`.
 
+Important: `DEPLOY_PROFILES` is interpreted by `scripts/deploy/vps_deploy.sh` and `scripts/deploy/local_deploy.sh`.
+If you run `docker compose ... up` directly, Docker Compose does not read `DEPLOY_PROFILES` automatically.
+
 To override profiles for a single run without editing `.env`:
 ```bash
 DEPLOY_PROFILES=microservices,cache bash scripts/deploy/vps_deploy.sh
@@ -454,26 +457,34 @@ npm run dev
 
 ```bash
 # From repo root
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+bash scripts/deploy/local_deploy.sh up
+# or in PowerShell
+powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 up
 ```
 
 Access the app at `http://localhost` (Caddy on port 80 with `DOMAIN=localhost`).
+Both local deploy scripts are local-only by design and will fail if `DOMAIN` is not local (`localhost`, `127.0.0.1`, `::1`, or `*.localhost`).
 
 ### Local Docker quick checklist
 
 ```bash
 # 1) Start/update stack
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+bash scripts/deploy/local_deploy.sh up
+# powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 up
 
 # 2) Check service status
-docker compose -f infra/docker-compose.yml --env-file infra/.env ps
+bash scripts/deploy/local_deploy.sh ps
+# powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 ps
 
 # 3) Follow logs (all or targeted)
-docker compose -f infra/docker-compose.yml --env-file infra/.env logs -f
-docker compose -f infra/docker-compose.yml --env-file infra/.env logs -f backend frontend caddy
+bash scripts/deploy/local_deploy.sh logs
+bash scripts/deploy/local_deploy.sh logs backend frontend caddy
+# powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 logs
+# powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 logs backend frontend caddy
 
 # 4) Stop stack (keep volumes)
-docker compose -f infra/docker-compose.yml --env-file infra/.env down
+bash scripts/deploy/local_deploy.sh down
+# powershell -ExecutionPolicy Bypass -File scripts/deploy/local_deploy.ps1 down
 ```
 
 ---

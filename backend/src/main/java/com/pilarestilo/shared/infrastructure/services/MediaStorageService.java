@@ -43,7 +43,7 @@ public class MediaStorageService {
     public String store(MultipartFile file, String folder) {
         try {
             byte[] raw = file.getBytes();
-            ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, file.getContentType());
+            ImageOptimizerService.OptimizedImage optimized = optimizeByFolder(raw, file.getContentType(), folder);
             String baseName = sanitizeBaseName(extractBaseName(file.getOriginalFilename()));
             String filename = buildFilename(baseName, optimized.extension());
             return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
@@ -54,7 +54,7 @@ public class MediaStorageService {
 
     public String storeOptimizedBytes(byte[] raw, String contentType, String folder, String baseFilename) {
         try {
-            ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, contentType);
+            ImageOptimizerService.OptimizedImage optimized = optimizeByFolder(raw, contentType, folder);
             String baseName = sanitizeBaseName(extractBaseName(baseFilename));
             String filename = buildFilename(baseName, optimized.extension());
             return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
@@ -70,6 +70,22 @@ public class MediaStorageService {
     private MediaStoragePort activeAdapter() {
         var provider = settingsRepo.get().getMediaStorageProvider();
         return provider == MediaStorageProvider.S3_COMPATIBLE ? s3Adapter : localAdapter;
+    }
+
+    private ImageOptimizerService.OptimizedImage optimizeByFolder(byte[] raw, String contentType, String folder) throws IOException {
+        if (isProductsOrCategoriesFolder(folder)) {
+            return imageOptimizer.optimizeForProductsAndCategories(raw, contentType);
+        }
+        return imageOptimizer.optimize(raw, contentType);
+    }
+
+    private boolean isProductsOrCategoriesFolder(String folder) {
+        if (!StringUtils.hasText(folder)) return false;
+        String normalized = folder.trim().toLowerCase(Locale.ROOT).replace('\\', '/');
+        return normalized.equals("products")
+                || normalized.startsWith("products/")
+                || normalized.equals("categories")
+                || normalized.startsWith("categories/");
     }
 
     public String resolveExtension(MultipartFile file) {
