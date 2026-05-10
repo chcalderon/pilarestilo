@@ -54,6 +54,8 @@ PilarEstilo/
 - Account self-service profile/password management
 - Admin user management surface (`/admin/users`) with role/status/password/credit actions
 - Payment-gateway simulation controls in account/admin workflows for non-production environments
+- Checkout en `cart` con seleccion de envio (`shippingZoneCode`, `shippingCourierId`, `shippingAddressReference`) independiente del metodo de pago
+- Account orders muestra snapshot de envio y permite confirmacion de entrega cuando la orden esta en `SHIPPED`
 
 ---
 
@@ -97,6 +99,13 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `notification`
 - `systemsettings`
 - `shared` (`auth`, `rbac`, `domain`, common infra)
+
+Dispatch and shipping architecture highlights:
+
+- `orders` persiste seleccion de envio en checkout (zona/courier/referencia + `shippingPaymentMode` snapshot).
+- `dispatches` persiste snapshot de envio de la orden al crearse (estado `PAID`).
+- `GET /api/despachos` lee `orderShipping*` directamente desde `dispatches` (sin enriquecimiento por consulta N+1 por orden).
+- Carrier override queda auditado en columnas estructuradas de `dispatches` (`carrierOverrideConfigured`, `carrierOverrideSelected`, `carrierOverrideBy`, `carrierOverrideAt`).
 
 ### Media delivery
 
@@ -174,6 +183,8 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V43`: shipping origin/zone rename alignment
 - `V44`: product stock synchronization from variants
 - `V45`: expanded size columns for composite sizes (`product_variants.size`, `product_size_stocks.size`)
+- `V46`: shipping selection persisted on `orders` (`shipping_zone_code`, `shipping_courier_id`, `shipping_courier_name`, `shipping_payment_mode`, `shipping_address_reference`)
+- `V47`: dispatch shipping snapshot + structured carrier override audit on `dispatches` (with one-time backfill from `orders`)
 
 ---
 
