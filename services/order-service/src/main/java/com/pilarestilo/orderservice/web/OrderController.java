@@ -4,6 +4,7 @@ import com.pilarestilo.orderservice.application.OrderCommandService;
 import com.pilarestilo.orderservice.application.OrderQueryService;
 import com.pilarestilo.orderservice.auth.AuthenticatedUser;
 import com.pilarestilo.orderservice.auth.UserRole;
+import jakarta.servlet.http.HttpServletRequest;
 import com.pilarestilo.orderservice.web.dto.CreateOrderRequest;
 import com.pilarestilo.orderservice.web.dto.OrderDto;
 import com.pilarestilo.orderservice.web.dto.UpdateOrderStatusRequest;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,14 +33,18 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
+    private static final String INTERNAL_HEADER = "X-Service-Token";
 
     private final OrderQueryService queryService;
     private final OrderCommandService commandService;
+    private final String internalToken;
 
     public OrderController(OrderQueryService queryService,
-                           OrderCommandService commandService) {
+                           OrderCommandService commandService,
+                           @Value("${app.order.internal-token:}") String internalToken) {
         this.queryService = queryService;
         this.commandService = commandService;
+        this.internalToken = internalToken == null ? "" : internalToken.trim();
     }
 
     @GetMapping
@@ -108,10 +114,12 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public OrderDto updateStatus(@PathVariable UUID id,
-                                 @RequestBody UpdateOrderStatusRequest request) {
+                                 @RequestBody UpdateOrderStatusRequest request,
+                                 @AuthenticationPrincipal AuthenticatedUser currentUser,
+                                 HttpServletRequest httpRequest) {
         try {
+            ensureCanUpdateStatus(currentUser, httpRequest);
             return OrderMapper.toDto(commandService.updateStatus(id, request.status()));
         } catch (NoSuchElementException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
@@ -123,5 +131,22 @@ public class OrderController {
     @GetMapping("/_health")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void healthPing() {
+    }
+
+    private void ensureCanUpdateStatus(AuthenticatedUser currentUser, HttpServletRequest request) {
+        if (currentUser != null) {
+            if (currentUser.internalCall()
+                    || currentUser.role() == UserRole.ADMIN
+                    || currentUser.role() == UserRole.SELLER) {
+                return;
+            }
+        }
+
+        String incomingToken = request == null ? null : request.getHeader(INTERNAL_HEADER);
+        if (!internalToken.isBlank() && incomingToken != null && internalToken.equals(incomingToken.trim())) {
+            return;
+        }
+
+        throw new AccessDeniedException("Forbidden");
     }
 }

@@ -20,6 +20,7 @@ class OrderTest {
     private static final String SHIPPING_COURIER_ID = "chilexpress";
     private static final String SHIPPING_COURIER_NAME = "Chilexpress";
     private static final String SHIPPING_PAYMENT_MODE = "POR_PAGAR";
+    private static final String SHIPPING_ADDRESS_REFERENCE = "Cliente Test | +56912345678 | Av Apoquindo 123, Las Condes, Santiago";
 
     private Order buildTestOrder() {
         List<OrderItem> items = List.of(
@@ -115,7 +116,7 @@ class OrderTest {
                 SHIPPING_COURIER_NAME,
                 SHIPPING_PAYMENT_MODE,
                 UUID.randomUUID(),
-                null,
+                SHIPPING_ADDRESS_REFERENCE,
                 null
         );
     }

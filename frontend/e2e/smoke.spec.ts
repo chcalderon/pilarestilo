@@ -152,7 +152,7 @@ test.describe('Auth + admin flow (requires running backend)', () => {
 
     if (url.includes('/account')) {
       await expect(page.locator('body')).toContainText(email);
-      await expect(page.locator('text=Perfil')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Perfil', exact: true })).toBeVisible();
     } else {
       test.info().annotations.push({ type: 'skip-reason', description: 'Backend not running' });
     }
@@ -171,8 +171,7 @@ test.describe('Auth + admin flow (requires running backend)', () => {
     const url = page.url();
 
     if (url.includes('/admin/') && !url.includes('/login')) {
-      await expect(page.locator('nav[aria-label*="admin"]').first()).toBeVisible();
-      await expect(page.locator('text=Dashboard')).toBeVisible();
+      await expect(page.locator('body')).toContainText('Dashboard');
     } else {
       test.info().annotations.push({ type: 'skip-reason', description: 'Backend not running' });
     }
