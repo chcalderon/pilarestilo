@@ -41,13 +41,27 @@ public class DispatchRepositoryAdapter implements DispatchRepository {
         e.setId(d.getId()); e.setOrderId(d.getOrderId()); e.setDispatcherId(d.getDispatcherId());
         e.setStatus(d.getStatus()); e.setCarrier(d.getCarrier()); e.setTrackingCode(d.getTrackingCode());
         e.setScheduledDate(d.getScheduledDate()); e.setDispatchedAt(d.getDispatchedAt());
-        e.setDeliveredAt(d.getDeliveredAt()); e.setNotes(d.getNotes()); e.setCreatedAt(d.getCreatedAt());
+        e.setDeliveredAt(d.getDeliveredAt()); e.setNotes(d.getNotes());
+        e.setOrderShippingZoneCode(d.getOrderShippingZoneCode());
+        e.setOrderShippingCourierId(d.getOrderShippingCourierId());
+        e.setOrderShippingCourierName(d.getOrderShippingCourierName());
+        e.setOrderShippingAddressReference(d.getOrderShippingAddressReference());
+        e.setCarrierOverrideConfigured(d.getCarrierOverrideConfigured());
+        e.setCarrierOverrideSelected(d.getCarrierOverrideSelected());
+        e.setCarrierOverrideBy(d.getCarrierOverrideBy());
+        e.setCarrierOverrideAt(d.getCarrierOverrideAt());
+        e.setCreatedAt(d.getCreatedAt());
         return e;
     }
 
     private Dispatch toDomain(DispatchEntity e) {
         return Dispatch.reconstruct(e.getId(), e.getOrderId(), e.getDispatcherId(),
                 e.getStatus(), e.getCarrier(), e.getTrackingCode(), e.getScheduledDate(),
-                e.getDispatchedAt(), e.getDeliveredAt(), e.getNotes(), e.getCreatedAt());
+                e.getDispatchedAt(), e.getDeliveredAt(), e.getNotes(),
+                e.getOrderShippingZoneCode(), e.getOrderShippingCourierId(),
+                e.getOrderShippingCourierName(), e.getOrderShippingAddressReference(),
+                e.getCarrierOverrideConfigured(), e.getCarrierOverrideSelected(),
+                e.getCarrierOverrideBy(), e.getCarrierOverrideAt(),
+                e.getCreatedAt());
     }
 }

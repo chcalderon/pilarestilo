@@ -691,6 +691,17 @@ export default function AccountPage({ locale }: Props) {
     return (es ? labelsEs : labelsEn)[method] ?? method;
   }
 
+  function shippingPaymentModeLabel(mode: string | null | undefined) {
+    const normalized = (mode ?? '').trim().toUpperCase();
+    const labelsEs: Record<string, string> = {
+      POR_PAGAR: 'Envio por pagar',
+    };
+    const labelsEn: Record<string, string> = {
+      POR_PAGAR: 'Shipping paid on pickup',
+    };
+    return (es ? labelsEs : labelsEn)[normalized] ?? normalized;
+  }
+
   function notificationChannelLabel(value: string | null | undefined) {
     const normalized = (value ?? 'AUTO').toUpperCase();
     const labelsEs: Record<string, string> = {
@@ -1056,6 +1067,10 @@ export default function AccountPage({ locale }: Props) {
                   const isConfirmingDelivery = deliveryConfirmingByOrder[order.id] === true;
                   const gatewayFeedback = gatewayFeedbackByOrder[order.id];
                   const selectedFile = proofFilesByOrder[order.id];
+                  const shippingZone = order.shippingZoneCode?.trim();
+                  const shippingCourier = order.shippingCourierName?.trim() || order.shippingCourierId?.trim();
+                  const shippingMode = shippingPaymentModeLabel(order.shippingPaymentMode);
+                  const shippingReference = order.shippingAddressReference?.trim();
 
                   return (
                     <li key={order.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-3">
@@ -1075,6 +1090,28 @@ export default function AccountPage({ locale }: Props) {
                           </span>
                         </div>
                       </div>
+
+                      {(shippingZone || shippingCourier || shippingMode || shippingReference) && (
+                        <div className="border border-pe-black/8 bg-pe-cream/25 px-3 py-2">
+                          <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/60 mb-1">
+                            {es ? 'Envio' : 'Shipping'}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+                            {shippingZone && (
+                              <p><span className="text-pe-charcoal/55">{es ? 'Zona:' : 'Zone:'}</span> {shippingZone}</p>
+                            )}
+                            {shippingCourier && (
+                              <p><span className="text-pe-charcoal/55">{es ? 'Courier:' : 'Courier:'}</span> {shippingCourier}</p>
+                            )}
+                            {shippingMode && (
+                              <p><span className="text-pe-charcoal/55">{es ? 'Modalidad:' : 'Mode:'}</span> {shippingMode}</p>
+                            )}
+                            {shippingReference && (
+                              <p><span className="text-pe-charcoal/55">{es ? 'Referencia:' : 'Reference:'}</span> {shippingReference}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-3 overflow-x-auto">
                         <div className="flex items-center gap-2 min-w-[680px]">

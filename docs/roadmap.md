@@ -171,3 +171,4 @@ This roadmap is synced with the current codebase on `master` as of May 7, 2026.
 - [x] Admin products: `Tomar foto` uses direct camera capture workflow (desktop/mobile) with graceful file-picker fallback
 - [x] Admin products: unsaved-change close confirmation moved from browser alert to in-app modal UX
 - [x] Admin settings: Shipping tab with configurable zones (`shipping_zones_json`), couriers (`shipping_couriers_json`), and payment mode (`shipping_payment_mode`); Flyway V42+V43; storefront `shipping-returns` page and `DeliveryEstimate` component now fetch live zone/ETA data
+- [x] Checkout shipping selection persisted on order (`shippingZoneCode`, `shippingCourierId`, `shippingAddressReference`) independent of payment method; dispatch queue pre-fills configured courier using dispatch-level shipping snapshot and stores structured carrier-override audit (`carrierOverrideConfigured`, `carrierOverrideSelected`, `carrierOverrideBy`, `carrierOverrideAt`)

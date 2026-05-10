@@ -10,15 +10,33 @@ public record CreateOrderCommand(
         UUID customerId,
         List<OrderItemCommand> items,
         PaymentMethod paymentMethod,
+        String shippingZoneCode,
+        String shippingCourierId,
+        String shippingAddressReference,
         String notes,
         Money discountAmount,
         boolean employeeDiscountEligible,
         String discountCode
 ) {
     public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
-                               PaymentMethod paymentMethod, String notes,
+                               PaymentMethod paymentMethod,
+                               String shippingZoneCode,
+                               String shippingCourierId,
+                               String shippingAddressReference,
+                               String notes,
                                Money discountAmount, boolean employeeDiscountEligible) {
-        this(customerId, items, paymentMethod, notes, discountAmount, employeeDiscountEligible, null);
+        this(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressReference,
+                notes,
+                discountAmount,
+                employeeDiscountEligible,
+                null
+        );
     }
 
     public record OrderItemCommand(

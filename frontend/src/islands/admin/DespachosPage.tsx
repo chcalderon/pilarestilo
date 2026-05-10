@@ -17,6 +17,14 @@ interface QueueDispatchDto {
   trackingCode: string | null;
   notes: string | null;
   createdAt: string;
+  orderShippingZoneCode?: string | null;
+  orderShippingCourierId?: string | null;
+  orderShippingCourierName?: string | null;
+  orderShippingAddressReference?: string | null;
+  carrierOverrideConfigured?: string | null;
+  carrierOverrideSelected?: string | null;
+  carrierOverrideBy?: string | null;
+  carrierOverrideAt?: string | null;
 }
 
 function toDateInputValue(date: Date): string {
@@ -24,6 +32,45 @@ function toDateInputValue(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+interface CarrierOverrideAudit {
+  configured: string;
+  selected: string;
+  dispatcher: string;
+  at?: string | null;
+}
+
+function parseCarrierOverrideAudit(notes: string | null | undefined): CarrierOverrideAudit | null {
+  const text = (notes ?? '').trim();
+  if (!text) return null;
+  const match = text.match(/\[carrier-override\]\s+configured='([^']+)'\s+selected='([^']+)'\s+dispatcher='([^']+)'/i);
+  if (!match) return null;
+  const [, configured, selected, dispatcher] = match;
+  if (!configured || !selected || !dispatcher) return null;
+  return { configured, selected, dispatcher };
+}
+
+function resolveCarrierOverride(
+  row: Pick<
+    DispatchHistoryRowDto,
+    'carrierOverrideConfigured' | 'carrierOverrideSelected' | 'carrierOverrideBy' | 'carrierOverrideAt' | 'notes'
+  >
+): CarrierOverrideAudit | null {
+  const configured = row.carrierOverrideConfigured?.trim();
+  const selected = row.carrierOverrideSelected?.trim();
+  const dispatcher = row.carrierOverrideBy?.trim();
+  if (configured && selected) {
+    return {
+      configured,
+      selected,
+      dispatcher: dispatcher ?? 'N/A',
+      at: row.carrierOverrideAt ?? null,
+    };
+  }
+  const fallback = parseCarrierOverrideAudit(row.notes);
+  if (!fallback) return null;
+  return { ...fallback, at: null };
 }
 
 export default function DespachosPage() {
@@ -146,6 +193,17 @@ export default function DespachosPage() {
     setBusy(false);
   }
 
+  function startDispatch(dispatch: QueueDispatchDto) {
+    const suggestedCarrier = dispatch.orderShippingCourierName?.trim()
+      || dispatch.orderShippingCourierId?.trim()
+      || dispatch.carrier?.trim()
+      || '';
+    setActive(dispatch);
+    setCarrier(suggestedCarrier);
+    setTracking(dispatch.trackingCode?.trim() ?? '');
+    setError('');
+  }
+
   async function openOrderDetail(orderId: string) {
     if (!token) return;
     setOrderModalOpen(true);
@@ -224,6 +282,11 @@ export default function DespachosPage() {
                               placeholder="Carrier (ej. Chilexpress)"
                               className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]"
                             />
+                            {d.orderShippingCourierName && (
+                              <p className="text-[11px] text-pe-charcoal/55">
+                                Courier configurado en la orden: <span className="font-medium">{d.orderShippingCourierName}</span>
+                              </p>
+                            )}
                             <input
                               type="text"
                               value={tracking}
@@ -259,7 +322,7 @@ export default function DespachosPage() {
                         ) : (
                           <div className="flex gap-2">
                             <button
-                              onClick={() => setActive(d)}
+                              onClick={() => startDispatch(d)}
                               className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors"
                             >
                               Despachar
@@ -430,7 +493,9 @@ export default function DespachosPage() {
                       </td>
                     </tr>
                   )}
-                  {searchedHistoryRows.map((row) => (
+                  {searchedHistoryRows.map((row) => {
+                    const carrierOverride = resolveCarrierOverride(row);
+                    return (
                     <tr key={row.id} className="border-t border-[#EDE3D8]">
                       <td className="px-3 py-2 text-pe-charcoal/70">
                         {row.orderCreatedAt ? new Date(row.orderCreatedAt).toLocaleString('es-CL') : '-'}
@@ -441,7 +506,15 @@ export default function DespachosPage() {
                       <td className="px-3 py-2 font-mono text-pe-charcoal/70">{row.orderId.substring(0, 8)}</td>
                       <td className="px-3 py-2">{row.status}</td>
                       <td className="px-3 py-2 text-pe-charcoal/70">
-                        {row.carrier || '-'} {row.trackingCode ? `(${row.trackingCode})` : ''}
+                        <div className="flex flex-col gap-0.5">
+                          <span>{row.carrier || '-'} {row.trackingCode ? `(${row.trackingCode})` : ''}</span>
+                          {carrierOverride && (
+                            <span className="text-[11px] text-amber-700">
+                              Override courier: {carrierOverride.configured}{' -> '}{carrierOverride.selected}
+                              {carrierOverride.at ? ` (${new Date(carrierOverride.at).toLocaleString('es-CL')})` : ''}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-pe-charcoal/70">{row.dispatchedBy || 'Sin asignar'}</td>
                       <td className="px-3 py-2 text-pe-charcoal/70">{row.soldBy || 'Web'}</td>
@@ -456,7 +529,8 @@ export default function DespachosPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -520,6 +594,9 @@ export default function DespachosPage() {
                     <p><span className="font-semibold">Cliente:</span> {orderDetail.customerId}</p>
                     <p><span className="font-semibold">Estado:</span> {orderDetail.status}</p>
                     <p><span className="font-semibold">Fecha:</span> {new Date(orderDetail.createdAt).toLocaleString('es-CL')}</p>
+                    <p><span className="font-semibold">Envío (zona):</span> {orderDetail.shippingZoneCode || '-'}</p>
+                    <p><span className="font-semibold">Envío (courier):</span> {orderDetail.shippingCourierName || orderDetail.shippingCourierId || '-'}</p>
+                    <p><span className="font-semibold">Envío (referencia):</span> {orderDetail.shippingAddressReference || '-'}</p>
                   </div>
                   <ul className="border border-[#EDE3D8] divide-y divide-[#EDE3D8]">
                     {orderDetail.items.map((item) => (

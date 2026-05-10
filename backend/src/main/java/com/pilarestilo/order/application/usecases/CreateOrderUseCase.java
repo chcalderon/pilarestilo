@@ -1,5 +1,7 @@
 package com.pilarestilo.order.application.usecases;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.domain.ports.DiscountRepository;
 import com.pilarestilo.inventory.application.InventoryService;
@@ -17,6 +19,7 @@ import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.systemsettings.domain.model.SystemSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +28,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class CreateOrderUseCase {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
@@ -57,7 +66,9 @@ public class CreateOrderUseCase {
 
     @Transactional
     public OrderDto execute(CreateOrderCommand command) {
-        validatePaymentMethodEnabled(command.paymentMethod());
+        var settings = systemSettingsRepository.get();
+        validatePaymentMethodEnabled(command.paymentMethod(), settings);
+        ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
 
         if (orderRemoteCommandClient.isWriteEnabled()) {
             OrderDto created = orderRemoteCommandClient.create(command);
@@ -118,6 +129,11 @@ public class CreateOrderUseCase {
                 orderItems,
                 discount,
                 command.paymentMethod(),
+                shippingSelection.zoneCode(),
+                shippingSelection.courierId(),
+                shippingSelection.courierName(),
+                shippingSelection.paymentMode(),
+                shippingSelection.addressReference(),
                 command.notes()
         );
 
@@ -126,9 +142,7 @@ public class CreateOrderUseCase {
         return OrderMapper.toDto(saved);
     }
 
-    private void validatePaymentMethodEnabled(PaymentMethod paymentMethod) {
-        var settings = systemSettingsRepository.get();
-
+    private void validatePaymentMethodEnabled(PaymentMethod paymentMethod, SystemSettings settings) {
         if (paymentMethod == PaymentMethod.BANK_TRANSFER && !settings.isPaymentMethodBankTransferEnabled()) {
             throw new DomainException("Payment method BANK_TRANSFER is currently disabled");
         }
@@ -141,5 +155,116 @@ public class CreateOrderUseCase {
                 throw new DomainException("No payment gateway provider is configured");
             }
         }
+    }
+
+    private ResolvedShippingSelection resolveShippingSelection(
+            CreateOrderCommand command,
+            SystemSettings settings
+    ) {
+        String zoneCode = normalizeRequired(command.shippingZoneCode(), "shipping zone").toUpperCase(Locale.ROOT);
+        String courierId = normalizeRequired(command.shippingCourierId(), "shipping courier");
+        Map<String, String> activeCouriers = parseActiveCourierMap(settings.getShippingCouriersJson());
+        Set<String> activeZones = parseActiveZones(settings.getShippingZonesJson());
+
+        if (!activeZones.contains(zoneCode)) {
+            throw new DomainException("Selected shipping zone is not available");
+        }
+        if (!activeCouriers.containsKey(courierId)) {
+            throw new DomainException("Selected shipping courier is not available");
+        }
+
+        String courierName = activeCouriers.get(courierId);
+        String paymentMode = settings.getShippingPaymentMode().name();
+        String addressReference = normalizeOptional(command.shippingAddressReference());
+
+        return new ResolvedShippingSelection(zoneCode, courierId, courierName, paymentMode, addressReference);
+    }
+
+    private Set<String> parseActiveZones(String shippingZonesJson) {
+        try {
+            if (shippingZonesJson == null || shippingZonesJson.isBlank()) {
+                throw new DomainException("No shipping zones configured");
+            }
+            JsonNode root = OBJECT_MAPPER.readTree(shippingZonesJson);
+            if (root == null || !root.isArray()) {
+                throw new DomainException("Invalid shipping zones configuration");
+            }
+            java.util.LinkedHashSet<String> zoneCodes = new java.util.LinkedHashSet<>();
+            for (JsonNode node : root) {
+                if (node == null || !node.isObject()) {
+                    continue;
+                }
+                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                String code = node.path("code").asText("").trim();
+                if (!active || code.isBlank()) {
+                    continue;
+                }
+                zoneCodes.add(code.toUpperCase(Locale.ROOT));
+            }
+            if (zoneCodes.isEmpty()) {
+                throw new DomainException("No active shipping zones configured");
+            }
+            return Set.copyOf(zoneCodes);
+        } catch (DomainException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new DomainException("Could not parse shipping zones configuration");
+        }
+    }
+
+    private Map<String, String> parseActiveCourierMap(String shippingCouriersJson) {
+        try {
+            if (shippingCouriersJson == null || shippingCouriersJson.isBlank()) {
+                throw new DomainException("No shipping couriers configured");
+            }
+            JsonNode root = OBJECT_MAPPER.readTree(shippingCouriersJson);
+            if (root == null || !root.isArray()) {
+                throw new DomainException("Invalid shipping couriers configuration");
+            }
+            Map<String, String> couriers = new LinkedHashMap<>();
+            for (JsonNode node : root) {
+                if (node == null || !node.isObject()) {
+                    continue;
+                }
+                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                String id = node.path("id").asText("").trim();
+                String name = node.path("name").asText("").trim();
+                if (!active || id.isBlank() || name.isBlank()) {
+                    continue;
+                }
+                couriers.put(id, name);
+            }
+            if (couriers.isEmpty()) {
+                throw new DomainException("No active shipping couriers configured");
+            }
+            return Map.copyOf(couriers);
+        } catch (DomainException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new DomainException("Could not parse shipping couriers configuration");
+        }
+    }
+
+    private String normalizeRequired(String value, String label) {
+        if (value == null || value.isBlank()) {
+            throw new DomainException("Missing " + label);
+        }
+        return value.trim();
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private record ResolvedShippingSelection(
+            String zoneCode,
+            String courierId,
+            String courierName,
+            String paymentMode,
+            String addressReference
+    ) {
     }
 }

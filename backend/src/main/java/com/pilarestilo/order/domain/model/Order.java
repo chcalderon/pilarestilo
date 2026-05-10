@@ -19,6 +19,11 @@ public class Order {
     private Money discountAmount;
     private Money totalAmount;
     private PaymentMethod paymentMethod;
+    private String shippingZoneCode;
+    private String shippingCourierId;
+    private String shippingCourierName;
+    private String shippingPaymentMode;
+    private String shippingAddressReference;
     private String notes;
     private OrderStatus status;
     private Instant createdAt;
@@ -32,7 +37,10 @@ public class Order {
      */
     public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
                                      Money subtotal, Money discountAmount, Money totalAmount,
-                                     PaymentMethod paymentMethod, String notes,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, String shippingAddressReference,
+                                     String notes,
                                      OrderStatus status, Instant createdAt, Instant updatedAt) {
         Order order = new Order();
         order.id = id;
@@ -42,6 +50,11 @@ public class Order {
         order.discountAmount = discountAmount;
         order.totalAmount = totalAmount;
         order.paymentMethod = paymentMethod;
+        order.shippingZoneCode = shippingZoneCode;
+        order.shippingCourierId = shippingCourierId;
+        order.shippingCourierName = shippingCourierName;
+        order.shippingPaymentMode = shippingPaymentMode;
+        order.shippingAddressReference = shippingAddressReference;
         order.notes = notes;
         order.status = status;
         order.createdAt = createdAt;
@@ -50,7 +63,10 @@ public class Order {
     }
 
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
-                                PaymentMethod paymentMethod, String notes) {
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, String shippingAddressReference,
+                                String notes) {
         if (customerId == null) {
             throw new DomainException("Customer ID cannot be null");
         }
@@ -59,6 +75,18 @@ public class Order {
         }
         if (paymentMethod == null) {
             throw new DomainException("Payment method cannot be null");
+        }
+        if (shippingZoneCode == null || shippingZoneCode.isBlank()) {
+            throw new DomainException("Shipping zone cannot be empty");
+        }
+        if (shippingCourierId == null || shippingCourierId.isBlank()) {
+            throw new DomainException("Shipping courier cannot be empty");
+        }
+        if (shippingCourierName == null || shippingCourierName.isBlank()) {
+            throw new DomainException("Shipping courier name cannot be empty");
+        }
+        if (shippingPaymentMode == null || shippingPaymentMode.isBlank()) {
+            throw new DomainException("Shipping payment mode cannot be empty");
         }
 
         Money subtotal = items.stream()
@@ -75,6 +103,13 @@ public class Order {
         order.discountAmount = discountAmount != null ? discountAmount : Money.zero();
         order.totalAmount = total;
         order.paymentMethod = paymentMethod;
+        order.shippingZoneCode = shippingZoneCode.trim();
+        order.shippingCourierId = shippingCourierId.trim();
+        order.shippingCourierName = shippingCourierName.trim();
+        order.shippingPaymentMode = shippingPaymentMode.trim();
+        order.shippingAddressReference = shippingAddressReference == null || shippingAddressReference.isBlank()
+                ? null
+                : shippingAddressReference.trim();
         order.notes = notes;
         order.status = OrderStatus.CREATED;
         order.createdAt = Instant.now();
@@ -149,6 +184,11 @@ public class Order {
     public Money getDiscountAmount() { return discountAmount; }
     public Money getTotalAmount() { return totalAmount; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public String getShippingZoneCode() { return shippingZoneCode; }
+    public String getShippingCourierId() { return shippingCourierId; }
+    public String getShippingCourierName() { return shippingCourierName; }
+    public String getShippingPaymentMode() { return shippingPaymentMode; }
+    public String getShippingAddressReference() { return shippingAddressReference; }
     public String getNotes() { return notes; }
     public OrderStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }

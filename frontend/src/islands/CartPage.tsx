@@ -2,7 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
-import { createOrder, getProduct, getPublicStoreSettings, validateDiscountCodeForUser, type PaymentGatewayProvider, type DiscountCodeDto } from '../lib/api';
+import {
+  createOrder,
+  getProduct,
+  getPublicShippingConfig,
+  getPublicStoreSettings,
+  validateDiscountCodeForUser,
+  type CourierConfig,
+  type DiscountCodeDto,
+  type PaymentGatewayProvider,
+  type ShippingPaymentMode,
+  type ShippingZoneCode,
+  type ShippingZoneConfig,
+} from '../lib/api';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -29,6 +41,15 @@ const labels = {
     paymentMethodGateway: 'Pasarela de pago',
     paymentMethodUnavailable: 'El metodo de pago seleccionado ya no esta disponible.',
     paymentProviderLabel: 'Proveedor',
+    shippingSectionTitle: 'Metodo de envio',
+    shippingZoneLabel: 'Zona de envio',
+    shippingCourierLabel: 'Courier',
+    shippingReferenceLabel: 'Referencia de entrega',
+    shippingReferencePlaceholder: 'Comuna, direccion o punto de retiro',
+    shippingPaymentModeLabel: 'Modalidad',
+    shippingPaymentModePorPagar: 'Envio por pagar',
+    shippingSelectionRequired: 'Debes seleccionar zona y courier antes de finalizar la compra.',
+    shippingUnavailable: 'No hay zonas o couriers activos para despacho. Contacta soporte.',
     transferDetailsTitle: 'Datos para transferencia',
     transferHolder: 'Nombre',
     transferEmail: 'Correo',
@@ -63,6 +84,15 @@ const labels = {
     paymentMethodGateway: 'Payment gateway',
     paymentMethodUnavailable: 'The selected payment method is no longer available.',
     paymentProviderLabel: 'Provider',
+    shippingSectionTitle: 'Shipping method',
+    shippingZoneLabel: 'Shipping zone',
+    shippingCourierLabel: 'Courier',
+    shippingReferenceLabel: 'Delivery reference',
+    shippingReferencePlaceholder: 'District, address, or pickup point',
+    shippingPaymentModeLabel: 'Mode',
+    shippingPaymentModePorPagar: 'Shipping paid on pickup',
+    shippingSelectionRequired: 'You must select a shipping zone and courier before checkout.',
+    shippingUnavailable: 'There are no active shipping zones or couriers. Contact support.',
     transferDetailsTitle: 'Bank transfer details',
     transferHolder: 'Name',
     transferEmail: 'Email',
@@ -107,6 +137,12 @@ export default function CartPage({ locale }: Props) {
   const [transferAccountNumber, setTransferAccountNumber] = useState('');
   const [transferBankName, setTransferBankName] = useState('');
   const [transferAccountType, setTransferAccountType] = useState('');
+  const [shippingZones, setShippingZones] = useState<ShippingZoneConfig[]>([]);
+  const [shippingCouriers, setShippingCouriers] = useState<CourierConfig[]>([]);
+  const [shippingPaymentMode, setShippingPaymentMode] = useState<ShippingPaymentMode>('POR_PAGAR');
+  const [shippingZoneCode, setShippingZoneCode] = useState<ShippingZoneCode>('LOCAL');
+  const [shippingCourierId, setShippingCourierId] = useState('');
+  const [shippingAddressReference, setShippingAddressReference] = useState('');
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCodeDto | null>(null);
   const [discountApplying, setDiscountApplying] = useState(false);
@@ -123,6 +159,15 @@ export default function CartPage({ locale }: Props) {
     : 0;
   const total = Math.max(0, subtotal - employeeDiscountAmount - appliedDiscountAmount);
   const stockConflictCount = Object.keys(stockConflicts).length;
+  const activeShippingZones = useMemo(
+    () => shippingZones.filter((zone) => zone.active),
+    [shippingZones]
+  );
+  const activeShippingCouriers = useMemo(
+    () => shippingCouriers.filter((courier) => courier.active),
+    [shippingCouriers]
+  );
+  const shippingUnavailable = activeShippingZones.length === 0 || activeShippingCouriers.length === 0;
 
   const priceFormat = (amount: number, currency: string) =>
     new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
@@ -130,6 +175,13 @@ export default function CartPage({ locale }: Props) {
       currency,
       maximumFractionDigits: 0,
     }).format(amount);
+
+  function shippingPaymentModeLabel(mode: ShippingPaymentMode): string {
+    if (mode === 'POR_PAGAR') {
+      return l.shippingPaymentModePorPagar;
+    }
+    return mode;
+  }
 
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message });
@@ -182,23 +234,38 @@ export default function CartPage({ locale }: Props) {
     let cancelled = false;
     async function loadPaymentConfig() {
       try {
-        const settings = await getPublicStoreSettings();
-        if (!settings || cancelled) return;
+        const [settings, shippingConfig] = await Promise.all([
+          getPublicStoreSettings(),
+          getPublicShippingConfig(),
+        ]);
+        if (cancelled) return;
 
-        const providers = Array.isArray(settings.paymentGatewayProviders)
+        const providers = Array.isArray(settings?.paymentGatewayProviders)
           ? settings.paymentGatewayProviders
           : [];
-        const gatewayEnabled = settings.paymentMethodGatewayEnabled !== false && providers.length > 0;
-        const bankTransferEnabled = settings.paymentMethodBankTransferEnabled !== false || !gatewayEnabled;
+        const gatewayEnabled = settings?.paymentMethodGatewayEnabled !== false && providers.length > 0;
+        const bankTransferEnabled = settings?.paymentMethodBankTransferEnabled !== false || !gatewayEnabled;
 
         setPaymentGatewayProviders(providers.length ? providers : ['MERCADO_PAGO']);
         setPaymentMethodGatewayEnabled(gatewayEnabled);
         setPaymentMethodBankTransferEnabled(bankTransferEnabled);
-        setTransferAccountHolder(settings.bankTransferAccountHolder?.trim() ?? '');
-        setTransferContactEmail(settings.bankTransferContactEmail?.trim() ?? '');
-        setTransferAccountNumber(settings.bankTransferAccountNumber?.trim() ?? '');
-        setTransferBankName(settings.bankTransferBankName?.trim() ?? '');
-        setTransferAccountType(settings.bankTransferAccountType?.trim() ?? '');
+        setTransferAccountHolder(settings?.bankTransferAccountHolder?.trim() ?? '');
+        setTransferContactEmail(settings?.bankTransferContactEmail?.trim() ?? '');
+        setTransferAccountNumber(settings?.bankTransferAccountNumber?.trim() ?? '');
+        setTransferBankName(settings?.bankTransferBankName?.trim() ?? '');
+        setTransferAccountType(settings?.bankTransferAccountType?.trim() ?? '');
+        setShippingZones(shippingConfig.zones ?? []);
+        setShippingCouriers(shippingConfig.couriers ?? []);
+        setShippingPaymentMode(shippingConfig.paymentMode ?? 'POR_PAGAR');
+
+        const firstActiveZone = (shippingConfig.zones ?? []).find((zone) => zone.active);
+        if (firstActiveZone?.code) {
+          setShippingZoneCode(firstActiveZone.code);
+        }
+        const firstActiveCourier = (shippingConfig.couriers ?? []).find((courier) => courier.active);
+        if (firstActiveCourier?.id) {
+          setShippingCourierId(firstActiveCourier.id);
+        }
 
         setPaymentMethod((prev) => {
           if (prev === 'BANK_TRANSFER' && !bankTransferEnabled && gatewayEnabled) {
@@ -254,6 +321,22 @@ export default function CartPage({ locale }: Props) {
     return first;
   }, [paymentGatewayProviders]);
 
+  useEffect(() => {
+    if (activeShippingZones.length === 0) return;
+    const selectedZoneStillActive = activeShippingZones.some((zone) => zone.code === shippingZoneCode);
+    if (!selectedZoneStillActive) {
+      setShippingZoneCode(activeShippingZones[0].code);
+    }
+  }, [activeShippingZones, shippingZoneCode]);
+
+  useEffect(() => {
+    if (activeShippingCouriers.length === 0) return;
+    const selectedCourierStillActive = activeShippingCouriers.some((courier) => courier.id === shippingCourierId);
+    if (!selectedCourierStillActive) {
+      setShippingCourierId(activeShippingCouriers[0].id);
+    }
+  }, [activeShippingCouriers, shippingCourierId]);
+
   async function handleApplyDiscount() {
     if (!discountCode.trim()) return;
     if (!effectiveToken) {
@@ -284,6 +367,14 @@ export default function CartPage({ locale }: Props) {
       showToast('error', l.paymentMethodUnavailable);
       return;
     }
+    if (activeShippingZones.length === 0 || activeShippingCouriers.length === 0) {
+      showToast('error', l.shippingUnavailable);
+      return;
+    }
+    if (!shippingZoneCode || !shippingCourierId) {
+      showToast('error', l.shippingSelectionRequired);
+      return;
+    }
 
     if (!authUser || !effectiveToken) {
       window.location.href = `/${locale}/auth/login?redirect=/${locale}/cart`;
@@ -312,6 +403,9 @@ export default function CartPage({ locale }: Props) {
             variantSize: item.variantSize,
           })),
           paymentMethod,
+          shippingZoneCode,
+          shippingCourierId,
+          shippingAddressReference: shippingAddressReference.trim() || undefined,
           discountCode: appliedDiscount?.code,
         },
         effectiveToken
@@ -579,6 +673,66 @@ export default function CartPage({ locale }: Props) {
 
                 <div className="mb-6">
                   <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
+                    {l.shippingSectionTitle}
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
+                        {l.shippingZoneLabel}
+                      </span>
+                      <select
+                        value={shippingZoneCode}
+                        onChange={(event) => setShippingZoneCode(event.target.value as ShippingZoneCode)}
+                        className="w-full border border-pe-black/12 bg-pe-white px-2.5 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
+                      >
+                        {activeShippingZones.map((zone) => (
+                          <option key={zone.code} value={zone.code}>
+                            {locale === 'es' ? zone.titleEs : zone.titleEn}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
+                        {l.shippingCourierLabel}
+                      </span>
+                      <select
+                        value={shippingCourierId}
+                        onChange={(event) => setShippingCourierId(event.target.value)}
+                        className="w-full border border-pe-black/12 bg-pe-white px-2.5 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
+                      >
+                        {activeShippingCouriers.map((courier) => (
+                          <option key={courier.id} value={courier.id}>
+                            {courier.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
+                        {l.shippingReferenceLabel}
+                      </span>
+                      <input
+                        type="text"
+                        value={shippingAddressReference}
+                        onChange={(event) => setShippingAddressReference(event.target.value)}
+                        placeholder={l.shippingReferencePlaceholder}
+                        className="w-full border border-pe-black/12 bg-pe-white px-2.5 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
+                      />
+                    </label>
+                  </div>
+                  <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60">
+                    {l.shippingPaymentModeLabel}: {shippingPaymentModeLabel(shippingPaymentMode)}
+                  </p>
+                  {(activeShippingZones.length === 0 || activeShippingCouriers.length === 0) && (
+                    <p className="mt-2 font-sans text-[0.7rem] text-pe-rose-deep">
+                      {l.shippingUnavailable}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mb-6">
+                  <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
                     {l.paymentMethod}
                   </p>
                   <div className="flex flex-col gap-2">
@@ -656,7 +810,7 @@ export default function CartPage({ locale }: Props) {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={checkingOut || stockConflictCount > 0}
+                  disabled={checkingOut || stockConflictCount > 0 || shippingUnavailable}
                   className="w-full bg-pe-gold text-pe-black font-sans text-xs tracking-widest uppercase py-3 hover:bg-opacity-90 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {checkingOut ? (
@@ -672,6 +826,11 @@ export default function CartPage({ locale }: Props) {
                 {stockConflictCount > 0 && (
                   <p className="mt-2 font-sans text-[0.68rem] text-[#8f2d3b]">
                     {l.checkoutBlockedByStock}
+                  </p>
+                )}
+                {shippingUnavailable && (
+                  <p className="mt-2 font-sans text-[0.68rem] text-[#8f2d3b]">
+                    {l.shippingUnavailable}
                   </p>
                 )}
 

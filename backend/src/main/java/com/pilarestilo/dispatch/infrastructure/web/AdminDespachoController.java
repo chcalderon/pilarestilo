@@ -6,6 +6,8 @@ import com.pilarestilo.dispatch.application.usecases.ListDispatchesUseCase;
 import com.pilarestilo.dispatch.application.usecases.ListDispatchHistoryUseCase;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
+import com.pilarestilo.order.application.dto.OrderDto;
+import com.pilarestilo.order.application.usecases.GetOrderUseCase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,13 +25,16 @@ public class AdminDespachoController {
     private final ListDispatchesUseCase listUseCase;
     private final ListDispatchHistoryUseCase listDispatchHistoryUseCase;
     private final DispatchRepository dispatchRepository;
+    private final GetOrderUseCase getOrderUseCase;
 
     public AdminDespachoController(ListDispatchesUseCase listUseCase,
                                     ListDispatchHistoryUseCase listDispatchHistoryUseCase,
-                                    DispatchRepository dispatchRepository) {
+                                    DispatchRepository dispatchRepository,
+                                    GetOrderUseCase getOrderUseCase) {
         this.listUseCase = listUseCase;
         this.listDispatchHistoryUseCase = listDispatchHistoryUseCase;
         this.dispatchRepository = dispatchRepository;
+        this.getOrderUseCase = getOrderUseCase;
     }
 
     @GetMapping
@@ -55,6 +60,21 @@ public class AdminDespachoController {
         if (dispatchRepository.existsByOrderId(orderId)) {
             return dispatchRepository.findByOrderId(orderId).map(DispatchDto::from).orElseThrow();
         }
-        return DispatchDto.from(dispatchRepository.save(Dispatch.create(orderId)));
+        return DispatchDto.from(dispatchRepository.save(resolveDispatchToCreate(orderId)));
+    }
+
+    private Dispatch resolveDispatchToCreate(UUID orderId) {
+        try {
+            OrderDto order = getOrderUseCase.execute(orderId);
+            return Dispatch.create(
+                    orderId,
+                    order.shippingZoneCode(),
+                    order.shippingCourierId(),
+                    order.shippingCourierName(),
+                    order.shippingAddressReference()
+            );
+        } catch (Exception ignored) {
+            return Dispatch.create(orderId);
+        }
     }
 }

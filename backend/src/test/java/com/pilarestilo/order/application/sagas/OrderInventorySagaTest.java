@@ -109,6 +109,17 @@ class OrderInventorySagaTest {
     }
 
     private Order orderWithItems(List<OrderItem> items) {
-        return Order.create(UUID.randomUUID(), items, Money.zero(), PaymentMethod.BANK_TRANSFER, null);
+        return Order.create(
+                UUID.randomUUID(),
+                items,
+                Money.zero(),
+                PaymentMethod.BANK_TRANSFER,
+                "LOCAL",
+                "chilexpress",
+                "Chilexpress",
+                "POR_PAGAR",
+                null,
+                null
+        );
     }
 }

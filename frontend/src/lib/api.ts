@@ -123,6 +123,11 @@ export interface OrderDto {
   discountAmount: MoneyDto;
   totalAmount: MoneyDto;
   paymentMethod: 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'AGREED_BY_WHATSAPP' | 'STORE_CREDIT' | 'PAYMENT_GATEWAY';
+  shippingZoneCode?: ShippingZoneCode | null;
+  shippingCourierId?: string | null;
+  shippingCourierName?: string | null;
+  shippingPaymentMode?: ShippingPaymentMode | null;
+  shippingAddressReference?: string | null;
   notes?: string | null;
   status: 'CREATED' | 'PENDING_PAYMENT' | 'PAYMENT_UNDER_REVIEW' | 'PAID' | 'PREPARING_ORDER' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
@@ -140,6 +145,10 @@ export interface DispatchHistoryRowDto {
   scheduledDate?: string | null;
   dispatchedAt?: string | null;
   deliveredAt?: string | null;
+  carrierOverrideConfigured?: string | null;
+  carrierOverrideSelected?: string | null;
+  carrierOverrideBy?: string | null;
+  carrierOverrideAt?: string | null;
   notes?: string | null;
   createdAt: string;
   orderCreatedAt?: string | null;
@@ -413,6 +422,9 @@ export interface CreateOrderRequest {
   customerId: string;
   items: CreateOrderItemRequest[];
   paymentMethod: OrderDto['paymentMethod'];
+  shippingZoneCode: ShippingZoneCode;
+  shippingCourierId: string;
+  shippingAddressReference?: string;
   notes?: string;
   discountCode?: string;
 }

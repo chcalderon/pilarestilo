@@ -3,6 +3,8 @@ package com.pilarestilo.dispatch.application.usecases;
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
+import com.pilarestilo.order.application.dto.OrderDto;
+import com.pilarestilo.order.application.usecases.GetOrderUseCase;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.shared.domain.DomainException;
@@ -16,11 +18,14 @@ import java.util.UUID;
 public class MarkDispatchedUseCase {
     private final DispatchRepository dispatchRepository;
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
+    private final GetOrderUseCase getOrderUseCase;
 
     public MarkDispatchedUseCase(DispatchRepository dispatchRepository,
-                                 UpdateOrderStatusUseCase updateOrderStatusUseCase) {
+                                 UpdateOrderStatusUseCase updateOrderStatusUseCase,
+                                 GetOrderUseCase getOrderUseCase) {
         this.dispatchRepository = dispatchRepository;
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
+        this.getOrderUseCase = getOrderUseCase;
     }
 
     @Transactional
@@ -32,9 +37,59 @@ public class MarkDispatchedUseCase {
         if (!dispatcherId.equals(d.getDispatcherId())) {
             throw new DomainException("You can only dispatch orders you have claimed");
         }
-        d.dispatch(carrier, trackingCode, scheduledDate, notes);
+        String normalizedCarrier = normalizeRequired(carrier, "carrier");
+        String normalizedTrackingCode = normalizeRequired(trackingCode, "tracking code");
+        String finalNotes = normalizeOptional(notes);
+        String configuredCarrier = resolveConfiguredCarrier(d);
+        boolean hasOverride = configuredCarrier != null && !configuredCarrier.equalsIgnoreCase(normalizedCarrier);
+
+        d.dispatch(
+                normalizedCarrier,
+                normalizedTrackingCode,
+                scheduledDate,
+                finalNotes,
+                hasOverride ? configuredCarrier : null,
+                hasOverride ? normalizedCarrier : null,
+                hasOverride ? dispatcherId : null
+        );
         Dispatch saved = dispatchRepository.save(d);
         updateOrderStatusUseCase.execute(saved.getOrderId(), OrderStatus.SHIPPED);
         return DispatchDto.from(saved);
+    }
+
+    private String resolveConfiguredCarrier(Dispatch dispatch) {
+        String fromDispatchName = normalizeOptional(dispatch.getOrderShippingCourierName());
+        if (fromDispatchName != null) {
+            return fromDispatchName;
+        }
+        String fromDispatchId = normalizeOptional(dispatch.getOrderShippingCourierId());
+        if (fromDispatchId != null) {
+            return fromDispatchId;
+        }
+        try {
+            OrderDto order = getOrderUseCase.execute(dispatch.getOrderId());
+            String byName = normalizeOptional(order.shippingCourierName());
+            if (byName != null) {
+                return byName;
+            }
+            return normalizeOptional(order.shippingCourierId());
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String normalizeRequired(String value, String field) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            throw new DomainException("Missing " + field);
+        }
+        return normalized;
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

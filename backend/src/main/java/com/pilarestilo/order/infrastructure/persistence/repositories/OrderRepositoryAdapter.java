@@ -57,6 +57,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setTotalAmount(order.getTotalAmount().amount());
         entity.setTotalCurrency(order.getTotalAmount().currency());
         entity.setPaymentMethod(order.getPaymentMethod());
+        entity.setShippingZoneCode(order.getShippingZoneCode());
+        entity.setShippingCourierId(order.getShippingCourierId());
+        entity.setShippingCourierName(order.getShippingCourierName());
+        entity.setShippingPaymentMode(order.getShippingPaymentMode());
+        entity.setShippingAddressReference(order.getShippingAddressReference());
         entity.setNotes(order.getNotes());
         entity.setStatus(order.getStatus());
         entity.setCreatedAt(order.getCreatedAt());
@@ -97,6 +102,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 new Money(entity.getDiscountAmount(), entity.getDiscountCurrency()),
                 new Money(entity.getTotalAmount(), entity.getTotalCurrency()),
                 entity.getPaymentMethod(),
+                entity.getShippingZoneCode(),
+                entity.getShippingCourierId(),
+                entity.getShippingCourierName(),
+                entity.getShippingPaymentMode(),
+                entity.getShippingAddressReference(),
                 entity.getNotes(),
                 entity.getStatus(),
                 entity.getCreatedAt(),

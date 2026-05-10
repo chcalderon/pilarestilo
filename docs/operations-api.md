@@ -114,9 +114,20 @@ Controllers:
 Endpoints:
 
 - `GET /api/despachos` (`DESPACHADOR`, `ADMIN`)
+  - Queue rows include shipping snapshot persisted on `dispatches`:
+    - `orderShippingZoneCode`
+    - `orderShippingCourierId`
+    - `orderShippingCourierName`
+    - `orderShippingAddressReference`
 - `POST /api/despachos/{id}/claim` (`DESPACHADOR`, `ADMIN`)
 - `POST /api/despachos/{id}/unclaim` (`DESPACHADOR`, `ADMIN`)
 - `POST /api/despachos/{id}/dispatch` (`DESPACHADOR`, `ADMIN`)
+  - Request body still requires `carrier` and `trackingCode`.
+  - If `carrier` differs from the configured courier snapshot, backend stores structured audit fields on `dispatches`:
+    - `carrierOverrideConfigured`
+    - `carrierOverrideSelected`
+    - `carrierOverrideBy`
+    - `carrierOverrideAt`
 - `POST /api/despachos/{id}/deliver` (`DESPACHADOR`, `ADMIN`)
 - `POST /api/despachos/{id}/fail` (`DESPACHADOR`, `ADMIN`)
 - `GET /api/admin/despachos` - paginated active dispatch queue (`ADMIN`, `SUPERVISOR`)
@@ -134,6 +145,17 @@ Order status side effects linked to dispatch actions:
 - `POST /api/despachos/{id}/dispatch` updates order status to `SHIPPED`
 - `POST /api/despachos/{id}/deliver` updates order status to `DELIVERED`
 - `PATCH /api/orders/{id}/confirm-delivery` (`isAuthenticated()`) - customer self-confirms delivery; also sets dispatch to `DELIVERED` if not already
+
+Order checkout payload now persists shipping selection independently of payment method via `POST /api/orders`:
+
+- `shippingZoneCode` (required)
+- `shippingCourierId` (required)
+- `shippingAddressReference` (optional)
+
+Rollout migrations:
+
+- `V46__order_shipping_selection.sql` adds shipping selection columns to `orders`.
+- `V47__dispatch_shipping_snapshot_and_override_audit.sql` adds shipping snapshot + structured override audit to `dispatches`, including a one-time backfill from `orders`.
 
 ### Auto-confirm scheduled job
 

@@ -16,12 +16,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OrderTest {
 
+    private static final String SHIPPING_ZONE = "LOCAL";
+    private static final String SHIPPING_COURIER_ID = "chilexpress";
+    private static final String SHIPPING_COURIER_NAME = "Chilexpress";
+    private static final String SHIPPING_PAYMENT_MODE = "POR_PAGAR";
+
     private Order buildTestOrder() {
         List<OrderItem> items = List.of(
                 new OrderItem(UUID.randomUUID(), UUID.randomUUID(), "Test Item",
                         Money.of(BigDecimal.valueOf(100000)), 2)
         );
-        return Order.create(UUID.randomUUID(), items, Money.zero(), PaymentMethod.BANK_TRANSFER, null);
+        return createOrder(items, Money.zero());
     }
 
     @Test
@@ -72,7 +77,7 @@ class OrderTest {
                         Money.of(BigDecimal.valueOf(100000)), 1)
         );
         Money discount = Money.of(BigDecimal.valueOf(10000));
-        Order o = Order.create(UUID.randomUUID(), items, discount, PaymentMethod.BANK_TRANSFER, null);
+        Order o = createOrder(items, discount);
         assertEquals(Money.of(BigDecimal.valueOf(90000)), o.getTotalAmount());
     }
 
@@ -96,6 +101,21 @@ class OrderTest {
     @Test
     void cannot_create_order_without_items() {
         assertThrows(DomainException.class,
-                () -> Order.create(UUID.randomUUID(), List.of(), Money.zero(), PaymentMethod.BANK_TRANSFER, null));
+                () -> createOrder(List.of(), Money.zero()));
+    }
+
+    private Order createOrder(List<OrderItem> items, Money discountAmount) {
+        return Order.create(
+                UUID.randomUUID(),
+                items,
+                discountAmount,
+                PaymentMethod.BANK_TRANSFER,
+                SHIPPING_ZONE,
+                SHIPPING_COURIER_ID,
+                SHIPPING_COURIER_NAME,
+                SHIPPING_PAYMENT_MODE,
+                null,
+                null
+        );
     }
 }

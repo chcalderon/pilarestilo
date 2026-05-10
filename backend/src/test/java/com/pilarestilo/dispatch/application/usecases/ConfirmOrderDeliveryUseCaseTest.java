@@ -83,6 +83,11 @@ class ConfirmOrderDeliveryUseCaseTest {
                 new MoneyDto(BigDecimal.TEN, "CLP"),
                 PaymentMethod.BANK_TRANSFER,
                 null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 status,
                 Instant.now(),
                 Instant.now()

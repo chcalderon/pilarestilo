@@ -45,6 +45,21 @@ public class OrderEntity {
     @Column(name = "payment_method", nullable = false, length = 30)
     private PaymentMethod paymentMethod;
 
+    @Column(name = "shipping_zone_code", length = 24)
+    private String shippingZoneCode;
+
+    @Column(name = "shipping_courier_id", length = 120)
+    private String shippingCourierId;
+
+    @Column(name = "shipping_courier_name", length = 160)
+    private String shippingCourierName;
+
+    @Column(name = "shipping_payment_mode", length = 32)
+    private String shippingPaymentMode;
+
+    @Column(name = "shipping_address_reference", columnDefinition = "TEXT")
+    private String shippingAddressReference;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 
@@ -87,6 +102,21 @@ public class OrderEntity {
 
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getShippingZoneCode() { return shippingZoneCode; }
+    public void setShippingZoneCode(String shippingZoneCode) { this.shippingZoneCode = shippingZoneCode; }
+
+    public String getShippingCourierId() { return shippingCourierId; }
+    public void setShippingCourierId(String shippingCourierId) { this.shippingCourierId = shippingCourierId; }
+
+    public String getShippingCourierName() { return shippingCourierName; }
+    public void setShippingCourierName(String shippingCourierName) { this.shippingCourierName = shippingCourierName; }
+
+    public String getShippingPaymentMode() { return shippingPaymentMode; }
+    public void setShippingPaymentMode(String shippingPaymentMode) { this.shippingPaymentMode = shippingPaymentMode; }
+
+    public String getShippingAddressReference() { return shippingAddressReference; }
+    public void setShippingAddressReference(String shippingAddressReference) { this.shippingAddressReference = shippingAddressReference; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

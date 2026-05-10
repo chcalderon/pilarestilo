@@ -1,6 +1,7 @@
 package com.pilarestilo.order.infrastructure.web.requests;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -16,6 +17,14 @@ public record CreateOrderRequest(
 
         @NotNull(message = "paymentMethod is required")
         String paymentMethod,
+
+        @NotBlank(message = "shippingZoneCode is required")
+        String shippingZoneCode,
+
+        @NotBlank(message = "shippingCourierId is required")
+        String shippingCourierId,
+
+        String shippingAddressReference,
 
         String notes,
 

@@ -13,7 +13,10 @@ import java.util.stream.Stream;
 @Service
 public class ListDispatchesUseCase {
     private final DispatchRepository dispatchRepository;
-    public ListDispatchesUseCase(DispatchRepository dispatchRepository) { this.dispatchRepository = dispatchRepository; }
+
+    public ListDispatchesUseCase(DispatchRepository dispatchRepository) {
+        this.dispatchRepository = dispatchRepository;
+    }
 
     public List<DispatchDto> executeForDispatcher(UUID dispatcherId) {
         List<DispatchDto> pending = dispatchRepository.findByStatus(DispatchStatus.PENDING)
@@ -25,6 +28,7 @@ public class ListDispatchesUseCase {
     }
 
     public Page<DispatchDto> executeForAdmin(Pageable pageable) {
-        return dispatchRepository.findAll(pageable).map(DispatchDto::from);
+        return dispatchRepository.findAll(pageable)
+                .map(DispatchDto::from);
     }
 }

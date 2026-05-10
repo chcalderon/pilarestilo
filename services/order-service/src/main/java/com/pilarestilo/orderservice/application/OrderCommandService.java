@@ -1,5 +1,7 @@
 package com.pilarestilo.orderservice.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pilarestilo.orderservice.domain.OrderStatus;
 import com.pilarestilo.orderservice.domain.PaymentMethod;
 import com.pilarestilo.orderservice.persistence.OrderEntity;
@@ -19,7 +21,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +32,7 @@ import java.util.UUID;
 @Service
 public class OrderCommandService {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String DEFAULT_CURRENCY = "CLP";
     private static final String PAYMENT_STATUS_PENDING = "PENDING";
     private static final String DEFAULT_TRANSFER_ACCOUNT_HOLDER = "Pilar Estilo";
@@ -34,6 +40,7 @@ public class OrderCommandService {
     private static final String DEFAULT_TRANSFER_ACCOUNT_NUMBER = "0000000000";
     private static final String DEFAULT_TRANSFER_BANK_NAME = "Banco de Chile";
     private static final String DEFAULT_TRANSFER_ACCOUNT_TYPE = "Cuenta Corriente";
+    private static final String DEFAULT_SHIPPING_PAYMENT_MODE = "POR_PAGAR";
     private static final short DEFAULT_SYSTEM_SETTINGS_ID = 1;
 
     private final OrderRepository orderRepository;
@@ -58,6 +65,7 @@ public class OrderCommandService {
     public OrderEntity create(CreateOrderRequest request) {
         validateCreateRequest(request);
         PaymentMethod paymentMethod = parsePaymentMethod(request.paymentMethod());
+        ShippingSelection shippingSelection = resolveShippingSelection(request);
         Instant now = Instant.now();
 
         List<OrderLineSnapshot> lines = loadOrderLines(request.items());
@@ -78,6 +86,11 @@ public class OrderCommandService {
         order.setTotalAmount(total);
         order.setTotalCurrency(currency);
         order.setPaymentMethod(paymentMethod.name());
+        order.setShippingZoneCode(shippingSelection.zoneCode());
+        order.setShippingCourierId(shippingSelection.courierId());
+        order.setShippingCourierName(shippingSelection.courierName());
+        order.setShippingPaymentMode(shippingSelection.paymentMode());
+        order.setShippingAddressReference(shippingSelection.addressReference());
         order.setNotes(request.notes());
         order.setStatus(OrderStatus.CREATED.name());
         order.setCreatedAt(now);
@@ -134,6 +147,12 @@ public class OrderCommandService {
         }
         if (request.paymentMethod() == null || request.paymentMethod().isBlank()) {
             throw new IllegalArgumentException("Payment method is required");
+        }
+        if (request.shippingZoneCode() == null || request.shippingZoneCode().isBlank()) {
+            throw new IllegalArgumentException("Shipping zone is required");
+        }
+        if (request.shippingCourierId() == null || request.shippingCourierId().isBlank()) {
+            throw new IllegalArgumentException("Shipping courier is required");
         }
     }
 
@@ -220,6 +239,103 @@ public class OrderCommandService {
         }
 
         return discount;
+    }
+
+    private ShippingSelection resolveShippingSelection(CreateOrderRequest request) {
+        String zoneCode = request.shippingZoneCode().trim().toUpperCase(Locale.ROOT);
+        String courierId = request.shippingCourierId().trim();
+        String addressReference = normalizeOptional(request.shippingAddressReference());
+
+        SystemSettingsEntity settings = systemSettingsRepository.findById(DEFAULT_SYSTEM_SETTINGS_ID).orElse(null);
+        Set<String> activeZoneCodes = parseActiveShippingZones(settings == null ? null : settings.getShippingZonesJson());
+        Map<String, String> activeCouriers = parseActiveShippingCouriers(settings == null ? null : settings.getShippingCouriersJson());
+
+        if (!activeZoneCodes.contains(zoneCode)) {
+            throw new IllegalArgumentException("Selected shipping zone is not available");
+        }
+        if (!activeCouriers.containsKey(courierId)) {
+            throw new IllegalArgumentException("Selected shipping courier is not available");
+        }
+
+        String paymentModeRaw = settings == null ? null : settings.getShippingPaymentMode();
+        String paymentMode = defaultIfBlank(paymentModeRaw, DEFAULT_SHIPPING_PAYMENT_MODE).toUpperCase(Locale.ROOT);
+
+        return new ShippingSelection(
+                zoneCode,
+                courierId,
+                activeCouriers.get(courierId),
+                paymentMode,
+                addressReference
+        );
+    }
+
+    private Set<String> parseActiveShippingZones(String shippingZonesJson) {
+        if (shippingZonesJson == null || shippingZonesJson.isBlank()) {
+            return Set.of("LOCAL", "REGIONAL", "NACIONAL");
+        }
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(shippingZonesJson);
+            if (root == null || !root.isArray()) {
+                throw new IllegalArgumentException("Invalid shipping zones configuration");
+            }
+            java.util.LinkedHashSet<String> activeZones = new java.util.LinkedHashSet<>();
+            for (JsonNode node : root) {
+                if (node == null || !node.isObject()) {
+                    continue;
+                }
+                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                if (!active) {
+                    continue;
+                }
+                String code = node.path("code").asText("").trim().toUpperCase(Locale.ROOT);
+                if (!code.isBlank()) {
+                    activeZones.add(code);
+                }
+            }
+            if (activeZones.isEmpty()) {
+                throw new IllegalArgumentException("No active shipping zones configured");
+            }
+            return Set.copyOf(activeZones);
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Could not parse shipping zones configuration");
+        }
+    }
+
+    private Map<String, String> parseActiveShippingCouriers(String shippingCouriersJson) {
+        if (shippingCouriersJson == null || shippingCouriersJson.isBlank()) {
+            return Map.of("starken", "Starken", "chilexpress", "ChilExpress");
+        }
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(shippingCouriersJson);
+            if (root == null || !root.isArray()) {
+                throw new IllegalArgumentException("Invalid shipping couriers configuration");
+            }
+            Map<String, String> activeCouriers = new LinkedHashMap<>();
+            for (JsonNode node : root) {
+                if (node == null || !node.isObject()) {
+                    continue;
+                }
+                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                if (!active) {
+                    continue;
+                }
+                String id = node.path("id").asText("").trim();
+                String name = node.path("name").asText("").trim();
+                if (!id.isBlank() && !name.isBlank()) {
+                    activeCouriers.put(id, name);
+                }
+            }
+            if (activeCouriers.isEmpty()) {
+                throw new IllegalArgumentException("No active shipping couriers configured");
+            }
+            return Map.copyOf(activeCouriers);
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Could not parse shipping couriers configuration");
+        }
     }
 
     private PaymentMethod parsePaymentMethod(String raw) {
@@ -329,6 +445,13 @@ public class OrderCommandService {
         return value.trim();
     }
 
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private record OrderLineSnapshot(
             ProductEntity product,
             int quantity,
@@ -343,6 +466,15 @@ public class OrderCommandService {
             String accountNumber,
             String bankName,
             String accountType
+    ) {
+    }
+
+    private record ShippingSelection(
+            String zoneCode,
+            String courierId,
+            String courierName,
+            String paymentMode,
+            String addressReference
     ) {
     }
 }
