@@ -29,6 +29,7 @@ public class OrderMapper {
                 order.getShippingCourierId(),
                 order.getShippingCourierName(),
                 order.getShippingPaymentMode(),
+                order.getShippingAddressId(),
                 order.getShippingAddressReference(),
                 order.getNotes(),
                 order.getStatus(),

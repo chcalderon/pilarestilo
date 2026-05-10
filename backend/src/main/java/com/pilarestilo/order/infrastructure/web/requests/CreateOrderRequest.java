@@ -24,7 +24,8 @@ public record CreateOrderRequest(
         @NotBlank(message = "shippingCourierId is required")
         String shippingCourierId,
 
-        String shippingAddressReference,
+        @NotNull(message = "shippingAddressId is required")
+        UUID shippingAddressId,
 
         String notes,
 

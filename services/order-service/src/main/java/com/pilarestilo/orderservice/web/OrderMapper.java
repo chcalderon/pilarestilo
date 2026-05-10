@@ -24,6 +24,7 @@ public final class OrderMapper {
                 entity.getShippingCourierId(),
                 entity.getShippingCourierName(),
                 entity.getShippingPaymentMode(),
+                entity.getShippingAddressId(),
                 entity.getShippingAddressReference(),
                 entity.getNotes(),
                 entity.getStatus(),

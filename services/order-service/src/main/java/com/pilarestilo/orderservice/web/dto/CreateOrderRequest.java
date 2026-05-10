@@ -10,7 +10,7 @@ public record CreateOrderRequest(
         String paymentMethod,
         String shippingZoneCode,
         String shippingCourierId,
-        String shippingAddressReference,
+        UUID shippingAddressId,
         String notes,
         BigDecimal discountAmount,
         String discountCurrency,

@@ -1,6 +1,11 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
-const BACKEND_API_BASE = process.env.INTERNAL_API_BASE_URL ?? 'http://127.0.0.1:8080/api';
+const ENV_BACKEND_API_BASE = process.env.INTERNAL_API_BASE_URL?.trim();
+const BACKEND_API_CANDIDATES = [
+  'http://127.0.0.1:8080/api',
+  'http://localhost/api',
+];
+let backendApiBase = ENV_BACKEND_API_BASE || BACKEND_API_CANDIDATES[0];
 const ADMIN_EMAIL = 'admin@pilarestilo.com';
 const ADMIN_PASSWORD = 'admin2026';
 
@@ -35,7 +40,23 @@ interface OrderResponse {
   shippingCourierId?: string | null;
   shippingCourierName?: string | null;
   shippingPaymentMode?: string | null;
+  shippingAddressId?: string | null;
   shippingAddressReference?: string | null;
+}
+
+interface AddressResponse {
+  id: string;
+  customerId: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  comuna: string;
+  city: string;
+  region: string;
+  reference?: string | null;
+  isDefault: boolean;
 }
 
 interface PaymentResponse {
@@ -65,8 +86,9 @@ interface PublicStoreSettingsResponse {
 test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
   test('shipping method is preserved for BANK_TRANSFER and PAYMENT_GATEWAY', async ({ request }) => {
     test.setTimeout(180000);
-    const backendAvailable = await isBackendAvailable(request);
-    test.skip(!backendAvailable, `Backend unavailable at ${BACKEND_API_BASE}`);
+    backendApiBase = await resolveBackendApiBase(request);
+    const backendAvailable = await isBackendAvailable(request, backendApiBase);
+    test.skip(!backendAvailable, `Backend unavailable at ${backendApiBase}`);
 
     const admin = await login(request, ADMIN_EMAIL, ADMIN_PASSWORD);
     const storeSettings = await getPublicStoreSettings(request);
@@ -85,7 +107,7 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
         const customer = await login(request, customerEmail, customerPassword);
 
         const product = await pickSimpleInStockProduct(request);
-        const shippingReference = `PW-${paymentMethod}-${ts}`;
+        const address = await createAddress(request, customer.accessToken, ts, paymentMethod);
         const order = await createOrder(
           request,
           customer.accessToken,
@@ -94,7 +116,7 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
           paymentMethod,
           shipping.zoneCode,
           shipping.courierId,
-          shippingReference,
+          address.id,
         );
         expect(order.paymentMethod).toBe(paymentMethod);
         const storedOrder = await apiJson<OrderResponse>(request, 'GET', `/orders/${order.id}`, {
@@ -102,7 +124,8 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
         });
         expect(storedOrder.shippingZoneCode).toBe(shipping.zoneCode);
         expect(storedOrder.shippingCourierId).toBe(shipping.courierId);
-        expect(storedOrder.shippingAddressReference ?? null).toBe(shippingReference);
+        expect(storedOrder.shippingAddressId ?? null).toBe(address.id);
+        expect(storedOrder.shippingAddressReference ?? '').toContain(address.line1);
         expect(storedOrder.shippingPaymentMode).toBe('POR_PAGAR');
 
         await settlePayment(request, {
@@ -121,7 +144,7 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
           expect(dispatch.orderShippingCourierId).toBe(shipping.courierId);
         }
         if (dispatch.orderShippingAddressReference != null) {
-          expect(dispatch.orderShippingAddressReference).toBe(shippingReference);
+          expect(dispatch.orderShippingAddressReference).toContain(address.line1);
         }
 
         await claimAndShipDispatch(request, admin.accessToken, dispatch, shipping.courierId, ts);
@@ -142,7 +165,7 @@ async function apiJson<T>(
   path: string,
   options?: { token?: string; body?: unknown },
 ): Promise<T> {
-  const url = `${BACKEND_API_BASE}${path}`;
+  const url = `${backendApiBase}${path}`;
   const headers: Record<string, string> = {};
   if (options?.token) {
     headers.Authorization = `Bearer ${options.token}`;
@@ -235,7 +258,7 @@ async function createOrder(
   paymentMethod: CheckoutPaymentMethod,
   shippingZoneCode: string,
   shippingCourierId: string,
-  shippingAddressReference: string,
+  shippingAddressId: string,
 ): Promise<OrderResponse> {
   return apiJson<OrderResponse>(request, 'POST', '/orders', {
     token: customerToken,
@@ -252,7 +275,30 @@ async function createOrder(
       paymentMethod,
       shippingZoneCode,
       shippingCourierId,
-      shippingAddressReference,
+      shippingAddressId,
+    },
+  });
+}
+
+async function createAddress(
+  request: APIRequestContext,
+  customerToken: string,
+  seed: number,
+  paymentMethod: CheckoutPaymentMethod,
+): Promise<AddressResponse> {
+  return apiJson<AddressResponse>(request, 'POST', '/auth/me/addresses', {
+    token: customerToken,
+    body: {
+      label: `Casa ${paymentMethod}`,
+      recipientName: `Cliente ${paymentMethod}`,
+      phone: '+56912345678',
+      line1: `PW Calle ${seed}`,
+      line2: 'Depto 10',
+      comuna: 'Las Condes',
+      city: 'Santiago',
+      region: 'Metropolitana',
+      reference: 'Porteria',
+      isDefault: true,
     },
   });
 }
@@ -407,9 +453,22 @@ function safeJsonArray<T>(value: string | null | undefined): T[] {
   }
 }
 
-async function isBackendAvailable(request: APIRequestContext): Promise<boolean> {
+async function resolveBackendApiBase(request: APIRequestContext): Promise<string> {
+  if (ENV_BACKEND_API_BASE) {
+    return ENV_BACKEND_API_BASE.replace(/\/+$/, '');
+  }
+  for (const candidate of BACKEND_API_CANDIDATES) {
+    const normalized = candidate.replace(/\/+$/, '');
+    if (await isBackendAvailable(request, normalized)) {
+      return normalized;
+    }
+  }
+  return BACKEND_API_CANDIDATES[0];
+}
+
+async function isBackendAvailable(request: APIRequestContext, apiBase: string): Promise<boolean> {
   try {
-    const response = await request.get(`${BACKEND_API_BASE}/products?page=0&size=1`);
+    const response = await request.get(`${apiBase}/products?page=0&size=1`);
     return response.ok();
   } catch {
     return false;

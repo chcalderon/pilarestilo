@@ -98,6 +98,7 @@ class OrderPaidDispatchListenerTest {
                 "chilexpress",
                 "Chilexpress",
                 "POR_PAGAR",
+                null,
                 "Casa 12",
                 null,
                 OrderStatus.PAID,

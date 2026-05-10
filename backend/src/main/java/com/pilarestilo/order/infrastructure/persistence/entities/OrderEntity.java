@@ -57,6 +57,9 @@ public class OrderEntity {
     @Column(name = "shipping_payment_mode", length = 32)
     private String shippingPaymentMode;
 
+    @Column(name = "shipping_address_id")
+    private UUID shippingAddressId;
+
     @Column(name = "shipping_address_reference", columnDefinition = "TEXT")
     private String shippingAddressReference;
 
@@ -114,6 +117,9 @@ public class OrderEntity {
 
     public String getShippingPaymentMode() { return shippingPaymentMode; }
     public void setShippingPaymentMode(String shippingPaymentMode) { this.shippingPaymentMode = shippingPaymentMode; }
+
+    public UUID getShippingAddressId() { return shippingAddressId; }
+    public void setShippingAddressId(UUID shippingAddressId) { this.shippingAddressId = shippingAddressId; }
 
     public String getShippingAddressReference() { return shippingAddressReference; }
     public void setShippingAddressReference(String shippingAddressReference) { this.shippingAddressReference = shippingAddressReference; }

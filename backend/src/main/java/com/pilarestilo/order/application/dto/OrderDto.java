@@ -19,6 +19,7 @@ public record OrderDto(
         String shippingCourierId,
         String shippingCourierName,
         String shippingPaymentMode,
+        UUID shippingAddressId,
         String shippingAddressReference,
         String notes,
         OrderStatus status,

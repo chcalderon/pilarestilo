@@ -127,6 +127,7 @@ export interface OrderDto {
   shippingCourierId?: string | null;
   shippingCourierName?: string | null;
   shippingPaymentMode?: ShippingPaymentMode | null;
+  shippingAddressId?: string | null;
   shippingAddressReference?: string | null;
   notes?: string | null;
   status: 'CREATED' | 'PENDING_PAYMENT' | 'PAYMENT_UNDER_REVIEW' | 'PAID' | 'PREPARING_ORDER' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
@@ -424,9 +425,51 @@ export interface CreateOrderRequest {
   paymentMethod: OrderDto['paymentMethod'];
   shippingZoneCode: ShippingZoneCode;
   shippingCourierId: string;
-  shippingAddressReference?: string;
+  shippingAddressId: string;
   notes?: string;
   discountCode?: string;
+}
+
+export interface CustomerAddressDto {
+  id: string;
+  customerId: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  comuna: string;
+  city: string;
+  region: string;
+  reference?: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomerAddressRequest {
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  comuna: string;
+  city: string;
+  region: string;
+  reference?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateCustomerAddressRequest {
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  comuna: string;
+  city: string;
+  region: string;
+  reference?: string;
 }
 
 export interface CreateProductRequest {
@@ -1079,6 +1122,46 @@ export async function changeMyPassword(currentPassword: string, newPassword: str
   await apiFetch<void>('/auth/me/password', {
     method: 'PATCH',
     body: JSON.stringify({ currentPassword, newPassword }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function getMyAddresses(token: string): Promise<CustomerAddressDto[]> {
+  return apiFetch<CustomerAddressDto[]>('/auth/me/addresses', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function createMyAddress(data: CreateCustomerAddressRequest, token: string): Promise<CustomerAddressDto> {
+  return apiFetch<CustomerAddressDto>('/auth/me/addresses', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function updateMyAddress(
+  addressId: string,
+  data: UpdateCustomerAddressRequest,
+  token: string
+): Promise<CustomerAddressDto> {
+  return apiFetch<CustomerAddressDto>(`/auth/me/addresses/${encodeURIComponent(addressId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function deleteMyAddress(addressId: string, token: string): Promise<void> {
+  await apiFetch<void>(`/auth/me/addresses/${encodeURIComponent(addressId)}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+}
+
+export async function setMyAddressAsDefault(addressId: string, token: string): Promise<CustomerAddressDto> {
+  return apiFetch<CustomerAddressDto>(`/auth/me/addresses/${encodeURIComponent(addressId)}/default`, {
+    method: 'PATCH',
     headers: authHeaders(token),
   });
 }

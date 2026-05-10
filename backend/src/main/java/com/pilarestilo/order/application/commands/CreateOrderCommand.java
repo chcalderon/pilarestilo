@@ -12,7 +12,7 @@ public record CreateOrderCommand(
         PaymentMethod paymentMethod,
         String shippingZoneCode,
         String shippingCourierId,
-        String shippingAddressReference,
+        UUID shippingAddressId,
         String notes,
         Money discountAmount,
         boolean employeeDiscountEligible,
@@ -22,7 +22,7 @@ public record CreateOrderCommand(
                                PaymentMethod paymentMethod,
                                String shippingZoneCode,
                                String shippingCourierId,
-                               String shippingAddressReference,
+                               UUID shippingAddressId,
                                String notes,
                                Money discountAmount, boolean employeeDiscountEligible) {
         this(
@@ -31,7 +31,7 @@ public record CreateOrderCommand(
                 paymentMethod,
                 shippingZoneCode,
                 shippingCourierId,
-                shippingAddressReference,
+                shippingAddressId,
                 notes,
                 discountAmount,
                 employeeDiscountEligible,

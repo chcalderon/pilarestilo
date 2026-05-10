@@ -23,6 +23,7 @@ public class Order {
     private String shippingCourierId;
     private String shippingCourierName;
     private String shippingPaymentMode;
+    private UUID shippingAddressId;
     private String shippingAddressReference;
     private String notes;
     private OrderStatus status;
@@ -39,7 +40,7 @@ public class Order {
                                      Money subtotal, Money discountAmount, Money totalAmount,
                                      PaymentMethod paymentMethod, String shippingZoneCode,
                                      String shippingCourierId, String shippingCourierName,
-                                     String shippingPaymentMode, String shippingAddressReference,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                      String notes,
                                      OrderStatus status, Instant createdAt, Instant updatedAt) {
         Order order = new Order();
@@ -54,6 +55,7 @@ public class Order {
         order.shippingCourierId = shippingCourierId;
         order.shippingCourierName = shippingCourierName;
         order.shippingPaymentMode = shippingPaymentMode;
+        order.shippingAddressId = shippingAddressId;
         order.shippingAddressReference = shippingAddressReference;
         order.notes = notes;
         order.status = status;
@@ -65,7 +67,7 @@ public class Order {
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
                                 PaymentMethod paymentMethod, String shippingZoneCode,
                                 String shippingCourierId, String shippingCourierName,
-                                String shippingPaymentMode, String shippingAddressReference,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                 String notes) {
         if (customerId == null) {
             throw new DomainException("Customer ID cannot be null");
@@ -88,6 +90,12 @@ public class Order {
         if (shippingPaymentMode == null || shippingPaymentMode.isBlank()) {
             throw new DomainException("Shipping payment mode cannot be empty");
         }
+        if (shippingAddressId == null) {
+            throw new DomainException("Shipping address id cannot be null");
+        }
+        if (shippingAddressReference == null || shippingAddressReference.isBlank()) {
+            throw new DomainException("Shipping address reference cannot be empty");
+        }
 
         Money subtotal = items.stream()
                 .map(item -> item.getUnitPrice().multiply(item.getQuantity()))
@@ -107,9 +115,8 @@ public class Order {
         order.shippingCourierId = shippingCourierId.trim();
         order.shippingCourierName = shippingCourierName.trim();
         order.shippingPaymentMode = shippingPaymentMode.trim();
-        order.shippingAddressReference = shippingAddressReference == null || shippingAddressReference.isBlank()
-                ? null
-                : shippingAddressReference.trim();
+        order.shippingAddressId = shippingAddressId;
+        order.shippingAddressReference = shippingAddressReference.trim();
         order.notes = notes;
         order.status = OrderStatus.CREATED;
         order.createdAt = Instant.now();
@@ -188,6 +195,7 @@ public class Order {
     public String getShippingCourierId() { return shippingCourierId; }
     public String getShippingCourierName() { return shippingCourierName; }
     public String getShippingPaymentMode() { return shippingPaymentMode; }
+    public UUID getShippingAddressId() { return shippingAddressId; }
     public String getShippingAddressReference() { return shippingAddressReference; }
     public String getNotes() { return notes; }
     public OrderStatus getStatus() { return status; }

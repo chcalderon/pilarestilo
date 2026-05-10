@@ -2,6 +2,8 @@ package com.pilarestilo.order.application.usecases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
+import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.domain.ports.DiscountRepository;
 import com.pilarestilo.inventory.application.InventoryService;
@@ -47,6 +49,7 @@ public class CreateOrderUseCase {
     private final OrderRemoteCommandClient orderRemoteCommandClient;
     private final SystemSettingsRepository systemSettingsRepository;
     private final DiscountRepository discountRepository;
+    private final CustomerAddressBookService customerAddressBookService;
 
     public CreateOrderUseCase(OrderRepository orderRepository,
                                ProductRepository productRepository,
@@ -54,7 +57,8 @@ public class CreateOrderUseCase {
                                DomainEventPublisher eventPublisher,
                                OrderRemoteCommandClient orderRemoteCommandClient,
                                SystemSettingsRepository systemSettingsRepository,
-                               DiscountRepository discountRepository) {
+                               DiscountRepository discountRepository,
+                               CustomerAddressBookService customerAddressBookService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
@@ -62,6 +66,7 @@ public class CreateOrderUseCase {
         this.orderRemoteCommandClient = orderRemoteCommandClient;
         this.systemSettingsRepository = systemSettingsRepository;
         this.discountRepository = discountRepository;
+        this.customerAddressBookService = customerAddressBookService;
     }
 
     @Transactional
@@ -133,6 +138,7 @@ public class CreateOrderUseCase {
                 shippingSelection.courierId(),
                 shippingSelection.courierName(),
                 shippingSelection.paymentMode(),
+                shippingSelection.addressId(),
                 shippingSelection.addressReference(),
                 command.notes()
         );
@@ -175,9 +181,20 @@ public class CreateOrderUseCase {
 
         String courierName = activeCouriers.get(courierId);
         String paymentMode = settings.getShippingPaymentMode().name();
-        String addressReference = normalizeOptional(command.shippingAddressReference());
+        CustomerAddress address = customerAddressBookService.resolveOwnedAddress(
+                command.customerId(),
+                command.shippingAddressId()
+        );
+        String addressReference = composeAddressSnapshot(address);
 
-        return new ResolvedShippingSelection(zoneCode, courierId, courierName, paymentMode, addressReference);
+        return new ResolvedShippingSelection(
+                zoneCode,
+                courierId,
+                courierName,
+                paymentMode,
+                address.getId(),
+                addressReference
+        );
     }
 
     private Set<String> parseActiveZones(String shippingZonesJson) {
@@ -259,11 +276,31 @@ public class CreateOrderUseCase {
         return value.trim();
     }
 
+    private String composeAddressSnapshot(CustomerAddress address) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(address.getRecipientName())
+                .append(" | ")
+                .append(address.getPhone())
+                .append(" | ")
+                .append(address.getLine1());
+        if (address.getLine2() != null && !address.getLine2().isBlank()) {
+            sb.append(", ").append(address.getLine2());
+        }
+        sb.append(", ").append(address.getComuna())
+                .append(", ").append(address.getCity())
+                .append(", ").append(address.getRegion());
+        if (address.getReference() != null && !address.getReference().isBlank()) {
+            sb.append(" | Ref: ").append(address.getReference());
+        }
+        return sb.toString();
+    }
+
     private record ResolvedShippingSelection(
             String zoneCode,
             String courierId,
             String courierName,
             String paymentMode,
+            UUID addressId,
             String addressReference
     ) {
     }

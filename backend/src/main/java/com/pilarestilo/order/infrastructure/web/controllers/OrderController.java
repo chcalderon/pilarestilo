@@ -71,7 +71,7 @@ public class OrderController {
                 PaymentMethod.valueOf(request.paymentMethod()),
                 request.shippingZoneCode(),
                 request.shippingCourierId(),
-                request.shippingAddressReference(),
+                request.shippingAddressId(),
                 request.notes(),
                 Money.zero(),
                 currentUser.role() == UserRole.SELLER,

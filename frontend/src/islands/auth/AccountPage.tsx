@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { User, Star, ShoppingBag, Trash2, Loader2, Camera } from 'lucide-react';
+import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import {
@@ -9,6 +9,11 @@ import {
   getMyProfile,
   updateMyProfile,
   changeMyPassword,
+  getMyAddresses,
+  createMyAddress,
+  updateMyAddress,
+  deleteMyAddress,
+  setMyAddressAsDefault,
   confirmOrderDelivery,
   getPaymentByOrder,
   submitPaymentProof,
@@ -20,17 +25,31 @@ import {
   type OrderDto,
   type PaymentDto,
   type UserProfileDto,
+  type CustomerAddressDto,
+  type CreateCustomerAddressRequest,
 } from '../../lib/api';
 
 interface Props {
   locale: 'es' | 'en';
 }
 
-type Tab = 'profile' | 'reviews' | 'orders' | 'notifications';
+type Tab = 'profile' | 'reviews' | 'orders' | 'addresses' | 'notifications';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
 type TimelineState = 'done' | 'current' | 'todo';
 type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
 type NotificationChannelPreference = 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
+type AddressDraft = {
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  comuna: string;
+  city: string;
+  region: string;
+  reference: string;
+  isDefault: boolean;
+};
 
 const ORDER_TIMELINE_FLOW: TimelineStepStatus[] = [
   'CREATED',
@@ -48,6 +67,36 @@ function sanitizePhoneDraft(value: string | null | undefined): string {
   if (!trimmed) return '';
   const digits = trimmed.replace(/\D/g, '');
   return digits.length >= 8 && digits.length <= 15 ? trimmed : '';
+}
+
+function emptyAddressDraft(): AddressDraft {
+  return {
+    label: '',
+    recipientName: '',
+    phone: '',
+    line1: '',
+    line2: '',
+    comuna: '',
+    city: '',
+    region: '',
+    reference: '',
+    isDefault: false,
+  };
+}
+
+function draftFromAddress(address: CustomerAddressDto): AddressDraft {
+  return {
+    label: address.label ?? '',
+    recipientName: address.recipientName ?? '',
+    phone: address.phone ?? '',
+    line1: address.line1 ?? '',
+    line2: address.line2 ?? '',
+    comuna: address.comuna ?? '',
+    city: address.city ?? '',
+    region: address.region ?? '',
+    reference: address.reference ?? '',
+    isDefault: Boolean(address.isDefault),
+  };
 }
 
 export default function AccountPage({ locale }: Props) {
@@ -85,6 +134,15 @@ export default function AccountPage({ locale }: Props) {
   const [avatarDragging, setAvatarDragging] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarFeedback, setAvatarFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [addressDeletingId, setAddressDeletingId] = useState<string | null>(null);
+  const [addressDefaultingId, setAddressDefaultingId] = useState<string | null>(null);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft());
+  const [addressFeedback, setAddressFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const es = locale === 'es';
   const displayName = profile?.fullName?.trim() ? profile.fullName : (user?.email ?? '');
@@ -104,7 +162,13 @@ export default function AccountPage({ locale }: Props) {
     const url = new URL(window.location.href);
     const searchParams = url.searchParams;
     const requestedTab = searchParams.get('tab');
-    if (requestedTab === 'profile' || requestedTab === 'reviews' || requestedTab === 'orders') {
+    if (
+      requestedTab === 'profile'
+      || requestedTab === 'reviews'
+      || requestedTab === 'orders'
+      || requestedTab === 'addresses'
+      || requestedTab === 'notifications'
+    ) {
       setTab(requestedTab);
     }
 
@@ -233,6 +297,22 @@ export default function AccountPage({ locale }: Props) {
       cancelled = true;
     };
   }, [effectiveToken]);
+
+  const loadAddresses = useCallback(async () => {
+    if (!effectiveToken) return;
+    setLoadingAddresses(true);
+    try {
+      const rows = await getMyAddresses(effectiveToken);
+      setAddresses(rows);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  }, [effectiveToken]);
+
+  useEffect(() => {
+    if (tab !== 'addresses' || !effectiveToken) return;
+    void loadAddresses();
+  }, [tab, effectiveToken, loadAddresses]);
 
   const handleAvatarFile = useCallback(async (file: File) => {
     if (!effectiveToken) return;
@@ -459,6 +539,129 @@ export default function AccountPage({ locale }: Props) {
       }));
     } finally {
       setGatewayCheckoutLoadingByOrder((prev) => ({ ...prev, [orderId]: false }));
+    }
+  }
+
+  function openCreateAddressModal() {
+    setEditingAddressId(null);
+    setAddressDraft(emptyAddressDraft());
+    setAddressFeedback(null);
+    setAddressModalOpen(true);
+  }
+
+  function openEditAddressModal(address: CustomerAddressDto) {
+    setEditingAddressId(address.id);
+    setAddressDraft(draftFromAddress(address));
+    setAddressFeedback(null);
+    setAddressModalOpen(true);
+  }
+
+  function normalizeAddressPayload(draft: AddressDraft): CreateCustomerAddressRequest {
+    return {
+      label: draft.label.trim(),
+      recipientName: draft.recipientName.trim(),
+      phone: draft.phone.trim(),
+      line1: draft.line1.trim(),
+      line2: draft.line2.trim() || undefined,
+      comuna: draft.comuna.trim(),
+      city: draft.city.trim(),
+      region: draft.region.trim(),
+      reference: draft.reference.trim() || undefined,
+      isDefault: draft.isDefault,
+    };
+  }
+
+  function validateAddressDraft(draft: AddressDraft): string | null {
+    if (!draft.label.trim()) return es ? 'Debes ingresar un alias de dirección.' : 'Address alias is required.';
+    if (!draft.recipientName.trim()) return es ? 'Debes ingresar destinatario.' : 'Recipient name is required.';
+    if (!draft.phone.trim()) return es ? 'Debes ingresar teléfono.' : 'Phone is required.';
+    const digits = draft.phone.replace(/\D/g, '');
+    if (digits.length < 8 || digits.length > 15) {
+      return es ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must contain between 8 and 15 digits.';
+    }
+    if (!draft.line1.trim()) return es ? 'Debes ingresar dirección.' : 'Address line is required.';
+    if (!draft.comuna.trim()) return es ? 'Debes ingresar comuna.' : 'Comuna is required.';
+    if (!draft.city.trim()) return es ? 'Debes ingresar ciudad.' : 'City is required.';
+    if (!draft.region.trim()) return es ? 'Debes ingresar región.' : 'Region is required.';
+    return null;
+  }
+
+  async function handleSaveAddress() {
+    if (!effectiveToken || addressSaving) return;
+    const validationError = validateAddressDraft(addressDraft);
+    if (validationError) {
+      setAddressFeedback({ type: 'error', text: validationError });
+      return;
+    }
+    setAddressSaving(true);
+    setAddressFeedback(null);
+    try {
+      const payload = normalizeAddressPayload(addressDraft);
+      if (editingAddressId) {
+        await updateMyAddress(editingAddressId, {
+          label: payload.label,
+          recipientName: payload.recipientName,
+          phone: payload.phone,
+          line1: payload.line1,
+          line2: payload.line2,
+          comuna: payload.comuna,
+          city: payload.city,
+          region: payload.region,
+          reference: payload.reference,
+        }, effectiveToken);
+        if (payload.isDefault) {
+          await setMyAddressAsDefault(editingAddressId, effectiveToken);
+        }
+      } else {
+        const created = await createMyAddress(payload, effectiveToken);
+        if (payload.isDefault && !created.isDefault) {
+          await setMyAddressAsDefault(created.id, effectiveToken);
+        }
+      }
+      await loadAddresses();
+      setAddressModalOpen(false);
+      setAddressFeedback({ type: 'success', text: es ? 'Dirección guardada.' : 'Address saved.' });
+    } catch (error) {
+      setAddressFeedback({
+        type: 'error',
+        text: error instanceof Error ? error.message : (es ? 'No se pudo guardar la dirección.' : 'Could not save address.'),
+      });
+    } finally {
+      setAddressSaving(false);
+    }
+  }
+
+  async function handleDeleteAddress(addressId: string) {
+    if (!effectiveToken || addressDeletingId) return;
+    setAddressDeletingId(addressId);
+    setAddressFeedback(null);
+    try {
+      await deleteMyAddress(addressId, effectiveToken);
+      await loadAddresses();
+    } catch (error) {
+      setAddressFeedback({
+        type: 'error',
+        text: error instanceof Error ? error.message : (es ? 'No se pudo eliminar la dirección.' : 'Could not delete address.'),
+      });
+    } finally {
+      setAddressDeletingId(null);
+    }
+  }
+
+  async function handleSetDefaultAddress(addressId: string) {
+    if (!effectiveToken || addressDefaultingId) return;
+    setAddressDefaultingId(addressId);
+    setAddressFeedback(null);
+    try {
+      await setMyAddressAsDefault(addressId, effectiveToken);
+      await loadAddresses();
+    } catch (error) {
+      setAddressFeedback({
+        type: 'error',
+        text: error instanceof Error ? error.message : (es ? 'No se pudo actualizar principal.' : 'Could not set default address.'),
+      });
+    } finally {
+      setAddressDefaultingId(null);
     }
   }
 
@@ -730,6 +933,7 @@ export default function AccountPage({ locale }: Props) {
     { id: 'profile', label: es ? 'Perfil' : 'Profile', icon: <User size={14} /> },
     { id: 'reviews', label: es ? 'Mis resenas' : 'My reviews', icon: <Star size={14} /> },
     { id: 'orders', label: es ? 'Mis pedidos' : 'My orders', icon: <ShoppingBag size={14} /> },
+    { id: 'addresses', label: es ? 'Direcciones' : 'Addresses', icon: <MapPin size={14} /> },
     { id: 'notifications', label: es ? 'Notificaciones' : 'Notifications', icon: null },
   ];
 
@@ -1018,6 +1222,167 @@ export default function AccountPage({ locale }: Props) {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+        )}
+
+        {tab === 'addresses' && (
+          <div className="max-w-4xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <p className="font-display text-pe-black text-xl">
+                {es ? 'Libreta de direcciones' : 'Address book'}
+              </p>
+              <button
+                type="button"
+                onClick={openCreateAddressModal}
+                className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors"
+              >
+                {es ? 'Agregar dirección' : 'Add address'}
+              </button>
+            </div>
+
+            {addressFeedback && (
+              <p className={`font-sans text-[0.74rem] ${addressFeedback.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>
+                {addressFeedback.text}
+              </p>
+            )}
+
+            {loadingAddresses ? (
+              <div className="flex justify-center py-16">
+                <Loader2 size={24} className="animate-spin text-pe-rose/60" />
+              </div>
+            ) : addresses.length === 0 ? (
+              <div className="bg-pe-white border border-pe-black/8 p-6">
+                <p className="font-sans text-sm text-pe-charcoal/70">
+                  {es
+                    ? 'Aún no tienes direcciones. Agrega una para usarla en el carrito.'
+                    : 'You have no addresses yet. Add one to use it at checkout.'}
+                </p>
+              </div>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {addresses.map((address) => (
+                  <li key={address.id} className="bg-pe-white border border-pe-black/8 p-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-display text-pe-black text-lg">{address.label}</p>
+                      {address.isDefault && (
+                        <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/12 text-pe-rose-deep">
+                          {es ? 'Principal' : 'Default'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-sans text-sm text-pe-charcoal/80">{address.recipientName}</p>
+                    <p className="font-sans text-sm text-pe-charcoal/65">{address.phone}</p>
+                    <p className="font-sans text-sm text-pe-charcoal/70">
+                      {address.line1}
+                      {address.line2 ? `, ${address.line2}` : ''}
+                    </p>
+                    <p className="font-sans text-sm text-pe-charcoal/70">
+                      {address.comuna}, {address.city}, {address.region}
+                    </p>
+                    {address.reference && (
+                      <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+                        {es ? 'Referencia:' : 'Reference:'} {address.reference}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditAddressModal(address)}
+                        className="px-3 py-1.5 border border-pe-black/15 text-pe-charcoal/75 font-sans text-[0.66rem] tracking-wider uppercase hover:border-pe-charcoal/30 transition-colors"
+                      >
+                        {es ? 'Editar' : 'Edit'}
+                      </button>
+                      {!address.isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleSetDefaultAddress(address.id);
+                          }}
+                          disabled={addressDefaultingId === address.id}
+                          className="px-3 py-1.5 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors disabled:opacity-60"
+                        >
+                          {addressDefaultingId === address.id
+                            ? (es ? 'Guardando...' : 'Saving...')
+                            : (es ? 'Marcar principal' : 'Set default')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDeleteAddress(address.id);
+                        }}
+                        disabled={addressDeletingId === address.id}
+                        className="px-3 py-1.5 border border-red-200 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
+                      >
+                        {addressDeletingId === address.id
+                          ? (es ? 'Eliminando...' : 'Deleting...')
+                          : (es ? 'Eliminar' : 'Delete')}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {addressModalOpen && (
+              <div className="fixed inset-0 z-[90] bg-black/45 flex items-center justify-center p-4">
+                <div className="w-full max-w-xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between">
+                    <p className="font-display text-pe-black text-xl">
+                      {editingAddressId
+                        ? (es ? 'Editar dirección' : 'Edit address')
+                        : (es ? 'Nueva dirección' : 'New address')}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setAddressModalOpen(false)}
+                      className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/50 hover:text-pe-charcoal"
+                    >
+                      {es ? 'Cerrar' : 'Close'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input value={addressDraft.label} onChange={(e) => setAddressDraft((p) => ({ ...p, label: e.target.value }))} placeholder={es ? 'Alias (Casa, Oficina)' : 'Label (Home, Office)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.recipientName} onChange={(e) => setAddressDraft((p) => ({ ...p, recipientName: e.target.value }))} placeholder={es ? 'Destinatario' : 'Recipient'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.phone} onChange={(e) => setAddressDraft((p) => ({ ...p, phone: e.target.value }))} placeholder={es ? 'Teléfono' : 'Phone'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.line1} onChange={(e) => setAddressDraft((p) => ({ ...p, line1: e.target.value }))} placeholder={es ? 'Dirección (línea 1)' : 'Address line 1'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.line2} onChange={(e) => setAddressDraft((p) => ({ ...p, line2: e.target.value }))} placeholder={es ? 'Dirección (línea 2, opcional)' : 'Address line 2 (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.comuna} onChange={(e) => setAddressDraft((p) => ({ ...p, comuna: e.target.value }))} placeholder={es ? 'Comuna' : 'Comuna'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
+                    <input value={addressDraft.city} onChange={(e) => setAddressDraft((p) => ({ ...p, city: e.target.value }))} placeholder={es ? 'Ciudad' : 'City'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
+                    <input value={addressDraft.region} onChange={(e) => setAddressDraft((p) => ({ ...p, region: e.target.value }))} placeholder={es ? 'Región' : 'Region'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <input value={addressDraft.reference} onChange={(e) => setAddressDraft((p) => ({ ...p, reference: e.target.value }))} placeholder={es ? 'Referencia (opcional)' : 'Reference (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                  </div>
+                  <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal/75">
+                    <input
+                      type="checkbox"
+                      checked={addressDraft.isDefault}
+                      onChange={(e) => setAddressDraft((p) => ({ ...p, isDefault: e.target.checked }))}
+                      className="accent-pe-rose"
+                    />
+                    {es ? 'Dejar como principal' : 'Set as default'}
+                  </label>
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleSaveAddress();
+                      }}
+                      disabled={addressSaving}
+                      className="px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+                    >
+                      {addressSaving ? (es ? 'Guardando...' : 'Saving...') : (es ? 'Guardar dirección' : 'Save address')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddressModalOpen(false)}
+                      className="px-4 py-2 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.68rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                    >
+                      {es ? 'Cancelar' : 'Cancel'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

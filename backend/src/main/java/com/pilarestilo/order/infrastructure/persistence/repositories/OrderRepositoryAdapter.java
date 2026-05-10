@@ -61,6 +61,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setShippingCourierId(order.getShippingCourierId());
         entity.setShippingCourierName(order.getShippingCourierName());
         entity.setShippingPaymentMode(order.getShippingPaymentMode());
+        entity.setShippingAddressId(order.getShippingAddressId());
         entity.setShippingAddressReference(order.getShippingAddressReference());
         entity.setNotes(order.getNotes());
         entity.setStatus(order.getStatus());
@@ -106,6 +107,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getShippingCourierId(),
                 entity.getShippingCourierName(),
                 entity.getShippingPaymentMode(),
+                entity.getShippingAddressId(),
                 entity.getShippingAddressReference(),
                 entity.getNotes(),
                 entity.getStatus(),

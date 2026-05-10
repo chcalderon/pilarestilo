@@ -92,7 +92,7 @@ public class OrderController {
                     request.paymentMethod(),
                     request.shippingZoneCode(),
                     request.shippingCourierId(),
-                    request.shippingAddressReference(),
+                    request.shippingAddressId(),
                     request.notes(),
                     request.discountAmount(),
                     request.discountCurrency(),

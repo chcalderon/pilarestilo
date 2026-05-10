@@ -63,6 +63,23 @@ class AuthorizationGuardsIT {
 
         mvc.perform(get("/api/payments/order/{orderId}", UUID.randomUUID()))
                 .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/auth/me/addresses"))
+                .andExpect(status().isForbidden());
+
+        String addressBody = om.writeValueAsString(Map.of(
+                "label", "Casa",
+                "recipientName", "Anon User",
+                "phone", "+56912345678",
+                "line1", "Sin auth 123",
+                "comuna", "Las Condes",
+                "city", "Santiago",
+                "region", "Metropolitana"
+        ));
+        mvc.perform(post("/api/auth/me/addresses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(addressBody))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -123,7 +140,8 @@ class AuthorizationGuardsIT {
         UUID customerAId = getCurrentUserId(customerAToken);
 
         UUID productId = createProduct(customerAToken, "Auth Guard Product");
-        UUID orderId = createOrder(customerAToken, customerAId, productId);
+        UUID addressId = createAddress(customerAToken);
+        UUID orderId = createOrder(customerAToken, customerAId, productId, addressId);
 
         mvc.perform(get("/api/orders/mine")
                         .header("Authorization", bearer(customerAToken)))
@@ -242,11 +260,14 @@ class AuthorizationGuardsIT {
         return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
     }
 
-    private UUID createOrder(String token, UUID customerId, UUID productId) throws Exception {
+    private UUID createOrder(String token, UUID customerId, UUID productId, UUID shippingAddressId) throws Exception {
         String orderBody = om.writeValueAsString(Map.of(
                 "customerId", customerId,
                 "items", List.of(Map.of("productId", productId, "quantity", 1)),
                 "paymentMethod", "BANK_TRANSFER",
+                "shippingZoneCode", "LOCAL",
+                "shippingCourierId", "chilexpress",
+                "shippingAddressId", shippingAddressId,
                 "notes", "authorization test order"
         ));
 
@@ -257,6 +278,25 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
+        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
+    }
+
+    private UUID createAddress(String token) throws Exception {
+        String body = om.writeValueAsString(Map.of(
+                "label", "Casa",
+                "recipientName", "Auth Guard Tester",
+                "phone", "+56912345678",
+                "line1", "Av Apoquindo 123",
+                "comuna", "Las Condes",
+                "city", "Santiago",
+                "region", "Metropolitana"
+        ));
+        MvcResult created = mvc.perform(post("/api/auth/me/addresses")
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn();
         return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
     }
 

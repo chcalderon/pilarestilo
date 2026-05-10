@@ -114,6 +114,7 @@ class OrderTest {
                 SHIPPING_COURIER_ID,
                 SHIPPING_COURIER_NAME,
                 SHIPPING_PAYMENT_MODE,
+                UUID.randomUUID(),
                 null,
                 null
         );

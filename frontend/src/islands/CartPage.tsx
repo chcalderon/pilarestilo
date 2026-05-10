@@ -4,11 +4,17 @@ import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
   createOrder,
+  createMyAddress,
+  getMyAddresses,
   getProduct,
   getPublicShippingConfig,
   getPublicStoreSettings,
+  setMyAddressAsDefault,
+  updateMyAddress,
   validateDiscountCodeForUser,
+  type CustomerAddressDto,
   type CourierConfig,
+  type CreateCustomerAddressRequest,
   type DiscountCodeDto,
   type PaymentGatewayProvider,
   type ShippingPaymentMode,
@@ -24,6 +30,57 @@ interface Props {
 interface StockConflict {
   type: 'OUT_OF_STOCK' | 'INSUFFICIENT_STOCK';
   availableQty: number;
+}
+
+interface AddressDraft {
+  label: string;
+  recipientName: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  comuna: string;
+  city: string;
+  region: string;
+  reference: string;
+  isDefault: boolean;
+}
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveOrderProductId(item: { id: string; productId?: string }): string | null {
+  const productId = item.productId?.trim() || item.id.split('::')[0]?.trim() || '';
+  return UUID_REGEX.test(productId) ? productId : null;
+}
+
+function emptyAddressDraft(): AddressDraft {
+  return {
+    label: '',
+    recipientName: '',
+    phone: '',
+    line1: '',
+    line2: '',
+    comuna: '',
+    city: '',
+    region: '',
+    reference: '',
+    isDefault: false,
+  };
+}
+
+function draftFromAddress(address: CustomerAddressDto): AddressDraft {
+  return {
+    label: address.label ?? '',
+    recipientName: address.recipientName ?? '',
+    phone: address.phone ?? '',
+    line1: address.line1 ?? '',
+    line2: address.line2 ?? '',
+    comuna: address.comuna ?? '',
+    city: address.city ?? '',
+    region: address.region ?? '',
+    reference: address.reference ?? '',
+    isDefault: address.isDefault,
+  };
 }
 
 const labels = {
@@ -44,12 +101,35 @@ const labels = {
     shippingSectionTitle: 'Metodo de envio',
     shippingZoneLabel: 'Zona de envio',
     shippingCourierLabel: 'Courier',
-    shippingReferenceLabel: 'Referencia de entrega',
-    shippingReferencePlaceholder: 'Comuna, direccion o punto de retiro',
+    shippingAddressTitle: 'Direccion de entrega',
+    shippingAddressChoose: 'Elegir o cambiar direccion',
+    shippingAddressMissing: 'Debes seleccionar una direccion para finalizar la compra.',
+    shippingAddressCreate: 'Agregar direccion',
+    shippingAddressNone: 'No tienes direcciones guardadas.',
+    shippingAddressSelectModalTitle: 'Selecciona direccion de entrega',
+    shippingAddressEdit: 'Editar',
+    shippingAddressSetDefault: 'Marcar principal',
+    shippingAddressDefaultBadge: 'Principal',
+    shippingAddressUse: 'Usar direccion',
+    shippingAddressFormTitleNew: 'Nueva direccion',
+    shippingAddressFormTitleEdit: 'Editar direccion',
+    shippingAddressSave: 'Guardar direccion',
+    shippingAddressCancel: 'Cancelar',
+    shippingAddressLabel: 'Alias',
+    shippingAddressRecipient: 'Destinatario',
+    shippingAddressPhone: 'Telefono',
+    shippingAddressLine1: 'Direccion',
+    shippingAddressLine2: 'Departamento (opcional)',
+    shippingAddressComuna: 'Comuna',
+    shippingAddressCity: 'Ciudad',
+    shippingAddressRegion: 'Region',
+    shippingAddressReference: 'Referencia (opcional)',
+    shippingAddressSetDefaultToggle: 'Dejar como principal',
     shippingPaymentModeLabel: 'Modalidad',
     shippingPaymentModePorPagar: 'Envio por pagar',
     shippingSelectionRequired: 'Debes seleccionar zona y courier antes de finalizar la compra.',
     shippingUnavailable: 'No hay zonas o couriers activos para despacho. Contacta soporte.',
+    legacyCartItemError: 'Tu carrito contiene productos antiguos no sincronizados. Eliminalos y vuelve a agregarlos desde catalogo.',
     transferDetailsTitle: 'Datos para transferencia',
     transferHolder: 'Nombre',
     transferEmail: 'Correo',
@@ -87,12 +167,35 @@ const labels = {
     shippingSectionTitle: 'Shipping method',
     shippingZoneLabel: 'Shipping zone',
     shippingCourierLabel: 'Courier',
-    shippingReferenceLabel: 'Delivery reference',
-    shippingReferencePlaceholder: 'District, address, or pickup point',
+    shippingAddressTitle: 'Delivery address',
+    shippingAddressChoose: 'Choose or change address',
+    shippingAddressMissing: 'You must select a delivery address before checkout.',
+    shippingAddressCreate: 'Add address',
+    shippingAddressNone: 'You do not have saved addresses.',
+    shippingAddressSelectModalTitle: 'Select delivery address',
+    shippingAddressEdit: 'Edit',
+    shippingAddressSetDefault: 'Set default',
+    shippingAddressDefaultBadge: 'Default',
+    shippingAddressUse: 'Use address',
+    shippingAddressFormTitleNew: 'New address',
+    shippingAddressFormTitleEdit: 'Edit address',
+    shippingAddressSave: 'Save address',
+    shippingAddressCancel: 'Cancel',
+    shippingAddressLabel: 'Label',
+    shippingAddressRecipient: 'Recipient',
+    shippingAddressPhone: 'Phone',
+    shippingAddressLine1: 'Address line 1',
+    shippingAddressLine2: 'Address line 2 (optional)',
+    shippingAddressComuna: 'Comuna',
+    shippingAddressCity: 'City',
+    shippingAddressRegion: 'Region',
+    shippingAddressReference: 'Reference (optional)',
+    shippingAddressSetDefaultToggle: 'Set as default',
     shippingPaymentModeLabel: 'Mode',
     shippingPaymentModePorPagar: 'Shipping paid on pickup',
     shippingSelectionRequired: 'You must select a shipping zone and courier before checkout.',
     shippingUnavailable: 'There are no active shipping zones or couriers. Contact support.',
+    legacyCartItemError: 'Your cart contains legacy items that are no longer synced. Remove them and add them again from the catalog.',
     transferDetailsTitle: 'Bank transfer details',
     transferHolder: 'Name',
     transferEmail: 'Email',
@@ -142,7 +245,15 @@ export default function CartPage({ locale }: Props) {
   const [shippingPaymentMode, setShippingPaymentMode] = useState<ShippingPaymentMode>('POR_PAGAR');
   const [shippingZoneCode, setShippingZoneCode] = useState<ShippingZoneCode>('LOCAL');
   const [shippingCourierId, setShippingCourierId] = useState('');
-  const [shippingAddressReference, setShippingAddressReference] = useState('');
+  const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [selectedShippingAddressId, setSelectedShippingAddressId] = useState<string>('');
+  const [showAddressSelectModal, setShowAddressSelectModal] = useState(false);
+  const [showAddressFormModal, setShowAddressFormModal] = useState(false);
+  const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft());
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [settingDefaultAddressId, setSettingDefaultAddressId] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCodeDto | null>(null);
   const [discountApplying, setDiscountApplying] = useState(false);
@@ -183,6 +294,129 @@ export default function CartPage({ locale }: Props) {
     return mode;
   }
 
+  const selectedAddress = useMemo(
+    () => addresses.find((address) => address.id === selectedShippingAddressId) ?? null,
+    [addresses, selectedShippingAddressId]
+  );
+
+  async function loadAddresses() {
+    if (!effectiveToken) {
+      setAddresses([]);
+      setSelectedShippingAddressId('');
+      return;
+    }
+    setLoadingAddresses(true);
+    try {
+      const rows = await getMyAddresses(effectiveToken);
+      setAddresses(rows);
+      const selectedStillExists = rows.some((row) => row.id === selectedShippingAddressId);
+      if (selectedStillExists) return;
+      const defaultAddress = rows.find((row) => row.isDefault) ?? rows[0];
+      setSelectedShippingAddressId(defaultAddress?.id ?? '');
+    } catch {
+      setAddresses([]);
+      setSelectedShippingAddressId('');
+    } finally {
+      setLoadingAddresses(false);
+    }
+  }
+
+  function validateAddressDraft(draft: AddressDraft): string | null {
+    if (!draft.label.trim()) return locale === 'es' ? 'Debes ingresar alias de dirección.' : 'Address label is required.';
+    if (!draft.recipientName.trim()) return locale === 'es' ? 'Debes ingresar destinatario.' : 'Recipient is required.';
+    const digits = draft.phone.replace(/\D/g, '');
+    if (digits.length < 8 || digits.length > 15) {
+      return locale === 'es' ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must contain between 8 and 15 digits.';
+    }
+    if (!draft.line1.trim()) return locale === 'es' ? 'Debes ingresar dirección.' : 'Address line is required.';
+    if (!draft.comuna.trim()) return locale === 'es' ? 'Debes ingresar comuna.' : 'Comuna is required.';
+    if (!draft.city.trim()) return locale === 'es' ? 'Debes ingresar ciudad.' : 'City is required.';
+    if (!draft.region.trim()) return locale === 'es' ? 'Debes ingresar región.' : 'Region is required.';
+    return null;
+  }
+
+  function openCreateAddressModal() {
+    setEditingAddressId(null);
+    setAddressDraft(emptyAddressDraft());
+    setShowAddressSelectModal(false);
+    setShowAddressFormModal(true);
+  }
+
+  function openEditAddressModal(address: CustomerAddressDto) {
+    setEditingAddressId(address.id);
+    setAddressDraft(draftFromAddress(address));
+    setShowAddressSelectModal(false);
+    setShowAddressFormModal(true);
+  }
+
+  async function handleSaveAddress() {
+    if (!effectiveToken || savingAddress) return;
+    const validationError = validateAddressDraft(addressDraft);
+    if (validationError) {
+      showToast('error', validationError);
+      return;
+    }
+    setSavingAddress(true);
+    const payload: CreateCustomerAddressRequest = {
+      label: addressDraft.label.trim(),
+      recipientName: addressDraft.recipientName.trim(),
+      phone: addressDraft.phone.trim(),
+      line1: addressDraft.line1.trim(),
+      line2: addressDraft.line2.trim() || undefined,
+      comuna: addressDraft.comuna.trim(),
+      city: addressDraft.city.trim(),
+      region: addressDraft.region.trim(),
+      reference: addressDraft.reference.trim() || undefined,
+      isDefault: addressDraft.isDefault,
+    };
+    try {
+      let targetId = editingAddressId;
+      if (editingAddressId) {
+        await updateMyAddress(editingAddressId, {
+          label: payload.label,
+          recipientName: payload.recipientName,
+          phone: payload.phone,
+          line1: payload.line1,
+          line2: payload.line2,
+          comuna: payload.comuna,
+          city: payload.city,
+          region: payload.region,
+          reference: payload.reference,
+        }, effectiveToken);
+        targetId = editingAddressId;
+      } else {
+        const created = await createMyAddress(payload, effectiveToken);
+        targetId = created.id;
+      }
+      if (payload.isDefault && targetId) {
+        await setMyAddressAsDefault(targetId, effectiveToken);
+      }
+      await loadAddresses();
+      if (targetId) {
+        setSelectedShippingAddressId(targetId);
+      }
+      setShowAddressFormModal(false);
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : l.checkoutError);
+    } finally {
+      setSavingAddress(false);
+    }
+  }
+
+  async function handleSetDefaultAddress(addressId: string) {
+    if (!effectiveToken || settingDefaultAddressId) return;
+    setSettingDefaultAddressId(addressId);
+    try {
+      await setMyAddressAsDefault(addressId, effectiveToken);
+      await loadAddresses();
+      setSelectedShippingAddressId(addressId);
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : l.checkoutError);
+    } finally {
+      setSettingDefaultAddressId(null);
+    }
+  }
+
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message });
     window.setTimeout(() => setToast(null), 3200);
@@ -199,7 +433,13 @@ export default function CartPage({ locale }: Props) {
 
   async function findStockConflicts(): Promise<Record<string, StockConflict>> {
     const checks = await Promise.all(items.map(async (item) => {
-      const productId = item.productId ?? item.id;
+      const productId = resolveOrderProductId(item);
+      if (!productId) {
+        return {
+          itemId: item.id,
+          conflict: { type: 'OUT_OF_STOCK' as const, availableQty: 0 },
+        };
+      }
       try {
         const latest = await getProduct(productId);
         if (!latest.active || latest.stock <= 0) {
@@ -286,6 +526,11 @@ export default function CartPage({ locale }: Props) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    void loadAddresses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveToken]);
 
   useEffect(() => {
     setStockConflicts((current) => {
@@ -375,6 +620,20 @@ export default function CartPage({ locale }: Props) {
       showToast('error', l.shippingSelectionRequired);
       return;
     }
+    if (!selectedShippingAddressId) {
+      showToast('error', l.shippingAddressMissing);
+      if (addresses.length === 0) {
+        openCreateAddressModal();
+      } else {
+        setShowAddressSelectModal(true);
+      }
+      return;
+    }
+
+    if (items.some((item) => !resolveOrderProductId(item))) {
+      showToast('error', l.legacyCartItemError);
+      return;
+    }
 
     if (!authUser || !effectiveToken) {
       window.location.href = `/${locale}/auth/login?redirect=/${locale}/cart`;
@@ -397,7 +656,7 @@ export default function CartPage({ locale }: Props) {
         {
           customerId: authUser.id,
           items: items.map((item) => ({
-            productId: item.productId ?? item.id,
+            productId: resolveOrderProductId(item) as string,
             quantity: item.quantity,
             variantColor: item.variantColor,
             variantSize: item.variantSize,
@@ -405,7 +664,7 @@ export default function CartPage({ locale }: Props) {
           paymentMethod,
           shippingZoneCode,
           shippingCourierId,
-          shippingAddressReference: shippingAddressReference.trim() || undefined,
+          shippingAddressId: selectedShippingAddressId,
           discountCode: appliedDiscount?.code,
         },
         effectiveToken
@@ -708,18 +967,64 @@ export default function CartPage({ locale }: Props) {
                         ))}
                       </select>
                     </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
-                        {l.shippingReferenceLabel}
-                      </span>
-                      <input
-                        type="text"
-                        value={shippingAddressReference}
-                        onChange={(event) => setShippingAddressReference(event.target.value)}
-                        placeholder={l.shippingReferencePlaceholder}
-                        className="w-full border border-pe-black/12 bg-pe-white px-2.5 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
-                      />
-                    </label>
+                    <div className="border border-pe-black/10 bg-pe-cream/30 px-3 py-2">
+                      <p className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
+                        {l.shippingAddressTitle}
+                      </p>
+                      {loadingAddresses ? (
+                        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/70">
+                          {locale === 'es' ? 'Cargando direcciones...' : 'Loading addresses...'}
+                        </p>
+                      ) : selectedAddress ? (
+                        <div className="mt-1.5">
+                          <div className="flex items-center gap-2">
+                            <p className="font-sans text-[0.82rem] text-pe-charcoal">{selectedAddress.label}</p>
+                            {selectedAddress.isDefault && (
+                              <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-deep">
+                                {l.shippingAddressDefaultBadge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-sans text-[0.72rem] text-pe-charcoal/75">{selectedAddress.recipientName} · {selectedAddress.phone}</p>
+                          <p className="font-sans text-[0.72rem] text-pe-charcoal/70">
+                            {selectedAddress.line1}
+                            {selectedAddress.line2 ? `, ${selectedAddress.line2}` : ''}
+                          </p>
+                          <p className="font-sans text-[0.72rem] text-pe-charcoal/70">
+                            {selectedAddress.comuna}, {selectedAddress.city}, {selectedAddress.region}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mt-1 font-sans text-[0.74rem] text-pe-rose-deep">
+                          {l.shippingAddressNone}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddressSelectModal(true)}
+                          className="px-2.5 py-1.5 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.62rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                        >
+                          {l.shippingAddressChoose}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={openCreateAddressModal}
+                          className="px-2.5 py-1.5 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.62rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors"
+                        >
+                          {l.shippingAddressCreate}
+                        </button>
+                        {selectedAddress && (
+                          <button
+                            type="button"
+                            onClick={() => openEditAddressModal(selectedAddress)}
+                            className="px-2.5 py-1.5 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.62rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                          >
+                            {l.shippingAddressEdit}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60">
                     {l.shippingPaymentModeLabel}: {shippingPaymentModeLabel(shippingPaymentMode)}
@@ -810,7 +1115,7 @@ export default function CartPage({ locale }: Props) {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={checkingOut || stockConflictCount > 0 || shippingUnavailable}
+                  disabled={checkingOut || stockConflictCount > 0 || shippingUnavailable || (!!authUser && !selectedShippingAddressId)}
                   className="w-full bg-pe-gold text-pe-black font-sans text-xs tracking-widest uppercase py-3 hover:bg-opacity-90 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {checkingOut ? (
@@ -833,6 +1138,11 @@ export default function CartPage({ locale }: Props) {
                     {l.shippingUnavailable}
                   </p>
                 )}
+                {!!authUser && !selectedShippingAddressId && (
+                  <p className="mt-2 font-sans text-[0.68rem] text-[#8f2d3b]">
+                    {l.shippingAddressMissing}
+                  </p>
+                )}
 
                 <a
                   href={`/${locale}/products`}
@@ -840,6 +1150,163 @@ export default function CartPage({ locale }: Props) {
                 >
                   {l.continueShopping}
                 </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAddressSelectModal && (
+          <div className="fixed inset-0 z-[90] bg-black/45 flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-pe-black text-xl">{l.shippingAddressSelectModalTitle}</p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddressSelectModal(false)}
+                  className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/55 hover:text-pe-charcoal"
+                >
+                  {l.shippingAddressCancel}
+                </button>
+              </div>
+
+              {addresses.length === 0 ? (
+                <div className="border border-pe-black/10 bg-pe-cream/35 px-3 py-3">
+                  <p className="font-sans text-sm text-pe-charcoal/70">{l.shippingAddressNone}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddressSelectModal(false);
+                      openCreateAddressModal();
+                    }}
+                    className="mt-2 px-3 py-1.5 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors"
+                  >
+                    {l.shippingAddressCreate}
+                  </button>
+                </div>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {addresses.map((address) => (
+                    <li key={address.id} className="border border-pe-black/10 bg-pe-cream/20 px-3 py-2">
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="shipping-address"
+                          checked={selectedShippingAddressId === address.id}
+                          onChange={() => setSelectedShippingAddressId(address.id)}
+                          className="mt-1 accent-pe-rose"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-sans text-sm text-pe-charcoal">{address.label}</p>
+                            {address.isDefault && (
+                              <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-deep">
+                                {l.shippingAddressDefaultBadge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-sans text-[0.74rem] text-pe-charcoal/75">{address.recipientName} · {address.phone}</p>
+                          <p className="font-sans text-[0.72rem] text-pe-charcoal/65">
+                            {address.line1}{address.line2 ? `, ${address.line2}` : ''}, {address.comuna}, {address.city}, {address.region}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditAddressModal(address)}
+                              className="px-2 py-1 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.58rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                            >
+                              {l.shippingAddressEdit}
+                            </button>
+                            {!address.isDefault && (
+                              <button
+                                type="button"
+                                onClick={() => { void handleSetDefaultAddress(address.id); }}
+                                disabled={settingDefaultAddressId === address.id}
+                                className="px-2 py-1 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.58rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors disabled:opacity-60"
+                              >
+                                {settingDefaultAddressId === address.id
+                                  ? (locale === 'es' ? 'Guardando...' : 'Saving...')
+                                  : l.shippingAddressSetDefault}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddressSelectModal(false)}
+                  className="px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors"
+                >
+                  {l.shippingAddressUse}
+                </button>
+                <button
+                  type="button"
+                  onClick={openCreateAddressModal}
+                  className="px-4 py-2 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.68rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                >
+                  {l.shippingAddressCreate}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAddressFormModal && (
+          <div className="fixed inset-0 z-[95] bg-black/50 flex items-center justify-center p-4">
+            <div className="w-full max-w-xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-pe-black text-xl">
+                  {editingAddressId ? l.shippingAddressFormTitleEdit : l.shippingAddressFormTitleNew}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddressFormModal(false)}
+                  className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/55 hover:text-pe-charcoal"
+                >
+                  {l.shippingAddressCancel}
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input value={addressDraft.label} onChange={(e) => setAddressDraft((p) => ({ ...p, label: e.target.value }))} placeholder={l.shippingAddressLabel} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.recipientName} onChange={(e) => setAddressDraft((p) => ({ ...p, recipientName: e.target.value }))} placeholder={l.shippingAddressRecipient} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.phone} onChange={(e) => setAddressDraft((p) => ({ ...p, phone: e.target.value }))} placeholder={l.shippingAddressPhone} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.line1} onChange={(e) => setAddressDraft((p) => ({ ...p, line1: e.target.value }))} placeholder={l.shippingAddressLine1} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.line2} onChange={(e) => setAddressDraft((p) => ({ ...p, line2: e.target.value }))} placeholder={l.shippingAddressLine2} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.comuna} onChange={(e) => setAddressDraft((p) => ({ ...p, comuna: e.target.value }))} placeholder={l.shippingAddressComuna} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
+                <input value={addressDraft.city} onChange={(e) => setAddressDraft((p) => ({ ...p, city: e.target.value }))} placeholder={l.shippingAddressCity} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
+                <input value={addressDraft.region} onChange={(e) => setAddressDraft((p) => ({ ...p, region: e.target.value }))} placeholder={l.shippingAddressRegion} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <input value={addressDraft.reference} onChange={(e) => setAddressDraft((p) => ({ ...p, reference: e.target.value }))} placeholder={l.shippingAddressReference} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+              </div>
+              <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal/75">
+                <input
+                  type="checkbox"
+                  checked={addressDraft.isDefault}
+                  onChange={(e) => setAddressDraft((p) => ({ ...p, isDefault: e.target.checked }))}
+                  className="accent-pe-rose"
+                />
+                {l.shippingAddressSetDefaultToggle}
+              </label>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { void handleSaveAddress(); }}
+                  disabled={savingAddress}
+                  className="px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+                >
+                  {savingAddress ? (locale === 'es' ? 'Guardando...' : 'Saving...') : l.shippingAddressSave}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddressFormModal(false)}
+                  className="px-4 py-2 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.68rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                >
+                  {l.shippingAddressCancel}
+                </button>
               </div>
             </div>
           </div>

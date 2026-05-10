@@ -26,10 +26,13 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/google").permitAll()
+                        .requestMatchers("/api/auth/me/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET,  "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/inventory/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/wishlist/shared/**").permitAll()

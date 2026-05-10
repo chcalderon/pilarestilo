@@ -118,7 +118,8 @@ class OrderInventorySagaTest {
                 "chilexpress",
                 "Chilexpress",
                 "POR_PAGAR",
-                null,
+                UUID.randomUUID(),
+                "Av Apoquindo 123",
                 null
         );
     }

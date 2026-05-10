@@ -9,6 +9,8 @@ import com.pilarestilo.orderservice.persistence.OrderItemEntity;
 import com.pilarestilo.orderservice.persistence.OrderRepository;
 import com.pilarestilo.orderservice.persistence.PaymentEntity;
 import com.pilarestilo.orderservice.persistence.PaymentRepository;
+import com.pilarestilo.orderservice.persistence.CustomerAddressEntity;
+import com.pilarestilo.orderservice.persistence.CustomerAddressRepository;
 import com.pilarestilo.orderservice.persistence.ProductEntity;
 import com.pilarestilo.orderservice.persistence.ProductRepository;
 import com.pilarestilo.orderservice.persistence.SystemSettingsEntity;
@@ -48,17 +50,20 @@ public class OrderCommandService {
     private final PaymentRepository paymentRepository;
     private final SystemSettingsRepository systemSettingsRepository;
     private final InventoryCommandClient inventoryCommandClient;
+    private final CustomerAddressRepository customerAddressRepository;
 
     public OrderCommandService(OrderRepository orderRepository,
                                ProductRepository productRepository,
                                PaymentRepository paymentRepository,
                                SystemSettingsRepository systemSettingsRepository,
-                               InventoryCommandClient inventoryCommandClient) {
+                               InventoryCommandClient inventoryCommandClient,
+                               CustomerAddressRepository customerAddressRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.paymentRepository = paymentRepository;
         this.systemSettingsRepository = systemSettingsRepository;
         this.inventoryCommandClient = inventoryCommandClient;
+        this.customerAddressRepository = customerAddressRepository;
     }
 
     @Transactional
@@ -90,6 +95,7 @@ public class OrderCommandService {
         order.setShippingCourierId(shippingSelection.courierId());
         order.setShippingCourierName(shippingSelection.courierName());
         order.setShippingPaymentMode(shippingSelection.paymentMode());
+        order.setShippingAddressId(shippingSelection.addressId());
         order.setShippingAddressReference(shippingSelection.addressReference());
         order.setNotes(request.notes());
         order.setStatus(OrderStatus.CREATED.name());
@@ -153,6 +159,9 @@ public class OrderCommandService {
         }
         if (request.shippingCourierId() == null || request.shippingCourierId().isBlank()) {
             throw new IllegalArgumentException("Shipping courier is required");
+        }
+        if (request.shippingAddressId() == null) {
+            throw new IllegalArgumentException("shippingAddressId is required");
         }
     }
 
@@ -244,7 +253,12 @@ public class OrderCommandService {
     private ShippingSelection resolveShippingSelection(CreateOrderRequest request) {
         String zoneCode = request.shippingZoneCode().trim().toUpperCase(Locale.ROOT);
         String courierId = request.shippingCourierId().trim();
-        String addressReference = normalizeOptional(request.shippingAddressReference());
+        CustomerAddressEntity address = customerAddressRepository.findByIdAndCustomerId(
+                        request.shippingAddressId(),
+                        request.customerId()
+                )
+                .orElseThrow(() -> new IllegalArgumentException("Shipping address not found for customer"));
+        String addressReference = composeAddressSnapshot(address);
 
         SystemSettingsEntity settings = systemSettingsRepository.findById(DEFAULT_SYSTEM_SETTINGS_ID).orElse(null);
         Set<String> activeZoneCodes = parseActiveShippingZones(settings == null ? null : settings.getShippingZonesJson());
@@ -265,6 +279,7 @@ public class OrderCommandService {
                 courierId,
                 activeCouriers.get(courierId),
                 paymentMode,
+                address.getId(),
                 addressReference
         );
     }
@@ -452,6 +467,25 @@ public class OrderCommandService {
         return value.trim();
     }
 
+    private String composeAddressSnapshot(CustomerAddressEntity address) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(address.getRecipientName())
+                .append(" | ")
+                .append(address.getPhone())
+                .append(" | ")
+                .append(address.getLine1());
+        if (address.getLine2() != null && !address.getLine2().isBlank()) {
+            sb.append(", ").append(address.getLine2().trim());
+        }
+        sb.append(", ").append(address.getComuna())
+                .append(", ").append(address.getCity())
+                .append(", ").append(address.getRegion());
+        if (address.getReference() != null && !address.getReference().isBlank()) {
+            sb.append(" | Ref: ").append(address.getReference().trim());
+        }
+        return sb.toString();
+    }
+
     private record OrderLineSnapshot(
             ProductEntity product,
             int quantity,
@@ -474,6 +508,7 @@ public class OrderCommandService {
             String courierId,
             String courierName,
             String paymentMode,
+            UUID addressId,
             String addressReference
     ) {
     }
