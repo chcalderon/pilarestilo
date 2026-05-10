@@ -61,6 +61,11 @@ Rule: `domain/` remains framework-agnostic (no Spring/JPA annotations).
 - `GET /api/auth/me/profile`
 - `PATCH /api/auth/me/profile`
 - `PATCH /api/auth/me/password`
+- `GET /api/auth/me/addresses`
+- `POST /api/auth/me/addresses`
+- `PATCH /api/auth/me/addresses/{addressId}`
+- `DELETE /api/auth/me/addresses/{addressId}`
+- `PATCH /api/auth/me/addresses/{addressId}/default`
 
 ### Users (admin)
 
@@ -200,6 +205,33 @@ Optional payment read delegation from backend to `payment-service`:
 Gateway-facing rate-limit filter (backend side):
 - Protects sensitive public POST endpoints (`/api/auth/login`, `/api/auth/register`, payment webhooks).
 - Per-IP window and thresholds are tunable through `APP_GATEWAY_RATE_LIMIT_*` variables.
+
+---
+
+## Testing and coverage
+
+### TDD workflow
+
+- Implement changes with `red -> green -> refactor`.
+- Prefer domain/application unit tests plus controller/integration tests when API behavior changes.
+- For checkout/payment/shipping changes, include a regression test that validates the complete flow.
+
+### Commands
+
+```bash
+# Unit/integration test suite
+mvn test
+
+# Coverage gate + HTML/CSV reports
+mvn verify
+```
+
+### Coverage policy
+
+- JaCoCo is enforced in `verify` phase using `LINE/COVEREDRATIO`.
+- Current backend gate: `22%` (temporary baseline while legacy modules are raised).
+- Current extracted services gates (`services/*`): `50%`.
+- Reports are generated in `target/site/jacoco/`.
 
 ---
 

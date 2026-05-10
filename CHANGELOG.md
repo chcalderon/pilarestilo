@@ -19,6 +19,7 @@ The format is inspired by Keep a Changelog.
 - Admin product form close confirmation now uses an in-app modal for unsaved changes (replacing browser alert/confirm).
 - Admin product variants row layout adjusted so `Quitar` action stays readable and aligned in desktop/tablet breakpoints.
 - Storefront `shipping-returns` page and `DeliveryEstimate` component now fetch live zone/ETA data from `/api/system-settings/public` instead of hard-coded strings.
+- Technical docs now include explicit TDD workflow and Java coverage-gate policy (JaCoCo) with per-module thresholds.
 
 ## [2026-05-03] - UX improvements, image optimization, and carousel overhaul
 

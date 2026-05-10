@@ -54,7 +54,8 @@ PilarEstilo/
 - Account self-service profile/password management
 - Admin user management surface (`/admin/users`) with role/status/password/credit actions
 - Payment-gateway simulation controls in account/admin workflows for non-production environments
-- Checkout en `cart` con seleccion de envio (`shippingZoneCode`, `shippingCourierId`, `shippingAddressReference`) independiente del metodo de pago
+- Checkout en `cart` con seleccion de envio basada en libreta de direcciones (`shippingAddressId`) y snapshot de referencia de envio persistido en orden
+- `Mi cuenta` incluye gestion de direcciones de cliente (crear, editar, eliminar, marcar principal)
 - Account orders muestra snapshot de envio y permite confirmacion de entrega cuando la orden esta en `SHIPPED`
 
 ---
@@ -98,6 +99,7 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `wishlist`
 - `notification`
 - `systemsettings`
+- `customeraddress`
 - `shared` (`auth`, `rbac`, `domain`, common infra)
 
 Dispatch and shipping architecture highlights:
@@ -185,6 +187,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V45`: expanded size columns for composite sizes (`product_variants.size`, `product_size_stocks.size`)
 - `V46`: shipping selection persisted on `orders` (`shipping_zone_code`, `shipping_courier_id`, `shipping_courier_name`, `shipping_payment_mode`, `shipping_address_reference`)
 - `V47`: dispatch shipping snapshot + structured carrier override audit on `dispatches` (with one-time backfill from `orders`)
+- `V48`: customer address book (`customer_addresses`), default-address constraints/indexes, and `orders.shipping_address_id`
 
 ---
 
@@ -287,3 +290,50 @@ Distributed tracing flow:
 - Backend, `product-service`, `inventory-service`, `order-service`, and `payment-service` emit OTLP traces (Micrometer tracing bridge + OTel exporter).
 - `otel-collector` receives and batches spans.
 - `tempo` stores traces and Grafana reads them through provisioned datasource.
+
+---
+
+## 7. Engineering Workflow (TDD + Coverage)
+
+### TDD policy used in this repository
+
+- New behavior and bugfixes must start with failing tests (`red`) before implementation (`green`) and cleanup (`refactor`).
+- Service-level changes must prefer focused unit tests for domain/application logic plus web/controller tests for contract and status codes.
+- Checkout/order/payment/shipping flows must include at least one integration or E2E regression when behavior changes across modules.
+
+### Java coverage enforcement (JaCoCo, `LINE/COVEREDRATIO`)
+
+Coverage gates are enforced at Maven `verify` phase with `org.jacoco:jacoco-maven-plugin`.
+
+| Module | Gate |
+|---|---|
+| `services/order-service` | `50%` |
+| `services/inventory-service` | `50%` |
+| `services/payment-service` | `50%` |
+| `services/product-service` | `50%` |
+| `backend` | `22%` (temporary baseline while legacy modules are raised) |
+
+Coverage snapshot (measured on **2026-05-10**):
+
+| Module | Line coverage |
+|---|---|
+| `services/order-service` | `82.92%` |
+| `services/inventory-service` | `73.84%` |
+| `services/payment-service` | `85.44%` |
+| `services/product-service` | `59.44%` |
+| `backend` | `23.27%` |
+
+### Verification commands
+
+```bash
+# Per-module quality gate + report
+mvn verify
+
+# Fast local checks
+mvn test
+```
+
+JaCoCo reports are generated at:
+
+- `<module>/target/site/jacoco/index.html`
+- `<module>/target/site/jacoco/jacoco.csv`

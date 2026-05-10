@@ -150,12 +150,22 @@ Order checkout payload now persists shipping selection independently of payment 
 
 - `shippingZoneCode` (required)
 - `shippingCourierId` (required)
-- `shippingAddressReference` (optional)
+- `shippingAddressId` (required, must belong to authenticated customer)
+- `shippingAddressReference` is no longer a free-form checkout input; backend composes and persists it as an immutable order snapshot.
+
+Customer address book endpoints (`isAuthenticated()`):
+
+- `GET /api/auth/me/addresses`
+- `POST /api/auth/me/addresses`
+- `PATCH /api/auth/me/addresses/{addressId}`
+- `DELETE /api/auth/me/addresses/{addressId}`
+- `PATCH /api/auth/me/addresses/{addressId}/default`
 
 Rollout migrations:
 
 - `V46__order_shipping_selection.sql` adds shipping selection columns to `orders`.
 - `V47__dispatch_shipping_snapshot_and_override_audit.sql` adds shipping snapshot + structured override audit to `dispatches`, including a one-time backfill from `orders`.
+- `V48__customer_addresses_and_order_shipping_address.sql` adds `customer_addresses`, default-address constraints/indexes, and `orders.shipping_address_id`.
 
 ### Auto-confirm scheduled job
 
