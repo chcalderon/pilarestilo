@@ -337,3 +337,14 @@ JaCoCo reports are generated at:
 
 - `<module>/target/site/jacoco/index.html`
 - `<module>/target/site/jacoco/jacoco.csv`
+
+### Local Docker run path and session memory
+
+- Canonical local orchestration should use script wrappers:
+  - `bash scripts/deploy/local_deploy.sh up`
+  - `./scripts/deploy/local_deploy.ps1 up`
+  - rebuild: `bash scripts/deploy/local_rebuild.sh` or `./scripts/deploy/local_rebuild.ps1`
+- These wrappers keep `infra/docker-compose.yml` + `infra/.env` as single source of truth and auto-read `DEPLOY_PROFILES`.
+- To avoid losing execution context across long sessions, store checkpoints in `docs/session-memory.md` via:
+  - `bash scripts/dev/save_session_memory.sh "short note"`
+  - `./scripts/dev/save_session_memory.ps1 "short note"`

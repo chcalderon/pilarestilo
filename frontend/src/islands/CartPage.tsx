@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { useCartStore } from '../lib/cartStore';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
@@ -106,6 +106,8 @@ const labels = {
     shippingAddressMissing: 'Debes seleccionar una direccion para finalizar la compra.',
     shippingAddressCreate: 'Agregar direccion',
     shippingAddressNone: 'No tienes direcciones guardadas.',
+    shippingAddressLoginRequired: 'Debes iniciar sesion para seleccionar direccion de entrega.',
+    shippingAddressLoginAction: 'Iniciar sesion',
     shippingAddressSelectModalTitle: 'Selecciona direccion de entrega',
     shippingAddressEdit: 'Editar',
     shippingAddressSetDefault: 'Marcar principal',
@@ -125,6 +127,7 @@ const labels = {
     shippingAddressRegion: 'Region',
     shippingAddressReference: 'Referencia (opcional)',
     shippingAddressSetDefaultToggle: 'Dejar como principal',
+    shippingAddressCloseModal: 'Cerrar modal',
     shippingPaymentModeLabel: 'Modalidad',
     shippingPaymentModePorPagar: 'Envio por pagar',
     shippingSelectionRequired: 'Debes seleccionar zona y courier antes de finalizar la compra.',
@@ -172,6 +175,8 @@ const labels = {
     shippingAddressMissing: 'You must select a delivery address before checkout.',
     shippingAddressCreate: 'Add address',
     shippingAddressNone: 'You do not have saved addresses.',
+    shippingAddressLoginRequired: 'You must sign in to select a delivery address.',
+    shippingAddressLoginAction: 'Sign in',
     shippingAddressSelectModalTitle: 'Select delivery address',
     shippingAddressEdit: 'Edit',
     shippingAddressSetDefault: 'Set default',
@@ -191,6 +196,7 @@ const labels = {
     shippingAddressRegion: 'Region',
     shippingAddressReference: 'Reference (optional)',
     shippingAddressSetDefaultToggle: 'Set as default',
+    shippingAddressCloseModal: 'Close modal',
     shippingPaymentModeLabel: 'Mode',
     shippingPaymentModePorPagar: 'Shipping paid on pickup',
     shippingSelectionRequired: 'You must select a shipping zone and courier before checkout.',
@@ -228,6 +234,7 @@ export default function CartPage({ locale }: Props) {
   const authUser = useAuthStore((s) => s.user);
   const authToken = useAuthStore((s) => s.token);
   const effectiveToken = authToken ?? readAuthTokenCookie();
+  const hasSession = Boolean(effectiveToken);
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -299,6 +306,10 @@ export default function CartPage({ locale }: Props) {
     [addresses, selectedShippingAddressId]
   );
 
+  function redirectToCartLogin() {
+    window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/cart`)}`;
+  }
+
   async function loadAddresses() {
     if (!effectiveToken) {
       setAddresses([]);
@@ -336,6 +347,10 @@ export default function CartPage({ locale }: Props) {
   }
 
   function openCreateAddressModal() {
+    if (!hasSession) {
+      redirectToCartLogin();
+      return;
+    }
     setEditingAddressId(null);
     setAddressDraft(emptyAddressDraft());
     setShowAddressSelectModal(false);
@@ -343,6 +358,10 @@ export default function CartPage({ locale }: Props) {
   }
 
   function openEditAddressModal(address: CustomerAddressDto) {
+    if (!hasSession) {
+      redirectToCartLogin();
+      return;
+    }
     setEditingAddressId(address.id);
     setAddressDraft(draftFromAddress(address));
     setShowAddressSelectModal(false);
@@ -582,6 +601,27 @@ export default function CartPage({ locale }: Props) {
     }
   }, [activeShippingCouriers, shippingCourierId]);
 
+  useEffect(() => {
+    const hasOpenModal = showAddressSelectModal || showAddressFormModal;
+    if (!hasOpenModal) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showAddressSelectModal, showAddressFormModal]);
+
+  useEffect(() => {
+    if (!showAddressSelectModal && !showAddressFormModal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setShowAddressFormModal(false);
+      setShowAddressSelectModal(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showAddressSelectModal, showAddressFormModal]);
+
   async function handleApplyDiscount() {
     if (!discountCode.trim()) return;
     if (!effectiveToken) {
@@ -620,6 +660,10 @@ export default function CartPage({ locale }: Props) {
       showToast('error', l.shippingSelectionRequired);
       return;
     }
+    if (!hasSession) {
+      redirectToCartLogin();
+      return;
+    }
     if (!selectedShippingAddressId) {
       showToast('error', l.shippingAddressMissing);
       if (addresses.length === 0) {
@@ -636,7 +680,7 @@ export default function CartPage({ locale }: Props) {
     }
 
     if (!authUser || !effectiveToken) {
-      window.location.href = `/${locale}/auth/login?redirect=/${locale}/cart`;
+      redirectToCartLogin();
       return;
     }
 
@@ -841,7 +885,10 @@ export default function CartPage({ locale }: Props) {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-pe-white p-6 sticky top-24">
+              <div
+                className="bg-pe-white p-6 sticky"
+                style={{ top: 'calc(var(--pe-site-header-height, 0px) + 1rem)' }}
+              >
                 <h2 className="font-display text-pe-black text-xl font-semibold mb-6">
                   {locale === 'es' ? 'Resumen' : 'Summary'}
                 </h2>
@@ -971,7 +1018,19 @@ export default function CartPage({ locale }: Props) {
                       <p className="font-sans text-[0.64rem] uppercase tracking-[0.14em] text-pe-charcoal/60">
                         {l.shippingAddressTitle}
                       </p>
-                      {loadingAddresses ? (
+                      {!hasSession ? (
+                        <div className="mt-1.5 flex flex-col gap-2">
+                          <p className="font-sans text-[0.74rem] text-pe-rose-deep">
+                            {l.shippingAddressLoginRequired}
+                          </p>
+                          <a
+                            href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/cart`)}`}
+                            className="w-fit px-2.5 py-1.5 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.62rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors"
+                          >
+                            {l.shippingAddressLoginAction}
+                          </a>
+                        </div>
+                      ) : loadingAddresses ? (
                         <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/70">
                           {locale === 'es' ? 'Cargando direcciones...' : 'Loading addresses...'}
                         </p>
@@ -999,6 +1058,7 @@ export default function CartPage({ locale }: Props) {
                           {l.shippingAddressNone}
                         </p>
                       )}
+                      {hasSession && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -1024,6 +1084,7 @@ export default function CartPage({ locale }: Props) {
                           </button>
                         )}
                       </div>
+                      )}
                     </div>
                   </div>
                   <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60">
@@ -1138,7 +1199,7 @@ export default function CartPage({ locale }: Props) {
                     {l.shippingUnavailable}
                   </p>
                 )}
-                {!!authUser && !selectedShippingAddressId && (
+                {hasSession && !selectedShippingAddressId && (
                   <p className="mt-2 font-sans text-[0.68rem] text-[#8f2d3b]">
                     {l.shippingAddressMissing}
                   </p>
@@ -1156,16 +1217,28 @@ export default function CartPage({ locale }: Props) {
         )}
 
         {showAddressSelectModal && (
-          <div className="fixed inset-0 z-[90] bg-black/45 flex items-center justify-center p-4">
-            <div className="w-full max-w-2xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+          <div
+            className="fixed inset-x-0 bottom-0 z-[120] bg-black/45 backdrop-blur-[1px] overflow-y-auto p-4 pb-6"
+            style={{ top: 'calc(var(--pe-site-header-height, 0px) + 1.5rem)' }}
+            onClick={() => setShowAddressSelectModal(false)}
+          >
+            <div className="min-h-full flex items-start justify-center">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={l.shippingAddressSelectModalTitle}
+              className="w-full max-w-2xl bg-pe-white border border-pe-black/12 px-5 pb-5 pt-4 flex flex-col gap-3 max-h-[calc(100dvh-var(--pe-site-header-height,0px)-3rem)] overflow-y-auto shadow-[0_30px_60px_-30px_rgba(26,26,26,0.45)]"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="flex items-center justify-between">
                 <p className="font-display text-pe-black text-xl">{l.shippingAddressSelectModalTitle}</p>
                 <button
                   type="button"
                   onClick={() => setShowAddressSelectModal(false)}
-                  className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/55 hover:text-pe-charcoal"
+                  aria-label={l.shippingAddressCloseModal}
+                  className="inline-flex h-11 w-11 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose/50"
                 >
-                  {l.shippingAddressCancel}
+                  <X size={18} strokeWidth={1.9} />
                 </button>
               </div>
 
@@ -1253,12 +1326,24 @@ export default function CartPage({ locale }: Props) {
                 </button>
               </div>
             </div>
+            </div>
           </div>
         )}
 
         {showAddressFormModal && (
-          <div className="fixed inset-0 z-[95] bg-black/50 flex items-center justify-center p-4">
-            <div className="w-full max-w-xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+          <div
+            className="fixed inset-x-0 bottom-0 z-[130] bg-black/50 backdrop-blur-[1px] overflow-y-auto p-4 pb-6"
+            style={{ top: 'calc(var(--pe-site-header-height, 0px) + 1.5rem)' }}
+            onClick={() => setShowAddressFormModal(false)}
+          >
+            <div className="min-h-full flex items-start justify-center">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={editingAddressId ? l.shippingAddressFormTitleEdit : l.shippingAddressFormTitleNew}
+              className="w-full max-w-xl bg-pe-white border border-pe-black/12 px-5 pb-5 pt-4 flex flex-col gap-3 max-h-[calc(100dvh-var(--pe-site-header-height,0px)-3rem)] overflow-y-auto shadow-[0_30px_60px_-30px_rgba(26,26,26,0.45)]"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="flex items-center justify-between">
                 <p className="font-display text-pe-black text-xl">
                   {editingAddressId ? l.shippingAddressFormTitleEdit : l.shippingAddressFormTitleNew}
@@ -1266,9 +1351,10 @@ export default function CartPage({ locale }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowAddressFormModal(false)}
-                  className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/55 hover:text-pe-charcoal"
+                  aria-label={l.shippingAddressCloseModal}
+                  className="inline-flex h-11 w-11 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose/50"
                 >
-                  {l.shippingAddressCancel}
+                  <X size={18} strokeWidth={1.9} />
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1308,6 +1394,7 @@ export default function CartPage({ locale }: Props) {
                   {l.shippingAddressCancel}
                 </button>
               </div>
+            </div>
             </div>
           </div>
         )}

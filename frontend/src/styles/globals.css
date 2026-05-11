@@ -16,6 +16,7 @@
 @layer base {
   :root,
   html[data-theme='light'] {
+    --pe-site-header-height: 0px;
     --pe-surface: #D9CDB8;
     --pe-surface-soft: #C9B9A4;
     --pe-surface-card: #EDE5D8;

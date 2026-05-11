@@ -28,7 +28,10 @@ export default function AdminLoginForm({ redirect }: Props) {
       }
       setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      window.location.href = redirect ?? '/admin/';
+      const target = redirect && redirect.startsWith('/admin') && !redirect.startsWith('/admin/login')
+        ? redirect
+        : '/admin/dashboard';
+      window.location.href = target;
     } catch {
       setError('Email o contrase\u00f1a incorrectos.');
     } finally {

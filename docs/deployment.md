@@ -186,6 +186,24 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=2
 ```
 
+For local environments (developer machine), prefer wrapper scripts instead of raw Compose:
+
+```bash
+# Bash
+bash scripts/deploy/local_deploy.sh up
+bash scripts/deploy/local_rebuild.sh
+
+# PowerShell
+./scripts/deploy/local_deploy.ps1 up
+./scripts/deploy/local_rebuild.ps1
+```
+
+These scripts:
+- enforce local-domain safety by default
+- read `DEPLOY_PROFILES` from `infra/.env`
+- run compose with the canonical file/env path
+- provide a consistent path to rebuild after frontend/backend fixes
+
 With `microservices` profile enabled, Caddy routes:
 - `GET/HEAD /api/products*` to `product-service` (with `backend:8080` fallback, 2 s dial / 30 s response timeout)
 - `GET/HEAD /api/inventory*` to `inventory-service` (with `backend:8080` fallback)

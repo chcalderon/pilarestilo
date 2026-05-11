@@ -13,6 +13,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
+const ADMIN_PANEL_ROLES = new Set(['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER']);
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
@@ -24,7 +26,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     const payload = decodeJwtPayload(token);
-    if (!payload || payload['role'] !== 'ADMIN') {
+    if (!payload || !ADMIN_PANEL_ROLES.has(String(payload['role'] ?? ''))) {
       context.cookies.delete('pe_token', { path: '/' });
       return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
     }
@@ -45,7 +47,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
       }
       const me = await res.json();
-      if (!me || me.role !== 'ADMIN') {
+      if (!me || !ADMIN_PANEL_ROLES.has(String(me.role ?? ''))) {
         context.cookies.delete('pe_token', { path: '/' });
         return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
       }

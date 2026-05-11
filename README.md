@@ -19,10 +19,20 @@ Luxury online boutique for curated new and second-hand branded clothing.
 ```bash
 cp infra/.env.example infra/.env
 # fill in infra/.env
-docker compose -f infra/docker-compose.yml --env-file infra/.env up --build
+bash scripts/deploy/local_deploy.sh up
+# or PowerShell:
+# ./scripts/deploy/local_deploy.ps1 up
 ```
 
 Open http://localhost
+
+Rebuild completo local:
+
+```bash
+bash scripts/deploy/local_rebuild.sh
+# or PowerShell:
+# ./scripts/deploy/local_rebuild.ps1
+```
 
 Optional compose profiles:
 
@@ -125,6 +135,7 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 - [Domain Events](docs/domain-events.md)
 - [Payment Flow](docs/payment-flow.md)
 - [Deployment](docs/deployment.md)
+- [Session Memory](docs/session-memory.md)
 - [GitHub Actions VPS Deploy](docs/github-actions-vps.md)
 - [Documentation Source Diff (2026-05-09)](docs/documentation-source-diff-2026-05-09.md)
 - [Roadmap](docs/roadmap.md)
