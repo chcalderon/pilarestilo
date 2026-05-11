@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (incomingToken == null || incomingToken.isBlank()) {
             return false;
         }
-        if (!internalToken.equals(incomingToken)) {
+        if (!internalToken.equals(incomingToken.trim())) {
             return false;
         }
 

@@ -86,9 +86,11 @@ public class OrderRemoteCommandClient {
         }
         try {
             JsonNode root = OBJECT_MAPPER.readTree(responseBody);
-            JsonNode detail = root.get("detail");
-            if (detail != null && !detail.isNull()) {
-                return detail.asText();
+            for (String field : new String[]{"detail", "message", "error"}) {
+                JsonNode node = root.get(field);
+                if (node != null && !node.isNull() && !node.asText().isBlank()) {
+                    return node.asText();
+                }
             }
         } catch (Exception ignored) {
             return null;

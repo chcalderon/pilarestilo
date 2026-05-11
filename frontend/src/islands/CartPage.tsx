@@ -501,7 +501,7 @@ export default function CartPage({ locale }: Props) {
 
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message });
-    window.setTimeout(() => setToast(null), 3200);
+    window.setTimeout(() => setToast(null), type === 'error' ? 6000 : 3200);
   }
 
   function clearItemConflict(itemId: string) {
@@ -830,11 +830,12 @@ export default function CartPage({ locale }: Props) {
           <div
             role="status"
             aria-live="polite"
-            className={`fixed bottom-6 right-6 z-[70] font-sans text-sm px-5 py-3 shadow-xl border max-w-[calc(100vw-2rem)] ${
+            className={`fixed right-4 z-[99999] font-sans text-sm px-5 py-3 shadow-xl border max-w-[calc(100vw-2rem)] sm:max-w-sm ${
               toast.type === 'success'
                 ? 'bg-pe-black text-pe-white border-pe-white/15'
                 : 'bg-[#5f1e25] text-pe-white border-[#f1c3cb]/40'
             }`}
+            style={{ top: 'calc(var(--pe-site-header-height, 64px) + 1rem)' }}
           >
             {toast.message}
           </div>

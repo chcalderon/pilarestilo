@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: ${SPRING_APPLICATION_NAME:order-service}
+  mvc:
+    problemdetails:
+      enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/pilarestilo}
     username: ${SPRING_DATASOURCE_USERNAME:pilar}
