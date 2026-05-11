@@ -61,6 +61,9 @@ public class CustomerAddressRepositoryAdapter implements CustomerAddressReposito
         entity.setPhone(address.getPhone());
         entity.setLine1(address.getLine1());
         entity.setLine2(address.getLine2());
+        entity.setRegionId(address.getRegionId());
+        entity.setCityId(address.getCityId());
+        entity.setCommuneId(address.getCommuneId());
         entity.setComuna(address.getComuna());
         entity.setCity(address.getCity());
         entity.setRegion(address.getRegion());
@@ -80,6 +83,9 @@ public class CustomerAddressRepositoryAdapter implements CustomerAddressReposito
                 entity.getPhone(),
                 entity.getLine1(),
                 entity.getLine2(),
+                entity.getRegionId(),
+                entity.getCityId(),
+                entity.getCommuneId(),
                 entity.getComuna(),
                 entity.getCity(),
                 entity.getRegion(),
@@ -90,4 +96,3 @@ public class CustomerAddressRepositoryAdapter implements CustomerAddressReposito
         );
     }
 }
-

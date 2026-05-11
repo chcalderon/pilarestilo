@@ -161,11 +161,26 @@ Customer address book endpoints (`isAuthenticated()`):
 - `DELETE /api/auth/me/addresses/{addressId}`
 - `PATCH /api/auth/me/addresses/{addressId}/default`
 
+Address payload contract for `POST/PATCH /api/auth/me/addresses`:
+
+- `regionId` (required, integer)
+- `cityId` (required, bigint)
+- `comunaId` (required, bigint)
+- `comuna`, `city`, `region` remain in request/response as canonical display names resolved from catalog
+
+Public location catalog endpoints (used by storefront/account/admin forms):
+
+- `GET /api/locations/tree`
+- `GET /api/locations/regions/{regionId}/cities`
+- `GET /api/locations/cities/{cityId}/comunas`
+- `GET /api/locations/comunas/search?q=...&regionId?&cityId?&limit?`
+
 Rollout migrations:
 
 - `V46__order_shipping_selection.sql` adds shipping selection columns to `orders`.
 - `V47__dispatch_shipping_snapshot_and_override_audit.sql` adds shipping snapshot + structured override audit to `dispatches`, including a one-time backfill from `orders`.
 - `V48__customer_addresses_and_order_shipping_address.sql` adds `customer_addresses`, default-address constraints/indexes, and `orders.shipping_address_id`.
+- `V49__location_catalog_and_address_relations.sql` adds location catalog (`geo_regions`, `geo_cities`, `geo_communes`) and address FK columns (`region_id`, `city_id`, `commune_id`) with best-effort backfill for existing addresses.
 
 ### Auto-confirm scheduled job
 

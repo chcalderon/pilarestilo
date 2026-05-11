@@ -14,6 +14,9 @@ public class CustomerAddress {
     private String phone;
     private String line1;
     private String line2;
+    private Integer regionId;
+    private Long cityId;
+    private Long communeId;
     private String comuna;
     private String city;
     private String region;
@@ -32,6 +35,9 @@ public class CustomerAddress {
             String phone,
             String line1,
             String line2,
+            Integer regionId,
+            Long cityId,
+            Long communeId,
             String comuna,
             String city,
             String region,
@@ -50,6 +56,9 @@ public class CustomerAddress {
         address.phone = normalizePhone(phone);
         address.line1 = normalizeRequired(line1, "Address line1");
         address.line2 = normalizeOptional(line2);
+        address.regionId = normalizeRequiredId(regionId, "Region id");
+        address.cityId = normalizeRequiredId(cityId, "City id");
+        address.communeId = normalizeRequiredId(communeId, "Comuna id");
         address.comuna = normalizeRequired(comuna, "Comuna");
         address.city = normalizeRequired(city, "City");
         address.region = normalizeRequired(region, "Region");
@@ -68,6 +77,9 @@ public class CustomerAddress {
             String phone,
             String line1,
             String line2,
+            Integer regionId,
+            Long cityId,
+            Long communeId,
             String comuna,
             String city,
             String region,
@@ -86,6 +98,9 @@ public class CustomerAddress {
                 phone,
                 line1,
                 line2,
+                regionId,
+                cityId,
+                communeId,
                 comuna,
                 city,
                 region,
@@ -104,6 +119,9 @@ public class CustomerAddress {
             String phone,
             String line1,
             String line2,
+            Integer regionId,
+            Long cityId,
+            Long communeId,
             String comuna,
             String city,
             String region,
@@ -114,6 +132,9 @@ public class CustomerAddress {
         this.phone = normalizePhone(phone);
         this.line1 = normalizeRequired(line1, "Address line1");
         this.line2 = normalizeOptional(line2);
+        this.regionId = normalizeRequiredId(regionId, "Region id");
+        this.cityId = normalizeRequiredId(cityId, "City id");
+        this.communeId = normalizeRequiredId(communeId, "Comuna id");
         this.comuna = normalizeRequired(comuna, "Comuna");
         this.city = normalizeRequired(city, "City");
         this.region = normalizeRequired(region, "Region");
@@ -160,6 +181,13 @@ public class CustomerAddress {
         return "+" + digits;
     }
 
+    private static <T> T normalizeRequiredId(T value, String label) {
+        if (value == null) {
+            throw new DomainException(label + " is required");
+        }
+        return value;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -186,6 +214,18 @@ public class CustomerAddress {
 
     public String getLine2() {
         return line2;
+    }
+
+    public Integer getRegionId() {
+        return regionId;
+    }
+
+    public Long getCityId() {
+        return cityId;
+    }
+
+    public Long getCommuneId() {
+        return communeId;
     }
 
     public String getComuna() {
@@ -216,4 +256,3 @@ public class CustomerAddress {
         return updatedAt;
     }
 }
-

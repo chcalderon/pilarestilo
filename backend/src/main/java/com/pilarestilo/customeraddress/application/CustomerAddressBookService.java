@@ -2,6 +2,7 @@ package com.pilarestilo.customeraddress.application;
 
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.customeraddress.domain.ports.CustomerAddressRepository;
+import com.pilarestilo.location.application.LocationCatalogService;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,14 @@ public class CustomerAddressBookService {
     private static final long MAX_ADDRESSES_PER_CUSTOMER = 10L;
 
     private final CustomerAddressRepository repository;
+    private final LocationCatalogService locationCatalogService;
 
-    public CustomerAddressBookService(CustomerAddressRepository repository) {
+    public CustomerAddressBookService(
+            CustomerAddressRepository repository,
+            LocationCatalogService locationCatalogService
+    ) {
         this.repository = repository;
+        this.locationCatalogService = locationCatalogService;
     }
 
     @Transactional(readOnly = true)
@@ -33,6 +39,9 @@ public class CustomerAddressBookService {
             String phone,
             String line1,
             String line2,
+            Integer regionId,
+            Long cityId,
+            Long communeId,
             String comuna,
             String city,
             String region,
@@ -50,6 +59,9 @@ public class CustomerAddressBookService {
             repository.clearDefaultForCustomer(customerId);
         }
 
+        LocationCatalogService.ResolvedLocation resolvedLocation =
+                locationCatalogService.resolveSelection(regionId, cityId, communeId);
+
         CustomerAddress address = CustomerAddress.create(
                 customerId,
                 label,
@@ -57,9 +69,12 @@ public class CustomerAddressBookService {
                 phone,
                 line1,
                 line2,
-                comuna,
-                city,
-                region,
+                resolvedLocation.regionId(),
+                resolvedLocation.cityId(),
+                resolvedLocation.communeId(),
+                resolvedLocation.communeName(),
+                resolvedLocation.cityName(),
+                resolvedLocation.regionName(),
                 reference,
                 willBeDefault
         );
@@ -75,6 +90,9 @@ public class CustomerAddressBookService {
             String phone,
             String line1,
             String line2,
+            Integer regionId,
+            Long cityId,
+            Long communeId,
             String comuna,
             String city,
             String region,
@@ -82,7 +100,22 @@ public class CustomerAddressBookService {
     ) {
         CustomerAddress address = repository.findByIdAndCustomerId(addressId, customerId)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Address not found: " + addressId));
-        address.update(label, recipientName, phone, line1, line2, comuna, city, region, reference);
+        LocationCatalogService.ResolvedLocation resolvedLocation =
+                locationCatalogService.resolveSelection(regionId, cityId, communeId);
+        address.update(
+                label,
+                recipientName,
+                phone,
+                line1,
+                line2,
+                resolvedLocation.regionId(),
+                resolvedLocation.cityId(),
+                resolvedLocation.communeId(),
+                resolvedLocation.communeName(),
+                resolvedLocation.cityName(),
+                resolvedLocation.regionName(),
+                reference
+        );
         return repository.save(address);
     }
 

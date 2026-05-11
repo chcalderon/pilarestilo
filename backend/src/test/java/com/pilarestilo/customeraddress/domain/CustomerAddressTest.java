@@ -21,6 +21,9 @@ class CustomerAddressTest {
                 "+56912345678",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -39,6 +42,9 @@ class CustomerAddressTest {
                 "123",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -57,6 +63,9 @@ class CustomerAddressTest {
                 " +56 9 1234 5678 ",
                 " Av. Apoquindo 123 ",
                 " Depto 4 ",
+                13,
+                45L,
+                273L,
                 " Las Condes ",
                 " Santiago ",
                 " Metropolitana ",
@@ -69,10 +78,12 @@ class CustomerAddressTest {
         assertEquals("+56912345678", address.getPhone());
         assertEquals("Av. Apoquindo 123", address.getLine1());
         assertEquals("Depto 4", address.getLine2());
+        assertEquals(13, address.getRegionId());
+        assertEquals(45L, address.getCityId());
+        assertEquals(273L, address.getCommuneId());
         assertEquals("Las Condes", address.getComuna());
         assertEquals("Santiago", address.getCity());
         assertEquals("Metropolitana", address.getRegion());
         assertEquals("Conserjeria", address.getReference());
     }
 }
-

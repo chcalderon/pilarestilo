@@ -17,6 +17,9 @@ public final class CustomerAddressMapper {
                 address.getPhone(),
                 address.getLine1(),
                 address.getLine2(),
+                address.getRegionId(),
+                address.getCityId(),
+                address.getCommuneId(),
                 address.getComuna(),
                 address.getCity(),
                 address.getRegion(),
@@ -27,4 +30,3 @@ public final class CustomerAddressMapper {
         );
     }
 }
-

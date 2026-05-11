@@ -52,6 +52,9 @@ public class CustomerAddressController {
                 request.phone(),
                 request.line1(),
                 request.line2(),
+                request.regionId(),
+                request.cityId(),
+                request.comunaId(),
                 request.comuna(),
                 request.city(),
                 request.region(),
@@ -73,6 +76,9 @@ public class CustomerAddressController {
                 request.phone(),
                 request.line1(),
                 request.line2(),
+                request.regionId(),
+                request.cityId(),
+                request.comunaId(),
                 request.comuna(),
                 request.city(),
                 request.region(),
@@ -95,4 +101,3 @@ public class CustomerAddressController {
         return CustomerAddressMapper.toDto(updated);
     }
 }
-

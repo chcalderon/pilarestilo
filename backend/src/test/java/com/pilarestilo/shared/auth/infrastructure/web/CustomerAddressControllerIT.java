@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,6 +58,8 @@ class CustomerAddressControllerIT {
     @Test
     void customer_can_manage_addresses_and_default_flag() throws Exception {
         String token = registerCustomerAndGetToken("addr_crud_" + UUID.randomUUID() + "@test.com");
+        AddressSelection lasCondes = resolveAddressSelection("Las Condes");
+        AddressSelection vitacura = resolveAddressSelection("Vitacura");
 
         MvcResult createdOne = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(token))
@@ -66,9 +69,12 @@ class CustomerAddressControllerIT {
                                 "recipientName", "Pilar Estilo",
                                 "phone", "+56912345678",
                                 "line1", "Av Apoquindo 123",
-                                "comuna", "Las Condes",
-                                "city", "Santiago",
-                                "region", "Metropolitana"
+                                "regionId", lasCondes.regionId(),
+                                "cityId", lasCondes.cityId(),
+                                "comunaId", lasCondes.comunaId(),
+                                "comuna", lasCondes.comuna(),
+                                "city", lasCondes.city(),
+                                "region", lasCondes.region()
                         ))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.isDefault").value(true))
@@ -78,16 +84,14 @@ class CustomerAddressControllerIT {
         MvcResult createdTwo = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "label", "Oficina",
-                                "recipientName", "Pilar Estilo",
-                                "phone", "+56987654321",
-                                "line1", "Nueva Costanera 100",
-                                "line2", "Piso 4",
-                                "comuna", "Vitacura",
-                                "city", "Santiago",
-                                "region", "Metropolitana",
-                                "reference", "Recepcion principal"
+                        .content(om.writeValueAsString(addressPayload(
+                                vitacura,
+                                "Oficina",
+                                "Pilar Estilo",
+                                "+56987654321",
+                                "Nueva Costanera 100",
+                                "Piso 4",
+                                "Recepcion principal"
                         ))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.isDefault").value(false))
@@ -103,16 +107,14 @@ class CustomerAddressControllerIT {
         mvc.perform(patch("/api/auth/me/addresses/{id}", secondAddressId)
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "label", "Oficina Centro",
-                                "recipientName", "Pilar E.",
-                                "phone", "+56999888777",
-                                "line1", "Av Vitacura 200",
-                                "line2", "Of 12",
-                                "comuna", "Vitacura",
-                                "city", "Santiago",
-                                "region", "Metropolitana",
-                                "reference", "Conserjeria"
+                        .content(om.writeValueAsString(addressPayload(
+                                vitacura,
+                                "Oficina Centro",
+                                "Pilar E.",
+                                "+56999888777",
+                                "Av Vitacura 200",
+                                "Of 12",
+                                "Conserjeria"
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Oficina Centro"))
@@ -153,6 +155,7 @@ class CustomerAddressControllerIT {
     void customer_cannot_modify_other_customer_address() throws Exception {
         String tokenA = registerCustomerAndGetToken("addr_owner_a_" + UUID.randomUUID() + "@test.com");
         String tokenB = registerCustomerAndGetToken("addr_owner_b_" + UUID.randomUUID() + "@test.com");
+        AddressSelection lasCondes = resolveAddressSelection("Las Condes");
 
         MvcResult created = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(tokenA))
@@ -162,9 +165,12 @@ class CustomerAddressControllerIT {
                                 "recipientName", "Pilar A",
                                 "phone", "+56911112222",
                                 "line1", "Linea A",
-                                "comuna", "Comuna A",
-                                "city", "Santiago",
-                                "region", "Metropolitana"
+                                "regionId", lasCondes.regionId(),
+                                "cityId", lasCondes.cityId(),
+                                "comunaId", lasCondes.comunaId(),
+                                "comuna", lasCondes.comuna(),
+                                "city", lasCondes.city(),
+                                "region", lasCondes.region()
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -178,9 +184,12 @@ class CustomerAddressControllerIT {
                                 "recipientName", "Hack",
                                 "phone", "+56999999999",
                                 "line1", "Hack line",
-                                "comuna", "Hack comuna",
-                                "city", "Hack city",
-                                "region", "Hack region"
+                                "regionId", lasCondes.regionId(),
+                                "cityId", lasCondes.cityId(),
+                                "comunaId", lasCondes.comunaId(),
+                                "comuna", lasCondes.comuna(),
+                                "city", lasCondes.city(),
+                                "region", lasCondes.region()
                         ))))
                 .andExpect(status().isNotFound());
     }
@@ -228,6 +237,7 @@ class CustomerAddressControllerIT {
         UUID productId = createProduct(customerToken, "Snapshot product");
         ShippingSelection shipping = resolveShippingSelection();
         String addressId = createAddressAndReturnId(customerToken, "Casa Snapshot");
+        AddressSelection providencia = resolveAddressSelection("Providencia");
 
         MvcResult createdOrder = mvc.perform(post("/api/orders")
                         .header("Authorization", bearer(customerToken))
@@ -249,16 +259,14 @@ class CustomerAddressControllerIT {
         mvc.perform(patch("/api/auth/me/addresses/{id}", addressId)
                         .header("Authorization", bearer(customerToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "label", "Casa Snapshot",
-                                "recipientName", "Cliente Snapshot",
-                                "phone", "+56911113333",
-                                "line1", "Otra direccion 999",
-                                "line2", "Depto B",
-                                "comuna", "Providencia",
-                                "city", "Santiago",
-                                "region", "Metropolitana",
-                                "reference", "Porteria"
+                        .content(om.writeValueAsString(addressPayload(
+                                providencia,
+                                "Casa Snapshot",
+                                "Cliente Snapshot",
+                                "+56911113333",
+                                "Otra direccion 999",
+                                "Depto B",
+                                "Porteria"
                         ))))
                 .andExpect(status().isOk());
 
@@ -271,23 +279,76 @@ class CustomerAddressControllerIT {
     }
 
     private String createAddressAndReturnId(String token, String label) throws Exception {
+        AddressSelection lasCondes = resolveAddressSelection("Las Condes");
         MvcResult created = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "label", label,
-                                "recipientName", "Cliente Direccion",
-                                "phone", "+56912345678",
-                                "line1", "Av Apoquindo 123",
-                                "line2", "Depto 5",
-                                "comuna", "Las Condes",
-                                "city", "Santiago",
-                                "region", "Metropolitana",
-                                "reference", "Conserjeria"
+                        .content(om.writeValueAsString(addressPayload(
+                                lasCondes,
+                                label,
+                                "Cliente Direccion",
+                                "+56912345678",
+                                "Av Apoquindo 123",
+                                "Depto 5",
+                                "Conserjeria"
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private Map<String, Object> addressPayload(
+            AddressSelection selection,
+            String label,
+            String recipientName,
+            String phone,
+            String line1,
+            String line2,
+            String reference
+    ) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("label", label);
+        payload.put("recipientName", recipientName);
+        payload.put("phone", phone);
+        payload.put("line1", line1);
+        if (line2 != null) {
+            payload.put("line2", line2);
+        }
+        payload.put("regionId", selection.regionId());
+        payload.put("cityId", selection.cityId());
+        payload.put("comunaId", selection.comunaId());
+        payload.put("comuna", selection.comuna());
+        payload.put("city", selection.city());
+        payload.put("region", selection.region());
+        if (reference != null) {
+            payload.put("reference", reference);
+        }
+        return payload;
+    }
+
+    private AddressSelection resolveAddressSelection(String communeName) throws Exception {
+        MvcResult result = mvc.perform(get("/api/locations/tree"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode regions = om.readTree(result.getResponse().getContentAsString());
+        for (JsonNode regionNode : regions) {
+            int regionId = regionNode.path("id").asInt();
+            String regionName = regionNode.path("name").asText();
+            JsonNode cities = regionNode.path("cities");
+            for (JsonNode cityNode : cities) {
+                long cityId = cityNode.path("id").asLong();
+                String cityName = cityNode.path("name").asText();
+                JsonNode communes = cityNode.path("communes");
+                for (JsonNode communeNode : communes) {
+                    String currentName = communeNode.path("name").asText();
+                    if (currentName.equalsIgnoreCase(communeName)) {
+                        long comunaId = communeNode.path("id").asLong();
+                        return new AddressSelection(regionId, cityId, comunaId, currentName, cityName, regionName);
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException("Commune not found in catalog: " + communeName);
     }
 
     private ShippingSelection resolveShippingSelection() throws Exception {
@@ -377,6 +438,16 @@ class CustomerAddressControllerIT {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    private record AddressSelection(
+            Integer regionId,
+            Long cityId,
+            Long comunaId,
+            String comuna,
+            String city,
+            String region
+    ) {
     }
 
     private record ShippingSelection(String zoneCode, String courierId) {

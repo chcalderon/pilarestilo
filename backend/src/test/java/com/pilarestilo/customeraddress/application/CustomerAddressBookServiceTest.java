@@ -2,6 +2,7 @@ package com.pilarestilo.customeraddress.application;
 
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.customeraddress.domain.ports.CustomerAddressRepository;
+import com.pilarestilo.location.application.LocationCatalogService;
 import com.pilarestilo.shared.domain.DomainException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,13 +31,28 @@ class CustomerAddressBookServiceTest {
     @Mock
     CustomerAddressRepository repository;
 
+    @Mock
+    LocationCatalogService locationCatalogService;
+
     @InjectMocks
     CustomerAddressBookService service;
+
+    private LocationCatalogService.ResolvedLocation lasCondes() {
+        return new LocationCatalogService.ResolvedLocation(
+                13,
+                "Region Metropolitana de Santiago",
+                45L,
+                "Santiago",
+                273L,
+                "Las Condes"
+        );
+    }
 
     @Test
     void create_first_address_for_customer_forces_default() {
         UUID customerId = UUID.randomUUID();
         when(repository.countByCustomerId(customerId)).thenReturn(0L);
+        when(locationCatalogService.resolveSelection(13, 45L, 273L)).thenReturn(lasCondes());
         when(repository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CustomerAddress saved = service.create(
@@ -46,6 +62,9 @@ class CustomerAddressBookServiceTest {
                 " +56 9 1234 5678 ",
                 " Av. Apoquindo 123 ",
                 null,
+                13,
+                45L,
+                273L,
                 " Las Condes ",
                 " Santiago ",
                 " Metropolitana ",
@@ -59,7 +78,7 @@ class CustomerAddressBookServiceTest {
         assertEquals("Av. Apoquindo 123", saved.getLine1());
         assertEquals("Las Condes", saved.getComuna());
         assertEquals("Santiago", saved.getCity());
-        assertEquals("Metropolitana", saved.getRegion());
+        assertEquals("Region Metropolitana de Santiago", saved.getRegion());
         assertEquals("Casa", saved.getLabel());
         assertEquals(customerId, saved.getCustomerId());
         assertEquals(true, saved.isDefault());
@@ -78,6 +97,9 @@ class CustomerAddressBookServiceTest {
                 "+56912345678",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -90,6 +112,7 @@ class CustomerAddressBookServiceTest {
     void create_marking_new_default_clears_previous_default() {
         UUID customerId = UUID.randomUUID();
         when(repository.countByCustomerId(customerId)).thenReturn(2L);
+        when(locationCatalogService.resolveSelection(13, 45L, 273L)).thenReturn(lasCondes());
         when(repository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CustomerAddress saved = service.create(
@@ -99,6 +122,9 @@ class CustomerAddressBookServiceTest {
                 "+56912345678",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -122,6 +148,9 @@ class CustomerAddressBookServiceTest {
                 "+56912345678",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -151,6 +180,9 @@ class CustomerAddressBookServiceTest {
                 "+56911111111",
                 "Linea 1",
                 null,
+                13,
+                45L,
+                273L,
                 "Comuna",
                 "Ciudad",
                 "Region",
@@ -161,6 +193,15 @@ class CustomerAddressBookServiceTest {
         );
 
         when(repository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(address));
+        when(locationCatalogService.resolveSelection(13, 45L, 281L))
+                .thenReturn(new LocationCatalogService.ResolvedLocation(
+                        13,
+                        "Region Metropolitana de Santiago",
+                        45L,
+                        "Santiago",
+                        281L,
+                        "Providencia"
+                ));
         when(repository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CustomerAddress saved = service.update(
@@ -171,6 +212,9 @@ class CustomerAddressBookServiceTest {
                 " +56 9 8765 4321 ",
                 " Linea 100 ",
                 " Torre A ",
+                13,
+                45L,
+                281L,
                 " Providencia ",
                 " Santiago ",
                 " Metropolitana ",
@@ -184,7 +228,7 @@ class CustomerAddressBookServiceTest {
         assertEquals("Torre A", saved.getLine2());
         assertEquals("Providencia", saved.getComuna());
         assertEquals("Santiago", saved.getCity());
-        assertEquals("Metropolitana", saved.getRegion());
+        assertEquals("Region Metropolitana de Santiago", saved.getRegion());
         assertEquals("Frente al parque", saved.getReference());
         assertEquals(true, saved.isDefault());
 
@@ -201,4 +245,3 @@ class CustomerAddressBookServiceTest {
         verify(repository).findByCustomerIdOrderByUpdatedAtDesc(customerId);
     }
 }
-

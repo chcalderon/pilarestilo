@@ -33,6 +33,15 @@ public class CustomerAddressEntity {
     @Column(name = "line2", length = 255)
     private String line2;
 
+    @Column(name = "region_id")
+    private Integer regionId;
+
+    @Column(name = "city_id")
+    private Long cityId;
+
+    @Column(name = "commune_id")
+    private Long communeId;
+
     @Column(nullable = false, length = 140)
     private String comuna;
 
@@ -110,6 +119,30 @@ public class CustomerAddressEntity {
         this.line2 = line2;
     }
 
+    public Integer getRegionId() {
+        return regionId;
+    }
+
+    public void setRegionId(Integer regionId) {
+        this.regionId = regionId;
+    }
+
+    public Long getCityId() {
+        return cityId;
+    }
+
+    public void setCityId(Long cityId) {
+        this.cityId = cityId;
+    }
+
+    public Long getCommuneId() {
+        return communeId;
+    }
+
+    public void setCommuneId(Long communeId) {
+        this.communeId = communeId;
+    }
+
     public String getComuna() {
         return comuna;
     }
@@ -166,4 +199,3 @@ public class CustomerAddressEntity {
         this.updatedAt = updatedAt;
     }
 }
-

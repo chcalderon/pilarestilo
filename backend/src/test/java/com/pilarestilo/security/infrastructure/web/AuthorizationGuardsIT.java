@@ -72,9 +72,12 @@ class AuthorizationGuardsIT {
                 "recipientName", "Anon User",
                 "phone", "+56912345678",
                 "line1", "Sin auth 123",
+                "regionId", 13,
+                "cityId", 45,
+                "comunaId", 273,
                 "comuna", "Las Condes",
                 "city", "Santiago",
-                "region", "Metropolitana"
+                "region", "Region Metropolitana de Santiago"
         ));
         mvc.perform(post("/api/auth/me/addresses")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -287,9 +290,12 @@ class AuthorizationGuardsIT {
                 "recipientName", "Auth Guard Tester",
                 "phone", "+56912345678",
                 "line1", "Av Apoquindo 123",
+                "regionId", 13,
+                "cityId", 45,
+                "comunaId", 273,
                 "comuna", "Las Condes",
                 "city", "Santiago",
-                "region", "Metropolitana"
+                "region", "Region Metropolitana de Santiago"
         ));
         MvcResult created = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(token))

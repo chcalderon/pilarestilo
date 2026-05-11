@@ -438,6 +438,9 @@ export interface CustomerAddressDto {
   phone: string;
   line1: string;
   line2?: string | null;
+  regionId?: number | null;
+  cityId?: number | null;
+  communeId?: number | null;
   comuna: string;
   city: string;
   region: string;
@@ -453,6 +456,9 @@ export interface CreateCustomerAddressRequest {
   phone: string;
   line1: string;
   line2?: string;
+  regionId: number;
+  cityId: number;
+  comunaId: number;
   comuna: string;
   city: string;
   region: string;
@@ -466,10 +472,33 @@ export interface UpdateCustomerAddressRequest {
   phone: string;
   line1: string;
   line2?: string;
+  regionId: number;
+  cityId: number;
+  comunaId: number;
   comuna: string;
   city: string;
   region: string;
   reference?: string;
+}
+
+export interface LocationCommuneDto {
+  id: number;
+  regionId: number;
+  cityId: number;
+  name: string;
+}
+
+export interface LocationCityDto {
+  id: number;
+  regionId: number;
+  name: string;
+  communes: LocationCommuneDto[];
+}
+
+export interface LocationRegionDto {
+  id: number;
+  name: string;
+  cities: LocationCityDto[];
 }
 
 export interface CreateProductRequest {
@@ -1164,6 +1193,33 @@ export async function setMyAddressAsDefault(addressId: string, token: string): P
     method: 'PATCH',
     headers: authHeaders(token),
   });
+}
+
+export async function getLocationTree(): Promise<LocationRegionDto[]> {
+  return apiFetch<LocationRegionDto[]>('/locations/tree');
+}
+
+export async function getLocationCities(regionId: number): Promise<LocationCityDto[]> {
+  return apiFetch<LocationCityDto[]>(`/locations/regions/${regionId}/cities`);
+}
+
+export async function getLocationCommunes(cityId: number): Promise<LocationCommuneDto[]> {
+  return apiFetch<LocationCommuneDto[]>(`/locations/cities/${cityId}/comunas`);
+}
+
+export async function searchLocationCommunes(params: {
+  q: string;
+  regionId?: number;
+  cityId?: number;
+  limit?: number;
+}): Promise<LocationCommuneDto[]> {
+  const query = buildQuery({
+    q: params.q,
+    ...(params.regionId !== undefined ? { regionId: params.regionId } : {}),
+    ...(params.cityId !== undefined ? { cityId: params.cityId } : {}),
+    ...(params.limit !== undefined ? { limit: params.limit } : {}),
+  });
+  return apiFetch<LocationCommuneDto[]>(`/locations/comunas/search${query}`);
 }
 
 export async function getMyOrders(token: string, page = 0, size = 20): Promise<Page<OrderDto>> {

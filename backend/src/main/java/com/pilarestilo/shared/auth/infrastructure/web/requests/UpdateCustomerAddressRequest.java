@@ -1,6 +1,7 @@
 package com.pilarestilo.shared.auth.infrastructure.web.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record UpdateCustomerAddressRequest(
         @NotBlank(message = "label is required")
@@ -12,6 +13,12 @@ public record UpdateCustomerAddressRequest(
         @NotBlank(message = "line1 is required")
         String line1,
         String line2,
+        @NotNull(message = "regionId is required")
+        Integer regionId,
+        @NotNull(message = "cityId is required")
+        Long cityId,
+        @NotNull(message = "comunaId is required")
+        Long comunaId,
         @NotBlank(message = "comuna is required")
         String comuna,
         @NotBlank(message = "city is required")
@@ -21,4 +28,3 @@ public record UpdateCustomerAddressRequest(
         String reference
 ) {
 }
-

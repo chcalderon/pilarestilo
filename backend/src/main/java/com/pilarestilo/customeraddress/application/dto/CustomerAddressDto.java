@@ -11,6 +11,9 @@ public record CustomerAddressDto(
         String phone,
         String line1,
         String line2,
+        Integer regionId,
+        Long cityId,
+        Long communeId,
         String comuna,
         String city,
         String region,
@@ -20,4 +23,3 @@ public record CustomerAddressDto(
         Instant updatedAt
 ) {
 }
-

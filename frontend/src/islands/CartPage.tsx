@@ -5,6 +5,7 @@ import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
   createOrder,
   createMyAddress,
+  getLocationTree,
   getMyAddresses,
   getProduct,
   getPublicShippingConfig,
@@ -16,6 +17,9 @@ import {
   type CourierConfig,
   type CreateCustomerAddressRequest,
   type DiscountCodeDto,
+  type LocationCityDto,
+  type LocationCommuneDto,
+  type LocationRegionDto,
   type PaymentGatewayProvider,
   type ShippingPaymentMode,
   type ShippingZoneCode,
@@ -38,6 +42,9 @@ interface AddressDraft {
   phone: string;
   line1: string;
   line2: string;
+  regionId: string;
+  cityId: string;
+  comunaId: string;
   comuna: string;
   city: string;
   region: string;
@@ -60,6 +67,9 @@ function emptyAddressDraft(): AddressDraft {
     phone: '',
     line1: '',
     line2: '',
+    regionId: '',
+    cityId: '',
+    comunaId: '',
     comuna: '',
     city: '',
     region: '',
@@ -75,6 +85,9 @@ function draftFromAddress(address: CustomerAddressDto): AddressDraft {
     phone: address.phone ?? '',
     line1: address.line1 ?? '',
     line2: address.line2 ?? '',
+    regionId: address.regionId ? String(address.regionId) : '',
+    cityId: address.cityId ? String(address.cityId) : '',
+    comunaId: address.communeId ? String(address.communeId) : '',
     comuna: address.comuna ?? '',
     city: address.city ?? '',
     region: address.region ?? '',
@@ -125,6 +138,10 @@ const labels = {
     shippingAddressComuna: 'Comuna',
     shippingAddressCity: 'Ciudad',
     shippingAddressRegion: 'Region',
+    shippingAddressRegionSelect: 'Selecciona region',
+    shippingAddressCitySelect: 'Selecciona ciudad',
+    shippingAddressComunaSelect: 'Selecciona comuna',
+    shippingAddressLocationsLoading: 'Cargando ubicaciones...',
     shippingAddressReference: 'Referencia (opcional)',
     shippingAddressSetDefaultToggle: 'Dejar como principal',
     shippingAddressCloseModal: 'Cerrar modal',
@@ -194,6 +211,10 @@ const labels = {
     shippingAddressComuna: 'Comuna',
     shippingAddressCity: 'City',
     shippingAddressRegion: 'Region',
+    shippingAddressRegionSelect: 'Select region',
+    shippingAddressCitySelect: 'Select city',
+    shippingAddressComunaSelect: 'Select comuna',
+    shippingAddressLocationsLoading: 'Loading locations...',
     shippingAddressReference: 'Reference (optional)',
     shippingAddressSetDefaultToggle: 'Set as default',
     shippingAddressCloseModal: 'Close modal',
@@ -258,6 +279,8 @@ export default function CartPage({ locale }: Props) {
   const [showAddressSelectModal, setShowAddressSelectModal] = useState(false);
   const [showAddressFormModal, setShowAddressFormModal] = useState(false);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft());
+  const [locationRegions, setLocationRegions] = useState<LocationRegionDto[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [savingAddress, setSavingAddress] = useState(false);
   const [settingDefaultAddressId, setSettingDefaultAddressId] = useState<string | null>(null);
@@ -306,6 +329,20 @@ export default function CartPage({ locale }: Props) {
     [addresses, selectedShippingAddressId]
   );
 
+  const selectedRegionId = addressDraft.regionId ? Number(addressDraft.regionId) : null;
+  const selectedCityId = addressDraft.cityId ? Number(addressDraft.cityId) : null;
+  const selectedComunaId = addressDraft.comunaId ? Number(addressDraft.comunaId) : null;
+
+  const cityOptions = useMemo<LocationCityDto[]>(() => {
+    if (!selectedRegionId) return [];
+    return locationRegions.find((region) => region.id === selectedRegionId)?.cities ?? [];
+  }, [locationRegions, selectedRegionId]);
+
+  const comunaOptions = useMemo<LocationCommuneDto[]>(() => {
+    if (!selectedCityId) return [];
+    return cityOptions.find((city) => city.id === selectedCityId)?.communes ?? [];
+  }, [cityOptions, selectedCityId]);
+
   function redirectToCartLogin() {
     window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/cart`)}`;
   }
@@ -332,6 +369,18 @@ export default function CartPage({ locale }: Props) {
     }
   }
 
+  async function loadLocations() {
+    setLoadingLocations(true);
+    try {
+      const regions = await getLocationTree();
+      setLocationRegions(regions);
+    } catch {
+      setLocationRegions([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  }
+
   function validateAddressDraft(draft: AddressDraft): string | null {
     if (!draft.label.trim()) return locale === 'es' ? 'Debes ingresar alias de dirección.' : 'Address label is required.';
     if (!draft.recipientName.trim()) return locale === 'es' ? 'Debes ingresar destinatario.' : 'Recipient is required.';
@@ -340,9 +389,9 @@ export default function CartPage({ locale }: Props) {
       return locale === 'es' ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must contain between 8 and 15 digits.';
     }
     if (!draft.line1.trim()) return locale === 'es' ? 'Debes ingresar dirección.' : 'Address line is required.';
-    if (!draft.comuna.trim()) return locale === 'es' ? 'Debes ingresar comuna.' : 'Comuna is required.';
-    if (!draft.city.trim()) return locale === 'es' ? 'Debes ingresar ciudad.' : 'City is required.';
-    if (!draft.region.trim()) return locale === 'es' ? 'Debes ingresar región.' : 'Region is required.';
+    if (!draft.regionId) return locale === 'es' ? 'Debes seleccionar region.' : 'Region selection is required.';
+    if (!draft.cityId) return locale === 'es' ? 'Debes seleccionar ciudad.' : 'City selection is required.';
+    if (!draft.comunaId) return locale === 'es' ? 'Debes seleccionar comuna.' : 'Comuna selection is required.';
     return null;
   }
 
@@ -376,15 +425,26 @@ export default function CartPage({ locale }: Props) {
       return;
     }
     setSavingAddress(true);
+    const selectedRegion = locationRegions.find((region) => region.id === selectedRegionId);
+    const selectedCity = cityOptions.find((city) => city.id === selectedCityId);
+    const selectedComuna = comunaOptions.find((comuna) => comuna.id === selectedComunaId);
+    if (!selectedRegion || !selectedCity || !selectedComuna) {
+      showToast('error', locale === 'es' ? 'Selecciona region, ciudad y comuna validas.' : 'Choose valid region, city, and comuna.');
+      setSavingAddress(false);
+      return;
+    }
     const payload: CreateCustomerAddressRequest = {
       label: addressDraft.label.trim(),
       recipientName: addressDraft.recipientName.trim(),
       phone: addressDraft.phone.trim(),
       line1: addressDraft.line1.trim(),
       line2: addressDraft.line2.trim() || undefined,
-      comuna: addressDraft.comuna.trim(),
-      city: addressDraft.city.trim(),
-      region: addressDraft.region.trim(),
+      regionId: selectedRegion.id,
+      cityId: selectedCity.id,
+      comunaId: selectedComuna.id,
+      comuna: selectedComuna.name,
+      city: selectedCity.name,
+      region: selectedRegion.name,
       reference: addressDraft.reference.trim() || undefined,
       isDefault: addressDraft.isDefault,
     };
@@ -397,6 +457,9 @@ export default function CartPage({ locale }: Props) {
           phone: payload.phone,
           line1: payload.line1,
           line2: payload.line2,
+          regionId: payload.regionId,
+          cityId: payload.cityId,
+          comunaId: payload.comunaId,
           comuna: payload.comuna,
           city: payload.city,
           region: payload.region,
@@ -550,6 +613,28 @@ export default function CartPage({ locale }: Props) {
     void loadAddresses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveToken]);
+
+  useEffect(() => {
+    void loadLocations();
+  }, []);
+
+  useEffect(() => {
+    if (!addressDraft.cityId) return;
+    if (locationRegions.length === 0) return;
+    const stillValid = cityOptions.some((city) => city.id === Number(addressDraft.cityId));
+    if (!stillValid) {
+      setAddressDraft((prev) => ({ ...prev, cityId: '', comunaId: '' }));
+    }
+  }, [addressDraft.cityId, cityOptions, locationRegions.length]);
+
+  useEffect(() => {
+    if (!addressDraft.comunaId) return;
+    if (locationRegions.length === 0) return;
+    const stillValid = comunaOptions.some((comuna) => comuna.id === Number(addressDraft.comunaId));
+    if (!stillValid) {
+      setAddressDraft((prev) => ({ ...prev, comunaId: '' }));
+    }
+  }, [addressDraft.comunaId, comunaOptions, locationRegions.length]);
 
   useEffect(() => {
     setStockConflicts((current) => {
@@ -1363,9 +1448,38 @@ export default function CartPage({ locale }: Props) {
                 <input value={addressDraft.phone} onChange={(e) => setAddressDraft((p) => ({ ...p, phone: e.target.value }))} placeholder={l.shippingAddressPhone} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                 <input value={addressDraft.line1} onChange={(e) => setAddressDraft((p) => ({ ...p, line1: e.target.value }))} placeholder={l.shippingAddressLine1} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                 <input value={addressDraft.line2} onChange={(e) => setAddressDraft((p) => ({ ...p, line2: e.target.value }))} placeholder={l.shippingAddressLine2} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-                <input value={addressDraft.comuna} onChange={(e) => setAddressDraft((p) => ({ ...p, comuna: e.target.value }))} placeholder={l.shippingAddressComuna} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
-                <input value={addressDraft.city} onChange={(e) => setAddressDraft((p) => ({ ...p, city: e.target.value }))} placeholder={l.shippingAddressCity} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
-                <input value={addressDraft.region} onChange={(e) => setAddressDraft((p) => ({ ...p, region: e.target.value }))} placeholder={l.shippingAddressRegion} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                <select
+                  value={addressDraft.regionId}
+                  onChange={(e) => setAddressDraft((p) => ({ ...p, regionId: e.target.value, cityId: '', comunaId: '', region: '', city: '', comuna: '' }))}
+                  className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2 bg-white"
+                >
+                  <option value="">{loadingLocations ? l.shippingAddressLocationsLoading : l.shippingAddressRegionSelect}</option>
+                  {locationRegions.map((region) => (
+                    <option key={region.id} value={region.id}>{region.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={addressDraft.cityId}
+                  onChange={(e) => setAddressDraft((p) => ({ ...p, cityId: e.target.value, comunaId: '', city: '', comuna: '' }))}
+                  disabled={!addressDraft.regionId}
+                  className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
+                >
+                  <option value="">{l.shippingAddressCitySelect}</option>
+                  {cityOptions.map((city) => (
+                    <option key={city.id} value={city.id}>{city.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={addressDraft.comunaId}
+                  onChange={(e) => setAddressDraft((p) => ({ ...p, comunaId: e.target.value }))}
+                  disabled={!addressDraft.cityId}
+                  className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
+                >
+                  <option value="">{l.shippingAddressComunaSelect}</option>
+                  {comunaOptions.map((comuna) => (
+                    <option key={comuna.id} value={comuna.id}>{comuna.name}</option>
+                  ))}
+                </select>
                 <input value={addressDraft.reference} onChange={(e) => setAddressDraft((p) => ({ ...p, reference: e.target.value }))} placeholder={l.shippingAddressReference} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
               </div>
               <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal/75">

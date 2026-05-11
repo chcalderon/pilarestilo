@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin, X } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import {
   getMyReviews,
+  getLocationTree,
   deleteReview,
   getMyOrders,
   getMyProfile,
@@ -27,6 +28,9 @@ import {
   type UserProfileDto,
   type CustomerAddressDto,
   type CreateCustomerAddressRequest,
+  type LocationCityDto,
+  type LocationCommuneDto,
+  type LocationRegionDto,
 } from '../../lib/api';
 
 interface Props {
@@ -44,6 +48,9 @@ type AddressDraft = {
   phone: string;
   line1: string;
   line2: string;
+  regionId: string;
+  cityId: string;
+  comunaId: string;
   comuna: string;
   city: string;
   region: string;
@@ -76,6 +83,9 @@ function emptyAddressDraft(): AddressDraft {
     phone: '',
     line1: '',
     line2: '',
+    regionId: '',
+    cityId: '',
+    comunaId: '',
     comuna: '',
     city: '',
     region: '',
@@ -91,6 +101,9 @@ function draftFromAddress(address: CustomerAddressDto): AddressDraft {
     phone: address.phone ?? '',
     line1: address.line1 ?? '',
     line2: address.line2 ?? '',
+    regionId: address.regionId ? String(address.regionId) : '',
+    cityId: address.cityId ? String(address.cityId) : '',
+    comunaId: address.communeId ? String(address.communeId) : '',
     comuna: address.comuna ?? '',
     city: address.city ?? '',
     region: address.region ?? '',
@@ -142,10 +155,23 @@ export default function AccountPage({ locale }: Props) {
   const [addressDefaultingId, setAddressDefaultingId] = useState<string | null>(null);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft());
+  const [locationRegions, setLocationRegions] = useState<LocationRegionDto[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
   const [addressFeedback, setAddressFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const es = locale === 'es';
   const displayName = profile?.fullName?.trim() ? profile.fullName : (user?.email ?? '');
+  const selectedRegionId = addressDraft.regionId ? Number(addressDraft.regionId) : null;
+  const selectedCityId = addressDraft.cityId ? Number(addressDraft.cityId) : null;
+  const selectedComunaId = addressDraft.comunaId ? Number(addressDraft.comunaId) : null;
+  const cityOptions = useMemo<LocationCityDto[]>(() => {
+    if (!selectedRegionId) return [];
+    return locationRegions.find((region) => region.id === selectedRegionId)?.cities ?? [];
+  }, [locationRegions, selectedRegionId]);
+  const comunaOptions = useMemo<LocationCommuneDto[]>(() => {
+    if (!selectedCityId) return [];
+    return cityOptions.find((city) => city.id === selectedCityId)?.communes ?? [];
+  }, [cityOptions, selectedCityId]);
 
   useEffect(() => {
     setReady(true);
@@ -309,10 +335,45 @@ export default function AccountPage({ locale }: Props) {
     }
   }, [effectiveToken]);
 
+  const loadLocations = useCallback(async () => {
+    setLoadingLocations(true);
+    try {
+      const regions = await getLocationTree();
+      setLocationRegions(regions);
+    } catch {
+      setLocationRegions([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (tab !== 'addresses' || !effectiveToken) return;
     void loadAddresses();
   }, [tab, effectiveToken, loadAddresses]);
+
+  useEffect(() => {
+    if (tab !== 'addresses') return;
+    void loadLocations();
+  }, [tab, loadLocations]);
+
+  useEffect(() => {
+    if (!addressDraft.cityId) return;
+    if (locationRegions.length === 0) return;
+    const stillValid = cityOptions.some((city) => city.id === Number(addressDraft.cityId));
+    if (!stillValid) {
+      setAddressDraft((prev) => ({ ...prev, cityId: '', comunaId: '' }));
+    }
+  }, [addressDraft.cityId, cityOptions, locationRegions.length]);
+
+  useEffect(() => {
+    if (!addressDraft.comunaId) return;
+    if (locationRegions.length === 0) return;
+    const stillValid = comunaOptions.some((comuna) => comuna.id === Number(addressDraft.comunaId));
+    if (!stillValid) {
+      setAddressDraft((prev) => ({ ...prev, comunaId: '' }));
+    }
+  }, [addressDraft.comunaId, comunaOptions, locationRegions.length]);
 
   const handleAvatarFile = useCallback(async (file: File) => {
     if (!effectiveToken) return;
@@ -557,15 +618,24 @@ export default function AccountPage({ locale }: Props) {
   }
 
   function normalizeAddressPayload(draft: AddressDraft): CreateCustomerAddressRequest {
+    const selectedRegion = locationRegions.find((region) => region.id === selectedRegionId);
+    const selectedCity = cityOptions.find((city) => city.id === selectedCityId);
+    const selectedComuna = comunaOptions.find((comuna) => comuna.id === selectedComunaId);
+    if (!selectedRegion || !selectedCity || !selectedComuna) {
+      throw new Error(es ? 'Selecciona region, ciudad y comuna validas.' : 'Choose valid region, city, and comuna.');
+    }
     return {
       label: draft.label.trim(),
       recipientName: draft.recipientName.trim(),
       phone: draft.phone.trim(),
       line1: draft.line1.trim(),
       line2: draft.line2.trim() || undefined,
-      comuna: draft.comuna.trim(),
-      city: draft.city.trim(),
-      region: draft.region.trim(),
+      regionId: selectedRegion.id,
+      cityId: selectedCity.id,
+      comunaId: selectedComuna.id,
+      comuna: selectedComuna.name,
+      city: selectedCity.name,
+      region: selectedRegion.name,
       reference: draft.reference.trim() || undefined,
       isDefault: draft.isDefault,
     };
@@ -580,9 +650,9 @@ export default function AccountPage({ locale }: Props) {
       return es ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must contain between 8 and 15 digits.';
     }
     if (!draft.line1.trim()) return es ? 'Debes ingresar dirección.' : 'Address line is required.';
-    if (!draft.comuna.trim()) return es ? 'Debes ingresar comuna.' : 'Comuna is required.';
-    if (!draft.city.trim()) return es ? 'Debes ingresar ciudad.' : 'City is required.';
-    if (!draft.region.trim()) return es ? 'Debes ingresar región.' : 'Region is required.';
+    if (!draft.regionId) return es ? 'Debes seleccionar region.' : 'Region selection is required.';
+    if (!draft.cityId) return es ? 'Debes seleccionar ciudad.' : 'City selection is required.';
+    if (!draft.comunaId) return es ? 'Debes seleccionar comuna.' : 'Comuna selection is required.';
     return null;
   }
 
@@ -604,6 +674,9 @@ export default function AccountPage({ locale }: Props) {
           phone: payload.phone,
           line1: payload.line1,
           line2: payload.line2,
+          regionId: payload.regionId,
+          cityId: payload.cityId,
+          comunaId: payload.comunaId,
           comuna: payload.comuna,
           city: payload.city,
           region: payload.region,
@@ -1337,9 +1410,10 @@ export default function AccountPage({ locale }: Props) {
                     <button
                       type="button"
                       onClick={() => setAddressModalOpen(false)}
-                      className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/50 hover:text-pe-charcoal"
+                      aria-label={es ? 'Cerrar modal' : 'Close modal'}
+                      className="inline-flex h-10 w-10 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose/45"
                     >
-                      {es ? 'Cerrar' : 'Close'}
+                      <X size={17} strokeWidth={1.9} />
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1348,9 +1422,38 @@ export default function AccountPage({ locale }: Props) {
                     <input value={addressDraft.phone} onChange={(e) => setAddressDraft((p) => ({ ...p, phone: e.target.value }))} placeholder={es ? 'Teléfono' : 'Phone'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                     <input value={addressDraft.line1} onChange={(e) => setAddressDraft((p) => ({ ...p, line1: e.target.value }))} placeholder={es ? 'Dirección (línea 1)' : 'Address line 1'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                     <input value={addressDraft.line2} onChange={(e) => setAddressDraft((p) => ({ ...p, line2: e.target.value }))} placeholder={es ? 'Dirección (línea 2, opcional)' : 'Address line 2 (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-                    <input value={addressDraft.comuna} onChange={(e) => setAddressDraft((p) => ({ ...p, comuna: e.target.value }))} placeholder={es ? 'Comuna' : 'Comuna'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
-                    <input value={addressDraft.city} onChange={(e) => setAddressDraft((p) => ({ ...p, city: e.target.value }))} placeholder={es ? 'Ciudad' : 'City'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm" />
-                    <input value={addressDraft.region} onChange={(e) => setAddressDraft((p) => ({ ...p, region: e.target.value }))} placeholder={es ? 'Región' : 'Region'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+                    <select
+                      value={addressDraft.regionId}
+                      onChange={(e) => setAddressDraft((p) => ({ ...p, regionId: e.target.value, cityId: '', comunaId: '', region: '', city: '', comuna: '' }))}
+                      className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2 bg-white"
+                    >
+                      <option value="">{loadingLocations ? (es ? 'Cargando ubicaciones...' : 'Loading locations...') : (es ? 'Selecciona region' : 'Select region')}</option>
+                      {locationRegions.map((region) => (
+                        <option key={region.id} value={region.id}>{region.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={addressDraft.cityId}
+                      onChange={(e) => setAddressDraft((p) => ({ ...p, cityId: e.target.value, comunaId: '', city: '', comuna: '' }))}
+                      disabled={!addressDraft.regionId}
+                      className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
+                    >
+                      <option value="">{es ? 'Selecciona ciudad' : 'Select city'}</option>
+                      {cityOptions.map((city) => (
+                        <option key={city.id} value={city.id}>{city.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={addressDraft.comunaId}
+                      onChange={(e) => setAddressDraft((p) => ({ ...p, comunaId: e.target.value }))}
+                      disabled={!addressDraft.cityId}
+                      className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
+                    >
+                      <option value="">{es ? 'Selecciona comuna' : 'Select comuna'}</option>
+                      {comunaOptions.map((comuna) => (
+                        <option key={comuna.id} value={comuna.id}>{comuna.name}</option>
+                      ))}
+                    </select>
                     <input value={addressDraft.reference} onChange={(e) => setAddressDraft((p) => ({ ...p, reference: e.target.value }))} placeholder={es ? 'Referencia (opcional)' : 'Reference (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                   </div>
                   <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal/75">

@@ -56,6 +56,9 @@ PilarEstilo/
 - Payment-gateway simulation controls in account/admin workflows for non-production environments
 - Checkout en `cart` con seleccion de envio basada en libreta de direcciones (`shippingAddressId`) y snapshot de referencia de envio persistido en orden
 - `Mi cuenta` incluye gestion de direcciones de cliente (crear, editar, eliminar, marcar principal)
+- Direcciones de cliente con `regionId/cityId/comunaId` obligatorios y nombres canónicos derivados de catálogo geográfico (`geo_regions -> geo_cities -> geo_communes`)
+- Formularios de dirección en `cart` y `mi cuenta` ahora usan combos dependientes (región -> ciudad -> comuna), sin edición manual de esos campos
+- Configuración de envíos en admin usa búsqueda de comunas contra catálogo (`/api/locations/comunas/search`) para poblar zonas
 - Account orders muestra snapshot de envio y permite confirmacion de entrega cuando la orden esta en `SHIPPED`
 
 ---
@@ -188,6 +191,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V46`: shipping selection persisted on `orders` (`shipping_zone_code`, `shipping_courier_id`, `shipping_courier_name`, `shipping_payment_mode`, `shipping_address_reference`)
 - `V47`: dispatch shipping snapshot + structured carrier override audit on `dispatches` (with one-time backfill from `orders`)
 - `V48`: customer address book (`customer_addresses`), default-address constraints/indexes, and `orders.shipping_address_id`
+- `V49`: catálogo geográfico Chile (`geo_regions`, `geo_cities`, `geo_communes`) + FK opcionales en `customer_addresses` (`region_id`, `city_id`, `commune_id`) con backfill best-effort
 
 ---
 

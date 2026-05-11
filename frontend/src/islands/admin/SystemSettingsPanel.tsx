@@ -13,6 +13,7 @@ import {
   ShieldX,
 } from 'lucide-react';
 import {
+  searchLocationCommunes,
   getHeroModels,
   getSystemSettings,
   migrateCategoryImages,
@@ -22,6 +23,7 @@ import {
   type HeroModelSlot,
   type HeroModelsDto,
   type MediaStorageProvider,
+  type LocationCommuneDto,
   type OptimizeAllResult,
   type PaymentGatewayProvider,
   type ResizeProductsCategoriesResult,
@@ -467,6 +469,9 @@ export default function SystemSettingsPanel() {
   const [heroModels, setHeroModels] = useState<HeroModelsDto | null>(null);
   const [heroLoading, setHeroLoading] = useState(false);
   const [heroUploadSlot, setHeroUploadSlot] = useState<HeroModelSlot | null>(null);
+  const [shippingCommuneSearch, setShippingCommuneSearch] = useState<Record<string, string>>({});
+  const [shippingCommuneResults, setShippingCommuneResults] = useState<Record<string, LocationCommuneDto[]>>({});
+  const [shippingCommuneLoading, setShippingCommuneLoading] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState<FormState>({
     whatsappNumber: '',
     instagramUrl: '',
@@ -617,6 +622,40 @@ export default function SystemSettingsPanel() {
       };
     });
     setFeedback(null);
+  }
+
+  function addCommuneToZone(idx: number, comunaName: string) {
+    const value = comunaName.trim();
+    if (!value) return;
+    const next = [...form.shippingZones];
+    const zone = next[idx];
+    if (!zone) return;
+    const exists = zone.comunas.some((entry) => entry.toLowerCase() === value.toLowerCase());
+    if (exists) return;
+    next[idx] = {
+      ...zone,
+      comunas: [...zone.comunas, value].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })),
+    };
+    updateField('shippingZones', next);
+  }
+
+  async function handleShippingCommuneSearch(zoneCode: string, query: string) {
+    setShippingCommuneSearch((prev) => ({ ...prev, [zoneCode]: query }));
+    const normalized = query.trim();
+    if (normalized.length < 2) {
+      setShippingCommuneResults((prev) => ({ ...prev, [zoneCode]: [] }));
+      setShippingCommuneLoading((prev) => ({ ...prev, [zoneCode]: false }));
+      return;
+    }
+    setShippingCommuneLoading((prev) => ({ ...prev, [zoneCode]: true }));
+    try {
+      const rows = await searchLocationCommunes({ q: normalized, limit: 10 });
+      setShippingCommuneResults((prev) => ({ ...prev, [zoneCode]: rows }));
+    } catch {
+      setShippingCommuneResults((prev) => ({ ...prev, [zoneCode]: [] }));
+    } finally {
+      setShippingCommuneLoading((prev) => ({ ...prev, [zoneCode]: false }));
+    }
   }
 
   const handleMigrateCategories = async () => {
@@ -1853,23 +1892,35 @@ export default function SystemSettingsPanel() {
                     </div>
                     <input
                       type="text"
-                      placeholder="Agregar comuna y Enter"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                          e.preventDefault();
-                          const value = e.currentTarget.value.trim();
-                          if (zone.comunas.includes(value)) {
-                            e.currentTarget.value = '';
-                            return;
-                          }
-                          const next = [...form.shippingZones];
-                          next[idx] = { ...zone, comunas: [...zone.comunas, value] };
-                          updateField('shippingZones', next);
-                          e.currentTarget.value = '';
-                        }
+                      value={shippingCommuneSearch[zone.code] ?? ''}
+                      placeholder="Buscar comuna..."
+                      onChange={(e) => {
+                        void handleShippingCommuneSearch(zone.code, e.target.value);
                       }}
                       className="w-full border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.75rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
                     />
+                    {shippingCommuneLoading[zone.code] && (
+                      <p className="mt-1 font-sans text-[0.68rem] text-pe-charcoal/55">Buscando comunas...</p>
+                    )}
+                    {(shippingCommuneResults[zone.code] ?? []).length > 0 && (
+                      <ul className="mt-2 border border-pe-black/10 bg-pe-white max-h-44 overflow-y-auto">
+                        {(shippingCommuneResults[zone.code] ?? []).map((option) => (
+                          <li key={`${zone.code}-${option.id}`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addCommuneToZone(idx, option.name);
+                                setShippingCommuneSearch((prev) => ({ ...prev, [zone.code]: '' }));
+                                setShippingCommuneResults((prev) => ({ ...prev, [zone.code]: [] }));
+                              }}
+                              className="w-full text-left px-2.5 py-2 font-sans text-[0.74rem] text-pe-charcoal hover:bg-pe-cream/35 transition-colors"
+                            >
+                              {option.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </article>
