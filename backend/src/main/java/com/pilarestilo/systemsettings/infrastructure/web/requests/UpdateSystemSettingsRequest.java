@@ -74,5 +74,8 @@ public record UpdateSystemSettingsRequest(
         @NotNull Boolean smtpStarttlsEnabled,
         String shippingZonesJson,
         String shippingCouriersJson,
-        @Size(max = 32) String shippingPaymentMode
+        @Size(max = 32) String shippingPaymentMode,
+        Boolean bankTransferAutoCancelEnabled,
+        @Min(5) @Max(1440) Integer bankTransferAutoCancelTimeoutMinutes,
+        @Size(max = 64) String bankTransferAutoCancelCron
 ) {}

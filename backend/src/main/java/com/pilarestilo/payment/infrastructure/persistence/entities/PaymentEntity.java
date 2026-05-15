@@ -52,6 +52,9 @@ public class PaymentEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -87,4 +90,6 @@ public class PaymentEntity {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 }

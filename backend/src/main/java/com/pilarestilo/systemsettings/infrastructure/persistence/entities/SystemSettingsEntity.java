@@ -185,6 +185,15 @@ public class SystemSettingsEntity {
     @Column(name = "shipping_payment_mode", length = 32)
     private String shippingPaymentMode;
 
+    @Column(name = "bank_transfer_auto_cancel_enabled", nullable = false)
+    private boolean bankTransferAutoCancelEnabled;
+
+    @Column(name = "bank_transfer_auto_cancel_timeout_minutes", nullable = false)
+    private int bankTransferAutoCancelTimeoutMinutes;
+
+    @Column(name = "bank_transfer_auto_cancel_cron", nullable = false, length = 64)
+    private String bankTransferAutoCancelCron;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -341,6 +350,12 @@ public class SystemSettingsEntity {
     public void setShippingCouriersJson(String shippingCouriersJson) { this.shippingCouriersJson = shippingCouriersJson; }
     public String getShippingPaymentMode() { return shippingPaymentMode; }
     public void setShippingPaymentMode(String shippingPaymentMode) { this.shippingPaymentMode = shippingPaymentMode; }
+    public boolean isBankTransferAutoCancelEnabled() { return bankTransferAutoCancelEnabled; }
+    public void setBankTransferAutoCancelEnabled(boolean bankTransferAutoCancelEnabled) { this.bankTransferAutoCancelEnabled = bankTransferAutoCancelEnabled; }
+    public int getBankTransferAutoCancelTimeoutMinutes() { return bankTransferAutoCancelTimeoutMinutes; }
+    public void setBankTransferAutoCancelTimeoutMinutes(int bankTransferAutoCancelTimeoutMinutes) { this.bankTransferAutoCancelTimeoutMinutes = bankTransferAutoCancelTimeoutMinutes; }
+    public String getBankTransferAutoCancelCron() { return bankTransferAutoCancelCron; }
+    public void setBankTransferAutoCancelCron(String bankTransferAutoCancelCron) { this.bankTransferAutoCancelCron = bankTransferAutoCancelCron; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public String getUpdatedBy() { return updatedBy; }

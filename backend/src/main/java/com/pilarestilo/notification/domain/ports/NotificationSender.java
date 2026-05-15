@@ -15,4 +15,6 @@ public interface NotificationSender {
     void sendOrderShipped(UUID orderId, NotificationRecipient recipient);
 
     void sendDiscountCodeAssigned(String code, NotificationRecipient recipient);
+
+    default void sendOrderCancelled(UUID orderId, String reason, NotificationRecipient recipient) {}
 }

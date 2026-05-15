@@ -59,7 +59,8 @@ public class RegisterPaymentUseCase {
                 p.getTransferAccountNumber(),
                 p.getTransferBankName(),
                 p.getTransferAccountType(),
-                p.getReviewedBy(), p.getReviewedAt(), p.getCreatedAt()
+                p.getReviewedBy(), p.getReviewedAt(), p.getCreatedAt(),
+                p.getRejectionReason()
         );
     }
 }

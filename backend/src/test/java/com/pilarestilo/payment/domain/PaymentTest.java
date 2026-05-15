@@ -128,4 +128,30 @@ class PaymentTest {
 
         assertThrows(DomainException.class, p::rejectByGateway);
     }
+
+    @Test
+    void systemCancel_sets_REJECTED_with_reason_and_system_reviewer() {
+        Payment p = newPendingPayment();
+        p.systemCancel("Cierre por sistema");
+
+        assertEquals(PaymentStatus.REJECTED, p.getStatus());
+        assertEquals(Payment.SYSTEM_REVIEWER_ID, p.getReviewedBy());
+        assertNotNull(p.getReviewedAt());
+        assertEquals("Cierre por sistema", p.getRejectionReason());
+    }
+
+    @Test
+    void systemCancel_rejects_non_PENDING_payment() {
+        Payment p = newPendingPayment();
+        p.submitProof("ref-001");
+
+        assertThrows(DomainException.class, () -> p.systemCancel("reason"));
+    }
+
+    @Test
+    void systemCancel_rejects_non_BANK_TRANSFER_payment() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+
+        assertThrows(DomainException.class, () -> p.systemCancel("reason"));
+    }
 }

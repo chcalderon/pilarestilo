@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public class Payment {
 
+    public static final UUID SYSTEM_REVIEWER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
     private UUID id;
     private UUID orderId;
     private PaymentMethod method;
@@ -22,6 +24,7 @@ public class Payment {
     private UUID reviewedBy;
     private Instant reviewedAt;
     private Instant createdAt;
+    private String rejectionReason;
 
     private Payment() {}
 
@@ -61,7 +64,8 @@ public class Payment {
                                        String transferAccountNumber,
                                        String transferBankName,
                                        String transferAccountType,
-                                       UUID reviewedBy, Instant reviewedAt, Instant createdAt) {
+                                       UUID reviewedBy, Instant reviewedAt, Instant createdAt,
+                                       String rejectionReason) {
         Payment p = new Payment();
         p.id = id;
         p.orderId = orderId;
@@ -76,6 +80,7 @@ public class Payment {
         p.reviewedBy = reviewedBy;
         p.reviewedAt = reviewedAt;
         p.createdAt = createdAt;
+        p.rejectionReason = rejectionReason;
         return p;
     }
 
@@ -167,6 +172,19 @@ public class Payment {
         return true;
     }
 
+    public void systemCancel(String reason) {
+        if (status != PaymentStatus.PENDING) {
+            throw new DomainException("Only PENDING payments can be system-cancelled, got " + status);
+        }
+        if (method != PaymentMethod.BANK_TRANSFER) {
+            throw new DomainException("System cancellation only supports BANK_TRANSFER");
+        }
+        this.status = PaymentStatus.REJECTED;
+        this.reviewedBy = SYSTEM_REVIEWER_ID;
+        this.reviewedAt = Instant.now();
+        this.rejectionReason = reason;
+    }
+
     public UUID getId() { return id; }
     public UUID getOrderId() { return orderId; }
     public PaymentMethod getMethod() { return method; }
@@ -180,4 +198,5 @@ public class Payment {
     public UUID getReviewedBy() { return reviewedBy; }
     public Instant getReviewedAt() { return reviewedAt; }
     public Instant getCreatedAt() { return createdAt; }
+    public String getRejectionReason() { return rejectionReason; }
 }

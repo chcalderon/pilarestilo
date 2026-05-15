@@ -1,5 +1,6 @@
 package com.pilarestilo.payment.infrastructure.persistence.repositories;
 
+import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.payment.domain.enums.PaymentStatus;
 import com.pilarestilo.payment.domain.model.Payment;
 import com.pilarestilo.payment.domain.ports.PaymentRepository;
@@ -8,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +49,13 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return jpaRepository.findAll(pageable).map(this::toDomain);
     }
 
+    @Override
+    public List<Payment> findPendingBankTransfersOlderThan(Instant cutoff, int limit) {
+        return jpaRepository.findPendingBankTransfersOlderThan(
+                PaymentStatus.PENDING, PaymentMethod.BANK_TRANSFER, cutoff, limit
+        ).stream().map(this::toDomain).toList();
+    }
+
     private PaymentEntity toEntity(Payment p) {
         PaymentEntity e = new PaymentEntity();
         e.setId(p.getId());
@@ -61,6 +71,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         e.setReviewedBy(p.getReviewedBy());
         e.setReviewedAt(p.getReviewedAt());
         e.setCreatedAt(p.getCreatedAt());
+        e.setRejectionReason(p.getRejectionReason());
         return e;
     }
 
@@ -73,7 +84,8 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
                 e.getTransferAccountNumber(),
                 e.getTransferBankName(),
                 e.getTransferAccountType(),
-                e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt()
+                e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt(),
+                e.getRejectionReason()
         );
     }
 }

@@ -19,5 +19,6 @@ public record PaymentDto(
         String transferAccountType,
         UUID reviewedBy,
         Instant reviewedAt,
-        Instant createdAt
+        Instant createdAt,
+        String rejectionReason
 ) {}

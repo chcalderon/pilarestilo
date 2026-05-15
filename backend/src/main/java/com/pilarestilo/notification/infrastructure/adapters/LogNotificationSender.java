@@ -37,4 +37,9 @@ public class LogNotificationSender implements NotificationSender {
     public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
         log.info("[NOTIFICATION] DISCOUNT_CODE_ASSIGNED code={} recipient={}", code, recipient.preferredEmailThenPhone());
     }
+
+    @Override
+    public void sendOrderCancelled(UUID orderId, String reason, NotificationRecipient recipient) {
+        log.info("[NOTIFICATION] ORDER_CANCELLED orderId={} reason={} recipient={}", orderId, reason, recipient.preferredEmailThenPhone());
+    }
 }

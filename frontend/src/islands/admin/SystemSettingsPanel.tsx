@@ -52,6 +52,9 @@ type FormState = {
   bankTransferAccountNumber: string;
   bankTransferBankName: string;
   bankTransferAccountType: string;
+  bankTransferAutoCancelEnabled: boolean;
+  bankTransferAutoCancelTimeoutMinutes: number;
+  bankTransferAutoCancelCron: string;
   paymentMethodBankTransferEnabled: boolean;
   paymentMethodGatewayEnabled: boolean;
   paymentGatewayProviders: PaymentGatewayProvider[];
@@ -320,6 +323,9 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     bankTransferAccountNumber: settings.bankTransferAccountNumber ?? '',
     bankTransferBankName: settings.bankTransferBankName ?? '',
     bankTransferAccountType: settings.bankTransferAccountType ?? '',
+    bankTransferAutoCancelEnabled: settings.bankTransferAutoCancelEnabled ?? true,
+    bankTransferAutoCancelTimeoutMinutes: settings.bankTransferAutoCancelTimeoutMinutes ?? 30,
+    bankTransferAutoCancelCron: settings.bankTransferAutoCancelCron ?? '0 */15 * * * *',
     paymentMethodBankTransferEnabled: settings.paymentMethodBankTransferEnabled ?? true,
     paymentMethodGatewayEnabled: settings.paymentMethodGatewayEnabled ?? true,
     paymentGatewayProviders: settings.paymentGatewayProviders?.length
@@ -481,6 +487,9 @@ export default function SystemSettingsPanel() {
     bankTransferAccountNumber: '',
     bankTransferBankName: '',
     bankTransferAccountType: '',
+    bankTransferAutoCancelEnabled: true,
+    bankTransferAutoCancelTimeoutMinutes: 30,
+    bankTransferAutoCancelCron: '0 */15 * * * *',
     paymentMethodBankTransferEnabled: true,
     paymentMethodGatewayEnabled: true,
     paymentGatewayProviders: ['MERCADO_PAGO'],
@@ -970,6 +979,9 @@ export default function SystemSettingsPanel() {
       shippingZonesJson: JSON.stringify(form.shippingZones),
       shippingCouriersJson: JSON.stringify(form.shippingCouriers),
       shippingPaymentMode: form.shippingPaymentMode,
+      bankTransferAutoCancelEnabled: form.bankTransferAutoCancelEnabled,
+      bankTransferAutoCancelTimeoutMinutes: form.bankTransferAutoCancelTimeoutMinutes,
+      bankTransferAutoCancelCron: form.bankTransferAutoCancelCron,
     };
 
     setSaving(true);
@@ -1259,6 +1271,52 @@ export default function SystemSettingsPanel() {
                   </span>
                 )}
               </label>
+            </div>
+
+            <div className="mt-4 border-t border-pe-black/10 pt-4">
+              <p className="mb-3 font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                Cancelación automática por falta de comprobante
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.bankTransferAutoCancelEnabled}
+                    onChange={(e) => updateField('bankTransferAutoCancelEnabled', e.target.checked)}
+                    className="h-4 w-4 accent-pe-rose"
+                  />
+                  <span className="font-sans text-[0.8rem] text-pe-charcoal">Cancelación automática</span>
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                    Minutos de espera
+                  </span>
+                  <input
+                    type="number"
+                    min={5}
+                    max={1440}
+                    value={form.bankTransferAutoCancelTimeoutMinutes}
+                    onChange={(e) => updateField('bankTransferAutoCancelTimeoutMinutes', Number(e.target.value))}
+                    className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  />
+                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Entre 5 y 1440 min</span>
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                    Intervalo cron
+                  </span>
+                  <input
+                    type="text"
+                    value={form.bankTransferAutoCancelCron}
+                    onChange={(e) => updateField('bankTransferAutoCancelCron', e.target.value)}
+                    className="border border-pe-black/15 px-3 py-2 font-mono text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    placeholder="0 */15 * * * *"
+                  />
+                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Expresión Spring cron (6 campos)</span>
+                </label>
+              </div>
             </div>
           </div>
         )}

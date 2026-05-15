@@ -61,6 +61,9 @@ public record SystemSettingsDto(
         String shippingZonesJson,
         String shippingCouriersJson,
         String shippingPaymentMode,
+        boolean bankTransferAutoCancelEnabled,
+        int bankTransferAutoCancelTimeoutMinutes,
+        String bankTransferAutoCancelCron,
         Instant updatedAt,
         String updatedBy
 ) {}

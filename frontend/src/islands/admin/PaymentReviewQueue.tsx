@@ -3,6 +3,7 @@ import { Check, X, RefreshCw, ExternalLink } from 'lucide-react';
 import {
   getReviewQueuePayments,
   getApprovedPayments,
+  getRejectedPayments,
   approvePayment,
   rejectPayment,
   simulateGatewayPaymentStatus,
@@ -29,7 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const ACTIONABLE_STATUSES = new Set(['SUBMITTED', 'UNDER_REVIEW']);
 
-type TabKey = 'queue' | 'approved';
+type TabKey = 'queue' | 'approved' | 'rejected';
 type ActionState = { id: string; action: 'approve' | 'reject' | 'simulate-approve' | 'simulate-reject' } | null;
 type DateSortDirection = 'desc' | 'asc';
 type QueueFeedback = { type: 'success' | 'error'; text: string } | null;
@@ -40,6 +41,7 @@ export default function PaymentReviewQueue() {
   const [activeTab, setActiveTab] = useState<TabKey>('queue');
   const [queuePayments, setQueuePayments] = useState<PaymentDto[]>([]);
   const [approvedPayments, setApprovedPayments] = useState<PaymentDto[]>([]);
+  const [rejectedPayments, setRejectedPayments] = useState<PaymentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<ActionState>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,12 +70,14 @@ export default function PaymentReviewQueue() {
     }
     setLoading(true);
     try {
-      const [queue, approved] = await Promise.all([
+      const [queue, approved, rejected] = await Promise.all([
         getReviewQueuePayments(effectiveToken),
         getApprovedPayments(effectiveToken),
+        getRejectedPayments(effectiveToken),
       ]);
       setQueuePayments(queue);
       setApprovedPayments(approved);
+      setRejectedPayments(rejected);
     } finally {
       setLoading(false);
     }
@@ -308,8 +312,39 @@ export default function PaymentReviewQueue() {
     },
   ];
 
+  const rejectedColumns: Column<PaymentDto>[] = [
+    ...baseColumns,
+    {
+      key: 'rejectionReason',
+      header: 'Motivo rechazo',
+      render: (row) => (
+        <span className="font-sans text-[0.72rem] text-pe-charcoal/60 italic">
+          {row.rejectionReason ?? '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'reviewedAt',
+      header: 'Cancelado',
+      width: '140px',
+      render: (row) => (
+        <span className="font-sans text-[0.72rem] text-pe-charcoal/40">
+          {row.reviewedAt
+            ? new Date(String(row.reviewedAt)).toLocaleDateString('es-CL', {
+              day: '2-digit',
+              month: '2-digit',
+              year: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+            : '-'}
+        </span>
+      ),
+    },
+  ];
+
   const visibleData = useMemo(() => {
-    const source = activeTab === 'queue' ? queuePayments : approvedPayments;
+    const source = activeTab === 'queue' ? queuePayments : activeTab === 'approved' ? approvedPayments : rejectedPayments;
     const term = searchTerm.trim().toLowerCase();
 
     const filtered = term
@@ -320,19 +355,21 @@ export default function PaymentReviewQueue() {
           String(row.method),
           String(row.status),
           String(row.proofReference ?? ''),
+          String(row.rejectionReason ?? ''),
         ].join(' ').toLowerCase();
         return searchable.includes(term);
       })
       : source;
 
     return [...filtered].sort((a, b) => {
-      const aDateValue = activeTab === 'approved' && a.reviewedAt ? a.reviewedAt : a.createdAt;
-      const bDateValue = activeTab === 'approved' && b.reviewedAt ? b.reviewedAt : b.createdAt;
+      const useReviewedAt = (activeTab === 'approved' || activeTab === 'rejected');
+      const aDateValue = useReviewedAt && a.reviewedAt ? a.reviewedAt : a.createdAt;
+      const bDateValue = useReviewedAt && b.reviewedAt ? b.reviewedAt : b.createdAt;
       const aTime = new Date(String(aDateValue)).getTime();
       const bTime = new Date(String(bDateValue)).getTime();
       return dateSort === 'desc' ? bTime - aTime : aTime - bTime;
     });
-  }, [activeTab, queuePayments, approvedPayments, searchTerm, dateSort]);
+  }, [activeTab, queuePayments, approvedPayments, rejectedPayments, searchTerm, dateSort]);
 
   const canClearFilters = searchTerm.trim().length > 0 || dateSort !== 'desc';
 
@@ -360,6 +397,16 @@ export default function PaymentReviewQueue() {
           >
             Pagados ({approvedPayments.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rejected')}
+            className={[
+              'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
+              activeTab === 'rejected' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+            ].join(' ')}
+          >
+            Rechazados ({rejectedPayments.length})
+          </button>
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -367,7 +414,7 @@ export default function PaymentReviewQueue() {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : 'Buscar pago aprobado...'}
+            placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : activeTab === 'approved' ? 'Buscar pago aprobado...' : 'Buscar pago rechazado...'}
             className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-none focus:border-pe-rose/45"
             aria-label="Buscar pagos"
           />
@@ -437,11 +484,11 @@ export default function PaymentReviewQueue() {
       </p>
 
       <DataTable
-        columns={activeTab === 'queue' ? queueColumns : approvedColumns}
+        columns={activeTab === 'queue' ? queueColumns : activeTab === 'approved' ? approvedColumns : rejectedColumns}
         data={visibleData}
         keyField="id"
         loading={loading}
-        emptyMessage={activeTab === 'queue' ? 'No hay pagos por revisar.' : 'No hay pagos aprobados.'}
+        emptyMessage={activeTab === 'queue' ? 'No hay pagos por revisar.' : activeTab === 'approved' ? 'No hay pagos aprobados.' : 'No hay pagos rechazados.'}
       />
     </div>
   );

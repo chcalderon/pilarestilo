@@ -67,6 +67,9 @@ public final class SystemSettingsMapper {
                 settings.getShippingZonesJson(),
                 settings.getShippingCouriersJson(),
                 settings.getShippingPaymentMode().name(),
+                settings.isBankTransferAutoCancelEnabled(),
+                settings.getBankTransferAutoCancelTimeoutMinutes(),
+                settings.getBankTransferAutoCancelCron(),
                 settings.getUpdatedAt(),
                 settings.getUpdatedBy()
         );

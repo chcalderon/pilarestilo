@@ -97,6 +97,7 @@ export interface PaymentDto {
   reviewedBy?: string;
   reviewedAt?: string;
   createdAt: string;
+  rejectionReason?: string | null;
 }
 
 export interface PaymentGatewayCheckoutDto {
@@ -271,6 +272,9 @@ export interface SystemSettingsDto {
   shippingZonesJson?: string | null;
   shippingCouriersJson?: string | null;
   shippingPaymentMode?: ShippingPaymentMode;
+  bankTransferAutoCancelEnabled: boolean;
+  bankTransferAutoCancelTimeoutMinutes: number;
+  bankTransferAutoCancelCron: string;
   updatedAt?: string;
   updatedBy?: string | null;
 }
@@ -340,6 +344,9 @@ export interface UpdateSystemSettingsRequest {
   shippingZonesJson?: string;
   shippingCouriersJson?: string;
   shippingPaymentMode?: ShippingPaymentMode;
+  bankTransferAutoCancelEnabled?: boolean;
+  bankTransferAutoCancelTimeoutMinutes?: number;
+  bankTransferAutoCancelCron?: string;
 }
 
 export interface PublicStoreSettingsDto {
@@ -938,6 +945,14 @@ async function listPaymentsByStatus(status: string, token?: string): Promise<Pay
 export async function getPendingPayments(token?: string): Promise<PaymentDto[]> {
   try {
     return await listPaymentsByStatus('PENDING', token);
+  } catch {
+    return [];
+  }
+}
+
+export async function getRejectedPayments(token?: string): Promise<PaymentDto[]> {
+  try {
+    return await listPaymentsByStatus('REJECTED', token);
   } catch {
     return [];
   }

@@ -89,6 +89,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setShippingZonesJson(settings.getShippingZonesJson());
         entity.setShippingCouriersJson(settings.getShippingCouriersJson());
         entity.setShippingPaymentMode(settings.getShippingPaymentMode().name());
+        entity.setBankTransferAutoCancelEnabled(settings.isBankTransferAutoCancelEnabled());
+        entity.setBankTransferAutoCancelTimeoutMinutes(settings.getBankTransferAutoCancelTimeoutMinutes());
+        entity.setBankTransferAutoCancelCron(settings.getBankTransferAutoCancelCron());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -154,6 +157,9 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getShippingZonesJson(),
                 entity.getShippingCouriersJson(),
                 entity.getShippingPaymentMode(),
+                entity.isBankTransferAutoCancelEnabled(),
+                entity.getBankTransferAutoCancelTimeoutMinutes(),
+                entity.getBankTransferAutoCancelCron(),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

@@ -67,5 +67,8 @@ public record UpdateSystemSettingsCommand(
         String shippingZonesJson,
         String shippingCouriersJson,
         String shippingPaymentMode,
+        Boolean bankTransferAutoCancelEnabled,
+        Integer bankTransferAutoCancelTimeoutMinutes,
+        String bankTransferAutoCancelCron,
         String updatedBy
 ) {}

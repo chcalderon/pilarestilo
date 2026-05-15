@@ -113,6 +113,9 @@ public class SystemSettingsController {
                 request.shippingZonesJson(),
                 request.shippingCouriersJson(),
                 request.shippingPaymentMode(),
+                request.bankTransferAutoCancelEnabled(),
+                request.bankTransferAutoCancelTimeoutMinutes(),
+                request.bankTransferAutoCancelCron(),
                 updatedBy
         ));
     }

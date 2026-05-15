@@ -74,6 +74,9 @@ public class SystemSettings {
     private String shippingZonesJson;
     private String shippingCouriersJson;
     private ShippingPaymentMode shippingPaymentMode;
+    private boolean bankTransferAutoCancelEnabled;
+    private int bankTransferAutoCancelTimeoutMinutes;
+    private String bankTransferAutoCancelCron;
     private Instant updatedAt;
     private String updatedBy;
 
@@ -135,6 +138,9 @@ public class SystemSettings {
         settings.shippingZonesJson = DEFAULT_SHIPPING_ZONES_JSON;
         settings.shippingCouriersJson = DEFAULT_SHIPPING_COURIERS_JSON;
         settings.shippingPaymentMode = ShippingPaymentMode.POR_PAGAR;
+        settings.bankTransferAutoCancelEnabled = true;
+        settings.bankTransferAutoCancelTimeoutMinutes = 30;
+        settings.bankTransferAutoCancelCron = "0 */15 * * * *";
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
         return settings;
@@ -199,6 +205,9 @@ public class SystemSettings {
             String shippingZonesJson,
             String shippingCouriersJson,
             String shippingPaymentMode,
+            Boolean bankTransferAutoCancelEnabled,
+            Integer bankTransferAutoCancelTimeoutMinutes,
+            String bankTransferAutoCancelCron,
             Instant updatedAt,
             String updatedBy
     ) {
@@ -263,6 +272,9 @@ public class SystemSettings {
         settings.shippingZonesJson = normalizeShippingZonesJson(shippingZonesJson);
         settings.shippingCouriersJson = normalizeShippingCouriersJson(shippingCouriersJson);
         settings.shippingPaymentMode = normalizeShippingPaymentMode(shippingPaymentMode);
+        settings.bankTransferAutoCancelEnabled = bankTransferAutoCancelEnabled != null && bankTransferAutoCancelEnabled;
+        settings.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
+        settings.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
@@ -327,6 +339,9 @@ public class SystemSettings {
             String shippingZonesJson,
             String shippingCouriersJson,
             String shippingPaymentMode,
+            Boolean bankTransferAutoCancelEnabled,
+            Integer bankTransferAutoCancelTimeoutMinutes,
+            String bankTransferAutoCancelCron,
             String updatedBy
     ) {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
@@ -386,6 +401,9 @@ public class SystemSettings {
         this.shippingZonesJson = normalizeShippingZonesJson(shippingZonesJson);
         this.shippingCouriersJson = normalizeShippingCouriersJson(shippingCouriersJson);
         this.shippingPaymentMode = normalizeShippingPaymentMode(shippingPaymentMode);
+        this.bankTransferAutoCancelEnabled = bankTransferAutoCancelEnabled != null && bankTransferAutoCancelEnabled;
+        this.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
+        this.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         validateConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
@@ -519,6 +537,24 @@ public class SystemSettings {
         }
     }
 
+    private static int normalizeCancelTimeout(Integer value) {
+        int v = value == null ? 30 : value;
+        if (v < 5) throw new DomainException("Bank transfer auto-cancel timeout must be >= 5 minutes");
+        if (v > 1440) throw new DomainException("Bank transfer auto-cancel timeout must be <= 1440 minutes");
+        return v;
+    }
+
+    private static String normalizeCancelCron(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) return "0 */15 * * * *";
+        try {
+            org.springframework.scheduling.support.CronExpression.parse(normalized);
+        } catch (IllegalArgumentException ex) {
+            throw new DomainException("Invalid cron expression: " + normalized);
+        }
+        return normalized;
+    }
+
     private static BigDecimal normalizeInferListPriceMultiplier(BigDecimal value) {
         BigDecimal normalized = value == null ? new BigDecimal("1.35") : value;
         if (normalized.compareTo(new BigDecimal("1.00")) < 0) {
@@ -643,6 +679,9 @@ public class SystemSettings {
     public String getShippingZonesJson() { return shippingZonesJson; }
     public String getShippingCouriersJson() { return shippingCouriersJson; }
     public ShippingPaymentMode getShippingPaymentMode() { return shippingPaymentMode; }
+    public boolean isBankTransferAutoCancelEnabled() { return bankTransferAutoCancelEnabled; }
+    public int getBankTransferAutoCancelTimeoutMinutes() { return bankTransferAutoCancelTimeoutMinutes; }
+    public String getBankTransferAutoCancelCron() { return bankTransferAutoCancelCron; }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getUpdatedBy() { return updatedBy; }
 }

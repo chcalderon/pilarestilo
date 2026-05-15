@@ -3,10 +3,12 @@ package com.pilarestilo.systemsettings.application.usecases;
 import com.pilarestilo.systemsettings.application.commands.UpdateSystemSettingsCommand;
 import com.pilarestilo.systemsettings.application.dto.SystemSettingsDto;
 import com.pilarestilo.systemsettings.application.mappers.SystemSettingsMapper;
+import com.pilarestilo.systemsettings.domain.events.BankTransferSettingsChangedEvent;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
 import com.pilarestilo.shared.infrastructure.cache.CacheNames;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +20,16 @@ public class UpdateSystemSettingsUseCase {
 
     private final SystemSettingsRepository systemSettingsRepository;
     private final SystemSettingsCryptoService cryptoService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public UpdateSystemSettingsUseCase(
             SystemSettingsRepository systemSettingsRepository,
-            SystemSettingsCryptoService cryptoService
+            SystemSettingsCryptoService cryptoService,
+            ApplicationEventPublisher applicationEventPublisher
     ) {
         this.systemSettingsRepository = systemSettingsRepository;
         this.cryptoService = cryptoService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional
@@ -67,6 +72,10 @@ public class UpdateSystemSettingsUseCase {
                 command.n8nApiKey(),
                 command.clearN8nApiKey()
         );
+
+        boolean oldEnabled = settings.isBankTransferAutoCancelEnabled();
+        int oldTimeout = settings.getBankTransferAutoCancelTimeoutMinutes();
+        String oldCron = settings.getBankTransferAutoCancelCron();
 
         settings.update(
                 command.whatsappNumber(),
@@ -126,10 +135,24 @@ public class UpdateSystemSettingsUseCase {
                 command.shippingZonesJson(),
                 command.shippingCouriersJson(),
                 command.shippingPaymentMode(),
+                command.bankTransferAutoCancelEnabled(),
+                command.bankTransferAutoCancelTimeoutMinutes(),
+                command.bankTransferAutoCancelCron(),
                 command.updatedBy()
         );
 
         var saved = systemSettingsRepository.save(settings);
+
+        if (saved.isBankTransferAutoCancelEnabled() != oldEnabled
+                || saved.getBankTransferAutoCancelTimeoutMinutes() != oldTimeout
+                || !saved.getBankTransferAutoCancelCron().equals(oldCron)) {
+            applicationEventPublisher.publishEvent(new BankTransferSettingsChangedEvent(
+                    saved.isBankTransferAutoCancelEnabled(),
+                    saved.getBankTransferAutoCancelCron(),
+                    saved.getBankTransferAutoCancelTimeoutMinutes()
+            ));
+        }
+
         return SystemSettingsMapper.toDto(saved);
     }
 
