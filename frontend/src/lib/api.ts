@@ -384,16 +384,26 @@ export interface CreditMovementDto {
   createdAt: string;
 }
 
-export type CashMovementType = 'SALE' | 'IN' | 'OUT' | 'REFUND';
+export type CashMovementType = 'IN' | 'OUT';
+
+export type CashMovementCategory =
+  | 'INITIAL_BALANCE'
+  | 'CASH_SALE'
+  | 'WITHDRAWAL'
+  | 'EXPENSE'
+  | 'ADJUSTMENT'
+  | 'REFUND';
 
 export interface CashMovementDto {
   id: string;
   type: CashMovementType;
+  category: CashMovementCategory;
   amount: number;
   description: string;
   orderId?: string | null;
   recordedAt: string;
   recordedBy: string;
+  createdAt?: string;
 }
 
 export interface CashRegisterDto {
@@ -1490,14 +1500,15 @@ export async function closeCashRegister(
 }
 
 export async function addCashMovement(
-  type: 'IN' | 'OUT',
+  type: CashMovementType,
+  category: CashMovementCategory,
   amount: number,
   description: string,
   token: string
 ): Promise<CashMovementDto> {
   return apiFetch<CashMovementDto>('/caja/movements', {
     method: 'POST',
-    body: JSON.stringify({ type, amount, description }),
+    body: JSON.stringify({ type, category, amount, description }),
     headers: authHeaders(token),
   });
 }
