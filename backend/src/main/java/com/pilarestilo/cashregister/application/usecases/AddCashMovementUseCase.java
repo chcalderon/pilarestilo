@@ -1,6 +1,7 @@
 package com.pilarestilo.cashregister.application.usecases;
 
 import com.pilarestilo.cashregister.application.dto.CashMovementDto;
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.model.CashRegister;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
@@ -18,14 +19,18 @@ public class AddCashMovementUseCase {
     }
 
     public CashMovementDto execute(UUID sellerId, CashMovementType type,
+                                    CashMovementCategory category,
                                     BigDecimal amount, String description) {
-        if (type == CashMovementType.SALE || type == CashMovementType.REFUND) {
-            throw new DomainException("SALE and REFUND movements are created automatically");
+        if (category == CashMovementCategory.INITIAL_BALANCE) {
+            throw new DomainException("INITIAL_BALANCE movements are created automatically when opening a cash register");
+        }
+        if (category == CashMovementCategory.CASH_SALE) {
+            throw new DomainException("CASH_SALE movements are created automatically from POS orders");
         }
         CashRegister cr = cashRegisterRepository.findOpenBySellerId(sellerId)
                 .orElseThrow(() -> new DomainException("No open cash register"));
         int sizeBefore = cr.getMovements().size();
-        cr.addMovement(type, amount, description, null, sellerId);
+        cr.addMovement(type, category, amount, description, null, sellerId);
         CashRegister saved = cashRegisterRepository.save(cr);
         return CashMovementDto.from(saved.getMovements().get(sizeBefore));
     }

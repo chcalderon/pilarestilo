@@ -60,7 +60,7 @@ class CajaIT {
                 .andExpect(jsonPath("$.status").value("OPEN"));
 
         // Add IN movement
-        String movBody = om.writeValueAsString(Map.of("type", "IN", "amount", 5000, "description", "Ingreso extra"));
+        String movBody = om.writeValueAsString(Map.of("type", "IN", "category", "ADJUSTMENT", "amount", 5000, "description", "Ingreso extra"));
         mvc.perform(post("/api/caja/movements")
                         .header("Authorization", "Bearer " + sellerToken)
                         .contentType(MediaType.APPLICATION_JSON).content(movBody))

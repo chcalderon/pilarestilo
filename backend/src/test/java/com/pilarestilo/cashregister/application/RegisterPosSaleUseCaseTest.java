@@ -1,6 +1,7 @@
 package com.pilarestilo.cashregister.application;
 
 import com.pilarestilo.cashregister.application.usecases.RegisterPosSaleUseCase;
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.enums.CashRegisterStatus;
 import com.pilarestilo.cashregister.domain.model.CashRegister;
@@ -63,7 +64,8 @@ class RegisterPosSaleUseCaseTest {
 
         CashRegister result = saved.getValue();
         assertThat(result.getMovements()).hasSize(1);
-        assertThat(result.getMovements().get(0).getType()).isEqualTo(CashMovementType.SALE);
+        assertThat(result.getMovements().get(0).getType()).isEqualTo(CashMovementType.IN);
+        assertThat(result.getMovements().get(0).getCategory()).isEqualTo(CashMovementCategory.CASH_SALE);
         assertThat(result.getMovements().get(0).getAmount())
                 .isEqualByComparingTo(BigDecimal.valueOf(25_000));
         assertThat(result.getMovements().get(0).getDescription())

@@ -1,5 +1,6 @@
 package com.pilarestilo.cashregister.domain.model;
 
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ public class CashMovement {
     private UUID id;
     private UUID cashRegisterId;
     private CashMovementType type;
+    private CashMovementCategory category;
     private BigDecimal amount;
     private String description;
     private UUID orderId;
@@ -18,12 +20,14 @@ public class CashMovement {
     private CashMovement() {}
 
     public static CashMovement create(UUID cashRegisterId, CashMovementType type,
+                                       CashMovementCategory category,
                                        BigDecimal amount, String description,
                                        UUID orderId, UUID recordedBy) {
         CashMovement m = new CashMovement();
         m.id = UUID.randomUUID();
         m.cashRegisterId = cashRegisterId;
         m.type = type;
+        m.category = category;
         m.amount = amount;
         m.description = description;
         m.orderId = orderId;
@@ -33,10 +37,12 @@ public class CashMovement {
     }
 
     public static CashMovement reconstruct(UUID id, UUID cashRegisterId, CashMovementType type,
+                                            CashMovementCategory category,
                                             BigDecimal amount, String description, UUID orderId,
                                             LocalDateTime recordedAt, UUID recordedBy) {
         CashMovement m = new CashMovement();
         m.id = id; m.cashRegisterId = cashRegisterId; m.type = type;
+        m.category = category;
         m.amount = amount; m.description = description; m.orderId = orderId;
         m.recordedAt = recordedAt; m.recordedBy = recordedBy;
         return m;
@@ -45,6 +51,7 @@ public class CashMovement {
     public UUID getId() { return id; }
     public UUID getCashRegisterId() { return cashRegisterId; }
     public CashMovementType getType() { return type; }
+    public CashMovementCategory getCategory() { return category; }
     public BigDecimal getAmount() { return amount; }
     public String getDescription() { return description; }
     public UUID getOrderId() { return orderId; }

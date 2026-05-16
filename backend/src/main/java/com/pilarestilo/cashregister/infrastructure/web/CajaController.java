@@ -3,6 +3,7 @@ package com.pilarestilo.cashregister.infrastructure.web;
 import com.pilarestilo.cashregister.application.dto.CashMovementDto;
 import com.pilarestilo.cashregister.application.dto.CashRegisterDto;
 import com.pilarestilo.cashregister.application.usecases.*;
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.enums.CashRegisterStatus;
 import com.pilarestilo.cashregister.infrastructure.web.requests.AddMovementRequest;
@@ -79,6 +80,8 @@ public class CajaController {
     public CashMovementDto addMovement(@RequestBody @Valid AddMovementRequest req,
                                         @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return addMovementUseCase.execute(currentUser.id(),
-                CashMovementType.valueOf(req.type()), req.amount(), req.description());
+                CashMovementType.valueOf(req.type()),
+                CashMovementCategory.valueOf(req.category()),
+                req.amount(), req.description());
     }
 }

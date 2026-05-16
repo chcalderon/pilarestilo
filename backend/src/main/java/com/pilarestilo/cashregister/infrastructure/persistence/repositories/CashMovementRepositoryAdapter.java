@@ -31,6 +31,7 @@ public class CashMovementRepositoryAdapter implements CashMovementRepository {
         e.setId(m.getId());
         e.setCashRegisterId(m.getCashRegisterId());
         e.setType(m.getType());
+        e.setCategory(m.getCategory());
         e.setAmount(m.getAmount());
         e.setDescription(m.getDescription());
         e.setOrderId(m.getOrderId());
@@ -41,6 +42,7 @@ public class CashMovementRepositoryAdapter implements CashMovementRepository {
 
     private CashMovement toDomain(CashMovementEntity e) {
         return CashMovement.reconstruct(e.getId(), e.getCashRegisterId(), e.getType(),
+                e.getCategory(),
                 e.getAmount(), e.getDescription(), e.getOrderId(),
                 e.getRecordedAt(), e.getRecordedBy());
     }

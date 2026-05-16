@@ -1,5 +1,6 @@
 package com.pilarestilo.cashregister.application.usecases;
 
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.model.CashRegister;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 /**
- * Records a SALE cash movement when a POS order is paid with cash.
+ * Records a CASH_SALE cash movement when a POS order is paid with cash.
  *
  * Only fires for POS channel orders; ECOMMERCE and other channels are intentionally ignored.
  * Non-cash POS payment methods (e.g. transfer) are also silently ignored — only physical
@@ -48,7 +49,8 @@ public class RegisterPosSaleUseCase {
                 .orElseThrow(() -> new IllegalStateException("No open cash register found"));
 
         cashRegister.addMovement(
-                CashMovementType.SALE,
+                CashMovementType.IN,
+                CashMovementCategory.CASH_SALE,
                 order.getTotalAmount().amount(),
                 "Venta POS #" + orderId.toString().substring(0, 8),
                 orderId,

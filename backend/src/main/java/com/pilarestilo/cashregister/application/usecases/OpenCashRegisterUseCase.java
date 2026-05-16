@@ -1,6 +1,8 @@
 package com.pilarestilo.cashregister.application.usecases;
 
 import com.pilarestilo.cashregister.application.dto.CashRegisterDto;
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
+import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.model.CashRegister;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
 import com.pilarestilo.shared.domain.DomainException;
@@ -21,6 +23,8 @@ public class OpenCashRegisterUseCase {
             throw new DomainException("Seller already has an open cash register");
         }
         CashRegister cr = CashRegister.open(sellerId, openingBalance);
+        cr.addMovement(CashMovementType.IN, CashMovementCategory.INITIAL_BALANCE,
+                openingBalance, "Saldo inicial", null, sellerId);
         return CashRegisterDto.from(cashRegisterRepository.save(cr));
     }
 }
