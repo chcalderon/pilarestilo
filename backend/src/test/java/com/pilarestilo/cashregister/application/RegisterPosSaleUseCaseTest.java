@@ -12,6 +12,7 @@ import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.shared.domain.DomainException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -91,10 +92,10 @@ class RegisterPosSaleUseCaseTest {
     void ecommerceChannel_throws() {
         UUID orderId = UUID.randomUUID();
 
-        assertThatIllegalArgumentException()
+        assertThatExceptionOfType(DomainException.class)
                 .isThrownBy(() -> useCase.execute(
                         orderId, SalesChannel.ECOMMERCE, PaymentMethod.CASH_ON_DELIVERY))
-                .withMessage("RegisterPosSaleUseCase requires POS channel");
+                .withMessageContaining("RegisterPosSaleUseCase requires POS channel");
 
         verify(cashRegisterRepository, never()).save(any());
         verify(orderRepository, never()).findById(any());

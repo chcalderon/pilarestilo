@@ -7,12 +7,8 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
-import com.pilarestilo.order.domain.model.Order;
-import com.pilarestilo.order.domain.model.OrderItem;
-import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.order.infrastructure.persistence.entities.OrderEntity;
 import com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository;
-import com.pilarestilo.shared.application.Money;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,9 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,13 +72,6 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
     @Autowired CashRegisterRepository cashRegisterRepository;
     /** Used to insert a bare order row so cash_movements.order_id FK resolves on RED. */
     @Autowired OrderJpaRepository orderJpaRepository;
-
-    /**
-     * Mock the domain OrderRepository port so:
-     *  - OrderPaidCashRegisterListener finds a real Order object (triggers RED movement creation)
-     *  - No lazy-load issues from JPA proxy
-     */
-    @MockBean OrderRepository orderRepository;
 
     /** Neutralises OrderPaidDispatchListener to avoid dispatches.order_id FK failure. */
     @MockBean DispatchRepository dispatchRepository;
@@ -141,25 +128,6 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         orderEntity.setCreatedAt(Instant.now());
         orderEntity.setUpdatedAt(Instant.now());
         orderJpaRepository.save(orderEntity);
-
-        // Stub OrderRepository (domain port) so the listener resolves the Order without
-        // hitting the JPA adapter (which would trigger a lazy-load on items collection).
-        Order fakeOrder = Order.reconstruct(
-                orderId, customerId,
-                List.of(new OrderItem(UUID.randomUUID(), UUID.randomUUID(),
-                        "Prod Test", Money.of(BigDecimal.valueOf(10_000)), 1)),
-                Money.of(BigDecimal.valueOf(10_000)),
-                Money.zero(),
-                Money.of(BigDecimal.valueOf(10_000)),
-                PaymentMethod.BANK_TRANSFER,
-                "RM", "chilexpress", "Chilexpress", "PREPAID",
-                UUID.randomUUID(), "Ref test",
-                null,
-                SalesChannel.ECOMMERCE,
-                OrderStatus.PAID,
-                Instant.now(), Instant.now()
-        );
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(fakeOrder));
 
         // Stub DispatchRepository so OrderPaidDispatchListener doesn't hit the DB
         when(dispatchRepository.existsByOrderId(any())).thenReturn(false);

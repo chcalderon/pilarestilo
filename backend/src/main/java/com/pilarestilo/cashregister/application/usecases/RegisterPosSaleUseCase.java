@@ -7,6 +7,7 @@ import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.ports.OrderRepository;
+import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -32,7 +33,7 @@ public class RegisterPosSaleUseCase {
 
     public void execute(UUID orderId, SalesChannel salesChannel, PaymentMethod paymentMethod) {
         if (salesChannel != SalesChannel.POS) {
-            throw new IllegalArgumentException("RegisterPosSaleUseCase requires POS channel");
+            throw new DomainException("RegisterPosSaleUseCase requires POS channel, got: " + salesChannel);
         }
 
         // TODO Fase 3: rename to PaymentMethod.CASH
