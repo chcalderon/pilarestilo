@@ -25,6 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -67,11 +68,14 @@ public class OrderController {
                 .toList();
 
         SalesChannel salesChannel;
-        try {
-            salesChannel = request.salesChannel() != null && !request.salesChannel().isBlank()
-                    ? SalesChannel.valueOf(request.salesChannel().toUpperCase())
-                    : SalesChannel.ECOMMERCE;
-        } catch (IllegalArgumentException e) {
+        if (request.salesChannel() != null && !request.salesChannel().isBlank()) {
+            try {
+                salesChannel = SalesChannel.valueOf(request.salesChannel().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Invalid salesChannel: " + request.salesChannel());
+            }
+        } else {
             salesChannel = SalesChannel.ECOMMERCE;
         }
 
