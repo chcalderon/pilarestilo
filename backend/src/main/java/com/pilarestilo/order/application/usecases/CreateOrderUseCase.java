@@ -140,7 +140,8 @@ public class CreateOrderUseCase {
                 shippingSelection.paymentMode(),
                 shippingSelection.addressId(),
                 shippingSelection.addressReference(),
-                command.notes()
+                command.notes(),
+                command.salesChannel()
         );
 
         Order saved = orderRepository.save(order);

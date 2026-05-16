@@ -68,6 +68,9 @@ public class OrderEntity {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "sales_channel", nullable = false, length = 20)
+    private String salesChannel;
+
     @Column(nullable = false, length = 30)
     private String status;
 
@@ -216,6 +219,14 @@ public class OrderEntity {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public String getSalesChannel() {
+        return salesChannel;
+    }
+
+    public void setSalesChannel(String salesChannel) {
+        this.salesChannel = salesChannel;
     }
 
     public String getStatus() {

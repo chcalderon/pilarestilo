@@ -29,5 +29,7 @@ public record CreateOrderRequest(
 
         String notes,
 
-        String discountCode
+        String discountCode,
+
+        String salesChannel
 ) {}

@@ -19,6 +19,7 @@ public record OrderDto(
         UUID shippingAddressId,
         String shippingAddressReference,
         String notes,
+        String salesChannel,
         String status,
         Instant createdAt,
         Instant updatedAt

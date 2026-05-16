@@ -89,6 +89,7 @@ class ConfirmOrderDeliveryUseCaseTest {
                 null,
                 null,
                 null,
+                null,
                 status,
                 Instant.now(),
                 Instant.now()

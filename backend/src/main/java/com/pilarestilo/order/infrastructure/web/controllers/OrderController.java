@@ -8,6 +8,7 @@ import com.pilarestilo.order.application.usecases.ListOrdersUseCase;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
 import com.pilarestilo.dispatch.application.usecases.ConfirmOrderDeliveryUseCase;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
 import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
 import com.pilarestilo.shared.application.Money;
@@ -65,6 +66,15 @@ public class OrderController {
                 ))
                 .toList();
 
+        SalesChannel salesChannel;
+        try {
+            salesChannel = request.salesChannel() != null && !request.salesChannel().isBlank()
+                    ? SalesChannel.valueOf(request.salesChannel().toUpperCase())
+                    : SalesChannel.ECOMMERCE;
+        } catch (IllegalArgumentException e) {
+            salesChannel = SalesChannel.ECOMMERCE;
+        }
+
         CreateOrderCommand command = new CreateOrderCommand(
                 currentUser.id(),
                 items,
@@ -75,7 +85,8 @@ public class OrderController {
                 request.notes(),
                 Money.zero(),
                 currentUser.role() == UserRole.SELLER,
-                request.discountCode()
+                request.discountCode(),
+                salesChannel
         );
 
         OrderDto dto = createOrderUseCase.execute(command);

@@ -98,6 +98,9 @@ public class OrderCommandService {
         order.setShippingAddressId(shippingSelection.addressId());
         order.setShippingAddressReference(shippingSelection.addressReference());
         order.setNotes(request.notes());
+        order.setSalesChannel(request.salesChannel() != null && !request.salesChannel().isBlank()
+                ? request.salesChannel().toUpperCase(Locale.ROOT)
+                : "ECOMMERCE");
         order.setStatus(OrderStatus.CREATED.name());
         order.setCreatedAt(now);
         order.setUpdatedAt(now);

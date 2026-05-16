@@ -138,7 +138,8 @@ class OrderCommandServiceTest {
                         null,
                         new BigDecimal("-1"),
                         "CLP",
-                        false
+                        false,
+                        null
                 )));
         assertEquals("Discount amount cannot be negative", negativeDiscountEx.getMessage());
     }
@@ -183,7 +184,8 @@ class OrderCommandServiceTest {
                 "nota",
                 new BigDecimal("10.00"),
                 "CLP",
-                true
+                true,
+                null
         );
 
         OrderEntity result = service.create(request);
@@ -264,7 +266,8 @@ class OrderCommandServiceTest {
                 null,
                 null,
                 null,
-                false
+                false,
+                null
         );
     }
 

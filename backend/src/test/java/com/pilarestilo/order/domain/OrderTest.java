@@ -2,6 +2,7 @@ package com.pilarestilo.order.domain;
 
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.shared.application.Money;
@@ -103,6 +104,38 @@ class OrderTest {
     void cannot_create_order_without_items() {
         assertThrows(DomainException.class,
                 () -> createOrder(List.of(), Money.zero()));
+    }
+
+    @Test
+    void shouldDefaultToEcommerceWhenChannelOmitted() {
+        Order order = createOrder(defaultItems(), Money.zero());
+        assertEquals(SalesChannel.ECOMMERCE, order.getSalesChannel());
+    }
+
+    @Test
+    void shouldAcceptPosChannel() {
+        Order order = Order.create(
+                UUID.randomUUID(),
+                defaultItems(),
+                Money.zero(),
+                PaymentMethod.BANK_TRANSFER,
+                SHIPPING_ZONE,
+                SHIPPING_COURIER_ID,
+                SHIPPING_COURIER_NAME,
+                SHIPPING_PAYMENT_MODE,
+                UUID.randomUUID(),
+                SHIPPING_ADDRESS_REFERENCE,
+                null,
+                SalesChannel.POS
+        );
+        assertEquals(SalesChannel.POS, order.getSalesChannel());
+    }
+
+    private List<OrderItem> defaultItems() {
+        return List.of(
+                new OrderItem(UUID.randomUUID(), UUID.randomUUID(), "Test Item",
+                        Money.of(BigDecimal.valueOf(100000)), 2)
+        );
     }
 
     private Order createOrder(List<OrderItem> items, Money discountAmount) {

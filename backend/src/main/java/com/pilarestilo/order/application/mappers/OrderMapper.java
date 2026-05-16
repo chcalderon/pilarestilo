@@ -32,6 +32,7 @@ public class OrderMapper {
                 order.getShippingAddressId(),
                 order.getShippingAddressReference(),
                 order.getNotes(),
+                order.getSalesChannel(),
                 order.getStatus(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()

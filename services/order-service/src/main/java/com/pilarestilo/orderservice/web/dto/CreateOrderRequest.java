@@ -14,7 +14,8 @@ public record CreateOrderRequest(
         String notes,
         BigDecimal discountAmount,
         String discountCurrency,
-        boolean employeeDiscountEligible
+        boolean employeeDiscountEligible,
+        String salesChannel
 ) {
     public record OrderItemRequest(
             UUID productId,

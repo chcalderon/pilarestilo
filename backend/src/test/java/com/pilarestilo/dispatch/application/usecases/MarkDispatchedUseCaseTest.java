@@ -183,6 +183,7 @@ class MarkDispatchedUseCaseTest {
                 null,
                 null,
                 null,
+                null,
                 OrderStatus.PAID,
                 Instant.now(),
                 Instant.now()

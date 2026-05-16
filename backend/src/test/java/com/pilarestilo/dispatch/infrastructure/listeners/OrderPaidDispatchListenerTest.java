@@ -101,6 +101,7 @@ class OrderPaidDispatchListenerTest {
                 null,
                 "Casa 12",
                 null,
+                null,
                 OrderStatus.PAID,
                 Instant.now(),
                 Instant.now()
