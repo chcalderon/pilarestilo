@@ -80,4 +80,10 @@ class CashRegisterTest {
         CashRegister cr = buildOpen();
         assertThrows(DomainException.class, () -> cr.close(null, null));
     }
+
+    @Test
+    void closeCashRegister_rejectsNegativeDeclaredBalance() {
+        CashRegister cr = buildOpen();
+        assertThrows(DomainException.class, () -> cr.close(new BigDecimal("-1"), null));
+    }
 }
