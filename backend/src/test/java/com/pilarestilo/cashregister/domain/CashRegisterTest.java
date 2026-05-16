@@ -1,5 +1,6 @@
 package com.pilarestilo.cashregister.domain;
 
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.enums.CashRegisterStatus;
 import com.pilarestilo.cashregister.domain.model.CashRegister;
@@ -25,16 +26,20 @@ class CashRegisterTest {
     @Test
     void expected_balance_equals_opening_plus_sales_minus_refunds() {
         CashRegister cr = buildOpen();
-        cr.addMovement(CashMovementType.SALE, new BigDecimal("10000"), "Venta #1", null, UUID.randomUUID());
-        cr.addMovement(CashMovementType.IN,   new BigDecimal("5000"),  "Ingreso extra", null, UUID.randomUUID());
-        cr.addMovement(CashMovementType.OUT,  new BigDecimal("2000"),  "Retiro", null, UUID.randomUUID());
+        cr.addMovement(CashMovementType.IN,  CashMovementCategory.CASH_SALE,
+                new BigDecimal("10000"), "Venta #1", null, UUID.randomUUID());
+        cr.addMovement(CashMovementType.IN,  CashMovementCategory.ADJUSTMENT,
+                new BigDecimal("5000"),  "Ingreso extra", null, UUID.randomUUID());
+        cr.addMovement(CashMovementType.OUT, CashMovementCategory.WITHDRAWAL,
+                new BigDecimal("2000"),  "Retiro", null, UUID.randomUUID());
         assertEquals(new BigDecimal("63000"), cr.getExpectedBalance());
     }
 
     @Test
     void can_close_with_declared_amount() {
         CashRegister cr = buildOpen();
-        cr.addMovement(CashMovementType.SALE, new BigDecimal("10000"), "Venta", null, UUID.randomUUID());
+        cr.addMovement(CashMovementType.IN, CashMovementCategory.CASH_SALE,
+                new BigDecimal("10000"), "Venta", null, UUID.randomUUID());
         cr.close(new BigDecimal("59000"), null);
         assertEquals(CashRegisterStatus.CLOSED, cr.getStatus());
         assertEquals(new BigDecimal("59000"), cr.getClosingBalance());
@@ -46,7 +51,8 @@ class CashRegisterTest {
         CashRegister cr = buildOpen();
         cr.close(new BigDecimal("50000"), null);
         assertThrows(DomainException.class,
-                () -> cr.addMovement(CashMovementType.SALE, new BigDecimal("1000"), "X", null, UUID.randomUUID()));
+                () -> cr.addMovement(CashMovementType.IN, CashMovementCategory.ADJUSTMENT,
+                        new BigDecimal("1000"), "X", null, UUID.randomUUID()));
     }
 
     @Test
@@ -54,5 +60,30 @@ class CashRegisterTest {
         CashRegister cr = buildOpen();
         cr.close(new BigDecimal("50000"), null);
         assertThrows(DomainException.class, () -> cr.close(new BigDecimal("50000"), null));
+    }
+
+    @Test
+    void closeCashRegister_calculatesDifferenceCorrectly() {
+        // openBalance=10000, add IN(ADJUSTMENT) 5000, close declaring 14000
+        // expectedBalance = 10000 + 5000 = 15000
+        // difference = 14000 - 15000 = -1000
+        CashRegister cr = CashRegister.open(UUID.randomUUID(), new BigDecimal("10000"));
+        cr.addMovement(CashMovementType.IN, CashMovementCategory.ADJUSTMENT,
+                new BigDecimal("5000"), "Ingreso extra", null, UUID.randomUUID());
+        cr.close(new BigDecimal("14000"), null);
+        assertEquals(new BigDecimal("15000"), cr.getExpectedBalance());
+        assertEquals(new BigDecimal("-1000"), cr.getDifference());
+    }
+
+    @Test
+    void closeCashRegister_rejectsMissingDeclaredBalance() {
+        CashRegister cr = buildOpen();
+        assertThrows(DomainException.class, () -> cr.close(null, null));
+    }
+
+    @Test
+    void closeCashRegister_rejectsNegativeDeclaredBalance() {
+        CashRegister cr = buildOpen();
+        assertThrows(DomainException.class, () -> cr.close(new BigDecimal("-1"), null));
     }
 }

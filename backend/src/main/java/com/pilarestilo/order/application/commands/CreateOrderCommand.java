@@ -1,6 +1,7 @@
 package com.pilarestilo.order.application.commands;
 
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.shared.application.Money;
 
 import java.util.List;
@@ -16,7 +17,8 @@ public record CreateOrderCommand(
         String notes,
         Money discountAmount,
         boolean employeeDiscountEligible,
-        String discountCode
+        String discountCode,
+        SalesChannel salesChannel
 ) {
     public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
                                PaymentMethod paymentMethod,
@@ -35,7 +37,31 @@ public record CreateOrderCommand(
                 notes,
                 discountAmount,
                 employeeDiscountEligible,
-                null
+                null,
+                SalesChannel.ECOMMERCE
+        );
+    }
+
+    public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
+                               PaymentMethod paymentMethod,
+                               String shippingZoneCode,
+                               String shippingCourierId,
+                               UUID shippingAddressId,
+                               String notes,
+                               Money discountAmount, boolean employeeDiscountEligible,
+                               String discountCode) {
+        this(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressId,
+                notes,
+                discountAmount,
+                employeeDiscountEligible,
+                discountCode,
+                SalesChannel.ECOMMERCE
         );
     }
 

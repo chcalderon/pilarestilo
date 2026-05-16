@@ -1,5 +1,6 @@
 package com.pilarestilo.cashregister.domain.model;
 
+import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import com.pilarestilo.cashregister.domain.enums.CashRegisterStatus;
 import com.pilarestilo.shared.domain.DomainException;
@@ -49,15 +50,21 @@ public class CashRegister {
         return cr;
     }
 
-    public void addMovement(CashMovementType type, BigDecimal amount,
-                             String description, UUID orderId, UUID recordedBy) {
+    public void addMovement(CashMovementType type, CashMovementCategory category,
+                             BigDecimal amount, String description, UUID orderId, UUID recordedBy) {
         if (status == CashRegisterStatus.CLOSED) {
             throw new DomainException("Cannot add movement to a closed cash register");
         }
-        movements.add(CashMovement.create(id, type, amount, description, orderId, recordedBy));
+        movements.add(CashMovement.create(id, type, category, amount, description, orderId, recordedBy));
     }
 
     public void close(BigDecimal declaredAmount, String notes) {
+        if (declaredAmount == null) {
+            throw new DomainException("Declared balance is required to close a cash register");
+        }
+        if (declaredAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new DomainException("Declared balance cannot be negative");
+        }
         if (status == CashRegisterStatus.CLOSED) {
             throw new DomainException("Cash register is already closed");
         }
@@ -78,7 +85,7 @@ public class CashRegister {
     private BigDecimal computeExpectedBalance() {
         BigDecimal balance = openingBalance;
         for (CashMovement m : movements) {
-            if (m.getType() == CashMovementType.SALE || m.getType() == CashMovementType.IN) {
+            if (m.getType() == CashMovementType.IN) {
                 balance = balance.add(m.getAmount());
             } else {
                 balance = balance.subtract(m.getAmount());

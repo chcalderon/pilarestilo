@@ -9,7 +9,7 @@ let backendApiBase = ENV_BACKEND_API_BASE || BACKEND_API_CANDIDATES[0];
 const ADMIN_EMAIL = 'admin@pilarestilo.com';
 const ADMIN_PASSWORD = 'admin2026';
 
-type CheckoutPaymentMethod = 'BANK_TRANSFER' | 'PAYMENT_GATEWAY';
+type CheckoutPaymentMethod = 'TRANSFER' | 'WEBPAY';
 
 interface AuthResponse {
   accessToken: string;
@@ -84,7 +84,7 @@ interface PublicStoreSettingsResponse {
 }
 
 test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
-  test('shipping method is preserved for BANK_TRANSFER and PAYMENT_GATEWAY', async ({ request }) => {
+  test('shipping method is preserved for TRANSFER and WEBPAY', async ({ request }) => {
     test.setTimeout(180000);
     backendApiBase = await resolveBackendApiBase(request);
     const backendAvailable = await isBackendAvailable(request, backendApiBase);
@@ -94,7 +94,7 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
     const storeSettings = await getPublicStoreSettings(request);
     const shipping = resolveShippingSelection(storeSettings);
 
-    for (const paymentMethod of ['BANK_TRANSFER', 'PAYMENT_GATEWAY'] as const) {
+    for (const paymentMethod of ['TRANSFER', 'WEBPAY'] as const) {
       await test.step(`flow ${paymentMethod}`, async () => {
         test.skip(!isPaymentMethodAvailable(storeSettings, paymentMethod), `${paymentMethod} disabled in settings`);
 
@@ -335,7 +335,7 @@ async function settlePayment(
     });
   }
 
-  if (args.paymentMethod === 'BANK_TRANSFER') {
+  if (args.paymentMethod === 'TRANSFER') {
     await apiJson<PaymentResponse>(request, 'PATCH', `/payments/${payment.id}/proof`, {
       token: args.customerToken,
       body: { proofReference: 'https://example.com/proof.png' },
@@ -436,7 +436,7 @@ function resolveShippingSelection(settings: PublicStoreSettingsResponse): { zone
 }
 
 function isPaymentMethodAvailable(settings: PublicStoreSettingsResponse, paymentMethod: CheckoutPaymentMethod): boolean {
-  if (paymentMethod === 'BANK_TRANSFER') {
+  if (paymentMethod === 'TRANSFER') {
     return settings.paymentMethodBankTransferEnabled !== false;
   }
   const providers = settings.paymentGatewayProviders ?? [];

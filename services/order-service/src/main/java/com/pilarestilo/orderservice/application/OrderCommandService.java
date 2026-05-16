@@ -98,6 +98,9 @@ public class OrderCommandService {
         order.setShippingAddressId(shippingSelection.addressId());
         order.setShippingAddressReference(shippingSelection.addressReference());
         order.setNotes(request.notes());
+        order.setSalesChannel(request.salesChannel() != null && !request.salesChannel().isBlank()
+                ? request.salesChannel().toUpperCase(Locale.ROOT)
+                : "ECOMMERCE");
         order.setStatus(OrderStatus.CREATED.name());
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
@@ -354,8 +357,20 @@ public class OrderCommandService {
     }
 
     private PaymentMethod parsePaymentMethod(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+
+        String normalized = switch (raw.trim().toUpperCase()) {
+            case "BANK_TRANSFER"      -> "TRANSFER";
+            case "CASH_ON_DELIVERY"   -> "CASH";
+            case "PAYMENT_GATEWAY"    -> "WEBPAY";
+            case "AGREED_BY_WHATSAPP", "STORE_CREDIT" -> "OTHER";
+            default -> raw.trim().toUpperCase();
+        };
+
         try {
-            return PaymentMethod.valueOf(raw.trim().toUpperCase());
+            return PaymentMethod.valueOf(normalized);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Unsupported payment method: " + raw);
         }
@@ -416,7 +431,7 @@ public class OrderCommandService {
         payment.setReviewedBy(null);
         payment.setReviewedAt(null);
         payment.setCreatedAt(now);
-        if (PaymentMethod.BANK_TRANSFER.name().equals(order.getPaymentMethod())) {
+        if (PaymentMethod.TRANSFER.name().equals(order.getPaymentMethod())) {
             TransferSnapshot snapshot = resolveTransferSnapshot();
             payment.setTransferAccountHolderName(snapshot.accountHolder());
             payment.setTransferAccountEmail(snapshot.contactEmail());

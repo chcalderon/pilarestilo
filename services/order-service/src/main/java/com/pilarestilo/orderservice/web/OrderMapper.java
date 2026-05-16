@@ -27,6 +27,7 @@ public final class OrderMapper {
                 entity.getShippingAddressId(),
                 entity.getShippingAddressReference(),
                 entity.getNotes(),
+                entity.getSalesChannel() != null ? entity.getSalesChannel() : "ECOMMERCE",
                 entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()

@@ -56,12 +56,12 @@ class OrderCommandServiceTest {
         UUID shippingAddressId = UUID.randomUUID();
 
         assertThrows(IllegalArgumentException.class, () -> service.create(null));
-        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(null, "BANK_TRANSFER", "LOCAL", "starken", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
-        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", shippingAddressId, List.of())));
+        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(null, "TRANSFER", "LOCAL", "starken", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
+        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", shippingAddressId, List.of())));
         assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, " ", "LOCAL", "starken", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
-        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "BANK_TRANSFER", " ", "starken", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
-        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", " ", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
-        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", null, List.of(item(UUID.randomUUID(), 1, null, null)))));
+        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "TRANSFER", " ", "starken", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
+        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "TRANSFER", "LOCAL", " ", shippingAddressId, List.of(item(UUID.randomUUID(), 1, null, null)))));
+        assertThrows(IllegalArgumentException.class, () -> service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", null, List.of(item(UUID.randomUUID(), 1, null, null)))));
     }
 
     @Test
@@ -70,7 +70,7 @@ class OrderCommandServiceTest {
         UUID customerId = UUID.randomUUID();
         UUID addressId = UUID.randomUUID();
 
-        CreateOrderRequest request = baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", addressId, List.of(item(UUID.randomUUID(), 1, null, null)));
+        CreateOrderRequest request = baseRequest(customerId, "TRANSFER", "LOCAL", "starken", addressId, List.of(item(UUID.randomUUID(), 1, null, null)));
         assertThrows(IllegalArgumentException.class, () -> service.create(request));
 
         when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(address(addressId, customerId)));
@@ -88,7 +88,7 @@ class OrderCommandServiceTest {
         IllegalArgumentException zoneEx = assertThrows(IllegalArgumentException.class, () -> service.create(request));
         assertEquals("Selected shipping zone is not available", zoneEx.getMessage());
 
-        CreateOrderRequest courierRequest = baseRequest(customerId, "BANK_TRANSFER", "REGIONAL", "starken", addressId, List.of(item(UUID.randomUUID(), 1, null, null)));
+        CreateOrderRequest courierRequest = baseRequest(customerId, "TRANSFER", "REGIONAL", "starken", addressId, List.of(item(UUID.randomUUID(), 1, null, null)));
         IllegalArgumentException courierEx = assertThrows(IllegalArgumentException.class, () -> service.create(courierRequest));
         assertEquals("Selected shipping courier is not available", courierEx.getMessage());
     }
@@ -103,19 +103,19 @@ class OrderCommandServiceTest {
         when(systemSettingsRepository.findById((short) 1)).thenReturn(Optional.empty());
 
         IllegalArgumentException variantEx = assertThrows(IllegalArgumentException.class, () ->
-                service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", addressId,
+                service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", addressId,
                         List.of(item(UUID.randomUUID(), 1, "Negro", null)))));
         assertEquals("variantColor and variantSize must be provided together", variantEx.getMessage());
 
         IllegalArgumentException qtyEx = assertThrows(IllegalArgumentException.class, () ->
-                service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", addressId,
+                service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", addressId,
                         List.of(item(UUID.randomUUID(), 0, null, null)))));
         assertEquals("Quantity must be greater than zero", qtyEx.getMessage());
 
         UUID productId = UUID.randomUUID();
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
         assertThrows(NoSuchElementException.class, () ->
-                service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", addressId,
+                service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", addressId,
                         List.of(item(productId, 1, null, null)))));
 
         ProductEntity clp = product(productId, "Vestido", "CLP", "100.00");
@@ -123,7 +123,7 @@ class OrderCommandServiceTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(clp));
         when(productRepository.findById(usd.getId())).thenReturn(Optional.of(usd));
         IllegalArgumentException currencyEx = assertThrows(IllegalArgumentException.class, () ->
-                service.create(baseRequest(customerId, "BANK_TRANSFER", "LOCAL", "starken", addressId,
+                service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken", addressId,
                         List.of(item(productId, 1, null, null), item(usd.getId(), 1, null, null)))));
         assertEquals("All order items must share the same currency", currencyEx.getMessage());
 
@@ -131,14 +131,15 @@ class OrderCommandServiceTest {
                 service.create(new CreateOrderRequest(
                         customerId,
                         List.of(item(productId, 1, null, null)),
-                        "BANK_TRANSFER",
+                        "TRANSFER",
                         "LOCAL",
                         "starken",
                         addressId,
                         null,
                         new BigDecimal("-1"),
                         "CLP",
-                        false
+                        false,
+                        null
                 )));
         assertEquals("Discount amount cannot be negative", negativeDiscountEx.getMessage());
     }
@@ -176,14 +177,15 @@ class OrderCommandServiceTest {
         CreateOrderRequest request = new CreateOrderRequest(
                 customerId,
                 List.of(item(productId, 2, null, null)),
-                "BANK_TRANSFER",
+                "TRANSFER",
                 "LOCAL",
                 "starken",
                 addressId,
                 "nota",
                 new BigDecimal("10.00"),
                 "CLP",
-                true
+                true,
+                null
         );
 
         OrderEntity result = service.create(request);
@@ -205,7 +207,7 @@ class OrderCommandServiceTest {
         verify(paymentRepository).save(paymentCaptor.capture());
         PaymentEntity payment = paymentCaptor.getValue();
         assertEquals(result.getId(), payment.getOrderId());
-        assertEquals("BANK_TRANSFER", payment.getMethod());
+        assertEquals("TRANSFER", payment.getMethod());
         assertEquals("Pilar Estilo", payment.getTransferAccountHolderName());
         assertEquals("admin@pilarestilo.com", payment.getTransferAccountEmail());
     }
@@ -264,7 +266,8 @@ class OrderCommandServiceTest {
                 null,
                 null,
                 null,
-                false
+                false,
+                null
         );
     }
 

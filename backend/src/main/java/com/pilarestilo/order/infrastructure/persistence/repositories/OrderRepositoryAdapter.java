@@ -1,5 +1,6 @@
 package com.pilarestilo.order.infrastructure.persistence.repositories;
 
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
@@ -64,6 +65,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setShippingAddressId(order.getShippingAddressId());
         entity.setShippingAddressReference(order.getShippingAddressReference());
         entity.setNotes(order.getNotes());
+        entity.setSalesChannel(order.getSalesChannel() != null ? order.getSalesChannel() : SalesChannel.ECOMMERCE);
         entity.setStatus(order.getStatus());
         entity.setCreatedAt(order.getCreatedAt());
         entity.setUpdatedAt(order.getUpdatedAt());
@@ -110,6 +112,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getShippingAddressId(),
                 entity.getShippingAddressReference(),
                 entity.getNotes(),
+                entity.getSalesChannel() != null ? entity.getSalesChannel() : SalesChannel.ECOMMERCE,
                 entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()

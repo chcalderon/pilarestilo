@@ -21,7 +21,7 @@ class PaymentTest {
     private Payment newPendingPayment() {
         return Payment.create(
                 UUID.randomUUID(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,
@@ -90,7 +90,7 @@ class PaymentTest {
 
     @Test
     void gateway_confirm_from_pending_marks_approved() {
-        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         boolean changed = p.confirmByGateway();
 
         assertTrue(changed);
@@ -101,7 +101,7 @@ class PaymentTest {
 
     @Test
     void gateway_reject_from_pending_marks_rejected() {
-        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         boolean changed = p.rejectByGateway();
 
         assertTrue(changed);
@@ -112,7 +112,7 @@ class PaymentTest {
 
     @Test
     void gateway_confirm_is_idempotent_when_already_approved() {
-        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         p.confirmByGateway();
 
         boolean changed = p.confirmByGateway();
@@ -123,7 +123,7 @@ class PaymentTest {
 
     @Test
     void gateway_reject_after_approved_throws() {
-        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         p.confirmByGateway();
 
         assertThrows(DomainException.class, p::rejectByGateway);
@@ -149,8 +149,8 @@ class PaymentTest {
     }
 
     @Test
-    void systemCancel_rejects_non_BANK_TRANSFER_payment() {
-        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+    void systemCancel_rejects_non_TRANSFER_payment() {
+        Payment p = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
 
         assertThrows(DomainException.class, () -> p.systemCancel("reason"));
     }

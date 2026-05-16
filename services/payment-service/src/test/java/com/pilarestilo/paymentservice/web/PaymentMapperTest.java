@@ -20,7 +20,7 @@ class PaymentMapperTest {
         PaymentEntity entity = new PaymentEntity();
         entity.setId(paymentId);
         entity.setOrderId(orderId);
-        entity.setMethod("BANK_TRANSFER");
+        entity.setMethod("TRANSFER");
         entity.setStatus("PENDING");
         entity.setProofReference("proof");
         entity.setTransferAccountHolderName("Pilar Estilo");
@@ -35,7 +35,7 @@ class PaymentMapperTest {
 
         assertEquals(paymentId, dto.id());
         assertEquals(orderId, dto.orderId());
-        assertEquals("BANK_TRANSFER", dto.method());
+        assertEquals("TRANSFER", dto.method());
         assertEquals("PENDING", dto.status());
         assertEquals("proof", dto.proofReference());
         assertEquals("Pilar Estilo", dto.transferAccountHolderName());

@@ -2,6 +2,7 @@ package com.pilarestilo.order.domain.model;
 
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
 
@@ -26,6 +27,7 @@ public class Order {
     private UUID shippingAddressId;
     private String shippingAddressReference;
     private String notes;
+    private SalesChannel salesChannel;
     private OrderStatus status;
     private Instant createdAt;
     private Instant updatedAt;
@@ -43,6 +45,19 @@ public class Order {
                                      String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                      String notes,
                                      OrderStatus status, Instant createdAt, Instant updatedAt) {
+        return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount,
+                paymentMethod, shippingZoneCode, shippingCourierId, shippingCourierName,
+                shippingPaymentMode, shippingAddressId, shippingAddressReference, notes,
+                SalesChannel.ECOMMERCE, status, createdAt, updatedAt);
+    }
+
+    public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
+                                     Money subtotal, Money discountAmount, Money totalAmount,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                     String notes, SalesChannel salesChannel,
+                                     OrderStatus status, Instant createdAt, Instant updatedAt) {
         Order order = new Order();
         order.id = id;
         order.customerId = customerId;
@@ -58,6 +73,7 @@ public class Order {
         order.shippingAddressId = shippingAddressId;
         order.shippingAddressReference = shippingAddressReference;
         order.notes = notes;
+        order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
         order.status = status;
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;
@@ -69,6 +85,16 @@ public class Order {
                                 String shippingCourierId, String shippingCourierName,
                                 String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                 String notes) {
+        return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
+                shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
+                shippingAddressReference, notes, null);
+    }
+
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel) {
         if (customerId == null) {
             throw new DomainException("Customer ID cannot be null");
         }
@@ -118,6 +144,7 @@ public class Order {
         order.shippingAddressId = shippingAddressId;
         order.shippingAddressReference = shippingAddressReference.trim();
         order.notes = notes;
+        order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
         order.status = OrderStatus.CREATED;
         order.createdAt = Instant.now();
         order.updatedAt = order.createdAt;
@@ -198,6 +225,7 @@ public class Order {
     public UUID getShippingAddressId() { return shippingAddressId; }
     public String getShippingAddressReference() { return shippingAddressReference; }
     public String getNotes() { return notes; }
+    public SalesChannel getSalesChannel() { return salesChannel; }
     public OrderStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

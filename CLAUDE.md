@@ -92,6 +92,8 @@ Naming conventions: `{Action}UseCase`, `{Entity}RepositoryJpaAdapter`, `{Entity}
 
 Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user` + `shared` (auth, rbac, kafka, common domain).
 
+`cashregister` also exposes `POST /api/pos/sales` (stub, returns 501) — planned Windows POS integration; see `docs/pos-channel.md`.
+
 ### Frontend — Astro islands
 
 Routes split by concern:
@@ -128,7 +130,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V45**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V53**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 ### Tailwind dark mode
 

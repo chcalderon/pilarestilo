@@ -33,8 +33,8 @@ public class CreatePaymentGatewayCheckoutUseCase {
         var payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new NoSuchElementException("Payment not found: " + paymentId));
 
-        if (payment.getMethod() != PaymentMethod.PAYMENT_GATEWAY) {
-            throw new DomainException("Payment method is not PAYMENT_GATEWAY");
+        if (payment.getMethod() != PaymentMethod.WEBPAY && payment.getMethod() != PaymentMethod.MERCADOPAGO) {
+            throw new DomainException("Payment method is not a gateway method");
         }
 
         if (payment.getStatus() == PaymentStatus.APPROVED) {
@@ -48,8 +48,8 @@ public class CreatePaymentGatewayCheckoutUseCase {
         var order = orderRepository.findById(payment.getOrderId())
                 .orElseThrow(() -> new NoSuchElementException("Order not found: " + payment.getOrderId()));
 
-        if (order.getPaymentMethod() != PaymentMethod.PAYMENT_GATEWAY) {
-            throw new DomainException("Order payment method is not PAYMENT_GATEWAY");
+        if (order.getPaymentMethod() != PaymentMethod.WEBPAY && order.getPaymentMethod() != PaymentMethod.MERCADOPAGO) {
+            throw new DomainException("Order payment method is not a gateway method");
         }
 
         var session = paymentGatewayPort.initiatePayment(order.getId(), order.getTotalAmount());

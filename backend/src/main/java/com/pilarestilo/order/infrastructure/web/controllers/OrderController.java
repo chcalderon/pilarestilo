@@ -8,6 +8,7 @@ import com.pilarestilo.order.application.usecases.ListOrdersUseCase;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
 import com.pilarestilo.dispatch.application.usecases.ConfirmOrderDeliveryUseCase;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.infrastructure.web.requests.CreateOrderRequest;
 import com.pilarestilo.order.infrastructure.web.requests.UpdateOrderStatusRequest;
 import com.pilarestilo.shared.application.Money;
@@ -24,6 +25,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -65,6 +67,18 @@ public class OrderController {
                 ))
                 .toList();
 
+        SalesChannel salesChannel;
+        if (request.salesChannel() != null && !request.salesChannel().isBlank()) {
+            try {
+                salesChannel = SalesChannel.valueOf(request.salesChannel().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Invalid salesChannel: " + request.salesChannel());
+            }
+        } else {
+            salesChannel = SalesChannel.ECOMMERCE;
+        }
+
         CreateOrderCommand command = new CreateOrderCommand(
                 currentUser.id(),
                 items,
@@ -75,7 +89,8 @@ public class OrderController {
                 request.notes(),
                 Money.zero(),
                 currentUser.role() == UserRole.SELLER,
-                request.discountCode()
+                request.discountCode(),
+                salesChannel
         );
 
         OrderDto dto = createOrderUseCase.execute(command);

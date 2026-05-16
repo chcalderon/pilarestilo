@@ -22,7 +22,7 @@ class PersistenceEntitiesTest {
 
         entity.setId(id);
         entity.setOrderId(orderId);
-        entity.setMethod("BANK_TRANSFER");
+        entity.setMethod("TRANSFER");
         entity.setStatus("PENDING");
         entity.setProofReference("proof-1");
         entity.setReviewedBy(reviewedBy);
@@ -36,7 +36,7 @@ class PersistenceEntitiesTest {
 
         assertEquals(id, entity.getId());
         assertEquals(orderId, entity.getOrderId());
-        assertEquals("BANK_TRANSFER", entity.getMethod());
+        assertEquals("TRANSFER", entity.getMethod());
         assertEquals("PENDING", entity.getStatus());
         assertEquals("proof-1", entity.getProofReference());
         assertEquals(reviewedBy, entity.getReviewedBy());

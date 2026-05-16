@@ -208,7 +208,7 @@ class CustomerAddressControllerIT {
                         .content(om.writeValueAsString(Map.of(
                                 "customerId", customerId,
                                 "items", List.of(Map.of("productId", productId, "quantity", 1)),
-                                "paymentMethod", "BANK_TRANSFER",
+                                "paymentMethod", "TRANSFER",
                                 "shippingZoneCode", shipping.zoneCode(),
                                 "shippingCourierId", shipping.courierId()
                         ))))
@@ -221,7 +221,7 @@ class CustomerAddressControllerIT {
                         .content(om.writeValueAsString(Map.of(
                                 "customerId", customerId,
                                 "items", List.of(Map.of("productId", productId, "quantity", 1)),
-                                "paymentMethod", "BANK_TRANSFER",
+                                "paymentMethod", "TRANSFER",
                                 "shippingZoneCode", shipping.zoneCode(),
                                 "shippingCourierId", shipping.courierId(),
                                 "shippingAddressId", otherAddressId
@@ -245,7 +245,7 @@ class CustomerAddressControllerIT {
                         .content(om.writeValueAsString(Map.of(
                                 "customerId", customerId,
                                 "items", List.of(Map.of("productId", productId, "quantity", 1)),
-                                "paymentMethod", "BANK_TRANSFER",
+                                "paymentMethod", "TRANSFER",
                                 "shippingZoneCode", shipping.zoneCode(),
                                 "shippingCourierId", shipping.courierId(),
                                 "shippingAddressId", addressId

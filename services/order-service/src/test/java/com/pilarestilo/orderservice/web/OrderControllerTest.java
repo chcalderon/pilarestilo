@@ -136,7 +136,7 @@ class OrderControllerTest {
         entity.setDiscountCurrency("CLP");
         entity.setTotalAmount(new BigDecimal("100.00"));
         entity.setTotalCurrency("CLP");
-        entity.setPaymentMethod("BANK_TRANSFER");
+        entity.setPaymentMethod("TRANSFER");
         entity.setShippingZoneCode("LOCAL");
         entity.setShippingCourierId("starken");
         entity.setShippingCourierName("Starken");

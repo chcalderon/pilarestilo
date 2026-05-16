@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 public record AddMovementRequest(
         @NotNull String type,
+        @NotNull String category,
         @NotNull @Positive BigDecimal amount,
         @NotBlank String description
 ) {}

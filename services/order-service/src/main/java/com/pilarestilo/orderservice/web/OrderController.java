@@ -102,7 +102,8 @@ public class OrderController {
                     request.notes(),
                     request.discountAmount(),
                     request.discountCurrency(),
-                    request.employeeDiscountEligible()
+                    request.employeeDiscountEligible(),
+                    request.salesChannel()
             );
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(OrderMapper.toDto(commandService.create(effectiveRequest)));

@@ -104,7 +104,7 @@ class PaymentControllerTest {
         PaymentEntity payment = new PaymentEntity();
         payment.setId(paymentId);
         payment.setOrderId(orderId);
-        payment.setMethod("BANK_TRANSFER");
+        payment.setMethod("TRANSFER");
         payment.setStatus("PENDING");
         payment.setProofReference("proof");
         payment.setTransferAccountHolderName("Pilar Estilo");

@@ -2,6 +2,7 @@ package com.pilarestilo.order.infrastructure.persistence.entities;
 
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -67,6 +68,10 @@ public class OrderEntity {
     private String notes;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "sales_channel", nullable = false, length = 20)
+    private SalesChannel salesChannel;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status;
 
@@ -126,6 +131,9 @@ public class OrderEntity {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public SalesChannel getSalesChannel() { return salesChannel; }
+    public void setSalesChannel(SalesChannel salesChannel) { this.salesChannel = salesChannel; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }

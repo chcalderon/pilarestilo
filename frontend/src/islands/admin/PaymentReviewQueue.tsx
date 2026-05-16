@@ -149,7 +149,7 @@ export default function PaymentReviewQueue() {
       render: (row) => (
         <div className="flex flex-col">
           <span className="font-sans text-[0.78rem] uppercase tracking-wider text-pe-charcoal/70">{row.method}</span>
-          {String(row.method) === 'BANK_TRANSFER' && row.transferAccountNumber && (
+          {String(row.method) === 'TRANSFER' && row.transferAccountNumber && (
             <span className="font-sans text-[0.66rem] text-pe-charcoal/45">
               Cuenta ****{String(row.transferAccountNumber).slice(-4)}
             </span>
@@ -229,7 +229,7 @@ export default function PaymentReviewQueue() {
         const isActing = acting?.id === id;
         const status = String(row.status);
         const canReview = ACTIONABLE_STATUSES.has(status);
-        const canSimulate = status === 'PENDING' && String(row.method) === 'PAYMENT_GATEWAY';
+        const canSimulate = status === 'PENDING' && (String(row.method) === 'WEBPAY' || String(row.method) === 'MERCADOPAGO');
 
         if (!canReview && !canSimulate) {
           return <span className="font-sans text-[0.68rem] text-pe-charcoal/45">Sin accion</span>;
@@ -475,7 +475,7 @@ export default function PaymentReviewQueue() {
 
       {activeTab === 'queue' && (
         <p className="font-sans text-[0.68rem] text-pe-charcoal/45 mb-2">
-          Simulacion dev: en pagos `PAYMENT_GATEWAY` pendientes puedes usar `Sim aprobar` o `Sim rechazar`.
+          Simulacion dev: en pagos `WEBPAY` / `MERCADOPAGO` pendientes puedes usar `Sim aprobar` o `Sim rechazar`.
         </p>
       )}
 

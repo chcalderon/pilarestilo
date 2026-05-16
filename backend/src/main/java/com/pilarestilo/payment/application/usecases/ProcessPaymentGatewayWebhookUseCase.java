@@ -32,7 +32,7 @@ public class ProcessPaymentGatewayWebhookUseCase {
         var payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new NoSuchElementException("Payment not found: " + paymentId));
 
-        if (payment.getMethod() != PaymentMethod.PAYMENT_GATEWAY) {
+        if (payment.getMethod() != PaymentMethod.WEBPAY && payment.getMethod() != PaymentMethod.MERCADOPAGO) {
             throw new DomainException("Webhook received for non-gateway payment");
         }
 
