@@ -123,7 +123,7 @@ export interface OrderDto {
   subtotal: MoneyDto;
   discountAmount: MoneyDto;
   totalAmount: MoneyDto;
-  paymentMethod: 'BANK_TRANSFER' | 'CASH_ON_DELIVERY' | 'AGREED_BY_WHATSAPP' | 'STORE_CREDIT' | 'PAYMENT_GATEWAY';
+  paymentMethod: 'CASH' | 'DEBIT' | 'CREDIT' | 'TRANSFER' | 'WEBPAY' | 'MERCADOPAGO' | 'OTHER';
   shippingZoneCode?: ShippingZoneCode | null;
   shippingCourierId?: string | null;
   shippingCourierName?: string | null;

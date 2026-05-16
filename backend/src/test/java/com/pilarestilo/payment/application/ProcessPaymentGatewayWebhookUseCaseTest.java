@@ -46,7 +46,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
     @Test
     void approves_gateway_payment_and_publishes_payment_confirmed() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
         when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -59,7 +59,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
     @Test
     void repeated_approved_webhook_is_idempotent() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         payment.confirmByGateway();
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
 
@@ -71,7 +71,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
     @Test
     void rejects_gateway_payment_and_publishes_payment_rejected() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
         when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -86,7 +86,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
     void webhook_for_non_gateway_payment_throws() {
         Payment payment = Payment.create(
                 UUID.randomUUID(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,
@@ -100,7 +100,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
     @Test
     void unknown_gateway_status_throws() {
-        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.PAYMENT_GATEWAY);
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
 
         assertThrows(DomainException.class, () -> useCase.execute(payment.getId(), "WHATEVER_STATUS"));
@@ -109,7 +109,7 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
     @Test
     void execute_by_order_id_resolves_payment_and_confirms() {
         UUID orderId = UUID.randomUUID();
-        Payment payment = Payment.create(orderId, PaymentMethod.PAYMENT_GATEWAY);
+        Payment payment = Payment.create(orderId, PaymentMethod.WEBPAY);
         when(paymentRepository.findByOrderId(orderId)).thenReturn(Optional.of(payment));
         when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
         when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

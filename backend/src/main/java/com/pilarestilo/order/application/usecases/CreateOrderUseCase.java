@@ -150,13 +150,13 @@ public class CreateOrderUseCase {
     }
 
     private void validatePaymentMethodEnabled(PaymentMethod paymentMethod, SystemSettings settings) {
-        if (paymentMethod == PaymentMethod.BANK_TRANSFER && !settings.isPaymentMethodBankTransferEnabled()) {
-            throw new DomainException("Payment method BANK_TRANSFER is currently disabled");
+        if (paymentMethod == PaymentMethod.TRANSFER && !settings.isPaymentMethodBankTransferEnabled()) {
+            throw new DomainException("Payment method TRANSFER is currently disabled");
         }
 
-        if (paymentMethod == PaymentMethod.PAYMENT_GATEWAY) {
+        if (paymentMethod == PaymentMethod.WEBPAY || paymentMethod == PaymentMethod.MERCADOPAGO) {
             if (!settings.isPaymentMethodGatewayEnabled()) {
-                throw new DomainException("Payment method PAYMENT_GATEWAY is currently disabled");
+                throw new DomainException("Payment method " + paymentMethod + " is currently disabled");
             }
             if (settings.getPaymentGatewayProviders().isEmpty()) {
                 throw new DomainException("No payment gateway provider is configured");

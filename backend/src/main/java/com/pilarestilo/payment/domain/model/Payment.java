@@ -93,23 +93,23 @@ public class Payment {
     }
 
     private void validateTransferSnapshot() {
-        if (method != PaymentMethod.BANK_TRANSFER) {
+        if (method != PaymentMethod.TRANSFER) {
             return;
         }
         if (transferAccountHolderName == null || transferAccountHolderName.isBlank()) {
-            throw new DomainException("Transfer account holder snapshot is required for BANK_TRANSFER payments");
+            throw new DomainException("Transfer account holder snapshot is required for TRANSFER payments");
         }
         if (transferAccountEmail == null || transferAccountEmail.isBlank()) {
-            throw new DomainException("Transfer account email snapshot is required for BANK_TRANSFER payments");
+            throw new DomainException("Transfer account email snapshot is required for TRANSFER payments");
         }
         if (transferAccountNumber == null || transferAccountNumber.isBlank()) {
-            throw new DomainException("Transfer account number snapshot is required for BANK_TRANSFER payments");
+            throw new DomainException("Transfer account number snapshot is required for TRANSFER payments");
         }
         if (transferBankName == null || transferBankName.isBlank()) {
-            throw new DomainException("Transfer bank name snapshot is required for BANK_TRANSFER payments");
+            throw new DomainException("Transfer bank name snapshot is required for TRANSFER payments");
         }
         if (transferAccountType == null || transferAccountType.isBlank()) {
-            throw new DomainException("Transfer account type snapshot is required for BANK_TRANSFER payments");
+            throw new DomainException("Transfer account type snapshot is required for TRANSFER payments");
         }
     }
 
@@ -176,8 +176,8 @@ public class Payment {
         if (status != PaymentStatus.PENDING) {
             throw new DomainException("Only PENDING payments can be system-cancelled, got " + status);
         }
-        if (method != PaymentMethod.BANK_TRANSFER) {
-            throw new DomainException("System cancellation only supports BANK_TRANSFER");
+        if (method != PaymentMethod.TRANSFER) {
+            throw new DomainException("System cancellation only supports TRANSFER");
         }
         this.status = PaymentStatus.REJECTED;
         this.reviewedBy = SYSTEM_REVIEWER_ID;

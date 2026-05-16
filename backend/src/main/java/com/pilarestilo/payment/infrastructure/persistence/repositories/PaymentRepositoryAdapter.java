@@ -52,7 +52,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     @Override
     public List<Payment> findPendingBankTransfersOlderThan(Instant cutoff, int limit) {
         return jpaRepository.findPendingBankTransfersOlderThan(
-                PaymentStatus.PENDING, PaymentMethod.BANK_TRANSFER, cutoff, limit
+                PaymentStatus.PENDING, PaymentMethod.TRANSFER, cutoff, limit
         ).stream().map(this::toDomain).toList();
     }
 

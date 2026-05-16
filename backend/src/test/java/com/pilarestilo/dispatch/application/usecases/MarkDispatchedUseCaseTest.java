@@ -175,7 +175,7 @@ class MarkDispatchedUseCaseTest {
                 new MoneyDto(BigDecimal.TEN, "CLP"),
                 new MoneyDto(BigDecimal.ZERO, "CLP"),
                 new MoneyDto(BigDecimal.TEN, "CLP"),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 "LOCAL",
                 "chilexpress",
                 "Chilexpress",

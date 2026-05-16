@@ -31,7 +31,7 @@ public class RegisterPaymentUseCase {
     @Transactional
     public PaymentDto execute(UUID orderId, PaymentMethod method) {
         Payment payment;
-        if (method == PaymentMethod.BANK_TRANSFER) {
+        if (method == PaymentMethod.TRANSFER) {
             var settings = systemSettingsRepository.get();
             payment = Payment.create(
                     orderId,

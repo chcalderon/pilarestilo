@@ -48,7 +48,7 @@ class RegisterPosSaleUseCaseTest {
         UUID orderId = UUID.randomUUID();
         UUID sellerId = UUID.randomUUID();
 
-        Order order = buildOrder(orderId, SalesChannel.POS, PaymentMethod.CASH_ON_DELIVERY,
+        Order order = buildOrder(orderId, SalesChannel.POS, PaymentMethod.CASH,
                 BigDecimal.valueOf(25_000));
         CashRegister register = buildOpenRegister(sellerId);
 
@@ -56,7 +56,7 @@ class RegisterPosSaleUseCaseTest {
         when(cashRegisterRepository.findAnyOpenRegister()).thenReturn(Optional.of(register));
         when(cashRegisterRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        useCase.execute(orderId, SalesChannel.POS, PaymentMethod.CASH_ON_DELIVERY);
+        useCase.execute(orderId, SalesChannel.POS, PaymentMethod.CASH);
 
         ArgumentCaptor<CashRegister> saved = ArgumentCaptor.forClass(CashRegister.class);
         verify(cashRegisterRepository).save(saved.capture());
@@ -76,10 +76,10 @@ class RegisterPosSaleUseCaseTest {
     // ── non-cash POS — silent return ─────────────────────────────────────────
 
     @Test
-    void posOrderPaidWithTransfer_doesNotCreateMovement() {
+    void posOrderPaidWithNonCash_doesNotCreateMovement() {
         UUID orderId = UUID.randomUUID();
 
-        useCase.execute(orderId, SalesChannel.POS, PaymentMethod.BANK_TRANSFER);
+        useCase.execute(orderId, SalesChannel.POS, PaymentMethod.TRANSFER);
 
         verify(cashRegisterRepository, never()).findAnyOpenRegister();
         verify(cashRegisterRepository, never()).save(any());
@@ -94,7 +94,7 @@ class RegisterPosSaleUseCaseTest {
 
         assertThatExceptionOfType(DomainException.class)
                 .isThrownBy(() -> useCase.execute(
-                        orderId, SalesChannel.ECOMMERCE, PaymentMethod.CASH_ON_DELIVERY))
+                        orderId, SalesChannel.ECOMMERCE, PaymentMethod.CASH))
                 .withMessageContaining("RegisterPosSaleUseCase requires POS channel");
 
         verify(cashRegisterRepository, never()).save(any());
@@ -107,14 +107,14 @@ class RegisterPosSaleUseCaseTest {
     void posOrderPaidWithCash_noOpenCashRegister_throws() {
         UUID orderId = UUID.randomUUID();
 
-        Order order = buildOrder(orderId, SalesChannel.POS, PaymentMethod.CASH_ON_DELIVERY,
+        Order order = buildOrder(orderId, SalesChannel.POS, PaymentMethod.CASH,
                 BigDecimal.valueOf(10_000));
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(cashRegisterRepository.findAnyOpenRegister()).thenReturn(Optional.empty());
 
         assertThatIllegalStateException()
                 .isThrownBy(() -> useCase.execute(
-                        orderId, SalesChannel.POS, PaymentMethod.CASH_ON_DELIVERY))
+                        orderId, SalesChannel.POS, PaymentMethod.CASH))
                 .withMessage("No open cash register found");
 
         verify(cashRegisterRepository, never()).save(any());

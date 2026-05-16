@@ -117,7 +117,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         orderEntity.setDiscountCurrency("CLP");
         orderEntity.setTotalAmount(BigDecimal.valueOf(10_000));
         orderEntity.setTotalCurrency("CLP");
-        orderEntity.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        orderEntity.setPaymentMethod(PaymentMethod.TRANSFER);
         orderEntity.setShippingZoneCode("RM");
         orderEntity.setShippingCourierId("chilexpress");
         orderEntity.setShippingCourierName("Chilexpress");

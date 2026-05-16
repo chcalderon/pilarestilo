@@ -419,7 +419,7 @@ public class OrderCommandService {
         payment.setReviewedBy(null);
         payment.setReviewedAt(null);
         payment.setCreatedAt(now);
-        if (PaymentMethod.BANK_TRANSFER.name().equals(order.getPaymentMethod())) {
+        if (PaymentMethod.TRANSFER.name().equals(order.getPaymentMethod())) {
             TransferSnapshot snapshot = resolveTransferSnapshot();
             payment.setTransferAccountHolderName(snapshot.accountHolder());
             payment.setTransferAccountEmail(snapshot.contactEmail());

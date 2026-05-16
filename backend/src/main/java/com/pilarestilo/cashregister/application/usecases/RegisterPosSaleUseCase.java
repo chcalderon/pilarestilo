@@ -36,8 +36,7 @@ public class RegisterPosSaleUseCase {
             throw new DomainException("RegisterPosSaleUseCase requires POS channel, got: " + salesChannel);
         }
 
-        // TODO Fase 3: rename to PaymentMethod.CASH
-        if (paymentMethod != PaymentMethod.CASH_ON_DELIVERY) {
+        if (paymentMethod != PaymentMethod.CASH) {
             // Non-cash POS sales (e.g. card, transfer) do not affect the cash register
             return;
         }

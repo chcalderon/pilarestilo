@@ -45,7 +45,7 @@ class AutoCancelPendingBankTransferUseCaseTest {
     private Payment pendingBankTransfer() {
         return Payment.create(
                 UUID.randomUUID(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 "Pilar Estilo",
                 "pagos@pilarestilo.com",
                 "0000000000",

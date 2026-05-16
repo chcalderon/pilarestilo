@@ -113,7 +113,7 @@ class OrderInventorySagaTest {
                 UUID.randomUUID(),
                 items,
                 Money.zero(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 "LOCAL",
                 "chilexpress",
                 "Chilexpress",

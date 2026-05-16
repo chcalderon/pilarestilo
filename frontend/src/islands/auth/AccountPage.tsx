@@ -539,13 +539,13 @@ export default function AccountPage({ locale }: Props) {
   }
 
   function canSubmitProof(order: OrderDto, payment: PaymentDto | undefined) {
-    if (order.paymentMethod !== 'BANK_TRANSFER') return false;
+    if (order.paymentMethod !== 'TRANSFER') return false;
     if (!payment) return false;
     return payment.status === 'PENDING' || payment.status === 'SUBMITTED';
   }
 
   function canSimulateGateway(order: OrderDto, payment: PaymentDto | undefined) {
-    if (order.paymentMethod !== 'PAYMENT_GATEWAY') return false;
+    if (order.paymentMethod !== 'WEBPAY' && order.paymentMethod !== 'MERCADOPAGO') return false;
     if (!payment) return false;
     return payment.status !== 'APPROVED' && payment.status !== 'REJECTED';
   }
@@ -951,18 +951,22 @@ export default function AccountPage({ locale }: Props) {
 
   function paymentMethodLabel(method: OrderDto['paymentMethod']) {
     const labelsEs: Record<OrderDto['paymentMethod'], string> = {
-      BANK_TRANSFER: 'Transferencia',
-      CASH_ON_DELIVERY: 'Contra entrega',
-      AGREED_BY_WHATSAPP: 'Acordado por WhatsApp',
-      STORE_CREDIT: 'Credito tienda',
-      PAYMENT_GATEWAY: 'Pasarela de pago',
+      CASH: 'Efectivo',
+      DEBIT: 'Débito',
+      CREDIT: 'Crédito',
+      TRANSFER: 'Transferencia',
+      WEBPAY: 'WebPay',
+      MERCADOPAGO: 'MercadoPago',
+      OTHER: 'Otro',
     };
     const labelsEn: Record<OrderDto['paymentMethod'], string> = {
-      BANK_TRANSFER: 'Bank transfer',
-      CASH_ON_DELIVERY: 'Cash on delivery',
-      AGREED_BY_WHATSAPP: 'WhatsApp agreement',
-      STORE_CREDIT: 'Store credit',
-      PAYMENT_GATEWAY: 'Payment gateway',
+      CASH: 'Cash',
+      DEBIT: 'Debit',
+      CREDIT: 'Credit',
+      TRANSFER: 'Transfer',
+      WEBPAY: 'WebPay',
+      MERCADOPAGO: 'MercadoPago',
+      OTHER: 'Other',
     };
     return (es ? labelsEs : labelsEn)[method] ?? method;
   }
@@ -1641,7 +1645,7 @@ export default function AccountPage({ locale }: Props) {
                         ))}
                       </ul>
 
-                      {order.paymentMethod === 'BANK_TRANSFER' && (
+                      {order.paymentMethod === 'TRANSFER' && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">
@@ -1752,7 +1756,7 @@ export default function AccountPage({ locale }: Props) {
                         </div>
                       )}
 
-                      {order.paymentMethod === 'PAYMENT_GATEWAY' && (
+                      {(order.paymentMethod === 'WEBPAY' || order.paymentMethod === 'MERCADOPAGO') && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">

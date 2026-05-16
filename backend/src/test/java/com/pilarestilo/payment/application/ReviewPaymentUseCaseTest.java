@@ -42,7 +42,7 @@ class ReviewPaymentUseCaseTest {
     private Payment paymentReadyForReview() {
         Payment payment = Payment.create(
                 UUID.randomUUID(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,
@@ -85,7 +85,7 @@ class ReviewPaymentUseCaseTest {
     void approve_auto_transitions_from_submitted_to_under_review() {
         Payment payment = Payment.create(
                 UUID.randomUUID(),
-                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.TRANSFER,
                 TRANSFER_HOLDER,
                 TRANSFER_EMAIL,
                 TRANSFER_ACCOUNT,

@@ -259,7 +259,7 @@ export default function CartPage({ locale }: Props) {
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'BANK_TRANSFER' | 'PAYMENT_GATEWAY'>('BANK_TRANSFER');
+  const [paymentMethod, setPaymentMethod] = useState<'TRANSFER' | 'WEBPAY'>('TRANSFER');
   const [paymentMethodBankTransferEnabled, setPaymentMethodBankTransferEnabled] = useState(true);
   const [paymentMethodGatewayEnabled, setPaymentMethodGatewayEnabled] = useState(true);
   const [paymentGatewayProviders, setPaymentGatewayProviders] = useState<PaymentGatewayProvider[]>(['MERCADO_PAGO']);
@@ -590,11 +590,11 @@ export default function CartPage({ locale }: Props) {
         }
 
         setPaymentMethod((prev) => {
-          if (prev === 'BANK_TRANSFER' && !bankTransferEnabled && gatewayEnabled) {
-            return 'PAYMENT_GATEWAY';
+          if (prev === 'TRANSFER' && !bankTransferEnabled && gatewayEnabled) {
+            return 'WEBPAY';
           }
-          if (prev === 'PAYMENT_GATEWAY' && !gatewayEnabled && bankTransferEnabled) {
-            return 'BANK_TRANSFER';
+          if (prev === 'WEBPAY' && !gatewayEnabled && bankTransferEnabled) {
+            return 'TRANSFER';
           }
           return prev;
         });
@@ -729,11 +729,11 @@ export default function CartPage({ locale }: Props) {
   async function handleCheckout() {
     if (!items.length || checkingOut) return;
 
-    if (paymentMethod === 'BANK_TRANSFER' && !paymentMethodBankTransferEnabled) {
+    if (paymentMethod === 'TRANSFER' && !paymentMethodBankTransferEnabled) {
       showToast('error', l.paymentMethodUnavailable);
       return;
     }
-    if (paymentMethod === 'PAYMENT_GATEWAY' && !paymentMethodGatewayEnabled) {
+    if (paymentMethod === 'WEBPAY' && !paymentMethodGatewayEnabled) {
       showToast('error', l.paymentMethodUnavailable);
       return;
     }
@@ -1193,9 +1193,9 @@ export default function CartPage({ locale }: Props) {
                         <input
                           type="radio"
                           name="paymentMethod"
-                          value="BANK_TRANSFER"
-                          checked={paymentMethod === 'BANK_TRANSFER'}
-                          onChange={() => setPaymentMethod('BANK_TRANSFER')}
+                          value="TRANSFER"
+                          checked={paymentMethod === 'TRANSFER'}
+                          onChange={() => setPaymentMethod('TRANSFER')}
                           className="accent-pe-rose"
                         />
                         {l.paymentMethodTransfer}
@@ -1206,9 +1206,9 @@ export default function CartPage({ locale }: Props) {
                         <input
                           type="radio"
                           name="paymentMethod"
-                          value="PAYMENT_GATEWAY"
-                          checked={paymentMethod === 'PAYMENT_GATEWAY'}
-                          onChange={() => setPaymentMethod('PAYMENT_GATEWAY')}
+                          value="WEBPAY"
+                          checked={paymentMethod === 'WEBPAY'}
+                          onChange={() => setPaymentMethod('WEBPAY')}
                           className="mt-1 accent-pe-rose"
                         />
                         <span>
@@ -1222,7 +1222,7 @@ export default function CartPage({ locale }: Props) {
                       </label>
                     )}
                   </div>
-                  {paymentMethod === 'BANK_TRANSFER' && (
+                  {paymentMethod === 'TRANSFER' && (
                     <div className="mt-3 border border-pe-black/10 bg-pe-cream/35 px-3 py-2">
                       <p className="font-sans text-[0.65rem] uppercase tracking-[0.16em] text-pe-charcoal/55 mb-2">
                         {l.transferDetailsTitle}

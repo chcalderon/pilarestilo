@@ -267,7 +267,7 @@ class AuthorizationGuardsIT {
         String orderBody = om.writeValueAsString(Map.of(
                 "customerId", customerId,
                 "items", List.of(Map.of("productId", productId, "quantity", 1)),
-                "paymentMethod", "BANK_TRANSFER",
+                "paymentMethod", "TRANSFER",
                 "shippingZoneCode", "LOCAL",
                 "shippingCourierId", "chilexpress",
                 "shippingAddressId", shippingAddressId,
