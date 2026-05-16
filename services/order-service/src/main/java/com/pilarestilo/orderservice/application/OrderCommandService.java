@@ -357,8 +357,20 @@ public class OrderCommandService {
     }
 
     private PaymentMethod parsePaymentMethod(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+
+        String normalized = switch (raw.trim().toUpperCase()) {
+            case "BANK_TRANSFER"      -> "TRANSFER";
+            case "CASH_ON_DELIVERY"   -> "CASH";
+            case "PAYMENT_GATEWAY"    -> "WEBPAY";
+            case "AGREED_BY_WHATSAPP", "STORE_CREDIT" -> "OTHER";
+            default -> raw.trim().toUpperCase();
+        };
+
         try {
-            return PaymentMethod.valueOf(raw.trim().toUpperCase());
+            return PaymentMethod.valueOf(normalized);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Unsupported payment method: " + raw);
         }
