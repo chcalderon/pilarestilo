@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuthStore } from '../../lib/authStore';
 import {
   addCashMovement,
@@ -17,8 +17,8 @@ type OperationView = 'loading' | 'no_caja' | 'open' | 'closed' | 'open_form';
 type Tab = 'operacion' | 'registros';
 type DrawerCategory = 'EXPENSE' | 'WITHDRAWAL' | 'ADJUSTMENT';
 
-const CLP = (n: number) =>
-  new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
+const clpFormatter = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+const CLP = (n: number) => clpFormatter.format(n);
 
 function formatDateTime(value?: string | null): string {
   if (!value) return '-';
@@ -124,6 +124,13 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
     }
   }, [open, category]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
   const resolvedType: CashMovementType = category === 'ADJUSTMENT' ? adjustType : 'OUT';
   const resolvedCategory: CashMovementCategory = category;
 
@@ -143,6 +150,9 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
       />
       {/* Drawer panel */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={DRAWER_TITLES[category]}
         className={`fixed inset-y-0 right-0 w-80 bg-white dark:bg-[#1A1A1A] shadow-2xl z-50 flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDE3D8] dark:border-white/10">
@@ -186,10 +196,11 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
           )}
 
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
+            <label htmlFor="drawer-amount" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
               Monto (CLP)
             </label>
             <input
+              id="drawer-amount"
               ref={amountRef}
               type="number"
               min="1"
@@ -203,10 +214,11 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
           </div>
 
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
-              Descripcion
+            <label htmlFor="drawer-description" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
+              Descripción
             </label>
             <input
+              id="drawer-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -258,7 +270,8 @@ export default function CajaPage() {
 
   const [operationError, setOperationError] = useState('');
   const [drawerError, setDrawerError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [operationBusy, setOperationBusy] = useState(false);
+  const [drawerBusy, setDrawerBusy] = useState(false);
 
   // History tab
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
@@ -348,11 +361,13 @@ export default function CajaPage() {
   }, [tab, token]);
 
   async function openCaja() {
-    if (!token || !openBalance) return;
-    setBusy(true);
+    if (!token) return;
+    const n = parseFloat(openBalance);
+    if (!Number.isFinite(n) || n < 0) return;
+    setOperationBusy(true);
     setOperationError('');
     try {
-      await openCashRegister(parseFloat(openBalance), token);
+      await openCashRegister(n, token);
       setOpenBalance('');
       setClosingMode(false);
       setDeclaredBalance('');
@@ -360,7 +375,7 @@ export default function CajaPage() {
     } catch {
       setOperationError('No se pudo abrir la caja.');
     } finally {
-      setBusy(false);
+      setOperationBusy(false);
     }
   }
 
@@ -368,7 +383,7 @@ export default function CajaPage() {
     if (!token || !declaredBalance) return;
     const declared = parseFloat(declaredBalance);
     if (!Number.isFinite(declared) || declared < 0) return;
-    setBusy(true);
+    setOperationBusy(true);
     setOperationError('');
     try {
       await closeCashRegister(declared, token, closeNotes.trim() || undefined);
@@ -379,7 +394,7 @@ export default function CajaPage() {
     } catch {
       setOperationError('No se pudo cerrar la caja.');
     } finally {
-      setBusy(false);
+      setOperationBusy(false);
     }
   }
 
@@ -390,7 +405,7 @@ export default function CajaPage() {
     description: string
   ) {
     if (!token) return;
-    setBusy(true);
+    setDrawerBusy(true);
     setDrawerError('');
     try {
       await addCashMovement(type, category, amount, description, token);
@@ -399,7 +414,7 @@ export default function CajaPage() {
     } catch {
       setDrawerError('No se pudo agregar el movimiento.');
     } finally {
-      setBusy(false);
+      setDrawerBusy(false);
     }
   }
 
@@ -411,18 +426,24 @@ export default function CajaPage() {
 
   // ─── Derived values ────────────────────────────────────────────────────────
 
-  const visibleMovements = (caja?.movements ?? []).filter((m) => {
-    if (m.category === 'CASH_SALE' && !showPosSales) return false;
-    return true;
-  });
+  const visibleMovements = useMemo(
+    () => (caja?.movements ?? []).filter((m) => m.category !== 'CASH_SALE' || showPosSales),
+    [caja?.movements, showPosSales]
+  );
 
-  const inSum = (caja?.movements ?? [])
-    .filter((m) => m.type === 'IN' && m.category !== 'INITIAL_BALANCE')
-    .reduce((acc, m) => acc + m.amount, 0);
+  const inSum = useMemo(
+    () => (caja?.movements ?? [])
+      .filter((m) => m.type === 'IN' && m.category !== 'INITIAL_BALANCE')
+      .reduce((acc, m) => acc + m.amount, 0),
+    [caja?.movements]
+  );
 
-  const outSum = (caja?.movements ?? [])
-    .filter((m) => m.type === 'OUT')
-    .reduce((acc, m) => acc + m.amount, 0);
+  const outSum = useMemo(
+    () => (caja?.movements ?? [])
+      .filter((m) => m.type === 'OUT')
+      .reduce((acc, m) => acc + m.amount, 0),
+    [caja?.movements]
+  );
 
   const declaredNum = parseFloat(declaredBalance);
   const difference = Number.isFinite(declaredNum) && caja
@@ -444,14 +465,15 @@ export default function CajaPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
         <p className="font-display text-2xl text-pe-charcoal/50 dark:text-pe-beige/40 italic">
-          {operationView === 'no_caja' ? 'Aun no hay caja abierta' : 'Abrir nueva caja'}
+          {operationView === 'no_caja' ? 'Aún no hay caja abierta' : 'Abrir nueva caja'}
         </p>
         <div className="w-full max-w-xs space-y-4">
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
+            <label htmlFor="open-balance" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
               Balance inicial (CLP)
             </label>
             <input
+              id="open-balance"
               type="number"
               value={openBalance}
               onChange={(e) => setOpenBalance(e.target.value)}
@@ -461,10 +483,10 @@ export default function CajaPage() {
           {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
           <button
             onClick={openCaja}
-            disabled={busy || !openBalance}
+            disabled={operationBusy || !Number.isFinite(parseFloat(openBalance)) || parseFloat(openBalance) < 0}
             className="w-full bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors disabled:opacity-50"
           >
-            {busy ? 'Abriendo...' : 'Abrir caja'}
+            {operationBusy ? 'Abriendo...' : 'Abrir caja'}
           </button>
         </div>
       </div>
@@ -520,7 +542,7 @@ export default function CajaPage() {
             <span className="text-sm text-pe-charcoal/70 dark:text-pe-beige/70">
               Caja abierta
               <span className="mx-1.5 text-pe-charcoal/30 dark:text-pe-beige/30">·</span>
-              Sesion #{shortId(caja.id)}
+              Sesión #{shortId(caja.id)}
               <span className="mx-1.5 text-pe-charcoal/30 dark:text-pe-beige/30">·</span>
               {formatTime(caja.openedAt)}h
             </span>
@@ -549,8 +571,9 @@ export default function CajaPage() {
         {closingMode && (
           <div className="border border-[#EDE3D8] dark:border-white/10 flex divide-x divide-[#EDE3D8] dark:divide-white/10 overflow-auto">
             <div className="flex-1 min-w-0 px-5 py-4">
-              <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Declarado</p>
+              <label htmlFor="declared-balance" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Declarado</label>
               <input
+                id="declared-balance"
                 type="number"
                 min="0"
                 step="1"
@@ -601,10 +624,10 @@ export default function CajaPage() {
                 </button>
                 <button
                   onClick={closeCaja}
-                  disabled={busy || !declaredBalance || parseFloat(declaredBalance) < 0}
+                  disabled={operationBusy || !declaredBalance || parseFloat(declaredBalance) < 0}
                   className="bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-6 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors disabled:opacity-50"
                 >
-                  {busy ? 'Cerrando...' : 'Cerrar caja'}
+                  {operationBusy ? 'Cerrando...' : 'Cerrar caja'}
                 </button>
               </>
             ) : (
@@ -620,13 +643,19 @@ export default function CajaPage() {
 
         {/* Close notes (shown in closing mode) */}
         {closingMode && (
-          <textarea
-            value={closeNotes}
-            onChange={(e) => setCloseNotes(e.target.value)}
-            placeholder="Notas de cierre (opcional)"
-            rows={2}
-            className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
-          />
+          <div>
+            <label htmlFor="close-notes" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
+              Notas de cierre (opcional)
+            </label>
+            <textarea
+              id="close-notes"
+              value={closeNotes}
+              onChange={(e) => setCloseNotes(e.target.value)}
+              placeholder="Notas de cierre (opcional)"
+              rows={2}
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+            />
+          </div>
         )}
 
         {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
@@ -636,7 +665,7 @@ export default function CajaPage() {
           <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 dark:text-pe-beige/40 mb-3">Movimientos</p>
           {visibleMovements.length === 0 ? (
             <p className="font-display italic text-pe-charcoal/40 dark:text-pe-beige/40 text-lg py-8 text-center">
-              Sin movimientos aun
+              Aún sin movimientos
             </p>
           ) : (
             <div className="border border-[#EDE3D8] dark:border-white/10 overflow-auto">
@@ -644,7 +673,7 @@ export default function CajaPage() {
                 <thead className="bg-[#F8F4EF] dark:bg-white/5">
                   <tr className="text-left text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50">
                     <th className="px-3 py-2">Hora</th>
-                    <th className="px-3 py-2">Categoria</th>
+                    <th className="px-3 py-2">Categoría</th>
                     <th className="px-3 py-2">Concepto</th>
                     <th className="px-3 py-2 text-right">Entrada</th>
                     <th className="px-3 py-2 text-right">Salida</th>
@@ -846,7 +875,7 @@ export default function CajaPage() {
                 <thead className="bg-[#F8F4EF] dark:bg-white/5">
                   <tr className="text-left text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50">
                     <th className="px-3 py-2">Hora</th>
-                    <th className="px-3 py-2">Categoria</th>
+                    <th className="px-3 py-2">Categoría</th>
                     <th className="px-3 py-2">Concepto</th>
                     <th className="px-3 py-2 text-right">Entrada</th>
                     <th className="px-3 py-2 text-right">Salida</th>
@@ -880,7 +909,7 @@ export default function CajaPage() {
         category={drawerCategory}
         onClose={() => setDrawerOpen(false)}
         onSubmit={createMovement}
-        busy={busy}
+        busy={drawerBusy}
         error={drawerError}
       />
 
