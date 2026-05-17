@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface RolePermissionJpaRepository extends JpaRepository<RolePermissionEntity, Long> {
 
-    @Query("SELECT e.viewKey FROM RolePermissionEntity e WHERE e.role = :role")
+    @Query("SELECT e.viewKey FROM RolePermissionEntity e WHERE e.role = :role ORDER BY e.viewKey")
     List<String> findViewKeysByRole(String role);
 
     void deleteAllByRole(String role);

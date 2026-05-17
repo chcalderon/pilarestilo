@@ -20,7 +20,8 @@ import {
   type ProductDto,
   type CategoryDto,
 } from '../../lib/api';
-import { summarizeVariantSizes } from '../../lib/productVariants';
+import { summarizeProductVariantSecondaryValues } from '../../lib/productVariants';
+import { getProductVariantSchema, getSecondaryAttribute } from '../../lib/variantSchema';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
@@ -117,6 +118,7 @@ export default function ProductTable() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>('');
   const [sortKey, setSortKey] = useState<string | undefined>(undefined);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [createdFrom, setCreatedFrom] = useState('');
@@ -219,6 +221,7 @@ export default function ProductTable() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const res = await searchProducts({
         q: parsed.q,
@@ -233,6 +236,11 @@ export default function ProductTable() {
       });
       setProducts(res.content);
       setTotal(res.totalElements);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo cargar el listado de productos.';
+      setLoadError(message);
+      setProducts([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -318,7 +326,8 @@ export default function ProductTable() {
   };
   const fmtCreatedAt = (value: string) =>
     new Date(value).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const formatSizesSummary = (row: ProductDto) => summarizeVariantSizes(row.variants);
+  const formatSizesSummary = (row: ProductDto) => summarizeProductVariantSecondaryValues(row);
+  const formatSecondaryAttributeLabel = (row: ProductDto) => getSecondaryAttribute(getProductVariantSchema(row)).label;
 
   const actionButtonClass =
     'inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors';
@@ -418,7 +427,7 @@ export default function ProductTable() {
             )}
             {sizesSummary && (
               <span className="font-sans text-[0.6rem] uppercase tracking-[0.08em] text-pe-charcoal/40">
-                {sizesSummary}
+                {formatSecondaryAttributeLabel(row)}: {sizesSummary}
               </span>
             )}
           </div>
@@ -628,7 +637,7 @@ export default function ProductTable() {
                   >
                     Stock {row.stock}
                     {(row.variants?.length ?? 0) > 0 ? ` · ${row.variants!.length} comb.` : ''}
-                    {formatSizesSummary(row) ? ` · ${formatSizesSummary(row)}` : ''}
+                    {formatSizesSummary(row) ? ` · ${formatSecondaryAttributeLabel(row)}: ${formatSizesSummary(row)}` : ''}
                   </p>
                 </div>
                 <p className="mt-2 font-sans text-[0.68rem] uppercase tracking-[0.08em] text-pe-charcoal/45">
@@ -855,6 +864,12 @@ export default function ProductTable() {
         {heroAssignmentFeedback && (
           <div className="rounded-sm border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-emerald-700">
             {heroAssignmentFeedback}
+          </div>
+        )}
+
+        {loadError && (
+          <div className="rounded-sm border border-red-300/70 bg-red-50 px-3 py-2 font-sans text-[0.72rem] text-red-700">
+            Error cargando productos: {loadError}
           </div>
         )}
 

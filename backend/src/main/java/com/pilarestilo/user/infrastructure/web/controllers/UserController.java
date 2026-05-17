@@ -11,15 +11,21 @@ import com.pilarestilo.user.application.usecases.SearchUsersUseCase;
 import com.pilarestilo.user.application.usecases.UpdateUserUseCase;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.shared.rbac.domain.PermissionRegistry;
+import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.infrastructure.web.requests.CreateUserRequest;
 import com.pilarestilo.user.infrastructure.web.requests.ResetUserPasswordRequest;
 import com.pilarestilo.user.infrastructure.web.requests.UpdateUserRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +35,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final CreateUserUseCase createUserUseCase;
     private final GetUserUseCase getUserUseCase;
@@ -64,7 +72,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).USERS_READ)")
     public Page<UserDto> list(@RequestParam(required = false) String role,
                               @RequestParam(required = false) Boolean active,
                               Pageable pageable) {
@@ -78,16 +86,27 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).USERS_READ)")
     public UserDto getById(@PathVariable UUID id) {
         return getUserUseCase.execute(id);
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).USERS_UPDATE)")
     public UserDto update(@PathVariable UUID id,
                           @RequestBody UpdateUserRequest request,
-                          @AuthenticationPrincipal AuthenticatedUser currentUser) {
+                          @AuthenticationPrincipal AuthenticatedUser currentUser,
+                          Authentication authentication) {
+        boolean isLegacyAdmin = currentUser != null && currentUser.role() == UserRole.ADMIN;
+        if (request.role() != null && !isLegacyAdmin) {
+            if (log.isWarnEnabled()) {
+                log.warn("[RBAC] denied role mutation userId={} actor={} requiredPermission={}",
+                        id,
+                        currentUser == null ? "anonymous" : currentUser.email(),
+                        PermissionRegistry.USERS_ASSIGN_ROLE.code());
+            }
+            throw new AccessDeniedException("Role changes require admin legacy access");
+        }
         if (currentUser != null && currentUser.id().equals(id)) {
             if (request.active() != null && !request.active()) {
                 throw new DomainException("You cannot block your own account");

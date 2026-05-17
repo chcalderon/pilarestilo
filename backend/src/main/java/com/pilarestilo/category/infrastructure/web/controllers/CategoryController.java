@@ -61,7 +61,8 @@ public class CategoryController {
     public ResponseEntity<CategoryDto> create(@Valid @RequestBody CreateCategoryRequest req) {
         CategoryDto dto = createCategory.execute(
                 req.slug(), req.nameEs(), req.nameEn(),
-                req.parentId(), req.sortOrder(), req.imageUrl()
+                req.parentId(), req.sortOrder(), req.imageUrl(),
+                req.active(), req.featured(), req.menuVisible(), req.categoryType(), req.heroImageUrl()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }

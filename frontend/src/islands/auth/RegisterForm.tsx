@@ -35,7 +35,17 @@ export default function RegisterForm({ locale, redirect }: Props) {
           setError('');
           try {
             const data = await googleLogin(response.credential);
-            setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
+            setAuth(data.accessToken, {
+              id: data.userId,
+              email: data.email,
+              role: data.role,
+              fullName: data.fullName,
+              avatarUrl: data.avatarUrl,
+              permissions: data.permissions ?? [],
+              permissionCodes: data.permissionCodes ?? [],
+              vigencyStart: data.vigencyStart,
+              vigencyEnd: data.vigencyEnd,
+            });
             document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
             const dest = redirect ?? `/${locale}/account`;
             if (data.accountMerged) {
@@ -82,7 +92,17 @@ export default function RegisterForm({ locale, redirect }: Props) {
     setError('');
     try {
       const data = await registerUser(email, password, fullName);
-      setAuth(data.accessToken, { id: data.userId, email: data.email, role: data.role, fullName: data.fullName, avatarUrl: data.avatarUrl, permissions: data.permissions ?? [], vigencyStart: data.vigencyStart, vigencyEnd: data.vigencyEnd });
+      setAuth(data.accessToken, {
+        id: data.userId,
+        email: data.email,
+        role: data.role,
+        fullName: data.fullName,
+        avatarUrl: data.avatarUrl,
+        permissions: data.permissions ?? [],
+        permissionCodes: data.permissionCodes ?? [],
+        vigencyStart: data.vigencyStart,
+        vigencyEnd: data.vigencyEnd,
+      });
       document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = redirect ?? `/${locale}/account`;
     } catch {

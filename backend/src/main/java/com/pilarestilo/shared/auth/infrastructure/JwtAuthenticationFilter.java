@@ -1,6 +1,7 @@
 package com.pilarestilo.shared.auth.infrastructure;
 
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
+import com.pilarestilo.shared.rbac.application.LegacyViewPermissionMapper;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -8,26 +9,34 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final LegacyViewPermissionMapper legacyViewPermissionMapper;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
+                                   UserRepository userRepository,
+                                   LegacyViewPermissionMapper legacyViewPermissionMapper) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
+        this.legacyViewPermissionMapper = legacyViewPermissionMapper;
     }
 
     @Override
@@ -49,10 +58,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @SuppressWarnings("unchecked")
             List<String> permissions = claims.get("permissions", List.class);
             if (permissions == null) permissions = List.of();
-
-            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+            @SuppressWarnings("unchecked")
+            List<String> permissionCodesClaim = claims.get("permissionCodes", List.class);
+            LinkedHashSet<String> permissionCodes = new LinkedHashSet<>();
+            if (permissionCodesClaim != null) {
+                permissionCodes.addAll(permissionCodesClaim);
+            }
+            boolean usedLegacyFallback = false;
+            if (permissionCodes.isEmpty()) {
+                usedLegacyFallback = true;
+                permissionCodes.addAll(legacyViewPermissionMapper.toPermissionCodes(permissions));
+            }
+            AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+                    userId, email, role, permissions, List.copyOf(permissionCodes));
+            if (usedLegacyFallback && log.isDebugEnabled()) {
+                log.debug(
+                        "[RBAC] legacy permission fallback path={} userId={} role={} legacyViews={} permissionCodes={}",
+                        request.getRequestURI(),
+                        userId,
+                        role.name(),
+                        permissions.size(),
+                        permissionCodes.size()
+                );
+            }
+            if (log.isTraceEnabled()) {
+                log.trace(
+                        "[RBAC] authorities resolved path={} userId={} authorities={}",
+                        request.getRequestURI(),
+                        userId,
+                        authenticatedUser.toAuthorities()
+                );
+            }
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    new AuthenticatedUser(userId, email, role, permissions), null, authorities);
+                    authenticatedUser, null, authenticatedUser.toAuthorities());
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);
         }

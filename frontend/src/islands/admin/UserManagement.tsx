@@ -10,6 +10,7 @@ import {
   type AdminUserDto,
 } from '../../lib/api';
 import { readAuthTokenCookie, useAuthStore } from '../../lib/authStore';
+import { useCan } from '../../lib/permissions';
 import DataTable, { type Column } from './DataTable';
 
 type TabKey = 'customers' | 'workers';
@@ -48,6 +49,9 @@ const DEFAULT_METRICS: UserMetrics = {
 export default function UserManagement() {
   const { token, user } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
+  const canReadUsers = useCan('users.read', 'usuarios');
+  const canUpdateUsers = useCan('users.update', 'usuarios');
+  const isLegacyAdmin = user?.role === 'ADMIN';
   const [tab, setTab] = useState<TabKey>('customers');
   const [customers, setCustomers] = useState<AdminUserDto[]>([]);
   const [workers, setWorkers] = useState<AdminUserDto[]>([]);
@@ -77,7 +81,7 @@ export default function UserManagement() {
   }, []);
 
   const loadCounters = useCallback(async () => {
-    if (!effectiveToken) {
+    if (!effectiveToken || !canReadUsers) {
       return;
     }
     const [customersRes, workersRes, blockedRes] = await Promise.all([
@@ -90,10 +94,10 @@ export default function UserManagement() {
       workers: workersRes.totalElements ?? 0,
       blocked: blockedRes.totalElements ?? 0,
     });
-  }, [effectiveToken]);
+  }, [effectiveToken, canReadUsers]);
 
   const loadCurrentTab = useCallback(async () => {
-    if (!effectiveToken) {
+    if (!effectiveToken || !canReadUsers) {
       setLoading(false);
       return;
     }
@@ -129,10 +133,10 @@ export default function UserManagement() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveToken, tab, customersPage, workersPage, statusFilterValue]);
+  }, [effectiveToken, canReadUsers, tab, customersPage, workersPage, statusFilterValue]);
 
   const loadMetrics = useCallback(async (u: AdminUserDto) => {
-    if (!effectiveToken) return;
+    if (!effectiveToken || !canReadUsers) return;
     setMetricsByUser((prev) => ({
       ...prev,
       [u.id]: prev[u.id] ?? { ...DEFAULT_METRICS, loading: true },
@@ -161,7 +165,7 @@ export default function UserManagement() {
         pendingOrders,
       },
     }));
-  }, [effectiveToken]);
+  }, [effectiveToken, canReadUsers]);
 
   useEffect(() => {
     void loadCounters();
@@ -183,7 +187,7 @@ export default function UserManagement() {
   }, [loadCounters, loadCurrentTab]);
 
   async function handleToggleActive(target: AdminUserDto) {
-    if (!effectiveToken || busyUserId) return;
+    if (!effectiveToken || busyUserId || !canUpdateUsers) return;
     setBusyUserId(target.id);
     try {
       const updated = await updateAdminUser(target.id, { active: !target.active }, effectiveToken);
@@ -261,37 +265,44 @@ export default function UserManagement() {
       key: 'actions',
       header: 'Acciones',
       width: '150px',
-      render: (row) => (
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            title="Editar usuario"
-            onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
-          >
-            <Pencil size={13} /> Editar
-          </button>
-          <button
-            type="button"
-            title={row.active ? 'Bloquear usuario' : 'Habilitar usuario'}
-            onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
-          >
-            {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
-          </button>
-          <button
-            type="button"
-            title="Eliminar usuario"
-            onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ),
+      render: (row) => {
+        if (!canUpdateUsers && !isLegacyAdmin) {
+          return <span className="font-sans text-[0.68rem] text-pe-charcoal/35">Solo lectura</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              title="Editar usuario"
+              onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
+              disabled={busyUserId !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
+            >
+              <Pencil size={13} /> Editar
+            </button>
+            <button
+              type="button"
+              title={row.active ? 'Bloquear usuario' : 'Habilitar usuario'}
+              onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
+              disabled={busyUserId !== null || !canUpdateUsers}
+              className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+            >
+              {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
+            </button>
+            {isLegacyAdmin && (
+              <button
+                type="button"
+                title="Eliminar usuario"
+                onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
+                disabled={busyUserId !== null}
+                className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -343,37 +354,44 @@ export default function UserManagement() {
       key: 'actions',
       header: 'Acciones',
       width: '150px',
-      render: (row) => (
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            title="Editar trabajador"
-            onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
-          >
-            <Pencil size={13} /> Editar
-          </button>
-          <button
-            type="button"
-            title={row.active ? 'Bloquear trabajador' : 'Habilitar trabajador'}
-            onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
-          >
-            {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
-          </button>
-          <button
-            type="button"
-            title="Eliminar trabajador"
-            onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
-            disabled={busyUserId !== null}
-            className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ),
+      render: (row) => {
+        if (!canUpdateUsers && !isLegacyAdmin) {
+          return <span className="font-sans text-[0.68rem] text-pe-charcoal/35">Solo lectura</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              title="Editar trabajador"
+              onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
+              disabled={busyUserId !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
+            >
+              <Pencil size={13} /> Editar
+            </button>
+            <button
+              type="button"
+              title={row.active ? 'Bloquear trabajador' : 'Habilitar trabajador'}
+              onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
+              disabled={busyUserId !== null || !canUpdateUsers}
+              className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+            >
+              {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
+            </button>
+            {isLegacyAdmin && (
+              <button
+                type="button"
+                title="Eliminar trabajador"
+                onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
+                disabled={busyUserId !== null}
+                className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -385,8 +403,27 @@ export default function UserManagement() {
     setWorkersPage(Math.max(0, nextPage));
   }
 
+  if (!canReadUsers) {
+    return (
+      <div className="border border-pe-black/10 bg-pe-white p-6">
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Usuarios</p>
+        <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+          Esta sesion no tiene permiso para consultar usuarios del panel administrativo.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {!canUpdateUsers && (
+        <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+            Modo consulta. Puedes revisar clientes y trabajadores, pero editar requiere <span className="font-mono text-[0.7rem]">users.update</span>.
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
           <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Clientes</p>
@@ -506,6 +543,8 @@ export default function UserManagement() {
           user={editingUser}
           token={effectiveToken}
           currentUserId={user?.id ?? ''}
+          canUpdate={canUpdateUsers}
+          isLegacyAdmin={isLegacyAdmin}
           onClose={() => setEditingUser(null)}
           onSaved={() => {
             setMetricsByUser((prev) => {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { useAuthStore } from "@/lib/authStore";
+import { readAuthTokenCookie, useAuthStore } from "@/lib/authStore";
 
 interface SalesTotal { amount: number; orderCount: number }
 interface TopProduct { productId: string; name: string; unitsSold: number }
@@ -176,22 +176,38 @@ export default function DashboardPage() {
   const [data, setData] = useState<StatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuthStore();
+  const effectiveToken = token ?? readAuthTokenCookie();
 
   useEffect(() => {
+    if (!effectiveToken) {
+      return;
+    }
+
+    let cancelled = false;
+
     async function load() {
       try {
         const res = await fetch("/api/dashboard/stats", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${effectiveToken}` },
         });
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const stats = await res.json() as StatsData;
+        if (cancelled) return;
         setData(stats);
+        setError(null);
       } catch {
+        if (cancelled) return;
+        setData(null);
         setError("No se pudo cargar el dashboard.");
       }
     }
+
     load();
-  }, [token]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveToken]);
 
   if (error) {
     return <p className="text-sm text-red-500 p-4">{error}</p>;

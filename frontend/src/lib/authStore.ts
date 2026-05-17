@@ -8,6 +8,7 @@ export interface StoredUser {
   fullName?: string;
   avatarUrl?: string;
   permissions: string[];
+  permissionCodes: string[];
   vigencyStart?: string;
   vigencyEnd?: string;
 }

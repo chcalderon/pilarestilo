@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCartStore } from '../../lib/cartStore';
 import type { Locale } from '../../i18n/index';
-import type { ProductVariantDto } from '../../lib/api';
-import { summarizeVariantSizes } from '../../lib/productVariants';
+import type { CategoryType, ProductVariantDto } from '../../lib/api';
+import {
+  getPrimaryAttribute,
+  getProductVariantSchema,
+  getSecondaryAttribute,
+  summarizeVariantAttributeValues,
+  toVariantAttributeRecord,
+} from '../../lib/variantSchema';
 
 interface Props {
   productId: string;
@@ -13,6 +19,7 @@ interface Props {
   condition: 'NEW' | 'USED';
   stock: number;
   locale: Locale;
+  categoryTypes?: CategoryType[];
   variants?: ProductVariantDto[];
 }
 
@@ -32,85 +39,114 @@ export default function ProductVariantSelector({
   condition,
   stock,
   locale,
+  categoryTypes,
   variants,
 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const schema = useMemo(() => getProductVariantSchema({ categoryTypes }), [categoryTypes]);
+  const primaryAttribute = useMemo(() => getPrimaryAttribute(schema), [schema]);
+  const secondaryAttribute = useMemo(() => getSecondaryAttribute(schema), [schema]);
 
   const labels = {
-    selectColor: locale === 'es' ? 'Color' : 'Color',
-    selectSize: locale === 'es' ? 'Talla' : 'Size',
-    availableSizes: locale === 'es' ? 'Tallas disponibles' : 'Available sizes',
+    selectPrimary: primaryAttribute.label,
+    selectSecondary: secondaryAttribute.label,
+    availableSecondary: locale === 'es'
+      ? `${secondaryAttribute.label}s disponibles`
+      : `Available ${secondaryAttribute.label.toLowerCase()}s`,
     addToCart: locale === 'es' ? 'Agregar al Carrito' : 'Add to Cart',
     outOfStock: locale === 'es' ? 'Sin Stock' : 'Out of Stock',
     added: locale === 'es' ? 'Agregado' : 'Added',
-    chooseVariant: locale === 'es' ? 'Selecciona color y talla' : 'Select color and size',
+    chooseVariant: locale === 'es'
+      ? `Selecciona ${primaryAttribute.label.toLowerCase()} y ${secondaryAttribute.label.toLowerCase()}`
+      : `Select ${primaryAttribute.label.toLowerCase()} and ${secondaryAttribute.label.toLowerCase()}`,
   };
 
   const normalizedVariants = useMemo(
     () =>
-      (variants ?? []).filter((v) => Boolean(v.color?.trim()) && Boolean(v.size?.trim())),
-    [variants]
+      (variants ?? [])
+        .map((variant) => ({
+          variant,
+          record: toVariantAttributeRecord(variant, schema),
+        }))
+        .filter(
+          ({ record }) =>
+            Boolean(record[primaryAttribute.code]?.trim()) && Boolean(record[secondaryAttribute.code]?.trim()),
+        ),
+    [variants, schema, primaryAttribute.code, secondaryAttribute.code]
   );
 
   const hasVariants = normalizedVariants.length > 0;
-  const allSizesSummary = useMemo(() => summarizeVariantSizes(normalizedVariants), [normalizedVariants]);
-  const colorOptions = useMemo(() => {
+  const allSecondarySummary = useMemo(
+    () => summarizeVariantAttributeValues(
+      normalizedVariants.map(({ variant }) => variant),
+      schema,
+      secondaryAttribute.code,
+    ),
+    [normalizedVariants, schema, secondaryAttribute.code]
+  );
+  const primaryOptions = useMemo(() => {
     const seen = new Set<string>();
-    const colors: string[] = [];
-    for (const variant of normalizedVariants) {
-      const color = variant.color.trim();
-      if (!seen.has(color)) {
-        seen.add(color);
-        colors.push(color);
+    const values: string[] = [];
+    for (const item of normalizedVariants) {
+      const value = item.record[primaryAttribute.code]?.trim();
+      if (value && !seen.has(value)) {
+        seen.add(value);
+        values.push(value);
       }
     }
-    return colors;
-  }, [normalizedVariants]);
+    return values;
+  }, [normalizedVariants, primaryAttribute.code]);
 
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!hasVariants) return;
-    if (!selectedColor || !colorOptions.includes(selectedColor)) {
-      setSelectedColor(colorOptions[0] ?? null);
-    }
-  }, [hasVariants, colorOptions, selectedColor]);
-
-  const sizeOptions = useMemo(() => {
-    if (!selectedColor) return [];
-    return normalizedVariants.filter((v) => v.color.trim() === selectedColor);
-  }, [normalizedVariants, selectedColor]);
-  const selectedColorSizesSummary = useMemo(() => {
-    const unique = Array.from(new Set(sizeOptions.map((v) => v.size)));
-    return unique.join('-');
-  }, [sizeOptions]);
+  const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
+  const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasVariants) return;
-    if (!selectedSize || !sizeOptions.some((v) => v.size === selectedSize && v.stock > 0)) {
-      const firstInStock = sizeOptions.find((v) => v.stock > 0);
-      setSelectedSize(firstInStock?.size ?? null);
+    if (!selectedPrimary || !primaryOptions.includes(selectedPrimary)) {
+      setSelectedPrimary(primaryOptions[0] ?? null);
     }
-  }, [hasVariants, sizeOptions, selectedSize]);
+  }, [hasVariants, primaryOptions, selectedPrimary]);
 
-  const selectedVariant = useMemo(
+  const secondaryOptions = useMemo(() => {
+    if (!selectedPrimary) return [];
+    return normalizedVariants.filter((item) => item.record[primaryAttribute.code] === selectedPrimary);
+  }, [normalizedVariants, selectedPrimary, primaryAttribute.code]);
+  const selectedPrimarySecondarySummary = useMemo(() => {
+    const unique = Array.from(new Set(secondaryOptions.map((item) => item.record[secondaryAttribute.code])));
+    return unique.join(secondaryAttribute.summaryJoiner ?? ' / ');
+  }, [secondaryOptions, secondaryAttribute]);
+
+  useEffect(() => {
+    if (!hasVariants) return;
+    if (
+      !selectedSecondary ||
+      !secondaryOptions.some((item) => item.record[secondaryAttribute.code] === selectedSecondary && item.variant.stock > 0)
+    ) {
+      const firstInStock = secondaryOptions.find((item) => item.variant.stock > 0);
+      setSelectedSecondary(firstInStock?.record[secondaryAttribute.code] ?? null);
+    }
+  }, [hasVariants, secondaryOptions, selectedSecondary, secondaryAttribute.code]);
+
+  const selectedVariantEntry = useMemo(
     () =>
       normalizedVariants.find(
-        (v) => v.color.trim() === selectedColor && v.size === selectedSize
+        (item) =>
+          item.record[primaryAttribute.code] === selectedPrimary &&
+          item.record[secondaryAttribute.code] === selectedSecondary
       ) ?? null,
-    [normalizedVariants, selectedColor, selectedSize]
+    [normalizedVariants, selectedPrimary, selectedSecondary, primaryAttribute.code, secondaryAttribute.code]
   );
 
   const depletedByGlobalStock = stock <= 0;
-  const outOfStock = depletedByGlobalStock || (hasVariants ? !selectedVariant || selectedVariant.stock === 0 : stock === 0);
-  const canAdd = hasVariants ? Boolean(selectedVariant) && !outOfStock : !outOfStock;
+  const outOfStock = depletedByGlobalStock
+    || (hasVariants ? !selectedVariantEntry || selectedVariantEntry.variant.stock === 0 : stock === 0);
+  const canAdd = hasVariants ? Boolean(selectedVariantEntry) && !outOfStock : !outOfStock;
 
   const handleAdd = () => {
     if (!canAdd || added) return;
 
-    if (!hasVariants || !selectedVariant) {
+    if (!hasVariants || !selectedVariantEntry) {
       addItem({
         id: productId,
         productId,
@@ -121,9 +157,9 @@ export default function ProductVariantSelector({
         condition,
       });
     } else {
-      const color = selectedVariant.color.trim();
-      const size = selectedVariant.size;
-      const lineId = `${productId}::${slugify(color)}::${size}`;
+      const primaryValue = selectedVariantEntry.record[primaryAttribute.code];
+      const secondaryValue = selectedVariantEntry.record[secondaryAttribute.code];
+      const lineId = `${productId}::${slugify(primaryValue)}::${secondaryValue}`;
       addItem({
         id: lineId,
         productId,
@@ -132,9 +168,9 @@ export default function ProductVariantSelector({
         price,
         imageUrl,
         condition,
-        variantColor: color,
-        variantSize: size,
-        variantLabel: `${labels.selectColor}: ${color} / ${labels.selectSize}: ${size}`,
+        variantColor: primaryValue,
+        variantSize: secondaryValue,
+        variantLabel: `${labels.selectPrimary}: ${primaryValue} / ${labels.selectSecondary}: ${secondaryValue}`,
       });
     }
 
@@ -148,16 +184,16 @@ export default function ProductVariantSelector({
         <>
           <div>
             <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
-              {labels.selectColor}
+              {labels.selectPrimary}
             </p>
             <div className="flex flex-wrap gap-2">
-              {colorOptions.map((color) => {
-                const isSelected = selectedColor === color;
+              {primaryOptions.map((primaryValue) => {
+                const isSelected = selectedPrimary === primaryValue;
                 return (
                   <button
-                    key={color}
+                    key={primaryValue}
                     type="button"
-                    onClick={() => setSelectedColor(color)}
+                    onClick={() => setSelectedPrimary(primaryValue)}
                     disabled={depletedByGlobalStock}
                     className={[
                       'px-3 py-2 text-xs tracking-wider border transition-colors',
@@ -168,7 +204,7 @@ export default function ProductVariantSelector({
                         : 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]',
                     ].join(' ')}
                   >
-                    {color}
+                    {primaryValue}
                   </button>
                 );
               })}
@@ -177,23 +213,24 @@ export default function ProductVariantSelector({
 
           <div>
             <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
-              {labels.selectSize}
+              {labels.selectSecondary}
             </p>
-            {allSizesSummary && (
+            {allSecondarySummary && (
               <p className="text-[10px] tracking-[0.08em] uppercase text-[#3A3A3A]/45 mb-2">
-                {labels.availableSizes}: {selectedColorSizesSummary || allSizesSummary}
+                {labels.availableSecondary}: {selectedPrimarySecondarySummary || allSecondarySummary}
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              {sizeOptions.map((variant) => {
-                const isSelected = selectedSize === variant.size;
-                const noStock = variant.stock === 0;
+              {secondaryOptions.map((item) => {
+                const value = item.record[secondaryAttribute.code];
+                const isSelected = selectedSecondary === value;
+                const noStock = item.variant.stock === 0;
                 return (
                   <button
-                    key={`${variant.color}-${variant.size}`}
+                    key={`${item.variant.color}-${item.variant.size}`}
                     type="button"
                     disabled={depletedByGlobalStock || noStock}
-                    onClick={() => setSelectedSize(variant.size)}
+                    onClick={() => setSelectedSecondary(value)}
                     className={[
                       'min-w-12 px-2 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
                       depletedByGlobalStock || noStock
@@ -203,7 +240,7 @@ export default function ProductVariantSelector({
                         : 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]',
                     ].join(' ')}
                   >
-                    {variant.size}
+                    {value}
                   </button>
                 );
               })}
@@ -212,7 +249,7 @@ export default function ProductVariantSelector({
         </>
       )}
 
-      {hasVariants && !selectedVariant && (
+      {hasVariants && !selectedVariantEntry && (
         <p className="text-xs text-[#8E4F58]">{labels.chooseVariant}</p>
       )}
 

@@ -35,11 +35,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
     @Modifying
     @Query(value = """
             update product_variants
-               set stock = stock - :qty
+               set stock_reserved = stock_reserved + :qty
              where product_id = :productId
                and lower(trim(color)) = lower(trim(:color))
                and upper(trim(size)) = upper(trim(:size))
-               and stock >= :qty
+               and stock_on_hand - stock_reserved >= :qty
             """, nativeQuery = true)
     int reserveVariantStock(@Param("productId") UUID productId,
                             @Param("color") String color,
@@ -62,7 +62,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
     @Query(value = """
             update products p
                set stock = coalesce((
-                       select sum(v.stock)
+                       select sum(v.stock_on_hand - v.stock_reserved)
                          from product_variants v
                         where v.product_id = :productId
                    ), 0),
@@ -86,10 +86,11 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
     @Modifying
     @Query(value = """
             update product_variants
-               set stock = stock + :qty
+               set stock_reserved = stock_reserved - :qty
              where product_id = :productId
                and lower(trim(color)) = lower(trim(:color))
                and upper(trim(size)) = upper(trim(:size))
+               and stock_reserved >= :qty
             """, nativeQuery = true)
     int releaseVariantStock(@Param("productId") UUID productId,
                             @Param("color") String color,

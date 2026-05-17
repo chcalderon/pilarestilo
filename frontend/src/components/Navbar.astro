@@ -31,12 +31,43 @@ try {
   // fallback — empty nav
 }
 
-const navCategoryRoots = (() => {
-  if (categoryTree.length !== 1) return categoryTree;
-  const onlyRoot = categoryTree[0];
-  const activeChildren = (onlyRoot.children ?? []).filter((node) => node.active);
-  return activeChildren.length > 0 ? activeChildren : categoryTree;
-})();
+function toCategoryTreeNode(
+  child: NavigationSectionDto['children'][number],
+  parentId: string,
+  sortOrder: number,
+): CategoryTreeNode {
+  return {
+    id: child.id,
+    parentId,
+    slug: child.slug,
+    nameEs: child.name,
+    nameEn: child.name,
+    sortOrder,
+    active: true,
+    featured: child.featured,
+    imageUrl: child.imageUrl,
+    menuVisible: true,
+    categoryType: 'GENERIC',
+    heroImageUrl: undefined,
+    children: child.children.map((grandChild, index) => toCategoryTreeNode(grandChild, child.id, index)),
+  };
+}
+
+const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, index) => ({
+  id: section.rootCategoryId,
+  parentId: null,
+  slug: section.rootCategorySlug,
+  nameEs: section.rootCategoryName,
+  nameEn: section.rootCategoryName,
+  sortOrder: index,
+  active: true,
+  featured: false,
+  imageUrl: section.heroImageUrl,
+  menuVisible: true,
+  categoryType: 'GENERIC',
+  heroImageUrl: section.heroImageUrl,
+  children: section.children.map((child, childIndex) => toCategoryTreeNode(child, section.rootCategoryId, childIndex)),
+}));
 ---
 
 <header class="sticky top-0 z-50" id="site-header">
@@ -191,7 +222,7 @@ const navCategoryRoots = (() => {
     <MobileNavOverlay client:load sections={navTree.sections} locale={locale} />
   </div>
 
-  <div id="nav-cats" class="hidden border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
+  <div id="nav-cats" class="block lg:hidden border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
     <div class="pe-container">
       <div class="nav-cats-shell">
         <button
@@ -1014,6 +1045,63 @@ const navCategoryRoots = (() => {
       // Allow navigation — don't preventDefault
       window.dispatchEvent(new CustomEvent('mega-menu:close'));
     });
+  });
+
+  const megaTriggers = Array.from(document.querySelectorAll('.mega-trigger')) as HTMLElement[];
+  let lastMegaTriggerSlug: string | null = null;
+  let suppressedFocusOpenSlug: string | null = null;
+
+  function syncMegaTriggerState(activeSlug: string | null) {
+    megaTriggers.forEach((trigger) => {
+      const triggerSlug = trigger.dataset.slug;
+      trigger.setAttribute('aria-expanded', triggerSlug && triggerSlug === activeSlug ? 'true' : 'false');
+    });
+  }
+
+  megaTriggers.forEach((trigger) => {
+    const slug = trigger.dataset.slug;
+    if (!slug) return;
+
+    const openMegaMenu = () => {
+      if (suppressedFocusOpenSlug === slug) {
+        suppressedFocusOpenSlug = null;
+        return;
+      }
+      lastMegaTriggerSlug = slug;
+      window.dispatchEvent(new CustomEvent('mega-menu:open', { detail: { slug } }));
+    };
+
+    trigger.addEventListener('focus', openMegaMenu);
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' || event.key === ' ') {
+        event.preventDefault();
+        lastMegaTriggerSlug = slug;
+        window.dispatchEvent(new CustomEvent('mega-menu:open', { detail: { slug, focusFirst: true } }));
+      }
+      if (event.key === 'Escape') {
+        window.dispatchEvent(new CustomEvent('mega-menu:close'));
+      }
+    });
+  });
+
+  window.addEventListener('mega-menu:state', (event) => {
+    const activeSlug = (event as CustomEvent).detail?.activeSlug ?? null;
+    syncMegaTriggerState(activeSlug);
+  });
+
+  window.addEventListener('mega-menu:closed', (event) => {
+    syncMegaTriggerState(null);
+    if (!(event as CustomEvent).detail?.restoreFocus || !lastMegaTriggerSlug) return;
+    const trigger = document.querySelector(`.mega-trigger[data-slug="${lastMegaTriggerSlug}"]`) as HTMLElement | null;
+    suppressedFocusOpenSlug = lastMegaTriggerSlug;
+    trigger?.focus();
+  });
+
+  document.addEventListener('focusin', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest('.mega-trigger') || target.closest('.mega-tray')) return;
+    window.dispatchEvent(new CustomEvent('mega-menu:close'));
   });
 
   // Update --header-height CSS var so tray positions correctly

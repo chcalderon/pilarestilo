@@ -3,7 +3,8 @@ package com.pilarestilo.shared.auth.application.usecases;
 import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
-import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
+import com.pilarestilo.shared.rbac.application.RolePermissionResolutionService;
+import com.pilarestilo.shared.rbac.domain.model.ResolvedPermissions;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
@@ -11,7 +12,6 @@ import io.jsonwebtoken.Claims;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,14 +19,14 @@ public class RefreshTokenUseCase {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    private final RolePermissionRepository rolePermissionRepository;
+    private final RolePermissionResolutionService rolePermissionResolutionService;
 
     public RefreshTokenUseCase(JwtTokenProvider jwtTokenProvider,
                                UserRepository userRepository,
-                               RolePermissionRepository rolePermissionRepository) {
+                               RolePermissionResolutionService rolePermissionResolutionService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
-        this.rolePermissionRepository = rolePermissionRepository;
+        this.rolePermissionResolutionService = rolePermissionResolutionService;
     }
 
     public AuthTokenDto execute(String refreshToken) {
@@ -51,9 +51,23 @@ public class RefreshTokenUseCase {
                 throw new DomainException("Worker vigency has expired");
             }
         }
-        List<String> permissions = rolePermissionRepository.findViewKeysByRole(role);
-        String access     = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), role, permissions);
+        ResolvedPermissions resolvedPermissions = rolePermissionResolutionService.resolve(role);
+        String access     = jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                role,
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
         String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());
-        return AuthTokenDto.of(access, newRefresh, user.getId(), user.getEmail(), role.name(), user.getFullName(), user.getAvatarUrl(), permissions);
+        return AuthTokenDto.of(
+                access,
+                newRefresh,
+                user.getId(),
+                user.getEmail(),
+                role.name(),
+                user.getFullName(),
+                user.getAvatarUrl(),
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
     }
 }

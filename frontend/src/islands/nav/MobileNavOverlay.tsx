@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { NavigationSectionDto, NavigationChildDto } from '../../lib/api';
 
@@ -15,6 +15,7 @@ type NavLevel =
 export default function MobileNavOverlay({ sections, locale }: Props) {
   const [open, setOpen] = useState(false);
   const [stack, setStack] = useState<NavLevel[]>([{ type: 'root' }]);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -44,7 +45,14 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
   // Prevent body scroll when open
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    document.documentElement.setAttribute('data-mobile-nav-open', open ? 'true' : 'false');
+    if (open) {
+      window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.setAttribute('data-mobile-nav-open', 'false');
+    };
   }, [open]);
 
   const current = stack[stack.length - 1];
@@ -105,6 +113,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
                 </span>
               )}
               <button
+                ref={closeButtonRef}
                 onClick={close}
                 className="text-pe-white/40 hover:text-pe-white transition-colors p-1"
                 aria-label={locale === 'es' ? 'Cerrar menú' : 'Close menu'}

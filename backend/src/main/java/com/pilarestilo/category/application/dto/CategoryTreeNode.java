@@ -13,5 +13,8 @@ public record CategoryTreeNode(
         boolean active,
         boolean featured,
         String imageUrl,
+        boolean menuVisible,
+        String categoryType,
+        String heroImageUrl,
         List<CategoryTreeNode> children
 ) {}

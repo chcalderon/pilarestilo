@@ -38,7 +38,8 @@ class InventoryMapperTest {
         ProductVariantEmbeddable variant = new ProductVariantEmbeddable();
         ReflectionTestUtils.setField(variant, "color", "Negro");
         ReflectionTestUtils.setField(variant, "size", "M");
-        ReflectionTestUtils.setField(variant, "stock", 1);
+        ReflectionTestUtils.setField(variant, "stockOnHand", 4);
+        ReflectionTestUtils.setField(variant, "stockReserved", 1);
         ReflectionTestUtils.setField(entity, "variants", List.of(variant));
 
         CategoryEntity catB = new CategoryEntity();
@@ -56,5 +57,9 @@ class InventoryMapperTest {
         assertEquals(List.of("accesorios", "zapatos"), dto.categorySlugs());
         assertEquals("M", dto.sizeStocks().get(0).size());
         assertEquals("Negro", dto.variants().get(0).color());
+        assertEquals(4, dto.variants().get(0).stockOnHand());
+        assertEquals(1, dto.variants().get(0).stockReserved());
+        assertEquals(3, dto.variants().get(0).stockAvailable());
+        assertEquals(3, dto.variants().get(0).stock());
     }
 }

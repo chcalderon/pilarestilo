@@ -12,8 +12,11 @@ public class ProductVariantEmbeddable {
     @Column(name = "size", nullable = false, length = 32)
     private String size;
 
-    @Column(name = "stock", nullable = false)
-    private int stock;
+    @Column(name = "stock_on_hand", nullable = false)
+    private int stockOnHand;
+
+    @Column(name = "stock_reserved", nullable = false)
+    private int stockReserved;
 
     public String getColor() {
         return color;
@@ -24,6 +27,18 @@ public class ProductVariantEmbeddable {
     }
 
     public int getStock() {
-        return stock;
+        return available();
+    }
+
+    public int getStockOnHand() {
+        return stockOnHand;
+    }
+
+    public int getStockReserved() {
+        return stockReserved;
+    }
+
+    public int available() {
+        return stockOnHand - stockReserved;
     }
 }

@@ -36,13 +36,13 @@ public class SystemSettingsController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).SETTINGS_READ)")
     public SystemSettingsDto getAdminSettings() {
         return getSystemSettingsUseCase.execute();
     }
 
     @PatchMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).SETTINGS_UPDATE)")
     public SystemSettingsDto updateSettings(
             @Valid @RequestBody UpdateSystemSettingsRequest request,
             @AuthenticationPrincipal AuthenticatedUser currentUser

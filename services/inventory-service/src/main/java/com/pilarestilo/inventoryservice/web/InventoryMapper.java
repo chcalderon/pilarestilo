@@ -19,7 +19,14 @@ final class InventoryMapper {
                 .toList();
 
         List<InventoryProductDto.VariantDto> variants = entity.getVariants().stream()
-                .map(v -> new InventoryProductDto.VariantDto(v.getColor(), v.getSize(), v.getStock()))
+                .map(v -> new InventoryProductDto.VariantDto(
+                        v.getColor(),
+                        v.getSize(),
+                        v.getStock(),
+                        v.getStockOnHand(),
+                        v.getStockReserved(),
+                        v.available()
+                ))
                 .toList();
 
         List<String> categorySlugs = entity.getCategories().stream()

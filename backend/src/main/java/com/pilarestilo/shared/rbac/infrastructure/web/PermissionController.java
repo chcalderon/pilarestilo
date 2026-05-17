@@ -22,13 +22,13 @@ public class PermissionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).ROLES_READ)")
     public PermissionMatrixDto get() {
         return getMatrixUseCase.execute();
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).ROLES_MANAGE)")
     public PermissionMatrixDto update(@RequestBody @Valid UpdatePermissionMatrixRequest req) {
         return updateMatrixUseCase.execute(req.permissions());
     }

@@ -36,6 +36,7 @@ import {
   type UpdateSystemSettingsRequest,
 } from '../../lib/api';
 import { readAuthTokenCookie, useAuthStore } from '../../lib/authStore';
+import { useCan } from '../../lib/permissions';
 import ImageDropzone from './ImageDropzone';
 
 type FeedbackState = {
@@ -455,8 +456,11 @@ function SecurityHint({
 }
 
 export default function SystemSettingsPanel() {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
+  const canReadSettings = useCan('settings.read', 'configuracion');
+  const canUpdateSettings = useCan('settings.update', 'configuracion');
+  const isLegacyAdmin = user?.role === 'ADMIN';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -549,6 +553,10 @@ export default function SystemSettingsPanel() {
   });
 
   async function loadSettings() {
+    if (!canReadSettings) {
+      setLoading(false);
+      return;
+    }
     if (!effectiveToken) {
       setFeedback({ tone: 'error', text: 'No hay sesion admin activa.' });
       setLoading(false);
@@ -574,6 +582,7 @@ export default function SystemSettingsPanel() {
   }
 
   async function loadHeroModels(tokenToUse?: string) {
+    if (!isLegacyAdmin) return;
     const adminToken = tokenToUse ?? effectiveToken;
     if (!adminToken) return;
     setHeroLoading(true);
@@ -589,7 +598,7 @@ export default function SystemSettingsPanel() {
 
   useEffect(() => {
     void loadSettings();
-  }, [effectiveToken]);
+  }, [effectiveToken, canReadSettings]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -668,6 +677,7 @@ export default function SystemSettingsPanel() {
   }
 
   const handleMigrateCategories = async () => {
+    if (!isLegacyAdmin) return;
     if (!effectiveToken) return;
     setMigrating(true);
     setMigrateResult(null);
@@ -682,6 +692,7 @@ export default function SystemSettingsPanel() {
   };
 
   const handleOptimizeAll = async () => {
+    if (!isLegacyAdmin) return;
     if (!effectiveToken || optimizing) return;
     if (!confirm('Esto reescribira todas las imagenes existentes (productos + categorias + resto). El proceso puede tardar varios minutos. Continuar?')) {
       return;
@@ -700,6 +711,7 @@ export default function SystemSettingsPanel() {
   };
 
   const handleResizeTo15cm = async () => {
+    if (!isLegacyAdmin) return;
     if (!effectiveToken || resizingTo15cm) return;
     if (!confirm('Esto redimensionara imagenes de productos y categorias a 15 cm maximo por lado mayor, manteniendo proporcion. Continuar?')) {
       return;
@@ -718,6 +730,9 @@ export default function SystemSettingsPanel() {
   };
 
   const handleHeroUpload = async (slot: HeroModelSlot, file: File) => {
+    if (!isLegacyAdmin) {
+      throw new Error('Solo administracion legacy puede actualizar modelos del hero.');
+    }
     if (!effectiveToken) {
       throw new Error('No hay sesion admin activa.');
     }
@@ -781,6 +796,10 @@ export default function SystemSettingsPanel() {
   }, [isBancoEstadoSelected, form.bankTransferAccountType]);
 
   async function handleSave() {
+    if (!canUpdateSettings) {
+      setFeedback({ tone: 'error', text: 'Tu sesion solo tiene acceso de lectura para esta configuracion.' });
+      return;
+    }
     if (!effectiveToken || saving) return;
 
     const whatsappTrimmed = form.whatsappNumber.trim();
@@ -1022,6 +1041,18 @@ export default function SystemSettingsPanel() {
     );
   }
 
+  if (!canReadSettings) {
+    return (
+      <div className="border border-pe-black/10 bg-pe-white p-6">
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Configuracion</p>
+        <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+          Esta cuenta no tiene permiso para consultar la configuracion operativa de la tienda.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1051,6 +1082,16 @@ export default function SystemSettingsPanel() {
           {feedback.text}
         </div>
       )}
+
+      {!canUpdateSettings && (
+        <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+            Modo consulta. Puedes revisar la configuracion vigente, pero guardar cambios requiere <span className="font-mono text-[0.7rem]">settings.update</span>.
+          </p>
+        </div>
+      )}
+
+      <fieldset disabled={!canUpdateSettings} className="flex flex-col gap-5 disabled:opacity-80">
 
       {activeSettingsTab === 'store' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
@@ -1524,6 +1565,7 @@ export default function SystemSettingsPanel() {
           </span>
         </div>
 
+        {isLegacyAdmin && (
         <div className="mt-5 border border-pe-black/10 bg-pe-offwhite/50 p-3 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -1588,7 +1630,9 @@ export default function SystemSettingsPanel() {
             })}
           </div>
         </div>
+        )}
 
+        {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
             Migración de imágenes
@@ -1614,7 +1658,9 @@ export default function SystemSettingsPanel() {
             </p>
           )}
         </div>
+        )}
 
+        {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
             Optimización de imágenes existentes
@@ -1656,7 +1702,9 @@ export default function SystemSettingsPanel() {
             </div>
           )}
         </div>
+        )}
 
+        {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
             Redimensionar imagenes de productos y categorias (15 cm)
@@ -1684,6 +1732,7 @@ export default function SystemSettingsPanel() {
             </p>
           )}
         </div>
+        )}
       </section>
       )}
 
@@ -2515,16 +2564,17 @@ export default function SystemSettingsPanel() {
           </div>
         </section>
       )}
+      </fieldset>
 
       <div className="flex justify-end">
         <button
           type="button"
           onClick={() => void handleSave()}
-          disabled={saving}
+          disabled={saving || !canUpdateSettings}
           className="inline-flex items-center gap-2 bg-pe-black px-4 py-2.5 font-sans text-[0.68rem] uppercase tracking-[0.16em] text-pe-offwhite hover:bg-pe-charcoal disabled:opacity-50"
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-          Guardar configuracion
+          {canUpdateSettings ? 'Guardar configuracion' : 'Solo lectura'}
         </button>
       </div>
     </div>

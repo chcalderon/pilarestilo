@@ -103,8 +103,10 @@ public class ProductQueryService {
                 var namePredicate = cb.like(cb.lower(root.get("name")), pattern);
                 var brandPredicate = cb.like(cb.lower(root.get("brand")), pattern);
                 var descPredicate = cb.like(cb.lower(root.get("description")), pattern);
+                var catEsPredicate = cb.like(cb.lower(textCats.get("nameEs")), pattern);
+                var catEnPredicate = cb.like(cb.lower(textCats.get("nameEn")), pattern);
                 var catSlugPredicate = cb.like(cb.lower(textCats.get("slug")), pattern);
-                predicates.add(cb.or(namePredicate, brandPredicate, descPredicate, catSlugPredicate));
+                predicates.add(cb.or(namePredicate, brandPredicate, descPredicate, catEsPredicate, catEnPredicate, catSlugPredicate));
             }
             if (condition != null && !condition.isBlank()) {
                 predicates.add(cb.equal(root.get("condition"), condition));
@@ -151,7 +153,7 @@ public class ProductQueryService {
         }
         return cb.or(
                 cb.greaterThan(root.get("stock"), 0),
-                cb.greaterThan(variants.get("stock"), 0),
+                cb.greaterThan(variants.get("stockOnHand"), 0),
                 cb.greaterThan(sizeStocks.get("stock"), 0)
         );
     }

@@ -4,12 +4,11 @@ import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.domain.ports.PasswordEncoder;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
-import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
+import com.pilarestilo.shared.rbac.application.RolePermissionResolutionService;
+import com.pilarestilo.shared.rbac.domain.model.ResolvedPermissions;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class LoginUseCase {
@@ -17,16 +16,16 @@ public class LoginUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RolePermissionRepository rolePermissionRepository;
+    private final RolePermissionResolutionService rolePermissionResolutionService;
 
     public LoginUseCase(UserRepository userRepository,
                         PasswordEncoder passwordEncoder,
                         JwtTokenProvider jwtTokenProvider,
-                        RolePermissionRepository rolePermissionRepository) {
+                        RolePermissionResolutionService rolePermissionResolutionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.rolePermissionRepository = rolePermissionRepository;
+        this.rolePermissionResolutionService = rolePermissionResolutionService;
     }
 
     public AuthTokenDto execute(String email, String rawPassword) {
@@ -38,9 +37,23 @@ public class LoginUseCase {
         if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new DomainException("Invalid credentials");
         }
-        List<String> permissions = rolePermissionRepository.findViewKeysByRole(user.getRole());
-        String access  = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole(), permissions);
+        ResolvedPermissions resolvedPermissions = rolePermissionResolutionService.resolve(user.getRole());
+        String access  = jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
         String refresh = jwtTokenProvider.generateRefreshToken(user.getId());
-        return AuthTokenDto.of(access, refresh, user.getId(), user.getEmail(), user.getRole().name(), user.getFullName(), user.getAvatarUrl(), permissions);
+        return AuthTokenDto.of(
+                access,
+                refresh,
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.getFullName(),
+                user.getAvatarUrl(),
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
     }
 }

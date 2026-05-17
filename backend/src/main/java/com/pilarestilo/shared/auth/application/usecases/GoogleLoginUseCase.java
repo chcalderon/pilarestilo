@@ -6,7 +6,8 @@ import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.shared.infrastructure.services.MediaStorageService;
-import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
+import com.pilarestilo.shared.rbac.application.RolePermissionResolutionService;
+import com.pilarestilo.shared.rbac.domain.model.ResolvedPermissions;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
@@ -18,7 +19,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 
 @Service
 public class GoogleLoginUseCase {
@@ -30,7 +30,7 @@ public class GoogleLoginUseCase {
     private final ObjectMapper objectMapper;
     private final String googleClientId;
     private final MediaStorageService mediaStorageService;
-    private final RolePermissionRepository rolePermissionRepository;
+    private final RolePermissionResolutionService rolePermissionResolutionService;
 
     public GoogleLoginUseCase(
             UserRepository userRepository,
@@ -38,14 +38,14 @@ public class GoogleLoginUseCase {
             ObjectMapper objectMapper,
             @Value("${app.google.client-id}") String googleClientId,
             MediaStorageService mediaStorageService,
-            RolePermissionRepository rolePermissionRepository
+            RolePermissionResolutionService rolePermissionResolutionService
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.objectMapper = objectMapper;
         this.googleClientId = googleClientId;
         this.mediaStorageService = mediaStorageService;
-        this.rolePermissionRepository = rolePermissionRepository;
+        this.rolePermissionResolutionService = rolePermissionResolutionService;
     }
 
     public AuthTokenDto execute(String idToken) {
@@ -100,10 +100,25 @@ public class GoogleLoginUseCase {
             throw new DomainException("This account is blocked");
         }
 
-        List<String> permissions = rolePermissionRepository.findViewKeysByRole(user.getRole());
-        String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole(), permissions);
+        ResolvedPermissions resolvedPermissions = rolePermissionResolutionService.resolve(user.getRole());
+        String access = jwtTokenProvider.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole(),
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
         String refresh = jwtTokenProvider.generateRefreshToken(user.getId());
-        return AuthTokenDto.ofMerged(access, refresh, user.getId(), user.getEmail(), user.getRole().name(), user.getFullName(), user.getAvatarUrl(), accountMerged, permissions);
+        return AuthTokenDto.ofMerged(
+                access,
+                refresh,
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.getFullName(),
+                user.getAvatarUrl(),
+                accountMerged,
+                resolvedPermissions.legacyViewKeys(),
+                resolvedPermissions.permissionCodes());
     }
 
     private String downloadAndSaveAvatar(String pictureUrl, String userId) {

@@ -277,8 +277,14 @@ public class ProductRepositoryAdapter implements ProductRepository {
                     .map(CategoryEntity::getSlug)
                     .sorted()
                     .collect(Collectors.toList());
+            List<String> categoryTypes = entity.getCategories().stream()
+                    .map(category -> category.getCategoryType() != null ? category.getCategoryType().name() : "GENERIC")
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
             product.setCategoryIds(ids);
             product.setCategorySlugs(slugs);
+            product.setCategoryTypes(categoryTypes);
         }
 
         return product;

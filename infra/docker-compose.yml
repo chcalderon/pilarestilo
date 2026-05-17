@@ -294,6 +294,7 @@ services:
       PORT: "4321"
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-/api}
       INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8080/api}
+      INTERNAL_PRODUCTS_API_BASE_URL: ${INTERNAL_PRODUCTS_API_BASE_URL:-http://product-service:8081/api}
       PUBLIC_WHATSAPP_PHONE: ${PUBLIC_WHATSAPP_PHONE:-+56900000000}
       PUBLIC_WHATSAPP_MESSAGE_ES: ${PUBLIC_WHATSAPP_MESSAGE_ES:-Hola Pilar Estilo, quiero ayuda con una compra.}
       PUBLIC_WHATSAPP_MESSAGE_EN: ${PUBLIC_WHATSAPP_MESSAGE_EN:-Hi Pilar Estilo, I need help with a purchase.}

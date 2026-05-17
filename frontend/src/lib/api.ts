@@ -1,13 +1,28 @@
 // All API calls for Pilar Estilo go through this module only.
 
+const RUNTIME_ENV: Record<string, string | undefined> | undefined =
+  (globalThis as typeof globalThis & {
+    process?: { env?: Record<string, string | undefined> };
+  }).process?.env;
+
 const PUBLIC_API_BASE: string =
   import.meta.env.PUBLIC_API_BASE_URL ?? '/api';
 
 const INTERNAL_API_BASE: string =
-  import.meta.env.INTERNAL_API_BASE_URL ?? 'http://backend:8080/api';
+  RUNTIME_ENV?.INTERNAL_API_BASE_URL
+  ?? import.meta.env.INTERNAL_API_BASE_URL
+  ?? 'http://backend:8080/api';
+
+const INTERNAL_PRODUCTS_API_BASE: string =
+  RUNTIME_ENV?.INTERNAL_PRODUCTS_API_BASE_URL
+  ?? import.meta.env.INTERNAL_PRODUCTS_API_BASE_URL
+  ?? INTERNAL_API_BASE;
 
 const API_BASE: string =
   typeof window === 'undefined' ? INTERNAL_API_BASE : PUBLIC_API_BASE;
+
+const PRODUCT_READ_API_BASE: string =
+  typeof window === 'undefined' ? INTERNAL_PRODUCTS_API_BASE : PUBLIC_API_BASE;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,6 +77,7 @@ export interface ProductDto {
   shippingOriginZone?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
+  categoryTypes?: CategoryType[];
   variants?: ProductVariantDto[];
 }
 
@@ -736,6 +752,15 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
+  return fetchJsonFromBase<T>(url, init);
+}
+
+async function productReadFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const url = `${PRODUCT_READ_API_BASE}${path}`;
+  return fetchJsonFromBase<T>(url, init);
+}
+
+async function fetchJsonFromBase<T>(url: string, init?: RequestInit): Promise<T> {
   const internalTimeoutMsRaw = Number((import.meta.env as Record<string, unknown>).INTERNAL_API_TIMEOUT_MS ?? 4000);
   const internalTimeoutMs = Number.isFinite(internalTimeoutMsRaw) && internalTimeoutMsRaw > 0
     ? internalTimeoutMsRaw
@@ -832,7 +857,7 @@ function toProductMutationBody(data: CreateProductRequest | UpdateProductRequest
 export async function getProducts(filter?: ProductFilter): Promise<Page<ProductDto>> {
   try {
     const query = buildQuery((filter ?? {}) as Record<string, unknown>);
-    const page = await apiFetch<Page<unknown>>(`/products${query}`);
+    const page = await productReadFetch<Page<unknown>>(`/products${query}`);
     const normalized = page.content.map(normalizeProduct);
     const content = filter?.inStock ? normalized.filter(hasSellableStock) : normalized;
     return { ...page, content };
@@ -849,7 +874,7 @@ export async function getProducts(filter?: ProductFilter): Promise<Page<ProductD
 
 export async function getProduct(id: string): Promise<ProductDto> {
   try {
-    const raw = await apiFetch<unknown>(`/products/${encodeURIComponent(id)}`);
+    const raw = await productReadFetch<unknown>(`/products/${encodeURIComponent(id)}`);
     return normalizeProduct(raw);
   } catch {
     const fixture = FIXTURE_PRODUCTS.find((p) => p.id === id);
@@ -862,13 +887,13 @@ export async function getFeaturedProducts(): Promise<ProductDto[]> {
   const query = buildQuery({ active: true, inStock: true, size: 8, page: 0, sort: 'createdAt,desc' });
 
   try {
-    const firstPage = await apiFetch<Page<unknown>>(`/products${query}`);
+    const firstPage = await productReadFetch<Page<unknown>>(`/products${query}`);
     return firstPage.content.map(normalizeProduct).filter(hasSellableStock);
   } catch {
     // Retry once for transient upstream hiccups before falling back.
     await new Promise((resolve) => setTimeout(resolve, 180));
     try {
-      const secondPage = await apiFetch<Page<unknown>>(`/products${query}`);
+      const secondPage = await productReadFetch<Page<unknown>>(`/products${query}`);
       return secondPage.content.map(normalizeProduct).filter(hasSellableStock);
     } catch {
       return FIXTURE_PRODUCTS.slice(0, 8);
@@ -1093,6 +1118,7 @@ export interface AuthTokenResponse {
   fullName?: string;
   avatarUrl?: string;
   permissions: string[];
+  permissionCodes?: string[];
   vigencyStart?: string;
   vigencyEnd?: string;
 }
@@ -1633,6 +1659,15 @@ export async function approveReview(reviewId: string, token: string): Promise<Re
 
 // ─── Category Types ───────────────────────────────────────────────────────────
 
+export type CategoryType =
+  | 'GENERIC'
+  | 'CLOTHING'
+  | 'SHOES'
+  | 'JEWELRY'
+  | 'ACCESSORY'
+  | 'COLLECTION'
+  | 'SEASON';
+
 export interface CategoryDto {
   id: string;
   slug: string;
@@ -1643,6 +1678,9 @@ export interface CategoryDto {
   active: boolean;
   featured: boolean;
   imageUrl?: string;
+  menuVisible: boolean;
+  categoryType: CategoryType;
+  heroImageUrl?: string;
 }
 
 export interface CategoryTreeNode extends CategoryDto {
@@ -1683,6 +1721,11 @@ export interface CreateCategoryRequest {
   parentId?: string;
   sortOrder: number;
   imageUrl?: string;
+  active?: boolean;
+  featured?: boolean;
+  menuVisible?: boolean;
+  categoryType?: CategoryType;
+  heroImageUrl?: string;
 }
 
 // ─── Category API ─────────────────────────────────────────────────────────────
@@ -1848,8 +1891,9 @@ export async function searchProducts(
 ): Promise<Page<ProductDto>> {
   // Backwards-compat: accept legacy positional (q, page, size) signature for
   // storefront search overlay while admin uses the params-object form.
+  const allowFixtureFallback = typeof qOrParams === 'string';
   const params: ProductSearchParams =
-    typeof qOrParams === 'string'
+    allowFixtureFallback
       ? { q: qOrParams, active: true, inStock: true, page, size }
       : qOrParams;
   const trimmedQ = (params.q ?? '').trim();
@@ -1866,11 +1910,14 @@ export async function searchProducts(
     size: params.size ?? 20,
   });
   try {
-    const res = await apiFetch<Page<unknown>>(`/products/search${queryString}`);
+    const res = await productReadFetch<Page<unknown>>(`/products/search${queryString}`);
     const normalized = res.content.map(normalizeProduct);
     const content = params.inStock ? normalized.filter(hasSellableStock) : normalized;
     return { ...res, content };
-  } catch {
+  } catch (error) {
+    if (!allowFixtureFallback) {
+      throw error;
+    }
     const lower = trimmedQ.toLowerCase();
     const matches = FIXTURE_PRODUCTS.filter(p =>
       lower

@@ -49,6 +49,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
               fullName: data.fullName,
               avatarUrl: data.avatarUrl,
               permissions: data.permissions ?? [],
+              permissionCodes: data.permissionCodes ?? [],
               vigencyStart: data.vigencyStart,
               vigencyEnd: data.vigencyEnd,
             });
@@ -96,6 +97,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
         fullName: data.fullName,
         avatarUrl: data.avatarUrl,
         permissions: data.permissions ?? [],
+        permissionCodes: data.permissionCodes ?? [],
         vigencyStart: data.vigencyStart,
         vigencyEnd: data.vigencyEnd,
       });

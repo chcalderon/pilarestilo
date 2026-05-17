@@ -16,11 +16,23 @@ final class ProductMapper {
                 .toList();
 
         List<ProductDto.VariantDto> variants = entity.getVariants().stream()
-                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize(), v.getStock()))
+                .map(v -> new ProductDto.VariantDto(
+                        v.getColor(),
+                        v.getSize(),
+                        v.getStockOnHand(),
+                        v.getStockOnHand(),
+                        v.getStockReserved(),
+                        v.available()
+                ))
                 .toList();
 
         List<String> categorySlugs = entity.getCategories().stream()
                 .map(c -> c.getSlug())
+                .sorted(Comparator.naturalOrder())
+                .toList();
+        List<String> categoryTypes = entity.getCategories().stream()
+                .map(c -> c.getCategoryType() != null ? c.getCategoryType() : "GENERIC")
+                .distinct()
                 .sorted(Comparator.naturalOrder())
                 .toList();
 
@@ -44,6 +56,7 @@ final class ProductMapper {
                 entity.getShippingOriginZone(),
                 sizeStocks,
                 categorySlugs,
+                categoryTypes,
                 variants
         );
     }

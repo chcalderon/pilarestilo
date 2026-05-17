@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../lib/authStore';
+import { useCan } from '../../lib/permissions';
 
 const VIEW_KEYS = ['dashboard', 'productos', 'usuarios', 'caja', 'despachos', 'configuracion', 'roles_permisos'];
 const VIEW_LABELS: Record<string, string> = {
@@ -14,6 +15,8 @@ type Matrix = Record<string, Set<string>>;
 
 export default function RolesPermisosView() {
   const { token } = useAuthStore();
+  const canRead = useCan('roles.read', 'roles_permisos');
+  const canManage = useCan('roles.manage');
   const [matrix, setMatrix] = useState<Matrix>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -21,18 +24,29 @@ export default function RolesPermisosView() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    if (!token || !canRead) {
+      setLoading(false);
+      return;
+    }
     fetch('/api/admin/permissions', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error('Error al cargar permisos');
+        }
+        return r.json();
+      })
       .then((data: { permissions: PermissionEntry[] }) => {
         const m: Matrix = {};
         EDITABLE_ROLES.forEach(r => { m[r] = new Set(); });
         data.permissions.forEach(e => { if (m[e.role]) m[e.role].add(e.viewKey); });
         setMatrix(m);
       })
+      .catch(() => setError('No se pudo cargar la matriz de permisos.'))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, canRead]);
 
   function toggle(role: string, viewKey: string) {
+    if (!canManage) return;
     setMatrix(prev => {
       const next = { ...prev, [role]: new Set(prev[role]) };
       if (next[role].has(viewKey)) next[role].delete(viewKey);
@@ -42,6 +56,7 @@ export default function RolesPermisosView() {
   }
 
   async function save() {
+    if (!canManage) return;
     setSaving(true); setError(''); setSaved(false);
     const permissions: PermissionEntry[] = [];
     EDITABLE_ROLES.forEach(role => {
@@ -59,10 +74,30 @@ export default function RolesPermisosView() {
     finally { setSaving(false); }
   }
 
+  if (!canRead) {
+    return (
+      <div className="border border-pe-black/10 bg-pe-white p-6">
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Roles y permisos</p>
+        <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+          Tu sesion no tiene capacidad para consultar la matriz RBAC. Si este acceso deberia estar disponible,
+          inicia sesion de nuevo o solicita habilitacion al equipo administrador.
+        </p>
+      </div>
+    );
+  }
+
   if (loading) return <p className="text-pe-charcoal/50 text-sm">Cargando...</p>;
 
   return (
     <div className="space-y-6">
+      {!canManage && (
+        <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
+          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+            Modo consulta. Puedes revisar la matriz vigente, pero los cambios solo estan habilitados para sesiones con <span className="font-mono text-[0.7rem]">roles.manage</span>.
+          </p>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="text-sm w-full border-collapse">
           <thead>
@@ -83,6 +118,7 @@ export default function RolesPermisosView() {
                       type="checkbox"
                       checked={matrix[role]?.has(viewKey) ?? false}
                       onChange={() => toggle(role, viewKey)}
+                      disabled={!canManage}
                       className="accent-[#B76E79] w-4 h-4"
                     />
                   </td>
@@ -98,10 +134,10 @@ export default function RolesPermisosView() {
 
       <button
         onClick={save}
-        disabled={saving}
+        disabled={saving || !canManage}
         className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
       >
-        {saving ? 'Guardando...' : 'Guardar cambios'}
+        {!canManage ? 'Solo lectura' : saving ? 'Guardando...' : 'Guardar cambios'}
       </button>
     </div>
   );

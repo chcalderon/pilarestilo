@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Loader2, Save, X, ChevronDown, ChevronRight, FolderOpen, Folder, Tag } from 'lucide-react';
 import {
   assignHeroModelFromProduct,
@@ -14,6 +14,21 @@ import {
   type ProductVariantDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
+import {
+  createEmptyVariantSelections,
+  getAttributeValue,
+  getAttributeValues,
+  getPrimaryAttribute,
+  getSecondaryAttribute,
+  getVariantSchema,
+  legacyVariantToSelections,
+  normalizeAttributeValues,
+  resolvePreferredCategoryType,
+  selectionsToLegacyVariant,
+  type CategoryAttributeDefinition,
+  type VariantAttributeSelections,
+  type VariantSchema,
+} from '../../lib/variantSchema';
 
 type CatNode = CategoryDto & { children: CatNode[] };
 
@@ -169,21 +184,17 @@ const EMPTY_FORM = {
   active: true,
 };
 
-type VariantSize = ProductVariantDto['size'];
 type VariantRow = {
-  color: string;
-  sizes: VariantSize[];
+  attributes: VariantAttributeSelections;
   stock: string;
 };
 
 type FlatVariantRow = {
-  color: string;
-  size: VariantSize;
+  color: ProductVariantDto['color'];
+  size: ProductVariantDto['size'];
   stock: string;
 };
 
-const BASE_VARIANT_SIZES: VariantSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'UNICO'];
-const ALLOWED_SIZE_TOKENS = new Set(BASE_VARIANT_SIZES);
 const DEFAULT_TRANSFORM_PROMPT = 'Generar una imagen de tamano ideal para Instagram (la presenta una modelo en un fondo de boutique de lujo), para campana de invierno. Fijate bien en el diseno y color; mantener tambien textura y corte. Sin texto, sin logos, sin marcas de agua.';
 const DEFAULT_INFERRED_BRAND = 'Pilar Estilo';
 const DEFAULT_INFERRED_CONDITION: 'NEW' | 'USED' = 'USED';
@@ -210,12 +221,11 @@ function inferSuggestedListPrice(basePrice: number, multiplier: number): number 
   return roundPriceToThousand(basePrice * multiplier);
 }
 
-function normalizeVariantRows(rows: VariantRow[]): ProductVariantDto[] {
-  return rows.map((row) => ({
-    color: row.color.trim(),
-    size: composeSizeFromSelections(row.sizes),
-    stock: Number(row.stock),
-  }));
+function normalizeVariantRows(rows: VariantRow[], schema: VariantSchema): ProductVariantDto[] {
+  return rows.map((row) => {
+    const stock = parseSafeStock(row.stock);
+    return selectionsToLegacyVariant(row.attributes, stock, schema);
+  });
 }
 
 function parseSafeStock(value: string | number): number {
@@ -224,67 +234,43 @@ function parseSafeStock(value: string | number): number {
   return Math.floor(parsed);
 }
 
-function sizeSortValue(size: string): number[] {
-  const tokens = size.split('-').filter(Boolean);
-  if (tokens.length === 0) return [999];
-  return tokens.map((token) => {
-    const rank = BASE_VARIANT_SIZES.indexOf(token as VariantSize);
-    return rank >= 0 ? rank : 999;
-  });
-}
-
-function compareVariantSizes(a: string, b: string): number {
-  const aParts = sizeSortValue(a);
-  const bParts = sizeSortValue(b);
-  const max = Math.max(aParts.length, bParts.length);
-  for (let index = 0; index < max; index += 1) {
-    const diff = (aParts[index] ?? 999) - (bParts[index] ?? 999);
-    if (diff !== 0) return diff;
-  }
-  if (aParts.length !== bParts.length) return aParts.length - bParts.length;
-  return a.localeCompare(b);
-}
-
-function normalizeSizeLabel(raw: string): string | null {
-  const compact = raw.toUpperCase().replace(/\s+/g, '');
-  if (!compact) return null;
-  if (!/^[A-Z-]+$/.test(compact)) return null;
-  const tokens = compact.split('-').filter(Boolean);
-  if (tokens.length === 0) return null;
-  if (tokens.some((token) => !ALLOWED_SIZE_TOKENS.has(token as VariantSize))) return null;
-  if (tokens.includes('UNICO') && tokens.length > 1) return null;
-  if (new Set(tokens).size !== tokens.length) return null;
-  return tokens.join('-');
-}
-
-function orderVariantSizes(sizes: VariantSize[]): VariantSize[] {
-  const unique = Array.from(new Set(sizes));
-  return unique.sort(compareVariantSizes);
-}
-
-function parseSizeSelections(size: string): VariantSize[] {
-  const normalized = normalizeSizeLabel(size);
-  if (!normalized) return ['UNICO'];
-  return orderVariantSizes(normalized.split('-') as VariantSize[]);
-}
-
-function composeSizeFromSelections(sizes: VariantSize[]): VariantSize {
-  const normalized = orderVariantSizes(sizes);
-  if (normalized.length === 0) return 'UNICO';
-  return normalized.join('-') as VariantSize;
-}
-
-function toVariantRows(rows: FlatVariantRow[]): VariantRow[] {
+function toVariantRows(rows: FlatVariantRow[], schema: VariantSchema): VariantRow[] {
   return rows.map((row) => ({
-    color: row.color.trim() || 'Base',
-    sizes: parseSizeSelections(row.size),
+    attributes: legacyVariantToSelections(
+      {
+        color: row.color,
+        size: row.size,
+        stock: parseSafeStock(row.stock),
+        stockOnHand: parseSafeStock(row.stock),
+        stockReserved: 0,
+        stockAvailable: parseSafeStock(row.stock),
+      },
+      schema,
+    ),
+    stock: String(parseSafeStock(row.stock)),
+  }));
+}
+
+function createVariantRow(schema: VariantSchema, stock = '0'): VariantRow {
+  return {
+    attributes: createEmptyVariantSelections(schema),
+    stock,
+  };
+}
+
+function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema, toSchema: VariantSchema): VariantRow[] {
+  return rows.map((row) => ({
+    attributes: legacyVariantToSelections(
+      selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), fromSchema),
+      toSchema,
+    ),
     stock: String(parseSafeStock(row.stock)),
   }));
 }
 
 function reconcileRowsWithRealStock(rows: FlatVariantRow[], realStock: number): FlatVariantRow[] {
   const target = Math.max(0, Math.floor(realStock));
-  const normalized = (rows.length ? rows : [{ color: 'Base', size: 'UNICO' as VariantSize, stock: '0' }]).map((row) => ({
+  const normalized = (rows.length ? rows : [{ color: 'Base', size: 'UNICO', stock: '0' }]).map((row) => ({
     color: row.color.trim() || 'Base',
     size: row.size || 'UNICO',
     stock: String(parseSafeStock(row.stock)),
@@ -343,6 +329,18 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const [heroAssigningSlot, setHeroAssigningSlot] = useState<'left' | 'right' | null>(null);
   const [heroAssignFeedback, setHeroAssignFeedback] = useState('');
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
+  const resolvedCategoryType = useMemo(
+    () => resolvePreferredCategoryType({
+      categoryTypes: selectedCatIds.length === 0 ? product?.categoryTypes : undefined,
+      categoryIds: selectedCatIds,
+      categories,
+    }),
+    [product?.categoryTypes, selectedCatIds, categories],
+  );
+  const variantSchema = useMemo(() => getVariantSchema(resolvedCategoryType), [resolvedCategoryType]);
+  const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
+  const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
+  const previousSchemaRef = useRef<VariantSchema>(variantSchema);
 
   useEffect(() => {
     getCategories()
@@ -404,6 +402,15 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }, [token]);
 
   useEffect(() => {
+    const previousSchema = previousSchemaRef.current;
+    if (previousSchema.key === variantSchema.key) {
+      return;
+    }
+    setVariantRows((prev) => rebindVariantRowsToSchema(prev, previousSchema, variantSchema));
+    previousSchemaRef.current = variantSchema;
+  }, [variantSchema]);
+
+  useEffect(() => {
     if (product) {
       const existingFlatVariants: FlatVariantRow[] = (product.variants ?? []).map((variant) => ({
         color: variant.color,
@@ -412,7 +419,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       }));
       const seededRows = existingFlatVariants.length > 0
         ? existingFlatVariants
-        : [{ color: 'Base', size: 'UNICO' as VariantSize, stock: String(product.stock) }];
+        : [{ color: 'Base', size: 'UNICO', stock: String(product.stock) }];
       const reconciledRows = reconcileRowsWithRealStock(seededRows, product.stock);
       const incomingTotal = existingFlatVariants.reduce((sum, row) => sum + parseSafeStock(row.stock), 0);
       const nextForm = {
@@ -427,26 +434,28 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: String(product.stock),
         active: product.active,
       };
-      const nextRows = toVariantRows(reconciledRows);
+      const nextRows = toVariantRows(reconciledRows, variantSchema);
       setForm(nextForm);
       setVariantRows(nextRows);
+      previousSchemaRef.current = variantSchema;
       setStockSyncHint(
         incomingTotal !== product.stock
-          ? 'Stock sincronizado con disponibilidad real. Revisa color, talla y stock antes de guardar.'
+          ? `Stock sincronizado con disponibilidad real. Revisa ${primaryAttribute.label.toLowerCase()}, ${secondaryAttribute.label.toLowerCase()} y stock antes de guardar.`
           : ''
       );
       const nextCatIds: string[] = [];
       setSelectedCatIds(nextCatIds);
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds, variantSchema));
     } else {
       const nextForm = { ...EMPTY_FORM };
-      const nextRows = [{ color: 'Base', sizes: ['UNICO'], stock: EMPTY_FORM.stock }];
+      const nextRows = [createVariantRow(variantSchema, EMPTY_FORM.stock)];
       const nextCatIds: string[] = [];
       setForm(nextForm);
       setVariantRows(nextRows);
+      previousSchemaRef.current = variantSchema;
       setStockSyncHint('');
       setSelectedCatIds(nextCatIds);
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds, variantSchema));
     }
     setErrors({});
     setApiError('');
@@ -460,22 +469,43 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setHeroAssignFeedback('');
     setHeroAssigningSlot(null);
     setUnsavedConfirmOpen(false);
-  }, [product]);
+  }, [product, variantSchema, primaryAttribute.label, secondaryAttribute.label]);
 
   useEffect(() => {
     if (product?.categorySlugs && categories.length > 0) {
       const ids = categories.filter((c) => product.categorySlugs!.includes(c.slug)).map((c) => c.id);
+      const existingFlatVariants: FlatVariantRow[] = (product.variants ?? []).map((variant) => ({
+        color: variant.color,
+        size: variant.size,
+        stock: String(variant.stock),
+      }));
+      const seededRows = existingFlatVariants.length > 0
+        ? existingFlatVariants
+        : [{ color: 'Base', size: 'UNICO', stock: String(product.stock) }];
+      const snapshotRows = toVariantRows(reconcileRowsWithRealStock(seededRows, product.stock), variantSchema);
+      const snapshotForm = {
+        name: product.name,
+        description: product.description,
+        amount: String(product.price.amount),
+        listAmount: product.listPrice?.amount != null ? String(product.listPrice.amount) : '',
+        currency: product.price.currency,
+        imageUrl: product.imageUrl,
+        condition: product.condition,
+        brand: product.brand,
+        stock: String(product.stock),
+        active: product.active,
+      };
       setSelectedCatIds(ids);
-      setInitialSnapshot(makeSnapshot(form, variantRows, ids));
+      setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, variantSchema));
     }
-  }, [categories, product]);
+  }, [categories, product, variantSchema]);
 
   function toggleCategory(id: string) {
     setSelectedCatIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function addVariantRow() {
-    setVariantRows((prev) => [...prev, { color: '', sizes: ['UNICO'], stock: '0' }]);
+    setVariantRows((prev) => [...prev, createVariantRow(variantSchema)]);
   }
 
   function updateVariantRow(index: number, patch: Partial<VariantRow>) {
@@ -484,26 +514,39 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     );
   }
 
-  function toggleVariantSize(index: number, size: VariantSize) {
+  function updateVariantAttributeValue(index: number, attribute: CategoryAttributeDefinition, rawValue: string) {
     setVariantRows((prev) =>
       prev.map((row, rowIndex) => {
         if (rowIndex !== index) return row;
-        const normalizedSize = normalizeSizeLabel(size);
-        if (!normalizedSize) return row;
-        if (normalizedSize === 'UNICO') {
-          return {
-            ...row,
-            sizes: row.sizes.includes('UNICO') ? [] : ['UNICO'],
-          };
-        }
-        const hasSize = row.sizes.includes(normalizedSize);
-        const withoutUnico = row.sizes.filter((current) => current !== 'UNICO');
-        const nextSizes = hasSize
-          ? row.sizes.filter((current) => current !== normalizedSize)
-          : [...withoutUnico, normalizedSize];
+        const nextValues = normalizeAttributeValues(attribute, [rawValue]);
         return {
           ...row,
-          sizes: orderVariantSizes(nextSizes),
+          attributes: {
+            ...row.attributes,
+            [attribute.code]: nextValues,
+          },
+        };
+      })
+    );
+  }
+
+  function toggleVariantAttributeOption(index: number, attribute: CategoryAttributeDefinition, optionValue: string) {
+    setVariantRows((prev) =>
+      prev.map((row, rowIndex) => {
+        if (rowIndex !== index) return row;
+        const currentValues = getAttributeValues(row.attributes, attribute);
+        const alreadySelected = currentValues.includes(optionValue);
+        const nextRawValues = attribute.allowMultiple
+          ? (alreadySelected
+            ? currentValues.filter((value) => value !== optionValue)
+            : [...currentValues.filter((value) => value !== 'UNICO'), optionValue])
+          : (alreadySelected ? [] : [optionValue]);
+        return {
+          ...row,
+          attributes: {
+            ...row.attributes,
+            [attribute.code]: normalizeAttributeValues(attribute, nextRawValues),
+          },
         };
       })
     );
@@ -513,7 +556,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setVariantRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
   }
 
-  const variantTotalStock = normalizeVariantRows(variantRows).reduce((sum, row) => sum + Number(row.stock), 0);
+  const variantTotalStock = variantRows.reduce((sum, row) => sum + parseSafeStock(row.stock), 0);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -534,45 +577,38 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       const seen = new Set<string>();
       for (let idx = 0; idx < variantRows.length; idx += 1) {
         const row = variantRows[idx];
-        if (!row.color.trim()) {
-          e.combinations = `Color requerido en fila ${idx + 1}`;
-          break;
-        }
-        if (row.sizes.length === 0) {
-          e.combinations = `Selecciona al menos una talla en fila ${idx + 1}`;
-          break;
-        }
-        const normalizedRowSizes: string[] = [];
-        for (const size of row.sizes) {
-          const normalized = normalizeSizeLabel(size);
-          if (!normalized) {
-            e.combinations = `Talla invalida en fila ${idx + 1}: ${size}`;
+        for (const attribute of variantSchema.attributes) {
+          const values = getAttributeValues(row.attributes, attribute);
+          const normalizedValues = normalizeAttributeValues(attribute, values);
+          if (attribute.required && normalizedValues.length === 0) {
+            e.combinations = `${attribute.label} requerido en fila ${idx + 1}`;
             break;
           }
-          normalizedRowSizes.push(normalized);
+          if (normalizedValues.length > 0 && values.join('|') !== normalizedValues.join('|')) {
+            e.combinations = `${attribute.label} invalido en fila ${idx + 1}`;
+            break;
+          }
         }
         if (e.combinations) break;
         if (!row.stock || isNaN(Number(row.stock)) || Number(row.stock) < 0) {
           e.combinations = `Stock valido requerido en fila ${idx + 1}`;
           break;
         }
-        const key = `${row.color.trim().toLowerCase()}::${normalizedRowSizes.join('-')}`;
+        const normalizedVariant = selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), variantSchema);
+        const key = `${normalizedVariant.color.trim().toLowerCase()}::${normalizedVariant.size}`;
         if (seen.has(key)) {
-          e.combinations = 'No se permiten combinaciones duplicadas (color + talla)';
+          e.combinations = `No se permiten combinaciones duplicadas (${primaryAttribute.label.toLowerCase()} + ${secondaryAttribute.label.toLowerCase()})`;
           break;
         }
         seen.add(key);
-        if (e.combinations) {
-          break;
-        }
       }
     }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
-  function makeSnapshot(nextForm: typeof form, nextRows: VariantRow[], nextCatIds: string[]): string {
-    const variants = normalizeVariantRows(nextRows)
+  function makeSnapshot(nextForm: typeof form, nextRows: VariantRow[], nextCatIds: string[], schema: VariantSchema): string {
+    const variants = normalizeVariantRows(nextRows, schema)
       .map((variant) => ({
         color: variant.color.trim().toLowerCase(),
         size: variant.size,
@@ -594,7 +630,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     });
   }
 
-  const currentSnapshot = makeSnapshot(form, variantRows, selectedCatIds);
+  const currentSnapshot = makeSnapshot(form, variantRows, selectedCatIds, variantSchema);
   const isDirty = initialSnapshot.length > 0 && currentSnapshot !== initialSnapshot;
   function handleAttemptClose() {
     if (!isDirty) {
@@ -633,7 +669,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setApiError('');
 
     try {
-      const normalizedVariants = normalizeVariantRows(variantRows);
+      const normalizedVariants = normalizeVariantRows(variantRows, variantSchema);
       const payload: CreateProductRequest = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -938,7 +974,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 disabled
               />
               <p className="font-sans text-[0.66rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55 mt-1">
-                Se calcula automaticamente desde color + talla(s) + stock por talla.
+                Se calcula automaticamente desde {primaryAttribute.label.toLowerCase()} + {secondaryAttribute.label.toLowerCase()} + stock por variante.
               </p>
             </div>
             <div className="flex flex-col justify-end pb-1 gap-2">
@@ -956,7 +992,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <p className={labelClass + ' mb-0'}>Color + talla + stock</p>
+              <p className={labelClass + ' mb-0'}>{variantSchema.title}</p>
               <button
                 type="button"
                 onClick={addVariantRow}
@@ -970,39 +1006,53 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               {variantRows.map((row, index) => (
                 <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-black/10 dark:border-[#3F2A2F] p-2">
                   <div className="sm:col-span-3 space-y-1">
-                    <p className={labelClass + ' mb-0'}>Color</p>
+                    <p className={labelClass + ' mb-0'}>{primaryAttribute.label}</p>
                     <input
                       type="text"
                       className={inputClass}
-                      placeholder="Color"
-                      value={row.color}
-                      onChange={(e) => updateVariantRow(index, { color: e.target.value })}
+                      placeholder={primaryAttribute.placeholder ?? primaryAttribute.label}
+                      value={getAttributeValue(row.attributes, primaryAttribute)}
+                      onChange={(e) => updateVariantAttributeValue(index, primaryAttribute, e.target.value)}
                     />
                   </div>
                   <div className="sm:col-span-5 space-y-1">
-                    <p className={labelClass + ' mb-0'}>Talla(s)</p>
-                    <div className="flex flex-wrap gap-1">
-                      {BASE_VARIANT_SIZES.map((size) => {
-                        const selected = row.sizes.includes(size);
-                        return (
-                          <button
-                            key={size}
-                            type="button"
-                            onClick={() => toggleVariantSize(index, size)}
-                            className={[
-                              'px-2 py-1 font-sans text-[0.62rem] uppercase tracking-[0.08em] border transition-colors',
-                              selected
-                                ? 'border-[#B76E79] bg-[#B76E79]/12 text-[#8E4F58] dark:text-[#E4B8BF]'
-                                : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
-                            ].join(' ')}
-                          >
-                            {size}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <p className={labelClass + ' mb-0'}>{secondaryAttribute.label}{secondaryAttribute.allowMultiple ? '(s)' : ''}</p>
+                    {secondaryAttribute.options.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {secondaryAttribute.options.map((option) => {
+                          const selected = getAttributeValues(row.attributes, secondaryAttribute).includes(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => toggleVariantAttributeOption(index, secondaryAttribute, option.value)}
+                              className={[
+                                'px-2 py-1 font-sans text-[0.62rem] uppercase tracking-[0.08em] border transition-colors',
+                                selected
+                                  ? 'border-[#B76E79] bg-[#B76E79]/12 text-[#8E4F58] dark:text-[#E4B8BF]'
+                                  : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
+                              ].join(' ')}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {(secondaryAttribute.type === 'text' || secondaryAttribute.allowCustom) && (
+                      <input
+                        type="text"
+                        className={inputClass}
+                        placeholder={secondaryAttribute.placeholder ?? secondaryAttribute.label}
+                        value={getAttributeValue(row.attributes, secondaryAttribute)}
+                        onChange={(e) => updateVariantAttributeValue(index, secondaryAttribute, e.target.value)}
+                      />
+                    )}
                     <p className="font-sans text-[0.62rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/60">
-                      Valor guardado: <span className="font-semibold">{row.sizes.length > 0 ? composeSizeFromSelections(row.sizes) : '-'}</span>
+                      Valor guardado:{' '}
+                      <span className="font-semibold">
+                        {selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), variantSchema).size || '-'}
+                      </span>
                     </p>
                   </div>
                   <div className="sm:col-span-2 space-y-1">
@@ -1029,7 +1079,9 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
               ))}
             </div>
             <p className="font-sans text-[0.62rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55">
-              Selecciona una o mas tallas por fila. Si eliges varias, se guardan como talla compuesta (ej: M + L = M-L).
+              {secondaryAttribute.allowMultiple
+                ? `Puedes seleccionar varias ${secondaryAttribute.label.toLowerCase()}s por fila. Se guardan como valor compuesto.`
+                : `La interfaz se adapta segun la metadata de categoria, sin asumir talla o color fijos.`}
             </p>
 
             {stockSyncHint && (

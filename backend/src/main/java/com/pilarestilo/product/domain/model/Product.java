@@ -39,6 +39,7 @@ public class Product {
     private List<ProductVariant> variants = new ArrayList<>();
     private Set<UUID> categoryIds = new HashSet<>();
     private List<String> categorySlugs = new ArrayList<>();
+    private List<String> categoryTypes = new ArrayList<>();
 
     private Product() {}
 
@@ -190,6 +191,11 @@ public class Product {
     public List<String> getCategorySlugs() { return categorySlugs; }
     public void setCategorySlugs(List<String> categorySlugs) {
         this.categorySlugs = categorySlugs != null ? categorySlugs : new ArrayList<>();
+    }
+
+    public List<String> getCategoryTypes() { return categoryTypes; }
+    public void setCategoryTypes(List<String> categoryTypes) {
+        this.categoryTypes = categoryTypes != null ? categoryTypes : new ArrayList<>();
     }
 
     public List<ProductVariant> getVariants() { return variants; }

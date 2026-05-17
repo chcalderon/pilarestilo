@@ -14,6 +14,49 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 const ADMIN_PANEL_ROLES = new Set(['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER']);
+const RBAC_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.RBAC_DEBUG === 'true';
+
+type HybridRouteRequirement = {
+  permissionCode: string;
+  legacyViewKey: 'roles_permisos' | 'usuarios' | 'configuracion';
+};
+
+const HYBRID_ROUTE_REQUIREMENTS: Array<[string, HybridRouteRequirement]> = [
+  ['/admin/roles-permisos', { permissionCode: 'roles.read', legacyViewKey: 'roles_permisos' }],
+  ['/admin/users', { permissionCode: 'users.read', legacyViewKey: 'usuarios' }],
+  ['/admin/settings', { permissionCode: 'settings.read', legacyViewKey: 'configuracion' }],
+];
+
+function resolveHybridRequirement(pathname: string): HybridRouteRequirement | null {
+  for (const [prefix, requirement] of HYBRID_ROUTE_REQUIREMENTS) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+      return requirement;
+    }
+  }
+  return null;
+}
+
+function readStringArray(source: unknown): string[] {
+  return Array.isArray(source) ? source.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function hasHybridRouteAccess(
+  role: string,
+  permissionCodes: string[],
+  legacyPermissions: string[],
+  requirement: HybridRouteRequirement,
+): { allowed: boolean; usedLegacyFallback: boolean } {
+  if (role === 'ADMIN') {
+    return { allowed: true, usedLegacyFallback: false };
+  }
+  if (permissionCodes.includes(requirement.permissionCode)) {
+    return { allowed: true, usedLegacyFallback: false };
+  }
+  return {
+    allowed: legacyPermissions.includes(requirement.legacyViewKey),
+    usedLegacyFallback: legacyPermissions.includes(requirement.legacyViewKey),
+  };
+}
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
@@ -50,6 +93,50 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (!me || !ADMIN_PANEL_ROLES.has(String(me.role ?? ''))) {
         context.cookies.delete('pe_token', { path: '/' });
         return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+      }
+
+      const hybridRequirement = resolveHybridRequirement(pathname);
+      if (hybridRequirement) {
+        const role = String(me.role ?? payload['role'] ?? '');
+        const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
+        const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
+        const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);
+
+        if (RBAC_DEBUG_ENABLED) {
+          if (permissionCodes.length === 0 && legacyPermissions.length > 0) {
+            console.info(
+              '[RBAC] middleware legacy fallback route=%s role=%s permission=%s legacy=%s',
+              pathname,
+              role,
+              hybridRequirement.permissionCode,
+              hybridRequirement.legacyViewKey,
+            );
+          }
+          if (access.allowed) {
+            console.info(
+              '[RBAC] middleware hybrid route=%s role=%s permission=%s authorities=%s fallback=%s',
+              pathname,
+              role,
+              hybridRequirement.permissionCode,
+              permissionCodes.length,
+              access.usedLegacyFallback,
+            );
+          }
+        }
+
+        if (!access.allowed) {
+          if (RBAC_DEBUG_ENABLED) {
+            console.warn(
+              '[RBAC] middleware deny route=%s role=%s permission=%s permissionCodes=%s legacyPermissions=%s',
+              pathname,
+              role,
+              hybridRequirement.permissionCode,
+              permissionCodes.length,
+              legacyPermissions.length,
+            );
+          }
+          return context.redirect('/admin/');
+        }
       }
     } catch {
       context.cookies.delete('pe_token', { path: '/' });

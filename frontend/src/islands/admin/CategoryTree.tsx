@@ -19,17 +19,30 @@ import { useToast, Toaster } from './Toast';
 type EditForm = {
   slug: string; nameEs: string; nameEn: string;
   parentId: string; sortOrder: string; imageUrl: string; active: boolean; featured: boolean;
+  menuVisible: boolean; categoryType: CategoryDto['categoryType']; heroImageUrl: string;
 };
 
 const EMPTY_FORM: EditForm = {
   slug: '', nameEs: '', nameEn: '', parentId: '', sortOrder: '0', imageUrl: '', active: true, featured: false,
+  menuVisible: true, categoryType: 'GENERIC', heroImageUrl: '',
 };
+
+const CATEGORY_TYPE_OPTIONS: CategoryDto['categoryType'][] = [
+  'GENERIC',
+  'CLOTHING',
+  'SHOES',
+  'JEWELRY',
+  'ACCESSORY',
+  'COLLECTION',
+  'SEASON',
+];
 
 function fromDto(dto: CategoryDto): EditForm {
   return {
     slug: dto.slug, nameEs: dto.nameEs, nameEn: dto.nameEn,
     parentId: dto.parentId ?? '', sortOrder: String(dto.sortOrder),
     imageUrl: dto.imageUrl ?? '', active: dto.active, featured: dto.featured,
+    menuVisible: dto.menuVisible, categoryType: dto.categoryType, heroImageUrl: dto.heroImageUrl ?? '',
   };
 }
 
@@ -80,6 +93,29 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
             onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
         </div>
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="flex flex-col gap-0.5">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Tipo variante</label>
+          <select
+            className={INPUT_CLASS}
+            value={form.categoryType}
+            onChange={e => setForm(f => ({ ...f, categoryType: e.target.value as CategoryDto['categoryType'] }))}
+          >
+            {CATEGORY_TYPE_OPTIONS.map((value) => (
+              <option key={value} value={value}>{value}</option>
+            ))}
+          </select>
+        </div>
+        <div className="sm:col-span-2 flex flex-col gap-0.5">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Hero imagen</label>
+          <input
+            className={INPUT_CLASS}
+            value={form.heroImageUrl}
+            onChange={e => setForm(f => ({ ...f, heroImageUrl: e.target.value }))}
+            placeholder="https://..."
+          />
+        </div>
+      </div>
       <ImageDropzone
         label="Imagen"
         folder="categories"
@@ -95,6 +131,10 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
           <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="accent-pe-rose" />
           <Star size={11} className="text-amber-500" /> Destacada en inicio
+        </label>
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+          <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />
+          Visible en menu
         </label>
         <button onClick={onSubmit} disabled={saving}
           className="flex items-center gap-1 bg-pe-rose text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50">
@@ -198,9 +238,19 @@ function CategoryRow({
             Inactiva
           </span>
         )}
-        {node.featured && (
-          <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" title="Destacada en inicio" />
+        {!node.menuVisible && (
+          <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/30 bg-pe-cream px-1.5 py-0.5">
+            Oculta menu
+          </span>
         )}
+        {node.featured && (
+          <span title="Destacada en inicio">
+            <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" />
+          </span>
+        )}
+        <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/35 bg-pe-cream px-1.5 py-0.5">
+          {node.categoryType}
+        </span>
 
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           {depth < 3 && (
@@ -368,6 +418,7 @@ export default function CategoryTree() {
         slug: form.slug, nameEs: form.nameEs, nameEn: form.nameEn,
         parentId: form.parentId || undefined, sortOrder: Number(form.sortOrder),
         imageUrl: form.imageUrl || undefined, active: form.active, featured: form.featured,
+        menuVisible: form.menuVisible, categoryType: form.categoryType, heroImageUrl: form.heroImageUrl || undefined,
       }, effectiveToken);
       setEditing(null);
       show('success', 'Categoría actualizada.');
@@ -387,6 +438,11 @@ export default function CategoryTree() {
         slug: form.slug, nameEs: form.nameEs, nameEn: form.nameEn,
         parentId: parentId ?? undefined, sortOrder: Number(form.sortOrder),
         imageUrl: form.imageUrl || undefined,
+        active: form.active,
+        featured: form.featured,
+        menuVisible: form.menuVisible,
+        categoryType: form.categoryType,
+        heroImageUrl: form.heroImageUrl || undefined,
       }, effectiveToken);
       setCreating(null);
       setForm({ ...EMPTY_FORM });

@@ -18,6 +18,7 @@ public class ProductMapper {
                 .toList();
 
         List<String> slugs = product.getCategorySlugs();
+        List<String> categoryTypes = product.getCategoryTypes();
 
         return new ProductDto(
                 product.getId(),
@@ -39,6 +40,7 @@ public class ProductMapper {
                 product.getShippingOriginZone().name(),
                 sizeStocks,
                 slugs,
+                categoryTypes,
                 variants
         );
     }

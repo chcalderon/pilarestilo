@@ -85,6 +85,12 @@ const shouldRender = phoneDigits.length >= 8;
     box-shadow: 0 12px 26px rgba(14, 104, 57, 0.28);
   }
 
+  html[data-mobile-nav-open='true'] .pe-whatsapp-fab {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+  }
+
   @media (max-width: 640px) {
     .pe-whatsapp-fab {
       right: max(0.7rem, env(safe-area-inset-right));

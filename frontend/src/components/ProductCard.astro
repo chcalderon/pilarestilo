@@ -6,7 +6,8 @@ import AddToCartButton from '../islands/AddToCartButton';
 import QuickRateStars from '../islands/reviews/QuickRateStars';
 import WishlistButton from '../islands/wishlist/WishlistButton';
 import RatingStars from './RatingStars.astro';
-import { summarizeVariantSizes } from '../lib/productVariants';
+import { summarizeProductVariantSecondaryValues } from '../lib/productVariants';
+import { getProductVariantSchema, getSecondaryAttribute } from '../lib/variantSchema';
 
 export interface Props {
   product: ProductDto;
@@ -46,7 +47,9 @@ const conditionLabel =
     : t('product.condition.used', locale);
 
 const isNew = product.condition === 'NEW';
-const sizesSummary = summarizeVariantSizes(product.variants);
+const variantSchema = getProductVariantSchema(product);
+const secondaryAttribute = getSecondaryAttribute(variantSchema);
+const sizesSummary = summarizeProductVariantSecondaryValues(product);
 ---
 
 <article class="group relative flex flex-col bg-pe-white overflow-hidden fx-lift cursor-rose" aria-label={product.name}>
@@ -91,7 +94,7 @@ const sizesSummary = summarizeVariantSizes(product.variants);
     </a>
     {sizesSummary && (
       <p class="font-sans text-[0.62rem] tracking-[0.12em] uppercase text-pe-charcoal/45">
-        {locale === 'es' ? 'Tallas' : 'Sizes'}: {sizesSummary}
+        {secondaryAttribute.label}: {sizesSummary}
       </p>
     )}
 

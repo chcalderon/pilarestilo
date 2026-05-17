@@ -36,7 +36,10 @@ class LoginWithPermissionsTest {
     void admin_login_returns_permissions_in_token_dto() {
         AuthTokenDto dto = loginUseCase.execute("admin@pilarestilo.com", "admin2026");
         assertNotNull(dto.permissions());
+        assertNotNull(dto.permissionCodes());
         assertTrue(dto.permissions().contains("dashboard"));
         assertTrue(dto.permissions().contains("configuracion"));
+        assertTrue(dto.permissionCodes().contains("dashboard.read"));
+        assertTrue(dto.permissionCodes().contains("roles.manage"));
     }
 }

@@ -21,7 +21,17 @@ export default function AccountMenu({ locale }: Props) {
       if (token) {
         try {
           const me = await getAuthMe(token);
-          setAuth(token, { id: me.id, email: me.email, role: me.role, fullName: me.fullName, avatarUrl: me.avatarUrl });
+          setAuth(token, {
+            id: me.id,
+            email: me.email,
+            role: me.role,
+            fullName: me.fullName,
+            avatarUrl: me.avatarUrl,
+            permissions: user?.permissions ?? [],
+            permissionCodes: user?.permissionCodes ?? [],
+            vigencyStart: user?.vigencyStart,
+            vigencyEnd: user?.vigencyEnd,
+          });
         } catch {
           clearAuth();
         }

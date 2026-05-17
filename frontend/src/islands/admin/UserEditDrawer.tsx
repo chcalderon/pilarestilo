@@ -16,6 +16,8 @@ interface Props {
   user: AdminUserDto;
   token: string;
   currentUserId: string;
+  canUpdate: boolean;
+  isLegacyAdmin: boolean;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -68,9 +70,18 @@ function flashOk(setter: (v: boolean) => void) {
   setTimeout(() => setter(false), 2000);
 }
 
-export default function UserEditDrawer({ user, token, currentUserId, onClose, onSaved }: Props) {
+export default function UserEditDrawer({
+  user,
+  token,
+  currentUserId,
+  canUpdate,
+  isLegacyAdmin,
+  onClose,
+  onSaved,
+}: Props) {
   const isSelf = user.id === currentUserId;
   const isCustomer = user.role === 'CUSTOMER';
+  const canEditBasics = canUpdate && !isSelf;
 
   // Info
   const [fullName, setFullName] = useState(user.fullName);
@@ -122,6 +133,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   const [roleChangeError, setRoleChangeError] = useState('');
 
   useEffect(() => {
+    if (!isLegacyAdmin) return;
     getCustomerCredit(user.id, token)
       .then((c) => {
         if (!c) return;
@@ -139,6 +151,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
     }).format(n);
 
   async function saveName() {
+    if (!canUpdate) return;
     const trimmed = fullName.trim();
     if (!trimmed || trimmed === user.fullName) return;
     setNameSaving(true);
@@ -155,6 +168,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function saveStatus(next: boolean) {
+    if (!canUpdate) return;
     setStatusSaving(true);
     setStatusError('');
     try {
@@ -170,6 +184,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function savePassword() {
+    if (!isLegacyAdmin) return;
     if (newPw.length < 8) {
       setPwError('Mínimo 8 caracteres.');
       return;
@@ -194,6 +209,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function saveCredit() {
+    if (!isLegacyAdmin) return;
     const amount = Number(creditAmount.replace(/[^\d]/g, ''));
     if (!amount || amount <= 0) {
       setCreditError('Monto inválido.');
@@ -215,6 +231,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function assignRole() {
+    if (!isLegacyAdmin) return;
     if (!vigencyStart) {
       setRoleError('Fecha de inicio requerida.');
       return;
@@ -238,6 +255,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function revokeRole() {
+    if (!isLegacyAdmin) return;
     setRoleSaving(true);
     setRoleError('');
     try {
@@ -256,6 +274,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function handleDeleteUser() {
+    if (!isLegacyAdmin) return;
     setDeleteSaving(true);
     setDeleteError('');
     try {
@@ -271,6 +290,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
   }
 
   async function changeRole() {
+    if (!isLegacyAdmin) return;
     const nextRole = isCustomer ? 'SELLER' : 'CUSTOMER';
     setRoleChangeSaving(true);
     setRoleChangeError('');
@@ -337,6 +357,11 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
 
         {/* Body */}
         <div className="flex flex-col gap-3 p-5">
+          {canUpdate && !isLegacyAdmin && (
+            <p className="text-[0.7rem] font-sans opacity-55 border border-[var(--pe-border)] rounded-md px-3 py-2">
+              Esta sesion puede editar nombre y estado. Acciones sensibles como contrasena, rol laboral y eliminacion siguen reservadas para administracion legacy.
+            </p>
+          )}
 
           {/* Own-account guard */}
           {isSelf && (
@@ -360,7 +385,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
                   setFullName(e.target.value);
                   setNameError('');
                 }}
-                disabled={isSelf || nameSaving}
+                disabled={!canEditBasics || nameSaving}
                 className={inputCls}
                 placeholder="Nombre del usuario"
               />
@@ -379,7 +404,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               <button
                 type="button"
                 onClick={saveName}
-                disabled={isSelf || nameSaving || fullName.trim() === user.fullName || !fullName.trim()}
+                disabled={!canEditBasics || nameSaving || fullName.trim() === user.fullName || !fullName.trim()}
                 className={btnPrimary}
               >
                 {nameSaving ? 'Guardando...' : 'Guardar nombre'}
@@ -402,9 +427,9 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               <button
                 type="button"
                 onClick={() => {
-                  if (!isSelf && !statusSaving) void saveStatus(!active);
+                  if (canEditBasics && !statusSaving) void saveStatus(!active);
                 }}
-                disabled={isSelf || statusSaving}
+                disabled={!canEditBasics || statusSaving}
                 aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
                 className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
                   active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
@@ -426,6 +451,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
           </SectionCard>
 
           {/* Contraseña */}
+          {isLegacyAdmin && (
           <SectionCard label="Contraseña">
             <button
               type="button"
@@ -488,8 +514,10 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               </div>
             )}
           </SectionCard>
+          )}
 
           {/* Crédito */}
+          {isLegacyAdmin && (
           <SectionCard label="Crédito">
             <div className="flex items-center justify-between">
               <span className="text-[0.7rem] opacity-50">
@@ -535,9 +563,10 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               <OkBadge show={creditOk} />
             </div>
           </SectionCard>
+          )}
 
           {/* Rol laboral — trabajadores only */}
-          {!isCustomer && (
+          {isLegacyAdmin && !isCustomer && (
             <SectionCard label="Rol laboral">
               <label className="flex flex-col gap-1.5">
                 <span className={labelCls}>Rol</span>
@@ -604,6 +633,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
           )}
 
           {/* Footer — zona de riesgo */}
+          {isLegacyAdmin && (
           <div className="border-t border-[var(--pe-border)] pt-4 space-y-3">
             <p className="text-[10px] tracking-widest uppercase opacity-40">
               Zona de riesgo
@@ -659,6 +689,7 @@ export default function UserEditDrawer({ user, token, currentUserId, onClose, on
               <p className="text-[0.7rem] text-red-500">{deleteError}</p>
             )}
           </div>
+          )}
         </div>
       </div>
     </>

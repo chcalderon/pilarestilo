@@ -38,6 +38,23 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generateAccessToken(UUID userId,
+                                      String email,
+                                      UserRole role,
+                                      List<String> permissions,
+                                      List<String> permissionCodes) {
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", email)
+                .claim("role", role.name())
+                .claim("permissions", permissions)
+                .claim("permissionCodes", permissionCodes)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRY_MS))
+                .signWith(key)
+                .compact();
+    }
+
     public String generateRefreshToken(UUID userId) {
         return Jwts.builder()
                 .subject(userId.toString())

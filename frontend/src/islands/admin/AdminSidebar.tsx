@@ -22,6 +22,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
+import { useCan } from '../../lib/permissions';
 
 interface Props {
   currentPath: string;
@@ -63,12 +64,19 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   const [settingsExpanded, setSettingsExpanded] = useState(currentPath.startsWith('/admin/settings'));
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
   const { user, clearAuth } = useAuthStore();
+  const canSeeUsers = useCan('users.read', 'usuarios');
+  const canSeeRoles = useCan('roles.read', 'roles_permisos');
+  const canSeeSettings = useCan('settings.read', 'configuracion');
 
   const permissions = user?.permissions ?? [];
   const visibleNavItems = user?.role === 'ADMIN'
     ? navItems
-    : navItems.filter(item => permissions.includes(item.viewKey));
-  const showSettings = user?.role === 'ADMIN' || permissions.includes('configuracion');
+    : navItems.filter((item) => {
+      if (item.href === '/admin/users') return canSeeUsers;
+      if (item.href === '/admin/roles-permisos') return canSeeRoles;
+      return permissions.includes(item.viewKey);
+    });
+  const showSettings = canSeeSettings;
 
   const isCollapsed = mobile ? false : collapsed;
   const settingsRouteActive = currentPath.startsWith('/admin/settings');
