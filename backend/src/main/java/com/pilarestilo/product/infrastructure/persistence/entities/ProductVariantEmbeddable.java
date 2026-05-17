@@ -2,6 +2,7 @@ package com.pilarestilo.product.infrastructure.persistence.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import org.hibernate.annotations.ColumnDefault;
 
 @Embeddable
 public class ProductVariantEmbeddable {
@@ -12,18 +13,37 @@ public class ProductVariantEmbeddable {
     @Column(name = "size", nullable = false, length = 32)
     private String size;
 
-    @Column(name = "stock", nullable = false)
-    private int stock;
+    @Column(name = "stock_on_hand", nullable = false)
+    private int stockOnHand;
+
+    @ColumnDefault("0")
+    @Column(name = "stock_reserved", nullable = false)
+    private int stockReserved;
 
     protected ProductVariantEmbeddable() {}
 
-    public ProductVariantEmbeddable(String color, String size, int stock) {
+    /** Backward-compatible constructor: reserved starts at 0. */
+    public ProductVariantEmbeddable(String color, String size, int stockOnHand) {
+        this(color, size, stockOnHand, 0);
+    }
+
+    public ProductVariantEmbeddable(String color, String size, int stockOnHand, int stockReserved) {
         this.color = color;
         this.size = size;
-        this.stock = stock;
+        this.stockOnHand = stockOnHand;
+        this.stockReserved = stockReserved;
     }
 
     public String getColor() { return color; }
     public String getSize() { return size; }
-    public int getStock() { return stock; }
+    public int getStockOnHand() { return stockOnHand; }
+    public int getStockReserved() { return stockReserved; }
+
+    /** Alias for {@link #getStockOnHand()} for backward compatibility. */
+    public int getStock() { return stockOnHand; }
+
+    public void setColor(String color) { this.color = color; }
+    public void setSize(String size) { this.size = size; }
+    public void setStockOnHand(int stockOnHand) { this.stockOnHand = stockOnHand; }
+    public void setStockReserved(int stockReserved) { this.stockReserved = stockReserved; }
 }

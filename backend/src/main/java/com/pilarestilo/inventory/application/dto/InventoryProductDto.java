@@ -18,5 +18,5 @@ public record InventoryProductDto(
         List<VariantDto> variants
 ) {
     public record SizeStockDto(String size, int stock) {}
-    public record VariantDto(String color, String size, int stock) {}
+    public record VariantDto(String color, String size, int stock, int stockOnHand, int stockReserved, int stockAvailable) {}
 }

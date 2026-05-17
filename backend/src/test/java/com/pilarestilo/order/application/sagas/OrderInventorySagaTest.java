@@ -46,8 +46,9 @@ class OrderInventorySagaTest {
     @Test
     void confirms_payment_from_created_moves_to_paid_via_pending_payment() {
         UUID orderId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
         Order order = orderWithItems(
-                List.of(new OrderItem(UUID.randomUUID(), UUID.randomUUID(), "A", Money.of(BigDecimal.valueOf(1000)), 1))
+                List.of(new OrderItem(UUID.randomUUID(), productId, "A", Money.of(BigDecimal.valueOf(1000)), 1))
         );
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
@@ -55,7 +56,8 @@ class OrderInventorySagaTest {
 
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.PENDING_PAYMENT);
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.PAID);
-        verifyNoInteractions(inventoryService);
+        // Fase 4: confirm converts reservation into a real sale for each item
+        verify(inventoryService).confirm(productId, 1, null, null);
     }
 
     @Test
@@ -89,8 +91,8 @@ class OrderInventorySagaTest {
         saga.onPaymentRejected(new PaymentRejected(UUID.randomUUID(), orderId, UUID.randomUUID(), Instant.now()));
 
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.CANCELLED);
-        verify(inventoryService).release(productA, 2);
-        verify(inventoryService).release(productB, 1);
+        verify(inventoryService).release(productA, 2, null, null);
+        verify(inventoryService).release(productB, 1, null, null);
     }
 
     @Test

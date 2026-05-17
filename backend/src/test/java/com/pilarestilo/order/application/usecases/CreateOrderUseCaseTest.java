@@ -1,0 +1,316 @@
+package com.pilarestilo.order.application.usecases;
+
+import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
+import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
+import com.pilarestilo.discount.domain.enums.DiscountType;
+import com.pilarestilo.discount.domain.model.Discount;
+import com.pilarestilo.discount.domain.ports.DiscountRepository;
+import com.pilarestilo.inventory.application.InventoryService;
+import com.pilarestilo.order.application.commands.CreateOrderCommand;
+import com.pilarestilo.order.application.dto.OrderDto;
+import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
+import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.events.OrderCreated;
+import com.pilarestilo.order.domain.model.Order;
+import com.pilarestilo.order.domain.ports.OrderRepository;
+import com.pilarestilo.product.domain.enums.ProductCondition;
+import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.systemsettings.domain.model.SystemSettings;
+import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.doReturn;
+
+@ExtendWith(MockitoExtension.class)
+class CreateOrderUseCaseTest {
+
+    @Mock OrderRepository orderRepository;
+    @Mock ProductRepository productRepository;
+    @Mock InventoryService inventoryService;
+    @Mock DomainEventPublisher eventPublisher;
+    @Mock OrderRemoteCommandClient orderRemoteCommandClient;
+    @Mock SystemSettingsRepository systemSettingsRepository;
+    @Mock DiscountRepository discountRepository;
+    @Mock CustomerAddressBookService customerAddressBookService;
+
+    CreateOrderUseCase useCase;
+
+    private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final UUID PRODUCT_ID  = UUID.randomUUID();
+    private static final UUID ADDRESS_ID  = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        useCase = new CreateOrderUseCase(
+                orderRepository,
+                productRepository,
+                inventoryService,
+                eventPublisher,
+                orderRemoteCommandClient,
+                systemSettingsRepository,
+                discountRepository,
+                customerAddressBookService
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Shared helpers
+    // -----------------------------------------------------------------------
+
+    /** Settings with bank-transfer enabled + default couriers / zones. */
+    private SystemSettings defaultSettings() {
+        return SystemSettings.createDefault();
+    }
+
+    private Product productWithPrice(UUID productId, BigDecimal amount) {
+        Product product = Product.create(
+                "Test Product",
+                "A test product",
+                Money.of(amount),
+                null,
+                ProductCondition.USED,
+                "TestBrand",
+                10
+        );
+        product.setId(productId);
+        return product;
+    }
+
+    private CustomerAddress defaultAddress() {
+        return CustomerAddress.reconstruct(
+                ADDRESS_ID,
+                CUSTOMER_ID,
+                "Casa",
+                "Test User",
+                "+56912345678",
+                "Av. Ejemplo 100",
+                null,
+                5,
+                501L,
+                50101L,
+                "Los Andes",
+                "Los Andes",
+                "Valparaíso",
+                null,
+                true,
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    /** Wires up the standard stubs needed by the happy-path flow. */
+    private void stubHappyPath(SystemSettings settings) {
+        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
+        when(systemSettingsRepository.get()).thenReturn(settings);
+        when(productRepository.findById(PRODUCT_ID))
+                .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
+        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
+                .thenReturn(defaultAddress());
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    private CreateOrderCommand basicTransferCommand() {
+        return new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                false,
+                null
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 1: happy path — reserves inventory and saves order
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_happyPath_reservesInventoryAndSavesOrder() {
+        stubHappyPath(defaultSettings());
+
+        OrderDto result = useCase.execute(basicTransferCommand());
+
+        assertThat(result).isNotNull();
+
+        verify(inventoryService).reserve(PRODUCT_ID, 1, "Rojo", "M");
+        verify(orderRepository).save(any(Order.class));
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 2: discount code — applies discount, saves usage
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_withDiscountCode_appliesDiscount() {
+        stubHappyPath(defaultSettings());
+
+        Discount disc = Discount.create(
+                "SAVE10",
+                DiscountType.PERCENTAGE,
+                BigDecimal.TEN,
+                Money.zero(),
+                LocalDate.now().minusDays(1),
+                LocalDate.now().plusDays(30),
+                100
+        );
+        when(discountRepository.findByCode("SAVE10")).thenReturn(Optional.of(disc));
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                false,
+                "save10"   // lower-case to verify uppercase normalisation
+        );
+
+        OrderDto result = useCase.execute(command);
+
+        assertThat(result).isNotNull();
+        verify(discountRepository).save(disc);
+        verify(discountRepository).recordUsage(eq(disc.getId()), eq(CUSTOMER_ID));
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 3: employee discount — order discount > 0
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_withEmployeeDiscount_appliesEmployeeDiscount() {
+        // Wire stubs manually so there is no duplicate save stub
+        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
+        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
+        when(productRepository.findById(PRODUCT_ID))
+                .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
+        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
+                .thenReturn(defaultAddress());
+
+        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        when(orderRepository.save(orderCaptor.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                true,   // employeeDiscountEligible
+                null
+        );
+
+        useCase.execute(command);
+
+        Order saved = orderCaptor.getValue();
+        // Employee discount = 10% of 15 000 = 1 500
+        assertThat(saved.getDiscountAmount().amount())
+                .isGreaterThan(BigDecimal.ZERO);
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 4: publishes OrderCreated event exactly once
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_publishesOrderCreatedEvent() {
+        stubHappyPath(defaultSettings());
+
+        useCase.execute(basicTransferCommand());
+
+        verify(eventPublisher, times(1)).publish(any(OrderCreated.class));
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 5: payment method disabled → DomainException
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_throwsDomainException_whenPaymentMethodDisabled() {
+        // Spy on a real SystemSettings so we can override isPaymentMethodBankTransferEnabled
+        SystemSettings settings = spy(SystemSettings.createDefault());
+        doReturn(false).when(settings).isPaymentMethodBankTransferEnabled();
+
+        // validatePaymentMethodEnabled is the FIRST call — throws before isWriteEnabled()
+        when(systemSettingsRepository.get()).thenReturn(settings);
+
+        assertThatThrownBy(() -> useCase.execute(basicTransferCommand()))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("TRANSFER");
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 6: product not found → DomainException
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_throwsDomainException_whenProductNotFound() {
+        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
+        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
+        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
+                .thenReturn(defaultAddress());
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(basicTransferCommand()))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("Product not found");
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 7: inactive shipping zone → DomainException
+    // -----------------------------------------------------------------------
+
+    @Test
+    void createOrder_throwsDomainException_whenShippingZoneNotActive() {
+        // resolveShippingSelection is called BEFORE isWriteEnabled() — no need to stub the remote client
+        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "INVALID_ZONE",   // not in the active zones JSON
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                false,
+                null
+        );
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("shipping zone");
+    }
+}

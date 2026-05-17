@@ -92,7 +92,9 @@ public class CreateOrderUseCase {
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
-                    itemCmd.quantity()
+                    itemCmd.quantity(),
+                    itemCmd.variantColor(),
+                    itemCmd.variantSize()
             ));
         }
 

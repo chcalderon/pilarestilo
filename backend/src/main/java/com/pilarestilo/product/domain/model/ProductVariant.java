@@ -6,21 +6,49 @@ public class ProductVariant {
 
     private final String color;
     private final String size;
-    private final int stock;
+    private final int stockOnHand;
+    private final int stockReserved;
 
-    public ProductVariant(String color, String size, int stock) {
+    /** Backward-compatible constructor: reserved starts at 0. */
+    public ProductVariant(String color, String size, int stockOnHand) {
+        this(color, size, stockOnHand, 0);
+    }
+
+    public ProductVariant(String color, String size, int stockOnHand, int stockReserved) {
         if (color == null || color.isBlank()) {
             throw new DomainException("Product variant color cannot be blank");
         }
-        if (stock < 0) {
+        if (stockOnHand < 0) {
             throw new DomainException("Product variant stock cannot be negative");
+        }
+        if (stockReserved < 0) {
+            throw new DomainException("Product variant reserved stock cannot be negative");
+        }
+        if (stockReserved > stockOnHand) {
+            throw new DomainException("Product variant reserved stock cannot exceed stock on hand");
         }
         this.color = color.trim();
         this.size = ProductSizeRules.normalizeOrThrow(size);
-        this.stock = stock;
+        this.stockOnHand = stockOnHand;
+        this.stockReserved = stockReserved;
     }
 
     public String getColor() { return color; }
     public String getSize() { return size; }
-    public int getStock() { return stock; }
+
+    /** Stock on hand (physical quantity, including reserved). */
+    public int getStockOnHand() { return stockOnHand; }
+
+    /** Stock reserved (committed to pending orders, not yet shipped). */
+    public int getStockReserved() { return stockReserved; }
+
+    /** Available stock = on-hand minus reserved. */
+    public int available() { return stockOnHand - stockReserved; }
+
+    /**
+     * Alias for {@link #getStockOnHand()} kept for backward compatibility.
+     * Callers that used getStock() before Fase 4 continue to compile;
+     * note that this no longer reflects "available" — use {@link #available()} for that.
+     */
+    public int getStock() { return stockOnHand; }
 }

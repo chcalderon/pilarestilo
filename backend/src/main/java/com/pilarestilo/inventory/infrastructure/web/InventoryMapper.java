@@ -31,7 +31,7 @@ public final class InventoryMapper {
                         .toList(),
                 categories,
                 variants.stream()
-                        .map(v -> new InventoryProductDto.VariantDto(v.color(), v.size(), v.stock()))
+                        .map(v -> new InventoryProductDto.VariantDto(v.color(), v.size(), v.stock(), v.stockOnHand(), v.stockReserved(), v.stockAvailable()))
                         .toList()
         );
     }

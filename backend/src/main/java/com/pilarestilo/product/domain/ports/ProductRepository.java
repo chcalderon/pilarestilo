@@ -21,6 +21,12 @@ public interface ProductRepository {
 
     void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount);
 
+    int atomicReserveVariantStock(UUID productId, String color, String size, int qty);
+
+    int atomicReleaseVariantStock(UUID productId, String color, String size, int qty);
+
+    int atomicConfirmVariantStock(UUID productId, String color, String size, int qty);
+
     Page<Product> search(String term,
                          Boolean active,
                          Boolean inStock,

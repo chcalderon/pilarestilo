@@ -42,6 +42,12 @@ public class OrderInventorySaga {
             updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.PENDING_PAYMENT);
         }
 
+        // Confirm inventory reservations: convert reserved stock into confirmed sales
+        for (var item : order.getItems()) {
+            inventoryService.confirm(item.getProductId(), item.getQuantity(),
+                    item.getVariantColor(), item.getVariantSize());
+        }
+
         updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.PAID);
     }
 
@@ -60,7 +66,7 @@ public class OrderInventorySaga {
         updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.CANCELLED);
 
         for (var item : order.getItems()) {
-            inventoryService.release(item.getProductId(), item.getQuantity());
+            inventoryService.release(item.getProductId(), item.getQuantity(), item.getVariantColor(), item.getVariantSize());
         }
     }
 }

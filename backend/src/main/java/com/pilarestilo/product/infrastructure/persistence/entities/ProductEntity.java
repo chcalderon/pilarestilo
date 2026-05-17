@@ -18,6 +18,9 @@ public class ProductEntity {
     @Id
     private UUID id;
 
+    @Version
+    private Long version;
+
     @Column(nullable = false)
     private String name;
 
@@ -91,6 +94,9 @@ public class ProductEntity {
     private java.util.Set<CategoryEntity> categories = new java.util.HashSet<>();
 
     // Getters and setters
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
+
     public ShippingOriginZone getShippingOriginZone() { return shippingOriginZone; }
     public void setShippingOriginZone(ShippingOriginZone shippingOriginZone) {
         this.shippingOriginZone = shippingOriginZone;

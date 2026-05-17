@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -198,13 +199,69 @@ public class Product {
         syncStocksFromVariants();
     }
 
+    public void reserveVariant(int qty, String color, String size) {
+        ProductVariant v = findVariant(color, size)
+                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+        if (v.available() < qty) {
+            throw new DomainException("Stock insuficiente para variante: " + color + " / " + size);
+        }
+        List<ProductVariant> updated = variants.stream()
+                .map(pv -> (lowerTrim(pv.getColor()).equals(lowerTrim(color))
+                        && upperTrim(pv.getSize()).equals(upperTrim(size)))
+                        ? new ProductVariant(pv.getColor(), pv.getSize(), pv.getStockOnHand(), pv.getStockReserved() + qty)
+                        : pv)
+                .toList();
+        setVariants(updated);
+    }
+
+    public void releaseVariant(int qty, String color, String size) {
+        ProductVariant v = findVariant(color, size)
+                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+        if (v.getStockReserved() < qty) {
+            throw new DomainException("Stock reservado insuficiente para variante: " + color + " / " + size);
+        }
+        List<ProductVariant> updated = variants.stream()
+                .map(pv -> (lowerTrim(pv.getColor()).equals(lowerTrim(color))
+                        && upperTrim(pv.getSize()).equals(upperTrim(size)))
+                        ? new ProductVariant(pv.getColor(), pv.getSize(), pv.getStockOnHand(), pv.getStockReserved() - qty)
+                        : pv)
+                .toList();
+        setVariants(updated);
+    }
+
+    public void confirmVariant(int qty, String color, String size) {
+        ProductVariant v = findVariant(color, size)
+                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+        if (v.getStockReserved() < qty) {
+            throw new DomainException("Stock reservado insuficiente para confirmar variante: " + color + " / " + size);
+        }
+        List<ProductVariant> updated = variants.stream()
+                .map(pv -> (lowerTrim(pv.getColor()).equals(lowerTrim(color))
+                        && upperTrim(pv.getSize()).equals(upperTrim(size)))
+                        ? new ProductVariant(pv.getColor(), pv.getSize(),
+                                pv.getStockOnHand() - qty, pv.getStockReserved() - qty)
+                        : pv)
+                .toList();
+        setVariants(updated);
+    }
+
+    private Optional<ProductVariant> findVariant(String color, String size) {
+        return variants.stream()
+                .filter(v -> lowerTrim(v.getColor()).equals(lowerTrim(color))
+                        && upperTrim(v.getSize()).equals(upperTrim(size)))
+                .findFirst();
+    }
+
+    private static String lowerTrim(String s) { return s == null ? "" : s.trim().toLowerCase(Locale.ROOT); }
+    private static String upperTrim(String s) { return s == null ? "" : s.trim().toUpperCase(Locale.ROOT); }
+
     private void validateVariants() {
         if (variants.isEmpty()) {
             return;
         }
         Set<String> uniqueKeys = new HashSet<>();
         for (ProductVariant variant : variants) {
-            String key = variant.getColor().trim().toLowerCase(Locale.ROOT) + "::" + variant.getSize();
+            String key = lowerTrim(variant.getColor()) + "::" + upperTrim(variant.getSize());
             if (!uniqueKeys.add(key)) {
                 throw new DomainException("Duplicated product variant combination: " + variant.getColor() + " / " + variant.getSize());
             }
@@ -216,17 +273,17 @@ public class Product {
             return;
         }
 
-        int totalStock = variants.stream().mapToInt(ProductVariant::getStock).sum();
+        int totalAvailable = variants.stream().mapToInt(ProductVariant::available).sum();
         Map<String, Integer> bySize = new LinkedHashMap<>();
         for (ProductVariant variant : variants) {
-            bySize.merge(variant.getSize(), variant.getStock(), Integer::sum);
+            bySize.merge(variant.getSize(), variant.available(), Integer::sum);
         }
 
         List<ProductSizeStock> nextSizeStocks = bySize.entrySet().stream()
                 .map(e -> new ProductSizeStock(e.getKey(), e.getValue()))
                 .toList();
 
-        this.stock = totalStock;
+        this.stock = totalAvailable;
         this.sizeStocks = nextSizeStocks;
     }
 }

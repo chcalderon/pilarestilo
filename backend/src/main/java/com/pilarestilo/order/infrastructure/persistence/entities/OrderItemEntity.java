@@ -31,6 +31,12 @@ public class OrderItemEntity {
     @Column(nullable = false)
     private int quantity;
 
+    @Column(name = "variant_color")
+    private String variantColor;
+
+    @Column(name = "variant_size")
+    private String variantSize;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -51,4 +57,10 @@ public class OrderItemEntity {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public String getVariantColor() { return variantColor; }
+    public void setVariantColor(String variantColor) { this.variantColor = variantColor; }
+
+    public String getVariantSize() { return variantSize; }
+    public void setVariantSize(String variantSize) { this.variantSize = variantSize; }
 }

@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -67,9 +66,23 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
-    @Transactional
     public void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount) {
         jpaRepository.updateRatingSummary(productId, avgRating, reviewCount);
+    }
+
+    @Override
+    public int atomicReserveVariantStock(UUID productId, String color, String size, int qty) {
+        return jpaRepository.atomicReserveVariantStock(productId, color, size, qty);
+    }
+
+    @Override
+    public int atomicReleaseVariantStock(UUID productId, String color, String size, int qty) {
+        return jpaRepository.atomicReleaseVariantStock(productId, color, size, qty);
+    }
+
+    @Override
+    public int atomicConfirmVariantStock(UUID productId, String color, String size, int qty) {
+        return jpaRepository.atomicConfirmVariantStock(productId, color, size, qty);
     }
 
     @Override
@@ -160,7 +173,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         }
         return cb.or(
                 cb.greaterThan(root.get("stock"), 0),
-                cb.greaterThan(variants.get("stock"), 0),
+                cb.greaterThan(variants.get("stockOnHand"), 0),
                 cb.greaterThan(sizeStocks.get("stock"), 0)
         );
     }
@@ -208,7 +221,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         entity.setSizeStocks(sizeEmbeddables);
 
         List<ProductVariantEmbeddable> variantEmbeddables = product.getVariants().stream()
-                .map(v -> new ProductVariantEmbeddable(v.getColor(), v.getSize(), v.getStock()))
+                .map(v -> new ProductVariantEmbeddable(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockReserved()))
                 .collect(Collectors.toList());
         entity.setVariants(variantEmbeddables);
 
@@ -251,7 +264,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         product.setSizeStocks(sizeStocks);
 
         List<ProductVariant> variants = (entity.getVariants() == null ? List.<ProductVariantEmbeddable>of() : entity.getVariants()).stream()
-                .map(v -> new ProductVariant(v.getColor(), v.getSize(), v.getStock()))
+                .map(v -> new ProductVariant(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockReserved()))
                 .collect(Collectors.toList());
         product.setVariants(variants);
 

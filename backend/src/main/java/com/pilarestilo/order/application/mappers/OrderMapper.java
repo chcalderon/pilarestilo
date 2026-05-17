@@ -45,7 +45,9 @@ public class OrderMapper {
                 item.getProductId(),
                 item.getProductName(),
                 toMoneyDto(item.getUnitPrice()),
-                item.getQuantity()
+                item.getQuantity(),
+                item.getVariantColor(),
+                item.getVariantSize()
         );
     }
 

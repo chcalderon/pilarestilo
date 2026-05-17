@@ -25,6 +25,23 @@ export interface ProductVariantDto {
   color: string;
   size: string;
   stock: number;
+  stockOnHand: number;
+  stockReserved: number;
+  stockAvailable: number;
+}
+
+export interface InventoryMovementDto {
+  id: string;
+  productId: string;
+  variantColor: string | null;
+  variantSize: string | null;
+  type: string;
+  quantity: number;
+  referenceType: string | null;
+  referenceId: string | null;
+  recordedBy: string | null;
+  reason: string | null;
+  createdAt: string;
 }
 
 export interface ProductDto {

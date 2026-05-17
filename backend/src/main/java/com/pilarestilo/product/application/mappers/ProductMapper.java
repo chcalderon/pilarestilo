@@ -14,7 +14,7 @@ public class ProductMapper {
                 .map(s -> new ProductDto.SizeStockDto(s.getSize(), s.getStock()))
                 .toList();
         List<ProductDto.VariantDto> variants = product.getVariants().stream()
-                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize(), v.getStock()))
+                .map(v -> new ProductDto.VariantDto(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockOnHand(), v.getStockReserved(), v.available()))
                 .toList();
 
         List<String> slugs = product.getCategorySlugs();

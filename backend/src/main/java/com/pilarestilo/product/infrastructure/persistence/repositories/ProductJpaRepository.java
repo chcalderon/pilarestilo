@@ -20,4 +20,59 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
                              @Param("reviewCount") int reviewCount);
 
     long countByCategoriesId(UUID categoryId);
+
+    /**
+     * Reserve stock by incrementing stock_reserved.
+     * Succeeds only when available (on_hand - reserved) >= qty.
+     */
+    @Modifying
+    @Query(value = """
+      UPDATE product_variants
+         SET stock_reserved = stock_reserved + :qty
+       WHERE product_id = :productId
+         AND lower(trim(color)) = lower(trim(:color))
+         AND upper(trim(size)) = upper(trim(:size))
+         AND stock_on_hand - stock_reserved >= :qty
+      """, nativeQuery = true)
+    int atomicReserveVariantStock(@Param("productId") UUID productId,
+                                  @Param("color") String color,
+                                  @Param("size") String size,
+                                  @Param("qty") int qty);
+
+    /**
+     * Release a reservation by decrementing stock_reserved.
+     * Succeeds only when stock_reserved >= qty.
+     */
+    @Modifying
+    @Query(value = """
+      UPDATE product_variants
+         SET stock_reserved = stock_reserved - :qty
+       WHERE product_id = :productId
+         AND lower(trim(color)) = lower(trim(:color))
+         AND upper(trim(size)) = upper(trim(:size))
+         AND stock_reserved >= :qty
+      """, nativeQuery = true)
+    int atomicReleaseVariantStock(@Param("productId") UUID productId,
+                                   @Param("color") String color,
+                                   @Param("size") String size,
+                                   @Param("qty") int qty);
+
+    /**
+     * Confirm a reservation: decrements both stock_on_hand and stock_reserved.
+     * Succeeds only when stock_reserved >= qty.
+     */
+    @Modifying
+    @Query(value = """
+      UPDATE product_variants
+         SET stock_on_hand = stock_on_hand - :qty,
+             stock_reserved = stock_reserved - :qty
+       WHERE product_id = :productId
+         AND lower(trim(color)) = lower(trim(:color))
+         AND upper(trim(size)) = upper(trim(:size))
+         AND stock_reserved >= :qty
+      """, nativeQuery = true)
+    int atomicConfirmVariantStock(@Param("productId") UUID productId,
+                                  @Param("color") String color,
+                                  @Param("size") String size,
+                                  @Param("qty") int qty);
 }

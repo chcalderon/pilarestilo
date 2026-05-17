@@ -7,5 +7,7 @@ public record OrderItemDto(
         UUID productId,
         String productName,
         MoneyDto unitPrice,
-        int quantity
+        int quantity,
+        String variantColor,
+        String variantSize
 ) {}

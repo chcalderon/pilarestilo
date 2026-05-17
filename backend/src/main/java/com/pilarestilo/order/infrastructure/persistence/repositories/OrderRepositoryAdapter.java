@@ -80,6 +80,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
             itemEntity.setUnitPriceAmount(item.getUnitPrice().amount());
             itemEntity.setUnitPriceCurrency(item.getUnitPrice().currency());
             itemEntity.setQuantity(item.getQuantity());
+            itemEntity.setVariantColor(item.getVariantColor());
+            itemEntity.setVariantSize(item.getVariantSize());
             itemEntities.add(itemEntity);
         }
         entity.setItems(itemEntities);
@@ -93,7 +95,9 @@ public class OrderRepositoryAdapter implements OrderRepository {
                         ie.getProductId(),
                         ie.getProductName(),
                         new Money(ie.getUnitPriceAmount(), ie.getUnitPriceCurrency()),
-                        ie.getQuantity()
+                        ie.getQuantity(),
+                        ie.getVariantColor(),
+                        ie.getVariantSize()
                 ))
                 .toList();
 

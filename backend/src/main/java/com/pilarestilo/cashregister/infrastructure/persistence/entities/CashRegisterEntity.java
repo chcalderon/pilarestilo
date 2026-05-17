@@ -10,6 +10,7 @@ import java.util.UUID;
 @Table(name = "cash_registers")
 public class CashRegisterEntity {
     @Id private UUID id;
+    @Version private Long version;
     @Column(name = "seller_id", nullable = false) private UUID sellerId;
     @Column(name = "opened_at", nullable = false) private LocalDateTime openedAt;
     @Column(name = "closed_at") private LocalDateTime closedAt;
@@ -22,6 +23,8 @@ public class CashRegisterEntity {
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
     public UUID getSellerId() { return sellerId; }
     public void setSellerId(UUID sellerId) { this.sellerId = sellerId; }
     public LocalDateTime getOpenedAt() { return openedAt; }
