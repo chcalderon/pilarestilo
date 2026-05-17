@@ -13,12 +13,18 @@ public record CategoryDto(
         int sortOrder,
         boolean active,
         boolean featured,
-        String imageUrl
+        String imageUrl,
+        boolean menuVisible,
+        String categoryType,
+        String heroImageUrl
 ) {
     public static CategoryDto from(Category c) {
         return new CategoryDto(
                 c.getId(), c.getSlug(), c.getNameEs(), c.getNameEn(),
-                c.getParentId(), c.getSortOrder(), c.isActive(), c.isFeatured(), c.getImageUrl()
+                c.getParentId(), c.getSortOrder(), c.isActive(), c.isFeatured(), c.getImageUrl(),
+                c.isMenuVisible(),
+                c.getCategoryType() != null ? c.getCategoryType().name() : "GENERIC",
+                c.getHeroImageUrl()
         );
     }
 }

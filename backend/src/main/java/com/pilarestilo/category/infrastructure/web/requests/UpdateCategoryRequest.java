@@ -1,6 +1,7 @@
 package com.pilarestilo.category.infrastructure.web.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.UUID;
@@ -13,5 +14,8 @@ public record UpdateCategoryRequest(
         @PositiveOrZero int sortOrder,
         boolean active,
         boolean featured,
-        String imageUrl
+        String imageUrl,
+        boolean menuVisible,
+        @Pattern(regexp = "GENERIC|CLOTHING|SHOES|JEWELRY|ACCESSORY|COLLECTION|SEASON", message = "invalid categoryType") String categoryType,
+        String heroImageUrl
 ) {}

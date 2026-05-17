@@ -78,7 +78,8 @@ public class CategoryController {
     public CategoryDto update(@PathVariable UUID id, @Valid @RequestBody UpdateCategoryRequest req) {
         return updateCategory.execute(
                 id, req.slug(), req.nameEs(), req.nameEn(),
-                req.parentId(), req.sortOrder(), req.active(), req.featured(), req.imageUrl()
+                req.parentId(), req.sortOrder(), req.active(), req.featured(), req.imageUrl(),
+                req.menuVisible(), req.categoryType(), req.heroImageUrl()
         );
     }
 

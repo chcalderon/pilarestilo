@@ -1,6 +1,7 @@
 package com.pilarestilo.category.application.usecases;
 
 import com.pilarestilo.category.application.dto.CategoryDto;
+import com.pilarestilo.category.domain.enums.CategoryType;
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
 import com.pilarestilo.shared.domain.DomainException;
@@ -23,10 +24,18 @@ public class UpdateCategoryUseCase {
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.CATEGORY_TREE}, allEntries = true)
     public CategoryDto execute(UUID id, String slug, String nameEs, String nameEn,
-                               UUID parentId, int sortOrder, boolean active, boolean featured, String imageUrl) {
+                               UUID parentId, int sortOrder, boolean active, boolean featured, String imageUrl,
+                               boolean menuVisible, String categoryType, String heroImageUrl) {
         Category c = categoryRepository.findById(id)
                 .orElseThrow(() -> new DomainException("Category not found: " + id));
         c.update(slug, nameEs, nameEn, parentId, sortOrder, active, featured, imageUrl);
+        CategoryType type;
+        try {
+            type = categoryType != null ? CategoryType.valueOf(categoryType) : CategoryType.GENERIC;
+        } catch (IllegalArgumentException e) {
+            throw new DomainException("Invalid categoryType: " + categoryType);
+        }
+        c.updateMenuMetadata(menuVisible, type, heroImageUrl);
         return CategoryDto.from(categoryRepository.save(c));
     }
 }

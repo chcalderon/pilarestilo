@@ -1,5 +1,6 @@
 package com.pilarestilo.category.domain.model;
 
+import com.pilarestilo.category.domain.enums.CategoryType;
 import com.pilarestilo.shared.domain.DomainException;
 
 import java.time.Instant;
@@ -20,6 +21,9 @@ public class Category {
     private boolean featured;
     private String imageUrl;
     private Instant createdAt;
+    private boolean menuVisible = true;
+    private CategoryType categoryType = CategoryType.GENERIC;
+    private String heroImageUrl;
 
     private Category() {}
 
@@ -36,6 +40,8 @@ public class Category {
         c.active = true;
         c.imageUrl = imageUrl;
         c.createdAt = Instant.now();
+        c.menuVisible = true;
+        c.categoryType = CategoryType.GENERIC;
         return c;
     }
 
@@ -50,6 +56,12 @@ public class Category {
         this.active = active;
         this.featured = featured;
         this.imageUrl = imageUrl;
+    }
+
+    public void updateMenuMetadata(boolean menuVisible, CategoryType categoryType, String heroImageUrl) {
+        this.menuVisible = menuVisible;
+        this.categoryType = categoryType != null ? categoryType : CategoryType.GENERIC;
+        this.heroImageUrl = heroImageUrl;
     }
 
     private static void validate(String slug, String nameEs, String nameEn) {
@@ -70,6 +82,9 @@ public class Category {
     public boolean isFeatured() { return featured; }
     public String getImageUrl() { return imageUrl; }
     public Instant getCreatedAt() { return createdAt; }
+    public boolean isMenuVisible() { return menuVisible; }
+    public CategoryType getCategoryType() { return categoryType; }
+    public String getHeroImageUrl() { return heroImageUrl; }
 
     public void reorder(int sortOrder) { this.sortOrder = sortOrder; }
 
@@ -78,4 +93,7 @@ public class Category {
     public void setActive(boolean active) { this.active = active; }
     public void setFeatured(boolean featured) { this.featured = featured; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public void setMenuVisible(boolean menuVisible) { this.menuVisible = menuVisible; }
+    public void setCategoryType(CategoryType categoryType) { this.categoryType = categoryType; }
+    public void setHeroImageUrl(String heroImageUrl) { this.heroImageUrl = heroImageUrl; }
 }

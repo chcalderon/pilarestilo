@@ -80,6 +80,9 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         e.setFeatured(c.isFeatured());
         e.setImageUrl(c.getImageUrl());
         e.setCreatedAt(c.getCreatedAt() != null ? c.getCreatedAt() : Instant.now());
+        e.setMenuVisible(c.isMenuVisible());
+        e.setCategoryType(c.getCategoryType());
+        e.setHeroImageUrl(c.getHeroImageUrl());
         return e;
     }
 
@@ -92,6 +95,9 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         c.setActive(e.isActive());
         c.setFeatured(e.isFeatured());
         c.setCreatedAt(e.getCreatedAt());
+        c.setMenuVisible(e.isMenuVisible());
+        c.setCategoryType(e.getCategoryType());
+        c.setHeroImageUrl(e.getHeroImageUrl());
         return c;
     }
 }

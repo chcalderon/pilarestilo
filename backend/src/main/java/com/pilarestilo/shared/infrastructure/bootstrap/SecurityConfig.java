@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/inventory/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/wishlist/shared/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/navigation/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/media/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/system-settings/public").permitAll()
