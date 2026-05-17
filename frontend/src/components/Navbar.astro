@@ -9,6 +9,7 @@ import Icon from './Icon.astro';
 import CategoryTreeNav from './CategoryTreeNav.astro';
 import { getNavigationTree, getCategoryTree, type CategoryTreeNode, type NavigationSectionDto } from '../lib/api';
 import MegaMenuTray from '../islands/nav/MegaMenuTray';
+import MobileNavOverlay from '../islands/nav/MobileNavOverlay';
 
 export interface Props {
   locale: Locale;
@@ -79,13 +80,28 @@ const navCategoryRoots = (() => {
   <div id="nav-main" class="backdrop-blur-sm border-b transition-colors duration-300 bg-pe-black/95 border-pe-white/8">
     <div class="pe-container">
       <nav id="nav-main-row" class="flex items-center justify-between" aria-label="Main navigation">
-        <button
-          id="nav-search-btn"
-          class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
-          aria-label={locale === 'es' ? 'Buscar' : 'Search'}
-        >
-          <Icon name="search" size={18} />
-        </button>
+        <div class="flex items-center gap-1">
+          <button
+            id="nav-hamburger"
+            class="lg:hidden text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            aria-label={locale === 'es' ? 'Abrir menú' : 'Open menu'}
+            aria-expanded="false"
+            aria-controls="mobile-nav-overlay"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <button
+            id="nav-search-btn"
+            class="text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            aria-label={locale === 'es' ? 'Buscar' : 'Search'}
+          >
+            <Icon name="search" size={18} />
+          </button>
+        </div>
 
         <a href={`/${locale}/`} class="nav-logo-wrap group" aria-label="Pilar Estilo - Inicio">
           <img
@@ -171,7 +187,11 @@ const navCategoryRoots = (() => {
     locale={locale}
   />
 
-  <div id="nav-cats" class="lg:hidden border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
+  <div id="mobile-nav-overlay">
+    <MobileNavOverlay client:load sections={navTree.sections} locale={locale} />
+  </div>
+
+  <div id="nav-cats" class="hidden border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
     <div class="pe-container">
       <div class="nav-cats-shell">
         <button
@@ -582,7 +602,7 @@ const navCategoryRoots = (() => {
       padding-bottom: 0.45rem;
     }
 
-    #site-header:not(.logo-compact) #nav-search-btn {
+    #site-header:not(.logo-compact) #nav-main-row > div:first-child {
       grid-area: search;
       justify-self: start;
     }
@@ -943,6 +963,17 @@ const navCategoryRoots = (() => {
   header?.classList.add('logo-intro');
   syncHeaderHeightVar();
   requestAnimationFrame(syncHeaderHeightVar);
+
+  const hamburger = document.getElementById('nav-hamburger');
+  if (hamburger) {
+    hamburger.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('mobile-nav:open'));
+      hamburger.setAttribute('aria-expanded', 'true');
+    });
+    window.addEventListener('mobile-nav:close', () => {
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  }
 
   document.getElementById('nav-search-btn')?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('open-search'));
