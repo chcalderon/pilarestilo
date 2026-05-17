@@ -1,6 +1,31 @@
 -- Align storefront/admin runtime metadata with the migrated frontend.
 -- This keeps the catalog metadata-driven and seeds realistic variants for QA.
 
+INSERT INTO categories (
+    id,
+    slug,
+    name_es,
+    name_en,
+    parent_id,
+    sort_order,
+    active,
+    image_url
+)
+SELECT
+    '30000000-0000-0000-0000-000000000009',
+    'aros',
+    'Aros',
+    'Earrings',
+    '30000000-0000-0000-0000-000000000008',
+    1,
+    TRUE,
+    'https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=900&q=80'
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM categories
+    WHERE slug = 'aros'
+);
+
 UPDATE categories
 SET
     menu_visible = TRUE,
@@ -78,7 +103,7 @@ SET
 INSERT INTO product_categories (product_id, category_id)
 VALUES
     ('10000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000008'),
-    ('10000000-0000-0000-0000-000000000016', '58df2aea-c3ca-43dd-92a3-f7c3d0dd1e99')
+    ('10000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000009')
 ON CONFLICT DO NOTHING;
 
 DELETE FROM product_variants
