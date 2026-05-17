@@ -45,12 +45,41 @@ public class GetNavigationTreeUseCase {
 
         List<NavigationSection> sections = navigationSectionRepository.findAllActiveOrdered();
 
+        if (sections.isEmpty()) {
+            return buildFallbackTree(allActive, byParent, resolvedLocale);
+        }
+
         List<NavigationTreeDto.SectionDto> sectionDtos = sections.stream()
                 .map(section -> toSectionDto(section, byId, byParent, resolvedLocale))
                 .filter(dto -> dto != null)
                 .toList();
 
         return new NavigationTreeDto(sectionDtos);
+    }
+
+    private NavigationTreeDto buildFallbackTree(List<Category> allActive,
+                                                  Map<UUID, List<Category>> byParent,
+                                                  String locale) {
+        List<Category> roots = allActive.stream()
+                .filter(c -> c.getParentId() == null)
+                .filter(Category::isMenuVisible)
+                .sorted(java.util.Comparator.comparingInt(Category::getSortOrder))
+                .toList();
+
+        List<NavigationTreeDto.SectionDto> sections = roots.stream()
+                .map(root -> new NavigationTreeDto.SectionDto(
+                        root.getId(),
+                        root.getSlug(),
+                        localize(root, locale),
+                        root.getHeroImageUrl(),
+                        "COLUMNS",
+                        4,
+                        null, null, null, null,
+                        buildChildren(root.getId(), byParent, locale, 1)
+                ))
+                .toList();
+
+        return new NavigationTreeDto(sections);
     }
 
     private NavigationTreeDto.SectionDto toSectionDto(NavigationSection section,
