@@ -1711,6 +1711,75 @@ export async function getNavigationTree(locale: string = 'es'): Promise<Navigati
   }
 }
 
+// ─── Navigation Section Admin API ───────────────────────────────────────────
+
+export interface AdminNavigationSectionDto {
+  id: string;
+  rootCategoryId: string;
+  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  columnCount: number;
+  bannerImageUrl?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerLink?: string;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpsertNavigationSectionRequest {
+  rootCategoryId: string;
+  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  columnCount: number;
+  bannerImageUrl?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerLink?: string;
+  active: boolean;
+  sortOrder: number;
+}
+
+export async function listNavigationSections(token: string): Promise<AdminNavigationSectionDto[]> {
+  try {
+    return await apiFetch<AdminNavigationSectionDto[]>('/navigation/sections', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function createNavigationSection(
+  req: UpsertNavigationSectionRequest,
+  token: string
+): Promise<AdminNavigationSectionDto> {
+  return apiFetch<AdminNavigationSectionDto>('/admin/navigation/sections', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+}
+
+export async function updateNavigationSection(
+  id: string,
+  req: UpsertNavigationSectionRequest,
+  token: string
+): Promise<AdminNavigationSectionDto> {
+  return apiFetch<AdminNavigationSectionDto>(`/admin/navigation/sections/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+}
+
+export async function deleteNavigationSection(id: string, token: string): Promise<void> {
+  await apiFetch<void>(`/admin/navigation/sections/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export async function getFeaturedCategories(): Promise<CategoryDto[]> {
   try {
     return await apiFetch<CategoryDto[]>('/categories/featured');

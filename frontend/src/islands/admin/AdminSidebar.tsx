@@ -19,6 +19,7 @@ import {
   DollarSign,
   Truck,
   Megaphone,
+  Navigation,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
 
@@ -33,6 +34,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard', viewKey: 'dashboard' },
   { href: '/admin/products', icon: Package, label: 'Productos', viewKey: 'productos' },
   { href: '/admin/categories', icon: Tag, label: 'Categorias', viewKey: 'productos' },
+  { href: '/admin/navegacion', icon: Navigation, label: 'Navegación', viewKey: 'productos' },
   { href: '/admin/reviews', icon: Star, label: 'Resenas', viewKey: 'productos' },
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos', viewKey: 'caja' },
   { href: '/admin/caja', icon: DollarSign, label: 'Caja', viewKey: 'caja' },
