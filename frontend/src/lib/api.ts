@@ -1649,6 +1649,33 @@ export interface CategoryTreeNode extends CategoryDto {
   children: CategoryTreeNode[];
 }
 
+export interface NavigationChildDto {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl?: string;
+  featured: boolean;
+  children: NavigationChildDto[];
+}
+
+export interface NavigationSectionDto {
+  rootCategoryId: string;
+  rootCategorySlug: string;
+  rootCategoryName: string;
+  heroImageUrl?: string;
+  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  columnCount: number;
+  bannerImageUrl?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerLink?: string;
+  children: NavigationChildDto[];
+}
+
+export interface NavigationTreeDto {
+  sections: NavigationSectionDto[];
+}
+
 export interface CreateCategoryRequest {
   slug: string;
   nameEs: string;
@@ -1673,6 +1700,14 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
     return await apiFetch<CategoryTreeNode[]>('/categories/tree');
   } catch {
     return [];
+  }
+}
+
+export async function getNavigationTree(locale: string = 'es'): Promise<NavigationTreeDto> {
+  try {
+    return await apiFetch<NavigationTreeDto>(`/navigation/tree?locale=${locale}`);
+  } catch {
+    return { sections: [] };
   }
 }
 

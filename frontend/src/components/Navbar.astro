@@ -7,7 +7,8 @@ import AccountMenu from '../islands/auth/AccountMenu';
 import NavNotificationBell from '../islands/NavNotificationBell';
 import Icon from './Icon.astro';
 import CategoryTreeNav from './CategoryTreeNav.astro';
-import { getCategoryTree, type CategoryTreeNode } from '../lib/api';
+import { getNavigationTree, getCategoryTree, type CategoryTreeNode, type NavigationSectionDto } from '../lib/api';
+import MegaMenuTray from '../islands/nav/MegaMenuTray';
 
 export interface Props {
   locale: Locale;
@@ -20,6 +21,13 @@ try {
   categoryTree = (await getCategoryTree()).filter((node) => node.active);
 } catch {
   // fallback — empty nav rather than broken page
+}
+
+let navTree: import('../lib/api').NavigationTreeDto = { sections: [] };
+try {
+  navTree = await getNavigationTree(locale);
+} catch {
+  // fallback — empty nav
 }
 
 const navCategoryRoots = (() => {
@@ -122,7 +130,48 @@ const navCategoryRoots = (() => {
     </div>
   </div>
 
-  <div id="nav-cats" class="border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
+  {/* Desktop mega menu trigger bar - hidden on mobile */}
+  <div id="nav-mega-bar" class="hidden lg:block border-b transition-colors duration-300 bg-pe-black border-pe-white/8" aria-label="Main categories">
+    <div class="pe-container">
+      <ul class="flex items-center gap-0 h-10" role="menubar" aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
+        <li>
+          <a href={`/${locale}/products`}
+             class="block font-sans text-[0.63rem] tracking-[0.2em] uppercase text-pe-white/40 hover:text-pe-rose-soft transition-colors px-4 h-10 flex items-center">
+            {locale === 'es' ? 'Todo' : 'All'}
+          </a>
+        </li>
+        {navTree.sections.map((section) => (
+          <li
+            class="relative"
+            data-mega-root={section.rootCategorySlug}
+          >
+            <a
+              href={`/${locale}/categories/${section.rootCategorySlug}`}
+              class="mega-trigger block font-sans text-[0.63rem] tracking-[0.2em] uppercase text-pe-white/50 hover:text-pe-rose-soft transition-colors px-4 h-10 flex items-center gap-1.5"
+              role="menuitem"
+              aria-haspopup="true"
+              aria-expanded="false"
+              data-slug={section.rootCategorySlug}
+            >
+              {section.rootCategoryName}
+              {section.children.length > 0 && (
+                <span class="text-[0.55rem] opacity-50" aria-hidden="true">▾</span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  {/* MegaMenuTray island - desktop only */}
+  <MegaMenuTray
+    client:load
+    sections={navTree.sections}
+    locale={locale}
+  />
+
+  <div id="nav-cats" class="lg:hidden border-b transition-colors duration-300 bg-pe-offwhite border-pe-black/8">
     <div class="pe-container">
       <div class="nav-cats-shell">
         <button
@@ -566,7 +615,7 @@ const navCategoryRoots = (() => {
     }
   }
 
-  @media (min-width: 1025px) {
+  @media (min-width: 1024px) {
     .nav-cat-panel {
       border-top: 1px solid color-mix(in srgb, var(--pe-rose) 34%, transparent);
       padding: 0.7rem 0.78rem 0.82rem;
@@ -680,7 +729,7 @@ const navCategoryRoots = (() => {
       const viewportHeight = window.innerHeight;
       const horizontalMargin = 12;
       const verticalGap = 8;
-      const isDesktopTray = window.matchMedia('(min-width: 1025px)').matches;
+      const isDesktopTray = window.matchMedia('(min-width: 1024px)').matches;
 
       if (isDesktopTray && navCats && navCatsContainer) {
         const navRect = navCats.getBoundingClientRect();
@@ -913,5 +962,39 @@ const navCategoryRoots = (() => {
   }, { passive: true });
   window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
   window.addEventListener('load', syncHeaderHeightVar, { passive: true });
+
+  // Dispatch mega-menu events from hover on .mega-trigger elements
+  document.querySelectorAll('.mega-trigger').forEach((trigger) => {
+    const slug = (trigger as HTMLElement).dataset.slug;
+    if (!slug) return;
+
+    trigger.addEventListener('mouseenter', () => {
+      window.dispatchEvent(new CustomEvent('mega-menu:open', { detail: { slug } }));
+      trigger.setAttribute('aria-expanded', 'true');
+    });
+
+    trigger.addEventListener('mouseleave', () => {
+      window.dispatchEvent(new CustomEvent('mega-menu:close'));
+      trigger.setAttribute('aria-expanded', 'false');
+    });
+
+    // Click outside should also close
+    trigger.addEventListener('click', () => {
+      // Allow navigation — don't preventDefault
+      window.dispatchEvent(new CustomEvent('mega-menu:close'));
+    });
+  });
+
+  // Update --header-height CSS var so tray positions correctly
+  function updateHeaderHeight() {
+    const header = document.getElementById('site-header');
+    if (header) {
+      document.documentElement.style.setProperty('--header-height', header.offsetHeight + 'px');
+    }
+  }
+  updateHeaderHeight();
+  window.addEventListener('resize', updateHeaderHeight);
+  // Also update after scroll (header shrinks on scroll)
+  window.addEventListener('scroll', updateHeaderHeight, { passive: true });
 </script>
 
