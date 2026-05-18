@@ -1,6 +1,7 @@
 package com.pilarestilo.migration;
 
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -41,6 +42,19 @@ class FlywayPublishedMigrationCompatibilityIT {
     @TempDir
     Path tempDir;
 
+    @BeforeEach
+    void resetDatabase() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
+        ); Statement statement = connection.createStatement()) {
+            statement.execute("DROP SCHEMA IF EXISTS public CASCADE");
+            statement.execute("CREATE SCHEMA public");
+            statement.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"");
+        }
+    }
+
     @Test
     void current_migrations_upgrade_a_database_that_already_applied_the_original_v61() throws Exception {
         Path baselineMigrationDir = Files.createDirectory(tempDir.resolve("baseline-migrations"));
@@ -59,6 +73,29 @@ class FlywayPublishedMigrationCompatibilityIT {
         assertEquals("64", currentFlyway.info().current().getVersion().getVersion());
         assertTrue(Stream.of(currentFlyway.info().all())
                 .anyMatch(info -> info.getVersion() != null && "60.1".equals(info.getVersion().getVersion())));
+    }
+
+    @Test
+    void current_migrations_repair_runtime_alignment_prerequisites_before_v61() throws Exception {
+        Path baselineMigrationDir = Files.createDirectory(tempDir.resolve("repair-baseline-migrations"));
+        Path currentMigrationDir = resolveClasspathDirectory("db/migration");
+
+        copyPublishedMigrationsThroughV60(currentMigrationDir, baselineMigrationDir);
+        migrate("filesystem:" + baselineMigrationDir.toAbsolutePath());
+
+        seedConflictingArosCategory();
+        deleteRetailRuntimeSeedProducts();
+
+        Flyway currentFlyway = migrate("classpath:db/migration");
+
+        assertNotNull(currentFlyway.info().current());
+        assertEquals("64", currentFlyway.info().current().getVersion().getVersion());
+        assertProductExists("10000000-0000-0000-0000-000000000004");
+        assertProductExists("10000000-0000-0000-0000-000000000005");
+        assertProductExists("10000000-0000-0000-0000-000000000010");
+        assertProductExists("10000000-0000-0000-0000-000000000012");
+        assertProductExists("10000000-0000-0000-0000-000000000014");
+        assertArosCategoryRepaired();
     }
 
     private void copyPublishedMigrationsThroughV60(Path sourceDir, Path targetDir) throws IOException {
@@ -108,6 +145,129 @@ class FlywayPublishedMigrationCompatibilityIT {
                     )
                     ON CONFLICT (id) DO NOTHING
                     """);
+        }
+    }
+
+    private void seedConflictingArosCategory() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
+        ); Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO categories (
+                        id,
+                        slug,
+                        name_es,
+                        name_en,
+                        parent_id,
+                        sort_order,
+                        active,
+                        image_url
+                    ) VALUES (
+                        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                        'aros',
+                        'Aros Legacy',
+                        'Legacy Earrings',
+                        '30000000-0000-0000-0000-000000000008',
+                        99,
+                        TRUE,
+                        'https://example.com/legacy-aros.jpg'
+                    )
+                    ON CONFLICT (id) DO NOTHING
+                    """);
+        }
+    }
+
+    private void deleteRetailRuntimeSeedProducts() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
+        ); Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    DELETE FROM reviews
+                    WHERE product_id IN (
+                        '10000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000010',
+                        '10000000-0000-0000-0000-000000000012',
+                        '10000000-0000-0000-0000-000000000014'
+                    )
+                    """);
+            statement.executeUpdate("""
+                    DELETE FROM product_size_stocks
+                    WHERE product_id IN (
+                        '10000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000010',
+                        '10000000-0000-0000-0000-000000000012',
+                        '10000000-0000-0000-0000-000000000014'
+                    )
+                    """);
+            statement.executeUpdate("""
+                    DELETE FROM product_categories
+                    WHERE product_id IN (
+                        '10000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000010',
+                        '10000000-0000-0000-0000-000000000012',
+                        '10000000-0000-0000-0000-000000000014'
+                    )
+                    """);
+            statement.executeUpdate("""
+                    DELETE FROM wishlist_items
+                    WHERE product_id IN (
+                        '10000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000010',
+                        '10000000-0000-0000-0000-000000000012',
+                        '10000000-0000-0000-0000-000000000014'
+                    )
+                    """);
+            statement.executeUpdate("""
+                    DELETE FROM products
+                    WHERE id IN (
+                        '10000000-0000-0000-0000-000000000004',
+                        '10000000-0000-0000-0000-000000000005',
+                        '10000000-0000-0000-0000-000000000010',
+                        '10000000-0000-0000-0000-000000000012',
+                        '10000000-0000-0000-0000-000000000014'
+                    )
+                    """);
+        }
+    }
+
+    private void assertProductExists(String productId) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
+        ); Statement statement = connection.createStatement();
+             var resultSet = statement.executeQuery("""
+                     SELECT COUNT(*)
+                     FROM products
+                     WHERE id = '%s'
+                     """.formatted(productId))) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
+        }
+    }
+
+    private void assertArosCategoryRepaired() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword()
+        ); Statement statement = connection.createStatement();
+             var resultSet = statement.executeQuery("""
+                     SELECT COUNT(*)
+                     FROM categories
+                     WHERE id = '58df2aea-c3ca-43dd-92a3-f7c3d0dd1e99'
+                       AND slug = 'aros'
+                     """)) {
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1));
         }
     }
 
