@@ -40,8 +40,13 @@ export default function AdminLoginForm({ redirect }: Props) {
         ? redirect
         : '/admin/dashboard';
       window.location.href = target;
-    } catch {
-      setError('Email o contrase\u00f1a incorrectos.');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '';
+      if (/API error 5\d{2}\b|API timeout\b/i.test(detail)) {
+        setError('El servidor administrativo no est\u00e1 disponible en este momento. Intenta nuevamente en unos minutos.');
+      } else {
+        setError('Email o contrase\u00f1a incorrectos.');
+      }
     } finally {
       setLoading(false);
     }
