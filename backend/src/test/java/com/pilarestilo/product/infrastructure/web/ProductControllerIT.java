@@ -14,7 +14,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,6 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 class ProductControllerIT {
+
+    private static final UUID SHOE_PRODUCT_ID = UUID.fromString("10000000-0000-0000-0000-000000000004");
 
     @Container
     @SuppressWarnings("resource")
@@ -63,6 +67,34 @@ class ProductControllerIT {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.brand").value("Gucci"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@pilarestilo.com", roles = {"ADMIN"})
+    void update_shoe_product_accepts_numeric_variant_size() throws Exception {
+        String body = objectMapper.writeValueAsString(Map.ofEntries(
+                Map.entry("name", "Pumps Stiletto Nude"),
+                Map.entry("description", "Zapatos stiletto en cuero genuino color nude, taco 10cm. Talla 35."),
+                Map.entry("priceAmount", 120000),
+                Map.entry("priceCurrency", "CLP"),
+                Map.entry("listPriceAmount", 144000),
+                Map.entry("listPriceCurrency", "CLP"),
+                Map.entry("imageUrl", "/api/media/products/product-004.jpg"),
+                Map.entry("condition", "USED"),
+                Map.entry("brand", "Valentino"),
+                Map.entry("stock", 1),
+                Map.entry("active", true),
+                Map.entry("variants", List.of(
+                        Map.of("color", "Nude", "size", "35", "stock", 1)
+                ))
+        ));
+
+        mvc.perform(put("/api/products/{id}", SHOE_PRODUCT_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.variants[0].size").value("35"))
+                .andExpect(jsonPath("$.sizeStocks[0].size").value("35"));
     }
 
     @Test

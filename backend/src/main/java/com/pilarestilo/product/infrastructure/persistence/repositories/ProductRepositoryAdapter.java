@@ -44,7 +44,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
 
     @Override
     public Product save(Product product) {
-        ProductEntity entity = toEntity(product);
+        ProductEntity entity = product.getId() == null
+                ? new ProductEntity()
+                : jpaRepository.findById(product.getId()).orElseGet(ProductEntity::new);
+        applyToEntity(product, entity);
         ProductEntity saved = jpaRepository.save(entity);
         return toDomain(saved);
     }
@@ -197,8 +200,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         }
     }
 
-    private ProductEntity toEntity(Product product) {
-        ProductEntity entity = new ProductEntity();
+    private void applyToEntity(Product product, ProductEntity entity) {
         entity.setId(product.getId());
         entity.setName(product.getName());
         entity.setDescription(product.getDescription());
@@ -229,8 +231,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 categoryJpaRepository.findAllById(product.getCategoryIds())
         );
         entity.setCategories(cats);
-
-        return entity;
     }
 
     private Product toDomain(ProductEntity entity) {
