@@ -12,11 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ShippingOriginZoneMigrationScriptsTest {
 
     @Test
-    void runtimeAlignmentRepairPrereqDoesNotSeedLegacyNationalValue() throws IOException {
+    void runtimeAlignmentRepairPrereqPreservesPublishedLegacyNationalValue() throws IOException {
         String sql = readMigration("db/migration/V60_2__repair_retail_runtime_alignment_prereqs.sql");
 
-        assertFalse(sql.contains("'NATIONAL'"));
-        assertTrue(sql.contains("'NACIONAL'"));
+        assertTrue(sql.contains("'NATIONAL'"));
+        assertFalse(sql.contains("'NACIONAL'"));
     }
 
     @Test
