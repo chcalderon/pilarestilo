@@ -176,7 +176,7 @@ VALUES
         'Hermes',
         5,
         TRUE,
-        'NATIONAL'
+        'NACIONAL'
     )
 ON CONFLICT (id) DO NOTHING;
 

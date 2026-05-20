@@ -67,8 +67,8 @@ public class ProductEntity {
     @Column(name = "review_count", nullable = false)
     private int reviewCount = 0;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "shipping_origin_zone", nullable = false, length = 16)
+    @Convert(converter = ShippingOriginZoneAttributeConverter.class)
     private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
 
     @ElementCollection(fetch = FetchType.EAGER)
