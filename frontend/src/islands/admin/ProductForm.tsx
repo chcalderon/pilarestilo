@@ -354,6 +354,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
   const previousSchemaRef = useRef<VariantSchema>(variantSchema);
+  const catInitKeyRef = useRef('');
 
   useEffect(() => {
     getCategories()
@@ -423,6 +424,13 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     previousSchemaRef.current = variantSchema;
   }, [variantSchema]);
 
+  // Clear selected categories only when the product identity changes (open/close form),
+  // NOT on variantSchema changes triggered by category toggles.
+  useEffect(() => {
+    setSelectedCatIds([]);
+    catInitKeyRef.current = '';
+  }, [product]);
+
   useEffect(() => {
     if (product) {
       const existingFlatVariants: FlatVariantRow[] = (product.variants ?? []).map((variant) => ({
@@ -456,19 +464,18 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           ? `Stock sincronizado con disponibilidad real. Revisa ${primaryAttribute.label.toLowerCase()}, ${secondaryAttribute.label.toLowerCase()} y stock antes de guardar.`
           : ''
       );
-      const nextCatIds: string[] = [];
-      setSelectedCatIds(nextCatIds);
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds, variantSchema));
+      // Categories are initialized by the separate categories useEffect.
+      // Do not reset them here — doing so would undo interactive toggles when variantSchema changes.
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], variantSchema));
     } else {
       const nextForm = { ...EMPTY_FORM };
       const nextRows = [createVariantRow(variantSchema, EMPTY_FORM.stock)];
-      const nextCatIds: string[] = [];
       setForm(nextForm);
       setVariantRows(nextRows);
       previousSchemaRef.current = variantSchema;
       setStockSyncHint('');
-      setSelectedCatIds(nextCatIds);
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, nextCatIds, variantSchema));
+      // Categories for new products are cleared by the dedicated product-change effect below.
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], variantSchema));
     }
     setErrors({});
     setApiError('');
@@ -485,7 +492,12 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }, [product, variantSchema, primaryAttribute.label, secondaryAttribute.label]);
 
   useEffect(() => {
-    if (product?.categorySlugs && categories.length > 0) {
+    // Guard: only reinitialize when the product or the categories list changes,
+    // not when variantSchema changes (which happens on every category toggle).
+    const key = `${product?.id ?? '__new__'}:${categories.length}`;
+    if (!product?.categorySlugs || categories.length === 0 || catInitKeyRef.current === key) return;
+    catInitKeyRef.current = key;
+    {
       const ids = categories.filter((c) => product.categorySlugs!.includes(c.slug)).map((c) => c.id);
       const existingFlatVariants: FlatVariantRow[] = (product.variants ?? []).map((variant) => ({
         color: variant.color,
@@ -514,7 +526,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       // forcing the user to save and persist the corrected category selection.
       setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, variantSchema));
     }
-  }, [categories, product, variantSchema]);
+  }, [categories, product, variantSchema]);  // variantSchema kept in deps for makeSnapshot freshness; catInitKeyRef guards re-init
 
   function toggleCategory(id: string) {
     setSelectedCatIds((prev) => {
