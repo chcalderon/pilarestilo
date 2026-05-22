@@ -1,0 +1,89 @@
+import { Trash2 } from 'lucide-react';
+import type { CartItem } from '../../lib/cartStore';
+import type { Locale } from '../../i18n/index';
+
+interface Props {
+  item: CartItem;
+  locale: Locale;
+  onRemove: () => void;
+  onNavigate: () => void;
+  cartHref: string;
+}
+
+export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHref }: Props) {
+  const priceFormat = (amount: number, currency = 'CLP') =>
+    new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+
+  return (
+    <div className="flex gap-3 px-4 py-3 border-b border-pe-charcoal/8 last:border-b-0 group">
+      {/* Image */}
+      <a
+        href={cartHref}
+        onClick={onNavigate}
+        className="flex-shrink-0 block"
+        tabIndex={-1}
+        aria-hidden="true"
+      >
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            width={60}
+            height={76}
+            className="object-cover"
+            style={{ width: 60, height: 76, objectFit: 'cover' }}
+            loading="lazy"
+          />
+        ) : (
+          <div className="bg-pe-cream" style={{ width: 60, height: 76 }} />
+        )}
+      </a>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+        <div>
+          {item.brand && (
+            <p className="font-sans text-[0.6rem] tracking-[0.22em] uppercase text-pe-gold mb-0.5 truncate">
+              {item.brand}
+            </p>
+          )}
+          <a
+            href={cartHref}
+            onClick={onNavigate}
+            className="block font-sans text-[0.76rem] text-pe-black leading-snug truncate hover:text-pe-rose transition-colors"
+          >
+            {item.name}
+          </a>
+          {item.variantLabel && (
+            <p className="font-sans text-[0.63rem] text-pe-charcoal/55 mt-0.5 truncate">
+              {item.variantLabel}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-end justify-between mt-1.5">
+          <div>
+            <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
+              {locale === 'es' ? 'Cant' : 'Qty'}: {item.quantity}
+            </p>
+            <p className="font-sans text-[0.75rem] font-medium text-pe-black">
+              {priceFormat(item.price.amount * item.quantity, item.price.currency)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`${locale === 'es' ? 'Eliminar' : 'Remove'} ${item.name}`}
+            className="text-pe-charcoal/45 hover:text-pe-rose transition-colors duration-200 p-1 -mr-1"
+          >
+            <Trash2 size={13} strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

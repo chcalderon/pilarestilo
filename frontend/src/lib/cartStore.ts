@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getProduct } from './api';
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -97,6 +98,43 @@ interface CartState {
   clearCart: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
+}
+
+type StockVerifyResult =
+  | { ok: true }
+  | { ok: false; availableQty: number; productName: string };
+
+export async function verifyStockForItem(
+  productId: string,
+  variant: { color?: string; size?: string } | null,
+  requestedQty: number
+): Promise<StockVerifyResult> {
+  try {
+    const product = await getProduct(productId);
+    const variants = product.variants ?? [];
+
+    if (variants.length > 0 && variant) {
+      const match = variants.find(
+        (v) =>
+          (!variant.color || v.color === variant.color) &&
+          (!variant.size || v.size === variant.size)
+      );
+      if (!match) {
+        return { ok: false, availableQty: 0, productName: product.name };
+      }
+      if (requestedQty <= match.stockAvailable) {
+        return { ok: true };
+      }
+      return { ok: false, availableQty: match.stockAvailable, productName: product.name };
+    }
+
+    if (requestedQty <= product.stock) {
+      return { ok: true };
+    }
+    return { ok: false, availableQty: product.stock, productName: product.name };
+  } catch {
+    return { ok: true };
+  }
 }
 
 export const useCartStore = create<CartState>()(

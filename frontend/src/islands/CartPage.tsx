@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
-import { useCartStore } from '../lib/cartStore';
+import { useCartStore, verifyStockForItem } from '../lib/cartStore';
+import StockUnavailableModal from './cart/StockUnavailableModal';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import {
   createOrder,
@@ -289,6 +290,11 @@ export default function CartPage({ locale }: Props) {
   const [discountApplying, setDiscountApplying] = useState(false);
   const [discountError, setDiscountError] = useState('');
   const [stockConflicts, setStockConflicts] = useState<Record<string, StockConflict>>({});
+  const [stockModal, setStockModal] = useState<{
+    productName: string;
+    availableQty: number;
+    requestedQty: number;
+  } | null>(null);
 
   const subtotal = items.reduce((sum, i) => sum + i.price.amount * i.quantity, 0);
   const isEmployee = authUser?.role === 'SELLER';
@@ -820,6 +826,7 @@ export default function CartPage({ locale }: Props) {
   }
 
   return (
+    <>
     <div className="py-12 bg-pe-beige min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="font-display text-pe-black text-3xl md:text-4xl font-semibold mb-8">
@@ -938,8 +945,24 @@ export default function CartPage({ locale }: Props) {
                           </button>
                           <span className="font-sans text-sm w-5 text-center">{item.quantity}</span>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               clearItemConflict(item.id);
+                              const pid = item.productId || item.id.split('::')[0];
+                              if (pid) {
+                                const variant =
+                                  item.variantColor || item.variantSize
+                                    ? { color: item.variantColor, size: item.variantSize }
+                                    : null;
+                                const result = await verifyStockForItem(pid, variant, item.quantity + 1);
+                                if (!result.ok) {
+                                  setStockModal({
+                                    productName: result.productName,
+                                    availableQty: result.availableQty,
+                                    requestedQty: item.quantity + 1,
+                                  });
+                                  return;
+                                }
+                              }
                               updateQuantity(item.id, item.quantity + 1);
                             }}
                             className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
@@ -1515,6 +1538,17 @@ export default function CartPage({ locale }: Props) {
         )}
       </div>
     </div>
+
+      {stockModal && (
+        <StockUnavailableModal
+          open={true}
+          productName={stockModal.productName}
+          availableQty={stockModal.availableQty}
+          requestedQty={stockModal.requestedQty}
+          onClose={() => setStockModal(null)}
+        />
+      )}
+    </>
   );
 }
 
