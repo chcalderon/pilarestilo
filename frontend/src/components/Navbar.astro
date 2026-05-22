@@ -182,6 +182,15 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
     <div class="pe-container">
       <ul class="flex items-center gap-0 h-10" role="menubar" aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
         <li>
+          <a
+            href={`/${locale}/`}
+            class="block text-pe-white/40 hover:text-pe-rose-soft transition-colors px-4 h-10 flex items-center"
+            aria-label={locale === 'es' ? 'Inicio' : 'Home'}
+          >
+            <Icon name="home" size={15} strokeWidth={1.6} />
+          </a>
+        </li>
+        <li>
           <a href={`/${locale}/products`}
              class="block font-sans text-[0.63rem] tracking-[0.2em] uppercase text-pe-white/40 hover:text-pe-rose-soft transition-colors px-4 h-10 flex items-center">
             {locale === 'es' ? 'Todo' : 'All'}

@@ -52,6 +52,19 @@ function buildCategoryTree(cats: CategoryDto[]): CatNode[] {
   return sort(roots);
 }
 
+function withAncestors(ids: string[], allCats: CategoryDto[]): string[] {
+  const catMap = new Map(allCats.map(c => [c.id, c]));
+  const result = new Set(ids);
+  for (const id of ids) {
+    let cat = catMap.get(id);
+    while (cat?.parentId) {
+      result.add(cat.parentId);
+      cat = catMap.get(cat.parentId);
+    }
+  }
+  return Array.from(result);
+}
+
 function collectSelectedDescendantCount(node: CatNode, selected: string[]): number {
   let count = 0;
   for (const child of node.children) {
@@ -495,13 +508,19 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: String(product.stock),
         active: product.active,
       };
-      setSelectedCatIds(ids);
+      const fixedIds = withAncestors(ids, categories);
+      setSelectedCatIds(fixedIds);
+      // Keep initialSnapshot with original ids so form is dirty when parents were auto-added,
+      // forcing the user to save and persist the corrected category selection.
       setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, variantSchema));
     }
   }, [categories, product, variantSchema]);
 
   function toggleCategory(id: string) {
-    setSelectedCatIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedCatIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      return withAncestors([...prev, id], categories);
+    });
   }
 
   function addVariantRow() {
@@ -1244,7 +1263,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 ))}
               </div>
               <p className="font-sans text-[0.6rem] text-pe-charcoal/45 dark:text-[#D6C8B5]/45 mt-1">
-                Selecciona una o varias categorias. Marca categorias hoja (sin hijos) para clasificar el producto con precision.
+                Al seleccionar una subcategoría, su categoría padre se marca automáticamente.
               </p>
             </div>
           )}
