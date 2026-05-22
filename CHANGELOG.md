@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 
 The format is inspired by Keep a Changelog.
 
+## [2026-05-21] - Navigation redesign, inventory evolution, RBAC, social commerce
+
+### Added
+- **Navigation redesign (Fases 1–5)**: mega menu desktop (full-width editorial tray, hover intent 120ms / grace 200ms, motion stagger via `motion` npm package, `prefers-reduced-motion` support). Mobile push-navigation overlay (Zara-style full-screen, stack-based breadcrumb back, persistent bottom bar). `NavigationSection` CMS entity (layout: COLUMNS/FEATURED_GRID/EDITORIAL, column_count 1–6, banner fields, sort_order). Admin CRUD at `/api/admin/navigation/sections` (ADMIN) + storefront admin UI at `/admin/navegacion`.
+- Backend endpoints: `GET /api/navigation/tree?locale=es` (public, SSR-optimized tree combining NavigationSections + Category subtree, locale-aware es/en with fallback), `GET /api/navigation/sections` (public list), `POST/PATCH/DELETE /api/admin/navigation/sections`.
+- Fallback tree in `GetNavigationTreeUseCase`: when `navigation_sections` is empty, auto-generates virtual sections from `menu_visible=true` root categories.
+- `categories` extended: `menu_visible BOOLEAN` (separates nav from catalog visibility), `category_type VARCHAR(24)` (GENERIC/CLOTHING/SHOES/JEWELRY/ACCESSORY/COLLECTION/SEASON), `hero_image_url VARCHAR(500)` for editorial banners.
+- Flyway V58 (`categories` menu metadata) + V59 (`navigation_sections` table) + V60 (idempotent seed from root categories) + V60_1 (seed aros subcategory) + V60_2 (prereq repair) + V61 (retail runtime alignment: category types, product variants with reserved-stock model, FEATURED_GRID navigation layout).
+- **Inventory Evolution (Fases 1–7)**: reserved-stock model on `product_variants` — `stock_on_hand` + `stock_reserved`. `InventoryService.reserve()` increments `stock_reserved`; `confirm()` decrements both; `release()` decrements `stock_reserved` only. POS `posSale()` decrements `stock_on_hand` directly. `inventory_movements` audit table (RESERVE/CONFIRM/RELEASE/ADJUSTMENT/POS_SALE/RETURN/MANUAL). Optimistic locking via `@Version` on `products` and `cash_registers`.
+- Flyway V54 (`@Version` fields) + V55 (`order_items` variant snapshot columns) + V56 (stock model rename) + V57 (`inventory_movements`).
+- **Modern RBAC**: code-based permission catalog (`permissions` table) + `role_permission_grants` table with `source` field. Seed permissions for dashboard, analytics, products, categories, navigation, orders, payments, dispatches, users, settings, AI pipeline, POS, social commerce. Default ADMIN full-access + SELLER subset grants.
+- Flyway V62 (schema) + V63 (permission seed) + V64 (role–permission grants).
+- **Social commerce foundation**: `publications` table for multi-platform content lifecycle (platform: INSTAGRAM/FACEBOOK/etc., channel_type, approval_status, idempotency_key, campaign_label, scheduled_at, external_post_id, retry tracking). New `publication` backend hexagonal module.
+- Flyway V65 (`publications` schema).
+- `location` backend module: geographic catalog API (`GET /api/locations/comunas/search`) backed by `geo_regions → geo_cities → geo_communes`.
+
+### Fixed
+- Flyway V66: repair `shipping_origin_zone` value `NATIONAL` → `NACIONAL` for enum alignment.
+- `GetNavigationTreeUseCase`: `UpsertNavigationSectionUseCase` update path was using `orElseGet` (always created instead of updating); fixed to `orElseThrow(DomainException)` then `update()`.
+- `NavigationLayout.valueOf()` and `CategoryType.valueOf()` now wrapped in try/catch throwing `DomainException` instead of leaking `IllegalArgumentException` as HTTP 500.
+- `NavigationSection` domain validates `columnCount` 1–6 in both `create()` and `update()`.
+- Navbar breakpoint corrected from 1025px (custom) to 1024px (Tailwind `lg:` standard).
+
+### Verified
+- Backend test suite passes with 192 tests after navigation redesign and inventory evolution.
+
 ## [Unreleased]
 
 ### Added

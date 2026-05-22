@@ -64,7 +64,12 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile traci
 
 ## Latest updates (April–May 2026)
 
-- Java 17 → 25 migration complete; backend test suite passes with 98 tests.
+- **Navigation redesign (5 fases)**: new mega menu desktop (full-width editorial tray, hover intent, motion stagger), mobile push-navigation overlay (Zara-style full-screen, breadcrumb back, bottom bar), `NavigationSection` CMS-level config (layout/banner/sort per root category), admin manager at `/admin/navegacion`. `motion` npm package installed for transitions. Backend: `GET /api/navigation/tree?locale=es` (public) + `GET /api/navigation/sections` + `POST/PATCH/DELETE /api/admin/navigation/sections`.
+- **Category navigation metadata**: `categories` extended with `menu_visible` (separate from catalog visibility), `category_type` enum (GENERIC/CLOTHING/SHOES/JEWELRY/ACCESSORY/COLLECTION/SEASON), `hero_image_url` for editorial banners. DB migrations V58–V61.
+- **Inventory Evolution (7 fases)**: reserved-stock model (`stock_on_hand` + `stock_reserved` on `product_variants`); `paymentApproved → confirm()` decrements both fields; `createOrder → reserve()` increments `stock_reserved` only; `inventory_movements` audit table. DB migrations V54–V57.
+- **Modern RBAC**: `permissions` table + `role_permission_grants` with code-based permission catalog (dashboard, products, categories, navigation, orders, payments, users, etc.). DB migrations V62–V64.
+- **Social commerce foundation**: `publications` table for multi-platform content lifecycle (INSTAGRAM/FACEBOOK, approval workflow, idempotency key). DB migration V65.
+- Java 17 → 25 migration complete; backend test suite passes with 192 tests.
 - Admin user management redesigned with `UserEditDrawer` slide-out panel replacing modal dialogs; refined palette throughout the UX.
 - Admin credit section now visible for all user types (previously hidden for non-`CUSTOMER` roles).
 - Server-side image optimization on upload: all images stored via `POST /api/media/upload` are auto-resized and JPEG-compressed before persisting (`ImageOptimizerService`).

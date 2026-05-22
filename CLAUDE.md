@@ -90,7 +90,7 @@ Every domain module follows the same three-layer pattern:
 
 Naming conventions: `{Action}UseCase`, `{Entity}RepositoryJpaAdapter`, `{Entity}Controller`. Domain objects carry no framework annotations — JPA entities are separate from domain models. Use cases take ports (interfaces) as constructor args; Spring wires them.
 
-Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user` + `shared` (auth, rbac, kafka, common domain).
+Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication` + `shared` (auth, rbac, kafka, common domain).
 
 `cashregister` also exposes `POST /api/pos/sales` (stub, returns 501) — planned Windows POS integration; see `docs/pos-channel.md`.
 
@@ -130,7 +130,24 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V53**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V66**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+
+Recent migrations (V54–V66):
+- V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
+- V55: `order_items.variant_color` + `variant_size` (nullable, no backfill)
+- V56: `product_variants.stock` → `stock_on_hand` + `stock_reserved` (reserved stock model)
+- V57: `inventory_movements` audit table
+- V58: `categories.menu_visible` + `category_type` + `hero_image_url`
+- V59: `navigation_sections` table (root_category_id FK, layout, column_count, banner fields, sort_order)
+- V60: seed `navigation_sections` from root categories (idempotent `ON CONFLICT DO NOTHING`)
+- V60_1: seed `aros` subcategory under accesorios
+- V60_2: prereq repair for retail runtime alignment
+- V61: retail runtime alignment — updates category_type/hero_image_url, seeds product variants, sets navigation layout
+- V62: modern RBAC permissions table + role_permission_grants
+- V63: seed default permission catalog
+- V64: seed default role–permission grants (ADMIN full, SELLER subset)
+- V65: social commerce foundation — `publications` table for multi-platform content
+- V66: repair `shipping_origin_zone` alias `NATIONAL` → `NACIONAL`
 
 ### Tailwind dark mode
 

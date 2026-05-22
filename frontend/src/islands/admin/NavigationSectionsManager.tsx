@@ -5,12 +5,14 @@ import {
   createNavigationSection,
   updateNavigationSection,
   deleteNavigationSection,
+  uploadNavigationBanner,
   getCategories,
   type AdminNavigationSectionDto,
   type UpsertNavigationSectionRequest,
   type CategoryDto,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
+import ImageDropzone from './ImageDropzone';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,11 +98,13 @@ interface SectionFormPanelProps {
   setForm: React.Dispatch<React.SetStateAction<SectionForm>>;
   saving: boolean;
   categories: CategoryDto[];
+  token: string;
   onSubmit: () => void;
   onCancel: () => void;
 }
 
-function SectionFormPanel({ form, setForm, saving, categories, onSubmit, onCancel }: SectionFormPanelProps) {
+function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, onCancel }: SectionFormPanelProps) {
+  const selectedSlug = categories.find(c => c.id === form.rootCategoryId)?.slug ?? '';
   return (
     <div className="bg-pe-cream/50 border border-pe-black/8 p-4 mt-2 flex flex-col gap-4">
       {/* Row 1: category, layout, columns, sortOrder */}
@@ -172,17 +176,30 @@ function SectionFormPanel({ form, setForm, saving, categories, onSubmit, onCance
 
       {/* Row 2: banner fields */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
-            Banner: URL imagen
-          </label>
-          <input
-            type="text"
-            className={INPUT_CLASS}
-            value={form.bannerImageUrl}
-            placeholder="https://..."
-            onChange={e => setForm(f => ({ ...f, bannerImageUrl: e.target.value }))}
-          />
+        {/* Banner image — upload replaces URL input; stored as banner-{slug}.jpg */}
+        <div className="flex flex-col gap-0.5 sm:row-span-2">
+          {selectedSlug ? (
+            <ImageDropzone
+              label="Imagen del banner"
+              value={form.bannerImageUrl || undefined}
+              folder="navigation"
+              token={token}
+              customUpload={file => uploadNavigationBanner(file, selectedSlug, token)}
+              onUpload={url => setForm(f => ({ ...f, bannerImageUrl: url }))}
+              allowClear
+            />
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+                Imagen del banner
+              </span>
+              <div className="h-48 border border-dashed border-pe-black/15 bg-pe-cream/20 flex items-center justify-center">
+                <span className="font-sans text-[0.68rem] text-pe-charcoal/30 text-center px-4">
+                  Selecciona una categoría raíz primero
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-0.5">
@@ -424,6 +441,7 @@ export default function NavigationSectionsManager() {
             setForm={setForm}
             saving={saving}
             categories={categories}
+            token={effectiveToken ?? ''}
             onSubmit={handleCreate}
             onCancel={handleCancel}
           />
@@ -500,6 +518,7 @@ export default function NavigationSectionsManager() {
                       setForm={setForm}
                       saving={saving}
                       categories={categories}
+                      token={effectiveToken ?? ''}
                       onSubmit={() => void handleSaveEdit(section.id)}
                       onCancel={handleCancel}
                     />

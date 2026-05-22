@@ -177,6 +177,12 @@ app:
       image-model: ${APP_PRODUCT_AI_OPENAI_IMAGE_MODEL:gpt-image-1}
       model: ${APP_PRODUCT_AI_OPENAI_MODEL:gpt-image-1}
       timeout-ms: ${APP_PRODUCT_AI_TIMEOUT_MS:180000}
+  social-publishing:
+    n8n:
+      webhook-url: ${APP_SOCIAL_PUBLISHING_N8N_WEBHOOK_URL:}
+      api-key: ${APP_SOCIAL_PUBLISHING_N8N_API_KEY:}
+      token-header-name: ${APP_SOCIAL_PUBLISHING_N8N_TOKEN_HEADER_NAME:X-PE-N8N-TOKEN}
+      callback-token: ${APP_SOCIAL_PUBLISHING_N8N_CALLBACK_TOKEN:}
 
 server:
   port: 8080

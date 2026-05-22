@@ -141,6 +141,33 @@ This roadmap is synced with the current codebase on `master` as of May 7, 2026.
 
 ---
 
+## Inventory Evolution (Completed — 2026-05-16)
+
+- [x] Optimistic locking on `products` and `cash_registers` (`@Version` + Flyway V54)
+- [x] `order_items` variant snapshot columns (`variant_color`, `variant_size`) — Flyway V55
+- [x] Reserved-stock model: `product_variants.stock` → `stock_on_hand` + `stock_reserved` — Flyway V56
+- [x] `inventory_movements` audit table (RESERVE/CONFIRM/RELEASE/ADJUSTMENT/POS_SALE/RETURN/MANUAL) — Flyway V57
+- [x] `InventoryService`: `reserve()` increments `stock_reserved`; `confirm()` decrements both; `release()` decrements `stock_reserved` only; `posSale()` decrements `stock_on_hand` directly
+- [x] Available stock = `stock_on_hand − stock_reserved`; `ProductVariant.getStock()` alias retained for backward compat
+
+---
+
+## Navigation Redesign (Completed — 2026-05-16)
+
+- [x] `category` extended with `menu_visible`, `category_type` (GENERIC/CLOTHING/SHOES/JEWELRY/ACCESSORY/COLLECTION/SEASON), `hero_image_url` — Flyway V58
+- [x] `navigation_sections` table: CMS-level config per root category (layout/banner/sort_order) — Flyway V59–V61
+- [x] `NavigationSection` hexagonal module: domain model + ports + use cases + adapters + controllers
+- [x] `GET /api/navigation/tree?locale=es` — SSR-optimized public endpoint combining sections + category tree
+- [x] `GET /api/navigation/sections` (public) + `POST/PATCH/DELETE /api/admin/navigation/sections` (ADMIN)
+- [x] `MegaMenuTray.tsx`: desktop hover-intent tray, motion stagger, editorial banner slot, FEATURED_GRID layout
+- [x] `MobileNavOverlay.tsx`: full-screen push-navigation (root→section→child), slide motion, bottom bar, scroll lock
+- [x] `motion` npm package installed for nav transitions; `prefers-reduced-motion` respected throughout
+- [x] Admin manager `NavigationSectionsManager.tsx` at `/admin/navegacion`
+- [x] Modern RBAC: `permissions` + `role_permission_grants` tables with code-based permission catalog — Flyway V62–V64
+- [x] Social commerce foundation: `publications` table for multi-platform content lifecycle — Flyway V65
+
+---
+
 ## P9 - Product AI Pipeline and Campaign Ops (In Progress)
 
 - [x] Technical design + API contracts documented (`docs/ai-product-pipeline-integration.md`)

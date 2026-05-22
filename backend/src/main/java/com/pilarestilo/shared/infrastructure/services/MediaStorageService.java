@@ -63,6 +63,17 @@ public class MediaStorageService {
         }
     }
 
+    public String storeWithFixedName(MultipartFile file, String folder, String filenameBase) {
+        try {
+            byte[] raw = file.getBytes();
+            ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, file.getContentType());
+            String filename = filenameBase + "." + optimized.extension();
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
+        } catch (IOException e) {
+            throw new RuntimeException("Could not process uploaded file", e);
+        }
+    }
+
     public String storeRaw(InputStream data, String folder, String filename, String contentType) {
         return activeAdapter().store(data, folder, filename, contentType);
     }

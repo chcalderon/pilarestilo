@@ -87,12 +87,12 @@ Rule: no Spring/JPA annotations inside `domain/`.
 ### Modules in codebase
 
 - `product`
-- `category`
+- `category` — extended with `menu_visible`, `category_type` (enum: GENERIC/CLOTHING/SHOES/JEWELRY/ACCESSORY/COLLECTION/SEASON), `hero_image_url`
 - `review`
 - `order`
 - `payment`
 - `discount`
-- `inventory`
+- `inventory` — reserved-stock model (`stock_on_hand` + `stock_reserved`), `inventory_movements` audit
 - `user`
 - `customercredit`
 - `cashregister`
@@ -103,7 +103,31 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - `notification`
 - `systemsettings`
 - `customeraddress`
+- `navigation` — `NavigationSection` CMS-level config (layout, banners, sort order per root category); `GET /api/navigation/tree` (public), `GET /api/navigation/sections` (public), `POST/PATCH/DELETE /api/admin/navigation/sections` (ADMIN)
+- `location` — geographic catalog (`geo_regions` → `geo_cities` → `geo_communes`); `GET /api/locations/comunas/search`
+- `publication` — social commerce content lifecycle (`publications` table, multi-platform: INSTAGRAM/FACEBOOK/etc.)
 - `shared` (`auth`, `rbac`, `domain`, common infra)
+
+### Navigation architecture
+
+- `GET /api/navigation/tree?locale=es` is the SSR endpoint for the mega menu (public, no auth).
+- Response combines active `NavigationSection` records with the Category tree in a single roundtrip.
+- `NavigationSection` is CMS-level config per root category: layout (`COLUMNS` / `FEATURED_GRID` / `EDITORIAL`), column_count (1–6), banner fields (image, title, subtitle, link), sort_order.
+- `menu_visible=true` categories appear in the nav tree (separate from catalog visibility).
+- When `navigation_sections` table is empty, `GetNavigationTreeUseCase` falls back to auto-generating virtual sections from menu_visible root categories.
+- Admin CRUD at `/api/admin/navigation/sections` (ADMIN role); storefront admin UI at `/admin/navegacion`.
+- Frontend: `MegaMenuTray.tsx` (motion.dev desktop hover tray, 120ms intent delay, 200ms grace, stagger fade) + `MobileNavOverlay.tsx` (push-navigation stack, slide from right, bottom bar).
+- motion library (`motion` npm package, ≈17KB gz) installed for nav transitions; respects `prefers-reduced-motion`.
+
+### Inventory reserved-stock model
+
+- Ecommerce `createOrder` → increments `stock_reserved` (not `stock_on_hand`).
+- `paymentApproved` → `confirm()` decrements both `stock_on_hand` and `stock_reserved`.
+- `paymentRejected/cancelled` → `release()` decrements `stock_reserved` only.
+- POS `posSale()` → decrements `stock_on_hand` directly.
+- `InventoryMovementType`: `RESERVE / CONFIRM / RELEASE / ADJUSTMENT / POS_SALE / RETURN / MANUAL`.
+- Non-variant products still use legacy aggregate `products.stock` (decremented at reserve; confirm is no-op).
+- `inventory_movements` records every operation for audit.
 
 Dispatch and shipping architecture highlights:
 
@@ -192,6 +216,25 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V47`: dispatch shipping snapshot + structured carrier override audit on `dispatches` (with one-time backfill from `orders`)
 - `V48`: customer address book (`customer_addresses`), default-address constraints/indexes, and `orders.shipping_address_id`
 - `V49`: catálogo geográfico Chile (`geo_regions`, `geo_cities`, `geo_communes`) + FK opcionales en `customer_addresses` (`region_id`, `city_id`, `commune_id`) con backfill best-effort
+- `V50`: bank-transfer auto-cancel baseline
+- `V51`: `orders.sales_channel` column
+- `V52`: payment method rename alignment
+- `V53`: cash movement category column
+- `V54`: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
+- `V55`: `order_items.variant_color` + `variant_size` (nullable snapshot, no backfill)
+- `V56`: `product_variants.stock` → `stock_on_hand` + ADD `stock_reserved` (reserved-stock model)
+- `V57`: `inventory_movements` audit table (`RESERVE/CONFIRM/RELEASE/ADJUSTMENT/POS_SALE/RETURN/MANUAL`)
+- `V58`: `categories.menu_visible BOOLEAN DEFAULT TRUE` + `category_type VARCHAR(24) DEFAULT 'GENERIC'` + `hero_image_url VARCHAR(500)`
+- `V59`: `navigation_sections` table (id UUID PK, root_category_id FK ON DELETE CASCADE, layout, column_count CHECK 1–6, banner_image/title/subtitle/link, active, sort_order, timestamps, UNIQUE root_category_id)
+- `V60`: idempotent seed of `navigation_sections` from root categories (`ON CONFLICT DO NOTHING`)
+- `V60_1`: seed `aros` subcategory under accesorios
+- `V60_2`: prereq repair for retail runtime alignment
+- `V61`: retail runtime alignment — sets `category_type`/`hero_image_url` on known slugs, seeds product variants with `stock_on_hand`/`stock_reserved`, sets FEATURED_GRID layout on Mujer navigation section
+- `V62`: modern RBAC — `permissions` table + `role_permission_grants` table
+- `V63`: seed default permission catalog (dashboard, analytics, products, categories, navigation, etc.)
+- `V64`: seed default role–permission grants (ADMIN full access, SELLER subset)
+- `V65`: social commerce foundation — `publications` table (multi-platform content lifecycle: INSTAGRAM/FACEBOOK, approval workflow, idempotency key)
+- `V66`: repair `shipping_origin_zone` value `NATIONAL` → `NACIONAL` for enum alignment
 
 ---
 

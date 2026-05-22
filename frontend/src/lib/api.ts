@@ -1823,6 +1823,19 @@ export async function deleteNavigationSection(id: string, token: string): Promis
   });
 }
 
+export async function uploadNavigationBanner(file: File, slug: string, token: string): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/admin/navigation/banners/${encodeURIComponent(slug)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(`Error al subir imagen (${res.status})`);
+  const json = await res.json() as { url: string };
+  return json.url;
+}
+
 export async function getFeaturedCategories(): Promise<CategoryDto[]> {
   try {
     return await apiFetch<CategoryDto[]>('/categories/featured');

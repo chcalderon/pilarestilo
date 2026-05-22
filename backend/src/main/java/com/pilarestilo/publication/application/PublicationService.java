@@ -1,0 +1,542 @@
+package com.pilarestilo.publication.application;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.model.ProductVariant;
+import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
+import com.pilarestilo.publication.application.commands.PublicationExternalResultCommand;
+import com.pilarestilo.publication.application.dto.PublicationAttemptDto;
+import com.pilarestilo.publication.application.dto.CreatePublicationResult;
+import com.pilarestilo.publication.application.dto.PublicationDispatchWebhookPayload;
+import com.pilarestilo.publication.application.dto.PublicationDto;
+import com.pilarestilo.publication.application.dto.PublicationExternalResultDto;
+import com.pilarestilo.publication.application.dto.PublicationMediaBundleDto;
+import com.pilarestilo.publication.application.dto.PublicationReviewDto;
+import com.pilarestilo.publication.application.dto.PublicationSnapshotDto;
+import com.pilarestilo.publication.application.ports.PublicationWebhookDispatcher;
+import com.pilarestilo.publication.domain.enums.PublicationApprovalStatus;
+import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
+import com.pilarestilo.publication.domain.enums.PublicationAttemptTriggerType;
+import com.pilarestilo.publication.domain.enums.PublicationMediaRenderStatus;
+import com.pilarestilo.publication.domain.enums.PublicationReviewAction;
+import com.pilarestilo.publication.domain.enums.PublicationSnapshotType;
+import com.pilarestilo.publication.domain.enums.PublicationSourceType;
+import com.pilarestilo.publication.domain.enums.PublicationStatus;
+import com.pilarestilo.publication.domain.events.PublicationApproved;
+import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
+import com.pilarestilo.publication.domain.events.PublicationDispatchFailed;
+import com.pilarestilo.publication.domain.events.PublicationDispatchRequested;
+import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
+import com.pilarestilo.publication.domain.events.PublicationRejected;
+import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationAttemptEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationMediaBundleEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationReviewEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationSnapshotEntity;
+import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationJpaRepository;
+import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.shared.domain.DomainException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+
+@Service
+public class PublicationService {
+
+    private final PublicationJpaRepository publicationRepository;
+    private final ProductRepository productRepository;
+    private final PublicationWebhookDispatcher publicationWebhookDispatcher;
+    private final DomainEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
+
+    public PublicationService(PublicationJpaRepository publicationRepository,
+                              ProductRepository productRepository,
+                              PublicationWebhookDispatcher publicationWebhookDispatcher,
+                              DomainEventPublisher eventPublisher,
+                              ObjectMapper objectMapper) {
+        this.publicationRepository = publicationRepository;
+        this.productRepository = productRepository;
+        this.publicationWebhookDispatcher = publicationWebhookDispatcher;
+        this.eventPublisher = eventPublisher;
+        this.objectMapper = objectMapper;
+    }
+
+    @Transactional
+    public CreatePublicationResult create(CreatePublicationCommand command, UUID actorUserId) {
+        String idempotencyKey = normalizeIdempotencyKey(command.idempotencyKey());
+        PublicationEntity existing = publicationRepository.findByIdempotencyKey(idempotencyKey).orElse(null);
+        if (existing != null) {
+            return new CreatePublicationResult(toDto(existing), false);
+        }
+
+        Instant now = Instant.now();
+        PublicationEntity entity = new PublicationEntity();
+        entity.setId(UUID.randomUUID());
+        entity.setProductId(command.productId());
+        entity.setSourceType(command.sourceType());
+        entity.setSourceId(command.sourceId());
+        entity.setPlatform(command.platform());
+        entity.setChannelType(command.channelType());
+        entity.setStatus(command.approvalRequired() ? PublicationStatus.DRAFT : PublicationStatus.APPROVED);
+        entity.setApprovalStatus(command.approvalRequired() ? PublicationApprovalStatus.PENDING_REVIEW : PublicationApprovalStatus.NOT_REQUIRED);
+        entity.setCaption(trimToNull(command.caption()));
+        entity.setHashtagsJson(writeHashtags(command.hashtags()));
+        entity.setLocale(normalizeLocale(command.locale()));
+        entity.setCampaignLabel(trimToNull(command.campaignLabel()));
+        entity.setScheduledAt(command.scheduledAt());
+        entity.setIdempotencyKey(idempotencyKey);
+        entity.setContentVersion(1);
+        entity.setSnapshotVersion(0);
+        entity.setRetryCount(0);
+        entity.setCreatedBy(actorUserId);
+        entity.setCreatedAt(now);
+        entity.setUpdatedAt(now);
+        if (!command.approvalRequired()) {
+            entity.setApprovedBy(actorUserId);
+        }
+
+        entity.setMediaBundles(new ArrayList<>());
+        entity.setAttempts(new ArrayList<>());
+        entity.setReviews(new ArrayList<>());
+        entity.setSnapshots(new ArrayList<>());
+
+        for (CreatePublicationCommand.MediaBundleCommand bundle : command.mediaBundles()) {
+            entity.getMediaBundles().add(toBundleEntity(entity, bundle, now));
+        }
+        addSnapshot(entity, PublicationSnapshotType.CONTENT_INPUT, buildContentSnapshot(entity), now);
+
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationDraftCreated(saved.getId(), saved.getPlatform(), saved.getChannelType(), saved.getSourceType()));
+        return new CreatePublicationResult(toDto(saved), true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicationDto> list() {
+        return publicationRepository.findAllByOrderByCreatedAtDesc().stream().map(this::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PublicationDto get(UUID id) {
+        return toDto(findById(id));
+    }
+
+    @Transactional
+    public PublicationDto submitForReview(UUID id, UUID actorUserId) {
+        PublicationEntity entity = findById(id);
+        if (!(entity.getStatus() == PublicationStatus.DRAFT || entity.getStatus() == PublicationStatus.AI_READY || entity.getStatus() == PublicationStatus.REJECTED)) {
+            throw new DomainException("Publication cannot be submitted for review from status " + entity.getStatus());
+        }
+        entity.setStatus(PublicationStatus.IN_REVIEW);
+        entity.setApprovalStatus(PublicationApprovalStatus.PENDING_REVIEW);
+        entity.setUpdatedAt(Instant.now());
+        addReview(entity, PublicationReviewAction.SUBMIT_FOR_REVIEW, actorUserId, null, entity.getUpdatedAt());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationSubmittedForReview(saved.getId()));
+        return toDto(saved);
+    }
+
+    @Transactional
+    public PublicationDto approve(UUID id, UUID actorUserId, String comment) {
+        PublicationEntity entity = findById(id);
+        if (!(entity.getStatus() == PublicationStatus.IN_REVIEW || entity.getApprovalStatus() == PublicationApprovalStatus.NOT_REQUIRED)) {
+            throw new DomainException("Publication cannot be approved from status " + entity.getStatus());
+        }
+        entity.setStatus(PublicationStatus.APPROVED);
+        entity.setApprovalStatus(PublicationApprovalStatus.APPROVED);
+        entity.setApprovedBy(actorUserId);
+        entity.setUpdatedAt(Instant.now());
+        addReview(entity, PublicationReviewAction.APPROVE, actorUserId, comment, entity.getUpdatedAt());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationApproved(saved.getId()));
+        return toDto(saved);
+    }
+
+    @Transactional
+    public PublicationDto reject(UUID id, UUID actorUserId, String comment) {
+        PublicationEntity entity = findById(id);
+        if (!(entity.getStatus() == PublicationStatus.IN_REVIEW || entity.getStatus() == PublicationStatus.APPROVED)) {
+            throw new DomainException("Publication cannot be rejected from status " + entity.getStatus());
+        }
+        entity.setStatus(PublicationStatus.REJECTED);
+        entity.setApprovalStatus(PublicationApprovalStatus.REJECTED);
+        entity.setUpdatedAt(Instant.now());
+        addReview(entity, PublicationReviewAction.REJECT, actorUserId, comment, entity.getUpdatedAt());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationRejected(saved.getId()));
+        return toDto(saved);
+    }
+
+    @Transactional
+    public PublicationDto dispatch(UUID id, UUID actorUserId) {
+        return dispatchInternal(id, actorUserId, PublicationAttemptTriggerType.MANUAL, false);
+    }
+
+    @Transactional
+    public PublicationDto retry(UUID id, UUID actorUserId) {
+        PublicationEntity entity = findById(id);
+        if (entity.getStatus() != PublicationStatus.FAILED) {
+            throw new DomainException("Only FAILED publications can be retried");
+        }
+        entity.setRetryCount(entity.getRetryCount() + 1);
+        publicationRepository.save(entity);
+        return dispatchInternal(id, actorUserId, PublicationAttemptTriggerType.RETRY, true);
+    }
+
+    @Transactional
+    public PublicationExternalResultDto registerExternalResult(UUID publicationId, PublicationExternalResultCommand command) {
+        PublicationEntity entity = findById(publicationId);
+        PublicationAttemptEntity attempt = entity.getAttempts().stream()
+                .filter(item -> item.getAttemptNumber() == command.attemptNumber())
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Publication attempt not found: " + command.attemptNumber()));
+
+        attempt.setWorkflowRunId(trimToNull(command.workflowRunId()));
+        attempt.setStatus(command.status());
+        attempt.setRemoteStatus(command.status().name());
+        attempt.setRemotePostId(trimToNull(command.remotePostId()));
+        attempt.setErrorCode(trimToNull(command.errorCode()));
+        attempt.setErrorMessage(trimToNull(command.errorMessage()));
+        attempt.setFinishedAt(command.publishedAt() != null ? command.publishedAt() : Instant.now());
+
+        entity.setUpdatedAt(Instant.now());
+        entity.setLastErrorCode(trimToNull(command.errorCode()));
+        entity.setLastErrorMessage(trimToNull(command.errorMessage()));
+
+        if (command.status() == PublicationAttemptStatus.SUCCEEDED) {
+            entity.setStatus(PublicationStatus.PUBLISHED);
+            entity.setPublishedAt(command.publishedAt() != null ? command.publishedAt() : Instant.now());
+            entity.setExternalPostId(trimToNull(command.remotePostId()));
+            entity.setLastErrorCode(null);
+            entity.setLastErrorMessage(null);
+            eventPublisher.publish(new PublicationDispatchCompleted(entity.getId(), attempt.getAttemptNumber(), attempt.getRemotePostId()));
+        } else {
+            entity.setStatus(PublicationStatus.FAILED);
+            eventPublisher.publish(new PublicationDispatchFailed(entity.getId(), attempt.getAttemptNumber(), trimToNull(command.errorCode())));
+        }
+
+        PublicationEntity saved = publicationRepository.save(entity);
+        return new PublicationExternalResultDto(
+                saved.getId(),
+                attempt.getAttemptNumber(),
+                attempt.getStatus(),
+                attempt.getRemotePostId(),
+                saved.getPublishedAt()
+        );
+    }
+
+    private PublicationDto dispatchInternal(UUID id, UUID actorUserId, PublicationAttemptTriggerType triggerType, boolean isRetry) {
+        PublicationEntity entity = findById(id);
+        if (!(entity.getStatus() == PublicationStatus.APPROVED || entity.getStatus() == PublicationStatus.SCHEDULED)) {
+            throw new DomainException("Publication cannot be dispatched from status " + entity.getStatus());
+        }
+
+        Instant now = Instant.now();
+        entity.setStatus(PublicationStatus.PUBLISHING);
+        entity.setUpdatedAt(now);
+
+        if (entity.getSourceType() == PublicationSourceType.PRODUCT) {
+            UUID snapshotProductId = entity.getProductId() != null ? entity.getProductId() : entity.getSourceId();
+            if (snapshotProductId != null) {
+                Product product = productRepository.findById(snapshotProductId)
+                        .orElseThrow(() -> new DomainException("Product snapshot source not found: " + snapshotProductId));
+                addSnapshot(entity, PublicationSnapshotType.SOURCE_PRODUCT, buildProductSnapshot(product), now);
+            }
+        }
+
+        PublicationDispatchWebhookPayload payload = buildWebhookPayload(entity);
+        addSnapshot(entity, PublicationSnapshotType.OUTBOUND_WEBHOOK, toMap(payload), now);
+
+        PublicationAttemptEntity attempt = new PublicationAttemptEntity();
+        attempt.setId(UUID.randomUUID());
+        attempt.setPublication(entity);
+        attempt.setAttemptNumber(entity.getAttempts().size() + 1);
+        attempt.setTriggerType(triggerType);
+        attempt.setStatus(PublicationAttemptStatus.STARTED);
+        attempt.setStartedAt(now);
+        entity.getAttempts().add(attempt);
+
+        PublicationEntity saved = publicationRepository.save(entity);
+
+        try {
+            PublicationWebhookDispatcher.DispatchResult dispatchResult = publicationWebhookDispatcher.dispatch(
+                    saved.getId(),
+                    saved.getIdempotencyKey(),
+                    payload
+            );
+            attempt.setRequestId(dispatchResult.requestId());
+            attempt.setPayloadHash(dispatchResult.payloadHash());
+            saved = publicationRepository.save(saved);
+            eventPublisher.publish(new PublicationDispatchRequested(saved.getId(), attempt.getAttemptNumber()));
+            return toDto(saved);
+        } catch (DomainException ex) {
+            attempt.setStatus(PublicationAttemptStatus.FAILED);
+            attempt.setFinishedAt(Instant.now());
+            attempt.setErrorCode("DISPATCH_ERROR");
+            attempt.setErrorMessage(ex.getMessage());
+            saved.setStatus(PublicationStatus.FAILED);
+            saved.setLastErrorCode("DISPATCH_ERROR");
+            saved.setLastErrorMessage(ex.getMessage());
+            saved.setUpdatedAt(Instant.now());
+            publicationRepository.save(saved);
+            eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), attempt.getAttemptNumber(), "DISPATCH_ERROR"));
+            if (isRetry) {
+                throw new DomainException("Publication retry failed: " + ex.getMessage());
+            }
+            throw ex;
+        }
+    }
+
+    private PublicationEntity findById(UUID id) {
+        return publicationRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Publication not found: " + id));
+    }
+
+    private PublicationMediaBundleEntity toBundleEntity(PublicationEntity publication,
+                                                        CreatePublicationCommand.MediaBundleCommand bundle,
+                                                        Instant now) {
+        PublicationMediaBundleEntity entity = new PublicationMediaBundleEntity();
+        entity.setId(UUID.randomUUID());
+        entity.setPublication(publication);
+        entity.setBundleType(bundle.bundleType());
+        entity.setPrimaryAssetUrl(bundle.primaryAssetUrl());
+        entity.setAssetManifest(bundle.assetManifest() == null ? Map.of() : bundle.assetManifest());
+        entity.setRenderStatus(PublicationMediaRenderStatus.READY);
+        entity.setCreatedAt(now);
+        entity.setUpdatedAt(now);
+        return entity;
+    }
+
+    private void addSnapshot(PublicationEntity publication,
+                             PublicationSnapshotType type,
+                             Map<String, Object> payload,
+                             Instant now) {
+        PublicationSnapshotEntity entity = new PublicationSnapshotEntity();
+        entity.setId(UUID.randomUUID());
+        entity.setPublication(publication);
+        entity.setSnapshotType(type);
+        entity.setPayload(payload);
+        publication.setSnapshotVersion(publication.getSnapshotVersion() + 1);
+        entity.setVersion(publication.getSnapshotVersion());
+        entity.setCreatedAt(now);
+        publication.getSnapshots().add(entity);
+    }
+
+    private void addReview(PublicationEntity publication,
+                           PublicationReviewAction action,
+                           UUID actorUserId,
+                           String comment,
+                           Instant now) {
+        PublicationReviewEntity review = new PublicationReviewEntity();
+        review.setId(UUID.randomUUID());
+        review.setPublication(publication);
+        review.setAction(action);
+        review.setActorUserId(actorUserId);
+        review.setComment(trimToNull(comment));
+        review.setCreatedAt(now);
+        publication.getReviews().add(review);
+    }
+
+    private PublicationDispatchWebhookPayload buildWebhookPayload(PublicationEntity entity) {
+        PublicationMediaBundleEntity bundle = entity.getMediaBundles().isEmpty() ? null : entity.getMediaBundles().get(0);
+        Map<String, Object> sourceSnapshot = entity.getSnapshots().stream()
+                .filter(snapshot -> snapshot.getSnapshotType() == PublicationSnapshotType.SOURCE_PRODUCT)
+                .reduce((first, second) -> second)
+                .map(PublicationSnapshotEntity::getPayload)
+                .orElseGet(() -> {
+                    Map<String, Object> fallback = new LinkedHashMap<>();
+                    fallback.put("sourceType", entity.getSourceType().name());
+                    fallback.put("sourceId", entity.getSourceId() == null ? null : entity.getSourceId().toString());
+                    return fallback;
+                });
+
+        return new PublicationDispatchWebhookPayload(
+                "PUBLICATION_DISPATCH_REQUESTED",
+                entity.getId(),
+                entity.getIdempotencyKey(),
+                entity.getPlatform(),
+                entity.getChannelType(),
+                entity.getLocale(),
+                entity.getScheduledAt(),
+                new PublicationDispatchWebhookPayload.PublicationDispatchContentDto(
+                        entity.getCaption(),
+                        readHashtags(entity.getHashtagsJson())
+                ),
+                bundle == null
+                        ? null
+                        : new PublicationDispatchWebhookPayload.PublicationDispatchMediaBundleDto(
+                                bundle.getBundleType().name(),
+                                bundle.getPrimaryAssetUrl(),
+                                bundle.getAssetManifest()
+                        ),
+                sourceSnapshot
+        );
+    }
+
+    private Map<String, Object> buildContentSnapshot(PublicationEntity entity) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("productId", entity.getProductId() == null ? null : entity.getProductId().toString());
+        payload.put("sourceType", entity.getSourceType().name());
+        payload.put("sourceId", entity.getSourceId() == null ? null : entity.getSourceId().toString());
+        payload.put("platform", entity.getPlatform().name());
+        payload.put("channelType", entity.getChannelType().name());
+        payload.put("caption", entity.getCaption());
+        payload.put("hashtags", readHashtags(entity.getHashtagsJson()));
+        payload.put("locale", entity.getLocale());
+        payload.put("campaignLabel", entity.getCampaignLabel());
+        payload.put("mediaBundleCount", entity.getMediaBundles().size());
+        return payload;
+    }
+
+    private Map<String, Object> buildProductSnapshot(Product product) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", product.getId().toString());
+        payload.put("name", product.getName());
+        payload.put("description", product.getDescription());
+        payload.put("imageUrl", product.getImageUrl());
+        payload.put("condition", product.getCondition().name());
+        payload.put("brand", product.getBrand().value());
+        payload.put("stock", product.getStock());
+        payload.put("active", product.isActive());
+        payload.put("categorySlugs", product.getCategorySlugs());
+        payload.put("categoryTypes", product.getCategoryTypes());
+        payload.put("variants", product.getVariants().stream().map(this::toVariantMap).toList());
+        return payload;
+    }
+
+    private Map<String, Object> toVariantMap(ProductVariant variant) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("color", variant.getColor());
+        payload.put("size", variant.getSize());
+        payload.put("stockOnHand", variant.getStockOnHand());
+        payload.put("stockReserved", variant.getStockReserved());
+        payload.put("stockAvailable", variant.available());
+        return payload;
+    }
+
+    private Map<String, Object> toMap(PublicationDispatchWebhookPayload payload) {
+        return objectMapper.convertValue(payload, new TypeReference<>() {
+        });
+    }
+
+    private String normalizeIdempotencyKey(String raw) {
+        String normalized = trimToNull(raw);
+        return normalized != null ? normalized : "pub-" + UUID.randomUUID();
+    }
+
+    private String normalizeLocale(String raw) {
+        String normalized = trimToNull(raw);
+        return normalized != null ? normalized : "es-CL";
+    }
+
+    private String writeHashtags(List<String> hashtags) {
+        List<String> normalized = hashtags == null ? List.of() : hashtags.stream()
+                .map(this::trimToNull)
+                .filter(item -> item != null && !item.isBlank())
+                .distinct()
+                .toList();
+        try {
+            return objectMapper.writeValueAsString(normalized);
+        } catch (JsonProcessingException ex) {
+            throw new DomainException("Could not serialize publication hashtags");
+        }
+    }
+
+    private List<String> readHashtags(String rawJson) {
+        if (rawJson == null || rawJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            List<String> parsed = objectMapper.readValue(rawJson, new TypeReference<>() {
+            });
+            return new ArrayList<>(new LinkedHashSet<>(parsed));
+        } catch (Exception ex) {
+            throw new DomainException("Could not read publication hashtags");
+        }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private PublicationDto toDto(PublicationEntity entity) {
+        return new PublicationDto(
+                entity.getId(),
+                entity.getProductId(),
+                entity.getSourceType(),
+                entity.getSourceId(),
+                entity.getPlatform(),
+                entity.getChannelType(),
+                entity.getStatus(),
+                entity.getApprovalStatus(),
+                entity.getCaption(),
+                readHashtags(entity.getHashtagsJson()),
+                entity.getLocale(),
+                entity.getCampaignLabel(),
+                entity.getScheduledAt(),
+                entity.getPublishedAt(),
+                entity.getExternalPostId(),
+                entity.getIdempotencyKey(),
+                entity.getContentVersion(),
+                entity.getSnapshotVersion(),
+                entity.getLastErrorCode(),
+                entity.getLastErrorMessage(),
+                entity.getRetryCount(),
+                entity.getCreatedBy(),
+                entity.getApprovedBy(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getMediaBundles().stream().map(bundle -> new PublicationMediaBundleDto(
+                        bundle.getId(),
+                        bundle.getBundleType(),
+                        bundle.getAssetManifest(),
+                        bundle.getPrimaryAssetUrl(),
+                        bundle.getRenderStatus(),
+                        bundle.getCreatedAt(),
+                        bundle.getUpdatedAt()
+                )).toList(),
+                entity.getAttempts().stream().map(attempt -> new PublicationAttemptDto(
+                        attempt.getId(),
+                        attempt.getAttemptNumber(),
+                        attempt.getTriggerType(),
+                        attempt.getRequestId(),
+                        attempt.getWorkflowRunId(),
+                        attempt.getStatus(),
+                        attempt.getRemoteStatus(),
+                        attempt.getRemotePostId(),
+                        attempt.getErrorCode(),
+                        attempt.getErrorMessage(),
+                        attempt.getPayloadHash(),
+                        attempt.getStartedAt(),
+                        attempt.getFinishedAt()
+                )).toList(),
+                entity.getReviews().stream().map(review -> new PublicationReviewDto(
+                        review.getId(),
+                        review.getAction(),
+                        review.getActorUserId(),
+                        review.getComment(),
+                        review.getCreatedAt()
+                )).toList(),
+                entity.getSnapshots().stream().map(snapshot -> new PublicationSnapshotDto(
+                        snapshot.getId(),
+                        snapshot.getSnapshotType(),
+                        snapshot.getPayload(),
+                        snapshot.getVersion(),
+                        snapshot.getCreatedAt()
+                )).toList()
+        );
+    }
+}
