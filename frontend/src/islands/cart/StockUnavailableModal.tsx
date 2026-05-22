@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 
 interface Props {
@@ -19,9 +20,11 @@ export default function StockUnavailableModal({
   onClose,
 }: Props) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
   const descId = 'stock-modal-desc';
 
-  // Focus primary button on open
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     if (open) {
       const frame = requestAnimationFrame(() => btnRef.current?.focus());
@@ -29,7 +32,6 @@ export default function StockUnavailableModal({
     }
   }, [open]);
 
-  // ESC closes
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -37,14 +39,15 @@ export default function StockUnavailableModal({
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  // Lock body scroll
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -52,13 +55,11 @@ export default function StockUnavailableModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[130] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-pe-black/50 backdrop-blur-sm" aria-hidden="true" />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -71,12 +72,10 @@ export default function StockUnavailableModal({
             className="relative w-full max-w-md bg-pe-beige shadow-editorial px-6 py-8"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Heading */}
             <h2 className="font-display text-pe-black text-2xl font-semibold tracking-wide mb-4">
               Sin stock suficiente
             </h2>
 
-            {/* Body */}
             <p id={descId} className="font-sans text-sm text-pe-charcoal/80 leading-relaxed mb-6">
               {availableQty === 0 ? (
                 <>
@@ -90,7 +89,6 @@ export default function StockUnavailableModal({
               )}
             </p>
 
-            {/* CTA */}
             <button
               ref={btnRef}
               type="button"
@@ -102,6 +100,7 @@ export default function StockUnavailableModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
