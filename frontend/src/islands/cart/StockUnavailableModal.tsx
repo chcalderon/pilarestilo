@@ -2,6 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return reduced;
+}
+
 interface Props {
   open: boolean;
   productName: string;
@@ -21,6 +33,7 @@ export default function StockUnavailableModal({
 }: Props) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
+  const reducedMotion = useReducedMotion();
   const descId = 'stock-modal-desc';
 
   useEffect(() => { setMounted(true); }, []);
@@ -61,10 +74,10 @@ export default function StockUnavailableModal({
           <div className="absolute inset-0 bg-pe-black/50 backdrop-blur-sm" aria-hidden="true" />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.24, ease: EASING }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+            transition={{ duration: reducedMotion ? 0.12 : 0.24, ease: EASING }}
             role="alertdialog"
             aria-modal="true"
             aria-describedby={descId}

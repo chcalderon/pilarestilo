@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useCartStore, verifyStockForItem } from '../lib/cartStore';
 import StockUnavailableModal from './cart/StockUnavailableModal';
@@ -290,6 +290,7 @@ export default function CartPage({ locale }: Props) {
   const [discountApplying, setDiscountApplying] = useState(false);
   const [discountError, setDiscountError] = useState('');
   const [stockConflicts, setStockConflicts] = useState<Record<string, StockConflict>>({});
+  const qtyVerifyCounterRef = useRef<Record<string, number>>({});
   const [stockModal, setStockModal] = useState<{
     productName: string;
     availableQty: number;
@@ -949,11 +950,14 @@ export default function CartPage({ locale }: Props) {
                               clearItemConflict(item.id);
                               const pid = item.productId || item.id.split('::')[0];
                               if (pid) {
+                                const reqId = (qtyVerifyCounterRef.current[item.id] ?? 0) + 1;
+                                qtyVerifyCounterRef.current[item.id] = reqId;
                                 const variant =
                                   item.variantColor || item.variantSize
                                     ? { color: item.variantColor, size: item.variantSize }
                                     : null;
                                 const result = await verifyStockForItem(pid, variant, item.quantity + 1);
+                                if (qtyVerifyCounterRef.current[item.id] !== reqId) return;
                                 if (!result.ok) {
                                   setStockModal({
                                     productName: result.productName,

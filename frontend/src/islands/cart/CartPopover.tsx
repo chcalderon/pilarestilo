@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ShoppingBag, X } from 'lucide-react';
@@ -12,6 +12,7 @@ interface Props {
 }
 
 const EASING = [0.22, 0.61, 0.36, 1] as const;
+const VISIBLE_LIMIT = 4;
 
 function priceFormat(amount: number, currency = 'CLP', locale: Locale) {
   return new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
@@ -21,13 +22,66 @@ function priceFormat(amount: number, currency = 'CLP', locale: Locale) {
   }).format(amount);
 }
 
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return reduced;
+}
+
+function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const getFocusables = () =>
+      Array.from(
+        el.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = getFocusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, [active, containerRef]);
+}
+
 export default function CartPopover({ locale }: Props) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reducedMotion = useReducedMotion();
 
   const items = useCartStore((s) => s.items);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -37,12 +91,11 @@ export default function CartPopover({ locale }: Props) {
   const viewCartHref = `/${locale}/cart`;
   const cartLabel = locale === 'es' ? 'Carrito de compras' : 'Shopping cart';
 
-  // SSR safety: only render portals after mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useFocusTrap(popoverRef, open && !isMobile);
+  useFocusTrap(sheetRef, open && isMobile);
 
-  // Detect mobile breakpoint
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1023px)');
     setIsMobile(mq.matches);
@@ -66,27 +119,23 @@ export default function CartPopover({ locale }: Props) {
     setOpen(false);
   }, []);
 
-  // Hover intent: open after 200ms delay
   const handleMouseEnter = useCallback(() => {
     if (isMobile) return;
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     openTimerRef.current = setTimeout(openPopover, 200);
   }, [isMobile, openPopover]);
 
-  // Grace period: 300ms before closing on mouse leave
   const handleMouseLeave = useCallback(() => {
     if (isMobile) return;
     if (openTimerRef.current) clearTimeout(openTimerRef.current);
     closeTimerRef.current = setTimeout(closePopover, 300);
   }, [isMobile, closePopover]);
 
-  // Click toggles; cancels any pending hover timers (anchor behavior)
   const handleClick = useCallback(() => {
     clearTimers();
     setOpen((prev) => !prev);
   }, [clearTimers]);
 
-  // Click-outside (desktop only)
   useEffect(() => {
     if (!open || isMobile) return;
     const handler = (e: MouseEvent) => {
@@ -98,25 +147,68 @@ export default function CartPopover({ locale }: Props) {
     return () => document.removeEventListener('mousedown', handler);
   }, [open, isMobile, closePopover]);
 
-  // ESC key
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closePopover();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closePopover(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, closePopover]);
 
-  // Lock body scroll when mobile sheet is open
   useEffect(() => {
     if (!open || !isMobile) return;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, [open, isMobile]);
 
-  // Cleanup timers on unmount
   useEffect(() => () => clearTimers(), [clearTimers]);
+
+  // Animation variants — strip motion when prefers-reduced-motion
+  const popoverInitial = reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 };
+  const popoverAnimate = { opacity: 1, y: 0, scale: 1 };
+  const popoverExit = reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.97 };
+  const popoverDuration = reducedMotion ? 0.12 : 0.22;
+
+  const sheetInitial = reducedMotion ? { opacity: 0 } : { y: '100%' };
+  const sheetAnimate = reducedMotion ? { opacity: 1 } : { y: 0 };
+  const sheetExit = reducedMotion ? { opacity: 0 } : { y: '100%' };
+  const sheetDuration = reducedMotion ? 0.12 : 0.28;
+
+  const hiddenCount = Math.max(0, items.length - VISIBLE_LIMIT);
+
+  function renderItems(onNavigate: () => void) {
+    if (items.length === 0) return <CartEmptyState locale={locale} onClose={onNavigate} />;
+    return (
+      <>
+        {items.slice(0, VISIBLE_LIMIT).map((item) => (
+          <CartItemRow
+            key={item.id}
+            item={item}
+            locale={locale}
+            onRemove={() => removeItem(item.id)}
+            onNavigate={onNavigate}
+            cartHref={viewCartHref}
+          />
+        ))}
+        {hiddenCount > 0 && (
+          <div className="px-4 py-2 text-center border-b border-pe-charcoal/8">
+            <span className="font-sans text-[0.62rem] text-pe-charcoal/40 tracking-wide">
+              ...y {hiddenCount} producto{hiddenCount !== 1 ? 's' : ''} más
+            </span>
+          </div>
+        )}
+        {items.slice(VISIBLE_LIMIT).map((item) => (
+          <CartItemRow
+            key={item.id}
+            item={item}
+            locale={locale}
+            onRemove={() => removeItem(item.id)}
+            onNavigate={onNavigate}
+            cartHref={viewCartHref}
+          />
+        ))}
+      </>
+    );
+  }
 
   const trigger = (
     <button
@@ -140,7 +232,6 @@ export default function CartPopover({ locale }: Props) {
     </button>
   );
 
-  // Mobile bottom-sheet via portal
   const mobileSheet = mounted && isMobile && open
     ? createPortal(
         <AnimatePresence>
@@ -150,17 +241,18 @@ export default function CartPopover({ locale }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: reducedMotion ? 0.12 : 0.18 }}
               className="fixed inset-0 z-[120] bg-pe-black/45 backdrop-blur-sm"
               onClick={closePopover}
               aria-hidden="true"
             >
               <motion.div
+                ref={sheetRef}
                 key="mobile-sheet"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ duration: 0.28, ease: EASING }}
+                initial={sheetInitial}
+                animate={sheetAnimate}
+                exit={sheetExit}
+                transition={{ duration: sheetDuration, ease: EASING }}
                 id="cart-popover-content"
                 role="dialog"
                 aria-modal="true"
@@ -169,17 +261,16 @@ export default function CartPopover({ locale }: Props) {
                 style={{ height: '70vh' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Grip bar */}
                 <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
                   <div className="w-10 h-1 bg-pe-cream" aria-hidden="true" />
                 </div>
 
-                {/* Sheet header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-pe-charcoal/10 flex-shrink-0">
                   <h2 className="font-display text-pe-black text-base font-semibold tracking-wide">
                     {locale === 'es' ? 'Tu carrito' : 'Your cart'}
                   </h2>
                   <button
+                    autoFocus
                     onClick={closePopover}
                     aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
                     className="text-pe-charcoal/40 hover:text-pe-charcoal transition-colors p-1"
@@ -188,27 +279,12 @@ export default function CartPopover({ locale }: Props) {
                   </button>
                 </div>
 
-                {/* Scrollable items */}
                 <div className="flex-1 overflow-y-auto">
-                  {items.length === 0 ? (
-                    <CartEmptyState locale={locale} onClose={closePopover} />
-                  ) : (
-                    items.map((item) => (
-                      <CartItemRow
-                        key={item.id}
-                        item={item}
-                        locale={locale}
-                        onRemove={() => removeItem(item.id)}
-                        onNavigate={closePopover}
-                        cartHref={viewCartHref}
-                      />
-                    ))
-                  )}
+                  {renderItems(closePopover)}
                 </div>
 
-                {/* Sticky footer */}
                 {items.length > 0 && (
-                  <div className="border-t border-pe-charcoal/10 px-4 py-4 flex-shrink-0 safe-area-pb">
+                  <div className="border-t border-pe-charcoal/10 px-4 py-4 flex-shrink-0">
                     <div className="flex justify-between items-center mb-3">
                       <span className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/70">
                         Subtotal
@@ -243,23 +319,22 @@ export default function CartPopover({ locale }: Props) {
     >
       {trigger}
 
-      {/* Desktop popover */}
       {!isMobile && (
         <AnimatePresence>
           {open && (
             <motion.div
+              ref={popoverRef}
               id="cart-popover-content"
               role="dialog"
               aria-modal="true"
               aria-label={cartLabel}
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.97 }}
-              transition={{ duration: 0.22, ease: EASING }}
+              initial={popoverInitial}
+              animate={popoverAnimate}
+              exit={popoverExit}
+              transition={{ duration: popoverDuration, ease: EASING }}
               className="absolute right-0 top-full mt-2 z-[100] bg-pe-beige shadow-editorial flex flex-col"
               style={{ width: 340, maxHeight: 'calc(100vh - 8rem)' }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-pe-charcoal/10 flex-shrink-0">
                 <h2 className="font-display text-pe-black text-base font-semibold tracking-wide">
                   {locale === 'es' ? 'Tu carrito' : 'Your cart'}
@@ -273,25 +348,10 @@ export default function CartPopover({ locale }: Props) {
                 </button>
               </div>
 
-              {/* Items */}
               <div className="flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
-                {items.length === 0 ? (
-                  <CartEmptyState locale={locale} onClose={closePopover} />
-                ) : (
-                  items.map((item) => (
-                    <CartItemRow
-                      key={item.id}
-                      item={item}
-                      locale={locale}
-                      onRemove={() => removeItem(item.id)}
-                      onNavigate={closePopover}
-                      cartHref={viewCartHref}
-                    />
-                  ))
-                )}
+                {renderItems(closePopover)}
               </div>
 
-              {/* Footer */}
               {items.length > 0 && (
                 <div className="border-t border-pe-charcoal/10 px-4 py-3 flex-shrink-0">
                   <div className="flex justify-between items-center mb-3">
@@ -316,7 +376,6 @@ export default function CartPopover({ locale }: Props) {
         </AnimatePresence>
       )}
 
-      {/* Mobile sheet portal */}
       {mobileSheet}
     </div>
   );
