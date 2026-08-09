@@ -4,7 +4,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -34,7 +34,7 @@ class FlywayPublishedMigrationCompatibilityIT {
 
     @Container
     @SuppressWarnings("resource")
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
@@ -70,7 +70,8 @@ class FlywayPublishedMigrationCompatibilityIT {
         Flyway currentFlyway = migrate("classpath:db/migration");
 
         assertNotNull(currentFlyway.info().current());
-        assertEquals("64", currentFlyway.info().current().getVersion().getVersion());
+        assertEquals(latestMigrationVersion(currentMigrationDir),
+                currentFlyway.info().current().getVersion().getVersion());
         assertTrue(Stream.of(currentFlyway.info().all())
                 .anyMatch(info -> info.getVersion() != null && "60.1".equals(info.getVersion().getVersion())));
     }
@@ -89,7 +90,8 @@ class FlywayPublishedMigrationCompatibilityIT {
         Flyway currentFlyway = migrate("classpath:db/migration");
 
         assertNotNull(currentFlyway.info().current());
-        assertEquals("64", currentFlyway.info().current().getVersion().getVersion());
+        assertEquals(latestMigrationVersion(currentMigrationDir),
+                currentFlyway.info().current().getVersion().getVersion());
         assertProductExists("10000000-0000-0000-0000-000000000004");
         assertProductExists("10000000-0000-0000-0000-000000000005");
         assertProductExists("10000000-0000-0000-0000-000000000010");
@@ -291,6 +293,22 @@ class FlywayPublishedMigrationCompatibilityIT {
 
     private static boolean isWholeNumberMigration(String filename) {
         return WHOLE_NUMBER_MIGRATION.matcher(filename).matches();
+    }
+
+    /**
+     * Highest whole-number migration on disk, which is where Flyway lands after applying
+     * everything. Derived rather than hard-coded: these assertions previously pinned "64" and
+     * silently went stale the moment V65 and V66 landed.
+     */
+    private static String latestMigrationVersion(Path migrationDir) throws IOException {
+        try (Stream<Path> paths = Files.list(migrationDir)) {
+            return String.valueOf(paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> isWholeNumberMigration(path.getFileName().toString()))
+                    .mapToInt(path -> migrationVersion(path.getFileName().toString()))
+                    .max()
+                    .orElseThrow(() -> new IllegalStateException("No migrations found in " + migrationDir)));
+        }
     }
 
     private static Path resolveClasspathDirectory(String location) throws URISyntaxException {
