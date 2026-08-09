@@ -33,3 +33,9 @@ infra/postgres/
 .worktrees/
 
 .continue/
+
+# Playwright run artifacts (traces, screenshots, .last-run.json) — regenerated on every run
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.cache/
