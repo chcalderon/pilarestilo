@@ -35,16 +35,26 @@ cd frontend && npm run test:e2e   # Playwright
 
 ### Docker (primary local workflow)
 
-```bash
-# Minimal stack (postgres + backend + frontend + caddy) — runs at http://localhost
-cd infra && docker compose --env-file .env up -d --build
+`.env.example` ships with the optional subsystems switched **on**
+(`APP_DOMAIN_EVENTS_KAFKA_ENABLED`, `APP_CACHE_REDIS_ENABLED`, the three
+`APP_*_REMOTE_ENABLED` flags, `APP_TRACING_ENABLED`). Those flags register Kafka listeners,
+a Redis connection factory and remote clients at startup, so the containers behind them have
+to exist: without the matching profiles the backend cannot resolve `kafka` or `redis` and dies
+in a restart loop (`No resolvable bootstrap urls given in bootstrap.servers`).
 
-# Add optional profiles
-cd infra && docker compose --env-file .env --profile kafka up -d
-cd infra && docker compose --env-file .env --profile cache up -d
-cd infra && docker compose --env-file .env --profile microservices up -d --build
-cd infra && docker compose --env-file .env --profile observability up -d
-cd infra && docker compose --env-file .env --profile tracing up -d
+```bash
+# Full stack matching the shipped .env — runs at http://localhost
+cd infra && docker compose --env-file .env \
+  --profile kafka --profile cache --profile microservices \
+  --profile observability --profile tracing up -d --build
+```
+
+To run the minimal stack (postgres + backend + frontend + caddy) instead, first set
+`APP_DOMAIN_EVENTS_KAFKA_ENABLED=false`, `APP_CACHE_REDIS_ENABLED=false`, `APP_TRACING_ENABLED=false`
+and the three `APP_*_REMOTE_ENABLED=false` in `.env`:
+
+```bash
+cd infra && docker compose --env-file .env up -d --build
 ```
 
 Seed admin credentials: `admin@pilarestilo.com` / `admin2026`
@@ -180,7 +190,7 @@ Jackson 3 is the default: use `tools.jackson.databind.*`, not `com.fasterxml.jac
 | `PAYMENT_GATEWAY_PROVIDER` | STUB \| MERCADO_PAGO |
 | `APP_DOMAIN_EVENTS_KAFKA_ENABLED` | Enables Kafka transport |
 | `APP_PRODUCT_AI_ENABLED` | Enables AI pipeline |
-| `APP_PRODUCT_AI_ENGINE` | `stub` \| `openai_backend` |
+| `APP_PRODUCT_AI_ENGINE` | `stub` short-circuits to the fake pipeline; **any other value** (the repo ships `ollama_backend`) routes to `APP_PRODUCT_AI_OPENAI_BASE_URL`. The name does not pick a provider — the base URL does. |
 | `APP_PRODUCT_AI_OPENAI_INFER_MODEL` | Text model (default: `gpt-4.1-mini`) |
 | `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL` | Image model (default: `gpt-image-1`) |
 | `APP_INVENTORY_REMOTE_ENABLED` | Delegate inventory write commands (`reserve/release/confirm`) to microservice |
