@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.14</version>
+    <version>4.0.7</version>
     <relativePath/>
   </parent>
 
@@ -19,7 +19,8 @@
 
   <properties>
     <java.version>25</java.version>
-    <testcontainers.version>1.20.1</testcontainers.version>
+    <!-- testcontainers.version intentionally not set: it would shadow the Boot 4 BOM property
+         and pin Testcontainers back to 1.x. -->
     <jacoco.version>0.8.14</jacoco.version>
   </properties>
 
@@ -65,9 +66,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
+    <!-- Boot 4 split Kafka auto-configuration (org.springframework.boot.kafka.autoconfigure)
+         out of spring-boot-autoconfigure; spring-kafka alone no longer brings KafkaProperties. -->
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
     </dependency>
 
     <!-- AWS SDK v2 S3 (S3-compatible storage) -->
@@ -87,6 +90,17 @@
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <!-- Boot 4 moved the Flyway auto-configuration out of spring-boot-autoconfigure;
+         flyway-core alone no longer triggers migrations, so ddl-auto=validate fails. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-flyway</artifactId>
+    </dependency>
+    <!-- Likewise the RestClient.Builder auto-configuration the remote clients inject. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-restclient</artifactId>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
@@ -123,10 +137,34 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Generates configuration metadata for @ConfigurationProperties classes so IDEs can
+         resolve and autocomplete our own `app.*` namespace instead of flagging it unknown. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Boot 4 moved the MockMvc/@WebMvcTest slice out of spring-boot-test-autoconfigure
+         into its own module (org.springframework.boot.webmvc.test.autoconfigure). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Boot 4 dropped MockMvcSecurityConfiguration from spring-boot-test-autoconfigure, so
+         @AutoConfigureMockMvc no longer applies springSecurity() on its own and @WithMockUser
+         silently stops authenticating (state-changing requests answer 403). This module
+         restores that auto-configuration. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-security-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -134,16 +172,16 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Version comes from the Boot 4 BOM (Testcontainers 2.x). The old hard-pinned 1.20.1
+         shipped a docker-java that Docker Engine 29 rejects with HTTP 400 over the named pipe. -->
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.version}</version>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>${testcontainers.version}</version>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -162,6 +200,12 @@
               <groupId>org.projectlombok</groupId>
               <artifactId>lombok</artifactId>
             </path>
+            <!-- Explicit annotationProcessorPaths disables processor discovery from the
+                 classpath, so the metadata generator must be listed here to actually run. -->
+            <path>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+            </path>
           </annotationProcessorPaths>
         </configuration>
       </plugin>
@@ -176,6 +220,22 @@
             </exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <!-- Surefire's default includes (*Test, Test*, *Tests) never matched the *IT classes, so
+           the 14 Testcontainers-backed integration tests ran under neither `mvn test` nor
+           `mvn verify` and drifted out of sync with the code unnoticed. Failsafe runs them in
+           the integration-test phase and still fails the build via verify. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>

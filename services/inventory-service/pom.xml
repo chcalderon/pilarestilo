@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.14</version>
+    <version>4.0.7</version>
     <relativePath/>
   </parent>
 
@@ -55,6 +55,13 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Boot 4 moved the MockMvc/@WebMvcTest slice out of spring-boot-test-autoconfigure
+         into its own module (org.springframework.boot.webmvc.test.autoconfigure). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
       <scope>test</scope>
     </dependency>
 
