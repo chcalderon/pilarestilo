@@ -1,7 +1,7 @@
 package com.pilarestilo.publication.infrastructure.n8n;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.publication.application.dto.PublicationDispatchWebhookPayload;
 import com.pilarestilo.publication.application.ports.PublicationWebhookDispatcher;
 import com.pilarestilo.shared.domain.DomainException;
@@ -76,7 +76,7 @@ public class N8nPublicationWebhookDispatcher implements PublicationWebhookDispat
     private String toJson(Object payload) {
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new DomainException("Could not serialize publication webhook payload");
         }
     }

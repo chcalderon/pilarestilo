@@ -1,7 +1,7 @@
 package com.pilarestilo.order.application.usecases;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.discount.domain.model.Discount;
@@ -215,7 +215,7 @@ public class CreateOrderUseCase {
                     continue;
                 }
                 boolean active = !node.has("active") || node.path("active").asBoolean(true);
-                String code = node.path("code").asText("").trim();
+                String code = node.path("code").asString("").trim();
                 if (!active || code.isBlank()) {
                     continue;
                 }
@@ -247,8 +247,8 @@ public class CreateOrderUseCase {
                     continue;
                 }
                 boolean active = !node.has("active") || node.path("active").asBoolean(true);
-                String id = node.path("id").asText("").trim();
-                String name = node.path("name").asText("").trim();
+                String id = node.path("id").asString("").trim();
+                String name = node.path("name").asString("").trim();
                 if (!active || id.isBlank() || name.isBlank()) {
                     continue;
                 }
@@ -268,13 +268,6 @@ public class CreateOrderUseCase {
     private String normalizeRequired(String value, String label) {
         if (value == null || value.isBlank()) {
             throw new DomainException("Missing " + label);
-        }
-        return value.trim();
-    }
-
-    private String normalizeOptional(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
         }
         return value.trim();
     }

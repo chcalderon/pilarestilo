@@ -1,6 +1,6 @@
 package com.pilarestilo.payment.infrastructure.web.controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.payment.application.dto.PaymentGatewayCheckoutDto;
@@ -196,7 +196,7 @@ public class PaymentController {
     private boolean isPaymentEvent(String queryType, String queryTopic, JsonNode payload) {
         String type = firstNonBlank(queryType, queryTopic);
         if (type.isBlank() && payload != null) {
-            type = firstNonBlank(payload.path("type").asText(""), payload.path("action").asText(""));
+            type = firstNonBlank(payload.path("type").asString(""), payload.path("action").asString(""));
         }
         if (type.isBlank()) {
             return true;
@@ -214,12 +214,12 @@ public class PaymentController {
             return "";
         }
 
-        String directId = payload.path("id").asText("");
+        String directId = payload.path("id").asString("");
         if (!directId.isBlank()) {
             return directId.trim();
         }
 
-        String dataId = payload.path("data").path("id").asText("");
+        String dataId = payload.path("data").path("id").asString("");
         return dataId == null ? "" : dataId.trim();
     }
 

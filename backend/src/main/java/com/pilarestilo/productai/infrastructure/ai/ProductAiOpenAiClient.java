@@ -1,7 +1,7 @@
 package com.pilarestilo.productai.infrastructure.ai;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.shared.domain.DomainException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,9 +107,9 @@ public class ProductAiOpenAiClient {
             ParsedFields fields;
             if (parsed != null) {
                 fields = new ParsedFields(
-                        parsed.path("title").asText(""),
-                        parsed.path("description").asText(""),
-                        parsed.path("imagePrompt").asText("")
+                        parsed.path("title").asString(""),
+                        parsed.path("description").asString(""),
+                        parsed.path("imagePrompt").asString("")
                 );
             } else {
                 fields = extractFieldsFromRawText(rawText);
@@ -184,10 +184,10 @@ public class ProductAiOpenAiClient {
                 throw new DomainException("OpenAI no devolvio imagen transformada");
             }
             JsonNode b64Node = responseNode.path("data").path(0).path("b64_json");
-            if (b64Node.isMissingNode() || b64Node.asText("").isBlank()) {
+            if (b64Node.isMissingNode() || b64Node.asString("").isBlank()) {
                 throw new DomainException("OpenAI no incluyo imagen transformada en la respuesta");
             }
-            return Base64.getDecoder().decode(b64Node.asText("").getBytes(StandardCharsets.UTF_8));
+            return Base64.getDecoder().decode(b64Node.asString("").getBytes(StandardCharsets.UTF_8));
         } catch (RestClientResponseException ex) {
             String apiMessage = extractApiErrorMessage(ex);
             throw new DomainException("OpenAI transformacion fallo (" + ex.getStatusCode().value() + "): " + apiMessage);
@@ -209,7 +209,7 @@ public class ProductAiOpenAiClient {
     }
 
     private String extractOutputText(JsonNode responseNode) {
-        String direct = responseNode.path("output_text").asText("");
+        String direct = responseNode.path("output_text").asString("");
         if (!direct.isBlank()) {
             return direct.trim();
         }
@@ -225,9 +225,9 @@ public class ProductAiOpenAiClient {
                 continue;
             }
             for (JsonNode content : contentArray) {
-                String type = content.path("type").asText("");
+                String type = content.path("type").asString("");
                 if ("output_text".equals(type) || "text".equals(type)) {
-                    String text = content.path("text").asText("");
+                    String text = content.path("text").asString("");
                     if (!text.isBlank()) {
                         if (builder.length() > 0) {
                             builder.append('\n');
@@ -425,7 +425,7 @@ public class ProductAiOpenAiClient {
         }
         try {
             JsonNode node = objectMapper.readTree(body);
-            String message = node.path("error").path("message").asText("");
+            String message = node.path("error").path("message").asString("");
             if (!message.isBlank()) {
                 return message.trim();
             }

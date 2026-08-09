@@ -1,7 +1,7 @@
 package com.pilarestilo.orderservice.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.orderservice.domain.OrderStatus;
 import com.pilarestilo.orderservice.domain.PaymentMethod;
 import com.pilarestilo.orderservice.persistence.OrderEntity;
@@ -305,7 +305,7 @@ public class OrderCommandService {
                 if (!active) {
                     continue;
                 }
-                String code = node.path("code").asText("").trim().toUpperCase(Locale.ROOT);
+                String code = node.path("code").asString("").trim().toUpperCase(Locale.ROOT);
                 if (!code.isBlank()) {
                     activeZones.add(code);
                 }
@@ -339,8 +339,8 @@ public class OrderCommandService {
                 if (!active) {
                     continue;
                 }
-                String id = node.path("id").asText("").trim();
-                String name = node.path("name").asText("").trim();
+                String id = node.path("id").asString("").trim();
+                String name = node.path("name").asString("").trim();
                 if (!id.isBlank() && !name.isBlank()) {
                     activeCouriers.put(id, name);
                 }
@@ -471,13 +471,6 @@ public class OrderCommandService {
     private String defaultIfBlank(String value, String fallback) {
         if (value == null || value.trim().isEmpty()) {
             return fallback;
-        }
-        return value.trim();
-    }
-
-    private String normalizeOptional(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
         }
         return value.trim();
     }

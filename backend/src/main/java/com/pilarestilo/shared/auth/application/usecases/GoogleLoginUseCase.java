@@ -1,7 +1,7 @@
 package com.pilarestilo.shared.auth.application.usecases;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
@@ -62,11 +62,11 @@ public class GoogleLoginUseCase {
             throw new DomainException("Google token audience mismatch");
         }
 
-        String fullName = claims.path("name").asText(null);
+        String fullName = claims.path("name").asString(null);
         if (fullName == null || fullName.isBlank()) {
             fullName = email.split("@")[0];
         }
-        String pictureUrl = claims.path("picture").asText(null);
+        String pictureUrl = claims.path("picture").asString(null);
 
         String finalFullName = fullName;
         String finalPictureUrl = pictureUrl;

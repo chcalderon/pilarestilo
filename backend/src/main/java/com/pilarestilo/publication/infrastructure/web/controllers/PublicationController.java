@@ -9,7 +9,6 @@ import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
 import com.pilarestilo.publication.domain.enums.PublicationSourceType;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
-import com.pilarestilo.shared.rbac.domain.PermissionRegistry;
 import com.pilarestilo.publication.infrastructure.web.requests.ApprovePublicationRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.CreatePublicationRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.RejectPublicationRequest;

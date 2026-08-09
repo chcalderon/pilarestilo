@@ -1,6 +1,6 @@
 package com.pilarestilo.payment.infrastructure.adapters;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.pilarestilo.payment.domain.enums.PaymentStatus;
 import com.pilarestilo.payment.domain.ports.PaymentGatewayPort;
 import com.pilarestilo.shared.application.Money;
@@ -266,7 +266,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         if (value == null || value.isNull()) {
             return "";
         }
-        return value.asText("");
+        return value.asString("");
     }
 
     private String firstNonBlank(String first, String second) {
