@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-### Backend (Java 25 + Spring Boot 3.5)
+### Backend (Java 25 + Spring Boot 4.0.7)
 
 ```bash
 # Run all tests (Testcontainers spins up real Postgres)
@@ -148,6 +148,24 @@ Recent migrations (V54–V66):
 - V64: seed default role–permission grants (ADMIN full, SELLER subset)
 - V65: social commerce foundation — `publications` table for multi-platform content
 - V66: repair `shipping_origin_zone` alias `NATIONAL` → `NACIONAL`
+
+### Spring Boot 4 modular auto-configuration
+
+Boot 4 split `spring-boot-autoconfigure` into per-technology modules. Putting a library on the
+classpath no longer enables its auto-configuration — the matching `spring-boot-*` module must be
+declared too, or the feature silently does nothing. The backend already declares:
+
+| Module | Without it |
+|---|---|
+| `spring-boot-flyway` | migrations never run → `ddl-auto: validate` fails on missing tables |
+| `spring-boot-restclient` | no `RestClient.Builder` bean → remote clients fail to wire |
+| `spring-boot-kafka` | `spring-kafka` alone no longer brings `KafkaProperties` |
+| `spring-boot-security-test` (test) | `@AutoConfigureMockMvc` skips `springSecurity()`, so `@WithMockUser` stops authenticating and state-changing requests answer 403 |
+| `spring-boot-starter-webmvc-test` (test) | MockMvc / `@WebMvcTest` slice unavailable |
+
+Jackson 3 is the default: use `tools.jackson.databind.*`, not `com.fasterxml.jackson.databind.*`
+(annotations stay on `com.fasterxml.jackson.annotation`). `JsonNode.asText(String)` is now
+`asString(String)`, and `JsonProcessingException` is the unchecked `tools.jackson.core.JacksonException`.
 
 ### Tailwind dark mode
 
