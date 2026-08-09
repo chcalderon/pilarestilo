@@ -1,17 +1,17 @@
 package com.pilarestilo.shared.auth.infrastructure.web;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -37,7 +37,7 @@ class CustomerAddressControllerIT {
 
     @Container
     @SuppressWarnings("resource")
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");
@@ -212,7 +212,7 @@ class CustomerAddressControllerIT {
                                 "shippingZoneCode", shipping.zoneCode(),
                                 "shippingCourierId", shipping.courierId()
                         ))))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isUnprocessableContent());
 
         String otherAddressId = createAddressAndReturnId(otherToken, "Casa B");
         mvc.perform(post("/api/orders")
@@ -356,14 +356,14 @@ class CustomerAddressControllerIT {
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode root = om.readTree(settings.getResponse().getContentAsString());
-        JsonNode zones = safeArray(root.path("shippingZonesJson").asText(null));
-        JsonNode couriers = safeArray(root.path("shippingCouriersJson").asText(null));
+        JsonNode zones = safeArray(root.path("shippingZonesJson").asString(null));
+        JsonNode couriers = safeArray(root.path("shippingCouriersJson").asString(null));
         String zoneCode = "LOCAL";
         String courierId = "chilexpress";
 
         for (JsonNode zone : zones) {
             if (zone.path("active").asBoolean(true)) {
-                String candidate = zone.path("code").asText("").trim();
+                String candidate = zone.path("code").asString("").trim();
                 if (!candidate.isBlank()) {
                     zoneCode = candidate;
                     break;
@@ -372,7 +372,7 @@ class CustomerAddressControllerIT {
         }
         for (JsonNode courier : couriers) {
             if (courier.path("active").asBoolean(true)) {
-                String candidate = courier.path("id").asText("").trim();
+                String candidate = courier.path("id").asString("").trim();
                 if (!candidate.isBlank()) {
                     courierId = candidate;
                     break;

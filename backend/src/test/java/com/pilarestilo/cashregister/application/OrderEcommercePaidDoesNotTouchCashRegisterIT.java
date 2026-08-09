@@ -1,6 +1,6 @@
 package com.pilarestilo.cashregister.application;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
 import com.pilarestilo.order.domain.enums.OrderStatus;
@@ -11,16 +11,16 @@ import com.pilarestilo.order.infrastructure.persistence.entities.OrderEntity;
 import com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Setup strategy:
  *  - Register + promote a seller via API so users.id FK for cash_registers is satisfied.
  *  - Insert a bare order row directly via OrderJpaRepository (satisfies cash_movements.order_id FK).
- *  - @MockBean DispatchRepository neutralises OrderPaidDispatchListener (no real dispatch insert).
+ *  - @MockitoBean DispatchRepository neutralises OrderPaidDispatchListener (no real dispatch insert).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -56,7 +56,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
 
     @Container
     @SuppressWarnings("resource")
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16")
             .withDatabaseName("testdb").withUsername("test").withPassword("test");
 
     @DynamicPropertySource
@@ -74,7 +74,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
     @Autowired OrderJpaRepository orderJpaRepository;
 
     /** Neutralises OrderPaidDispatchListener to avoid dispatches.order_id FK failure. */
-    @MockBean DispatchRepository dispatchRepository;
+    @MockitoBean DispatchRepository dispatchRepository;
 
     @Test
     void ecommerce_order_paid_does_not_create_cash_movement() throws Exception {
