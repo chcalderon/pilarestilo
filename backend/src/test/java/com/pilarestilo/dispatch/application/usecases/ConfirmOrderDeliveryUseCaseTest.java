@@ -76,6 +76,7 @@ class ConfirmOrderDeliveryUseCaseTest {
     private OrderDto order(UUID orderId, UUID customerId, OrderStatus status) {
         return new OrderDto(
                 orderId,
+                "PE-TEST000000",
                 customerId,
                 List.of(),
                 new MoneyDto(BigDecimal.TEN, "CLP"),

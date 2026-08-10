@@ -7,6 +7,7 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
+import com.pilarestilo.order.domain.model.OrderReference;
 import com.pilarestilo.order.infrastructure.persistence.entities.OrderEntity;
 import com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -110,6 +111,9 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         // so orders.customer_id → users.id FK is also satisfied.
         OrderEntity orderEntity = new OrderEntity();
         orderEntity.setId(orderId);
+        // Built entity-first to satisfy the cash_movements FK, so it bypasses Order.create(),
+        // which is what normally mints the reference.
+        orderEntity.setPublicReference(OrderReference.forOrderId(orderId));
         orderEntity.setCustomerId(customerId);
         orderEntity.setSubtotalAmount(BigDecimal.valueOf(10_000));
         orderEntity.setSubtotalCurrency("CLP");

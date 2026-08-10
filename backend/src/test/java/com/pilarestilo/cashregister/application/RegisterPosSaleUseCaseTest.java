@@ -136,7 +136,7 @@ class RegisterPosSaleUseCaseTest {
                 UUID.randomUUID(), "Ref",
                 null, channel,
                 OrderStatus.PAID,
-                Instant.now(), Instant.now()
+                Instant.now(), Instant.now(), null
         );
     }
 

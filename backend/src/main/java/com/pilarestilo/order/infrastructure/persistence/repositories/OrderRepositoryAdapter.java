@@ -51,6 +51,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
         OrderEntity entity = new OrderEntity();
         entity.setId(order.getId());
         entity.setCustomerId(order.getCustomerId());
+        entity.setPublicReference(order.getPublicReference());
         entity.setSubtotalAmount(order.getSubtotal().amount());
         entity.setSubtotalCurrency(order.getSubtotal().currency());
         entity.setDiscountAmount(order.getDiscountAmount().amount());
@@ -119,7 +120,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getSalesChannel() != null ? entity.getSalesChannel() : SalesChannel.ECOMMERCE,
                 entity.getStatus(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getPublicReference()
         );
     }
 }

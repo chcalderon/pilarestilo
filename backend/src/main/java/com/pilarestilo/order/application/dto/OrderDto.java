@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public record OrderDto(
         UUID id,
+        /** Short code the customer quotes on a bank transfer; see OrderReference. */
+        String publicReference,
         UUID customerId,
         List<OrderItemDto> items,
         MoneyDto subtotal,
