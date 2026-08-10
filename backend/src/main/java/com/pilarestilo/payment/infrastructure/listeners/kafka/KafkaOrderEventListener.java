@@ -27,6 +27,7 @@ public class KafkaOrderEventListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-payment",
             topics = "#{@domainEventTopics.topicFor('OrderCreated')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )

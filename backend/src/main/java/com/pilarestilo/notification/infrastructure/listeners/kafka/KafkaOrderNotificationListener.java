@@ -24,6 +24,7 @@ public class KafkaOrderNotificationListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-notification",
             topics = "#{@domainEventTopics.topicFor('OrderCreated')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
@@ -40,6 +41,7 @@ public class KafkaOrderNotificationListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-notification",
             topics = "#{@domainEventTopics.topicFor('OrderStatusChanged')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
