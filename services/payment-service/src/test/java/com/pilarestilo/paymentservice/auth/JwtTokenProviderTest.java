@@ -2,7 +2,6 @@ package com.pilarestilo.paymentservice.auth;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Encoders;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
@@ -17,7 +16,7 @@ class JwtTokenProviderTest {
 
     @Test
     void parses_and_validates_token() {
-        SecretKey key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+        SecretKey key = Jwts.SIG.HS256.key().build();
         JwtTokenProvider provider = new JwtTokenProvider(Encoders.BASE64.encode(key.getEncoded()));
         String userId = UUID.randomUUID().toString();
 
@@ -36,7 +35,7 @@ class JwtTokenProviderTest {
 
     @Test
     void invalid_token_returns_false() {
-        SecretKey key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+        SecretKey key = Jwts.SIG.HS256.key().build();
         JwtTokenProvider provider = new JwtTokenProvider(Encoders.BASE64.encode(key.getEncoded()));
 
         assertFalse(provider.isValid("invalid"));

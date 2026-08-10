@@ -1,8 +1,8 @@
 package com.pilarestilo.publication.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.model.ProductVariant;
 import com.pilarestilo.product.domain.ports.ProductRepository;
@@ -448,7 +448,7 @@ public class PublicationService {
                 .toList();
         try {
             return objectMapper.writeValueAsString(normalized);
-        } catch (JsonProcessingException ex) {
+        } catch (JacksonException ex) {
             throw new DomainException("Could not serialize publication hashtags");
         }
     }

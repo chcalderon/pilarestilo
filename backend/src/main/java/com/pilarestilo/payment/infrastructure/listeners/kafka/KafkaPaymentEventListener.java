@@ -18,6 +18,7 @@ public class KafkaPaymentEventListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-payment",
             topics = "#{@domainEventTopics.topicFor('PaymentConfirmed')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
@@ -26,6 +27,7 @@ public class KafkaPaymentEventListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-payment",
             topics = "#{@domainEventTopics.topicFor('PaymentRejected')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )

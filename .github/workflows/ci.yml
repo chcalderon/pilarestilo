@@ -24,8 +24,11 @@ jobs:
           java-version: "25"
           cache: maven
 
+      # verify, not test: surefire only matches *Test, so `mvn test` skipped the 14
+      # Testcontainers-backed *IT classes entirely. They run under failsafe in the
+      # integration-test phase. Docker is available on ubuntu-latest runners.
       - name: Run tests
-        run: mvn -q test
+        run: mvn -B verify
 
   frontend-build:
     name: Frontend Build (Astro)
@@ -46,6 +49,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Playwright stays out of CI: e2e/ needs the compose stack running behind Caddy.
+      - name: Run unit tests
+        run: npm test
 
       - name: Build frontend
         run: npm run build

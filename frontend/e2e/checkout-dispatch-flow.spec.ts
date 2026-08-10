@@ -28,7 +28,7 @@ interface ProductPageResponse {
     imageUrl: string;
     condition: 'NEW' | 'USED';
     stock: number;
-    variants?: Array<{ color?: string; size?: string; stock: number }>;
+    variants?: Array<{ color?: string; size?: string; stock: number; stockAvailable?: number }>;
   }>;
 }
 
@@ -136,6 +136,11 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
           customerToken: customer.accessToken,
         });
 
+        // With APP_DOMAIN_EVENTS_KAFKA_ENABLED the PaymentConfirmed -> order PAID transition
+        // travels through Kafka, so it lands after settlePayment returns. Claiming the dispatch
+        // before it does fails with "Cannot transition from CREATED, expected PAID".
+        await waitForOrderStatus(request, customer.accessToken, order.id, 'PAID');
+
         const dispatch = await pollDispatchByOrder(request, admin.accessToken, order.id);
         if (dispatch.orderShippingZoneCode != null) {
           expect(dispatch.orderShippingZoneCode).toBe(shipping.zoneCode);
@@ -229,7 +234,12 @@ async function pickSimpleInStockProduct(
   );
   for (const product of page.content) {
     if (Array.isArray(product.variants) && product.variants.length > 0) {
-      const variant = product.variants.find((v) => Number(v.stock ?? 0) > 0 && !!v.color && !!v.size);
+      // `stock` is a backward-compatible alias for stockOnHand and ignores reservations, so a
+      // variant whose only unit is already reserved still looked available and the order failed
+      // with "Inventory reservation rejected". stockAvailable is on-hand minus reserved.
+      const variant = product.variants.find(
+        (v) => Number(v.stockAvailable ?? v.stock ?? 0) > 0 && !!v.color && !!v.size,
+      );
       if (variant) {
         return {
           ...product,
@@ -280,12 +290,33 @@ async function createOrder(
   });
 }
 
+type LocationCommune = { id: number; name: string };
+type LocationCity = { id: number; name: string; communes: LocationCommune[] };
+type LocationRegion = { id: number; name: string; cities: LocationCity[] };
+
+/**
+ * CreateCustomerAddressRequest requires regionId/cityId/comunaId alongside the display names.
+ * Resolved from the catalog rather than hard-coded so the ids and the names stay consistent
+ * and the test survives reseeded location data.
+ */
+async function firstCatalogLocation(request: APIRequestContext) {
+  const tree = await apiJson<LocationRegion[]>(request, 'GET', '/locations/tree');
+  const region = tree.find((r) => r.cities?.some((c) => c.communes?.length));
+  const city = region?.cities.find((c) => c.communes?.length);
+  const commune = city?.communes[0];
+  if (!region || !city || !commune) {
+    throw new Error('Location catalog has no region/city/comuna to build an address from');
+  }
+  return { region, city, commune };
+}
+
 async function createAddress(
   request: APIRequestContext,
   customerToken: string,
   seed: number,
   paymentMethod: CheckoutPaymentMethod,
 ): Promise<AddressResponse> {
+  const { region, city, commune } = await firstCatalogLocation(request);
   return apiJson<AddressResponse>(request, 'POST', '/auth/me/addresses', {
     token: customerToken,
     body: {
@@ -294,9 +325,12 @@ async function createAddress(
       phone: '+56912345678',
       line1: `PW Calle ${seed}`,
       line2: 'Depto 10',
-      comuna: 'Las Condes',
-      city: 'Santiago',
-      region: 'Metropolitana',
+      regionId: region.id,
+      cityId: city.id,
+      comunaId: commune.id,
+      comuna: commune.name,
+      city: city.name,
+      region: region.name,
       reference: 'Porteria',
       isDefault: true,
     },

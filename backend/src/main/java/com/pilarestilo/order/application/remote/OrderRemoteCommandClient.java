@@ -1,7 +1,7 @@
 package com.pilarestilo.order.application.remote;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.domain.enums.OrderStatus;

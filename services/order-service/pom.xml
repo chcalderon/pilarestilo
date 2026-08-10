@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.14</version>
+    <version>4.0.7</version>
     <relativePath/>
   </parent>
 
@@ -26,6 +26,14 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!-- Boot 4 moved the RestClient.Builder auto-configuration out of
+         spring-boot-autoconfigure. InventoryCommandClient injects that builder, so without this
+         module the context fails to start — and no test covers it, because none of them build
+         that bean. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-restclient</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

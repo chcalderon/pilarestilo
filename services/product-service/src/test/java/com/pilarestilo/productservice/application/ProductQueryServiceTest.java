@@ -5,6 +5,7 @@ import com.pilarestilo.productservice.persistence.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -22,7 +23,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,7 +38,8 @@ class ProductQueryServiceTest {
         ProductQueryService service = new ProductQueryService(productRepository);
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<ProductEntity> expected = new PageImpl<>(List.of(new ProductEntity()));
-        when(productRepository.findAll(any(Specification.class), eq(pageRequest))).thenReturn(expected);
+        when(productRepository.findAll(ArgumentMatchers.<Specification<ProductEntity>>any(), eq(pageRequest)))
+                .thenReturn(expected);
 
         Page<ProductEntity> result = service.list(
                 "NUEVO",
@@ -54,7 +55,7 @@ class ProductQueryServiceTest {
         );
 
         assertSame(expected, result);
-        ArgumentCaptor<Specification<ProductEntity>> specCaptor = ArgumentCaptor.forClass(Specification.class);
+        ArgumentCaptor<Specification<ProductEntity>> specCaptor = ArgumentCaptor.captor();
         verify(productRepository).findAll(specCaptor.capture(), eq(pageRequest));
         assertEquals(true, specCaptor.getValue() != null);
     }
@@ -64,7 +65,8 @@ class ProductQueryServiceTest {
         ProductQueryService service = new ProductQueryService(productRepository);
         PageRequest pageRequest = PageRequest.of(0, 10);
         Page<ProductEntity> expected = new PageImpl<>(List.of(new ProductEntity()));
-        when(productRepository.findAll(any(Specification.class), eq(pageRequest))).thenReturn(expected);
+        when(productRepository.findAll(ArgumentMatchers.<Specification<ProductEntity>>any(), eq(pageRequest)))
+                .thenReturn(expected);
 
         Page<ProductEntity> result = service.search(
                 "cartera",
@@ -78,7 +80,7 @@ class ProductQueryServiceTest {
         );
 
         assertSame(expected, result);
-        verify(productRepository).findAll(any(Specification.class), eq(pageRequest));
+        verify(productRepository).findAll(ArgumentMatchers.<Specification<ProductEntity>>any(), eq(pageRequest));
     }
 
     @Test

@@ -1,0 +1,39 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "java.lang.Object",
+      "description": "Pilar Estilo application settings. Most leaves are injected with @Value rather than @ConfigurationProperties, so they carry no generated metadata; this file declares the namespace so IDEs stop reporting it as an unknown property."
+    },
+    { "name": "app.jwt", "type": "java.lang.Object", "description": "JWT signing configuration." },
+    { "name": "app.google", "type": "java.lang.Object", "description": "Google Identity Services sign-in." },
+    { "name": "app.media", "type": "java.lang.Object", "description": "Product media storage." },
+    { "name": "app.cache", "type": "java.lang.Object", "description": "Hot-read cache (Redis)." },
+    { "name": "app.notification", "type": "java.lang.Object", "description": "Notification providers: log, WhatsApp, email, n8n." },
+    { "name": "app.payment", "type": "java.lang.Object", "description": "Payment gateway and remote payment-service delegation." },
+    { "name": "app.system-settings", "type": "java.lang.Object", "description": "Encryption of secrets stored in system_settings." },
+    { "name": "app.inventory", "type": "java.lang.Object", "description": "Remote inventory-service delegation." },
+    { "name": "app.order", "type": "java.lang.Object", "description": "Remote order-service delegation." },
+    { "name": "app.product-ai", "type": "java.lang.Object", "description": "AI product enrichment pipeline." },
+    { "name": "app.gateway", "type": "java.lang.Object", "description": "Per-IP rate limiting on auth and webhook endpoints." },
+    { "name": "app.tracing", "type": "java.lang.Object", "description": "OTLP distributed tracing." }
+  ],
+  "properties": [
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "HS256 signing key, base64-encoded, minimum 32 bytes."
+    },
+    {
+      "name": "app.system-settings.crypto-secret",
+      "type": "java.lang.String",
+      "description": "Key used to encrypt secrets at rest in system_settings. Falls back to app.jwt.secret."
+    },
+    {
+      "name": "app.media.storage-path",
+      "type": "java.lang.String",
+      "description": "Filesystem path where product media is written.",
+      "defaultValue": "./media"
+    }
+  ]
+}

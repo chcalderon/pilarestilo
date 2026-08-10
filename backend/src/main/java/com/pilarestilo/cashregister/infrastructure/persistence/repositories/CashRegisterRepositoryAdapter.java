@@ -29,7 +29,8 @@ public class CashRegisterRepositoryAdapter implements CashRegisterRepository {
 
     @Override
     public CashRegister save(CashRegister cr) {
-        jpaRepository.save(toEntity(cr));
+        jpaRepository.save(applyToEntity(cr, jpaRepository.findById(cr.getId())
+                .orElseGet(CashRegisterEntity::new)));
         for (CashMovement m : cr.getMovements()) {
             movementRepository.save(m);
         }
@@ -100,8 +101,13 @@ public class CashRegisterRepositoryAdapter implements CashRegisterRepository {
         };
     }
 
-    private CashRegisterEntity toEntity(CashRegister cr) {
-        CashRegisterEntity e = new CashRegisterEntity();
+    /**
+     * Copies the aggregate onto a (possibly managed) entity instead of building a fresh one.
+     * CashRegisterEntity carries @Version, and Spring Data treats a null version as "new", so
+     * constructing a detached entity on every save made re-saving an existing register issue an
+     * INSERT and violate cash_registers_pkey. Mirrors ProductRepositoryAdapter.save.
+     */
+    private CashRegisterEntity applyToEntity(CashRegister cr, CashRegisterEntity e) {
         e.setId(cr.getId());
         e.setSellerId(cr.getSellerId());
         e.setOpenedAt(cr.getOpenedAt());

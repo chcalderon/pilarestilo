@@ -27,6 +27,7 @@ public class KafkaReviewSummaryListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-review",
             topics = "#{@domainEventTopics.topicFor('ReviewCreated')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
@@ -36,6 +37,7 @@ public class KafkaReviewSummaryListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-review",
             topics = "#{@domainEventTopics.topicFor('ReviewApproved')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
@@ -45,6 +47,7 @@ public class KafkaReviewSummaryListener {
     }
 
     @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-review",
             topics = "#{@domainEventTopics.topicFor('ReviewDeleted')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )

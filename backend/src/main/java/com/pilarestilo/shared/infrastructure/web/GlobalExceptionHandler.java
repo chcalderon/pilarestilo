@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
         String details = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, details);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, details);
         problem.setTitle("Validation Error");
         return problem;
     }
@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
         String details = ex.getConstraintViolations().stream()
                 .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
                 .collect(Collectors.joining("; "));
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, details);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, details);
         problem.setTitle("Constraint Violation");
         return problem;
     }
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.PAYLOAD_TOO_LARGE,
+                HttpStatus.CONTENT_TOO_LARGE,
                 "Image file is too large. Maximum allowed size is 10MB."
         );
         problem.setTitle("Payload Too Large");

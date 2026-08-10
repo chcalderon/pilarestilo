@@ -2,7 +2,6 @@ package com.pilarestilo.orderservice.auth;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Encoders;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.SecretKey;
@@ -17,7 +16,7 @@ class JwtTokenProviderTest {
 
     @Test
     void parse_token_and_validate_successfully() {
-        SecretKey key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+        SecretKey key = Jwts.SIG.HS256.key().build();
         String secretBase64 = Encoders.BASE64.encode(key.getEncoded());
         JwtTokenProvider provider = new JwtTokenProvider(secretBase64);
 
@@ -39,7 +38,7 @@ class JwtTokenProviderTest {
 
     @Test
     void is_valid_returns_false_for_invalid_token() {
-        SecretKey key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+        SecretKey key = Jwts.SIG.HS256.key().build();
         String secretBase64 = Encoders.BASE64.encode(key.getEncoded());
         JwtTokenProvider provider = new JwtTokenProvider(secretBase64);
 
