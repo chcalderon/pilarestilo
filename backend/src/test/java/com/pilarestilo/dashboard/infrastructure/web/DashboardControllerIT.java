@@ -47,7 +47,7 @@ class DashboardControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", "admin@pilarestilo.com", "password", "admin2026"))))
                 .andExpect(status().isOk()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String registerAndGetId(String email) throws Exception {
@@ -55,7 +55,7 @@ class DashboardControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", email, "password", "pass1234", "fullName", "Test User"))))
                 .andExpect(status().isCreated()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("userId").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("userId").asString();
     }
 
     private String promoteAndLogin(String adminToken, String userId, String role, String email) throws Exception {
@@ -68,7 +68,7 @@ class DashboardControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", email, "password", "pass1234"))))
                 .andExpect(status().isOk()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     @Test

@@ -169,7 +169,7 @@ class AuthorizationGuardsIT {
                         .header("Authorization", bearer(customerAToken)))
                 .andExpect(status().isOk())
                 .andReturn();
-        UUID paymentId = UUID.fromString(om.readTree(ownPayment.getResponse().getContentAsString()).get("id").asText());
+        UUID paymentId = UUID.fromString(om.readTree(ownPayment.getResponse().getContentAsString()).get("id").asString());
 
         mvc.perform(get("/api/payments/order/{orderId}", orderId)
                         .header("Authorization", bearer(customerBToken)))
@@ -215,7 +215,7 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return om.readTree(register.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(register.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String loginAdminAndGetToken() throws Exception {
@@ -229,7 +229,7 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        return om.readTree(adminLogin.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(adminLogin.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private UUID getCurrentUserId(String token) throws Exception {
@@ -237,7 +237,7 @@ class AuthorizationGuardsIT {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andReturn();
-        return UUID.fromString(om.readTree(me.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(me.getResponse().getContentAsString()).get("id").asString());
     }
 
     private UUID createProduct(String token, String name) throws Exception {
@@ -260,7 +260,7 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asString());
     }
 
     private UUID createOrder(String token, UUID customerId, UUID productId, UUID shippingAddressId) throws Exception {
@@ -281,7 +281,7 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asString());
     }
 
     private UUID createAddress(String token) throws Exception {
@@ -303,7 +303,7 @@ class AuthorizationGuardsIT {
                         .content(body))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asString());
     }
 
     private String bearer(String token) {

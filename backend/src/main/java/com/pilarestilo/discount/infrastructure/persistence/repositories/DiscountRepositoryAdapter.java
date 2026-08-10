@@ -2,7 +2,6 @@ package com.pilarestilo.discount.infrastructure.persistence.repositories;
 
 import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.domain.ports.DiscountRepository;
-import com.pilarestilo.discount.infrastructure.persistence.entities.DiscountCodeUsageEntity;
 import com.pilarestilo.discount.infrastructure.persistence.entities.DiscountEntity;
 import com.pilarestilo.shared.application.Money;
 import org.springframework.data.domain.Page;
@@ -18,12 +17,9 @@ import java.util.UUID;
 public class DiscountRepositoryAdapter implements DiscountRepository {
 
     private final DiscountJpaRepository jpaRepository;
-    private final DiscountCodeUsageJpaRepository usageRepository;
 
-    public DiscountRepositoryAdapter(DiscountJpaRepository jpaRepository,
-                                      DiscountCodeUsageJpaRepository usageRepository) {
+    public DiscountRepositoryAdapter(DiscountJpaRepository jpaRepository) {
         this.jpaRepository = jpaRepository;
-        this.usageRepository = usageRepository;
     }
 
     @Override

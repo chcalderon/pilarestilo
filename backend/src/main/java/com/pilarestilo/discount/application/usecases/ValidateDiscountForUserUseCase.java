@@ -2,10 +2,8 @@ package com.pilarestilo.discount.application.usecases;
 
 import com.pilarestilo.discount.application.dto.DiscountDto;
 import com.pilarestilo.discount.application.mappers.DiscountMapper;
-import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.shared.application.Money;
-import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

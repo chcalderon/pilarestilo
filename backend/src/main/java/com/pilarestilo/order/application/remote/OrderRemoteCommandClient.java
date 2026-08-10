@@ -88,8 +88,8 @@ public class OrderRemoteCommandClient {
             JsonNode root = OBJECT_MAPPER.readTree(responseBody);
             for (String field : new String[]{"detail", "message", "error"}) {
                 JsonNode node = root.get(field);
-                if (node != null && !node.isNull() && !node.asText().isBlank()) {
-                    return node.asText();
+                if (node != null && !node.isNull() && !node.asString().isBlank()) {
+                    return node.asString();
                 }
             }
         } catch (Exception ignored) {

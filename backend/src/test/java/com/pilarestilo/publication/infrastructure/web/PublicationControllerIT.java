@@ -91,7 +91,7 @@ class PublicationControllerIT {
                 .andReturn();
 
         JsonNode createdBody = om.readTree(created.getResponse().getContentAsString());
-        String publicationId = createdBody.get("id").asText();
+        String publicationId = createdBody.get("id").asString();
 
         mvc.perform(get("/api/admin/publications")
                         .header("Authorization", bearer(adminToken)))
@@ -126,7 +126,7 @@ class PublicationControllerIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String firstId = om.readTree(first.getResponse().getContentAsString()).get("id").asText();
+        String firstId = om.readTree(first.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(post("/api/admin/publications")
                         .header("Authorization", bearer(adminToken))
@@ -162,7 +162,7 @@ class PublicationControllerIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String publicationId = om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        String publicationId = om.readTree(created.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(get("/api/admin/publications")
                         .header("Authorization", bearer(sellerToken)))
@@ -196,7 +196,7 @@ class PublicationControllerIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String publicationId = om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        String publicationId = om.readTree(created.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(post("/api/admin/publications/{id}/submit-review", publicationId)
                         .header("Authorization", bearer(adminToken)))
@@ -250,7 +250,7 @@ class PublicationControllerIT {
                         ))))
                 .andExpect(status().isOk())
                 .andReturn();
-        return om.readTree(login.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(login.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String bearer(String token) {

@@ -68,7 +68,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isCreated())
                 .andReturn();
         String customerToken = om.readTree(regResult.getResponse().getContentAsString())
-                .get("accessToken").asText();
+                .get("accessToken").asString();
 
         // 2. Register + login admin (we register a second user as ADMIN via direct DB is complex;
         //    instead create a customer and promote via register, OR just register with a unique
@@ -85,7 +85,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isOk())
                 .andReturn();
         String adminToken = om.readTree(adminLogin.getResponse().getContentAsString())
-                .get("accessToken").asText();
+                .get("accessToken").asString();
 
         // 3. Admin creates a product
         String productBody = om.writeValueAsString(Map.of(
@@ -106,7 +106,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isCreated())
                 .andReturn();
         String productId = om.readTree(createProduct.getResponse().getContentAsString())
-                .get("id").asText();
+                .get("id").asString();
 
         // 4. Customer posts a review (rating = 5)
         String reviewBody = om.writeValueAsString(Map.of(
@@ -122,7 +122,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isCreated())
                 .andReturn();
         String reviewId = om.readTree(createReview.getResponse().getContentAsString())
-                .get("id").asText();
+                .get("id").asString();
 
         // 5. Before approval: avg_rating should still be 0 (only approved reviews count)
         mvc.perform(get("/api/products/{id}", productId))
@@ -156,7 +156,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isCreated())
                 .andReturn();
         String customerToken = om.readTree(reg.getResponse().getContentAsString())
-                .get("accessToken").asText();
+                .get("accessToken").asString();
 
         // Login admin
         String adminLoginBody = om.writeValueAsString(Map.of(
@@ -168,7 +168,7 @@ class ReviewSummaryIT {
                 .andExpect(status().isOk())
                 .andReturn();
         String adminToken = om.readTree(adminLogin.getResponse().getContentAsString())
-                .get("accessToken").asText();
+                .get("accessToken").asString();
 
         // Create product
         String productBody = om.writeValueAsString(Map.of(
@@ -184,7 +184,7 @@ class ReviewSummaryIT {
                         .content(productBody))
                 .andExpect(status().isCreated())
                 .andReturn();
-        String productId = om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        String productId = om.readTree(created.getResponse().getContentAsString()).get("id").asString();
 
         // Create and approve a 4-star review
         String reviewBody = om.writeValueAsString(Map.of("rating", 4, "title", "Bueno", "comment", "Ok"));
@@ -195,7 +195,7 @@ class ReviewSummaryIT {
                                 .content(reviewBody))
                 .andExpect(status().isCreated())
                 .andReturn();
-        String reviewId = om.readTree(reviewResult.getResponse().getContentAsString()).get("id").asText();
+        String reviewId = om.readTree(reviewResult.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(patch("/api/reviews/{id}/approve", reviewId)
                         .header("Authorization", "Bearer " + adminToken))

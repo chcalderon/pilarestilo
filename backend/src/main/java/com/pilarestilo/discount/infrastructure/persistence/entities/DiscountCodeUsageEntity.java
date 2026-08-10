@@ -57,7 +57,7 @@ public class DiscountCodeUsageEntity {
     public Instant getSettledAt() { return settledAt; }
     public Instant getReleasedAt() { return releasedAt; }
 
-    public void setStatus(RedemptionStatus status) { this.status = status; }
-    public void setSettledAt(Instant settledAt) { this.settledAt = settledAt; }
-    public void setReleasedAt(Instant releasedAt) { this.releasedAt = releasedAt; }
+    // No setters for status/settledAt/releasedAt on purpose. Settling and releasing go through
+    // the conditional UPDATEs in DiscountCodeUsageJpaRepository, whose `WHERE status = 'PENDING'`
+    // is what makes both idempotent. Mutating the entity here would bypass that guard.
 }
