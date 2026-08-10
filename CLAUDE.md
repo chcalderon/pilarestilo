@@ -140,7 +140,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V66**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V67**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -158,6 +158,7 @@ Recent migrations (V54–V66):
 - V64: seed default role–permission grants (ADMIN full, SELLER subset)
 - V65: social commerce foundation — `publications` table for multi-platform content
 - V66: repair `shipping_origin_zone` alias `NATIONAL` → `NACIONAL`
+- V67: discount redemptions become reservable (`status` + `order_id` on `discount_code_usages`, partial unique index on `status <> 'RELEASED'`) + `orders.public_reference`
 
 ### Spring Boot 4 modular auto-configuration
 

@@ -129,6 +129,36 @@ Rule: no Spring/JPA annotations inside `domain/`.
 - Non-variant products still use legacy aggregate `products.stock` (decremented at reserve; confirm is no-op).
 - `inventory_movements` records every operation for audit.
 
+### Discount redemption model
+
+Mirrors the reserved-stock model above: applying a code reserves capacity, paying settles it,
+cancelling gives it back. Before V67 the counter was incremented at order creation and never
+reversed, so an abandoned bank transfer burned the customer's code permanently.
+
+- `validate-for-user` → evaluates only. Nothing is consumed, so the storefront can check a code
+  as often as it likes.
+- `createOrder` → `reserve()` writes a `PENDING` row in `discount_code_usages` and claims a slot
+  via a conditional `UPDATE ... WHERE times_used < max_uses`. That statement is the concurrency
+  guard: two customers racing for the last use of a code produce exactly one winner, no lock.
+- order → `PAID` → `settle()` marks the row `SETTLED`. The slot stays occupied.
+- order → `CANCELLED` → `release()` marks it `RELEASED` and returns the slot. **Only `PENDING`
+  rows are released**, so cancelling an already-paid order does not hand the code back — that is a
+  refund, and the goods may have shipped.
+- `discounts.times_used` counts **active** redemptions (`PENDING + SETTLED`), which keeps the
+  existing `times_used >= max_uses` check correct without a second counter.
+- Uniqueness is a partial index on `status <> 'RELEASED'`, not a plain constraint: one use per
+  user while a redemption is live, reusable once released, and the audit row is never deleted.
+- Settle and release hook into `UpdateOrderStatusUseCase` and nowhere else. Every route to
+  PAID/CANCELLED funnels through it — the payment saga, the admin `PATCH /api/orders/{id}/status`,
+  the bank-transfer auto-cancel job. Do **not** also call them from `OrderInventorySaga`, which
+  delegates there: `times_used` would be decremented twice.
+- Guards (unknown code, expired, exhausted, assigned to another user, already redeemed) live in
+  `DiscountRedemptionService.evaluate` so the storefront endpoint and order creation cannot drift.
+  They did: order creation used to skip the ownership and prior-use checks entirely.
+- With `APP_ORDER_REMOTE_WRITE_ENABLED=true` a discount code is rejected outright. The remote
+  client drops it from the outbound payload, so it would otherwise be silently ignored and the
+  customer charged full price.
+
 Dispatch and shipping architecture highlights:
 
 - `orders` persiste seleccion de envio en checkout (zona/courier/referencia + `shippingPaymentMode` snapshot).
@@ -235,6 +265,7 @@ Flyway migrations currently include baseline plus catalog refinements:
 - `V64`: seed default role–permission grants (ADMIN full access, SELLER subset)
 - `V65`: social commerce foundation — `publications` table (multi-platform content lifecycle: INSTAGRAM/FACEBOOK, approval workflow, idempotency key)
 - `V66`: repair `shipping_origin_zone` value `NATIONAL` → `NACIONAL` for enum alignment
+- `V67`: discount redemptions become reservable (`status`/`order_id` on the usage ledger, partial unique index) + `orders.public_reference`
 
 ---
 
