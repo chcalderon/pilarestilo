@@ -1121,6 +1121,8 @@ export default function AccountPage({ locale }: Props) {
                 type="text"
                 value={profileName}
                 onChange={(event) => setProfileName(event.target.value)}
+                autoComplete="name"
+                name="fullName"
                 disabled={profileLoading || profileSaving}
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? 'Tu nombre completo' : 'Your full name'}
@@ -1176,11 +1178,30 @@ export default function AccountPage({ locale }: Props) {
 
             <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
               <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Cambiar contraseña' : 'Change password'}</p>
+              {/*
+                Password managers look for the account these password fields belong to. With no
+                username field they guess, and Chrome was picking the WhatsApp input and filling
+                it with the saved login email. This gives it the real answer; it is hidden from
+                sight but has to stay in the DOM and focusable-by-autofill, so it is not
+                `type="hidden"` (which Chrome ignores for this purpose).
+              */}
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={profile?.email ?? user.email}
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                className="sr-only"
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
                   type="password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
+                  autoComplete="current-password"
+                  name="currentPassword"
                   className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
                   placeholder={es ? 'Contraseña actual' : 'Current password'}
                 />
@@ -1188,6 +1209,8 @@ export default function AccountPage({ locale }: Props) {
                   type="password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
+                  autoComplete="new-password"
+                  name="newPassword"
                   className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
                   placeholder={es ? 'Nueva contraseña' : 'New password'}
                 />
@@ -1195,6 +1218,8 @@ export default function AccountPage({ locale }: Props) {
                   type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  name="confirmPassword"
                   className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose sm:col-span-2"
                   placeholder={es ? 'Confirmar nueva contraseña' : 'Confirm new password'}
                 />
