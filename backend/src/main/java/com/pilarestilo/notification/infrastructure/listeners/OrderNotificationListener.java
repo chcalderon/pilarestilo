@@ -1,5 +1,7 @@
 package com.pilarestilo.notification.infrastructure.listeners;
 
+import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.InAppNotificationPort;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
@@ -16,23 +18,35 @@ public class OrderNotificationListener {
     private final NotificationSender notificationSender;
     private final InAppNotificationPort inAppNotificationPort;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     public OrderNotificationListener(NotificationSender notificationSender,
                                       InAppNotificationPort inAppNotificationPort,
-                                      UserRepository userRepository) {
+                                      UserRepository userRepository,
+                                      OrderRepository orderRepository) {
         this.notificationSender = notificationSender;
         this.inAppNotificationPort = inAppNotificationPort;
         this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
     }
 
     @EventListener
     public void onOrderCreated(OrderCreated event) {
+        // A TRANSFER order gets the instructions message from PaymentRegisteredNotificationListener,
+        // which carries the amount, bank details and deadline. Sending the generic confirmation too
+        // would mean two emails, one of them useless.
+        boolean isTransfer = orderRepository.findById(event.orderId())
+                .map(order -> order.getPaymentMethod() == PaymentMethod.TRANSFER)
+                .orElse(false);
+
         userRepository.findById(event.customerId()).ifPresent(user -> {
-            notificationSender.sendOrderConfirmation(
+            if (!isTransfer) {
+                notificationSender.sendOrderConfirmation(
                 event.orderId(),
                 NotificationRecipient.of(user.getPhone(), user.getEmail(),
                     user.getNotificationChannelPreference().name())
-            );
+                );
+            }
             inAppNotificationPort.notifyOrderConfirmed(user.getId(), event.orderId());
         });
     }

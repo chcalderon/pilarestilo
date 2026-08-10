@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
@@ -113,4 +114,15 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
     }
 
     private record EffectiveConfig(String simulatedTo, String senderAlias) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        if (!recipient.allowsWhatsApp()) {
+            log.info("[WHATSAPP:SIMULATED] skipped template={} reason=channel-preference",
+                    message.templateKey());
+            return;
+        }
+        log.info("[WHATSAPP:SIMULATED] template={} referenceId={} to={} body={}",
+                message.templateKey(), message.referenceId(), recipient.phone(), message.bodyText());
+    }
 }

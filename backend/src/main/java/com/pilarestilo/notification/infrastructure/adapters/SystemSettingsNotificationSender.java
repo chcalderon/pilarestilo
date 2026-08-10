@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.systemsettings.domain.enums.NotificationProvider;
@@ -73,8 +74,8 @@ public class SystemSettingsNotificationSender implements NotificationSender {
     }
 
     @Override
-    public void sendOrderCancelled(UUID orderId, String reason, NotificationRecipient recipient) {
-        resolveSender().sendOrderCancelled(orderId, reason, recipient);
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        resolveSender().send(message, recipient);
     }
 
     private NotificationSender resolveSender() {

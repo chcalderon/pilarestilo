@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import org.slf4j.Logger;
@@ -38,8 +39,10 @@ public class LogNotificationSender implements NotificationSender {
         log.info("[NOTIFICATION] DISCOUNT_CODE_ASSIGNED code={} recipient={}", code, recipient.preferredEmailThenPhone());
     }
 
+
     @Override
-    public void sendOrderCancelled(UUID orderId, String reason, NotificationRecipient recipient) {
-        log.info("[NOTIFICATION] ORDER_CANCELLED orderId={} reason={} recipient={}", orderId, reason, recipient.preferredEmailThenPhone());
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        log.info("[NOTIFY] template={} referenceId={} subject={} data={}",
+                message.templateKey(), message.referenceId(), message.subject(), message.data());
     }
 }
