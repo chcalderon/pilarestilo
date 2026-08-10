@@ -46,7 +46,6 @@ export default function RegisterForm({ locale, redirect }: Props) {
               vigencyStart: data.vigencyStart,
               vigencyEnd: data.vigencyEnd,
             });
-            document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
             const dest = redirect ?? `/${locale}/account`;
             if (data.accountMerged) {
               setMerged(true);
@@ -103,7 +102,6 @@ export default function RegisterForm({ locale, redirect }: Props) {
         vigencyStart: data.vigencyStart,
         vigencyEnd: data.vigencyEnd,
       });
-      document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       window.location.href = redirect ?? `/${locale}/account`;
     } catch {
       setError(

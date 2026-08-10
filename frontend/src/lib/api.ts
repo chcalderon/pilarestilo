@@ -750,6 +750,26 @@ export const FIXTURE_PRODUCTS: ProductDto[] = [
 
 // ─── HTTP Helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Carries the HTTP status so callers can tell "the server rejected you" (401/403 — drop the
+ * session) from "the server did not answer" (5xx, timeout, network — keep it). Message keeps the
+ * previous shape, so existing string checks on `.message` still behave the same.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+/** True only for a genuine credential rejection — never for an unreachable backend. */
+export function isAuthRejection(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 401 || error.status === 403);
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
   return fetchJsonFromBase<T>(url, init);
@@ -788,7 +808,7 @@ async function fetchJsonFromBase<T>(url: string, init?: RequestInit): Promise<T>
       } catch {
         // Keep default detail when body is not JSON.
       }
-      throw new Error(detail);
+      throw new ApiError(detail, res.status);
     }
     if (res.status === 204) return undefined as unknown as T;
     return res.json() as Promise<T>;

@@ -37,8 +37,8 @@ export {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Instagram,
-  Facebook,
+  // Brand icons (Instagram/Facebook) were dropped in lucide-react v1 — Footer.astro renders
+  // them via Icon.astro and inline SVG instead.
   Send,
   ImageIcon,
 } from 'lucide-react';

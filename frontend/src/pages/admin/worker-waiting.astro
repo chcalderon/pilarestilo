@@ -38,7 +38,6 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   document.getElementById('logout-btn')?.addEventListener('click', () => {
     useAuthStore.getState().clearAuth();
-    document.cookie = 'pe_token=; path=/; max-age=0; SameSite=Lax';
     window.location.href = '/admin/login';
   });
 </script>

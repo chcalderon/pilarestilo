@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, LogIn, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { loginUser, googleLogin } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
+import { isAdminPanelRole } from '../../lib/roles';
 
 interface Props {
   locale: 'es' | 'en';
@@ -45,9 +46,7 @@ export default function LoginForm({ locale, redirect }: Props) {
               vigencyStart: data.vigencyStart,
               vigencyEnd: data.vigencyEnd,
             });
-            document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-            const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
-            const dest = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
+            const dest = isAdminPanelRole(data.role) ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
             if (data.accountMerged) {
               setMerged(true);
               setTimeout(() => { window.location.href = dest; }, 2500);
@@ -99,9 +98,7 @@ export default function LoginForm({ locale, redirect }: Props) {
         vigencyStart: data.vigencyStart,
         vigencyEnd: data.vigencyEnd,
       });
-      document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      const isStaff = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'].includes(data.role);
-      window.location.href = isStaff ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
+      window.location.href = isAdminPanelRole(data.role) ? '/admin/dashboard' : (redirect ?? `/${locale}/`);
     } catch {
       setError(es ? 'Email o contraseña incorrectos.' : 'Invalid email or password.');
     } finally {

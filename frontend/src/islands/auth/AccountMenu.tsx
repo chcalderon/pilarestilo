@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { User, LogOut, ChevronDown, LogIn } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
-import { getAuthMe } from '../../lib/api';
+import { isAdminPanelRole, roleLabel } from '../../lib/roles';
+import { getAuthMe, isAuthRejection } from '../../lib/api';
 import { RegisterPopoverTrigger } from '@/components/auth/RegisterPopoverTrigger';
 
 interface Props {
@@ -32,8 +33,12 @@ export default function AccountMenu({ locale }: Props) {
             vigencyStart: user?.vigencyStart,
             vigencyEnd: user?.vigencyEnd,
           });
-        } catch {
-          clearAuth();
+        } catch (err) {
+          // clearAuth() also drops the pe_token cookie the admin panel depends on, so only a
+          // real rejection ends the session — a backend blip must not sign the user out.
+          if (isAuthRejection(err)) {
+            clearAuth();
+          }
         }
       }
       setReady(true);
@@ -79,7 +84,6 @@ export default function AccountMenu({ locale }: Props) {
 
   function handleLogout() {
     clearAuth();
-    document.cookie = 'pe_token=; path=/; max-age=0; SameSite=Lax';
     window.location.href = `/${locale}/`;
   }
 
@@ -111,7 +115,7 @@ export default function AccountMenu({ locale }: Props) {
           <div className="px-4 py-3 border-b border-[var(--pe-dropdown-border)]">
             <p className="font-sans text-[0.72rem] text-[var(--pe-nav-subtle)] truncate">{user.email}</p>
             <p className="font-sans text-[0.65rem] tracking-wider uppercase text-pe-rose/70 mt-0.5">
-              {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
+              {roleLabel(user.role, es)}
             </p>
           </div>
           <a
@@ -122,7 +126,7 @@ export default function AccountMenu({ locale }: Props) {
             <User size={13} />
             {es ? 'Mi cuenta' : 'My account'}
           </a>
-          {user.role === 'ADMIN' && (
+          {isAdminPanelRole(user.role) && (
             <a
               href="/admin"
               className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-[0.78rem] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] hover:bg-[var(--pe-dropdown-hover)] transition-colors duration-200"

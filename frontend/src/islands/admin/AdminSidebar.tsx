@@ -101,7 +101,6 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
 
   function handleLogout() {
     clearAuth();
-    document.cookie = 'pe_token=; path=/; max-age=0; SameSite=Lax';
     closeMobileMenu();
     window.location.href = '/admin/login';
   }

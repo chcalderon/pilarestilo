@@ -1,19 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
+import { decodeJwtPayload } from './lib/jwt';
+import { isAdminPanelRole } from './lib/roles';
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '=='.slice(0, (4 - (base64.length % 4)) % 4);
-    const decoded = atob(padded);
-    return JSON.parse(decoded) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-const ADMIN_PANEL_ROLES = new Set(['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER']);
 const RBAC_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.RBAC_DEBUG === 'true';
 
 type HybridRouteRequirement = {
@@ -68,79 +56,101 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
     }
 
-    const payload = decodeJwtPayload(token);
-    if (!payload || !ADMIN_PANEL_ROLES.has(String(payload['role'] ?? ''))) {
+    /** The token itself is bad — drop it so the stale copy stops being retried. */
+    const rejectToken = () => {
       context.cookies.delete('pe_token', { path: '/' });
       return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+    };
+
+    const payload = decodeJwtPayload(token);
+    if (!payload || !isAdminPanelRole(payload['role'])) {
+      return rejectToken();
     }
 
     if (typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp']) {
-      context.cookies.delete('pe_token', { path: '/' });
-      return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+      return rejectToken();
     }
+
+    /**
+     * The backend could not answer. That says nothing about the token, so keep the cookie —
+     * otherwise a transient outage logs every staff member out and they cannot get back in
+     * until it recovers.
+     */
+    const backendUnavailable = () =>
+      context.redirect(
+        `/admin/login?redirect=${encodeURIComponent(pathname)}&reason=backend_unavailable`,
+      );
 
     // Server-side validation against backend to reject stale/invalid signatures.
     const apiBase = import.meta.env.INTERNAL_API_BASE_URL ?? 'http://backend:8080/api';
+    let res: Response;
     try {
-      const res = await fetch(`${apiBase}/auth/me`, {
+      res = await fetch(`${apiBase}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        context.cookies.delete('pe_token', { path: '/' });
-        return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
-      }
-      const me = await res.json();
-      if (!me || !ADMIN_PANEL_ROLES.has(String(me.role ?? ''))) {
-        context.cookies.delete('pe_token', { path: '/' });
-        return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
-      }
-
-      const hybridRequirement = resolveHybridRequirement(pathname);
-      if (hybridRequirement) {
-        const role = String(me.role ?? payload['role'] ?? '');
-        const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
-        const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
-        const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);
-
-        if (RBAC_DEBUG_ENABLED) {
-          if (permissionCodes.length === 0 && legacyPermissions.length > 0) {
-            console.info(
-              '[RBAC] middleware legacy fallback route=%s role=%s permission=%s legacy=%s',
-              pathname,
-              role,
-              hybridRequirement.permissionCode,
-              hybridRequirement.legacyViewKey,
-            );
-          }
-          if (access.allowed) {
-            console.info(
-              '[RBAC] middleware hybrid route=%s role=%s permission=%s authorities=%s fallback=%s',
-              pathname,
-              role,
-              hybridRequirement.permissionCode,
-              permissionCodes.length,
-              access.usedLegacyFallback,
-            );
-          }
-        }
-
-        if (!access.allowed) {
-          if (RBAC_DEBUG_ENABLED) {
-            console.warn(
-              '[RBAC] middleware deny route=%s role=%s permission=%s permissionCodes=%s legacyPermissions=%s',
-              pathname,
-              role,
-              hybridRequirement.permissionCode,
-              permissionCodes.length,
-              legacyPermissions.length,
-            );
-          }
-          return context.redirect('/admin/');
-        }
-      }
     } catch {
-      context.cookies.delete('pe_token', { path: '/' });
-      return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+      // Network-level failure: backend down, DNS, or a bad INTERNAL_API_BASE_URL.
+      return backendUnavailable();
+    }
+
+    if (!res.ok) {
+      return rejectToken();
+    }
+
+    let me: { role?: unknown; permissions?: unknown; permissionCodes?: unknown } | null;
+    try {
+      me = await res.json();
+    } catch {
+      // 200 with an unreadable body is a backend fault, not a bad credential.
+      return backendUnavailable();
+    }
+
+    if (!me || !isAdminPanelRole(me.role)) {
+      return rejectToken();
+    }
+
+    const hybridRequirement = resolveHybridRequirement(pathname);
+    if (hybridRequirement) {
+      const role = String(me.role ?? payload['role'] ?? '');
+      const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
+      const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
+      const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);
+
+      if (RBAC_DEBUG_ENABLED) {
+        if (permissionCodes.length === 0 && legacyPermissions.length > 0) {
+          console.info(
+            '[RBAC] middleware legacy fallback route=%s role=%s permission=%s legacy=%s',
+            pathname,
+            role,
+            hybridRequirement.permissionCode,
+            hybridRequirement.legacyViewKey,
+          );
+        }
+        if (access.allowed) {
+          console.info(
+            '[RBAC] middleware hybrid route=%s role=%s permission=%s authorities=%s fallback=%s',
+            pathname,
+            role,
+            hybridRequirement.permissionCode,
+            permissionCodes.length,
+            access.usedLegacyFallback,
+          );
+        }
+      }
+
+      if (!access.allowed) {
+        if (RBAC_DEBUG_ENABLED) {
+          console.warn(
+            '[RBAC] middleware deny route=%s role=%s permission=%s permissionCodes=%s legacyPermissions=%s',
+            pathname,
+            role,
+            hybridRequirement.permissionCode,
+            permissionCodes.length,
+            legacyPermissions.length,
+          );
+        }
+        return context.redirect('/admin/');
+      }
     }
   }
 

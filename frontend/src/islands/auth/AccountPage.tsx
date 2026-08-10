@@ -516,7 +516,6 @@ export default function AccountPage({ locale }: Props) {
 
   function handleLogout() {
     clearAuth();
-    document.cookie = 'pe_token=; path=/; max-age=0; SameSite=Lax';
     window.location.href = `/${locale}/`;
   }
 

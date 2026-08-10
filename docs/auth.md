@@ -10,7 +10,13 @@ This document reflects the implementation currently in the codebase.
 | Access token TTL | 24 hours |
 | Refresh token TTL | 7 days |
 | Secret source | `JWT_SECRET` env var |
-| Claims | `sub`, `email`, `role`, `exp` |
+| Access token claims | `sub`, `email`, `role`, `permissions`, `permissionCodes`, `iat`, `exp` |
+| Refresh token claims | `sub`, `type: "refresh"`, `iat`, `exp` |
+
+`role` is a single unprefixed string (`ADMIN`, not `ROLE_ADMIN`); the `ROLE_`/`PERM_` prefixes are
+added server-side in `AuthenticatedUser.toAuthorities()`. `permissions` holds legacy view keys
+(`dashboard`, `productos`, …); `permissionCodes` holds modern RBAC codes (`products.read`, …).
+Both are resolved at login by `RolePermissionResolutionService` — see `JwtTokenProvider`.
 
 Generate a secure secret:
 
@@ -210,12 +216,33 @@ The panel is wired into `AccountMenu.tsx` and replaces direct guest navigation t
 ---
 ## 6. Frontend Token Storage
 
-Frontend stores auth data in two places:
+The token lives in two places because two runtimes need it:
 
-1. `localStorage` (`pe-auth`) via Zustand (`authStore`)
-2. `pe_token` cookie for Astro SSR middleware checks
+| Store | Read by |
+|---|---|
+| `localStorage` key `pe-auth` (Zustand `authStore`, `persist`) | React islands — drives the UI |
+| `pe_token` cookie | `frontend/src/middleware.ts` — the **only** token SSR can see |
 
-Logout clears both.
+**Invariant: `frontend/src/lib/authStore.ts` is the sole writer of the cookie.** `setAuth()` writes
+it, `clearAuth()` deletes it, and `onRehydrateStorage` re-mirrors it on page load (or clears the
+store if the JWT has expired). Never assign `document.cookie = 'pe_token=…'` anywhere else.
+
+Writing the two stores from separate call sites is what caused the storefront → `/admin` bounce:
+the navbar login popover called `setAuth()` without writing the cookie, so the middleware saw an
+anonymous request and redirected an already-logged-in admin to `/admin/login`.
+
+Cookie attributes (`writeAuthTokenCookie`):
+
+| Attribute | Value |
+|---|---|
+| `path` | `/` |
+| `max-age` | derived from the JWT `exp` claim, so cookie and token expire together |
+| `SameSite` | `Lax` |
+| `Secure` | only when `location.protocol === 'https:'` — local dev is plain `http://localhost` |
+| `HttpOnly` | **not set** — the cookie is written and read by client JS, so it is XSS-readable |
+
+Islands that may run before hydration use `token ?? readAuthTokenCookie()` (see `AdminDashboard`,
+`CartPage`, `UserManagement`, …).
 
 ---
 
@@ -223,12 +250,35 @@ Logout clears both.
 
 `frontend/src/middleware.ts` protects `/admin/**` (except `/admin/login`):
 
-1. Reads `pe_token` cookie
-2. Decodes JWT payload
-3. Validates token expiry and `role === 'ADMIN'`
-4. Redirects unauthorized users to `/admin/login?redirect=<path>`
+1. Reads the `pe_token` cookie; missing → redirect to `/admin/login?redirect=<path>`
+2. Decodes the JWT payload (`lib/jwt.ts` — payload only, signature is not verified here)
+3. Requires `role` ∈ `ADMIN_PANEL_ROLES` (`lib/roles.ts`): `ADMIN`, `SUPERVISOR`, `ADMINISTRACION`,
+   `DESPACHADOR`, `SELLER`. `CUSTOMER` is rejected.
+4. Rejects expired tokens via the `exp` claim
+5. Revalidates server-side against `GET {INTERNAL_API_BASE_URL}/auth/me` and re-checks the role
+   from the response, catching tokens with a stale or forged signature
+6. Enforces per-route RBAC on three routes, ADMIN always allowed, otherwise modern
+   `permissionCodes` with a legacy `permissions` fallback; denial redirects to `/admin/`:
 
-Backend authorization remains the second protection layer.
+   | Route prefix | `permissionCode` | legacy view key |
+   |---|---|---|
+   | `/admin/roles-permisos` | `roles.read` | `roles_permisos` |
+   | `/admin/users` | `users.read` | `usuarios` |
+   | `/admin/settings` | `settings.read` | `configuracion` |
+
+Failure handling distinguishes a bad credential from an unreachable backend:
+
+- **Invalid token** (bad role, expired, non-OK `/auth/me`) → delete the cookie, redirect to
+  `/admin/login?redirect=<path>`
+- **Backend unreachable** (`fetch` throws, or a 200 with an unreadable body) → redirect to
+  `/admin/login?redirect=<path>&reason=backend_unavailable` and **keep** the cookie, so a
+  transient outage does not log every staff member out. `admin/login.astro` reads `reason` and
+  shows "el servidor administrativo no está disponible" instead of a credentials error.
+
+Set `RBAC_DEBUG=true` (implicit in dev) for `[RBAC] middleware …` decision logging.
+
+Backend authorization (`@PreAuthorize`, §4) remains the real security boundary — this guard only
+decides what renders.
 
 ---
 

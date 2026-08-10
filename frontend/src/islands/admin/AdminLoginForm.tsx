@@ -2,16 +2,22 @@ import { useState } from 'react';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { loginUser } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
+import { isAdminPanelRole } from '../../lib/roles';
 
 interface Props {
   redirect?: string;
+  /** Set when the middleware bounced us here because the backend was unreachable, not on a 401. */
+  backendUnavailable?: boolean;
 }
 
-export default function AdminLoginForm({ redirect }: Props) {
+const BACKEND_UNAVAILABLE_MESSAGE =
+  'El servidor administrativo no está disponible en este momento. Intenta nuevamente en unos minutos.';
+
+export default function AdminLoginForm({ redirect, backendUnavailable = false }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(backendUnavailable ? BACKEND_UNAVAILABLE_MESSAGE : '');
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuthStore();
 
@@ -21,8 +27,7 @@ export default function AdminLoginForm({ redirect }: Props) {
     setError('');
     try {
       const data = await loginUser(email, password);
-      const allowedRoles = ['ADMIN', 'SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'];
-      if (!allowedRoles.includes(data.role)) {
+      if (!isAdminPanelRole(data.role)) {
         setError('Acceso denegado. Se requieren privilegios de administrador.');
         return;
       }
@@ -35,7 +40,6 @@ export default function AdminLoginForm({ redirect }: Props) {
         vigencyStart: data.vigencyStart,
         vigencyEnd: data.vigencyEnd,
       });
-      document.cookie = `pe_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       const target = redirect && redirect.startsWith('/admin') && !redirect.startsWith('/admin/login')
         ? redirect
         : '/admin/dashboard';
@@ -43,7 +47,7 @@ export default function AdminLoginForm({ redirect }: Props) {
     } catch (error) {
       const detail = error instanceof Error ? error.message : '';
       if (/API error 5\d{2}\b|API timeout\b/i.test(detail)) {
-        setError('El servidor administrativo no est\u00e1 disponible en este momento. Intenta nuevamente en unos minutos.');
+        setError(BACKEND_UNAVAILABLE_MESSAGE);
       } else {
         setError('Email o contrase\u00f1a incorrectos.');
       }
