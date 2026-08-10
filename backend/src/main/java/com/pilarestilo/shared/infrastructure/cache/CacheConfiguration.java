@@ -15,11 +15,16 @@ import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.pilarestilo.category.application.dto.CategoryDto;
+import com.pilarestilo.category.application.dto.CategoryTreeNode;
+import com.pilarestilo.systemsettings.application.dto.PublicStoreSettingsDto;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.type.TypeFactory;
 
 import java.time.Duration;
 import java.util.List;
@@ -37,24 +42,44 @@ public class CacheConfiguration implements CachingConfigurer {
             RedisConnectionFactory redisConnectionFactory,
             @Value("${app.cache.redis.ttl-seconds:300}") long ttlSeconds
     ) {
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+        // JSON, not JDK serialization: every cached type (CategoryDto, CategoryTreeNode,
+        // PublicStoreSettingsDto) is a record and none implements Serializable, so
+        // JdkSerializationRedisSerializer threw "Cannot serialize" on every write. The error
+        // handler swallowed that as a cache miss, so the cache looked healthy while storing
+        // nothing — redis-cli dbsize stayed at 0 and every read hit the database.
+        //
+        // Each cache is pinned to its concrete type instead of relying on Jackson's default
+        // typing. Default typing round-trips a single record fine (@class property) but not a
+        // List, where the type id has to move into a wrapper array and the read then fails with
+        // "expected VALUE_STRING ... that contains type id". Pinning the type also means nothing
+        // in the cache can name a class to instantiate, so there is no deserialization gadget
+        // surface to validate. Prefix bumped to v4 so entries in the old format are never read.
+        TypeFactory typeFactory = TypeFactory.createDefaultInstance();
+
+        RedisCacheConfiguration base = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(Math.max(30L, ttlSeconds)))
                 .disableCachingNullValues()
-                .computePrefixWith(cacheName -> "pe:v3:" + cacheName + "::")
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair.fromSerializer(
-                                new JdkSerializationRedisSerializer()
-                        )
-                );
+                .computePrefixWith(cacheName -> "pe:v4:" + cacheName + "::");
 
         return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(defaultConfig)
+                .cacheDefaults(base)
                 .withInitialCacheConfigurations(Map.of(
-                        CacheNames.PUBLIC_STORE_SETTINGS, defaultConfig,
-                        CacheNames.CATEGORY_LIST, defaultConfig,
-                        CacheNames.CATEGORY_TREE, defaultConfig
+                        CacheNames.PUBLIC_STORE_SETTINGS,
+                        typedCache(base, typeFactory.constructType(PublicStoreSettingsDto.class)),
+                        CacheNames.CATEGORY_LIST,
+                        typedCache(base, typeFactory.constructCollectionType(List.class, CategoryDto.class)),
+                        CacheNames.CATEGORY_TREE,
+                        typedCache(base, typeFactory.constructCollectionType(List.class, CategoryTreeNode.class))
                 ))
                 .build();
+    }
+
+    private static RedisCacheConfiguration typedCache(RedisCacheConfiguration base, JavaType type) {
+        return base.serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(
+                        new JacksonJsonRedisSerializer<>(type)
+                )
+        );
     }
 
     @Bean
