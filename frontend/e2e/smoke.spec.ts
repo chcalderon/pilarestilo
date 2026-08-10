@@ -15,6 +15,10 @@ async function gotoApp(page: Page, path: string) {
 test.describe('Home page', () => {
   test('Spanish home renders header and category nav', async ({ page }) => {
     test.slow();
+    // #nav-cats is `block lg:hidden` — the category strip only exists below Tailwind's lg
+    // breakpoint (1024px). Playwright's Desktop Chrome viewport is 1280px wide, where the
+    // markup renders but stays hidden.
+    await page.setViewportSize({ width: 900, height: 800 });
     await gotoApp(page, '/es/');
     await expect(page).toHaveTitle(/Pilar Estilo/i);
     await expect(page.locator('header#site-header')).toBeVisible({ timeout: 15000 });
@@ -46,6 +50,8 @@ test.describe('Products listing', () => {
   });
 
   test('Category nav exposes products link', async ({ page }) => {
+    // Below lg — see the note in "Spanish home renders header and category nav".
+    await page.setViewportSize({ width: 900, height: 800 });
     await gotoApp(page, '/es/');
     const productsLink = page.locator('#nav-cats-list a[href="/es/products"]').first();
     await expect(productsLink).toBeVisible({ timeout: 15000 });
