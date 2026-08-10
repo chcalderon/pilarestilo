@@ -61,15 +61,7 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
         jpaRepository.deleteById(id);
     }
 
-    @Override
-    public boolean hasUserUsedDiscount(UUID discountId, UUID userId) {
-        return usageRepository.existsByDiscountIdAndUserId(discountId, userId);
-    }
 
-    @Override
-    public void recordUsage(UUID discountId, UUID userId) {
-        usageRepository.save(new DiscountCodeUsageEntity(discountId, userId));
-    }
 
     @Override
     public long countByCodePattern(String pattern) {

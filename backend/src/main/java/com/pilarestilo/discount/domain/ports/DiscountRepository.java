@@ -22,9 +22,7 @@ public interface DiscountRepository {
 
     void deleteById(UUID id);
 
-    boolean hasUserUsedDiscount(UUID discountId, UUID userId);
 
-    void recordUsage(UUID discountId, UUID userId);
 
     long countByCodePattern(String pattern);
 }

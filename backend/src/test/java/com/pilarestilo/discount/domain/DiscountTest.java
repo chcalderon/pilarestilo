@@ -41,7 +41,7 @@ class DiscountTest {
     void percentage_discount_computed_correctly() {
         Discount d = buildPercentageDiscount(5);
         Money subtotal = Money.of(BigDecimal.valueOf(100000));
-        Money discountAmount = d.apply(subtotal);
+        Money discountAmount = d.computeDiscountFor(subtotal);
         assertEquals(BigDecimal.valueOf(10000).stripTrailingZeros(),
                 discountAmount.amount().stripTrailingZeros());
     }
@@ -50,7 +50,7 @@ class DiscountTest {
     void fixed_discount_returned_correctly() {
         Discount d = buildFixedDiscount();
         Money subtotal = Money.of(BigDecimal.valueOf(50000));
-        Money discountAmount = d.apply(subtotal);
+        Money discountAmount = d.computeDiscountFor(subtotal);
         assertEquals(BigDecimal.valueOf(5000).stripTrailingZeros(),
                 discountAmount.amount().stripTrailingZeros());
     }
@@ -59,7 +59,7 @@ class DiscountTest {
     void fixed_discount_capped_at_subtotal() {
         Discount d = buildFixedDiscount();
         Money subtotal = Money.of(BigDecimal.valueOf(3000));
-        Money discountAmount = d.apply(subtotal);
+        Money discountAmount = d.computeDiscountFor(subtotal);
         assertEquals(BigDecimal.valueOf(3000).stripTrailingZeros(),
                 discountAmount.amount().stripTrailingZeros());
     }
@@ -82,8 +82,8 @@ class DiscountTest {
     void throws_when_usage_limit_reached() {
         Discount d = buildPercentageDiscount(1);
         Money subtotal = Money.of(BigDecimal.valueOf(10000));
-        d.apply(subtotal); // first use — consumes the one allowed use
-        assertThrows(DomainException.class, () -> d.apply(subtotal));
+        d.setTimesUsed(1); // the slot is claimed in DiscountRedemptionRepository, not by the aggregate
+        assertThrows(DomainException.class, () -> d.computeDiscountFor(subtotal));
     }
 
     @Test
