@@ -91,19 +91,26 @@ SYSTEM_SETTINGS_CRYPTO_SECRET=                  # generate with: openssl rand -b
 DOMAIN=pilarestilo.com                          # your real domain
 
 # Docker Compose profiles activated by vps_deploy.sh.
-# Standard full stack (includes extracted microservices + Redis):
-DEPLOY_PROFILES=microservices,cache
+# Standard full stack. Every profile here backs a flag that .env.example ships enabled, and
+# the flags are what make the containers mandatory: they register Kafka listeners, a Redis
+# connection factory and the remote clients at startup. Drop a profile while its flag is on
+# and the backend cannot resolve `kafka` or `redis`, fails with "No resolvable bootstrap urls
+# given in bootstrap.servers", and Docker holds it in a restart loop.
+DEPLOY_PROFILES=microservices,cache,kafka
 
-# Enable backend-to-microservice delegation once microservices are running:
+# Backend-to-microservice delegation (needs the microservices profile):
 APP_INVENTORY_REMOTE_ENABLED=true
 APP_ORDER_REMOTE_ENABLED=true
 APP_ORDER_REMOTE_WRITE_ENABLED=true
 APP_PAYMENT_REMOTE_ENABLED=true
+
+# Redis hot-read cache (needs the cache profile):
 APP_CACHE_REDIS_ENABLED=true
 
-# Optional Kafka domain-events mode:
-# APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
-# DEPLOY_PROFILES=microservices,cache,kafka
+# Kafka domain events (needs the kafka profile):
+APP_DOMAIN_EVENTS_KAFKA_ENABLED=true
+
+# To run without one of these, switch its flag off *and* drop its profile — never just one.
 
 # Dispatch auto-delivery scheduler (default: every 30 minutes):
 # APP_DISPATCH_AUTO_DELIVERY_CRON=0 */30 * * * *
@@ -165,8 +172,10 @@ If you run `docker compose ... up` directly, Docker Compose does not read `DEPLO
 
 To override profiles for a single run without editing `.env`:
 ```bash
-DEPLOY_PROFILES=microservices,cache bash scripts/deploy/vps_deploy.sh
+DEPLOY_PROFILES=microservices,cache,kafka bash scripts/deploy/vps_deploy.sh
 ```
+Dropping a profile here does not disable the matching flag in `.env`, so an override that
+omits `kafka` or `cache` starts a backend that cannot reach a service it was told to use.
 
 Manual profile examples (without deploy script):
 ```bash

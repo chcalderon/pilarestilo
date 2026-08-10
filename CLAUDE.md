@@ -66,7 +66,7 @@ Seed admin credentials: `admin@pilarestilo.com` / `admin2026`
 ### Monorepo layout
 
 ```
-backend/          Spring Boot monolith (hexagonal, 16 modules)
+backend/          Spring Boot monolith (hexagonal, 21 modules)
 services/         Extracted microservices (P6 — optional profile)
   product-service, inventory-service, order-service, payment-service
 frontend/         Astro 4 SSR + React islands
@@ -100,7 +100,7 @@ Every domain module follows the same three-layer pattern:
 
 Naming conventions: `{Action}UseCase`, `{Entity}RepositoryJpaAdapter`, `{Entity}Controller`. Domain objects carry no framework annotations — JPA entities are separate from domain models. Use cases take ports (interfaces) as constructor args; Spring wires them.
 
-Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication` + `shared` (auth, rbac, kafka, common domain).
+Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`, `customeraddress` + `shared` (auth, rbac, kafka, common domain).
 
 `cashregister` also exposes `POST /api/pos/sales` (stub, returns 501) — planned Windows POS integration; see `docs/pos-channel.md`.
 
