@@ -91,7 +91,9 @@ public final class SystemSettingsMapper {
                 settings.getPaymentGatewayProviders().stream().map(Enum::name).toList(),
                 settings.getShippingZonesJson(),
                 settings.getShippingCouriersJson(),
-                settings.getShippingPaymentMode().name()
+                settings.getShippingPaymentMode().name(),
+                settings.isBankTransferAutoCancelEnabled(),
+                settings.getBankTransferAutoCancelTimeoutMinutes()
         );
     }
 
