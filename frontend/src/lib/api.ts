@@ -400,6 +400,8 @@ export interface PublicStoreSettingsDto {
   shippingPaymentMode?: ShippingPaymentMode;
   bankTransferAutoCancelEnabled?: boolean;
   bankTransferAutoCancelTimeoutMinutes?: number;
+  /** False when order writes go to order-service, which refuses any order carrying a code. */
+  discountCodesEnabled?: boolean;
 }
 
 export interface CustomerCreditDto {

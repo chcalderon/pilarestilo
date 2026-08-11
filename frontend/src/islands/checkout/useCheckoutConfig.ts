@@ -28,6 +28,12 @@ export interface CheckoutConfig {
   shippingPaymentMode: ShippingPaymentMode;
   /** Minutes to upload a transfer receipt, or null when the auto-cancel sweep is off. */
   transferWindowMinutes: number | null;
+  /**
+   * False when this deployment delegates order writes to order-service, which has no
+   * redemption ledger and rejects any order carrying a code. Offering the input then would
+   * let a customer apply a code, watch the total drop, and be refused at the last step.
+   */
+  discountCodesEnabled: boolean;
 }
 
 const EMPTY_TRANSFER: BankTransferDetails = {
@@ -63,6 +69,7 @@ export function useCheckoutConfig(): CheckoutConfig {
     couriers: [],
     shippingPaymentMode: 'POR_PAGAR',
     transferWindowMinutes: null,
+    discountCodesEnabled: false,
   });
 
   useEffect(() => {
@@ -115,6 +122,8 @@ export function useCheckoutConfig(): CheckoutConfig {
           transferWindowMinutes: settings?.bankTransferAutoCancelEnabled
             ? (settings.bankTransferAutoCancelTimeoutMinutes ?? null)
             : null,
+          /* Absent on an older backend: assume off rather than offer what may be refused. */
+          discountCodesEnabled: settings?.discountCodesEnabled === true,
         });
       } catch {
         if (cancelled) return;

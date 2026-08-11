@@ -391,6 +391,7 @@ export default function CheckoutPage({ locale }: Props) {
                 appliedDiscount={appliedDiscount}
                 applying={discountApplying}
                 error={discountError}
+                enabled={config.discountCodesEnabled}
                 onApply={applyDiscount}
                 onRemove={removeDiscount}
               />
