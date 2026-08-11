@@ -24,6 +24,19 @@ function resolveHybridRequirement(pathname: string): HybridRouteRequirement | nu
   return null;
 }
 
+const CHECKOUT_LOCALES = ['es', 'en'] as const;
+
+/** Returns the locale when `pathname` is that locale's checkout, otherwise null. */
+function resolveCheckoutLocale(pathname: string): (typeof CHECKOUT_LOCALES)[number] | null {
+  for (const locale of CHECKOUT_LOCALES) {
+    const prefix = `/${locale}/checkout`;
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+      return locale;
+    }
+  }
+  return null;
+}
+
 function readStringArray(source: unknown): string[] {
   return Array.isArray(source) ? source.filter((item): item is string => typeof item === 'string') : [];
 }
@@ -151,6 +164,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
         }
         return context.redirect('/admin/');
       }
+    }
+  }
+
+  const checkoutLocale = resolveCheckoutLocale(pathname);
+  if (checkoutLocale) {
+    const token = context.cookies.get('pe_token')?.value;
+    const payload = token ? decodeJwtPayload(token) : null;
+    const expired =
+      !!payload && typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp'];
+
+    /**
+     * Deliberately a local check, unlike the admin gate above: it never calls the backend.
+     * Checkout is not privileged — the order endpoint authorizes the request itself — so the
+     * only job here is to avoid rendering a flow the customer cannot finish. Asking the
+     * backend would mean a blip bounces a paying customer to the login screen.
+     */
+    if (!payload || expired) {
+      if (token) {
+        context.cookies.delete('pe_token', { path: '/' });
+      }
+      const target = `${pathname}${context.url.search}`;
+      return context.redirect(
+        `/${checkoutLocale}/auth/login?redirect=${encodeURIComponent(target)}`,
+      );
     }
   }
 
