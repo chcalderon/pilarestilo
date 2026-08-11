@@ -4,8 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
-import com.pilarestilo.discount.domain.model.Discount;
-import com.pilarestilo.discount.domain.ports.DiscountRepository;
+import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
@@ -48,7 +47,7 @@ public class CreateOrderUseCase {
     private final DomainEventPublisher eventPublisher;
     private final OrderRemoteCommandClient orderRemoteCommandClient;
     private final SystemSettingsRepository systemSettingsRepository;
-    private final DiscountRepository discountRepository;
+    private final DiscountRedemptionService discountRedemptionService;
     private final CustomerAddressBookService customerAddressBookService;
 
     public CreateOrderUseCase(OrderRepository orderRepository,
@@ -57,7 +56,7 @@ public class CreateOrderUseCase {
                                DomainEventPublisher eventPublisher,
                                OrderRemoteCommandClient orderRemoteCommandClient,
                                SystemSettingsRepository systemSettingsRepository,
-                               DiscountRepository discountRepository,
+                               DiscountRedemptionService discountRedemptionService,
                                CustomerAddressBookService customerAddressBookService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
@@ -65,7 +64,7 @@ public class CreateOrderUseCase {
         this.eventPublisher = eventPublisher;
         this.orderRemoteCommandClient = orderRemoteCommandClient;
         this.systemSettingsRepository = systemSettingsRepository;
-        this.discountRepository = discountRepository;
+        this.discountRedemptionService = discountRedemptionService;
         this.customerAddressBookService = customerAddressBookService;
     }
 
@@ -76,6 +75,12 @@ public class CreateOrderUseCase {
         ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
 
         if (orderRemoteCommandClient.isWriteEnabled()) {
+            // OrderRemoteCommandClient.toCreateRequest drops discountCode from the outbound
+            // payload, so the customer was shown a discount and then charged full price with no
+            // error. Failing loudly until order-service speaks the redemption protocol.
+            if (command.discountCode() != null && !command.discountCode().isBlank()) {
+                throw new DomainException("Los códigos de descuento no están disponibles en este modo");
+            }
             OrderDto created = orderRemoteCommandClient.create(command);
             eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
             return created;
@@ -98,6 +103,19 @@ public class CreateOrderUseCase {
             ));
         }
 
+        BigDecimal subtotalAmount = orderItems.stream()
+                .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Evaluated before inventory is touched. Reserving first meant an invalid code left stock
+        // reserved -- masked by @Transactional locally, but not when APP_INVENTORY_REMOTE_ENABLED
+        // sends the reservation to inventory-service as a committed HTTP call no rollback undoes.
+        DiscountRedemptionService.DiscountEvaluation evaluation = null;
+        if (command.discountCode() != null && !command.discountCode().isBlank()) {
+            evaluation = discountRedemptionService.evaluate(
+                    command.discountCode(), Money.of(subtotalAmount), command.customerId());
+        }
+
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
             inventoryService.reserve(
                     itemCmd.productId(),
@@ -107,21 +125,7 @@ public class CreateOrderUseCase {
             );
         }
 
-        BigDecimal subtotalAmount = orderItems.stream()
-                .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Money discount = Money.zero();
-
-        // Apply discount code
-        if (command.discountCode() != null && !command.discountCode().isBlank()) {
-            Discount disc = discountRepository.findByCode(command.discountCode().toUpperCase())
-                    .orElseThrow(() -> new DomainException("Código de descuento no encontrado"));
-            Money subtotal = Money.of(subtotalAmount);
-            discount = disc.apply(subtotal);
-            discountRepository.save(disc); // persist incremented timesUsed
-            discountRepository.recordUsage(disc.getId(), command.customerId());
-        }
+        Money discount = evaluation != null ? evaluation.amount() : Money.zero();
 
         // Employee discount stacks on top of code discount
         if (command.employeeDiscountEligible()) {
@@ -147,6 +151,14 @@ public class CreateOrderUseCase {
         );
 
         Order saved = orderRepository.save(order);
+
+        // After save: discount_code_usages.order_id references orders(id). Losing a capacity race
+        // here throws and rolls back the order, which is correct -- the customer was quoted a
+        // price that is no longer available.
+        if (evaluation != null) {
+            discountRedemptionService.reserve(evaluation, command.customerId(), saved.getId());
+        }
+
         eventPublisher.publish(new OrderCreated(saved.getId(), saved.getCustomerId(), Instant.now()));
         return OrderMapper.toDto(saved);
     }

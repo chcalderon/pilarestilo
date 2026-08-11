@@ -7,6 +7,7 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
+import com.pilarestilo.order.domain.model.OrderReference;
 import com.pilarestilo.order.infrastructure.persistence.entities.OrderEntity;
 import com.pilarestilo.order.infrastructure.persistence.repositories.OrderJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
                 .andExpect(status().isOk())
                 .andReturn();
         UUID cashRegisterId = UUID.fromString(
-                om.readTree(currentResult.getResponse().getContentAsString()).get("id").asText());
+                om.readTree(currentResult.getResponse().getContentAsString()).get("id").asString());
 
         int movementsBefore = cashRegisterRepository.findById(cashRegisterId)
                 .orElseThrow().getMovements().size();
@@ -110,6 +111,9 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         // so orders.customer_id → users.id FK is also satisfied.
         OrderEntity orderEntity = new OrderEntity();
         orderEntity.setId(orderId);
+        // Built entity-first to satisfy the cash_movements FK, so it bypasses Order.create(),
+        // which is what normally mints the reference.
+        orderEntity.setPublicReference(OrderReference.forOrderId(orderId));
         orderEntity.setCustomerId(customerId);
         orderEntity.setSubtotalAmount(BigDecimal.valueOf(10_000));
         orderEntity.setSubtotalCurrency("CLP");
@@ -157,7 +161,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
                         .content(om.writeValueAsString(Map.of(
                                 "email", "admin@pilarestilo.com", "password", "admin2026"))))
                 .andExpect(status().isOk()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String registerAndGetId(String email) throws Exception {
@@ -166,7 +170,7 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
                         .content(om.writeValueAsString(Map.of(
                                 "email", email, "password", "pass1234", "fullName", "Test"))))
                 .andExpect(status().isCreated()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("userId").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("userId").asString();
     }
 
     private void promoteToSeller(String adminToken, String userId) throws Exception {
@@ -183,6 +187,6 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", email, "password", password))))
                 .andExpect(status().isOk()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 }

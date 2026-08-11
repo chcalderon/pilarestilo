@@ -79,7 +79,7 @@ class CustomerAddressControllerIT {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.isDefault").value(true))
                 .andReturn();
-        String firstAddressId = om.readTree(createdOne.getResponse().getContentAsString()).get("id").asText();
+        String firstAddressId = om.readTree(createdOne.getResponse().getContentAsString()).get("id").asString();
 
         MvcResult createdTwo = mvc.perform(post("/api/auth/me/addresses")
                         .header("Authorization", bearer(token))
@@ -96,7 +96,7 @@ class CustomerAddressControllerIT {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.isDefault").value(false))
                 .andReturn();
-        String secondAddressId = om.readTree(createdTwo.getResponse().getContentAsString()).get("id").asText();
+        String secondAddressId = om.readTree(createdTwo.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(get("/api/auth/me/addresses")
                         .header("Authorization", bearer(token)))
@@ -133,7 +133,7 @@ class CustomerAddressControllerIT {
         JsonNode afterDefaultRows = om.readTree(listAfterDefault.getResponse().getContentAsString());
         boolean firstAddressStillDefault = false;
         for (JsonNode row : afterDefaultRows) {
-            if (firstAddressId.equals(row.path("id").asText())) {
+            if (firstAddressId.equals(row.path("id").asString())) {
                 firstAddressStillDefault = row.path("isDefault").asBoolean(false);
                 break;
             }
@@ -174,7 +174,7 @@ class CustomerAddressControllerIT {
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        String addressId = om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        String addressId = om.readTree(created.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(patch("/api/auth/me/addresses/{id}", addressId)
                         .header("Authorization", bearer(tokenB))
@@ -254,7 +254,7 @@ class CustomerAddressControllerIT {
                 .andExpect(jsonPath("$.shippingAddressId").value(addressId))
                 .andExpect(jsonPath("$.shippingAddressReference", containsString("Av Apoquindo 123")))
                 .andReturn();
-        String orderId = om.readTree(createdOrder.getResponse().getContentAsString()).get("id").asText();
+        String orderId = om.readTree(createdOrder.getResponse().getContentAsString()).get("id").asString();
 
         mvc.perform(patch("/api/auth/me/addresses/{id}", addressId)
                         .header("Authorization", bearer(customerToken))
@@ -294,7 +294,7 @@ class CustomerAddressControllerIT {
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return om.readTree(created.getResponse().getContentAsString()).get("id").asText();
+        return om.readTree(created.getResponse().getContentAsString()).get("id").asString();
     }
 
     private Map<String, Object> addressPayload(
@@ -333,14 +333,14 @@ class CustomerAddressControllerIT {
         JsonNode regions = om.readTree(result.getResponse().getContentAsString());
         for (JsonNode regionNode : regions) {
             int regionId = regionNode.path("id").asInt();
-            String regionName = regionNode.path("name").asText();
+            String regionName = regionNode.path("name").asString();
             JsonNode cities = regionNode.path("cities");
             for (JsonNode cityNode : cities) {
                 long cityId = cityNode.path("id").asLong();
-                String cityName = cityNode.path("name").asText();
+                String cityName = cityNode.path("name").asString();
                 JsonNode communes = cityNode.path("communes");
                 for (JsonNode communeNode : communes) {
-                    String currentName = communeNode.path("name").asText();
+                    String currentName = communeNode.path("name").asString();
                     if (currentName.equalsIgnoreCase(communeName)) {
                         long comunaId = communeNode.path("id").asLong();
                         return new AddressSelection(regionId, cityId, comunaId, currentName, cityName, regionName);
@@ -402,7 +402,7 @@ class CustomerAddressControllerIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return om.readTree(register.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(register.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private UUID getCurrentUserId(String token) throws Exception {
@@ -410,7 +410,7 @@ class CustomerAddressControllerIT {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andReturn();
-        return UUID.fromString(om.readTree(me.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(me.getResponse().getContentAsString()).get("id").asString());
     }
 
     private UUID createProduct(String token, String name) throws Exception {
@@ -433,7 +433,7 @@ class CustomerAddressControllerIT {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asText());
+        return UUID.fromString(om.readTree(created.getResponse().getContentAsString()).get("id").asString());
     }
 
     private String bearer(String token) {

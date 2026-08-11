@@ -15,6 +15,8 @@ public class Order {
 
     private UUID id;
     private UUID customerId;
+    /** Short human-quotable code; see OrderReference. */
+    private String publicReference;
     private List<OrderItem> items;
     private Money subtotal;
     private Money discountAmount;
@@ -48,7 +50,7 @@ public class Order {
         return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount,
                 paymentMethod, shippingZoneCode, shippingCourierId, shippingCourierName,
                 shippingPaymentMode, shippingAddressId, shippingAddressReference, notes,
-                SalesChannel.ECOMMERCE, status, createdAt, updatedAt);
+                SalesChannel.ECOMMERCE, status, createdAt, updatedAt, null);
     }
 
     public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
@@ -57,9 +59,15 @@ public class Order {
                                      String shippingCourierId, String shippingCourierName,
                                      String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                      String notes, SalesChannel salesChannel,
-                                     OrderStatus status, Instant createdAt, Instant updatedAt) {
+                                     OrderStatus status, Instant createdAt, Instant updatedAt,
+                                     String publicReference) {
         Order order = new Order();
         order.id = id;
+        // Stored value wins. V67's repair loop salts duplicates, so a derived value could differ
+        // from the code the customer was actually given. Older rows predate the column.
+        order.publicReference = publicReference != null
+                ? publicReference
+                : OrderReference.forOrderId(id);
         order.customerId = customerId;
         order.items = items;
         order.subtotal = subtotal;
@@ -131,6 +139,11 @@ public class Order {
 
         Order order = new Order();
         order.id = UUID.randomUUID();
+        // Derived from the id rather than passed in: create() is the only place that mints the id,
+        // so this is the one spot where the two cannot drift. uq_orders_public_reference is the
+        // backstop -- a fresh UUID colliding with an existing reference is ~1 in 10 million at
+        // 100k orders, and the salted overload exists for the migration's repair loop.
+        order.publicReference = OrderReference.forOrderId(order.id);
         order.customerId = customerId;
         order.items = List.copyOf(items);
         order.subtotal = subtotal;
@@ -212,6 +225,7 @@ public class Order {
     }
 
     public UUID getId() { return id; }
+    public String getPublicReference() { return publicReference; }
     public UUID getCustomerId() { return customerId; }
     public List<OrderItem> getItems() { return items; }
     public Money getSubtotal() { return subtotal; }

@@ -14,6 +14,7 @@ public final class OrderMapper {
     public static OrderDto toDto(OrderEntity entity) {
         return new OrderDto(
                 entity.getId(),
+                entity.getPublicReference(),
                 entity.getCustomerId(),
                 entity.getItems().stream().map(OrderMapper::toItemDto).toList(),
                 new MoneyDto(entity.getSubtotalAmount(), entity.getSubtotalCurrency()),

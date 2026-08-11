@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.shared.domain.DomainException;
@@ -271,4 +272,10 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             String senderName,
             String fallbackTo
     ) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        send(message.templateKey(), message.referenceId(), recipient,
+                message.subject(), message.bodyText());
+    }
 }

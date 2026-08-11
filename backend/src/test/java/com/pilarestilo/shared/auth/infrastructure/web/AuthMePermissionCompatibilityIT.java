@@ -80,6 +80,6 @@ class AuthMePermissionCompatibilityIT {
                         .content(om.writeValueAsString(Map.of("email", "admin@pilarestilo.com", "password", "admin2026"))))
                 .andExpect(status().isOk())
                 .andReturn();
-        return om.readTree(result.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(result.getResponse().getContentAsString()).get("accessToken").asString();
     }
 }

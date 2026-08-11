@@ -15,7 +15,6 @@ This file reflects the event contracts currently defined in code.
 | `PaymentConfirmed` | `paymentId`, `orderId`, `occurredAt` | `payment` | `OrderInventorySaga` (status progression), payment notification |
 | `PaymentRejected` | `paymentId`, `orderId`, `reviewerId`, `occurredAt` | `payment` | `OrderInventorySaga` (cancel + stock compensation) |
 | `DiscountCodeAssigned` | `discountId`, `code`, `assignedUserId`, `occurredAt` | `discount` | discount assignment notification (in-app + outbound) |
-| `DiscountApplied` | `discountId`, `discountCode`, `orderId`, `discountAmount`, `occurredAt` | `discount` | none |
 | `StoreCreditGranted` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
 | `StoreCreditUsed` | `customerId`, `amount`, `occurredAt` | `customercredit` | none |
 | `StockUpdated` | `productId`, `newStock`, `occurredAt` | `inventory` | none |

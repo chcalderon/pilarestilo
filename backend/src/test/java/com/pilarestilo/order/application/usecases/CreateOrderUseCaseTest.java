@@ -4,7 +4,7 @@ import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.discount.domain.enums.DiscountType;
 import com.pilarestilo.discount.domain.model.Discount;
-import com.pilarestilo.discount.domain.ports.DiscountRepository;
+import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -52,7 +53,7 @@ class CreateOrderUseCaseTest {
     @Mock DomainEventPublisher eventPublisher;
     @Mock OrderRemoteCommandClient orderRemoteCommandClient;
     @Mock SystemSettingsRepository systemSettingsRepository;
-    @Mock DiscountRepository discountRepository;
+    @Mock DiscountRedemptionService discountRedemptionService;
     @Mock CustomerAddressBookService customerAddressBookService;
 
     CreateOrderUseCase useCase;
@@ -70,7 +71,7 @@ class CreateOrderUseCaseTest {
                 eventPublisher,
                 orderRemoteCommandClient,
                 systemSettingsRepository,
-                discountRepository,
+                discountRedemptionService,
                 customerAddressBookService
         );
     }
@@ -179,7 +180,11 @@ class CreateOrderUseCaseTest {
                 LocalDate.now().plusDays(30),
                 100
         );
-        when(discountRepository.findByCode("SAVE10")).thenReturn(Optional.of(disc));
+        disc.setId(UUID.randomUUID());
+        DiscountRedemptionService.DiscountEvaluation evaluation =
+                new DiscountRedemptionService.DiscountEvaluation(disc, Money.of(new BigDecimal("1000.00")));
+        when(discountRedemptionService.evaluate(eq("save10"), any(Money.class), eq(CUSTOMER_ID)))
+                .thenReturn(evaluation);
 
         CreateOrderCommand command = new CreateOrderCommand(
                 CUSTOMER_ID,
@@ -197,8 +202,45 @@ class CreateOrderUseCaseTest {
         OrderDto result = useCase.execute(command);
 
         assertThat(result).isNotNull();
-        verify(discountRepository).save(disc);
-        verify(discountRepository).recordUsage(eq(disc.getId()), eq(CUSTOMER_ID));
+        // Reserved against the saved order, not consumed outright: the order is CREATED and the
+        // customer has not paid. Settling happens when it reaches PAID.
+        verify(discountRedemptionService).reserve(eq(evaluation), eq(CUSTOMER_ID), any(UUID.class));
+    }
+
+    @Test
+    void createOrder_rejectsCodeThatDoesNotBelongToTheCustomer() {
+        // No stubHappyPath: this fails at discount evaluation, before the collaborators it stubs
+        // are reached, and strict stubbing rightly objects to the unused ones.
+        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
+        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
+        when(productRepository.findById(PRODUCT_ID))
+                .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
+        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
+                .thenReturn(defaultAddress());
+
+        // The guard used to live only in ValidateDiscountForUserUseCase, so posting straight to
+        // POST /api/orders redeemed a code assigned to somebody else.
+        when(discountRedemptionService.evaluate(eq("AJENO"), any(Money.class), eq(CUSTOMER_ID)))
+                .thenThrow(new DomainException("Este código no está disponible para tu cuenta"));
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                false,
+                "AJENO"
+        );
+
+        assertThrows(DomainException.class, () -> useCase.execute(command));
+
+        // Evaluated before inventory is touched, so a rejected code leaves no stock reserved.
+        verifyNoInteractions(inventoryService);
+        verify(orderRepository, never()).save(any());
     }
 
     // -----------------------------------------------------------------------

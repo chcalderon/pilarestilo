@@ -19,6 +19,7 @@ public class OrderMapper {
                 .toList();
         return new OrderDto(
                 order.getId(),
+                order.getPublicReference(),
                 order.getCustomerId(),
                 itemDtos,
                 toMoneyDto(order.getSubtotal()),

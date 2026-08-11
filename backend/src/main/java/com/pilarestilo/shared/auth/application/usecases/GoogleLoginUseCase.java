@@ -51,9 +51,9 @@ public class GoogleLoginUseCase {
     public AuthTokenDto execute(String idToken) {
         JsonNode claims = verifyIdToken(idToken);
 
-        String email = claims.path("email").asText();
-        String emailVerified = claims.path("email_verified").asText();
-        String aud = claims.path("aud").asText();
+        String email = claims.path("email").asString();
+        String emailVerified = claims.path("email_verified").asString();
+        String aud = claims.path("aud").asString();
 
         if (!"true".equalsIgnoreCase(emailVerified)) {
             throw new DomainException("Google account email is not verified");

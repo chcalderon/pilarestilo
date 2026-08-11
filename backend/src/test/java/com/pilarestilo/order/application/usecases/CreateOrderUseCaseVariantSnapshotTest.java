@@ -2,7 +2,7 @@ package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
-import com.pilarestilo.discount.domain.ports.DiscountRepository;
+import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
@@ -41,7 +41,7 @@ class CreateOrderUseCaseVariantSnapshotTest {
     @Mock DomainEventPublisher eventPublisher;
     @Mock OrderRemoteCommandClient orderRemoteCommandClient;
     @Mock SystemSettingsRepository systemSettingsRepository;
-    @Mock DiscountRepository discountRepository;
+    @Mock DiscountRedemptionService discountRedemptionService;
     @Mock CustomerAddressBookService customerAddressBookService;
 
     CreateOrderUseCase useCase;
@@ -55,7 +55,7 @@ class CreateOrderUseCaseVariantSnapshotTest {
                 eventPublisher,
                 orderRemoteCommandClient,
                 systemSettingsRepository,
-                discountRepository,
+                discountRedemptionService,
                 customerAddressBookService
         );
     }

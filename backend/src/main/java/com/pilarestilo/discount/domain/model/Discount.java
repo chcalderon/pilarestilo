@@ -79,9 +79,19 @@ public class Discount {
         }
     }
 
-    public Money apply(Money subtotal) {
+    /**
+     * Computes the discount without consuming it.
+     *
+     * <p>Renamed from {@code apply} and stripped of its {@code timesUsed++}: the counter now moves
+     * in {@code DiscountRedemptionRepository}, where the increment is atomic with the ledger row
+     * under a row lock. Fusing validation and mutation is what made an abandoned order burn a code
+     * permanently — the increment happened at order creation and nothing reversed it.
+     *
+     * <p>The rename is deliberate. A silently-changed {@code apply} would have compiled at every
+     * call site.
+     */
+    public Money computeDiscountFor(Money subtotal) {
         validate(subtotal);
-        timesUsed++;
 
         if (type == DiscountType.PERCENTAGE) {
             return Money.of(subtotal.amount()

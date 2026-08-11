@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.orderservice.domain.OrderStatus;
 import com.pilarestilo.orderservice.domain.PaymentMethod;
+import com.pilarestilo.orderservice.domain.OrderReference;
 import com.pilarestilo.orderservice.persistence.OrderEntity;
 import com.pilarestilo.orderservice.persistence.OrderItemEntity;
 import com.pilarestilo.orderservice.persistence.OrderRepository;
@@ -82,7 +83,11 @@ public class OrderCommandService {
         BigDecimal total = subtotal.subtract(discount).setScale(2, RoundingMode.HALF_UP);
 
         OrderEntity order = new OrderEntity();
-        order.setId(UUID.randomUUID());
+        UUID orderId = UUID.randomUUID();
+        order.setId(orderId);
+        // public_reference is NOT NULL and shared with the monolith, which mints it in
+        // Order.create. Same derivation from the id, so both services agree.
+        order.setPublicReference(OrderReference.forOrderId(orderId));
         order.setCustomerId(request.customerId());
         order.setSubtotalAmount(subtotal);
         order.setSubtotalCurrency(currency);

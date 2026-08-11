@@ -6,6 +6,8 @@ import java.util.UUID;
 
 public record OrderDto(
         UUID id,
+        /** Mirrors the monolith's field so both order-creation paths return the same shape. */
+        String publicReference,
         UUID customerId,
         List<OrderItemDto> items,
         MoneyDto subtotal,

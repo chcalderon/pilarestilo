@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.shared.domain.DomainException;
@@ -104,6 +105,17 @@ public class N8nWebhookNotificationSender implements NotificationSender {
     }
 
     private void sendWebhook(String eventType, UUID referenceId, NotificationRecipient recipient) {
+        sendWebhook(eventType, referenceId, recipient, null, null, null);
+    }
+
+    /**
+     * @param subject  null for the legacy typed events, which carry no copy
+     * @param bodyText null for the same reason
+     * @param data     the composed facts; forwarded verbatim so an n8n workflow can reword the
+     *                 message, or use a new field, without a backend deploy
+     */
+    private void sendWebhook(String eventType, UUID referenceId, NotificationRecipient recipient,
+                             String subject, String bodyText, Map<String, Object> data) {
         EffectiveConfig config = resolveConfig();
         if (config == null) {
             log.warn("[NOTIFICATION:N8N] disabled: missing webhook URL.");
@@ -122,6 +134,15 @@ public class N8nWebhookNotificationSender implements NotificationSender {
         payload.put("referenceId", referenceId.toString());
         payload.put("occurredAt", Instant.now().toString());
         payload.put("recipient", recipientPayload);
+        if (subject != null) {
+            payload.put("subject", subject);
+        }
+        if (bodyText != null) {
+            payload.put("bodyText", bodyText);
+        }
+        if (data != null && !data.isEmpty()) {
+            payload.put("data", data);
+        }
 
         try {
             RestClient.RequestBodySpec request = restClientBuilder
@@ -212,4 +233,10 @@ public class N8nWebhookNotificationSender implements NotificationSender {
             String apiKey,
             String tokenHeaderName
     ) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        sendWebhook(message.templateKey(), message.referenceId(), recipient,
+                message.subject(), message.bodyText(), message.data());
+    }
 }

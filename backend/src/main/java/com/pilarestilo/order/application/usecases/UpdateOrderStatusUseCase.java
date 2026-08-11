@@ -1,5 +1,6 @@
 package com.pilarestilo.order.application.usecases;
 
+import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
@@ -24,15 +25,18 @@ public class UpdateOrderStatusUseCase {
     private final DomainEventPublisher eventPublisher;
     private final OrderRemoteCommandClient orderRemoteCommandClient;
     private final OrderRemoteQueryClient orderRemoteQueryClient;
+    private final DiscountRedemptionService discountRedemptionService;
 
     public UpdateOrderStatusUseCase(OrderRepository orderRepository,
                                      DomainEventPublisher eventPublisher,
                                      OrderRemoteCommandClient orderRemoteCommandClient,
-                                     OrderRemoteQueryClient orderRemoteQueryClient) {
+                                     OrderRemoteQueryClient orderRemoteQueryClient,
+                                     DiscountRedemptionService discountRedemptionService) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
         this.orderRemoteCommandClient = orderRemoteCommandClient;
         this.orderRemoteQueryClient = orderRemoteQueryClient;
+        this.discountRedemptionService = discountRedemptionService;
     }
 
     @Transactional
@@ -44,6 +48,7 @@ public class UpdateOrderStatusUseCase {
                 return previous;
             }
             OrderDto updated = orderRemoteCommandClient.updateStatus(orderId, targetStatus);
+            applyRedemptionSideEffects(orderId, targetStatus);
             eventPublisher.publish(new OrderStatusChanged(
                     updated.id(),
                     updated.customerId(),
@@ -74,9 +79,33 @@ public class UpdateOrderStatusUseCase {
         }
 
         Order saved = orderRepository.save(order);
+        applyRedemptionSideEffects(saved.getId(), targetStatus);
         eventPublisher.publish(new OrderStatusChanged(
                 saved.getId(), saved.getCustomerId(), previous, saved.getStatus(), Instant.now()
         ));
         return OrderMapper.toDto(saved);
+    }
+
+    /**
+     * Settles or releases the order's discount redemption.
+     *
+     * <p>Hooked here, and only here, because every route to PAID or CANCELLED funnels through this
+     * method: OrderInventorySaga (both handlers), the admin PATCH /api/orders/{id}/status endpoint,
+     * and the dispatch use cases. A listener on PaymentConfirmed/PaymentRejected would miss the
+     * manual admin path, and any new @EventListener would be silently dead whenever
+     * APP_DOMAIN_EVENTS_KAFKA_ENABLED is on, since KafkaDomainEventPublisher is @Primary.
+     *
+     * <p>Do not also call this from OrderInventorySaga: the saga delegates here, so it would
+     * decrement times_used twice.
+     *
+     * <p>Runs inside the surrounding @Transactional, so the ledger commits with the status change.
+     * Both operations are idempotent, and both no-op for orders that carried no discount.
+     */
+    private void applyRedemptionSideEffects(UUID orderId, OrderStatus targetStatus) {
+        switch (targetStatus) {
+            case PAID -> discountRedemptionService.settle(orderId);
+            case CANCELLED -> discountRedemptionService.release(orderId);
+            default -> { }
+        }
     }
 }

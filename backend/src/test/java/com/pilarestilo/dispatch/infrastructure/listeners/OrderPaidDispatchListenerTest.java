@@ -88,6 +88,7 @@ class OrderPaidDispatchListenerTest {
     private OrderDto order(UUID orderId) {
         return new OrderDto(
                 orderId,
+                "PE-TEST000000",
                 UUID.randomUUID(),
                 List.of(),
                 new MoneyDto(BigDecimal.TEN, "CLP"),

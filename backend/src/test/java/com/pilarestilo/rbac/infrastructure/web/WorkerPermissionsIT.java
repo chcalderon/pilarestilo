@@ -88,7 +88,7 @@ class WorkerPermissionsIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", "admin@pilarestilo.com", "password", "admin2026"))))
                 .andExpect(status().isOk()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String registerAndGetToken(String email) throws Exception {
@@ -96,7 +96,7 @@ class WorkerPermissionsIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", email, "password", "pass1234", "fullName", "Test"))))
                 .andExpect(status().isCreated()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     private String registerAndGetId(String email) throws Exception {
@@ -104,6 +104,6 @@ class WorkerPermissionsIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(Map.of("email", email, "password", "pass1234", "fullName", "Test"))))
                 .andExpect(status().isCreated()).andReturn();
-        return om.readTree(r.getResponse().getContentAsString()).get("userId").asText();
+        return om.readTree(r.getResponse().getContentAsString()).get("userId").asString();
     }
 }

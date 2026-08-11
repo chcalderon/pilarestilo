@@ -23,6 +23,10 @@ public class OrderEntity {
     @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
+    /** Shared with the monolith; NOT NULL since V68. Derived from the id via OrderReference. */
+    @Column(name = "public_reference", nullable = false, length = 16)
+    private String publicReference;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> items = new ArrayList<>();
 
@@ -90,6 +94,14 @@ public class OrderEntity {
 
     public UUID getCustomerId() {
         return customerId;
+    }
+
+    public String getPublicReference() {
+        return publicReference;
+    }
+
+    public void setPublicReference(String publicReference) {
+        this.publicReference = publicReference;
     }
 
     public void setCustomerId(UUID customerId) {

@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.shared.domain.DomainException;
@@ -111,6 +112,13 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
     }
 
     private void send(String template, UUID referenceId, NotificationRecipient recipient) {
+        send(template, referenceId, recipient, null);
+    }
+
+    /** @param overrideBody pre-composed copy from NotificationComposer; null keeps the legacy
+     *                      per-template wording built by buildMessage. */
+    private void send(String template, UUID referenceId, NotificationRecipient recipient,
+                      String overrideBody) {
         if (!recipient.allowsWhatsApp()) {
             log.info(
                     "[WHATSAPP:TWILIO] skipped template={} referenceId={} reason=channel-preference preference={}",
@@ -126,7 +134,8 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
             return;
         }
 
-        String body = buildMessage(template, referenceId, config.senderAlias());
+        String body = overrideBody != null ? overrideBody
+                : buildMessage(template, referenceId, config.senderAlias());
         String recipientContact = normalize(recipient.preferredPhoneThenEmail(), "unknown");
         String toAddress = resolveToAddress(recipientContact, config.fallbackToAddress());
 
@@ -312,4 +321,9 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
             String fallbackToAddress,
             String senderAlias
     ) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        send(message.templateKey(), message.referenceId(), recipient, message.bodyText());
+    }
 }
