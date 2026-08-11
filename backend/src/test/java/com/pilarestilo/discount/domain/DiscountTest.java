@@ -46,6 +46,31 @@ class DiscountTest {
                 discountAmount.amount().stripTrailingZeros());
     }
 
+    /**
+     * The storefront computes the same figure with {@code Math.round} to show the customer a
+     * total before the order exists. An unrounded quotient here made the two disagree: the
+     * customer saw 30.000 and the order was settled at 29.999,70. CLP has no subunit, so the
+     * fractional value was never payable in the first place.
+     */
+    @Test
+    void percentage_discount_rounds_to_whole_pesos() {
+        Discount d = buildPercentageDiscount(5);
+        Money discountAmount = d.computeDiscountFor(Money.of(BigDecimal.valueOf(33333)));
+
+        assertEquals(0, discountAmount.amount().scale(),
+                "a fractional peso cannot be charged");
+        assertEquals(0, BigDecimal.valueOf(3333).compareTo(discountAmount.amount()));
+    }
+
+    @Test
+    void percentage_discount_rounds_half_up_like_the_storefront() {
+        Discount d = buildPercentageDiscount(5);
+        // 10% of 33.335 is 3.333,50 — both sides must land on 3.334, never 3.333.
+        Money discountAmount = d.computeDiscountFor(Money.of(BigDecimal.valueOf(33335)));
+
+        assertEquals(0, BigDecimal.valueOf(3334).compareTo(discountAmount.amount()));
+    }
+
     @Test
     void fixed_discount_returned_correctly() {
         Discount d = buildFixedDiscount();

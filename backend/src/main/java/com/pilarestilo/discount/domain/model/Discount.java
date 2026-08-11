@@ -5,6 +5,7 @@ import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -94,9 +95,16 @@ public class Discount {
         validate(subtotal);
 
         if (type == DiscountType.PERCENTAGE) {
+            /*
+             * Rounded to whole pesos. The Chilean peso has no subunit, so an unrounded
+             * quotient invents a value that cannot be paid: 10% of 33.333 is 3.333,30, and
+             * the order would be settled at 29.999,70 while the customer was shown 30.000.
+             * HALF_UP matches the storefront's Math.round for the positive amounts this
+             * ever sees, which is what keeps the two totals identical.
+             */
             return Money.of(subtotal.amount()
                     .multiply(value)
-                    .divide(BigDecimal.valueOf(100)));
+                    .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP));
         } else {
             BigDecimal discountAmt = value.min(subtotal.amount());
             return Money.of(discountAmt);
