@@ -18,10 +18,25 @@ public interface DiscountRedemptionRepository {
     /**
      * Records a PENDING redemption and consumes one usage slot.
      *
+     * <p>{@code orderId} may be null. Order writes delegated to order-service have no order row
+     * to point at yet, so those reserve first — claiming the slot before anything else happens —
+     * and call {@link #attachOrder} once the remote order exists. Claiming first means losing a
+     * capacity race costs nothing, because no order has been created to compensate for.
+     *
+     * @return the id of the ledger row, needed to attach the order afterwards.
      * @throws com.pilarestilo.shared.domain.DomainException when the discount ran out of uses
      *         between validation and this call, or the user already holds an active redemption.
      */
-    void reserve(UUID discountId, UUID userId, UUID orderId);
+    UUID reserve(UUID discountId, UUID userId, UUID orderId);
+
+    /**
+     * Points a reservation made without an order at the order that now exists.
+     *
+     * <p>Without it the row could never be settled or released, both of which look up by order id.
+     *
+     * @throws com.pilarestilo.shared.domain.DomainException when the row is gone or already bound.
+     */
+    void attachOrder(UUID redemptionId, UUID orderId);
 
     /** Marks the order's PENDING redemption SETTLED. No-op if there is none. */
     boolean settle(UUID orderId);

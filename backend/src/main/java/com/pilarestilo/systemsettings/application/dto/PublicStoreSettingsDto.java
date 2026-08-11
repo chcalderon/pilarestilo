@@ -25,12 +25,5 @@ public record PublicStoreSettingsDto(
          * cannot factor it into the decision.
          */
         boolean bankTransferAutoCancelEnabled,
-        int bankTransferAutoCancelTimeoutMinutes,
-        /*
-         * False when order writes are delegated to order-service, which has no redemption
-         * ledger and rejects any order carrying a code. The storefront hides the input rather
-         * than letting a customer type a code, watch it validate, see the total drop, and
-         * then have the order refused at the last step.
-         */
-        boolean discountCodesEnabled
+        int bankTransferAutoCancelTimeoutMinutes
 ) {}

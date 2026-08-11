@@ -81,8 +81,25 @@ public class DiscountRedemptionService {
      * Losing a capacity race here throws, rolling back the whole order transaction, which is the
      * correct outcome: the customer was quoted a price that is no longer available.
      */
-    public void reserve(DiscountEvaluation evaluation, UUID userId, UUID orderId) {
-        redemptionRepository.reserve(evaluation.discountId(), userId, orderId);
+    public UUID reserve(DiscountEvaluation evaluation, UUID userId, UUID orderId) {
+        return redemptionRepository.reserve(evaluation.discountId(), userId, orderId);
+    }
+
+    /**
+     * Claims a usage slot before the order exists, for writes delegated to order-service.
+     *
+     * <p>There is no local order row to reference in that mode, so the sequence is inverted:
+     * claim, create the order remotely, then {@link #attachOrder}. Claiming first is what makes a
+     * lost capacity race harmless — it fails while nothing has been created, instead of leaving an
+     * order in another service that would have to be cancelled.
+     */
+    public UUID reserveWithoutOrder(DiscountEvaluation evaluation, UUID userId) {
+        return redemptionRepository.reserve(evaluation.discountId(), userId, null);
+    }
+
+    /** Binds a {@link #reserveWithoutOrder} reservation to the order that now exists. */
+    public void attachOrder(UUID redemptionId, UUID orderId) {
+        redemptionRepository.attachOrder(redemptionId, orderId);
     }
 
     /** Called when an order reaches PAID. Idempotent. */

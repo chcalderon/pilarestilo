@@ -12,8 +12,6 @@ interface Props {
   appliedDiscount: DiscountCodeDto | null;
   applying: boolean;
   error: string;
-  /** When false the input is hidden entirely: this deployment cannot accept a code. */
-  enabled: boolean;
   onApply: (code: string) => void;
   onRemove: () => void;
 }
@@ -51,7 +49,6 @@ export default function OrderSummary({
   appliedDiscount,
   applying,
   error,
-  enabled,
   onApply,
   onRemove,
 }: Props) {
@@ -87,7 +84,6 @@ export default function OrderSummary({
         </div>
       )}
 
-      {enabled && (
       <div className="mb-4">
         <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
           {l.discountLabel}
@@ -158,7 +154,6 @@ export default function OrderSummary({
           </p>
         )}
       </div>
-      )}
 
       <div className="border-t border-pe-charcoal/15 pt-4 flex justify-between items-baseline">
         <span className="font-display text-pe-black text-base font-semibold">{l.total}</span>

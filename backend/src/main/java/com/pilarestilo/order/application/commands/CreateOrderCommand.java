@@ -65,6 +65,28 @@ public record CreateOrderCommand(
         );
     }
 
+    /**
+     * A copy carrying the discount the monolith computed.
+     *
+     * <p>Used on the delegated-write path: order-service is told the amount, never the code,
+     * because the redemption ledger it would need lives here.
+     */
+    public CreateOrderCommand withDiscountAmount(Money resolvedDiscount) {
+        return new CreateOrderCommand(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressId,
+                notes,
+                resolvedDiscount,
+                employeeDiscountEligible,
+                discountCode,
+                salesChannel
+        );
+    }
+
     public record OrderItemCommand(
             UUID productId,
             int quantity,

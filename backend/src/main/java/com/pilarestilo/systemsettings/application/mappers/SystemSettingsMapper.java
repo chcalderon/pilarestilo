@@ -75,7 +75,7 @@ public final class SystemSettingsMapper {
         );
     }
 
-    public static PublicStoreSettingsDto toPublicDto(SystemSettings settings, boolean discountCodesEnabled) {
+    public static PublicStoreSettingsDto toPublicDto(SystemSettings settings) {
         return new PublicStoreSettingsDto(
                 settings.getWhatsappNumber(),
                 settings.getInstagramUrl(),
@@ -93,8 +93,7 @@ public final class SystemSettingsMapper {
                 settings.getShippingCouriersJson(),
                 settings.getShippingPaymentMode().name(),
                 settings.isBankTransferAutoCancelEnabled(),
-                settings.getBankTransferAutoCancelTimeoutMinutes(),
-                discountCodesEnabled
+                settings.getBankTransferAutoCancelTimeoutMinutes()
         );
     }
 
