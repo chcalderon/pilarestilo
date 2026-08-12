@@ -1,0 +1,8 @@
+# Mirrors services/*/.dockerignore, which the extracted services already carry.
+# The Dockerfile only copies pom.xml and src, so target/ never reaches an image — but it is
+# still packed into the context and shipped to the daemon on every build.
+target
+.git
+.idea
+*.iml
+*.log
