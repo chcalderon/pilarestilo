@@ -36,18 +36,31 @@ public class DiscountRedemptionRepositoryAdapter implements DiscountRedemptionRe
      */
     @Override
     @Transactional
-    public void reserve(UUID discountId, UUID userId, UUID orderId) {
+    public UUID reserve(UUID discountId, UUID userId, UUID orderId) {
         if (discountRepository.atomicClaimUsage(discountId) == 0) {
             throw new DomainException("Discount usage limit reached");
         }
         try {
-            usageRepository.save(new DiscountCodeUsageEntity(discountId, userId, orderId));
+            return usageRepository.save(new DiscountCodeUsageEntity(discountId, userId, orderId)).getId();
         } catch (DataIntegrityViolationException e) {
             // uq_dcu_active: the user already holds a live redemption for this code.
             // uq_dcu_order: this order already reserved one.
             // Both mean the claim above was not ours to keep; the surrounding transaction rolls
             // it back, so no compensating decrement is needed.
             throw new DomainException("Ya usaste este código de descuento");
+        }
+    }
+
+    /**
+     * Binds the order with a conditional UPDATE rather than a load-then-set, so a row that was
+     * released or already bound in the meantime affects nothing and is reported instead of
+     * silently overwritten.
+     */
+    @Override
+    @Transactional
+    public void attachOrder(UUID redemptionId, UUID orderId) {
+        if (usageRepository.attachOrder(redemptionId, orderId) == 0) {
+            throw new DomainException("La reserva del descuento ya no está disponible");
         }
     }
 

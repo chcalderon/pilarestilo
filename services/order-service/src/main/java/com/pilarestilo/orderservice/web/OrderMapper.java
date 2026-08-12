@@ -41,7 +41,9 @@ public final class OrderMapper {
                 entity.getProductId(),
                 entity.getProductName(),
                 new MoneyDto(entity.getUnitPriceAmount(), entity.getUnitPriceCurrency()),
-                entity.getQuantity()
+                entity.getQuantity(),
+                entity.getVariantColor(),
+                entity.getVariantSize()
         );
     }
 }

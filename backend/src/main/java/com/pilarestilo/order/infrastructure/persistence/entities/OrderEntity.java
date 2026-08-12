@@ -39,6 +39,13 @@ public class OrderEntity {
     @Column(name = "discount_currency", nullable = false, length = 10)
     private String discountCurrency;
 
+    /** Provenance for discount_amount; see Order.discountId. Nullable by design. */
+    @Column(name = "discount_id")
+    private UUID discountId;
+
+    @Column(name = "discount_code", length = 50)
+    private String discountCode;
+
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
@@ -103,6 +110,12 @@ public class OrderEntity {
 
     public BigDecimal getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+
+    public UUID getDiscountId() { return discountId; }
+    public void setDiscountId(UUID discountId) { this.discountId = discountId; }
+
+    public String getDiscountCode() { return discountCode; }
+    public void setDiscountCode(String discountCode) { this.discountCode = discountCode; }
 
     public String getDiscountCurrency() { return discountCurrency; }
     public void setDiscountCurrency(String discountCurrency) { this.discountCurrency = discountCurrency; }

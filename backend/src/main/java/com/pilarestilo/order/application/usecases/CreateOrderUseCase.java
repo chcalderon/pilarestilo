@@ -75,15 +75,7 @@ public class CreateOrderUseCase {
         ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
 
         if (orderRemoteCommandClient.isWriteEnabled()) {
-            // OrderRemoteCommandClient.toCreateRequest drops discountCode from the outbound
-            // payload, so the customer was shown a discount and then charged full price with no
-            // error. Failing loudly until order-service speaks the redemption protocol.
-            if (command.discountCode() != null && !command.discountCode().isBlank()) {
-                throw new DomainException("Los códigos de descuento no están disponibles en este modo");
-            }
-            OrderDto created = orderRemoteCommandClient.create(command);
-            eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
-            return created;
+            return createRemotely(command);
         }
 
         List<OrderItem> orderItems = new ArrayList<>();
@@ -150,6 +142,11 @@ public class CreateOrderUseCase {
                 command.salesChannel()
         );
 
+        if (evaluation != null) {
+            // Provenance, so a later hard delete of the code cannot erase which order used it.
+            order.recordDiscountProvenance(evaluation.discountId(), evaluation.code());
+        }
+
         Order saved = orderRepository.save(order);
 
         // After save: discount_code_usages.order_id references orders(id). Losing a capacity race
@@ -161,6 +158,65 @@ public class CreateOrderUseCase {
 
         eventPublisher.publish(new OrderCreated(saved.getId(), saved.getCustomerId(), Instant.now()));
         return OrderMapper.toDto(saved);
+    }
+
+    /**
+     * Order writes are delegated to order-service, which owns no redemption ledger. The monolith
+     * therefore keeps the whole discount decision and sends order-service only the resulting
+     * amount, a field its request already carried.
+     *
+     * <p>The sequence is inverted relative to the local path. Locally the reservation happens
+     * after the order is saved, because the ledger references {@code orders(id)} and a failure
+     * rolls the order back with it. Here there is no shared transaction with order-service, so a
+     * reservation that failed after the remote write would leave an order to cancel. Claiming the
+     * slot first moves the only racy step to a point where nothing has been created yet: losing
+     * the race throws before order-service is ever called.
+     *
+     * <p>Everything local runs inside this transaction, so a failure anywhere after the claim
+     * rolls the reservation back and frees the slot. The narrow remaining gap is a remote order
+     * that succeeds and a local commit that then fails: the order exists with its discount applied
+     * and no ledger row, so the code stays usable. That favours the customer and is rare. It is
+     * also currently hard to spot after the fact — {@code orders.discount_code} was added for
+     * exactly that trail and no write path fills it in yet, on either side.
+     */
+    private OrderDto createRemotely(CreateOrderCommand command) {
+        DiscountRedemptionService.DiscountEvaluation evaluation = null;
+        UUID redemptionId = null;
+
+        if (command.discountCode() != null && !command.discountCode().isBlank()) {
+            /*
+             * Priced from the same products table order-service reads, so both arrive at the same
+             * subtotal; it only ever sees the amount, never the code.
+             */
+            Money subtotal = Money.of(subtotalForRemote(command));
+            evaluation = discountRedemptionService.evaluate(
+                    command.discountCode(), subtotal, command.customerId());
+            redemptionId = discountRedemptionService.reserveWithoutOrder(evaluation, command.customerId());
+        }
+
+        CreateOrderCommand outbound = evaluation == null
+                ? command
+                : command.withResolvedDiscount(evaluation.amount(), evaluation.discountId(), evaluation.code());
+
+        OrderDto created = orderRemoteCommandClient.create(outbound);
+
+        if (redemptionId != null) {
+            discountRedemptionService.attachOrder(redemptionId, created.id());
+        }
+
+        eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
+        return created;
+    }
+
+    private BigDecimal subtotalForRemote(CreateOrderCommand command) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (CreateOrderCommand.OrderItemCommand item : command.items()) {
+            Product product = productRepository.findById(item.productId())
+                    .orElseThrow(() -> new DomainException("Product not found: " + item.productId()));
+            subtotal = subtotal.add(
+                    product.getPrice().amount().multiply(BigDecimal.valueOf(item.quantity())));
+        }
+        return subtotal.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void validatePaymentMethodEnabled(PaymentMethod paymentMethod, SystemSettings settings) {

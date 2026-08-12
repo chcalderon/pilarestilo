@@ -1,0 +1,27 @@
+# Without this file the whole node_modules tree is packed into the build context on every
+# build — 115 MB and ~3 minutes of transfer before a single layer runs.
+#
+# It is also a correctness problem, not only a slow one. The Dockerfile runs `npm ci` and then
+# `COPY . .`, so a node_modules copied from the host overwrites the one just installed inside
+# the image: the container ends up running modules built for the developer's machine rather
+# than for Alpine.
+node_modules
+dist
+.astro
+.vercel
+.netlify
+
+# Build and test output, never an input.
+playwright-report
+test-results
+coverage
+
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+.vscode
+.idea
+*.log

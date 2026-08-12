@@ -39,6 +39,13 @@ public class OrderEntity {
     @Column(name = "discount_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal discountAmount;
 
+    /** Provenance for discountAmount; resolved by the monolith. Nullable by design. */
+    @Column(name = "discount_id")
+    private UUID discountId;
+
+    @Column(name = "discount_code", length = 50)
+    private String discountCode;
+
     @Column(name = "discount_currency", nullable = false, length = 10)
     private String discountCurrency;
 
@@ -143,6 +150,22 @@ public class OrderEntity {
 
     public void setDiscountAmount(BigDecimal discountAmount) {
         this.discountAmount = discountAmount;
+    }
+
+    public UUID getDiscountId() {
+        return discountId;
+    }
+
+    public void setDiscountId(UUID discountId) {
+        this.discountId = discountId;
+    }
+
+    public String getDiscountCode() {
+        return discountCode;
+    }
+
+    public void setDiscountCode(String discountCode) {
+        this.discountCode = discountCode;
     }
 
     public String getDiscountCurrency() {

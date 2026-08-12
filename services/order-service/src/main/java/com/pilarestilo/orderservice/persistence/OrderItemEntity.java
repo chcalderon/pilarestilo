@@ -37,6 +37,17 @@ public class OrderItemEntity {
     @Column(nullable = false)
     private int quantity;
 
+    /*
+     * V55 added these to order_items and this service never carried them: the variant was used
+     * to reserve stock and then dropped, so every remotely-created order recorded what was bought
+     * but not in which colour or size. Nullable, because products without variants have none.
+     */
+    @Column(name = "variant_color", length = 80)
+    private String variantColor;
+
+    @Column(name = "variant_size", length = 32)
+    private String variantSize;
+
     public UUID getId() {
         return id;
     }
@@ -91,5 +102,21 @@ public class OrderItemEntity {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public String getVariantColor() {
+        return variantColor;
+    }
+
+    public void setVariantColor(String variantColor) {
+        this.variantColor = variantColor;
+    }
+
+    public String getVariantSize() {
+        return variantSize;
+    }
+
+    public void setVariantSize(String variantSize) {
+        this.variantSize = variantSize;
     }
 }

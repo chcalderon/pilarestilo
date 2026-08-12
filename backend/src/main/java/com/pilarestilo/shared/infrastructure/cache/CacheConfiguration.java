@@ -59,7 +59,7 @@ public class CacheConfiguration implements CachingConfigurer {
         RedisCacheConfiguration base = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(Math.max(30L, ttlSeconds)))
                 .disableCachingNullValues()
-                .computePrefixWith(cacheName -> "pe:v4:" + cacheName + "::");
+                .computePrefixWith(cacheName -> "pe:v5:" + cacheName + "::");
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(base)

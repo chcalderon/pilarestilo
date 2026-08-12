@@ -93,6 +93,10 @@ public class OrderCommandService {
         order.setSubtotalCurrency(currency);
         order.setDiscountAmount(discount);
         order.setDiscountCurrency(currency);
+        // Stored as sent. The monolith resolved the code and holds the redemption ledger; this
+        // service records which code produced the amount so a later hard delete cannot erase it.
+        order.setDiscountId(request.discountId());
+        order.setDiscountCode(request.discountCode());
         order.setTotalAmount(total);
         order.setTotalCurrency(currency);
         order.setPaymentMethod(paymentMethod.name());
@@ -119,6 +123,8 @@ public class OrderCommandService {
             item.setUnitPriceAmount(line.product().getPriceAmount().setScale(2, RoundingMode.HALF_UP));
             item.setUnitPriceCurrency(currency);
             item.setQuantity(line.quantity());
+            item.setVariantColor(line.variantColor());
+            item.setVariantSize(line.variantSize());
             order.addItem(item);
         }
 

@@ -121,7 +121,9 @@ public class OrderRemoteCommandClient {
                 command.notes(),
                 discountAmount,
                 discountCurrency,
-                command.employeeDiscountEligible()
+                command.employeeDiscountEligible(),
+                command.resolvedDiscountId(),
+                command.discountCode()
         );
     }
 
@@ -135,7 +137,10 @@ public class OrderRemoteCommandClient {
             String notes,
             BigDecimal discountAmount,
             String discountCurrency,
-            boolean employeeDiscountEligible
+            boolean employeeDiscountEligible,
+            /* Provenance only. order-service stores these; the ledger stays in the monolith. */
+            UUID discountId,
+            String discountCode
     ) {
         private record OrderItemRequest(
                 UUID productId,

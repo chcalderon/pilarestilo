@@ -100,8 +100,15 @@ interface CartState {
   getSubtotal: () => number;
 }
 
-type StockVerifyResult =
-  | { ok: true }
+/**
+ * `ok: true` with `verified: false` means the check could not be performed, not that
+ * stock exists. Both are non-blocking on purpose — the backend reservation is the
+ * authority, and refusing a purchase over a transient network error is the worse
+ * failure — but callers must not present an unverified result as a confirmation.
+ */
+export type StockVerifyResult =
+  | { ok: true; verified: true }
+  | { ok: true; verified: false }
   | { ok: false; availableQty: number; productName: string };
 
 export async function verifyStockForItem(
@@ -123,17 +130,17 @@ export async function verifyStockForItem(
         return { ok: false, availableQty: 0, productName: product.name };
       }
       if (requestedQty <= match.stockAvailable) {
-        return { ok: true };
+        return { ok: true, verified: true };
       }
       return { ok: false, availableQty: match.stockAvailable, productName: product.name };
     }
 
     if (requestedQty <= product.stock) {
-      return { ok: true };
+      return { ok: true, verified: true };
     }
     return { ok: false, availableQty: product.stock, productName: product.name };
   } catch {
-    return { ok: true };
+    return { ok: true, verified: false };
   }
 }
 

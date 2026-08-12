@@ -41,7 +41,7 @@ describe('verifyStockForItem', () => {
     }) as any);
 
     const result = await verifyStockForItem('p1', { color: 'negro', size: 'M' }, 3);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, verified: true });
   });
 
   it('returns fail with availableQty when variant qty > stockAvailable', async () => {
@@ -60,7 +60,7 @@ describe('verifyStockForItem', () => {
     }) as any);
 
     const result = await verifyStockForItem('p1', { color: 'rojo', size: 'L' }, 3);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, verified: true });
   });
 
   it('returns fail with availableQty=0 when variant not found', async () => {
@@ -77,7 +77,7 @@ describe('verifyStockForItem', () => {
     mockGetProduct.mockResolvedValue(makeProduct({ stock: 8, variants: [] }) as any);
 
     const result = await verifyStockForItem('p1', null, 5);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, verified: true });
   });
 
   it('fails when requested qty > product.stock (no variants)', async () => {
@@ -87,17 +87,17 @@ describe('verifyStockForItem', () => {
     expect(result).toEqual({ ok: false, availableQty: 3, productName: 'Accesorio' });
   });
 
-  it('fails-open on API error (network down)', async () => {
+  it('reports unverified — not available — when the API is unreachable', async () => {
     mockGetProduct.mockRejectedValue(new Error('Network error'));
 
     const result = await verifyStockForItem('p1', null, 1);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, verified: false });
   });
 
-  it('fails-open on API 404', async () => {
+  it('reports unverified when the product lookup 404s', async () => {
     mockGetProduct.mockRejectedValue(new Error('Product p1 not found'));
 
     const result = await verifyStockForItem('p1', { color: 'negro', size: 'M' }, 2);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, verified: false });
   });
 });

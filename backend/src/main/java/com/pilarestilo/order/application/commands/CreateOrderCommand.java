@@ -18,7 +18,12 @@ public record CreateOrderCommand(
         Money discountAmount,
         boolean employeeDiscountEligible,
         String discountCode,
-        SalesChannel salesChannel
+        SalesChannel salesChannel,
+        /**
+         * Set only on the delegated-write path, where the monolith resolves the code and
+         * order-service persists the provenance it cannot look up itself.
+         */
+        UUID resolvedDiscountId
 ) {
     public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
                                PaymentMethod paymentMethod,
@@ -38,7 +43,8 @@ public record CreateOrderCommand(
                 discountAmount,
                 employeeDiscountEligible,
                 null,
-                SalesChannel.ECOMMERCE
+                SalesChannel.ECOMMERCE,
+                null
         );
     }
 
@@ -61,7 +67,59 @@ public record CreateOrderCommand(
                 discountAmount,
                 employeeDiscountEligible,
                 discountCode,
-                SalesChannel.ECOMMERCE
+                SalesChannel.ECOMMERCE,
+                null
+        );
+    }
+
+    /**
+     * The full command as the storefront sends it: no provenance, because the code has not been
+     * resolved to a discount yet. CreateOrderUseCase fills that in for the delegated-write path.
+     */
+    public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
+                               PaymentMethod paymentMethod,
+                               String shippingZoneCode,
+                               String shippingCourierId,
+                               UUID shippingAddressId,
+                               String notes,
+                               Money discountAmount, boolean employeeDiscountEligible,
+                               String discountCode, SalesChannel salesChannel) {
+        this(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressId,
+                notes,
+                discountAmount,
+                employeeDiscountEligible,
+                discountCode,
+                salesChannel,
+                null
+        );
+    }
+
+    /**
+     * A copy carrying the discount the monolith resolved.
+     *
+     * <p>For the delegated-write path. order-service is told the amount and the code that
+     * produced it, but never asked to redeem anything: the ledger lives here.
+     */
+    public CreateOrderCommand withResolvedDiscount(Money amount, UUID discountId, String code) {
+        return new CreateOrderCommand(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressId,
+                notes,
+                amount,
+                employeeDiscountEligible,
+                code,
+                salesChannel,
+                discountId
         );
     }
 

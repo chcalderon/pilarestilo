@@ -1,7 +1,8 @@
 ---
 import AdminLoginForm from '../../islands/admin/AdminLoginForm';
+import { safeRedirectPath } from '../../lib/safeRedirect';
 
-const redirect = Astro.url.searchParams.get('redirect') ?? undefined;
+const redirect = safeRedirectPath(Astro.url.searchParams.get('redirect'), '/admin/dashboard');
 // The middleware sets ?reason=backend_unavailable when /auth/me was unreachable (not a 401),
 // so the user is told the panel is down instead of assuming their credentials expired.
 const backendUnavailable = Astro.url.searchParams.get('reason') === 'backend_unavailable';

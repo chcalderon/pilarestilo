@@ -398,6 +398,8 @@ export interface PublicStoreSettingsDto {
   shippingZonesJson?: string | null;
   shippingCouriersJson?: string | null;
   shippingPaymentMode?: ShippingPaymentMode;
+  bankTransferAutoCancelEnabled?: boolean;
+  bankTransferAutoCancelTimeoutMinutes?: number;
 }
 
 export interface CustomerCreditDto {

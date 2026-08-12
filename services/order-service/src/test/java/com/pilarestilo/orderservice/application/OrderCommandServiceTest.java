@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -137,6 +138,8 @@ class OrderCommandServiceTest {
                         new BigDecimal("-1"),
                         "CLP",
                         false,
+                        null,
+                        null,
                         null
                 )));
         assertEquals("Discount amount cannot be negative", negativeDiscountEx.getMessage());
@@ -183,6 +186,8 @@ class OrderCommandServiceTest {
                 new BigDecimal("10.00"),
                 "CLP",
                 true,
+                null,
+                null,
                 null
         );
 
@@ -208,6 +213,80 @@ class OrderCommandServiceTest {
         assertEquals("TRANSFER", payment.getMethod());
         assertEquals("Pilar Estilo", payment.getTransferAccountHolderName());
         assertEquals("admin@pilarestilo.com", payment.getTransferAccountEmail());
+    }
+
+    /**
+     * The monolith owns the discount catalogue and the redemption ledger; this service only
+     * records which code produced the amount. Without that snapshot, hard-deleting a discount
+     * would erase every trace of which orders used it, since the ledger's FK is ON DELETE SET
+     * NULL.
+     */
+    @Test
+    void create_stores_the_discount_provenance_the_monolith_resolved() {
+        OrderCommandService service = service();
+        UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        UUID discountId = UUID.randomUUID();
+        stubCreateCollaborators(customerId, productId, addressId);
+
+        CreateOrderRequest request = new CreateOrderRequest(
+                customerId,
+                List.of(item(productId, 1, null, null)),
+                "TRANSFER",
+                "LOCAL",
+                "starken",
+                addressId,
+                null,
+                new BigDecimal("10.00"),
+                "CLP",
+                false,
+                null,
+                discountId,
+                "SAVE10"
+        );
+
+        OrderEntity result = service.create(request);
+
+        assertEquals(discountId, result.getDiscountId());
+        assertEquals("SAVE10", result.getDiscountCode());
+    }
+
+    /**
+     * V55 put these columns on order_items and this service never filled them, so a remotely
+     * created order recorded what was bought but not in which colour or size — unfulfillable for
+     * a clothing store, and it made the monolith release stock against the wrong record when an
+     * order was cancelled.
+     */
+    @Test
+    void create_stores_the_variant_on_each_line() {
+        OrderCommandService service = service();
+        UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        stubCreateCollaborators(customerId, productId, addressId);
+
+        OrderEntity result = service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken",
+                addressId, List.of(item(productId, 1, "Rojo", "M"))));
+
+        assertEquals("Rojo", result.getItems().get(0).getVariantColor());
+        assertEquals("M", result.getItems().get(0).getVariantSize());
+    }
+
+    /** No code, no provenance — the columns stay null rather than carrying a stale value. */
+    @Test
+    void create_leaves_the_discount_provenance_null_without_a_code() {
+        OrderCommandService service = service();
+        UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        stubCreateCollaborators(customerId, productId, addressId);
+
+        OrderEntity result = service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken",
+                addressId, List.of(item(productId, 1, null, null))));
+
+        assertNull(result.getDiscountId());
+        assertNull(result.getDiscountCode());
     }
 
     @Test
@@ -248,6 +327,32 @@ class OrderCommandServiceTest {
         );
     }
 
+    /** The collaborators every create() needs: address, settings, product, repositories. */
+    private void stubCreateCollaborators(UUID customerId, UUID productId, UUID addressId) {
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId))
+                .thenReturn(Optional.of(address(addressId, customerId)));
+        SystemSettingsEntity settings = settings(
+                """
+                        [{"code":"LOCAL","active":true}]
+                        """,
+                """
+                        [{"id":"starken","name":"Starken","active":true}]
+                        """,
+                "por_pagar"
+        );
+        ReflectionTestUtils.setField(settings, "bankTransferAccountHolder", "Pilar Estilo");
+        ReflectionTestUtils.setField(settings, "bankTransferContactEmail", "admin@pilarestilo.com");
+        ReflectionTestUtils.setField(settings, "bankTransferAccountNumber", "123456789");
+        ReflectionTestUtils.setField(settings, "bankTransferBankName", "Banco de Chile");
+        ReflectionTestUtils.setField(settings, "bankTransferAccountType", "Cuenta Corriente");
+        when(systemSettingsRepository.findById((short) 1)).thenReturn(Optional.of(settings));
+
+        when(productRepository.findById(productId))
+                .thenReturn(Optional.of(product(productId, "Vestido", "CLP", "100.00")));
+        when(orderRepository.save(any(OrderEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(paymentRepository.findByOrderId(any(UUID.class))).thenReturn(Optional.empty());
+    }
+
     private CreateOrderRequest baseRequest(UUID customerId,
                                            String paymentMethod,
                                            String shippingZoneCode,
@@ -265,6 +370,8 @@ class OrderCommandServiceTest {
                 null,
                 null,
                 false,
+                null,
+                null,
                 null
         );
     }
