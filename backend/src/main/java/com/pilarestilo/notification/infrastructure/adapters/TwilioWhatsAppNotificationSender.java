@@ -55,10 +55,6 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
         this.envSenderAlias = normalize(senderAlias, "Pilar Estilo");
     }
 
-    private void send(String template, UUID referenceId, NotificationRecipient recipient) {
-        send(template, referenceId, recipient, null);
-    }
-
     /** @param overrideBody pre-composed copy from NotificationComposer; null keeps the legacy
      *                      per-template wording built by buildMessage. */
     private void send(String template, UUID referenceId, NotificationRecipient recipient,

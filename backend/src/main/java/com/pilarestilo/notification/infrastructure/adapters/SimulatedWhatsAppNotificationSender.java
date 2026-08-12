@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 @Component
 public class SimulatedWhatsAppNotificationSender implements NotificationSender {
 
@@ -40,27 +38,6 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
         );
     }
 
-    private void logSimulated(String template, String to, String senderAlias, UUID referenceId, NotificationRecipient recipient) {
-        if (!recipient.allowsWhatsApp()) {
-            log.info(
-                    "[WHATSAPP:SIMULATED] skipped template={} referenceId={} reason=channel-preference preference={}",
-                    template,
-                    referenceId,
-                    recipient.preference()
-            );
-            return;
-        }
-
-        log.info(
-                "[WHATSAPP:SIMULATED] sender={} to={} template={} referenceId={} recipient={}",
-                senderAlias,
-                to,
-                template,
-                referenceId,
-                recipient.preferredPhoneThenEmail()
-        );
-    }
-
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.isBlank()) {
             return first.trim();
@@ -80,14 +57,35 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
 
     private record EffectiveConfig(String simulatedTo, String senderAlias) {}
 
+    /**
+     * Logs to the configured simulated destination, never to the customer.
+     *
+     * <p>That is the whole point of this adapter: it stands in for WhatsApp in environments
+     * where messaging a real person would be wrong. An earlier version of this method logged
+     * {@code recipient.phone()} and ignored the configured number and sender alias, which
+     * defeated it — the settings existed and nothing read them.
+     */
     @Override
     public void send(NotificationMessage message, NotificationRecipient recipient) {
         if (!recipient.allowsWhatsApp()) {
-            log.info("[WHATSAPP:SIMULATED] skipped template={} reason=channel-preference",
-                    message.templateKey());
+            log.info(
+                    "[WHATSAPP:SIMULATED] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    message.templateKey(),
+                    message.referenceId(),
+                    recipient.preference()
+            );
             return;
         }
-        log.info("[WHATSAPP:SIMULATED] template={} referenceId={} to={} body={}",
-                message.templateKey(), message.referenceId(), recipient.phone(), message.bodyText());
+
+        EffectiveConfig config = resolveConfig();
+        log.info(
+                "[WHATSAPP:SIMULATED] sender={} to={} template={} referenceId={} recipient={} body={}",
+                config.senderAlias(),
+                config.simulatedTo(),
+                message.templateKey(),
+                message.referenceId(),
+                recipient.preferredPhoneThenEmail(),
+                message.bodyText()
+        );
     }
 }

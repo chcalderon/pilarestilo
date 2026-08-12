@@ -232,11 +232,6 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         return Boolean.parseBoolean(rawValue.trim());
     }
 
-    private String shortId(UUID id) {
-        String raw = String.valueOf(id);
-        return raw.length() >= 8 ? raw.substring(0, 8) : raw;
-    }
-
     private boolean looksLikeEmail(String value) {
         if (value == null || value.isBlank()) {
             return false;

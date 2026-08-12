@@ -47,42 +47,6 @@ public class N8nWebhookNotificationSender implements NotificationSender {
         this.envTokenHeaderName = normalize(tokenHeaderName);
     }
 
-    private void sendWebhookCode(String eventType, String reference, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        if (config == null) {
-            log.warn("[NOTIFICATION:N8N] disabled: missing webhook URL.");
-            return;
-        }
-        Map<String, Object> recipientPayload = new LinkedHashMap<>();
-        recipientPayload.put("phone", recipient.phone());
-        recipientPayload.put("email", recipient.email());
-        recipientPayload.put("channelPreference", recipient.preference().name());
-        recipientPayload.put("allowWhatsApp", recipient.allowsWhatsApp());
-        recipientPayload.put("allowEmail", recipient.allowsEmail());
-
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("eventType", eventType);
-        payload.put("reference", reference);
-        payload.put("occurredAt", Instant.now().toString());
-        payload.put("recipient", recipientPayload);
-
-        try {
-            RestClient.RequestBodySpec request = restClientBuilder.build()
-                .post().uri(config.webhookUrl()).contentType(MediaType.APPLICATION_JSON);
-            if (!config.apiKey().isBlank()) {
-                request = request.header(config.tokenHeaderName(), config.apiKey());
-            }
-            request.body(payload).retrieve().toBodilessEntity();
-            log.info("[NOTIFICATION:N8N] event={} reference={}", eventType, reference);
-        } catch (Exception ex) {
-            log.warn("[NOTIFICATION:N8N] send failed event={} reference={} reason={}", eventType, reference, ex.getMessage());
-        }
-    }
-
-    private void sendWebhook(String eventType, UUID referenceId, NotificationRecipient recipient) {
-        sendWebhook(eventType, referenceId, recipient, null, null, null);
-    }
-
     /**
      * @param subject  null for the legacy typed events, which carry no copy
      * @param bodyText null for the same reason
