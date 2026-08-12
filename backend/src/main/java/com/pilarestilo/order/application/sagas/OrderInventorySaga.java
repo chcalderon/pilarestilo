@@ -1,6 +1,5 @@
 package com.pilarestilo.order.application.sagas;
 
-import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.model.Order;
@@ -16,14 +15,11 @@ public class OrderInventorySaga {
 
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
     private final OrderRepository orderRepository;
-    private final InventoryService inventoryService;
 
     public OrderInventorySaga(UpdateOrderStatusUseCase updateOrderStatusUseCase,
-                              OrderRepository orderRepository,
-                              InventoryService inventoryService) {
+                              OrderRepository orderRepository) {
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
         this.orderRepository = orderRepository;
-        this.inventoryService = inventoryService;
     }
 
     public void onPaymentConfirmed(PaymentConfirmed event) {
@@ -42,12 +38,8 @@ public class OrderInventorySaga {
             updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.PENDING_PAYMENT);
         }
 
-        // Confirm inventory reservations: convert reserved stock into confirmed sales
-        for (var item : order.getItems()) {
-            inventoryService.confirm(item.getProductId(), item.getQuantity(),
-                    item.getVariantColor(), item.getVariantSize());
-        }
-
+        // Converting the reservation into a sale is UpdateOrderStatusUseCase's job, reached by
+        // every route to PAID rather than by this event alone.
         updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.PAID);
     }
 
@@ -63,10 +55,9 @@ public class OrderInventorySaga {
             return;
         }
 
+        // Releasing the reservation is UpdateOrderStatusUseCase's job now, not this saga's.
+        // It used to happen here, which meant a cancellation arriving any other way -- the admin
+        // PATCH endpoint above all -- left the stock reserved with nothing to free it.
         updateOrderStatusUseCase.execute(event.orderId(), OrderStatus.CANCELLED);
-
-        for (var item : order.getItems()) {
-            inventoryService.release(item.getProductId(), item.getQuantity(), item.getVariantColor(), item.getVariantSize());
-        }
     }
 }

@@ -252,6 +252,27 @@ class OrderCommandServiceTest {
         assertEquals("SAVE10", result.getDiscountCode());
     }
 
+    /**
+     * V55 put these columns on order_items and this service never filled them, so a remotely
+     * created order recorded what was bought but not in which colour or size — unfulfillable for
+     * a clothing store, and it made the monolith release stock against the wrong record when an
+     * order was cancelled.
+     */
+    @Test
+    void create_stores_the_variant_on_each_line() {
+        OrderCommandService service = service();
+        UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        stubCreateCollaborators(customerId, productId, addressId);
+
+        OrderEntity result = service.create(baseRequest(customerId, "TRANSFER", "LOCAL", "starken",
+                addressId, List.of(item(productId, 1, "Rojo", "M"))));
+
+        assertEquals("Rojo", result.getItems().get(0).getVariantColor());
+        assertEquals("M", result.getItems().get(0).getVariantSize());
+    }
+
     /** No code, no provenance — the columns stay null rather than carrying a stale value. */
     @Test
     void create_leaves_the_discount_provenance_null_without_a_code() {

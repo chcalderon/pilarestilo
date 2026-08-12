@@ -37,6 +37,11 @@ class OrderInventorySagaTest {
     @Mock
     OrderRepository orderRepository;
 
+    /**
+     * Deliberately not injected into the saga: it no longer holds an InventoryService. Kept as a
+     * mock so every case can assert it stays untouched, which is what stops the release from
+     * quietly moving back here and running twice.
+     */
     @Mock
     InventoryService inventoryService;
 
@@ -56,8 +61,9 @@ class OrderInventorySagaTest {
 
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.PENDING_PAYMENT);
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.PAID);
-        // Fase 4: confirm converts reservation into a real sale for each item
-        verify(inventoryService).confirm(productId, 1, null, null);
+        // Converting the reservation belongs to UpdateOrderStatusUseCase, which every route to
+        // PAID passes through. Asserting it here would let the saga grow a second copy.
+        verifyNoInteractions(inventoryService);
     }
 
     @Test
@@ -91,8 +97,9 @@ class OrderInventorySagaTest {
         saga.onPaymentRejected(new PaymentRejected(UUID.randomUUID(), orderId, UUID.randomUUID(), Instant.now()));
 
         verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.CANCELLED);
-        verify(inventoryService).release(productA, 2, null, null);
-        verify(inventoryService).release(productB, 1, null, null);
+        // Same reason as above: releasing is the use case's job. Doing it here too would give
+        // the stock back twice on the payment-rejected path.
+        verifyNoInteractions(inventoryService);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.discount.application.DiscountRedemptionService;
+import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
 import com.pilarestilo.order.application.remote.OrderRemoteQueryClient;
 import com.pilarestilo.order.domain.enums.OrderStatus;
@@ -24,26 +25,33 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * The discount half of the status funnel. A reserved redemption is worthless without these two
- * calls: before this wiring existed, a code applied at checkout stayed PENDING forever.
+ * Everything the status funnel unwinds when an order reaches PAID or CANCELLED.
+ *
+ * <p>Both the discount ledger and the inventory reservation hang off this one method, because it
+ * is the only thing every route to those states passes through. Each half got here after the same
+ * defect: a reserved redemption stayed PENDING forever, and a reservation released only from the
+ * payment saga left stock held for good whenever an admin cancelled by hand.
  */
 @ExtendWith(MockitoExtension.class)
-class UpdateOrderStatusUseCaseRedemptionTest {
+class UpdateOrderStatusUseCaseSideEffectsTest {
 
     private static final UUID ORDER_ID = UUID.randomUUID();
     private static final UUID CUSTOMER_ID = UUID.randomUUID();
+    private static final UUID PRODUCT_ID = UUID.randomUUID();
 
     @Mock OrderRepository orderRepository;
     @Mock DomainEventPublisher eventPublisher;
     @Mock OrderRemoteCommandClient orderRemoteCommandClient;
     @Mock OrderRemoteQueryClient orderRemoteQueryClient;
     @Mock DiscountRedemptionService discountRedemptionService;
+    @Mock InventoryService inventoryService;
     @InjectMocks UpdateOrderStatusUseCase useCase;
 
     private Order order;
@@ -59,7 +67,7 @@ class UpdateOrderStatusUseCaseRedemptionTest {
         // asserted against it.
         return Order.reconstruct(
                 ORDER_ID, CUSTOMER_ID,
-                List.of(new OrderItem(UUID.randomUUID(), UUID.randomUUID(), "Vestido", price, 1)),
+                List.of(new OrderItem(UUID.randomUUID(), PRODUCT_ID, "Vestido", price, 2, "Rojo", "M")),
                 price, Money.zero(), price,
                 PaymentMethod.TRANSFER,
                 "LOCAL", "starken", "Starken", "POR_PAGAR",
@@ -84,6 +92,49 @@ class UpdateOrderStatusUseCaseRedemptionTest {
         verify(discountRedemptionService, never()).release(any());
     }
 
+    // -----------------------------------------------------------------------------------------
+    // Inventory. These used to live in OrderInventorySaga, reachable only from a payment event.
+    // -----------------------------------------------------------------------------------------
+
+    /** The gap this closes: cancelling by hand left the units reserved with nothing to free them. */
+    @Test
+    void cancelled_givesTheReservationBack() {
+        stubLocalPath();
+
+        useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
+
+        verify(inventoryService).release(PRODUCT_ID, 2, "Rojo", "M");
+    }
+
+    @Test
+    void paid_turnsTheReservationIntoASale() {
+        order = orderInStatus(OrderStatus.PENDING_PAYMENT);
+        stubLocalPath();
+
+        useCase.execute(ORDER_ID, OrderStatus.PAID);
+
+        verify(inventoryService).confirm(PRODUCT_ID, 2, "Rojo", "M");
+        verify(inventoryService, never()).release(any(), anyInt(), any(), any());
+    }
+
+    /**
+     * Reaching PAID already took the units out of on-hand. Releasing on a later cancellation
+     * would invent stock that has left the warehouse, so this returns nothing — the same
+     * asymmetry that stops a paid-then-cancelled order from getting its code back.
+     */
+    @Test
+    void cancelledAfterPaid_returnsNoStock() {
+        order = orderInStatus(OrderStatus.PAID);
+        stubLocalPath();
+
+        useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
+
+        verifyNoInteractions(inventoryService);
+        // The discount is still released here; only PENDING redemptions respond, so a settled
+        // one stays settled. That guard lives in the adapter, not in this branch.
+        verify(discountRedemptionService).release(ORDER_ID);
+    }
+
     /** The auto-cancel job and the admin cancel button both land here. */
     @Test
     void cancelled_releasesTheRedemption() {
@@ -103,6 +154,7 @@ class UpdateOrderStatusUseCaseRedemptionTest {
         useCase.execute(ORDER_ID, OrderStatus.PREPARING_ORDER);
 
         verifyNoInteractions(discountRedemptionService);
+        verifyNoInteractions(inventoryService);
     }
 
     /**
@@ -118,6 +170,7 @@ class UpdateOrderStatusUseCaseRedemptionTest {
         useCase.execute(ORDER_ID, order.getStatus());
 
         verifyNoInteractions(discountRedemptionService);
+        verifyNoInteractions(inventoryService);
         verify(orderRepository, never()).save(any());
     }
 }

@@ -123,6 +123,8 @@ public class OrderCommandService {
             item.setUnitPriceAmount(line.product().getPriceAmount().setScale(2, RoundingMode.HALF_UP));
             item.setUnitPriceCurrency(currency);
             item.setQuantity(line.quantity());
+            item.setVariantColor(line.variantColor());
+            item.setVariantSize(line.variantSize());
             order.addItem(item);
         }
 
