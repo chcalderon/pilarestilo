@@ -4,6 +4,7 @@ import type { CartItem } from '../../../lib/cartStore';
 import type { CheckoutPaymentMethod } from '../../../lib/checkoutStore';
 import { formatPrice } from '../../../lib/formatPrice';
 import type { StockIssues } from '../../../lib/useStockCheck';
+import StockBadge, { stockImageClass } from '../../cart/StockBadge';
 import type { Locale } from '../../../i18n/index';
 
 interface Props {
@@ -38,8 +39,6 @@ const copy = {
     pay: 'Confirmar pedido',
     submitting: 'Procesando…',
     qty: 'Cantidad',
-    soldOut: 'Sin stock',
-    limited: 'Quedan',
     removeLine: 'Quitar del pedido',
   },
   en: {
@@ -55,8 +54,6 @@ const copy = {
     pay: 'Place order',
     submitting: 'Processing…',
     qty: 'Quantity',
-    soldOut: 'Out of stock',
-    limited: 'Only',
     removeLine: 'Remove from order',
   },
 } as const;
@@ -94,7 +91,7 @@ export default function ReviewStep({
             <li
               key={item.id}
               className={`flex gap-3 items-start ${
-                issue ? 'border-l-2 border-[#cb6070] bg-[#fff6f7] -ml-3 pl-3 py-2' : ''
+                issue ? 'border-l-4 border-[#8f2d3b] bg-[#fff6f7] -ml-3 pl-3 py-2' : ''
               }`}
             >
               {item.imageUrl && (
@@ -104,11 +101,24 @@ export default function ReviewStep({
                   width={48}
                   height={64}
                   loading="lazy"
-                  className="w-12 h-16 object-cover bg-pe-cream shrink-0"
+                  className={`w-12 h-16 object-cover bg-pe-cream shrink-0 ${stockImageClass(issue)}`}
                 />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-sans text-sm text-pe-black truncate">{item.name}</p>
+                {issue && (
+                  <span className="block mb-1">
+                    <StockBadge issue={issue} locale={locale} />
+                  </span>
+                )}
+                <p
+                  className={`font-sans text-sm truncate ${
+                    issue?.type === 'SOLD_OUT'
+                      ? 'text-pe-charcoal/50 line-through'
+                      : 'text-pe-black'
+                  }`}
+                >
+                  {item.name}
+                </p>
                 {item.variantLabel && (
                   <p className="font-sans text-[0.72rem] text-pe-charcoal/60">{item.variantLabel}</p>
                 )}
@@ -117,12 +127,7 @@ export default function ReviewStep({
                 </p>
 
                 {issue && (
-                  <div className="mt-1.5" role="status" aria-live="polite">
-                    <p className="font-sans text-[0.7rem] text-[#8f2d3b]">
-                      {issue.type === 'SOLD_OUT'
-                        ? l.soldOut
-                        : `${l.limited} ${issue.availableQty}`}
-                    </p>
+                  <div className="mt-1" role="status" aria-live="polite">
                     <button
                       type="button"
                       onClick={() => onRemoveItem(item.id)}
