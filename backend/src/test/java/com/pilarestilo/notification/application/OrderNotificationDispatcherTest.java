@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.application;
 
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.InAppNotificationPort;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -44,6 +46,8 @@ class OrderNotificationDispatcherTest {
     @Mock InAppNotificationPort inAppNotificationPort;
     @Mock UserRepository userRepository;
     @Mock OrderRepository orderRepository;
+    /** Real, not mocked: the copy it produces is the thing under test in the send assertions. */
+    final NotificationComposer composer = new NotificationComposer();
 
     OrderNotificationDispatcher dispatcher;
 
@@ -54,7 +58,7 @@ class OrderNotificationDispatcherTest {
     @BeforeEach
     void setUp() {
         dispatcher = new OrderNotificationDispatcher(
-                notificationSender, inAppNotificationPort, userRepository, orderRepository);
+                notificationSender, composer, inAppNotificationPort, userRepository, orderRepository);
     }
 
     /* Real domain objects rather than mocks: these classes are plain and constructing them
@@ -96,7 +100,7 @@ class OrderNotificationDispatcherTest {
 
         dispatcher.onOrderCreated(new OrderCreated(orderId, customerId, Instant.now()));
 
-        verify(notificationSender, never()).sendOrderConfirmation(any(), any());
+        verify(notificationSender, never()).send(any(NotificationMessage.class), any());
     }
 
     @Test
@@ -106,7 +110,10 @@ class OrderNotificationDispatcherTest {
 
         dispatcher.onOrderCreated(new OrderCreated(orderId, customerId, Instant.now()));
 
-        verify(notificationSender).sendOrderConfirmation(eq(orderId), any(NotificationRecipient.class));
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.ORDER_CONFIRMATION.equals(m.templateKey())
+                        && orderId.equals(m.referenceId())),
+                any(NotificationRecipient.class));
     }
 
     /**
@@ -130,7 +137,9 @@ class OrderNotificationDispatcherTest {
         dispatcher.onOrderStatusChanged(new OrderStatusChanged(
                 orderId, customerId, OrderStatus.PREPARING_ORDER, OrderStatus.SHIPPED, Instant.now()));
 
-        verify(notificationSender).sendOrderShipped(eq(orderId), any(NotificationRecipient.class));
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.ORDER_SHIPPED.equals(m.templateKey())),
+                any(NotificationRecipient.class));
         verify(inAppNotificationPort).notifyOrderShipped(customerId, orderId);
     }
 
@@ -142,7 +151,9 @@ class OrderNotificationDispatcherTest {
         dispatcher.onOrderStatusChanged(new OrderStatusChanged(
                 orderId, customerId, OrderStatus.CREATED, OrderStatus.PREPARING_ORDER, Instant.now()));
 
-        verify(notificationSender).sendOrderPreparing(orderId, NotificationRecipient.unknown());
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.ORDER_PREPARING.equals(m.templateKey())),
+                eq(NotificationRecipient.unknown()));
     }
 
     @Test
@@ -150,7 +161,6 @@ class OrderNotificationDispatcherTest {
         dispatcher.onOrderStatusChanged(new OrderStatusChanged(
                 orderId, customerId, OrderStatus.CREATED, OrderStatus.PAID, Instant.now()));
 
-        verify(notificationSender, never()).sendOrderShipped(any(), any());
-        verify(notificationSender, never()).sendOrderPreparing(any(), any());
+        verify(notificationSender, never()).send(any(NotificationMessage.class), any());
     }
 }

@@ -44,7 +44,7 @@ public class PaymentNotificationListener {
             .map(user -> NotificationRecipient.of(user.getPhone(), user.getEmail(),
                 user.getNotificationChannelPreference().name()))
             .orElse(NotificationRecipient.unknown());
-        notificationSender.sendPaymentReceived(event.paymentId(), recipient);
+        notificationSender.send(notificationComposer.paymentReceived(event.paymentId()), recipient);
 
         orderRepository.findById(event.orderId())
             .map(order -> order.getCustomerId())

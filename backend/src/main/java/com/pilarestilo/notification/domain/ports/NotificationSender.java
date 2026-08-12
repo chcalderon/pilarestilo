@@ -3,19 +3,15 @@ package com.pilarestilo.notification.domain.ports;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 
-import java.util.UUID;
-
+/**
+ * One method. Every message is composed by {@link
+ * com.pilarestilo.notification.application.NotificationComposer} and rendered by the adapter.
+ *
+ * <p>There used to be five typed methods beside it, each reimplemented in all eight adapters.
+ * The copy drifted per channel as a result: SMTP carried real Spanish prose while the WhatsApp
+ * and log senders emitted only a template key and an id, and adding a field meant eight edits.
+ */
 public interface NotificationSender {
-
-    void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient);
-
-    void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient);
-
-    void sendOrderPreparing(UUID orderId, NotificationRecipient recipient);
-
-    void sendOrderShipped(UUID orderId, NotificationRecipient recipient);
-
-    void sendDiscountCodeAssigned(String code, NotificationRecipient recipient);
 
     /**
      * Renders a composed message.

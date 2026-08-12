@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Every customer-facing string lives here.
@@ -100,6 +101,78 @@ public class NotificationComposer {
                 null,
                 data,
                 order.getId());
+    }
+
+    /*
+     * The five short messages below. Their wording used to be duplicated across eight adapters,
+     * so each channel drifted on its own: SMTP carried real Spanish prose while the WhatsApp and
+     * log senders emitted only a template key and an id. Collapsing them here gives every channel
+     * the same copy, and a new field is one edit instead of eight.
+     *
+     * <p>They take an id rather than the aggregate because that is all their callers hold. Where
+     * an order reference would read better than a UUID, the caller has to load the order first —
+     * a change to what the customer sees, not a refactor, so it is not made here.
+     */
+
+    public NotificationMessage orderConfirmation(UUID orderId) {
+        return new NotificationMessage(
+                NotificationMessage.ORDER_CONFIRMATION,
+                "Pedido " + shortId(orderId) + " confirmado",
+                "Tu pedido " + orderId + " fue creado correctamente.\n"
+                        + "Te notificaremos por este canal cuando avance.\n",
+                null,
+                Map.of("orderId", orderId),
+                orderId);
+    }
+
+    public NotificationMessage paymentReceived(UUID paymentId) {
+        return new NotificationMessage(
+                NotificationMessage.PAYMENT_RECEIVED,
+                "Pago " + shortId(paymentId) + " recibido",
+                "Confirmamos el pago " + paymentId + ".\n"
+                        + "Gracias por tu compra en Pilar Estilo.\n",
+                null,
+                Map.of("paymentId", paymentId),
+                paymentId);
+    }
+
+    public NotificationMessage orderPreparing(UUID orderId) {
+        return new NotificationMessage(
+                NotificationMessage.ORDER_PREPARING,
+                "Pedido " + shortId(orderId) + " en preparación",
+                "Tu pedido " + orderId + " está en preparación.\n"
+                        + "Te avisaremos cuando sea despachado.\n",
+                null,
+                Map.of("orderId", orderId),
+                orderId);
+    }
+
+    public NotificationMessage orderShipped(UUID orderId) {
+        return new NotificationMessage(
+                NotificationMessage.ORDER_SHIPPED,
+                "Pedido " + shortId(orderId) + " enviado",
+                "Tu pedido " + orderId + " ya fue enviado.\n"
+                        + "Pronto llegará a destino.\n",
+                null,
+                Map.of("orderId", orderId),
+                orderId);
+    }
+
+    public NotificationMessage discountCodeAssigned(String code) {
+        return new NotificationMessage(
+                NotificationMessage.DISCOUNT_CODE_ASSIGNED,
+                "Código de descuento exclusivo para ti",
+                "Tienes un código de descuento exclusivo: " + code + "\n"
++ ""
+                        + "Úsalo en tu próxima compra en Pilar Estilo.\n",
+                null,
+                Map.of("code", code),
+                null);
+    }
+
+    /** The first segment of a UUID: enough for a customer to quote, short enough for a subject. */
+    private static String shortId(UUID id) {
+        return id == null ? "" : id.toString().substring(0, 8);
     }
 
     /** Same-day deadlines show only the time; anything later needs the date to be unambiguous. */
