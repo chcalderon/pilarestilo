@@ -9,6 +9,7 @@ import {
   type CheckoutStep,
 } from '../../lib/checkoutStore';
 import { computeTotals } from '../../lib/checkoutTotals';
+import { useStockCheck } from '../../lib/useStockCheck';
 import {
   createOrder,
   getMyAddresses,
@@ -54,6 +55,7 @@ const copy = {
     missingSelection: 'Falta información de envío. Vuelve al primer paso.',
     legacyItem: 'Hay un producto antiguo en tu carrito. Quítalo y vuelve a agregarlo.',
     submitFailed: 'No pudimos crear el pedido. Inténtalo de nuevo.',
+    stockChanged: 'La disponibilidad cambió mientras completabas la compra. Revisa los productos marcados.',
   },
   en: {
     title: 'Checkout',
@@ -67,6 +69,7 @@ const copy = {
     missingSelection: 'Shipping information is missing. Go back to the first step.',
     legacyItem: 'Your cart holds a legacy item. Remove it and add it again.',
     submitFailed: 'We could not create the order. Please try again.',
+    stockChanged: 'Availability changed while you were checking out. Review the flagged items.',
   },
 } as const;
 
@@ -94,8 +97,10 @@ export default function CheckoutPage({ locale }: Props) {
   const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
   const resetCheckout = useCheckoutStore((s) => s.reset);
   const clearCart = useCartStore((s) => s.clearCart);
+  const removeItem = useCartStore((s) => s.removeItem);
 
   const config = useCheckoutConfig();
+  const stock = useStockCheck(items);
 
   const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -246,6 +251,19 @@ export default function CheckoutPage({ locale }: Props) {
     setSubmitting(true);
     setSubmitError('');
     try {
+      /*
+       * Last check before the order exists. Stock can go in the minutes a customer spends on
+       * these steps, and the backend refusing at this point is the least useful moment to find
+       * out: the message is generic and the cart is still full of the offending line. Checking
+       * here lets the review step name the item and offer to drop it.
+       */
+      const found = await stock.check();
+      if (Object.keys(found).length > 0) {
+        setSubmitError(l.stockChanged);
+        setSubmitting(false);
+        return;
+      }
+
       const order = await createOrder(
         {
           customerId: authUser.id,
@@ -378,6 +396,11 @@ export default function CheckoutPage({ locale }: Props) {
                   currency={currency}
                   submitting={submitting}
                   error={submitError}
+                  stockIssues={stock.issues}
+                  onRemoveItem={(lineId) => {
+                    stock.clearIssue(lineId);
+                    removeItem(lineId);
+                  }}
                   onBack={() => setStep('payment')}
                   onSubmit={placeOrder}
                 />

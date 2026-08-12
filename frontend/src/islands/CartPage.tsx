@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { useCartStore, verifyStockForItem } from '../lib/cartStore';
+import { ArrowRight, Loader2, Trash2, Undo2 } from 'lucide-react';
+import { useCartStore, verifyStockForItem, type CartItem } from '../lib/cartStore';
+import { useStockCheck } from '../lib/useStockCheck';
 import StockUnavailableModal from './cart/StockUnavailableModal';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import { formatPrice } from '../lib/formatPrice';
@@ -8,11 +9,6 @@ import type { Locale } from '../i18n/index';
 
 interface Props {
   locale: Locale;
-}
-
-interface StockConflict {
-  type: 'OUT_OF_STOCK' | 'INSUFFICIENT_STOCK';
-  availableQty: number;
 }
 
 const labels = {
@@ -32,6 +28,9 @@ const labels = {
     findReplacement: 'Ver alternativas',
     stockAdjusted: 'Este producto ya no está disponible.',
     resolveStockFirst: 'Resuelve los productos sin stock para continuar.',
+    checkingStock: 'Revisando disponibilidad…',
+    removed: 'Producto quitado',
+    undo: 'Deshacer',
   },
   en: {
     title: 'Cart',
@@ -49,6 +48,9 @@ const labels = {
     findReplacement: 'See alternatives',
     stockAdjusted: 'This product is no longer available.',
     resolveStockFirst: 'Resolve the out-of-stock items to continue.',
+    checkingStock: 'Checking availability…',
+    removed: 'Item removed',
+    undo: 'Undo',
   },
 } as const;
 
@@ -58,13 +60,17 @@ export default function CartPage({ locale }: Props) {
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const addItem = useCartStore((s) => s.addItem);
 
   const storeToken = useAuthStore((s) => s.token);
   const [cookieToken, setCookieToken] = useState<string | null>(null);
   useEffect(() => setCookieToken(readAuthTokenCookie()), []);
   const hasSession = Boolean(storeToken ?? cookieToken);
 
-  const [stockConflicts, setStockConflicts] = useState<Record<string, StockConflict>>({});
+  const { issues, checking, clearIssue } = useStockCheck(items);
+  /** The last line removed, kept only long enough to offer an undo. */
+  const [undoable, setUndoable] = useState<CartItem | null>(null);
+  const undoTimerRef = useRef<number | null>(null);
   const [stockModal, setStockModal] = useState<{
     productName: string;
     availableQty: number;
@@ -79,33 +85,35 @@ export default function CartPage({ locale }: Props) {
     [items]
   );
   const currency = items[0]?.price.currency ?? 'CLP';
-  const conflictCount = Object.keys(stockConflicts).length;
+  const conflictCount = Object.keys(issues).length;
 
-  function clearItemConflict(itemId: string) {
-    setStockConflicts((current) => {
-      if (!current[itemId]) return current;
-      const next = { ...current };
-      delete next[itemId];
-      return next;
-    });
+  /**
+   * Removal is one tap, undone by a toast rather than guarded by a confirmation dialog. The
+   * customer is being asked to drop something the store cannot sell them; making them confirm
+   * that is friction over a decision that was never really theirs.
+   */
+  function removeWithUndo(item: CartItem) {
+    clearIssue(item.id);
+    removeItem(item.id);
+    setUndoable(item);
+    if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = window.setTimeout(() => setUndoable(null), 6000);
   }
 
-  /** Drops conflicts that no longer apply because the item left or its quantity came down. */
-  useEffect(() => {
-    setStockConflicts((current) => {
-      const next: Record<string, StockConflict> = {};
-      for (const [itemId, conflict] of Object.entries(current)) {
-        const item = items.find((candidate) => candidate.id === itemId);
-        if (!item) continue;
-        if (conflict.type === 'INSUFFICIENT_STOCK' && item.quantity <= conflict.availableQty) continue;
-        next[itemId] = conflict;
-      }
-      return Object.keys(next).length === Object.keys(current).length ? current : next;
-    });
-  }, [items]);
+  function undoRemove() {
+    if (!undoable) return;
+    const { quantity, ...rest } = undoable;
+    addItem(rest);
+    if (quantity > 1) updateQuantity(undoable.id, quantity);
+    setUndoable(null);
+  }
 
-  async function increaseQuantity(item: (typeof items)[number]) {
-    clearItemConflict(item.id);
+  useEffect(() => () => {
+    if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
+  }, []);
+
+  async function increaseQuantity(item: CartItem) {
+    clearIssue(item.id);
     const productId = item.productId || item.id.split('::')[0];
 
     if (productId) {
@@ -169,10 +177,21 @@ export default function CartPage({ locale }: Props) {
             {l.title}
           </h1>
 
+          {checking && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2 font-sans text-[0.75rem] text-pe-charcoal/70 mb-4"
+            >
+              <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+              {l.checkingStock}
+            </p>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 flex flex-col gap-4">
               {items.map((item) => {
-                const conflict = stockConflicts[item.id];
+                const conflict = issues[item.id];
 
                 return (
                   <div
@@ -214,22 +233,23 @@ export default function CartPage({ locale }: Props) {
                           className="mt-2 border border-[#cb6070]/45 bg-[#ffe9ec] px-2.5 py-2"
                         >
                           <p className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#8f2d3b]">
-                            {conflict.type === 'OUT_OF_STOCK' ? l.outOfStockBadge : l.limitedStockBadge}
+                            {conflict.type === 'SOLD_OUT' ? l.outOfStockBadge : l.limitedStockBadge}
                           </p>
                           <p className="font-sans text-xs text-[#732731] mt-1">
-                            {conflict.type === 'OUT_OF_STOCK'
+                            {conflict.type === 'SOLD_OUT'
                               ? l.stockAdjusted
                               : `${l.availableStockPrefix}: ${conflict.availableQty}`}
                           </p>
                           <div className="mt-2 flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => {
-                                clearItemConflict(item.id);
-                                removeItem(item.id);
-                              }}
-                              className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-[#8f2d3b]/40 text-[#8f2d3b] hover:bg-[#8f2d3b] hover:text-white transition-colors"
+                              onClick={() => removeWithUndo(item)}
+                              className="inline-flex items-center gap-1.5 font-sans text-[10px] tracking-[0.14em]
+                                uppercase min-h-11 px-2.5 border border-[#8f2d3b]/40 text-[#8f2d3b]
+                                hover:bg-[#8f2d3b] hover:text-white transition-colors
+                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
                             >
+                              <Trash2 size={13} aria-hidden="true" />
                               {l.removeUnavailable}
                             </button>
                             <a
@@ -247,7 +267,7 @@ export default function CartPage({ locale }: Props) {
                           <button
                             type="button"
                             onClick={() => {
-                              clearItemConflict(item.id);
+                              clearIssue(item.id);
                               updateQuantity(item.id, item.quantity - 1);
                             }}
                             className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
@@ -273,7 +293,7 @@ export default function CartPage({ locale }: Props) {
                         <button
                           type="button"
                           onClick={() => {
-                            clearItemConflict(item.id);
+                            clearIssue(item.id);
                             removeItem(item.id);
                           }}
                           className="font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors"
@@ -346,6 +366,29 @@ export default function CartPage({ locale }: Props) {
           </div>
         </div>
       </div>
+
+      {undoable && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 flex items-center gap-3
+            bg-pe-black text-pe-white px-4 py-3 shadow-xl max-w-[calc(100vw-2rem)]"
+        >
+          <span className="font-sans text-[0.78rem] truncate">
+            {l.removed}: {undoable.name}
+          </span>
+          <button
+            type="button"
+            onClick={undoRemove}
+            className="inline-flex items-center gap-1.5 shrink-0 min-h-11 px-2 font-sans
+              text-[0.68rem] tracking-[0.16em] uppercase text-pe-white underline underline-offset-4
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+          >
+            <Undo2 size={13} aria-hidden="true" />
+            {l.undo}
+          </button>
+        </div>
+      )}
 
       {stockModal && (
         <StockUnavailableModal

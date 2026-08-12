@@ -1,8 +1,9 @@
-import { AlertTriangle, ArrowLeft, Loader2, Lock } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Loader2, Lock, Trash2 } from 'lucide-react';
 import type { CustomerAddressDto } from '../../../lib/api';
 import type { CartItem } from '../../../lib/cartStore';
 import type { CheckoutPaymentMethod } from '../../../lib/checkoutStore';
 import { formatPrice } from '../../../lib/formatPrice';
+import type { StockIssues } from '../../../lib/useStockCheck';
 import type { Locale } from '../../../i18n/index';
 
 interface Props {
@@ -16,6 +17,9 @@ interface Props {
   currency: string;
   submitting: boolean;
   error: string;
+  /** Lines the last check found unavailable, keyed by cart line id. */
+  stockIssues: StockIssues;
+  onRemoveItem: (lineId: string) => void;
   onBack: () => void;
   onSubmit: () => void;
 }
@@ -34,6 +38,9 @@ const copy = {
     pay: 'Confirmar pedido',
     submitting: 'Procesando…',
     qty: 'Cantidad',
+    soldOut: 'Sin stock',
+    limited: 'Quedan',
+    removeLine: 'Quitar del pedido',
   },
   en: {
     heading: 'Review your order',
@@ -48,6 +55,9 @@ const copy = {
     pay: 'Place order',
     submitting: 'Processing…',
     qty: 'Quantity',
+    soldOut: 'Out of stock',
+    limited: 'Only',
+    removeLine: 'Remove from order',
   },
 } as const;
 
@@ -62,6 +72,8 @@ export default function ReviewStep({
   currency,
   submitting,
   error,
+  stockIssues,
+  onRemoveItem,
   onBack,
   onSubmit,
 }: Props) {
@@ -76,8 +88,15 @@ export default function ReviewStep({
           {l.items}
         </h3>
         <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.id} className="flex gap-3 items-start">
+          {items.map((item) => {
+            const issue = stockIssues[item.id];
+            return (
+            <li
+              key={item.id}
+              className={`flex gap-3 items-start ${
+                issue ? 'border-l-2 border-[#cb6070] bg-[#fff6f7] -ml-3 pl-3 py-2' : ''
+              }`}
+            >
               {item.imageUrl && (
                 <img
                   src={item.imageUrl}
@@ -96,12 +115,34 @@ export default function ReviewStep({
                 <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
                   {l.qty}: {item.quantity}
                 </p>
+
+                {issue && (
+                  <div className="mt-1.5" role="status" aria-live="polite">
+                    <p className="font-sans text-[0.7rem] text-[#8f2d3b]">
+                      {issue.type === 'SOLD_OUT'
+                        ? l.soldOut
+                        : `${l.limited} ${issue.availableQty}`}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveItem(item.id)}
+                      className="mt-1 inline-flex items-center gap-1.5 min-h-11 pr-2 font-sans
+                        text-[0.66rem] tracking-[0.14em] uppercase text-[#8f2d3b] underline
+                        underline-offset-4 focus-visible:outline-none focus-visible:ring-2
+                        focus-visible:ring-pe-rose"
+                    >
+                      <Trash2 size={13} aria-hidden="true" />
+                      {l.removeLine}
+                    </button>
+                  </div>
+                )}
               </div>
               <p className="font-sans text-sm text-pe-black tabular-nums shrink-0">
                 {formatPrice(item.price.amount * item.quantity, item.price.currency, locale)}
               </p>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 
@@ -170,7 +211,7 @@ export default function ReviewStep({
         <button
           type="button"
           onClick={onSubmit}
-          disabled={submitting}
+          disabled={submitting || Object.keys(stockIssues).length > 0}
           className="flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-8
             bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
             transition-opacity disabled:opacity-50 disabled:cursor-wait
