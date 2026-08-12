@@ -92,19 +92,7 @@ public class OrderController {
             if (effectiveCustomerId == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
             }
-            CreateOrderRequest effectiveRequest = new CreateOrderRequest(
-                    effectiveCustomerId,
-                    request.items(),
-                    request.paymentMethod(),
-                    request.shippingZoneCode(),
-                    request.shippingCourierId(),
-                    request.shippingAddressId(),
-                    request.notes(),
-                    request.discountAmount(),
-                    request.discountCurrency(),
-                    request.employeeDiscountEligible(),
-                    request.salesChannel()
-            );
+            CreateOrderRequest effectiveRequest = request.withCustomerId(effectiveCustomerId);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(OrderMapper.toDto(commandService.create(effectiveRequest)));
         } catch (NoSuchElementException ex) {

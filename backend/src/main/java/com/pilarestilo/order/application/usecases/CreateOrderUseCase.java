@@ -142,6 +142,11 @@ public class CreateOrderUseCase {
                 command.salesChannel()
         );
 
+        if (evaluation != null) {
+            // Provenance, so a later hard delete of the code cannot erase which order used it.
+            order.recordDiscountProvenance(evaluation.discountId(), evaluation.code());
+        }
+
         Order saved = orderRepository.save(order);
 
         // After save: discount_code_usages.order_id references orders(id). Losing a capacity race
@@ -191,7 +196,7 @@ public class CreateOrderUseCase {
 
         CreateOrderCommand outbound = evaluation == null
                 ? command
-                : command.withDiscountAmount(evaluation.amount());
+                : command.withResolvedDiscount(evaluation.amount(), evaluation.discountId(), evaluation.code());
 
         OrderDto created = orderRemoteCommandClient.create(outbound);
 

@@ -488,4 +488,56 @@ class CreateOrderUseCaseTest {
         verify(discountRedemptionService, never()).reserveWithoutOrder(any(), any());
         verify(discountRedemptionService, never()).attachOrder(any(), any());
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Discount provenance. orders.discount_id / discount_code exist so that hard-deleting a code
+    // cannot erase which orders used it — DeleteDiscountUseCase deletes for real and the ledger's
+    // FK is ON DELETE SET NULL. Both write paths must fill them or the columns are decoration.
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    void localWrite_storesWhichCodeProducedTheDiscount() {
+        stubHappyPath(defaultSettings());
+        var evaluation = evaluationWorth(new BigDecimal("1500.00"));
+        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
+                .thenReturn(evaluation);
+
+        useCase.execute(commandWithCode("SAVE10"));
+
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(saved.capture());
+        assertThat(saved.getValue().getDiscountId()).isEqualTo(evaluation.discountId());
+        assertThat(saved.getValue().getDiscountCode()).isEqualTo("SAVE10");
+    }
+
+    @Test
+    void localWrite_leavesProvenanceEmptyWithoutACode() {
+        stubHappyPath(defaultSettings());
+
+        useCase.execute(basicTransferCommand());
+
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(saved.capture());
+        assertThat(saved.getValue().getDiscountId()).isNull();
+        assertThat(saved.getValue().getDiscountCode()).isNull();
+    }
+
+    /** order-service cannot look the code up, so the monolith has to send it along. */
+    @Test
+    void remoteWrite_forwardsTheProvenanceToOrderService() {
+        stubRemoteWriteWithProduct();
+        var evaluation = evaluationWorth(new BigDecimal("1500.00"));
+        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
+                .thenReturn(evaluation);
+        when(discountRedemptionService.reserveWithoutOrder(any(), any())).thenReturn(UUID.randomUUID());
+        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class)))
+                .thenReturn(remoteOrderDto(UUID.randomUUID()));
+
+        useCase.execute(commandWithCode("SAVE10"));
+
+        ArgumentCaptor<CreateOrderCommand> sent = ArgumentCaptor.forClass(CreateOrderCommand.class);
+        verify(orderRemoteCommandClient).create(sent.capture());
+        assertThat(sent.getValue().resolvedDiscountId()).isEqualTo(evaluation.discountId());
+        assertThat(sent.getValue().discountCode()).isEqualTo("SAVE10");
+    }
 }

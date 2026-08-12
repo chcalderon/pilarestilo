@@ -20,6 +20,14 @@ public class Order {
     private List<OrderItem> items;
     private Money subtotal;
     private Money discountAmount;
+    /**
+     * Which code produced {@link #discountAmount}, kept as provenance only — never read by the
+     * state machine. Discounts are hard-deleted, and the ledger's FK is ON DELETE SET NULL, so
+     * without this snapshot deleting a code erases every record of which orders used it.
+     * Null for orders created before V67 and for orders with no code.
+     */
+    private UUID discountId;
+    private String discountCode;
     private Money totalAmount;
     private PaymentMethod paymentMethod;
     private String shippingZoneCode;
@@ -86,6 +94,15 @@ public class Order {
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;
         return order;
+    }
+
+    /**
+     * Records which code was applied. Deliberately not a constructor argument: it changes no
+     * behaviour, and the factories already carry seventeen parameters.
+     */
+    public void recordDiscountProvenance(UUID discountId, String discountCode) {
+        this.discountId = discountId;
+        this.discountCode = discountCode;
     }
 
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
@@ -230,6 +247,8 @@ public class Order {
     public List<OrderItem> getItems() { return items; }
     public Money getSubtotal() { return subtotal; }
     public Money getDiscountAmount() { return discountAmount; }
+    public UUID getDiscountId() { return discountId; }
+    public String getDiscountCode() { return discountCode; }
     public Money getTotalAmount() { return totalAmount; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public String getShippingZoneCode() { return shippingZoneCode; }

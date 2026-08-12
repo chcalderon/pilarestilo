@@ -56,6 +56,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setSubtotalCurrency(order.getSubtotal().currency());
         entity.setDiscountAmount(order.getDiscountAmount().amount());
         entity.setDiscountCurrency(order.getDiscountAmount().currency());
+        entity.setDiscountId(order.getDiscountId());
+        entity.setDiscountCode(order.getDiscountCode());
         entity.setTotalAmount(order.getTotalAmount().amount());
         entity.setTotalCurrency(order.getTotalAmount().currency());
         entity.setPaymentMethod(order.getPaymentMethod());
@@ -102,7 +104,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 ))
                 .toList();
 
-        return Order.reconstruct(
+        Order order = Order.reconstruct(
                 entity.getId(),
                 entity.getCustomerId(),
                 items,
@@ -123,5 +125,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getUpdatedAt(),
                 entity.getPublicReference()
         );
+        order.recordDiscountProvenance(entity.getDiscountId(), entity.getDiscountCode());
+        return order;
     }
 }
