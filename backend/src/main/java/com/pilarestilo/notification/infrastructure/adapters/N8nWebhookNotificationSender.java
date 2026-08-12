@@ -47,31 +47,6 @@ public class N8nWebhookNotificationSender implements NotificationSender {
         this.envTokenHeaderName = normalize(tokenHeaderName);
     }
 
-    @Override
-    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
-        sendWebhook("ORDER_CONFIRMATION", orderId, recipient);
-    }
-
-    @Override
-    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
-        sendWebhook("PAYMENT_RECEIVED", paymentId, recipient);
-    }
-
-    @Override
-    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
-        sendWebhook("ORDER_PREPARING", orderId, recipient);
-    }
-
-    @Override
-    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
-        sendWebhook("ORDER_SHIPPED", orderId, recipient);
-    }
-
-    @Override
-    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
-        sendWebhookCode("DISCOUNT_CODE_ASSIGNED", code, recipient);
-    }
-
     private void sendWebhookCode(String eventType, String reference, NotificationRecipient recipient) {
         EffectiveConfig config = resolveConfig();
         if (config == null) {

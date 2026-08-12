@@ -11,8 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 @Component
 @Primary
 public class SystemSettingsNotificationSender implements NotificationSender {
@@ -46,31 +44,6 @@ public class SystemSettingsNotificationSender implements NotificationSender {
         this.smtpEmailNotificationSender = smtpEmailNotificationSender;
         this.n8nWebhookNotificationSender = n8nWebhookNotificationSender;
         this.envDefaultProvider = parseProvider(envDefaultProvider, NotificationProvider.LOG);
-    }
-
-    @Override
-    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
-        resolveSender().sendOrderConfirmation(orderId, recipient);
-    }
-
-    @Override
-    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
-        resolveSender().sendPaymentReceived(paymentId, recipient);
-    }
-
-    @Override
-    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
-        resolveSender().sendOrderPreparing(orderId, recipient);
-    }
-
-    @Override
-    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
-        resolveSender().sendOrderShipped(orderId, recipient);
-    }
-
-    @Override
-    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
-        resolveSender().sendDiscountCodeAssigned(code, recipient);
     }
 
     @Override

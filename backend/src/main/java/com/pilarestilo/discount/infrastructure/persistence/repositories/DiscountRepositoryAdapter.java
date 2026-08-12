@@ -52,11 +52,6 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
         };
     }
 
-    @Override
-    public void deleteById(UUID id) {
-        jpaRepository.deleteById(id);
-    }
-
 
 
     @Override

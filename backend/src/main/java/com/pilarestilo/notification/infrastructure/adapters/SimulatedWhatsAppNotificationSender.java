@@ -30,41 +30,6 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
         this.envSenderAlias = normalize(senderAlias, "Pilar Estilo");
     }
 
-    @Override
-    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        logSimulated("ORDER_CONFIRMATION", config.simulatedTo(), config.senderAlias(), orderId, recipient);
-    }
-
-    @Override
-    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        logSimulated("PAYMENT_RECEIVED", config.simulatedTo(), config.senderAlias(), paymentId, recipient);
-    }
-
-    @Override
-    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        logSimulated("ORDER_PREPARING", config.simulatedTo(), config.senderAlias(), orderId, recipient);
-    }
-
-    @Override
-    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        logSimulated("ORDER_SHIPPED", config.simulatedTo(), config.senderAlias(), orderId, recipient);
-    }
-
-    @Override
-    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
-        EffectiveConfig config = resolveConfig();
-        if (!recipient.allowsWhatsApp()) {
-            log.info("[WHATSAPP:SIMULATED] skipped template=DISCOUNT_CODE_ASSIGNED code={} reason=channel-preference preference={}", code, recipient.preference());
-            return;
-        }
-        log.info("[WHATSAPP:SIMULATED] sender={} to={} template=DISCOUNT_CODE_ASSIGNED code={} recipient={}",
-            config.senderAlias(), config.simulatedTo(), code, recipient.preferredPhoneThenEmail());
-    }
-
     private EffectiveConfig resolveConfig() {
         var settings = systemSettingsRepository.get();
         String simulatedTo = firstNonBlank(settings.getWhatsappSimulatedTo(), envSimulatedTo);

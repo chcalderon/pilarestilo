@@ -28,15 +28,18 @@ import org.springframework.stereotype.Service;
 public class OrderNotificationDispatcher {
 
     private final NotificationSender notificationSender;
+    private final NotificationComposer composer;
     private final InAppNotificationPort inAppNotificationPort;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
 
     public OrderNotificationDispatcher(NotificationSender notificationSender,
+                                       NotificationComposer composer,
                                        InAppNotificationPort inAppNotificationPort,
                                        UserRepository userRepository,
                                        OrderRepository orderRepository) {
         this.notificationSender = notificationSender;
+        this.composer = composer;
         this.inAppNotificationPort = inAppNotificationPort;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
@@ -54,7 +57,7 @@ public class OrderNotificationDispatcher {
 
         userRepository.findById(event.customerId()).ifPresent(user -> {
             if (!isTransfer) {
-                notificationSender.sendOrderConfirmation(event.orderId(), recipientFor(user));
+                notificationSender.send(composer.orderConfirmation(event.orderId()), recipientFor(user));
             }
             inAppNotificationPort.notifyOrderConfirmed(user.getId(), event.orderId());
         });
@@ -64,11 +67,11 @@ public class OrderNotificationDispatcher {
         if (event.newStatus() == OrderStatus.PREPARING_ORDER) {
             userRepository.findById(event.customerId()).ifPresentOrElse(
                     user -> {
-                        notificationSender.sendOrderPreparing(event.orderId(), recipientFor(user));
+                        notificationSender.send(composer.orderPreparing(event.orderId()), recipientFor(user));
                         inAppNotificationPort.notifyOrderPreparing(user.getId(), event.orderId());
                     },
                     /* No user row: still tell the channel, since the order is real. */
-                    () -> notificationSender.sendOrderPreparing(event.orderId(), NotificationRecipient.unknown())
+                    () -> notificationSender.send(composer.orderPreparing(event.orderId()), NotificationRecipient.unknown())
             );
             return;
         }
@@ -77,10 +80,10 @@ public class OrderNotificationDispatcher {
 
         userRepository.findById(event.customerId()).ifPresentOrElse(
                 user -> {
-                    notificationSender.sendOrderShipped(event.orderId(), recipientFor(user));
+                    notificationSender.send(composer.orderShipped(event.orderId()), recipientFor(user));
                     inAppNotificationPort.notifyOrderShipped(user.getId(), event.orderId());
                 },
-                () -> notificationSender.sendOrderShipped(event.orderId(), NotificationRecipient.unknown())
+                () -> notificationSender.send(composer.orderShipped(event.orderId()), NotificationRecipient.unknown())
         );
     }
 

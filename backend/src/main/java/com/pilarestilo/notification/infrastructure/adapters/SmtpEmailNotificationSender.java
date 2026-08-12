@@ -14,7 +14,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -62,58 +61,6 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         this.envStarttlsEnabled = normalize(envStarttlsEnabled, "");
         this.envSslEnabled = normalize(envSslEnabled, "");
         this.envFallbackTo = normalize(envFallbackTo, "");
-    }
-
-    @Override
-    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
-        String subject = String.format(Locale.ROOT, "Pedido %s confirmado", shortId(orderId));
-        String body = String.format(
-                Locale.ROOT,
-                "Tu pedido %s fue creado correctamente.%nTe notificaremos por este canal cuando avance.",
-                orderId
-        );
-        send("ORDER_CONFIRMATION", orderId, recipient, subject, body);
-    }
-
-    @Override
-    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
-        String subject = String.format(Locale.ROOT, "Pago %s recibido", shortId(paymentId));
-        String body = String.format(
-                Locale.ROOT,
-                "Confirmamos el pago %s.%nGracias por tu compra en Pilar Estilo.",
-                paymentId
-        );
-        send("PAYMENT_RECEIVED", paymentId, recipient, subject, body);
-    }
-
-    @Override
-    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
-        String subject = String.format(Locale.ROOT, "Pedido %s en preparacion", shortId(orderId));
-        String body = String.format(
-                Locale.ROOT,
-                "Tu pedido %s esta en preparacion.%nTe avisaremos cuando sea despachado.",
-                orderId
-        );
-        send("ORDER_PREPARING", orderId, recipient, subject, body);
-    }
-
-    @Override
-    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
-        String subject = String.format(Locale.ROOT, "Pedido %s enviado", shortId(orderId));
-        String body = String.format(
-                Locale.ROOT,
-                "Tu pedido %s ya fue enviado.%nPronto llegara a destino.",
-                orderId
-        );
-        send("ORDER_SHIPPED", orderId, recipient, subject, body);
-    }
-
-    @Override
-    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
-        String subject = "Código de descuento exclusivo para ti";
-        String body = String.format(Locale.ROOT,
-            "Tienes un código de descuento exclusivo: %s%nÚsalo en tu próxima compra en Pilar Estilo.", code);
-        send("DISCOUNT_CODE_ASSIGNED", null, recipient, subject, body);
     }
 
     private void send(

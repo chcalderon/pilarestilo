@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * No delete method by design. {@code discount_code_usages.discount_id} cascades, so removing a
+ * discount row destroys the redemption ledger behind it. Retiring a code is
+ * {@link com.pilarestilo.discount.application.usecases.DeleteDiscountUseCase}, which deactivates.
+ */
 public interface DiscountRepository {
 
     Discount save(Discount discount);
@@ -20,7 +25,6 @@ public interface DiscountRepository {
 
     List<Discount> findAllByStatus(String status);
 
-    void deleteById(UUID id);
 
 
 

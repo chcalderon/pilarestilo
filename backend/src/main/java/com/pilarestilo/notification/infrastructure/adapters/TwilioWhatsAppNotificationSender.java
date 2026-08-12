@@ -55,62 +55,6 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
         this.envSenderAlias = normalize(senderAlias, "Pilar Estilo");
     }
 
-    @Override
-    public void sendOrderConfirmation(UUID orderId, NotificationRecipient recipient) {
-        send("ORDER_CONFIRMATION", orderId, recipient);
-    }
-
-    @Override
-    public void sendPaymentReceived(UUID paymentId, NotificationRecipient recipient) {
-        send("PAYMENT_RECEIVED", paymentId, recipient);
-    }
-
-    @Override
-    public void sendOrderPreparing(UUID orderId, NotificationRecipient recipient) {
-        send("ORDER_PREPARING", orderId, recipient);
-    }
-
-    @Override
-    public void sendOrderShipped(UUID orderId, NotificationRecipient recipient) {
-        send("ORDER_SHIPPED", orderId, recipient);
-    }
-
-    @Override
-    public void sendDiscountCodeAssigned(String code, NotificationRecipient recipient) {
-        if (!recipient.allowsWhatsApp()) {
-            log.info("[WHATSAPP:TWILIO] skipped template=DISCOUNT_CODE_ASSIGNED code={} reason=channel-preference preference={}", code, recipient.preference());
-            return;
-        }
-        EffectiveConfig config = resolveConfig();
-        if (config == null) return;
-
-        String body = String.format(Locale.ROOT, "%s: tienes un código de descuento exclusivo: %s. Úsalo en tu próxima compra.",
-            config.senderAlias(), code);
-        String recipientContact = normalize(recipient.preferredPhoneThenEmail(), "unknown");
-        String toAddress = resolveToAddress(recipientContact, config.fallbackToAddress());
-
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("To", toAddress);
-        form.add("From", config.fromAddress());
-        form.add("Body", body);
-
-        try {
-            RestClient restClient = restClientBuilder
-                .baseUrl(config.apiBaseUrl())
-                .defaultHeaders(headers -> headers.setBasicAuth(config.accountSid(), config.authToken()))
-                .build();
-            restClient.post()
-                .uri("/2010-04-01/Accounts/{sid}/Messages.json", config.accountSid())
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form)
-                .retrieve()
-                .toBodilessEntity();
-            log.info("[WHATSAPP:TWILIO] template=DISCOUNT_CODE_ASSIGNED to={} code={}", toAddress, code);
-        } catch (Exception ex) {
-            log.warn("[WHATSAPP:TWILIO] send failed template=DISCOUNT_CODE_ASSIGNED code={} reason={}", code, ex.getMessage());
-        }
-    }
-
     private void send(String template, UUID referenceId, NotificationRecipient recipient) {
         send(template, referenceId, recipient, null);
     }

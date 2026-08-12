@@ -32,6 +32,11 @@ public record NotificationMessage(
 
     public static final String TRANSFER_INSTRUCTIONS = "TRANSFER_INSTRUCTIONS";
     public static final String ORDER_CANCELLED = "ORDER_CANCELLED";
+    public static final String ORDER_CONFIRMATION = "ORDER_CONFIRMATION";
+    public static final String PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
+    public static final String ORDER_PREPARING = "ORDER_PREPARING";
+    public static final String ORDER_SHIPPED = "ORDER_SHIPPED";
+    public static final String DISCOUNT_CODE_ASSIGNED = "DISCOUNT_CODE_ASSIGNED";
 
     public NotificationMessage {
         // Not Map.copyOf: it rejects null values, and absent facts are legitimately null here --
