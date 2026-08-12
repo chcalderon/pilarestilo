@@ -110,6 +110,11 @@ Routes split by concern:
 - **Storefront**: `/es/*` and `/en/*` — localized, SSR Astro pages
 - **Admin**: `/admin/*` — guarded by `src/middleware.ts` (checks JWT `role === ADMIN`)
 - Root `/` redirects to `/es/`
+- **Checkout**: `/{locale}/checkout` — three steps (`?paso=envio|pago|resumen`), identical on
+  mobile and desktop. `src/middleware.ts` also gates this route, locally (no backend call), so an
+  unauthenticated customer logs in *before* step one instead of at the pay button. Answers persist
+  in the `pe-checkout` store so the login redirect does not wipe them. The cart page holds only
+  items, a subtotal and the CTA.
 
 Static markup in `src/components/*.astro`; interactive pieces in `src/islands/` as React components hydrated client-side. Admin islands live in `src/islands/admin/`. Auth state (JWT), cart, and wishlist use Zustand stores. Token stored in `pe_token` cookie.
 
@@ -130,6 +135,27 @@ All traffic enters through Caddy. In the `microservices` profile, read paths are
 
 Guardrails: 12 MB body cap, per-IP rate limits on auth and webhook endpoints.
 
+### Two codebases write the `orders` table
+
+With `APP_ORDER_REMOTE_WRITE_ENABLED=true` — what production runs — `order-service` performs the
+INSERT, not the monolith. They share a database and no compiler, no schema check and no test
+crosses between them, so **any change to `orders` / `order_items`, their DTOs, or the events
+around them must be applied in `services/order-service/` in the same commit, and both must ship in
+the same deploy.** Five bugs have come from forgetting this; green suites on both sides say
+nothing about it. Verify by creating a real order against the full compose stack.
+
+Discount codes are the exception that proves the rule: `order-service` owns no redemption ledger,
+so the monolith evaluates the code, claims the slot, calls the service with only the resulting
+amount, then binds the ledger row to the returned order id.
+
+### Every in-process `@EventListener` is dead when Kafka is on
+
+`KafkaDomainEventPublisher` is `@Primary`, so with `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true` only the
+Kafka listeners run. Four separate defects came from a twin drifting from its in-process original,
+or never existing. Behaviour now lives in a `*NotificationDispatcher` in `notification/application/`
+and the listeners are transport adapters with none of their own. **Add behaviour to the dispatcher,
+never to a listener.**
+
 ### Domain events
 
 `DomainEventPublisher` port has two adapters selected by env:
@@ -140,7 +166,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V67**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V68**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -158,7 +184,8 @@ Recent migrations (V54–V66):
 - V64: seed default role–permission grants (ADMIN full, SELLER subset)
 - V65: social commerce foundation — `publications` table for multi-platform content
 - V66: repair `shipping_origin_zone` alias `NATIONAL` → `NACIONAL`
-- V67: discount redemptions become reservable (`status` + `order_id` on `discount_code_usages`, partial unique index on `status <> 'RELEASED'`) + `orders.public_reference`
+- V67: discount redemptions become reservable (`status` + `order_id` on `discount_code_usages`, partial unique index on `status <> 'RELEASED'`) + `orders.public_reference` + `orders.discount_id`/`discount_code` provenance
+- V68: `orders.public_reference` SET NOT NULL (contract half of V67's expand)
 
 ### Spring Boot 4 modular auto-configuration
 
