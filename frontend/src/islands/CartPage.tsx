@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, Loader2, Trash2, Undo2 } from 'lucide-react';
+import { ArrowRight, Loader2, PackageX, Trash2, Undo2 } from 'lucide-react';
 import { useCartStore, verifyStockForItem, type CartItem } from '../lib/cartStore';
 import { useStockCheck } from '../lib/useStockCheck';
 import StockUnavailableModal from './cart/StockUnavailableModal';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
 import { formatPrice } from '../lib/formatPrice';
+import StockBadge, { stockImageClass } from './cart/StockBadge';
 import type { Locale } from '../i18n/index';
 
 interface Props {
@@ -21,13 +22,13 @@ const labels = {
     continueHint: 'Elegirás envío y pago en los siguientes pasos.',
     quantity: 'Cantidad',
     remove: 'Quitar',
-    outOfStockBadge: 'Sin stock',
-    limitedStockBadge: 'Stock limitado',
     availableStockPrefix: 'Disponible',
     removeUnavailable: 'Quitar del carrito',
     findReplacement: 'Ver alternativas',
     stockAdjusted: 'Este producto ya no está disponible.',
     resolveStockFirst: 'Resuelve los productos sin stock para continuar.',
+    unavailableBanner: 'Un producto de tu carrito ya no está disponible.',
+    unavailableBannerPlural: 'productos de tu carrito ya no están disponibles.',
     checkingStock: 'Revisando disponibilidad…',
     removed: 'Producto quitado',
     undo: 'Deshacer',
@@ -41,13 +42,13 @@ const labels = {
     continueHint: 'You will choose shipping and payment in the next steps.',
     quantity: 'Quantity',
     remove: 'Remove',
-    outOfStockBadge: 'Out of stock',
-    limitedStockBadge: 'Limited stock',
     availableStockPrefix: 'Available',
     removeUnavailable: 'Remove from cart',
     findReplacement: 'See alternatives',
     stockAdjusted: 'This product is no longer available.',
     resolveStockFirst: 'Resolve the out-of-stock items to continue.',
+    unavailableBanner: 'One item in your cart is no longer available.',
+    unavailableBannerPlural: 'items in your cart are no longer available.',
     checkingStock: 'Checking availability…',
     removed: 'Item removed',
     undo: 'Undo',
@@ -188,6 +189,20 @@ export default function CartPage({ locale }: Props) {
             </p>
           )}
 
+          {conflictCount > 0 && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 border-l-4 border-[#8f2d3b] bg-[#ffe9ec] p-4 mb-6"
+            >
+              <PackageX size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="font-sans text-sm text-[#732731]">
+                {conflictCount === 1
+                  ? l.unavailableBanner
+                  : `${conflictCount} ${l.unavailableBannerPlural}`}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 flex flex-col gap-4">
               {items.map((item) => {
@@ -196,16 +211,17 @@ export default function CartPage({ locale }: Props) {
                 return (
                   <div
                     key={item.id}
-                    className={`flex gap-4 p-4 border ${
+                    className={`flex gap-4 p-4 border-l-4 border-y border-r ${
                       conflict
-                        ? 'bg-[#fff6f7] border-[#cb6070]/45'
+                        ? 'bg-[#fff6f7] border-[#cb6070]/45 border-l-[#8f2d3b]'
                         : 'bg-pe-white border-transparent'
                     }`}
                   >
                     <img
                       src={item.imageUrl}
                       alt={item.name}
-                      className="w-20 h-24 object-cover flex-shrink-0"
+                      className={`w-20 h-24 object-cover flex-shrink-0 transition-[filter,opacity]
+                        duration-200 ${stockImageClass(conflict)}`}
                       width="80"
                       height="96"
                       loading="lazy"
@@ -214,7 +230,18 @@ export default function CartPage({ locale }: Props) {
                       <span className="font-sans text-[10px] tracking-[0.3em] uppercase text-pe-gold">
                         {item.brand}
                       </span>
-                      <p className="font-display text-pe-black text-sm font-semibold truncate">
+                      {conflict && (
+                        <span className="mb-0.5">
+                          <StockBadge issue={conflict} locale={locale} />
+                        </span>
+                      )}
+                      <p
+                        className={`font-display text-sm font-semibold truncate ${
+                          conflict?.type === 'SOLD_OUT'
+                            ? 'text-pe-charcoal/50 line-through'
+                            : 'text-pe-black'
+                        }`}
+                      >
                         {item.name}
                       </p>
                       {item.variantLabel && (
@@ -232,10 +259,7 @@ export default function CartPage({ locale }: Props) {
                           aria-live="polite"
                           className="mt-2 border border-[#cb6070]/45 bg-[#ffe9ec] px-2.5 py-2"
                         >
-                          <p className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#8f2d3b]">
-                            {conflict.type === 'SOLD_OUT' ? l.outOfStockBadge : l.limitedStockBadge}
-                          </p>
-                          <p className="font-sans text-xs text-[#732731] mt-1">
+                          <p className="font-sans text-xs text-[#732731]">
                             {conflict.type === 'SOLD_OUT'
                               ? l.stockAdjusted
                               : `${l.availableStockPrefix}: ${conflict.availableQty}`}
