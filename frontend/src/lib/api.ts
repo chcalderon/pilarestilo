@@ -1020,6 +1020,21 @@ async function listPaymentsByStatus(status: string, token?: string): Promise<Pay
   return all;
 }
 
+export interface DashboardStatsDto {
+  role: string;
+  /** Receipts uploaded and not yet approved or rejected. */
+  paymentsAwaitingReview?: number;
+}
+
+/** The admin dashboard figures. Absent fields mean the role does not get that number. */
+export async function getDashboardStats(token?: string): Promise<DashboardStatsDto | null> {
+  try {
+    return await apiFetch<DashboardStatsDto>('/dashboard/stats', { headers: authHeaders(token) });
+  } catch {
+    return null;
+  }
+}
+
 export async function getPendingPayments(token?: string): Promise<PaymentDto[]> {
   try {
     return await listPaymentsByStatus('PENDING', token);
