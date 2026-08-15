@@ -19,12 +19,18 @@ export interface Props {
 const { product, locale, priority = false, token } = Astro.props;
 
 /*
- * A product that sells by variant cannot be added from here: the card has no size picker, and
- * inventory-service refuses any reservation for a variant product that names no colour and size.
- * Offering the button anyway put lines in the cart that could never be ordered — the customer
- * found out at the pay button, with a raw "Inventory reservation rejected" in their face.
+ * Only send the customer to the product page when there is an actual choice to make. Twelve of
+ * the seventeen products here are a single Base/UNICO row, and asking someone to pick from a
+ * list of one is friction, not clarity — the card adds those directly, naming the one variant so
+ * the line is complete.
+ *
+ * <p>With several variants the card has no picker and cannot guess, and inventory-service refuses
+ * any reservation that names no colour and size. Offering a plain add button there is what put
+ * lines in the cart that could never be ordered.
  */
-const sellsByVariant = (product.variants ?? []).length > 0;
+const productVariants = product.variants ?? [];
+const needsVariantChoice = productVariants.length > 1;
+const onlyVariant = productVariants.length === 1 ? productVariants[0] : null;
 
 const priceFormatted = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -132,7 +138,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
     </div>
 
     <div class="mt-2 overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-400 ease-in-out">
-      {sellsByVariant ? (
+      {needsVariantChoice ? (
         <a
           href={`/${locale}/products/${product.id}`}
           class="w-full inline-flex items-center justify-center min-h-11 px-4 border border-pe-black/20
@@ -153,6 +159,8 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
           condition={product.condition}
           stock={product.stock}
           locale={locale}
+          variantColor={onlyVariant?.color}
+          variantSize={onlyVariant?.size}
         />
       )}
     </div>

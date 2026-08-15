@@ -94,7 +94,7 @@ describe('verifyStockForItem', () => {
    * inventory-service refuses any reservation for a variant product with no size. The refusal
    * arrived as "Inventory reservation rejected (status 400)" after the whole checkout.
    */
-  it('refuses a variant product when the line names no variant', async () => {
+  it('refuses a line naming no variant when the product has several', async () => {
     mockGetProduct.mockResolvedValue(makeProduct({
       name: 'Traje Pantalón Marino',
       stock: 2,
@@ -107,6 +107,36 @@ describe('verifyStockForItem', () => {
       ok: false,
       reason: 'NEEDS_VARIANT',
       productName: 'Traje Pantalón Marino',
+    });
+  });
+
+  /**
+   * One variant is not a choice. Twelve of the seventeen products in this catalogue are a single
+   * Base/UNICO row, so a line naming no variant can only mean that one — asking the customer to
+   * pick from a list of one is friction, not clarity.
+   */
+  it('resolves a variant-less line when the product has exactly one variant', async () => {
+    mockGetProduct.mockResolvedValue(makeProduct({
+      name: 'Blazer Clásico Crema',
+      stock: 5,
+      variants: [makeVariant('Base', 'UNICO', 5)],
+    }) as any);
+
+    expect(await verifyStockForItem('p1', null, 2)).toEqual({ ok: true, verified: true });
+  });
+
+  it('still reports the shortfall when that single variant runs low', async () => {
+    mockGetProduct.mockResolvedValue(makeProduct({
+      name: 'Blazer Clásico Crema',
+      stock: 5,
+      variants: [makeVariant('Base', 'UNICO', 1)],
+    }) as any);
+
+    expect(await verifyStockForItem('p1', null, 3)).toEqual({
+      ok: false,
+      reason: 'INSUFFICIENT',
+      availableQty: 1,
+      productName: 'Blazer Clásico Crema',
     });
   });
 
