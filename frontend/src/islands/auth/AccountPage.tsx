@@ -1624,8 +1624,13 @@ export default function AccountPage({ locale }: Props) {
                         </div>
                       )}
 
-                      <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-3 overflow-x-auto">
-                        <div className="flex items-center gap-2 min-w-[680px]">
+                      {/*
+                        * Wraps instead of scrolling. A 680px minimum pushed the last node past
+                        * the edge and left it behind a scrollbar — which for a cancelled order
+                        * hid the one marker that says how it ended.
+                        */}
+                      <div className="border border-pe-black/8 dark:border-pe-cream/10 bg-pe-cream/35 dark:bg-pe-black/20 px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                           {timeline.steps.map((node, index) => (
                             <div key={node.step} className="flex items-center gap-2">
                               <span
