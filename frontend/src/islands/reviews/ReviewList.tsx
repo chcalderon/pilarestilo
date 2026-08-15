@@ -6,6 +6,10 @@ import type { ReviewDto } from '../../lib/api';
 interface Props {
   productId: string;
   locale?: string;
+  /** Sent so the backend includes the reader's own review while it awaits approval. */
+  token?: string;
+  /** Who is reading, so their own pending review stays visible to them and nobody else. */
+  userId?: string;
 }
 
 function Stars({ value }: { value: number }) {
@@ -23,7 +27,7 @@ function Stars({ value }: { value: number }) {
   );
 }
 
-export default function ReviewList({ productId, locale = 'es' }: Props) {
+export default function ReviewList({ productId, locale = 'es', token, userId }: Props) {
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -31,14 +35,17 @@ export default function ReviewList({ productId, locale = 'es' }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    getProductReviews(productId)
+    getProductReviews(productId, token)
       .then(setReviews)
       .finally(() => setLoading(false));
-  }, [productId]);
+  }, [productId, token]);
 
-  const approved = reviews.filter(r => r.approved);
-  const paged = approved.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-  const totalPages = Math.ceil(approved.length / PER_PAGE);
+  // Everyone sees approved reviews. The reader also sees their own while it waits for a moderator,
+  // labelled as pending — otherwise replacing a quick rating with a written one looks like the
+  // review was swallowed.
+  const visible = reviews.filter(r => r.approved || (userId != null && r.userId === userId));
+  const paged = visible.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const totalPages = Math.ceil(visible.length / PER_PAGE);
 
   if (loading) {
     return (
@@ -54,7 +61,7 @@ export default function ReviewList({ productId, locale = 'es' }: Props) {
     );
   }
 
-  if (!approved.length) {
+  if (!visible.length) {
     return (
       <div className="py-10 text-center">
         <p className="font-['Cormorant_Garamond',serif] text-xl text-[#3A3A3A]/50">
@@ -67,7 +74,7 @@ export default function ReviewList({ productId, locale = 'es' }: Props) {
   return (
     <div>
       <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-6">
-        {approved.length} {locale === 'es' ? (approved.length === 1 ? 'reseña' : 'reseñas') : (approved.length === 1 ? 'review' : 'reviews')}
+        {visible.length} {locale === 'es' ? (visible.length === 1 ? 'reseña' : 'reseñas') : (visible.length === 1 ? 'review' : 'reviews')}
       </p>
       <ul className="space-y-8">
         {paged.map(r => (
@@ -76,6 +83,11 @@ export default function ReviewList({ productId, locale = 'es' }: Props) {
               <Stars value={r.rating} />
               {r.title && (
                 <span className="font-['Cormorant_Garamond',serif] text-[#1A1A1A]">{r.title}</span>
+              )}
+              {!r.approved && (
+                <span className="text-[10px] tracking-widest uppercase text-[#B76E79] border border-[#B76E79]/40 rounded-full px-2 py-0.5">
+                  {locale === 'es' ? 'Pendiente de aprobación' : 'Awaiting approval'}
+                </span>
               )}
             </div>
             {r.comment && (

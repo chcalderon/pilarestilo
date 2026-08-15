@@ -78,13 +78,10 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
       rememberRated(productId, value);
       setLocked(true);
       setJustRated(true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message.toLowerCase() : '';
-      if (message.includes('already')) {
-        setLocked(true);
-      } else {
-        setRating(0);
-      }
+    } catch {
+      // Rating again is allowed now, so a failure here is only ever the request. Put the stars
+      // back the way they were rather than leaving a vote that was never recorded.
+      setRating(0);
     } finally {
       setSaving(false);
     }

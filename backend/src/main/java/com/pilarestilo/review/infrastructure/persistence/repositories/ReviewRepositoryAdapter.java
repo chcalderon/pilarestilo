@@ -21,7 +21,11 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
 
     @Override
     public Review save(Review review) {
-        return toDomain(jpaRepository.save(toEntity(review)));
+        // saveAndFlush, not save: superseding a review writes the old row then inserts the new one,
+        // and Hibernate's action queue runs inserts before updates. Left to reorder, the insert
+        // would hit uq_review_live_per_user while the previous row was still live. Flushing in call
+        // order keeps the "one live review per customer" rule enforceable in the database.
+        return toDomain(jpaRepository.saveAndFlush(toEntity(review)));
     }
 
     @Override
@@ -31,22 +35,22 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
 
     @Override
     public List<Review> findByProductId(UUID productId) {
-        return jpaRepository.findByProductId(productId).stream().map(this::toDomain).toList();
+        return jpaRepository.findByProductIdAndSupersededAtIsNull(productId).stream().map(this::toDomain).toList();
     }
 
     @Override
     public List<Review> findApprovedByProductId(UUID productId) {
-        return jpaRepository.findByProductIdAndApprovedTrue(productId).stream().map(this::toDomain).toList();
+        return jpaRepository.findByProductIdAndApprovedTrueAndSupersededAtIsNull(productId).stream().map(this::toDomain).toList();
     }
 
     @Override
     public List<Review> findByUserId(UUID userId) {
-        return jpaRepository.findByUserId(userId).stream().map(this::toDomain).toList();
+        return jpaRepository.findByUserIdAndSupersededAtIsNull(userId).stream().map(this::toDomain).toList();
     }
 
     @Override
-    public boolean existsByProductIdAndUserId(UUID productId, UUID userId) {
-        return jpaRepository.existsByProductIdAndUserId(productId, userId);
+    public Optional<Review> findLiveByProductIdAndUserId(UUID productId, UUID userId) {
+        return jpaRepository.findByProductIdAndUserIdAndSupersededAtIsNull(productId, userId).map(this::toDomain);
     }
 
     @Override
@@ -61,7 +65,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
 
     @Override
     public List<Review> findByApproved(boolean approved) {
-        return jpaRepository.findByApproved(approved).stream().map(this::toDomain).toList();
+        return jpaRepository.findByApprovedAndSupersededAtIsNull(approved).stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -81,6 +85,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
         e.setComment(review.getComment());
         e.setApproved(review.isApproved());
         e.setCreatedAt(review.getCreatedAt());
+        e.setSupersededAt(review.getSupersededAt());
         return e;
     }
 
@@ -89,6 +94,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
         review.setId(e.getId());
         review.setApproved(e.isApproved());
         review.setCreatedAt(e.getCreatedAt());
+        review.setSupersededAt(e.getSupersededAt());
         return review;
     }
 }
