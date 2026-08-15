@@ -1,4 +1,4 @@
-import { AlertTriangle, PackageX } from 'lucide-react';
+import { AlertTriangle, PackageX, Ruler } from 'lucide-react';
 import type { StockIssue } from '../../lib/useStockCheck';
 import type { Locale } from '../../i18n/index';
 
@@ -8,13 +8,14 @@ interface Props {
 }
 
 const copy = {
-  es: { soldOut: 'Sin stock', short: 'Solo quedan' },
-  en: { soldOut: 'Out of stock', short: 'Only' },
+  es: { soldOut: 'Sin stock', short: 'Solo quedan', needsVariant: 'Falta elegir talla' },
+  en: { soldOut: 'Out of stock', short: 'Only', needsVariant: 'Choose a size' },
 } as const;
 
 export function stockIssueLabel(issue: StockIssue, locale: Locale): string {
   const l = copy[locale === 'es' ? 'es' : 'en'];
   if (issue.type === 'SOLD_OUT') return l.soldOut;
+  if (issue.type === 'NEEDS_VARIANT') return l.needsVariant;
   return locale === 'es'
     ? `${l.short} ${issue.availableQty}`
     : `${l.short} ${issue.availableQty} left`;
@@ -31,14 +32,19 @@ export function stockIssueLabel(issue: StockIssue, locale: Locale): string {
  * fix by lowering the quantity, so it warns without pretending the item is unbuyable.
  */
 export default function StockBadge({ issue, locale }: Props) {
-  const soldOut = issue.type === 'SOLD_OUT';
-  const Icon = soldOut ? PackageX : AlertTriangle;
+  /* Both are blockers — the line cannot be ordered as it stands — so both get the loud fill. */
+  const blocking = issue.type === 'SOLD_OUT' || issue.type === 'NEEDS_VARIANT';
+  const Icon = issue.type === 'NEEDS_VARIANT'
+    ? Ruler
+    : issue.type === 'SOLD_OUT'
+      ? PackageX
+      : AlertTriangle;
 
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2 py-1 font-sans text-[0.66rem]
         tracking-[0.14em] uppercase whitespace-nowrap ${
-          soldOut
+          blocking
             ? 'bg-[#8f2d3b] text-white font-semibold'
             : 'bg-[#ffe9ec] text-[#8f2d3b] border border-[#cb6070]/50'
         }`}
@@ -57,5 +63,6 @@ export default function StockBadge({ issue, locale }: Props) {
  * and available, just not in the quantity asked for.
  */
 export function stockImageClass(issue: StockIssue | undefined): string {
+  /* NEEDS_VARIANT is not dimmed: the product is there and buyable, the line just names no size. */
   return issue?.type === 'SOLD_OUT' ? 'grayscale opacity-40' : '';
 }

@@ -18,6 +18,14 @@ export interface Props {
 
 const { product, locale, priority = false, token } = Astro.props;
 
+/*
+ * A product that sells by variant cannot be added from here: the card has no size picker, and
+ * inventory-service refuses any reservation for a variant product that names no colour and size.
+ * Offering the button anyway put lines in the cart that could never be ordered — the customer
+ * found out at the pay button, with a raw "Inventory reservation rejected" in their face.
+ */
+const sellsByVariant = (product.variants ?? []).length > 0;
+
 const priceFormatted = new Intl.NumberFormat('es-CL', {
   style: 'currency',
   currency: product.price.currency,
@@ -124,17 +132,29 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
     </div>
 
     <div class="mt-2 overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-400 ease-in-out">
-      <AddToCartButton
-        client:visible
-        productId={product.id}
-        name={product.name}
-        brand={product.brand}
-        price={product.price}
-        imageUrl={product.imageUrl}
-        condition={product.condition}
-        stock={product.stock}
-        locale={locale}
-      />
+      {sellsByVariant ? (
+        <a
+          href={`/${locale}/products/${product.id}`}
+          class="w-full inline-flex items-center justify-center min-h-11 px-4 border border-pe-black/20
+            font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal
+            hover:border-pe-black hover:text-pe-black transition-colors
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+        >
+          {locale === 'es' ? 'Elegir talla' : 'Choose size'}
+        </a>
+      ) : (
+        <AddToCartButton
+          client:visible
+          productId={product.id}
+          name={product.name}
+          brand={product.brand}
+          price={product.price}
+          imageUrl={product.imageUrl}
+          condition={product.condition}
+          stock={product.stock}
+          locale={locale}
+        />
+      )}
     </div>
   </div>
 

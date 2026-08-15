@@ -72,7 +72,7 @@ export default function AddToCartButton({
       if (!result.ok) {
         setStockModal({
           productName: result.productName,
-          availableQty: result.availableQty,
+          availableQty: result.reason === 'INSUFFICIENT' ? result.availableQty : 0,
           requestedQty: currentQty + 1,
         });
         return;

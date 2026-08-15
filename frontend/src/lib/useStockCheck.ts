@@ -2,8 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { verifyStockForItem, type CartItem } from './cartStore';
 
 export interface StockIssue {
-  /** SOLD_OUT means nothing is left; SHORT means fewer units than the line asks for. */
-  type: 'SOLD_OUT' | 'SHORT';
+  /**
+   * SOLD_OUT: nothing left. SHORT: fewer units than the line asks for, fixable by lowering the
+   * quantity. NEEDS_VARIANT: the product sells by size or colour and this line names neither, so
+   * it can never be ordered however much stock exists — only re-adding from the product page
+   * fixes it.
+   */
+  type: 'SOLD_OUT' | 'SHORT' | 'NEEDS_VARIANT';
   availableQty: number;
   productName: string;
 }
@@ -40,6 +45,13 @@ export async function checkStockForItems(items: CartItem[]): Promise<StockIssues
 
       const result = await verifyStockForItem(productId, variant, item.quantity);
       if (result.ok) return null;
+
+      if (result.reason === 'NEEDS_VARIANT') {
+        return [
+          item.id,
+          { type: 'NEEDS_VARIANT' as const, availableQty: 0, productName: result.productName },
+        ] as const;
+      }
 
       return [
         item.id,

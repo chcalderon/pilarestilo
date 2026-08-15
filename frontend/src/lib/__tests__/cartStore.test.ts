@@ -51,7 +51,7 @@ describe('verifyStockForItem', () => {
     }) as any);
 
     const result = await verifyStockForItem('p1', { color: 'blanco', size: 'S' }, 5);
-    expect(result).toEqual({ ok: false, availableQty: 2, productName: 'Camisa Lino' });
+    expect(result).toEqual({ ok: false, reason: 'INSUFFICIENT', availableQty: 2, productName: 'Camisa Lino' });
   });
 
   it('returns ok at exact stockAvailable boundary', async () => {
@@ -70,7 +70,7 @@ describe('verifyStockForItem', () => {
     }) as any);
 
     const result = await verifyStockForItem('p1', { color: 'azul', size: 'M' }, 1);
-    expect(result).toEqual({ ok: false, availableQty: 0, productName: 'Vestido' });
+    expect(result).toEqual({ ok: false, reason: 'INSUFFICIENT', availableQty: 0, productName: 'Vestido' });
   });
 
   it('uses product.stock when no variants and no variant arg', async () => {
@@ -84,7 +84,33 @@ describe('verifyStockForItem', () => {
     mockGetProduct.mockResolvedValue(makeProduct({ name: 'Accesorio', stock: 3, variants: [] }) as any);
 
     const result = await verifyStockForItem('p1', null, 5);
-    expect(result).toEqual({ ok: false, availableQty: 3, productName: 'Accesorio' });
+    expect(result).toEqual({ ok: false, reason: 'INSUFFICIENT', availableQty: 3, productName: 'Accesorio' });
+  });
+
+  /**
+   * The line a customer reached the pay button with. The product grid offered a plain add
+   * button for a product sold by size, so the cart line carried none; this check then measured
+   * it against products.stock — the sum across every variant — and called it available, while
+   * inventory-service refuses any reservation for a variant product with no size. The refusal
+   * arrived as "Inventory reservation rejected (status 400)" after the whole checkout.
+   */
+  it('refuses a variant product when the line names no variant', async () => {
+    mockGetProduct.mockResolvedValue(makeProduct({
+      name: 'Traje Pantalón Marino',
+      stock: 2,
+      variants: [
+        { color: 'Marino', size: '38', stockAvailable: 1 },
+        { color: 'Marino', size: '40', stockAvailable: 1 },
+      ],
+    }) as any);
+
+    const result = await verifyStockForItem('p1', null, 1);
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'NEEDS_VARIANT',
+      productName: 'Traje Pantalón Marino',
+    });
   });
 
   it('reports unverified — not available — when the API is unreachable', async () => {

@@ -18,6 +18,20 @@ describe('stockIssueLabel', () => {
   });
 });
 
+describe('the needs-a-size state', () => {
+  const needsVariant: StockIssue = { type: 'NEEDS_VARIANT', availableQty: 0, productName: 'Traje' };
+
+  /** Not "sold out": the product is there, the line just names no size. */
+  it('asks for the choice rather than reporting no stock', () => {
+    expect(stockIssueLabel(needsVariant, 'es')).toBe('Falta elegir talla');
+    expect(stockIssueLabel(needsVariant, 'en')).toBe('Choose a size');
+  });
+
+  it('does not grey the thumbnail, because the item is available', () => {
+    expect(stockImageClass(needsVariant)).toBe('');
+  });
+});
+
 describe('stockImageClass', () => {
   /** The thumbnail is scanned first, so a line that cannot be bought must not look buyable. */
   it('greys out a sold-out line', () => {
