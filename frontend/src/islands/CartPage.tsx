@@ -131,7 +131,7 @@ export default function CartPage({ locale }: Props) {
       if (!result.ok) {
         setStockModal({
           productName: result.productName,
-          availableQty: result.availableQty,
+          availableQty: result.reason === 'INSUFFICIENT' ? result.availableQty : 0,
           requestedQty: item.quantity + 1,
         });
         return;

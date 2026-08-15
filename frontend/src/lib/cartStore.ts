@@ -109,7 +109,14 @@ interface CartState {
 export type StockVerifyResult =
   | { ok: true; verified: true }
   | { ok: true; verified: false }
-  | { ok: false; availableQty: number; productName: string };
+  | { ok: false; reason: 'INSUFFICIENT'; availableQty: number; productName: string }
+  /**
+   * The line names a product that sells by variant but carries no colour or size. It cannot be
+   * ordered at all — inventory-service refuses the reservation outright — even though the
+   * product itself is in stock. Cart lines like this come from the product grid, which used to
+   * offer a plain add button for variant products.
+   */
+  | { ok: false; reason: 'NEEDS_VARIANT'; productName: string };
 
 export async function verifyStockForItem(
   productId: string,
@@ -127,18 +134,38 @@ export async function verifyStockForItem(
           (!variant.size || v.size === variant.size)
       );
       if (!match) {
-        return { ok: false, availableQty: 0, productName: product.name };
+        return { ok: false, reason: 'INSUFFICIENT', availableQty: 0, productName: product.name };
       }
       if (requestedQty <= match.stockAvailable) {
         return { ok: true, verified: true };
       }
-      return { ok: false, availableQty: match.stockAvailable, productName: product.name };
+      return {
+        ok: false,
+        reason: 'INSUFFICIENT',
+        availableQty: match.stockAvailable,
+        productName: product.name,
+      };
+    }
+
+    /*
+     * Falling back to products.stock here is what let a variant-less line pass. The aggregate
+     * counts every variant, so a line with no size looked available and was then refused by
+     * inventory-service, which requires colour+size whenever a product has variants. The
+     * customer only found out at the pay button.
+     */
+    if (variants.length > 0) {
+      return { ok: false, reason: 'NEEDS_VARIANT', productName: product.name };
     }
 
     if (requestedQty <= product.stock) {
       return { ok: true, verified: true };
     }
-    return { ok: false, availableQty: product.stock, productName: product.name };
+    return {
+      ok: false,
+      reason: 'INSUFFICIENT',
+      availableQty: product.stock,
+      productName: product.name,
+    };
   } catch {
     return { ok: true, verified: false };
   }

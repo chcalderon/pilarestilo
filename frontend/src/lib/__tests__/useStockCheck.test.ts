@@ -40,7 +40,7 @@ describe('checkStockForItems', () => {
   });
 
   it('marks a line with no stock left as SOLD_OUT', async () => {
-    mockVerify.mockResolvedValue({ ok: false, availableQty: 0, productName: 'Vestido' });
+    mockVerify.mockResolvedValue({ ok: false, reason: 'INSUFFICIENT', availableQty: 0, productName: 'Vestido' });
 
     const issues = await checkStockForItems([line('a')]);
 
@@ -49,7 +49,7 @@ describe('checkStockForItems', () => {
 
   /** Different message, different remedy: SHORT can be fixed by lowering the quantity. */
   it('marks a line with some stock left as SHORT', async () => {
-    mockVerify.mockResolvedValue({ ok: false, availableQty: 2, productName: 'Vestido' });
+    mockVerify.mockResolvedValue({ ok: false, reason: 'INSUFFICIENT', availableQty: 2, productName: 'Vestido' });
 
     const issues = await checkStockForItems([line('a', 5)]);
 
@@ -69,7 +69,7 @@ describe('checkStockForItems', () => {
 
   it('keys issues by cart line, so one variant does not flag another', async () => {
     mockVerify
-      .mockResolvedValueOnce({ ok: false, availableQty: 0, productName: 'Vestido' })
+      .mockResolvedValueOnce({ ok: false, reason: 'INSUFFICIENT', availableQty: 0, productName: 'Vestido' })
       .mockResolvedValueOnce({ ok: true, verified: true });
 
     const issues = await checkStockForItems([
@@ -99,6 +99,21 @@ describe('checkStockForItems', () => {
     await checkStockForItems([line('a')]);
 
     expect(mockVerify).toHaveBeenCalledWith(expect.any(String), null, 1);
+  });
+
+  /**
+   * The defect a customer hit at the pay button: the grid offered a plain add button for a
+   * product that sells by size, so the line carried none. verifyStockForItem then measured it
+   * against products.stock — the sum across every variant — and said it was available, while
+   * inventory-service refuses any reservation for a variant product with no size.
+   */
+  it('flags a line that names no variant for a product sold by variant', async () => {
+    mockVerify.mockResolvedValue({ ok: false, reason: 'NEEDS_VARIANT', productName: 'Traje' });
+
+    const issues = await checkStockForItems([line('a')]);
+
+    expect(issues.a.type).toBe('NEEDS_VARIANT');
+    expect(issues.a.productName).toBe('Traje');
   });
 
   it('does nothing for an empty cart', async () => {

@@ -56,6 +56,7 @@ const copy = {
     legacyItem: 'Hay un producto antiguo en tu carrito. Quítalo y vuelve a agregarlo.',
     submitFailed: 'No pudimos crear el pedido. Inténtalo de nuevo.',
     stockChanged: 'La disponibilidad cambió mientras completabas la compra. Revisa los productos marcados.',
+    stockRejected: 'Uno de los productos ya no está disponible en la cantidad o talla elegida. Revisa tu pedido.',
   },
   en: {
     title: 'Checkout',
@@ -70,6 +71,7 @@ const copy = {
     legacyItem: 'Your cart holds a legacy item. Remove it and add it again.',
     submitFailed: 'We could not create the order. Please try again.',
     stockChanged: 'Availability changed while you were checking out. Review the flagged items.',
+    stockRejected: 'One of the items is no longer available in the size or quantity chosen. Review your order.',
   },
 } as const;
 
@@ -290,9 +292,20 @@ export default function CheckoutPage({ locale }: Props) {
       resetCheckout();
       window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
     } catch (error) {
-      setSubmitError(
-        error instanceof Error && error.message ? error.message : l.submitFailed
-      );
+      const raw = error instanceof Error ? error.message : '';
+
+      /*
+       * The backend's own words reach the customer when they are written for one — a rejected
+       * discount code says exactly what is wrong. Its inventory refusals do not: they surface as
+       * "Inventory reservation rejected (status 400)", untranslated and unactionable. Those get
+       * replaced, and the offending lines re-checked so the review step can name them.
+       */
+      if (/inventory|stock|variant/i.test(raw)) {
+        await stock.check();
+        setSubmitError(l.stockRejected);
+      } else {
+        setSubmitError(raw || l.submitFailed);
+      }
       setSubmitting(false);
     }
   }
