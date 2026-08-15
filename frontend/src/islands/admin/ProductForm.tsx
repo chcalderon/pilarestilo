@@ -285,34 +285,6 @@ function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema
   }));
 }
 
-function reconcileRowsWithRealStock(rows: FlatVariantRow[], realStock: number): FlatVariantRow[] {
-  const target = Math.max(0, Math.floor(realStock));
-  const normalized = (rows.length ? rows : [{ color: 'Base', size: 'UNICO', stock: '0' }]).map((row) => ({
-    color: row.color.trim() || 'Base',
-    size: row.size || 'UNICO',
-    stock: String(parseSafeStock(row.stock)),
-  }));
-
-  const working = normalized.map((row) => ({ ...row, stockValue: parseSafeStock(row.stock) }));
-  let currentTotal = working.reduce((sum, row) => sum + row.stockValue, 0);
-
-  if (currentTotal < target) {
-    working[0].stockValue += target - currentTotal;
-  } else if (currentTotal > target) {
-    let remainingToDiscount = currentTotal - target;
-    for (let index = working.length - 1; index >= 0 && remainingToDiscount > 0; index -= 1) {
-      const discount = Math.min(working[index].stockValue, remainingToDiscount);
-      working[index].stockValue -= discount;
-      remainingToDiscount -= discount;
-    }
-  }
-
-  return working.map((row) => ({
-    color: row.color,
-    size: row.size,
-    stock: String(row.stockValue),
-  }));
-}
 
 export default function ProductForm({ product, onSave, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -454,8 +426,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       const seededRows = existingFlatVariants.length > 0
         ? existingFlatVariants
         : [{ color: 'Base', size: 'UNICO', stock: String(product.stock) }];
-      const reconciledRows = reconcileRowsWithRealStock(seededRows, product.stock);
-      const incomingTotal = existingFlatVariants.reduce((sum, row) => sum + parseSafeStock(row.stock), 0);
+      /* The rows are the truth; products.stock is derived from them since the resync landed. */
+      const reconciledRows = seededRows;
       const nextForm = {
         name: product.name,
         description: product.description,
@@ -474,11 +446,12 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       setForm(nextForm);
       setVariantRows(nextRows);
       previousSchemaRef.current = variantSchema;
-      setStockSyncHint(
-        incomingTotal !== product.stock
-          ? `Stock sincronizado con disponibilidad real. Revisa ${primaryAttribute.label.toLowerCase()}, ${secondaryAttribute.label.toLowerCase()} y stock antes de guardar.`
-          : ''
-      );
+      /*
+       * The warning that the rows had been rewritten to match products.stock. Nothing rewrites
+       * them any more — the aggregate is recomputed from the variants on every movement — so
+       * there is nothing left to warn about.
+       */
+      setStockSyncHint('');
       // Categories are initialized by the separate categories useEffect.
       // Do not reset them here — doing so would undo interactive toggles when variantSchema changes.
       setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], variantSchema));
@@ -522,7 +495,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
       const seededRows = existingFlatVariants.length > 0
         ? existingFlatVariants
         : [{ color: 'Base', size: 'UNICO', stock: String(product.stock) }];
-      const snapshotRows = toVariantRows(reconcileRowsWithRealStock(seededRows, product.stock), variantSchema);
+      const snapshotRows = toVariantRows(seededRows, variantSchema);
       const snapshotForm = {
         name: product.name,
         description: product.description,

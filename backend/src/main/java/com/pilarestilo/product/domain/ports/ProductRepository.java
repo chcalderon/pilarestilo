@@ -23,6 +23,14 @@ public interface ProductRepository {
 
     int atomicReserveVariantStock(UUID productId, String color, String size, int qty);
 
+    /**
+     * Recomputes the product's aggregate stock from its variant rows.
+     *
+     * <p>Call after any variant movement. The aggregate is a cache of what the variants already
+     * say, and the product page refuses to sell a product whose aggregate reads zero.
+     */
+    int syncProductStockFromVariants(UUID productId);
+
     int atomicReleaseVariantStock(UUID productId, String color, String size, int qty);
 
     int atomicConfirmVariantStock(UUID productId, String color, String size, int qty);

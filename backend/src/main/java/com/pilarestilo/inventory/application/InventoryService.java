@@ -131,6 +131,7 @@ public class InventoryService {
             if (updated == 0) {
                 throw new DomainException("Stock insuficiente para variante: " + variantColor + " / " + variantSize);
             }
+            productRepository.syncProductStockFromVariants(productId);
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.RESERVE, qty);
             return;
         }
@@ -149,6 +150,7 @@ public class InventoryService {
             if (updated == 0) {
                 throw new DomainException("Variante no encontrada para release: " + variantColor + " / " + variantSize);
             }
+            productRepository.syncProductStockFromVariants(productId);
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.RELEASE, -qty);
             return;
         }
@@ -166,6 +168,7 @@ public class InventoryService {
             if (updated == 0) {
                 throw new DomainException("Stock reservado insuficiente para confirmar variante: " + variantColor + " / " + variantSize);
             }
+            productRepository.syncProductStockFromVariants(productId);
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.CONFIRM, -qty);
             return;
         }
