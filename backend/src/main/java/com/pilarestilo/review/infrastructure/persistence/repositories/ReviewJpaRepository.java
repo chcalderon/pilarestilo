@@ -22,9 +22,9 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewEntity, UUID> {
 
     List<ReviewEntity> findByApprovedAndSupersededAtIsNull(boolean approved);
 
-    @Query("SELECT AVG(r.rating) FROM ReviewEntity r WHERE r.productId = :productId AND r.approved = true")
+    @Query("SELECT AVG(r.rating) FROM ReviewEntity r WHERE r.productId = :productId AND r.approved = true AND r.supersededAt IS NULL")
     BigDecimal computeAvgRating(@Param("productId") UUID productId);
 
-    @Query("SELECT COUNT(r) FROM ReviewEntity r WHERE r.productId = :productId AND r.approved = true")
+    @Query("SELECT COUNT(r) FROM ReviewEntity r WHERE r.productId = :productId AND r.approved = true AND r.supersededAt IS NULL")
     long computeCount(@Param("productId") UUID productId);
 }
