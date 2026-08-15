@@ -1,9 +1,12 @@
 package com.pilarestilo.inventoryservice.web;
 
 import com.pilarestilo.inventoryservice.persistence.ProductEntity;
+import com.pilarestilo.inventoryservice.persistence.ProductVariantEmbeddable;
 import com.pilarestilo.inventoryservice.web.dto.InventoryProductDto;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 
 final class InventoryMapper {
@@ -14,8 +17,21 @@ final class InventoryMapper {
     static InventoryProductDto toDto(ProductEntity entity, int lowStockThreshold) {
         int normalizedThreshold = Math.max(lowStockThreshold, 0);
 
-        List<InventoryProductDto.SizeStockDto> sizeStocks = entity.getSizeStocks().stream()
-                .map(s -> new InventoryProductDto.SizeStockDto(s.getSize(), s.getStock()))
+        /*
+         * Derived from the variants rather than read from product_size_stocks.
+         *
+         * <p>That table held the same fact twice: available units per size, which the variant
+         * rows already give by summing. Two writers kept it — this service decremented it on
+         * every reservation while the monolith overwrote it from the variants on every product
+         * save — so it drifted, and a drifted row refused a sale the variants would have allowed.
+         * Summing here cannot disagree with itself.
+         */
+        Map<String, Integer> availableBySize = new LinkedHashMap<>();
+        for (ProductVariantEmbeddable variant : entity.getVariants()) {
+            availableBySize.merge(variant.getSize(), variant.available(), Integer::sum);
+        }
+        List<InventoryProductDto.SizeStockDto> sizeStocks = availableBySize.entrySet().stream()
+                .map(e -> new InventoryProductDto.SizeStockDto(e.getKey(), e.getValue()))
                 .toList();
 
         List<InventoryProductDto.VariantDto> variants = entity.getVariants().stream()

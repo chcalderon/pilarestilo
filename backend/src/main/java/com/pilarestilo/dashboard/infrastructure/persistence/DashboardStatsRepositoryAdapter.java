@@ -39,6 +39,8 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
                 "SELECT COUNT(*) FROM dispatches WHERE status = 'IN_PROGRESS'"
         ).getSingleResult()).intValue();
 
+        int paymentsAwaitingReview = countPaymentsAwaitingReview();
+
         @SuppressWarnings("unchecked")
         List<Object[]> topRows = em.createNativeQuery(
                 """
@@ -73,7 +75,8 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
                 .toList();
 
         return new DashboardStats.AdminStats(dailySales, weeklySales, openCashRegisters,
-                pendingDispatches, inProgressDispatches, topProducts, dailyRevenueSeries);
+                pendingDispatches, inProgressDispatches, paymentsAwaitingReview,
+                topProducts, dailyRevenueSeries);
     }
 
     @Override
@@ -162,7 +165,21 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
                         ((java.sql.Date) r[2]).toLocalDate()))
                 .toList();
 
-        return new DashboardStats.AdministracionStats(active, expiringWorkers);
+        return new DashboardStats.AdministracionStats(
+                active, countPaymentsAwaitingReview(), expiringWorkers);
+    }
+
+    /**
+     * Receipts a customer has uploaded and nobody has judged yet.
+     *
+     * <p>SUBMITTED is the state a proof upload leaves a payment in; UNDER_REVIEW covers a gateway
+     * that reports the same thing. Both are money sitting still, which is why this belongs on a
+     * dashboard rather than only inside the payments screen.
+     */
+    private int countPaymentsAwaitingReview() {
+        return ((Number) em.createNativeQuery(
+                "SELECT COUNT(*) FROM payments WHERE status IN ('SUBMITTED', 'UNDER_REVIEW')"
+        ).getSingleResult()).intValue();
     }
 
     private BigDecimal toBigDecimal(Object val) {

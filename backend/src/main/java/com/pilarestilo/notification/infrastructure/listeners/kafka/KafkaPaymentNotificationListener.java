@@ -3,6 +3,7 @@ package com.pilarestilo.notification.infrastructure.listeners.kafka;
 import com.pilarestilo.notification.application.PaymentNotificationDispatcher;
 import com.pilarestilo.payment.domain.events.PaymentConfirmed;
 import com.pilarestilo.payment.domain.events.PaymentRejected;
+import com.pilarestilo.payment.domain.events.PaymentSubmitted;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -51,5 +52,16 @@ public class KafkaPaymentNotificationListener {
     @Transactional(readOnly = true)
     public void onPaymentRejected(PaymentRejected event) {
         dispatcher.onPaymentRejected(event);
+    }
+
+    /** Writable: this branch moves the order to PAYMENT_UNDER_REVIEW. */
+    @KafkaListener(
+            groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-notification",
+            topics = "#{@domainEventTopics.topicFor('PaymentSubmitted')}",
+            containerFactory = "domainEventsKafkaListenerContainerFactory"
+    )
+    @Transactional
+    public void onPaymentSubmitted(PaymentSubmitted event) {
+        dispatcher.onPaymentSubmitted(event);
     }
 }

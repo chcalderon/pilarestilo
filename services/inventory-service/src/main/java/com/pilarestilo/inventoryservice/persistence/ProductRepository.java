@@ -48,18 +48,6 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
 
     @Modifying
     @Query(value = """
-            update product_size_stocks
-               set stock = stock - :qty
-             where product_id = :productId
-               and upper(trim(size)) = upper(trim(:size))
-               and stock >= :qty
-            """, nativeQuery = true)
-    int reserveSizeStock(@Param("productId") UUID productId,
-                         @Param("size") String size,
-                         @Param("qty") int qty);
-
-    @Modifying
-    @Query(value = """
             update products p
                set stock = coalesce((
                        select sum(v.stock_on_hand - v.stock_reserved)
@@ -96,15 +84,4 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
                             @Param("color") String color,
                             @Param("size") String size,
                             @Param("qty") int qty);
-
-    @Modifying
-    @Query(value = """
-            update product_size_stocks
-               set stock = stock + :qty
-             where product_id = :productId
-               and upper(trim(size)) = upper(trim(:size))
-            """, nativeQuery = true)
-    int releaseSizeStock(@Param("productId") UUID productId,
-                         @Param("size") String size,
-                         @Param("qty") int qty);
 }

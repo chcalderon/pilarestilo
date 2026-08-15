@@ -33,6 +33,8 @@ public sealed interface DashboardStats
             int openCashRegisters,
             int pendingDispatches,
             int inProgressDispatches,
+            /** Receipts uploaded and not yet approved or rejected. Money waiting on someone. */
+            int paymentsAwaitingReview,
             List<TopProduct> topProducts,
             List<DailyRevenue> dailyRevenueSeries
     ) implements DashboardStats {}
@@ -50,6 +52,8 @@ public sealed interface DashboardStats
 
     record AdministracionStats(
             int activeWorkers,
+            /** Same figure the admin panel shows; this role can approve them too since V70. */
+            int paymentsAwaitingReview,
             List<ExpiringWorker> expiringWorkers
     ) implements DashboardStats {}
 }

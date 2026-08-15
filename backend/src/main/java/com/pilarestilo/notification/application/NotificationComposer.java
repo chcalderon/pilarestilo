@@ -170,6 +170,41 @@ public class NotificationComposer {
                 null);
     }
 
+    /**
+     * Tells a reviewer a receipt is waiting, with what they need to judge it without opening
+     * anything: which order, how much, and who paid.
+     *
+     * <p>The only message in here addressed to staff rather than a customer, which is why it
+     * names the buyer and carries the order id for the panel to link to.
+     */
+    public NotificationMessage paymentProofSubmitted(Order order, Payment payment, String buyerName) {
+        String reference = order.getPublicReference();
+        /* The amount lives on the order; a Payment carries the method and the proof, not a total. */
+        String amount = formatAmount(
+                order.getTotalAmount().amount().toPlainString(), order.getTotalAmount().currency());
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("paymentId", payment.getId());
+        data.put("amount", order.getTotalAmount().amount().toPlainString());
+        data.put("currency", order.getTotalAmount().currency());
+        data.put("buyerName", buyerName);
+        data.put("proofReference", payment.getProofReference());
+
+        return new NotificationMessage(
+                NotificationMessage.PAYMENT_PROOF_SUBMITTED,
+                "Comprobante recibido — pedido " + reference,
+                "Un cliente subió el comprobante de su transferencia.\n\n"
+                        + "Pedido: " + reference + "\n"
+                        + "Monto: " + amount + "\n"
+                        + "Cliente: " + buyerName + "\n\n"
+                        + "Revísalo en el panel, en Pagos → Pendientes de revisión.\n",
+                null,
+                data,
+                order.getId());
+    }
+
     /** The first segment of a UUID: enough for a customer to quote, short enough for a subject. */
     private static String shortId(UUID id) {
         return id == null ? "" : id.toString().substring(0, 8);

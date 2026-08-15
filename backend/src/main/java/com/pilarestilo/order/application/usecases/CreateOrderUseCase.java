@@ -147,6 +147,18 @@ public class CreateOrderUseCase {
             order.recordDiscountProvenance(evaluation.discountId(), evaluation.code());
         }
 
+        /*
+         * The order is waiting for the customer to pay, and PENDING_PAYMENT is the state that
+         * says so. Nothing ever entered it before: the only route was OrderInventorySaga stepping
+         * through on the way to PAID, so an order awaiting a bank transfer sat in CREATED for its
+         * whole life and the admin list could not tell it from one created a second ago.
+         *
+         * Set before the save rather than through UpdateOrderStatusUseCase afterwards: one write
+         * instead of two, and the status hooks there settle discounts and release inventory that
+         * this method has only just reserved.
+         */
+        order.markAsPendingPayment();
+
         Order saved = orderRepository.save(order);
 
         // After save: discount_code_usages.order_id references orders(id). Losing a capacity race
