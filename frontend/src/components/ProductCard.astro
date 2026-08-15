@@ -112,15 +112,16 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
       </p>
     )}
 
-    <div class="min-h-[1.2rem]">
+    {/*
+      * One row: the product's average, then the customer's own vote behind a label. Stacked as
+      * two unlabelled star rows they read as a single control drawn twice.
+      */}
+    <div class="min-h-[1.2rem] flex items-center gap-3 flex-wrap">
       <RatingStars value={product.avgRating ?? 0} size={12} />
-    </div>
-
-    {token && (
-      <div>
+      {token && (
         <QuickRateStars client:idle productId={product.id} token={token} locale={locale} />
-      </div>
-    )}
+      )}
+    </div>
 
     <div class="flex items-center justify-between mt-auto pt-2">
       <div class="flex flex-col leading-tight">

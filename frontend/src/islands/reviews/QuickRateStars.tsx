@@ -42,8 +42,18 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
 
   const groupLabel = locale === 'es' ? 'Valorar producto' : 'Rate product';
 
+  const doneLabel = locale === 'es' ? '¡Gracias!' : 'Thanks!';
+
   return (
-    <div className="inline-flex items-center gap-0.5" role="group" aria-label={groupLabel}>
+    /*
+     * Sits inline beside the average, not stacked under it. Two unlabelled rows of stars read as
+     * one broken control — the customer cannot tell which is the product's score and which is
+     * their own vote.
+     */
+    <div className="inline-flex items-center gap-1" role="group" aria-label={groupLabel}>
+      <span className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-charcoal/50">
+        {locked ? doneLabel : (locale === 'es' ? 'Valorar' : 'Rate')}
+      </span>
       {[1, 2, 3, 4, 5].map((value) => (
         <button
           key={value}
@@ -58,7 +68,12 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
           <Star
             size={13}
             strokeWidth={1.35}
-            className={value <= display ? 'fill-[#B76E79] stroke-[#B76E79]' : 'fill-none stroke-[#3A3A3A]/35'}
+            /* Token, not a literal: the hardcoded grey was invisible on the dark storefront. */
+            className={
+              value <= display
+                ? 'fill-pe-rose stroke-pe-rose'
+                : 'fill-none stroke-pe-charcoal/40'
+            }
           />
         </button>
       ))}
