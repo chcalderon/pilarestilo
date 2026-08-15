@@ -503,22 +503,55 @@ export function getProductVariantSchema(
 const GROUPING_TYPES: ReadonlySet<CategoryType> = new Set(['GENERIC', 'COLLECTION', 'SEASON']);
 
 /**
- * Whether a category can be chosen for a product using this variant type.
+ * The categories selectable for a product whose variants use `variantType`.
  *
- * <p>Grouping categories always can. A shape category only when it matches, because a product
- * cannot be both a shoe and a piece of jewellery — and its variants cannot be both Color/Número
- * and Material/Diseño.
+ * <p>Three ways in. A grouping category always qualifies. A shape category qualifies when it
+ * matches. And a category qualifies when one of its descendants does — because the taxonomy nests
+ * shapes inside each other: "Aros" is JEWELRY under "Accesorios", which is ACCESSORY. Selecting
+ * the child forces the parent, so a rule that judged each category alone would have the form add
+ * a category and then refuse to save it. Two products in this catalogue sit exactly there.
  *
- * <p>A category with no type stated is treated as grouping: refusing it would lock an admin out
- * of a category nobody has classified yet.
+ * <p>A category with no type stated counts as grouping: refusing it would lock an admin out of a
+ * category nobody has classified yet.
  */
-export function isCategoryCompatibleWith(
-  categoryType: CategoryType | null | undefined,
+export function allowedCategoryIds(
+  categories: CategoryDto[],
   variantType: CategoryType
-): boolean {
-  if (!categoryType) return true;
-  if (GROUPING_TYPES.has(categoryType)) return true;
-  return categoryType === variantType;
+): Set<string> {
+  const allowed = new Set<string>();
+  const childrenOf = new Map<string, CategoryDto[]>();
+  for (const category of categories) {
+    const key = category.parentId ?? '';
+    const list = childrenOf.get(key);
+    if (list) list.push(category);
+    else childrenOf.set(key, [category]);
+  }
+
+  /** Qualifies on its own account, ignoring the tree. */
+  const qualifiesAlone = (category: CategoryDto): boolean =>
+    !category.categoryType
+    || GROUPING_TYPES.has(category.categoryType)
+    || category.categoryType === variantType;
+
+  /* Depth-first: a branch is allowed when it holds anything allowed, so parents ride along. */
+  const visit = (category: CategoryDto): boolean => {
+    let anyDescendantAllowed = false;
+    for (const child of childrenOf.get(category.id) ?? []) {
+      if (visit(child)) anyDescendantAllowed = true;
+    }
+    const ok = qualifiesAlone(category) || anyDescendantAllowed;
+    if (ok) allowed.add(category.id);
+    return ok;
+  };
+
+  for (const root of childrenOf.get('') ?? []) visit(root);
+
+  /* Orphans — a parentId pointing at a category not in this list — are judged on their own. */
+  for (const category of categories) {
+    if (!allowed.has(category.id) && qualifiesAlone(category)) allowed.add(category.id);
+  }
+
+  return allowed;
 }
 
 /** Every schema an admin can choose, in the order the picker lists them. */

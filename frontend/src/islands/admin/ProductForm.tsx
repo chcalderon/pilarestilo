@@ -22,7 +22,7 @@ import {
   getPrimaryAttribute,
   getSecondaryAttribute,
   getVariantSchema,
-  isCategoryCompatibleWith,
+  allowedCategoryIds,
   legacyVariantToSelections,
   listVariantSchemas,
   normalizeAttributeValues,
@@ -84,6 +84,7 @@ function CategoryTreeItem({
   onToggle,
   expanded,
   onToggleExpand,
+  allowedIds,
   variantType,
 }: {
   node: CatNode;
@@ -92,7 +93,8 @@ function CategoryTreeItem({
   onToggle: (id: string) => void;
   expanded: Set<string>;
   onToggleExpand: (id: string) => void;
-  /** Drives which categories can be chosen; see isCategoryCompatibleWith. */
+  /** Ids selectable for the current variant type; see allowedCategoryIds. */
+  allowedIds: Set<string>;
   variantType: CategoryType;
 }) {
   const hasChildren = node.children.length > 0;
@@ -104,7 +106,7 @@ function CategoryTreeItem({
    * Already-selected categories stay operable so a product whose type is being changed can be
    * untangled rather than stranded.
    */
-  const compatible = isCategoryCompatibleWith(node.categoryType, variantType);
+  const compatible = allowedIds.has(node.id);
   const locked = !compatible && !isSelected;
   const descendantsSelected = hasChildren ? collectSelectedDescendantCount(node, selected) : 0;
 
@@ -189,6 +191,7 @@ function CategoryTreeItem({
             <CategoryTreeItem
               key={child.id}
               node={child}
+              allowedIds={allowedIds}
               variantType={variantType}
               depth={depth + 1}
               selected={selected}
@@ -356,6 +359,14 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
    * that is what the admin wants, surprising when it is not, which is why it is now a choice.
    */
   const effectiveVariantType = form.variantType || resolvedCategoryType;
+  /*
+   * Computed once for the whole tree rather than per node: the rule walks descendants, so asking
+   * each node in isolation would rewalk the same branches on every render.
+   */
+  const allowedCatIds = useMemo(
+    () => allowedCategoryIds(categories, effectiveVariantType),
+    [categories, effectiveVariantType]
+  );
   const variantSchema = useMemo(
     () => getVariantSchema(effectiveVariantType),
     [effectiveVariantType]
@@ -656,7 +667,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
      */
     const incompatible = categories
       .filter((category) => selectedCatIds.includes(category.id))
-      .filter((category) => !isCategoryCompatibleWith(category.categoryType, effectiveVariantType));
+      .filter((category) => !allowedCatIds.has(category.id));
     if (incompatible.length > 0) {
       e.categories = `Quita ${incompatible.map((c) => c.nameEs).join(', ')}: no aplica${
         incompatible.length > 1 ? 'n' : ''
@@ -1325,6 +1336,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   <CategoryTreeItem
                     key={root.id}
                     node={root}
+                    allowedIds={allowedCatIds}
                     variantType={effectiveVariantType}
                     depth={0}
                     selected={selectedCatIds}

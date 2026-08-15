@@ -1,46 +1,110 @@
 import { describe, expect, it } from 'vitest';
-import { isCategoryCompatibleWith, getProductVariantSchema } from '../variantSchema';
+import { allowedCategoryIds, getProductVariantSchema } from '../variantSchema';
+import type { CategoryDto, CategoryType } from '../api';
+
+function category(
+  id: string,
+  categoryType: CategoryType | null,
+  parentId: string | null = null
+): CategoryDto {
+  return {
+    id,
+    slug: id,
+    nameEs: id,
+    nameEn: id,
+    parentId,
+    categoryType: categoryType as CategoryType,
+    sortOrder: 0,
+  } as CategoryDto;
+}
 
 /**
- * The catalogue has two kinds of category. "Mujer" and "Verano" say how a product is grouped;
- * "Zapatos" and "Vestidos" say what it is. Only the second kind constrains the variants, and a
- * product is only ever one of them.
+ * The real catalogue, which is what the rule has to survive:
+ *
+ *   mujer (GENERIC)
+ *   ├── accesorios (ACCESSORY)
+ *   │   └── aros (JEWELRY)
+ *   ├── vestidos (CLOTHING)
+ *   ├── zapatos (SHOES)
+ *   └── verano (SEASON)
  */
-describe('isCategoryCompatibleWith', () => {
-  it('lets a shape category through when it matches', () => {
-    expect(isCategoryCompatibleWith('CLOTHING', 'CLOTHING')).toBe(true);
-    expect(isCategoryCompatibleWith('SHOES', 'SHOES')).toBe(true);
+const catalogue: CategoryDto[] = [
+  category('mujer', 'GENERIC'),
+  category('accesorios', 'ACCESSORY', 'mujer'),
+  category('aros', 'JEWELRY', 'accesorios'),
+  category('vestidos', 'CLOTHING', 'mujer'),
+  category('zapatos', 'SHOES', 'mujer'),
+  category('verano', 'SEASON', 'mujer'),
+];
+
+describe('allowedCategoryIds', () => {
+  it('allows the matching shape category', () => {
+    expect(allowedCategoryIds(catalogue, 'CLOTHING')).toContain('vestidos');
+    expect(allowedCategoryIds(catalogue, 'SHOES')).toContain('zapatos');
   });
 
   /** A product cannot be both a shoe and a dress, so its categories cannot say both. */
-  it('refuses a shape category that does not match', () => {
-    expect(isCategoryCompatibleWith('SHOES', 'CLOTHING')).toBe(false);
-    expect(isCategoryCompatibleWith('JEWELRY', 'SHOES')).toBe(false);
-    expect(isCategoryCompatibleWith('CLOTHING', 'ACCESSORY')).toBe(false);
+  it('refuses the shape categories that do not match', () => {
+    const allowed = allowedCategoryIds(catalogue, 'CLOTHING');
+    expect(allowed).not.toContain('zapatos');
+    expect(allowed).not.toContain('aros');
   });
 
-  /** A dress belongs to "Mujer" and to "Verano" as naturally as it belongs to "Vestidos". */
   it('always allows grouping categories', () => {
-    for (const variantType of ['CLOTHING', 'SHOES', 'JEWELRY', 'ACCESSORY'] as const) {
-      expect(isCategoryCompatibleWith('GENERIC', variantType)).toBe(true);
-      expect(isCategoryCompatibleWith('SEASON', variantType)).toBe(true);
-      expect(isCategoryCompatibleWith('COLLECTION', variantType)).toBe(true);
+    for (const type of ['CLOTHING', 'SHOES', 'JEWELRY'] as const) {
+      const allowed = allowedCategoryIds(catalogue, type);
+      expect(allowed).toContain('mujer');
+      expect(allowed).toContain('verano');
     }
+  });
+
+  /**
+   * The case that made the first version of this rule deadlock. "Aros" is JEWELRY inside
+   * "Accesorios", which is ACCESSORY, and the form auto-selects ancestors — so judging each
+   * category alone had it add "accesorios" and then refuse to save it. Two products in the real
+   * catalogue sit exactly here.
+   */
+  it('allows a parent whose descendant matches', () => {
+    const allowed = allowedCategoryIds(catalogue, 'JEWELRY');
+
+    expect(allowed).toContain('aros');
+    expect(allowed).toContain('accesorios');
+    expect(allowed).toContain('mujer');
+  });
+
+  /** That leniency is only for the path down to a match, not for every shape category. */
+  it('does not allow a parent whose descendants all mismatch', () => {
+    const allowed = allowedCategoryIds(catalogue, 'CLOTHING');
+    expect(allowed).not.toContain('accesorios');
+  });
+
+  it('allows ACCESSORY itself when that is the chosen type', () => {
+    const allowed = allowedCategoryIds(catalogue, 'ACCESSORY');
+    expect(allowed).toContain('accesorios');
+    expect(allowed).not.toContain('zapatos');
   });
 
   /** Refusing an unclassified category would lock the admin out of it for no stated reason. */
   it('allows a category with no type stated', () => {
-    expect(isCategoryCompatibleWith(null, 'SHOES')).toBe(true);
-    expect(isCategoryCompatibleWith(undefined, 'CLOTHING')).toBe(true);
+    const withUntyped = [...catalogue, category('nueva', null, 'mujer')];
+    expect(allowedCategoryIds(withUntyped, 'SHOES')).toContain('nueva');
+  });
+
+  /** A parentId pointing outside the list must not drop the category from the walk. */
+  it('judges an orphan on its own account', () => {
+    const orphans = [category('suelta', 'SHOES', 'no-existe')];
+    expect(allowedCategoryIds(orphans, 'SHOES')).toContain('suelta');
+    expect(allowedCategoryIds(orphans, 'CLOTHING')).not.toContain('suelta');
+  });
+
+  it('handles an empty catalogue', () => {
+    expect(allowedCategoryIds([], 'CLOTHING').size).toBe(0);
   });
 });
 
 describe('getProductVariantSchema', () => {
   it('honours a stated type over the categories', () => {
-    const schema = getProductVariantSchema({
-      categoryTypes: ['CLOTHING'],
-      variantType: 'SHOES',
-    });
+    const schema = getProductVariantSchema({ categoryTypes: ['CLOTHING'], variantType: 'SHOES' });
 
     expect(schema.key).toBe('SHOES');
     expect(schema.attributes[1].label).toBe('Numero');
