@@ -113,11 +113,14 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
     )}
 
     {/*
-      * One row: the product's average, then the customer's own vote behind a label. Stacked as
-      * two unlabelled star rows they read as a single control drawn twice.
+      * One row. The average appears only once somebody has rated — five empty stars say nothing
+      * the absent count does not — and the vote stays a word until asked for. Two star groups
+      * side by side read as one control drawn twice, whatever label sits between them.
       */}
     <div class="min-h-[1.2rem] flex items-center gap-3 flex-wrap">
-      <RatingStars value={product.avgRating ?? 0} size={12} />
+      {(product.reviewCount ?? 0) > 0 && (
+        <RatingStars value={product.avgRating ?? 0} count={product.reviewCount} size={12} />
+      )}
       {token && (
         <QuickRateStars client:idle productId={product.id} token={token} locale={locale} />
       )}

@@ -13,6 +13,8 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
   const [hover, setHover] = useState(0);
   const [saving, setSaving] = useState(false);
   const [locked, setLocked] = useState(false);
+  /** Collapsed until asked for: five idle stars beside the average read as one broken control. */
+  const [open, setOpen] = useState(false);
 
   if (!token) {
     return null;
@@ -43,6 +45,29 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
   const groupLabel = locale === 'es' ? 'Valorar producto' : 'Rate product';
 
   const doneLabel = locale === 'es' ? '¡Gracias!' : 'Thanks!';
+  const openLabel = locale === 'es' ? 'Valorar' : 'Rate';
+
+  if (locked) {
+    return (
+      <span className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose">
+        {doneLabel}
+      </span>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-charcoal/55
+          underline underline-offset-2 hover:text-pe-rose transition-colors
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+      >
+        {openLabel}
+      </button>
+    );
+  }
 
   return (
     /*
@@ -51,9 +76,6 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
      * their own vote.
      */
     <div className="inline-flex items-center gap-1" role="group" aria-label={groupLabel}>
-      <span className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-charcoal/50">
-        {locked ? doneLabel : (locale === 'es' ? 'Valorar' : 'Rate')}
-      </span>
       {[1, 2, 3, 4, 5].map((value) => (
         <button
           key={value}
