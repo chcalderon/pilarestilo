@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import { createReview } from '../../lib/api';
 
@@ -8,6 +8,36 @@ interface Props {
   locale?: string;
 }
 
+/**
+ * Which products this browser has already rated, and with what.
+ *
+ * <p>The backend refuses a second review, but nothing told the card, so a reload offered
+ * "Valorar" again and the click would have failed. There is no endpoint for "my review" and
+ * asking for a product's whole review list per card would be one request per tile, so the
+ * answer is remembered here. The server stays the authority; this only stops the card offering
+ * something that cannot work.
+ */
+const RATED_KEY = 'pe-rated-products';
+
+function readRated(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(RATED_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function rememberRated(productId: string, value: number) {
+  try {
+    window.localStorage.setItem(RATED_KEY, JSON.stringify({ ...readRated(), [productId]: value }));
+  } catch {
+    /* Private mode or a full quota: the rating still reached the server, which is what counts. */
+  }
+}
+
 export default function QuickRateStars({ productId, token, locale = 'es' }: Props) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -15,6 +45,22 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
   const [locked, setLocked] = useState(false);
   /** Collapsed until asked for: five idle stars beside the average read as one broken control. */
   const [open, setOpen] = useState(false);
+  /** Thanks is a moment, not a state. It gives way to the rating the customer left. */
+  const [justRated, setJustRated] = useState(false);
+
+  useEffect(() => {
+    const mine = readRated()[productId];
+    if (mine) {
+      setRating(mine);
+      setLocked(true);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (!justRated) return;
+    const timer = window.setTimeout(() => setJustRated(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [justRated]);
 
   if (!token) {
     return null;
@@ -29,7 +75,9 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
     setRating(value);
     try {
       await createReview(productId, token, { rating: value });
+      rememberRated(productId, value);
       setLocked(true);
+      setJustRated(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message.toLowerCase() : '';
       if (message.includes('already')) {
@@ -48,9 +96,36 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
   const openLabel = locale === 'es' ? 'Valorar' : 'Rate';
 
   if (locked) {
+    /* Four seconds of acknowledgement, then the vote itself — which is the lasting fact. */
+    if (justRated) {
+      return (
+        <span
+          role="status"
+          className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose"
+        >
+          {doneLabel}
+        </span>
+      );
+    }
     return (
-      <span className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose">
-        {doneLabel}
+      <span
+        className="inline-flex items-center gap-0.5"
+        title={locale === 'es' ? 'Tu valoración' : 'Your rating'}
+      >
+        {[1, 2, 3, 4, 5].map((value) => (
+          <Star
+            key={value}
+            size={13}
+            strokeWidth={1.35}
+            aria-hidden="true"
+            className={
+              value <= rating ? 'fill-pe-rose stroke-pe-rose' : 'fill-none stroke-pe-charcoal/40'
+            }
+          />
+        ))}
+        <span className="sr-only">
+          {locale === 'es' ? `Tu valoración: ${rating} de 5` : `Your rating: ${rating} of 5`}
+        </span>
       </span>
     );
   }
