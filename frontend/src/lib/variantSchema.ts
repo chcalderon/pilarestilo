@@ -492,11 +492,33 @@ export function getProductVariantSchema(
   return getVariantSchema(pickCategoryType(product?.categoryTypes));
 }
 
-/** What the product would use if nobody stated a type. Shown as the default in the admin form. */
-export function inferVariantTypeFromCategories(
-  categoryTypes: CategoryType[] | undefined
-): CategoryType {
-  return pickCategoryType(categoryTypes) ?? 'GENERIC';
+/**
+ * Category types that describe how a product is grouped rather than what shape it is.
+ *
+ * <p>A department ("Mujer"), a collection and a season are all cross-cutting: a dress belongs to
+ * "Mujer" and to "Verano" as naturally as it belongs to "Vestidos". Only the shape types —
+ * clothing, shoes, jewellery, accessories — say what a product *is*, and a product is only ever
+ * one of those, which is what makes them mutually exclusive.
+ */
+const GROUPING_TYPES: ReadonlySet<CategoryType> = new Set(['GENERIC', 'COLLECTION', 'SEASON']);
+
+/**
+ * Whether a category can be chosen for a product using this variant type.
+ *
+ * <p>Grouping categories always can. A shape category only when it matches, because a product
+ * cannot be both a shoe and a piece of jewellery — and its variants cannot be both Color/Número
+ * and Material/Diseño.
+ *
+ * <p>A category with no type stated is treated as grouping: refusing it would lock an admin out
+ * of a category nobody has classified yet.
+ */
+export function isCategoryCompatibleWith(
+  categoryType: CategoryType | null | undefined,
+  variantType: CategoryType
+): boolean {
+  if (!categoryType) return true;
+  if (GROUPING_TYPES.has(categoryType)) return true;
+  return categoryType === variantType;
 }
 
 /** Every schema an admin can choose, in the order the picker lists them. */

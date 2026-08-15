@@ -22,6 +22,7 @@ import {
   getPrimaryAttribute,
   getSecondaryAttribute,
   getVariantSchema,
+  isCategoryCompatibleWith,
   legacyVariantToSelections,
   listVariantSchemas,
   normalizeAttributeValues,
@@ -83,6 +84,7 @@ function CategoryTreeItem({
   onToggle,
   expanded,
   onToggleExpand,
+  variantType,
 }: {
   node: CatNode;
   depth: number;
@@ -90,10 +92,20 @@ function CategoryTreeItem({
   onToggle: (id: string) => void;
   expanded: Set<string>;
   onToggleExpand: (id: string) => void;
+  /** Drives which categories can be chosen; see isCategoryCompatibleWith. */
+  variantType: CategoryType;
 }) {
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
   const isSelected = selected.includes(node.id);
+  /*
+   * Shown, not hidden. An admin who cannot find "Zapatos" assumes it is missing; one who sees it
+   * greyed out learns the rule — a product is one shape, and its variants follow from it.
+   * Already-selected categories stay operable so a product whose type is being changed can be
+   * untangled rather than stranded.
+   */
+  const compatible = isCategoryCompatibleWith(node.categoryType, variantType);
+  const locked = !compatible && !isSelected;
   const descendantsSelected = hasChildren ? collectSelectedDescendantCount(node, selected) : 0;
 
   // Visual hierarchy by depth — stronger contrast, clearer rhythm
@@ -135,11 +147,17 @@ function CategoryTreeItem({
           </span>
         )}
 
-        <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+        <label
+          className={`flex items-center gap-2 flex-1 min-w-0 ${
+            locked ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'
+          }`}
+          title={locked ? `No aplica a variantes de tipo ${variantType.toLowerCase()}` : undefined}
+        >
           <input
             type="checkbox"
-            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
+            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79] disabled:cursor-not-allowed"
             checked={isSelected}
+            disabled={locked}
             onChange={() => onToggle(node.id)}
           />
           {hasChildren && (
@@ -150,6 +168,11 @@ function CategoryTreeItem({
           <span className={`font-sans leading-snug truncate group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors ${rowClass}`}>
             {node.nameEs}
           </span>
+          {!compatible && isSelected && (
+            <span className="shrink-0 font-sans text-[0.58rem] tracking-wider uppercase px-1 py-0.5 bg-[#8f2d3b]/10 text-[#8f2d3b]">
+              No aplica
+            </span>
+          )}
           {hasChildren && (
             <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-charcoal/40 dark:text-[#D6C8B5]/45">
               {descendantsSelected > 0
@@ -166,6 +189,7 @@ function CategoryTreeItem({
             <CategoryTreeItem
               key={child.id}
               node={child}
+              variantType={variantType}
               depth={depth + 1}
               selected={selected}
               onToggle={onToggle}
@@ -624,6 +648,21 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         seen.add(key);
       }
     }
+    /*
+     * A category left over from a previous variant type. The tree greys these out, but a
+     * selection made before the type changed stays operable so it can be untangled — which means
+     * it can also reach save. Refused here rather than silently stored: a shoe filed under
+     * "Vestidos" is wrong in the catalogue long after anyone remembers why.
+     */
+    const incompatible = categories
+      .filter((category) => selectedCatIds.includes(category.id))
+      .filter((category) => !isCategoryCompatibleWith(category.categoryType, effectiveVariantType));
+    if (incompatible.length > 0) {
+      e.categories = `Quita ${incompatible.map((c) => c.nameEs).join(', ')}: no aplica${
+        incompatible.length > 1 ? 'n' : ''
+      } al tipo de variante elegido.`;
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -1286,6 +1325,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   <CategoryTreeItem
                     key={root.id}
                     node={root}
+                    variantType={effectiveVariantType}
                     depth={0}
                     selected={selectedCatIds}
                     onToggle={toggleCategory}
@@ -1294,8 +1334,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                   />
                 ))}
               </div>
+              {errors.categories && <p className={errorClass}>{errors.categories}</p>}
               <p className="font-sans text-[0.6rem] text-pe-charcoal/45 dark:text-[#D6C8B5]/45 mt-1">
                 Al seleccionar una subcategoría, su categoría padre se marca automáticamente.
+                Las que no aplican al tipo de variante aparecen atenuadas.
               </p>
             </div>
           )}
