@@ -17,6 +17,8 @@ public record DashboardStatsResponse(
         Integer openCashRegisters,
         Integer pendingDispatches,
         Integer inProgressDispatches,
+        /** Receipts uploaded and not yet judged. Shown to ADMIN, SUPERVISOR and ADMINISTRACION. */
+        Integer paymentsAwaitingReview,
         List<TopProduct> topProducts,
         List<DailyRevenue> dailyRevenueSeries,
         // SELLER fields
@@ -43,13 +45,14 @@ public record DashboardStatsResponse(
                     new SalesTotal(a.dailySales().amount(), a.dailySales().orderCount()),
                     new SalesTotal(a.weeklySales().amount(), a.weeklySales().orderCount()),
                     a.openCashRegisters(), a.pendingDispatches(), a.inProgressDispatches(),
+                    a.paymentsAwaitingReview(),
                     a.topProducts().stream().map(p -> new TopProduct(p.productId(), p.name(), p.unitsSold())).toList(),
                     a.dailyRevenueSeries().stream().map(d -> new DailyRevenue(d.date(), d.amount())).toList(),
                     null, null, null, null, null, null
             );
         } else if (stats instanceof DashboardStats.SellerStats s) {
             return new DashboardStatsResponse(
-                    "SELLER", null, null, null, null, null, null, null,
+                    "SELLER", null, null, null, null, null, null, null, null,
                     s.currentCaja() == null ? null : new CajaSnapshot(
                             s.currentCaja().status(), s.currentCaja().openedAt(),
                             s.currentCaja().expectedBalance(), s.currentCaja().saleCount(), s.currentCaja().saleTotal()),
@@ -59,12 +62,14 @@ public record DashboardStatsResponse(
         } else if (stats instanceof DashboardStats.DespachadorStats d) {
             return new DashboardStatsResponse(
                     "DESPACHADOR", null, null, null,
-                    d.pendingDispatches(), null, null, null, null, null,
+                    d.pendingDispatches(), null, null, null, null, null, null,
                     d.myDispatchedToday(), d.myInProgress(), null, null
             );
         } else if (stats instanceof DashboardStats.AdministracionStats adm) {
             return new DashboardStatsResponse(
-                    "ADMINISTRACION", null, null, null, null, null, null, null, null, null, null, null,
+                    "ADMINISTRACION", null, null, null, null, null,
+                    adm.paymentsAwaitingReview(),
+                    null, null, null, null, null, null,
                     adm.activeWorkers(),
                     adm.expiringWorkers().stream().map(w -> new ExpiringWorker(w.userId(), w.fullName(), w.vigencyEnd())).toList()
             );

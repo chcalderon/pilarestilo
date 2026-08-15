@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertCircle } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -18,6 +19,7 @@ interface AdminData {
   openCashRegisters: number;
   pendingDispatches: number;
   inProgressDispatches: number;
+  paymentsAwaitingReview?: number;
   topProducts: TopProduct[];
   dailyRevenueSeries: DailyRevenue[];
 }
@@ -38,6 +40,7 @@ interface DespachadorData {
 interface AdministracionData {
   role: "ADMINISTRACION";
   activeWorkers: number;
+  paymentsAwaitingReview?: number;
   expiringWorkers: ExpiringWorker[];
 }
 
@@ -54,6 +57,37 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
       <span className="text-2xl font-bold font-[Cormorant_Garamond,serif]">{value}</span>
       {sub && <span className="text-xs text-[var(--pe-muted)]">{sub}</span>}
     </div>
+  );
+}
+
+/**
+ * The pending-review count, and a way straight to it.
+ *
+ * <p>A plain number would say money is waiting without offering to do anything about it, so with
+ * anything pending the whole card becomes the link to the review queue and takes the alert
+ * colour. At zero it stays a quiet stat: a permanent red badge reading 0 teaches people to
+ * ignore red.
+ */
+function PaymentsAwaitingCard({ count }: { count: number }) {
+  if (count === 0) {
+    return <StatCard label="Pagos por revisar" value="0" sub="nada pendiente" />;
+  }
+  return (
+    <a
+      href="/admin/payments"
+      className="border border-[var(--pe-rose)] bg-[var(--pe-rose)]/8 p-4 flex flex-col gap-1
+        transition-colors hover:bg-[var(--pe-rose)]/15
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pe-rose)]"
+    >
+      <span className="text-[10px] tracking-widest uppercase text-[var(--pe-rose)] flex items-center gap-1.5">
+        <AlertCircle size={11} aria-hidden="true" />
+        Pagos por revisar
+      </span>
+      <span className="text-2xl font-bold font-[Cormorant_Garamond,serif]">{count}</span>
+      <span className="text-xs text-[var(--pe-muted)]">
+        {count === 1 ? 'comprobante esperando' : 'comprobantes esperando'} · revisar
+      </span>
+    </a>
   );
 }
 
@@ -79,6 +113,7 @@ function AdminDashboard({ data }: { data: AdminData }) {
         <StatCard label="Ventas semana" value={formatCLP(data.weeklySales.amount)} sub={`${data.weeklySales.orderCount} órdenes`} />
         <StatCard label="Cajas abiertas" value={String(data.openCashRegisters)} />
         <StatCard label="Despachos pendientes" value={String(data.pendingDispatches)} sub={`${data.inProgressDispatches} en progreso`} />
+        <PaymentsAwaitingCard count={data.paymentsAwaitingReview ?? 0} />
       </div>
 
       <div className="border border-[var(--pe-border)] p-4">
@@ -152,6 +187,7 @@ function AdministracionDashboard({ data }: { data: AdministracionData }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
+        <PaymentsAwaitingCard count={data.paymentsAwaitingReview ?? 0} />
         <StatCard label="Trabajadores activos" value={String(data.activeWorkers)} />
         <StatCard label="Vencimientos próximos" value={String(data.expiringWorkers.length)} sub="en los próximos 7 días" />
       </div>
