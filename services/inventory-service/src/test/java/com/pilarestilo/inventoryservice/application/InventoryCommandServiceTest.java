@@ -47,7 +47,6 @@ class InventoryCommandServiceTest {
     void reserveWithVariantSyncsProductStockFromVariants() {
         when(productRepository.hasVariants(PRODUCT_ID)).thenReturn(true);
         when(productRepository.reserveVariantStock(PRODUCT_ID, "Base", "UNICO", 1)).thenReturn(1);
-        when(productRepository.reserveSizeStock(PRODUCT_ID, "UNICO", 1)).thenReturn(1);
 
         service.reserve(PRODUCT_ID, 1, "Base", "UNICO");
 
@@ -60,7 +59,7 @@ class InventoryCommandServiceTest {
         service.release(PRODUCT_ID, 1, "Base", "UNICO");
 
         verify(productRepository).releaseVariantStock(PRODUCT_ID, "Base", "UNICO", 1);
-        verify(productRepository).releaseSizeStock(PRODUCT_ID, "UNICO", 1);
+        /* No size-stock call: the variant row is the only gate now. */
         verify(productRepository).syncProductStockFromVariants(eq(PRODUCT_ID), any());
         verify(productRepository, never()).releaseStock(any(), anyInt(), any());
     }

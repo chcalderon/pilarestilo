@@ -174,15 +174,17 @@ public class ProductRepositoryAdapter implements ProductRepository {
     private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,
                                             jakarta.persistence.criteria.CriteriaQuery<?> query,
                                             jakarta.persistence.criteria.CriteriaBuilder cb) {
+        /*
+         * The sizeStocks join is gone: it repeated what the variants already say, and this is an
+         * OR, so it could only ever widen the result. One fewer left join per product query.
+         */
         Join<Object, Object> variants = root.join("variants", JoinType.LEFT);
-        Join<Object, Object> sizeStocks = root.join("sizeStocks", JoinType.LEFT);
         if (query != null) {
             query.distinct(true);
         }
         return cb.or(
                 cb.greaterThan(root.get("stock"), 0),
-                cb.greaterThan(variants.get("stockOnHand"), 0),
-                cb.greaterThan(sizeStocks.get("stock"), 0)
+                cb.greaterThan(variants.get("stockOnHand"), 0)
         );
     }
 
@@ -263,15 +265,21 @@ public class ProductRepositoryAdapter implements ProductRepository {
         if (entity.getShippingOriginZone() != null) {
             product.setShippingOriginZone(entity.getShippingOriginZone());
         }
-        List<ProductSizeStock> sizeStocks = entity.getSizeStocks().stream()
-                .map(s -> new ProductSizeStock(s.getSize(), s.getStock()))
-                .collect(Collectors.toList());
-        product.setSizeStocks(sizeStocks);
-
         List<ProductVariant> variants = (entity.getVariants() == null ? List.<ProductVariantEmbeddable>of() : entity.getVariants()).stream()
                 .map(v -> new ProductVariant(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockReserved()))
                 .collect(Collectors.toList());
+        /*
+         * setVariants runs syncStocksFromVariants, which derives sizeStocks and stock from these
+         * rows — so reading product_size_stocks first was work that got overwritten a line later.
+         * The stored value is only kept for a product with no variants at all, where the
+         * derivation returns early and there is nothing else to fall back on.
+         */
         product.setVariants(variants);
+        if (variants.isEmpty()) {
+            product.setSizeStocks(entity.getSizeStocks().stream()
+                    .map(sizeStock -> new ProductSizeStock(sizeStock.getSize(), sizeStock.getStock()))
+                    .collect(Collectors.toList()));
+        }
 
         // Map categories from entity
         if (entity.getCategories() != null && !entity.getCategories().isEmpty()) {

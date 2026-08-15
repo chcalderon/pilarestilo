@@ -35,9 +35,15 @@ public class InventoryCommandService {
         }
 
         if (variantSelectionProvided) {
+            /*
+             * The variant row is the only gate. reserveVariantStock already refuses unless
+             * stock_on_hand - stock_reserved >= qty for this exact colour and size; a second
+             * check against a per-size total could only ever be more restrictive, and when that
+             * total drifted it refused sales the variants allowed. product_size_stocks is now
+             * derived on read instead of maintained here.
+             */
             int variantUpdated = productRepository.reserveVariantStock(productId, variantColor, variantSize, qty);
-            int sizeUpdated = productRepository.reserveSizeStock(productId, variantSize, qty);
-            if (variantUpdated == 0 || sizeUpdated == 0) {
+            if (variantUpdated == 0) {
                 throw new IllegalStateException("Insufficient stock for variant: " + productId + " / " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId, Instant.now());
@@ -62,7 +68,6 @@ public class InventoryCommandService {
         ensureExists(productId);
         if (variantColor != null && variantSize != null) {
             productRepository.releaseVariantStock(productId, variantColor, variantSize, qty);
-            productRepository.releaseSizeStock(productId, variantSize, qty);
             productRepository.syncProductStockFromVariants(productId, Instant.now());
             return;
         }
