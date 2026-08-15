@@ -98,10 +98,7 @@ describe('verifyStockForItem', () => {
     mockGetProduct.mockResolvedValue(makeProduct({
       name: 'Traje Pantalón Marino',
       stock: 2,
-      variants: [
-        { color: 'Marino', size: '38', stockAvailable: 1 },
-        { color: 'Marino', size: '40', stockAvailable: 1 },
-      ],
+      variants: [makeVariant('Marino', '38', 1), makeVariant('Marino', '40', 1)],
     }) as any);
 
     const result = await verifyStockForItem('p1', null, 1);
