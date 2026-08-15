@@ -3,6 +3,7 @@ package com.pilarestilo.shared.infrastructure.bootstrap;
 import com.pilarestilo.shared.auth.infrastructure.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.DispatcherType;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,6 +27,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
+                        // When a controller throws, the container re-dispatches to /error, and that
+                        // dispatch runs the filter chain again without the original authentication.
+                        // Left denied, every internal error in the API answers 403, which reads as a
+                        // permission problem and sends anyone debugging it in the wrong direction —
+                        // it hid a ClassCastException that had the whole dashboard down.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
