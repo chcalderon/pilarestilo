@@ -119,14 +119,22 @@ export function useStockCheck(items: CartItem[]) {
     }
   }, [items]);
 
-  /**
-   * Runs once on mount. Not on every `items` change: re-checking after each quantity tap would
-   * fire a burst of requests and make the badges flicker while the customer is still adjusting.
+  /*
+   * Keyed on which lines are present, not on the array identity.
+   *
+   * <p>Running once on mount looked right and was not: the cart store persists to localStorage
+   * and zustand rehydrates a tick after the first render, so the check fired against an empty
+   * cart, found nothing, and never ran again. Every test passed — they hand the hook its items
+   * directly and never hydrate — while nothing was ever flagged in a browser.
+   *
+   * <p>Line ids rather than the items themselves, so adjusting a quantity does not fire a burst
+   * of requests and make the badges flicker while the customer is still deciding.
    */
+  const lineKey = items.map((item) => item.id).sort().join('|');
   useEffect(() => {
     void check();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lineKey]);
 
   useEffect(() => {
     setIssues((current) => pruneResolvedIssues(current, items));
