@@ -39,7 +39,11 @@ interface Props {
 
 type Tab = 'profile' | 'reviews' | 'orders' | 'addresses' | 'notifications';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
-type TimelineState = 'done' | 'current' | 'todo';
+/**
+ * 'skipped' is a step the order will never reach because it ended early. Rendering those as
+ * 'todo' said the journey was still going, which is what a cancelled order looked like.
+ */
+type TimelineState = 'done' | 'current' | 'todo' | 'skipped' | 'ended';
 type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
 type NotificationChannelPreference = 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
 type AddressDraft = {
@@ -897,7 +901,9 @@ export default function AccountPage({ locale }: Props) {
     return (es ? labelsEs : labelsEn)[status] ?? status;
   }
 
-  function orderTimelineLabel(status: TimelineStepStatus) {
+  /** Accepts CANCELLED too: it is a terminal node on the track, not a step on the way. */
+  function orderTimelineLabel(status: TimelineStepStatus | 'CANCELLED') {
+    if (status === 'CANCELLED') return es ? 'Cancelado' : 'Cancelled';
     const labelsEs: Record<TimelineStepStatus, string> = {
       CREATED: 'Creado',
       PENDING_PAYMENT: 'Pago pendiente',
@@ -921,12 +927,21 @@ export default function AccountPage({ locale }: Props) {
 
   function getOrderTimeline(status: OrderDto['status']) {
     if (status === 'CANCELLED') {
+      /*
+       * A cancelled order stopped; it is not waiting. Marking the rest 'todo' drew the same
+       * hollow dots as an order still in progress, so the only thing saying it had ended was a
+       * line of small red text below. The remaining steps are struck through and a terminal
+       * node closes the track.
+       */
       return {
         cancelled: true,
-        steps: ORDER_TIMELINE_FLOW.map((step, index) => ({
-          step,
-          state: (index === 0 ? 'done' : 'todo') as TimelineState,
-        })),
+        steps: [
+          ...ORDER_TIMELINE_FLOW.map((step, index) => ({
+            step,
+            state: (index === 0 ? 'done' : 'skipped') as TimelineState,
+          })),
+          { step: 'CANCELLED' as const, state: 'ended' as TimelineState },
+        ],
       };
     }
 
@@ -1609,28 +1624,39 @@ export default function AccountPage({ locale }: Props) {
                         </div>
                       )}
 
-                      <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-3 overflow-x-auto">
-                        <div className="flex items-center gap-2 min-w-[680px]">
+                      {/*
+                        * Wraps instead of scrolling. A 680px minimum pushed the last node past
+                        * the edge and left it behind a scrollbar — which for a cancelled order
+                        * hid the one marker that says how it ended.
+                        */}
+                      <div className="border border-pe-black/8 dark:border-pe-cream/10 bg-pe-cream/35 dark:bg-pe-black/20 px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                           {timeline.steps.map((node, index) => (
                             <div key={node.step} className="flex items-center gap-2">
                               <span
                                 className={[
                                   'inline-flex h-2.5 w-2.5 rounded-full border',
                                   node.state === 'done'
-                                    ? 'bg-emerald-600 border-emerald-600'
+                                    ? 'bg-emerald-600 border-emerald-600 dark:bg-emerald-400 dark:border-emerald-400'
                                     : node.state === 'current'
                                       ? 'bg-pe-rose border-pe-rose'
-                                      : 'bg-transparent border-pe-black/20',
+                                      : node.state === 'ended'
+                                        ? 'bg-[#8f2d3b] border-[#8f2d3b] dark:bg-red-400 dark:border-red-400'
+                                        : 'bg-transparent border-pe-black/20 dark:border-pe-cream/25',
                                 ].join(' ')}
                               />
                               <span
                                 className={[
                                   'font-sans text-[0.62rem] tracking-[0.08em] uppercase whitespace-nowrap',
                                   node.state === 'done'
-                                    ? 'text-emerald-700'
+                                    ? 'text-emerald-700 dark:text-emerald-400'
                                     : node.state === 'current'
-                                      ? 'text-pe-rose-deep'
-                                      : 'text-pe-charcoal/60',
+                                      ? 'text-pe-rose-deep dark:text-pe-rose'
+                                      : node.state === 'ended'
+                                        ? 'text-[#8f2d3b] dark:text-red-400 font-semibold'
+                                        : node.state === 'skipped'
+                                          ? 'text-pe-charcoal/35 dark:text-pe-cream/25 line-through'
+                                          : 'text-pe-charcoal/60 dark:text-pe-cream/45',
                                 ].join(' ')}
                               >
                                 {orderTimelineLabel(node.step)}
@@ -1641,7 +1667,7 @@ export default function AccountPage({ locale }: Props) {
                                     'block h-px w-5',
                                     node.state === 'done' || node.state === 'current'
                                       ? 'bg-pe-rose/45'
-                                      : 'bg-pe-black/12',
+                                      : 'bg-pe-black/12 dark:bg-pe-cream/15',
                                   ].join(' ')}
                                   aria-hidden="true"
                                 />
@@ -1650,8 +1676,10 @@ export default function AccountPage({ locale }: Props) {
                           ))}
                         </div>
                         {timeline.cancelled && (
-                          <p className="font-sans text-[0.68rem] text-red-600 mt-2">
-                            {es ? 'Pedido cancelado por administracion o cliente.' : 'Order cancelled by admin or customer.'}
+                          <p className="font-sans text-[0.68rem] text-[#8f2d3b] dark:text-red-300 mt-2">
+                            {es
+                              ? 'Pedido cancelado. Si fue por falta de pago dentro del plazo, los productos volvieron a estar disponibles y puedes hacer un nuevo pedido.'
+                              : 'Order cancelled. If the payment window lapsed, the items are available again and you can place a new order.'}
                           </p>
                         )}
                       </div>
