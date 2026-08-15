@@ -110,7 +110,16 @@ public class OrderCommandService {
         order.setSalesChannel(request.salesChannel() != null && !request.salesChannel().isBlank()
                 ? request.salesChannel().toUpperCase(Locale.ROOT)
                 : "ECOMMERCE");
-        order.setStatus(OrderStatus.CREATED.name());
+        /*
+         * PENDING_PAYMENT, not CREATED: the order is waiting for the customer to pay, and that
+         * is the state which says so. Nothing ever entered it — the only route was the payment
+         * saga stepping through on the way to PAID — so a transfer order sat in CREATED for its
+         * whole life and the admin list could not tell it from one placed a second ago.
+         *
+         * Mirrors CreateOrderUseCase in the monolith. Both codebases write this table; a change
+         * to one that skips the other is how five defects got here.
+         */
+        order.setStatus(OrderStatus.PENDING_PAYMENT.name());
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
         order.clearItems();

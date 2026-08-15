@@ -10,6 +10,7 @@ import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
+import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
@@ -146,6 +147,18 @@ public class CreateOrderUseCase {
             // Provenance, so a later hard delete of the code cannot erase which order used it.
             order.recordDiscountProvenance(evaluation.discountId(), evaluation.code());
         }
+
+        /*
+         * The order is waiting for the customer to pay, and PENDING_PAYMENT is the state that
+         * says so. Nothing ever entered it before: the only route was OrderInventorySaga stepping
+         * through on the way to PAID, so an order awaiting a bank transfer sat in CREATED for its
+         * whole life and the admin list could not tell it from one created a second ago.
+         *
+         * Set before the save rather than through UpdateOrderStatusUseCase afterwards: one write
+         * instead of two, and the status hooks there settle discounts and release inventory that
+         * this method has only just reserved.
+         */
+        order.markAsPendingPayment();
 
         Order saved = orderRepository.save(order);
 

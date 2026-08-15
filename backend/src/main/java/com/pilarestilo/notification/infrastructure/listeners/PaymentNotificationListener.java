@@ -3,6 +3,7 @@ package com.pilarestilo.notification.infrastructure.listeners;
 import com.pilarestilo.notification.application.PaymentNotificationDispatcher;
 import com.pilarestilo.payment.domain.events.PaymentConfirmed;
 import com.pilarestilo.payment.domain.events.PaymentRejected;
+import com.pilarestilo.payment.domain.events.PaymentSubmitted;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -27,5 +28,10 @@ public class PaymentNotificationListener {
     @EventListener
     public void onPaymentRejected(PaymentRejected event) {
         dispatcher.onPaymentRejected(event);
+    }
+
+    @EventListener
+    public void onPaymentSubmitted(PaymentSubmitted event) {
+        dispatcher.onPaymentSubmitted(event);
     }
 }
