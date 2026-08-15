@@ -38,6 +38,7 @@ public class ProductMapper {
                 product.getAvgRating(),
                 product.getReviewCount(),
                 product.getShippingOriginZone().name(),
+                product.getVariantType() == null ? null : product.getVariantType().name(),
                 sizeStocks,
                 slugs,
                 categoryTypes,

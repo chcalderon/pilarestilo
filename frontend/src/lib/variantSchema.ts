@@ -475,6 +475,31 @@ export function resolvePreferredCategoryType(params: {
   return pickCategoryType(selectedTypes) ?? selected[0]?.categoryType ?? 'GENERIC';
 }
 
-export function getProductVariantSchema(product?: Pick<ProductDto, 'categoryTypes'> | null): VariantSchema {
+/**
+ * The attribute pair a product's variants use.
+ *
+ * <p>An explicit `variantType` wins. Without one the type is inferred from the categories, which
+ * is what every product did before an admin could state it — and why moving a product between
+ * categories used to relabel its variants without anyone asking.
+ */
+export function getProductVariantSchema(
+  product?: Pick<ProductDto, 'categoryTypes' | 'variantType'> | null
+): VariantSchema {
+  const stated = product?.variantType;
+  if (stated && stated in SCHEMAS) {
+    return SCHEMAS[stated as CategoryType];
+  }
   return getVariantSchema(pickCategoryType(product?.categoryTypes));
+}
+
+/** What the product would use if nobody stated a type. Shown as the default in the admin form. */
+export function inferVariantTypeFromCategories(
+  categoryTypes: CategoryType[] | undefined
+): CategoryType {
+  return pickCategoryType(categoryTypes) ?? 'GENERIC';
+}
+
+/** Every schema an admin can choose, in the order the picker lists them. */
+export function listVariantSchemas(): VariantSchema[] {
+  return Object.values(SCHEMAS);
 }

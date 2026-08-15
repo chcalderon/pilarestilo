@@ -50,7 +50,8 @@ public class ProductController {
                 request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
                 request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(), request.stock(),
-                request.active(), request.categoryIds(), toVariantInputs(request.variants())
+                request.active(), request.categoryIds(), toVariantInputs(request.variants()),
+                request.variantType()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
@@ -93,7 +94,8 @@ public class ProductController {
                 id, request.name(), request.description(), request.priceAmount(), request.priceCurrency(),
                 request.listPriceAmount(), request.listPriceCurrency(),
                 request.imageUrl(), request.condition(), request.brand(),
-                request.stock(), request.active(), request.categoryIds(), toVariantInputs(request.variants())
+                request.stock(), request.active(), request.categoryIds(), toVariantInputs(request.variants()),
+                request.variantType()
         );
     }
 

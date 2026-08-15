@@ -11,6 +11,7 @@ import {
   type ProductDto,
   type CreateProductRequest,
   type CategoryDto,
+  type CategoryType,
   type ProductVariantDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
@@ -22,6 +23,7 @@ import {
   getSecondaryAttribute,
   getVariantSchema,
   legacyVariantToSelections,
+  listVariantSchemas,
   normalizeAttributeValues,
   resolvePreferredCategoryType,
   selectionsToLegacyVariant,
@@ -195,6 +197,8 @@ const EMPTY_FORM = {
   brand: '',
   stock: '1',
   active: true,
+  /** '' means "inherit from the categories", which is how every product behaved before V69. */
+  variantType: '' as CategoryType | '',
 };
 
 type VariantRow = {
@@ -350,7 +354,16 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     }),
     [product?.categoryTypes, selectedCatIds, categories],
   );
-  const variantSchema = useMemo(() => getVariantSchema(resolvedCategoryType), [resolvedCategoryType]);
+  /*
+   * A stated type wins over the one the categories imply. Leaving it on "inherit" keeps the old
+   * behaviour, where moving a product to another category relabelled its variants — fine when
+   * that is what the admin wants, surprising when it is not, which is why it is now a choice.
+   */
+  const effectiveVariantType = form.variantType || resolvedCategoryType;
+  const variantSchema = useMemo(
+    () => getVariantSchema(effectiveVariantType),
+    [effectiveVariantType]
+  );
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
   const previousSchemaRef = useRef<VariantSchema>(variantSchema);
@@ -454,6 +467,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
+        /* Blank keeps it inherited, which is what a product saved before V69 has. */
+        variantType: (product.variantType ?? '') as CategoryType | '',
       };
       const nextRows = toVariantRows(reconciledRows, variantSchema);
       setForm(nextForm);
@@ -519,6 +534,8 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
+        /* Blank keeps it inherited, which is what a product saved before V69 has. */
+        variantType: (product.variantType ?? '') as CategoryType | '',
       };
       const fixedIds = withAncestors(ids, categories);
       setSelectedCatIds(fixedIds);
@@ -714,6 +731,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: variantTotalStock,
         active: form.active,
         categoryIds: selectedCatIds,
+        variantType: form.variantType || undefined,
         variants: normalizedVariants,
       };
 
@@ -1022,6 +1040,35 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
           </div>
 
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
+            <div>
+              <label htmlFor="product-variant-type" className={labelClass}>
+                Tipo de variante
+              </label>
+              <select
+                id="product-variant-type"
+                value={form.variantType}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, variantType: e.target.value as CategoryType | '' }))
+                }
+                className={inputClass}
+              >
+                <option value="">
+                  Según la categoría ({getVariantSchema(resolvedCategoryType).attributes[0].label}
+                  {' / '}
+                  {getVariantSchema(resolvedCategoryType).attributes[1].label})
+                </option>
+                {listVariantSchemas().map((schema) => (
+                  <option key={schema.key} value={schema.key}>
+                    {schema.attributes[0].label} / {schema.attributes[1].label}
+                  </option>
+                ))}
+              </select>
+              <p className="font-sans text-[0.68rem] text-pe-charcoal/60 dark:text-[#E8DCC8]/50 mt-1">
+                Define los dos campos de cada variante. Si lo dejas en «según la categoría», cambia
+                solo cuando cambies la categoría del producto.
+              </p>
+            </div>
+
             <div className="flex items-center justify-between">
               <p className={labelClass + ' mb-0'}>{variantSchema.title}</p>
               <button

@@ -26,6 +26,8 @@ public record ProductDto(
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,
         List<String> categoryTypes,
+        /** Null when unstated; the storefront then derives it from categoryTypes. */
+        String variantType,
         List<VariantDto> variants
 ) {
     public record SizeStockDto(String size, int stock) {}

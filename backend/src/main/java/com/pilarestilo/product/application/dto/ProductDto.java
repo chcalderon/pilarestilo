@@ -23,6 +23,8 @@ public record ProductDto(
         BigDecimal avgRating,
         int reviewCount,
         String shippingOriginZone,
+        /** Null when the admin has not stated one; the storefront then derives it from the categories. */
+        String variantType,
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,
         List<String> categoryTypes,
