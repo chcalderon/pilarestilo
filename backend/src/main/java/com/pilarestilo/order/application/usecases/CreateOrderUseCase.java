@@ -10,7 +10,6 @@ import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
-import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
