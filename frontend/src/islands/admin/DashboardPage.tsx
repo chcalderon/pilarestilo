@@ -91,6 +91,69 @@ function PaymentsAwaitingCard({ count }: { count: number }) {
   );
 }
 
+/**
+ * The shortcuts a role can actually use.
+ *
+ * <p>Filtered rather than shown-and-denied: a link that leads to a permission error teaches
+ * nothing, and the sidebar already hides what a role cannot reach. Every role gets its own
+ * short list instead of one list that is mostly wrong for everyone but the admin.
+ */
+const QUICK_ACTIONS: Record<string, Array<{ href: string; label: string; sub: string }>> = {
+  ADMIN: [
+    { href: '/admin/products', label: 'Gestionar productos', sub: 'Crear, editar, eliminar' },
+    { href: '/admin/publicaciones', label: 'Publicaciones IA', sub: 'Lotes, assets y campañas n8n' },
+    { href: '/admin/categories', label: 'Gestionar categorías', sub: 'Árbol de navegación' },
+    { href: '/admin/reviews', label: 'Moderar reseñas', sub: 'Aprobar o rechazar' },
+    { href: '/admin/payments', label: 'Revisar pagos', sub: 'Aprobar comprobantes' },
+    { href: '/admin/users', label: 'Gestionar usuarios', sub: 'Clientes y trabajadores' },
+  ],
+  SUPERVISOR: [
+    { href: '/admin/products', label: 'Gestionar productos', sub: 'Crear, editar, eliminar' },
+    { href: '/admin/reviews', label: 'Moderar reseñas', sub: 'Aprobar o rechazar' },
+    { href: '/admin/payments', label: 'Ver pagos', sub: 'Solo consulta' },
+    { href: '/admin/despachos', label: 'Despachos', sub: 'Seguimiento de envíos' },
+  ],
+  ADMINISTRACION: [
+    { href: '/admin/payments', label: 'Revisar pagos', sub: 'Aprobar comprobantes' },
+    { href: '/admin/users', label: 'Gestionar usuarios', sub: 'Clientes y trabajadores' },
+    { href: '/admin/caja', label: 'Caja', sub: 'Aperturas y cierres' },
+  ],
+  SELLER: [
+    { href: '/admin/caja', label: 'Mi caja', sub: 'Abrir, cerrar, movimientos' },
+    { href: '/admin/products', label: 'Ver productos', sub: 'Catálogo y stock' },
+  ],
+  DESPACHADOR: [
+    { href: '/admin/despachos', label: 'Mis despachos', sub: 'Pendientes y en progreso' },
+  ],
+};
+
+function QuickActions({ role }: { role: string }) {
+  const links = QUICK_ACTIONS[role] ?? [];
+  if (links.length === 0) return null;
+
+  return (
+    <div>
+      <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--pe-muted)] mb-4">
+        Accesos rápidos
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {links.map(link => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="block border border-[var(--pe-border)] p-4 transition-colors
+              hover:border-[var(--pe-rose)]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pe-rose)]"
+          >
+            <p className="text-sm font-medium">{link.label}</p>
+            <p className="text-xs text-[var(--pe-muted)] mt-0.5">{link.sub}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SkeletonCard() {
   return (
     <div className="border border-[var(--pe-border)] p-4 animate-pulse">
@@ -264,6 +327,8 @@ export default function DashboardPage() {
       {data.role === "SELLER" && <SellerDashboard data={data as SellerData} />}
       {data.role === "DESPACHADOR" && <DespachadorDashboard data={data as DespachadorData} />}
       {data.role === "ADMINISTRACION" && <AdministracionDashboard data={data as AdministracionData} />}
+      {/* Figures first, then where to go about them. */}
+      <QuickActions role={data.role} />
     </div>
   );
 }

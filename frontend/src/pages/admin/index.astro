@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import AdminDashboard from '../../islands/admin/AdminDashboard';
+import DashboardPage from '../../islands/admin/DashboardPage';
 ---
 
 <AdminLayout title="Dashboard">
@@ -11,5 +11,5 @@ import AdminDashboard from '../../islands/admin/AdminDashboard';
     <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Dashboard</h1>
   </div>
 
-  <AdminDashboard client:load />
+  <DashboardPage client:load />
 </AdminLayout>
