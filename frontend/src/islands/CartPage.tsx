@@ -26,6 +26,8 @@ const labels = {
     removeUnavailable: 'Quitar del carrito',
     findReplacement: 'Ver alternativas',
     stockAdjusted: 'Este producto ya no está disponible.',
+    needsVariantHint: 'Este producto se vende por talla y esta línea no tiene una. Quítala y vuelve a agregarlo eligiendo la talla.',
+    chooseSize: 'Elegir talla',
     resolveStockFirst: 'Resuelve los productos sin stock para continuar.',
     unavailableBanner: 'Un producto de tu carrito ya no está disponible.',
     unavailableBannerPlural: 'productos de tu carrito ya no están disponibles.',
@@ -46,6 +48,8 @@ const labels = {
     removeUnavailable: 'Remove from cart',
     findReplacement: 'See alternatives',
     stockAdjusted: 'This product is no longer available.',
+    needsVariantHint: 'This product is sold by size and this line has none. Remove it and add it again choosing a size.',
+    chooseSize: 'Choose a size',
     resolveStockFirst: 'Resolve the out-of-stock items to continue.',
     unavailableBanner: 'One item in your cart is no longer available.',
     unavailableBannerPlural: 'items in your cart are no longer available.',
@@ -259,10 +263,19 @@ export default function CartPage({ locale }: Props) {
                           aria-live="polite"
                           className="mt-2 border border-[#cb6070]/45 bg-[#ffe9ec] px-2.5 py-2"
                         >
+                          {/*
+                            * One message per reason. NEEDS_VARIANT used to fall through to the
+                            * "Disponible: 0" branch, so a line whose only problem was a missing
+                            * size announced that the product had no stock — contradicting the
+                            * badge right above it and sending the customer to look for a
+                            * replacement that was never needed.
+                            */}
                           <p className="font-sans text-xs text-[#732731]">
                             {conflict.type === 'SOLD_OUT'
                               ? l.stockAdjusted
-                              : `${l.availableStockPrefix}: ${conflict.availableQty}`}
+                              : conflict.type === 'NEEDS_VARIANT'
+                                ? l.needsVariantHint
+                                : `${l.availableStockPrefix}: ${conflict.availableQty}`}
                           </p>
                           <div className="mt-2 flex items-center gap-2">
                             <button
@@ -277,10 +290,14 @@ export default function CartPage({ locale }: Props) {
                               {l.removeUnavailable}
                             </button>
                             <a
-                              href={`/${locale}/products`}
+                              href={
+                                conflict.type === 'NEEDS_VARIANT'
+                                  ? `/${locale}/products/${item.productId ?? item.id.split('::')[0]}`
+                                  : `/${locale}/products`
+                              }
                               className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-pe-black/20 text-pe-charcoal/70 hover:border-pe-gold hover:text-pe-gold transition-colors"
                             >
-                              {l.findReplacement}
+                              {conflict.type === 'NEEDS_VARIANT' ? l.chooseSize : l.findReplacement}
                             </a>
                           </div>
                         </div>

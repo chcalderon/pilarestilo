@@ -148,12 +148,30 @@ export async function verifyStockForItem(
     }
 
     /*
-     * Falling back to products.stock here is what let a variant-less line pass. The aggregate
-     * counts every variant, so a line with no size looked available and was then refused by
-     * inventory-service, which requires colour+size whenever a product has variants. The
+     * One variant is not a choice. Twelve of the seventeen products in this catalogue are a
+     * single Base/UNICO row, so a line naming no variant is unambiguous — it can only mean that
+     * one. Resolve it rather than asking the customer to pick from a list of one.
+     */
+    if (variants.length === 1) {
+      const only = variants[0];
+      if (requestedQty <= only.stockAvailable) {
+        return { ok: true, verified: true };
+      }
+      return {
+        ok: false,
+        reason: 'INSUFFICIENT',
+        availableQty: only.stockAvailable,
+        productName: product.name,
+      };
+    }
+
+    /*
+     * Several variants and none named. Falling back to products.stock here is what let such a
+     * line pass: the aggregate counts every variant, so it looked available and was then refused
+     * by inventory-service, which requires colour+size whenever a product has variants. The
      * customer only found out at the pay button.
      */
-    if (variants.length > 0) {
+    if (variants.length > 1) {
       return { ok: false, reason: 'NEEDS_VARIANT', productName: product.name };
     }
 
