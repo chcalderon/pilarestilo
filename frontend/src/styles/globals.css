@@ -35,6 +35,9 @@
     --pe-white: var(--pe-surface-card);
     --pe-black: var(--pe-ink);
     --pe-charcoal: var(--pe-muted);
+    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-charcoal/55. */
+    --pe-charcoal-rgb: 58 58 58;
+    --pe-black-rgb: 26 26 26;
   }
 
   html[data-theme='dark'] {
@@ -56,6 +59,9 @@
     --pe-white: var(--pe-surface-card);
     --pe-black: var(--pe-ink);
     --pe-charcoal: var(--pe-muted);
+    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-charcoal/55. */
+    --pe-charcoal-rgb: 240 230 223;
+    --pe-black-rgb: 248 244 239;
     color-scheme: dark;
   }
 

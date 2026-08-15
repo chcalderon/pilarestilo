@@ -1245,7 +1245,7 @@ export default function AccountPage({ locale }: Props) {
                     void handleChangePassword();
                   }}
                   disabled={passwordSaving}
-                  className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-charcoal transition-colors disabled:opacity-60"
+                  className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-[#3A3A3A] transition-colors disabled:opacity-60"
                 >
                   {passwordSaving ? (es ? 'Actualizando...' : 'Updating...') : (es ? 'Actualizar contraseña' : 'Update password')}
                 </button>
