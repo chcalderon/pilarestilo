@@ -75,17 +75,25 @@ function PaymentsAwaitingCard({ count }: { count: number }) {
   return (
     <a
       href="/admin/payments"
-      className="border border-[var(--pe-rose)] bg-[var(--pe-rose)]/8 p-4 flex flex-col gap-1
-        transition-colors hover:bg-[var(--pe-rose)]/15
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pe-rose)]"
+      /*
+       * A left rule and a filled count, not a tinted background. The tint was a light-mode
+       * value and vanished on the dark panel, so the one card meant to be noticed read as the
+       * quietest. A border and a solid figure carry in both themes without a second palette.
+       */
+      className="group border border-[var(--pe-border)] border-l-4 border-l-[#cb6070] p-4
+        flex flex-col gap-1 transition-colors
+        hover:border-[#cb6070] hover:bg-[#cb6070]/10
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#cb6070]"
     >
-      <span className="text-[10px] tracking-widest uppercase text-[var(--pe-rose)] flex items-center gap-1.5">
+      <span className="text-[10px] tracking-widest uppercase text-[#cb6070] flex items-center gap-1.5">
         <AlertCircle size={11} aria-hidden="true" />
         Pagos por revisar
       </span>
-      <span className="text-2xl font-bold font-[Cormorant_Garamond,serif]">{count}</span>
-      <span className="text-xs text-[var(--pe-muted)]">
-        {count === 1 ? 'comprobante esperando' : 'comprobantes esperando'} · revisar
+      <span className="text-2xl font-bold font-[Cormorant_Garamond,serif] text-[#cb6070]">
+        {count}
+      </span>
+      <span className="text-xs text-[var(--pe-muted)] group-hover:text-[#cb6070] transition-colors">
+        {count === 1 ? 'comprobante esperando' : 'comprobantes esperando'} →
       </span>
     </a>
   );
@@ -171,7 +179,7 @@ function AdminDashboard({ data }: { data: AdminData }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         <StatCard label="Ventas hoy" value={formatCLP(data.dailySales.amount)} sub={`${data.dailySales.orderCount} órdenes`} />
         <StatCard label="Ventas semana" value={formatCLP(data.weeklySales.amount)} sub={`${data.weeklySales.orderCount} órdenes`} />
         <StatCard label="Cajas abiertas" value={String(data.openCashRegisters)} />
@@ -181,6 +189,15 @@ function AdminDashboard({ data }: { data: AdminData }) {
 
       <div className="border border-[var(--pe-border)] p-4">
         <p className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)] mb-4">Ingresos últimos 7 días</p>
+        {chartData.every(d => d.amount === 0) ? (
+          /* An empty axis frame tells the reader nothing and looks broken. Say why it is empty. */
+          <div className="h-[200px] flex flex-col items-center justify-center gap-1 text-center">
+            <p className="text-sm text-[var(--pe-muted)]">Sin ventas en los últimos 7 días</p>
+            <p className="text-xs text-[var(--pe-muted)]/70">
+              El gráfico aparece con la primera venta pagada.
+            </p>
+          </div>
+        ) : (
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--pe-border)" />
@@ -190,6 +207,7 @@ function AdminDashboard({ data }: { data: AdminData }) {
             <Bar dataKey="amount" fill="var(--pe-rose, #B76E79)" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        )}
       </div>
 
       {data.topProducts.length > 0 && (
@@ -321,8 +339,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold font-[Cormorant_Garamond,serif]">Dashboard</h1>
+    /*
+     * 5xl left a column of empty panel to the right and squeezed five cards into 1024px. The
+     * sidebar already sets the reading width; the content should use what is left of it.
+     */
+    <div className="p-6 max-w-7xl space-y-6">
       {(data.role === "ADMIN" || data.role === "SUPERVISOR") && <AdminDashboard data={data as AdminData} />}
       {data.role === "SELLER" && <SellerDashboard data={data as SellerData} />}
       {data.role === "DESPACHADOR" && <DespachadorDashboard data={data as DespachadorData} />}
