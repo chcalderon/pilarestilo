@@ -74,6 +74,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public int syncProductStockFromVariants(UUID productId) {
+        return jpaRepository.syncProductStockFromVariants(productId);
+    }
+
+    @Override
     public int atomicReserveVariantStock(UUID productId, String color, String size, int qty) {
         return jpaRepository.atomicReserveVariantStock(productId, color, size, qty);
     }

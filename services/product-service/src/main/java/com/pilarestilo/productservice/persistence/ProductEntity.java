@@ -74,6 +74,14 @@ public class ProductEntity {
     @Column(name = "shipping_origin_zone", nullable = false, length = 16)
     private String shippingOriginZone;
 
+    /**
+     * Which attribute pair this product's variants use. Null means the storefront derives it
+     * from the categories, which is what every row did before V69. Stored, never interpreted
+     * here — this service only hands it to the caller.
+     */
+    @Column(name = "variant_type", length = 20)
+    private String variantType;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_size_stocks", joinColumns = @JoinColumn(name = "product_id"))
     private List<ProductSizeStockEmbeddable> sizeStocks = new ArrayList<>();
@@ -168,5 +176,13 @@ public class ProductEntity {
 
     public Set<CategoryEntity> getCategories() {
         return categories;
+    }
+
+    public String getVariantType() {
+        return variantType;
+    }
+
+    public void setVariantType(String variantType) {
+        this.variantType = variantType;
     }
 }

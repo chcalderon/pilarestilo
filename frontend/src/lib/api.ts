@@ -78,6 +78,8 @@ export interface ProductDto {
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
   categoryTypes?: CategoryType[];
+  /** Stated by the admin; null means the storefront derives it from categoryTypes. */
+  variantType?: CategoryType | null;
   variants?: ProductVariantDto[];
 }
 
@@ -564,6 +566,8 @@ export interface CreateProductRequest {
   stock: number;
   active: boolean;
   categoryIds?: string[];
+  /** Omit to leave it derived from the categories. */
+  variantType?: CategoryType;
   variants?: ProductVariantDto[];
 }
 

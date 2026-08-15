@@ -75,4 +75,25 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
                                   @Param("color") String color,
                                   @Param("size") String size,
                                   @Param("qty") int qty);
+
+    /**
+     * Recomputes products.stock from the variant rows.
+     *
+     * <p>products.stock is a cache of a value product_variants already holds — Product derives it
+     * the same way in memory. Only inventory-service kept the stored copy current, so every
+     * reservation taken locally left it frozen. It gates the buy button on the product page
+     * (`stock <= 0` blocks the whole product), so drifting to zero made a product with stock
+     * unbuyable, with nothing in the variants table to explain why.
+     */
+    @Modifying
+    @Query(value = """
+      UPDATE products p
+         SET stock = COALESCE((
+                 SELECT SUM(v.stock_on_hand - v.stock_reserved)
+                   FROM product_variants v
+                  WHERE v.product_id = p.id), p.stock)
+       WHERE p.id = :productId
+         AND EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id)
+      """, nativeQuery = true)
+    int syncProductStockFromVariants(@Param("productId") UUID productId);
 }

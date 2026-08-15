@@ -1,5 +1,6 @@
 package com.pilarestilo.product.application.usecases;
 
+import com.pilarestilo.category.domain.enums.CategoryType;
 import com.pilarestilo.product.application.dto.ProductDto;
 import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.product.application.mappers.ProductMapper;
@@ -49,6 +50,22 @@ public class UpdateProductUseCase {
                                String imageUrl, String condition, String brand, int stock,
                                boolean active, Set<UUID> categoryIds,
                                List<ProductVariantInput> variants) {
+        return execute(id, name, description, priceAmount, priceCurrency, listPriceAmount,
+                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds,
+                variants, null);
+    }
+
+    /**
+     * @param variantType which attribute pair the variants use, or null to leave it derived from
+     *                    the categories — see Product.variantType.
+     */
+    @Transactional
+    public ProductDto execute(UUID id, String name, String description, BigDecimal priceAmount, String priceCurrency,
+                               BigDecimal listPriceAmount, String listPriceCurrency,
+                               String imageUrl, String condition, String brand, int stock,
+                               boolean active, Set<UUID> categoryIds,
+                               List<ProductVariantInput> variants,
+                               String variantType) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product not found: " + id));
 
@@ -69,11 +86,22 @@ public class UpdateProductUseCase {
         if (variants != null) {
             product.setVariants(variants.stream().map(this::toVariant).toList());
         }
+        product.setVariantType(parseVariantType(variantType));
         Product saved = productRepository.save(product);
 
         eventPublisher.publish(new ProductUpdated(saved.getId(), saved.getName()));
 
         return ProductMapper.toDto(saved);
+    }
+
+    /** Blank and null both mean "not stated", which is the storefront's cue to derive it. */
+    private CategoryType parseVariantType(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return CategoryType.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new DomainException("Unknown variant type: " + raw);
+        }
     }
 
     private ProductVariant toVariant(ProductVariantInput input) {

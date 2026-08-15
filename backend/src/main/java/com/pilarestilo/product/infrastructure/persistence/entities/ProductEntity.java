@@ -1,5 +1,6 @@
 package com.pilarestilo.product.infrastructure.persistence.entities;
 
+import com.pilarestilo.category.domain.enums.CategoryType;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
 import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.enums.ShippingOriginZone;
@@ -71,6 +72,11 @@ public class ProductEntity {
     @Convert(converter = ShippingOriginZoneAttributeConverter.class)
     private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
 
+    /** Null means derive it from the categories; see Product.variantType. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "variant_type", length = 20)
+    private CategoryType variantType;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "product_size_stocks",
@@ -98,6 +104,9 @@ public class ProductEntity {
     public void setVersion(Long version) { this.version = version; }
 
     public ShippingOriginZone getShippingOriginZone() { return shippingOriginZone; }
+
+    public CategoryType getVariantType() { return variantType; }
+    public void setVariantType(CategoryType variantType) { this.variantType = variantType; }
     public void setShippingOriginZone(ShippingOriginZone shippingOriginZone) {
         this.shippingOriginZone = shippingOriginZone;
     }

@@ -57,6 +57,7 @@ final class ProductMapper {
                 sizeStocks,
                 categorySlugs,
                 categoryTypes,
+                entity.getVariantType(),
                 variants
         );
     }
