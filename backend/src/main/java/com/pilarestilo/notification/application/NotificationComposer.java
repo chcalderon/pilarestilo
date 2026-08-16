@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,9 +76,46 @@ public class NotificationComposer {
                 NotificationMessage.TRANSFER_INSTRUCTIONS,
                 "Pedido " + reference + " — datos para tu transferencia",
                 body.toString(),
-                null,
+                transferInstructionsHtml(payment, deadline, reference, amount),
                 data,
                 order.getId());
+    }
+
+    /**
+     * The one message a customer works from rather than reads: they copy the account number, they
+     * type the reference into the transfer, and they need the amount to the peso.
+     *
+     * <p>So the amount is the highlight, the bank details are a table of one fact per row instead of
+     * a paragraph to pick apart, and the deadline is a note rather than another sentence in the
+     * middle. The wording is the plain-text version's, unchanged — including "sube tu comprobante"
+     * rather than "transfiere", which is the thing that actually stops the clock.
+     */
+    private String transferInstructionsHtml(Payment payment,
+                                            Instant deadline,
+                                            String reference,
+                                            String amount) {
+        EmailLayout.Builder email = EmailLayout.titled("Datos para tu transferencia")
+                .paragraph("Tu pedido " + reference + " está reservado. Transfiere el monto exacto "
+                        + "a la cuenta de abajo.")
+                .highlight("Monto a transferir", amount)
+                .details(List.of(
+                        new String[]{"Titular", payment.getTransferAccountHolderName()},
+                        new String[]{"Banco", payment.getTransferBankName()},
+                        new String[]{"Tipo de cuenta", payment.getTransferAccountType()},
+                        new String[]{"N° de cuenta", payment.getTransferAccountNumber()},
+                        new String[]{"Correo", payment.getTransferAccountEmail()},
+                        new String[]{"Mensaje", reference}))
+                .paragraph("Escribe " + reference + " en el mensaje de la transferencia para que "
+                        + "podamos identificar tu pago.");
+
+        if (deadline != null) {
+            email.note("Sube tu comprobante desde Mi Cuenta antes de las "
+                    + formatDeadline(deadline) + ". Sin comprobante, el pedido puede cancelarse "
+                    + "y el stock quedará liberado.");
+        } else {
+            email.paragraph("Sube tu comprobante desde Mi Cuenta cuando hayas hecho la transferencia.");
+        }
+        return email.build();
     }
 
     public NotificationMessage orderCancelled(Order order, String reason) {
@@ -98,7 +136,7 @@ public class NotificationComposer {
                 NotificationMessage.ORDER_CANCELLED,
                 "Pedido " + reference + " cancelado",
                 body,
-                null,
+                orderCancelledHtml(reference, reason),
                 data,
                 order.getId());
     }
@@ -122,7 +160,11 @@ public class NotificationComposer {
                 "Pedido " + reference + " confirmado",
                 "Tu pedido " + reference + " fue creado correctamente.\n"
                         + "Te notificaremos por este canal cuando avance.\n",
-                null,
+                EmailLayout.titled("Recibimos tu pedido")
+                        .paragraph("Gracias por comprar en Pilar Estilo. Ya tenemos tu pedido y te "
+                                + "avisaremos por aquí en cada paso.")
+                        .highlight("Número de pedido", reference)
+                        .build(),
                 Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
@@ -136,6 +178,24 @@ public class NotificationComposer {
                 null,
                 Map.of("paymentId", paymentId),
                 paymentId);
+    }
+
+    /**
+     * A cancellation says what happened and what is still possible, in that order.
+     *
+     * <p>The reason is only printed when there is one: an empty "Motivo:" reads as the shop having
+     * cancelled the order for no stated cause.
+     */
+    private String orderCancelledHtml(String reference, String reason) {
+        EmailLayout.Builder email = EmailLayout.titled("Tu pedido fue cancelado")
+                .highlight("Número de pedido", reference);
+        Optional.ofNullable(reason)
+                .filter(r -> !r.isBlank())
+                .ifPresent(r -> email.note("Motivo: " + r));
+        return email
+                .paragraph("Los productos volvieron a estar disponibles. Si aún quieres comprarlos, "
+                        + "puedes hacer un nuevo pedido cuando quieras.")
+                .build();
     }
 
     /*
@@ -152,7 +212,11 @@ public class NotificationComposer {
                 "Pedido " + reference + " en preparación",
                 "Tu pedido " + reference + " está en preparación.\n"
                         + "Te avisaremos cuando sea despachado.\n",
-                null,
+                EmailLayout.titled("Estamos preparando tu pedido")
+                        .paragraph("Tu pago quedó confirmado y ya estamos armando el paquete.")
+                        .highlight("Número de pedido", reference)
+                        .paragraph("Te escribimos de nuevo apenas salga.")
+                        .build(),
                 Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
@@ -165,7 +229,11 @@ public class NotificationComposer {
                 "Pedido " + reference + " enviado",
                 "Tu pedido " + reference + " ya fue enviado.\n"
                         + "Pronto llegará a destino.\n",
-                null,
+                EmailLayout.titled("Tu pedido va en camino")
+                        .paragraph("Ya salió de nuestras manos y está en viaje.")
+                        .highlight("Número de pedido", reference)
+                        .paragraph("Cuando llegue, avísanos desde tu cuenta para cerrar el pedido.")
+                        .build(),
                 Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
@@ -191,7 +259,11 @@ public class NotificationComposer {
                 "Tu pedido " + reference + " quedó como entregado.\n"
                         + "Si aún no lo recibiste, respóndenos y lo revisamos.\n\n"
                         + "Nos ayudarías mucho contándonos qué te pareció.\n",
-                null,
+                EmailLayout.titled("Tu pedido quedó como entregado")
+                        .highlight("Número de pedido", reference)
+                        .note("Si aún no lo recibiste, respóndenos este correo y lo revisamos.")
+                        .paragraph("Nos ayudarías mucho contándonos qué te pareció.")
+                        .build(),
                 Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }

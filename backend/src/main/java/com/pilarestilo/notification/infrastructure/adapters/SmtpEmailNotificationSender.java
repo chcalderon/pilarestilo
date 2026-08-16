@@ -68,7 +68,8 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             UUID referenceId,
             NotificationRecipient recipient,
             String subject,
-            String body
+            String body,
+            String htmlBody
     ) {
         if (!recipient.allowsEmail()) {
             log.info(
@@ -100,11 +101,19 @@ public class SmtpEmailNotificationSender implements NotificationSender {
 
         try {
             var message = sender.createMimeMessage();
-            var helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
+            // Multipart whenever there is an HTML body, so both parts travel together: the client
+            // shows the designed one and a text-only reader still gets the whole message. It used
+            // to force text and drop the HTML on the floor.
+            boolean hasHtml = htmlBody != null && !htmlBody.isBlank();
+            var helper = new MimeMessageHelper(message, hasHtml, StandardCharsets.UTF_8.name());
             helper.setFrom(config.fromEmail(), config.senderName());
             helper.setTo(toEmail);
             helper.setSubject(subject);
-            helper.setText(body, false);
+            if (hasHtml) {
+                helper.setText(body, htmlBody);
+            } else {
+                helper.setText(body, false);
+            }
             sender.send(message);
             log.info("[EMAIL:SMTP] template={} to={} referenceId={}", template, toEmail, referenceId);
         } catch (Exception ex) {
@@ -287,6 +296,6 @@ public class SmtpEmailNotificationSender implements NotificationSender {
     @Override
     public void send(NotificationMessage message, NotificationRecipient recipient) {
         send(message.templateKey(), message.referenceId(), recipient,
-                message.subject(), message.bodyText());
+                message.subject(), message.bodyText(), message.bodyHtml());
     }
 }
