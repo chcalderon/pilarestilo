@@ -42,6 +42,15 @@ public final class EmailLayout {
     private static final String SERIF = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
     private static final String SANS = "Montserrat, 'Helvetica Neue', Helvetica, Arial, sans-serif";
 
+    /**
+     * Ties the {@code <img src="cid:…">} in the header to the part the sender attaches. Both sides
+     * have to agree on this string, so it lives here and the adapter reads it.
+     */
+    public static final String LOGO_CONTENT_ID = "pilar-estilo-logo";
+
+    /** Classpath location of that part. */
+    public static final String LOGO_RESOURCE = "email/pilar-estilo-logo.png";
+
     private EmailLayout() {
     }
 
@@ -149,11 +158,24 @@ public final class EmailLayout {
                     + "</table></td></tr></table></body></html>";
         }
 
+        /**
+         * The shop's mark, attached to the message rather than linked.
+         *
+         * <p>A remote {@code https://} image is blocked by default in Gmail, Outlook and Apple
+         * Mail, so a linked logo is a grey box for most people on first open. A {@code cid:}
+         * reference points at a part of the message itself and renders without asking.
+         *
+         * <p>The alt text is the shop's name, not "logo": when images are off — which is the normal
+         * state, not the exception — the header still reads Pilar Estilo. Width and height are on
+         * the tag so the layout does not jump once the image arrives.
+         */
         private String header() {
-            return "<tr><td style=\"padding:28px 32px 0;border-bottom:1px solid " + BORDER + ";\">"
-                    + "<div style=\"font-family:" + SERIF + ";font-size:20px;letter-spacing:3px;"
-                    + "text-transform:uppercase;color:" + INK + ";padding-bottom:20px;\">"
-                    + "Pilar Estilo</div></td></tr>";
+            return "<tr><td style=\"padding:28px 32px 24px;border-bottom:1px solid " + BORDER + ";\">"
+                    + "<img src=\"cid:" + LOGO_CONTENT_ID + "\" alt=\"Pilar Estilo\" "
+                    + "width=\"220\" height=\"74\" "
+                    + "style=\"display:block;width:220px;max-width:60%;height:auto;border:0;"
+                    + "font-family:" + SERIF + ";font-size:20px;letter-spacing:3px;color:" + INK + ";\">"
+                    + "</td></tr>";
         }
 
         private String footer() {

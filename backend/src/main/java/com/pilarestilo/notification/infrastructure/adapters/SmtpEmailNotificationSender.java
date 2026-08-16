@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.application.EmailLayout;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
@@ -9,6 +10,7 @@ import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryp
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -111,6 +113,7 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             helper.setSubject(subject);
             if (hasHtml) {
                 helper.setText(body, htmlBody);
+                attachLogo(helper);
             } else {
                 helper.setText(body, false);
             }
@@ -124,6 +127,29 @@ public class SmtpEmailNotificationSender implements NotificationSender {
                     referenceId,
                     ex.getMessage()
             );
+        }
+    }
+
+    /**
+     * Attaches the logo the header points at with {@code cid:}.
+     *
+     * <p>Must run after setText: MimeMessageHelper builds the multipart when the body is set, and
+     * an inline part added before that has nothing to attach to.
+     *
+     * <p>A missing or unreadable file is a warning, not a failure. The alt text already carries the
+     * shop's name, so the message is still complete without it — losing the whole email over a
+     * decoration would be the worse trade.
+     */
+    private void attachLogo(MimeMessageHelper helper) {
+        try {
+            ClassPathResource logo = new ClassPathResource(EmailLayout.LOGO_RESOURCE);
+            if (!logo.exists()) {
+                log.warn("[EMAIL:SMTP] logo not on the classpath at {}", EmailLayout.LOGO_RESOURCE);
+                return;
+            }
+            helper.addInline(EmailLayout.LOGO_CONTENT_ID, logo, "image/png");
+        } catch (Exception ex) {
+            log.warn("[EMAIL:SMTP] could not attach the logo: {}", ex.getMessage());
         }
     }
 

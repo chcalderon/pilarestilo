@@ -50,6 +50,25 @@ class EmailLayoutTest {
     }
 
     @Test
+    @DisplayName("the logo is attached, not linked: remote images are blocked by default")
+    void referencesTheLogoByContentId() {
+        String html = EmailLayout.titled("Pedido").build();
+
+        assertThat(html).contains("src=\"cid:" + EmailLayout.LOGO_CONTENT_ID + "\"");
+        assertThat(html).doesNotContain("src=\"http");
+    }
+
+    @Test
+    @DisplayName("with images off the header still says who sent it")
+    void logoCarriesTheShopNameAsAltText() {
+        String html = EmailLayout.titled("Pedido").build();
+
+        assertThat(html).contains("alt=\"Pilar Estilo\"");
+        // Dimensions on the tag, so the layout does not jump when the image arrives.
+        assertThat(html).contains("width=\"220\"").contains("height=\"74\"");
+    }
+
+    @Test
     @DisplayName("declares both colour schemes, so a dark client does not invert half the design")
     void declaresColorSchemes() {
         String html = EmailLayout.titled("Pedido").build();

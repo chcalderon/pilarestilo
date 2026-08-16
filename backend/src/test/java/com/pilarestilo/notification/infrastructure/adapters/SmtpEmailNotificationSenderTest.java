@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.application.EmailLayout;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
@@ -121,6 +122,26 @@ class SmtpEmailNotificationSenderTest {
         // recording override skips.
         sender.sent.saveChanges();
         assertThat(sender.sent.getContentType()).startsWith("multipart/");
+    }
+
+    @Test
+    @DisplayName("the logo travels inside the message, so no client has to fetch it")
+    void attachesTheLogoInline() throws Exception {
+        NotificationMessage withHtml = new NotificationMessage(
+                "ORDER_SHIPPED", "Pedido enviado", "Texto plano.",
+                EmailLayout.titled("Pedido").build(),
+                Map.of(), UUID.randomUUID());
+
+        sender.send(withHtml, NotificationRecipient.of(null, "cliente@correo.cl", "EMAIL"));
+
+        sender.sent.saveChanges();
+        // Spring nests the related part inside a mixed envelope, so the outer type says "mixed".
+        // Writing the message out and looking for the Content-ID is the direct evidence that the
+        // part the header points at is actually in there.
+        java.io.ByteArrayOutputStream raw = new java.io.ByteArrayOutputStream();
+        sender.sent.writeTo(raw);
+        assertThat(raw.toString(java.nio.charset.StandardCharsets.UTF_8))
+                .contains("Content-ID: <" + EmailLayout.LOGO_CONTENT_ID + ">");
     }
 
     @Test
