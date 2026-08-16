@@ -1,5 +1,7 @@
 package com.pilarestilo.inventoryservice.application;
 
+import com.pilarestilo.inventoryservice.persistence.InventoryMovementEntity;
+import com.pilarestilo.inventoryservice.persistence.InventoryMovementRepository;
 import com.pilarestilo.inventoryservice.persistence.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,10 +13,35 @@ import java.util.UUID;
 @Service
 public class InventoryCommandService {
 
-    private final ProductRepository productRepository;
+    /*
+     * The monolith maps this column with an enum, so a value it does not know would break its
+     * reads. POS sales are the monolith's channel, so only these three appear here.
+     */
+    private static final String RESERVE = "RESERVE";
+    private static final String RELEASE = "RELEASE";
+    private static final String CONFIRM = "CONFIRM";
 
-    public InventoryCommandService(ProductRepository productRepository) {
+    private final ProductRepository productRepository;
+    private final InventoryMovementRepository movementRepository;
+
+    public InventoryCommandService(ProductRepository productRepository,
+                                   InventoryMovementRepository movementRepository) {
         this.productRepository = productRepository;
+        this.movementRepository = movementRepository;
+    }
+
+    /**
+     * Writes one line of the stock ledger, with the monolith's sign convention: positive when units
+     * are put aside, negative when they leave the shelf or are handed back. The sign is direction
+     * per line, not a running total — see InventoryMovementEntity.record.
+     *
+     * <p>Recorded after the update succeeded, never before, so the ledger describes what happened
+     * rather than what was attempted. It runs inside the same transaction as the movement it
+     * describes, so neither can exist without the other.
+     */
+    private void record(String type, UUID productId, String variantColor, String variantSize, int signedQty) {
+        movementRepository.save(InventoryMovementEntity.record(
+                productId, variantColor, variantSize, type, signedQty, null, Instant.now()));
     }
 
     @Transactional
@@ -47,6 +74,7 @@ public class InventoryCommandService {
                 throw new IllegalStateException("Insufficient stock for variant: " + productId + " / " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId, Instant.now());
+            record(RESERVE, productId, variantColor, variantSize, qty);
             return;
         }
 
@@ -54,6 +82,7 @@ public class InventoryCommandService {
         if (updated == 0) {
             throw new IllegalStateException("Insufficient stock for product: " + productId);
         }
+        record(RESERVE, productId, null, null, qty);
     }
 
     @Transactional
@@ -69,10 +98,12 @@ public class InventoryCommandService {
         if (variantColor != null && variantSize != null) {
             productRepository.releaseVariantStock(productId, variantColor, variantSize, qty);
             productRepository.syncProductStockFromVariants(productId, Instant.now());
+            record(RELEASE, productId, variantColor, variantSize, -qty);
             return;
         }
 
         productRepository.releaseStock(productId, qty, Instant.now());
+        record(RELEASE, productId, null, null, -qty);
     }
 
     @Transactional
@@ -104,10 +135,13 @@ public class InventoryCommandService {
                                 + " of product " + productId);
             }
             productRepository.syncProductStockFromVariants(productId, Instant.now());
+            record(CONFIRM, productId, variantColor, variantSize, -qty);
             return;
         }
         // Non-variant products follow the legacy aggregate model, where reserving already
-        // decremented the total. A second decrement here would double-count the sale.
+        // decremented the total. A second decrement here would double-count the sale. The ledger
+        // still records it: the sale happened, and a gap in the trail would read as a lost movement.
+        record(CONFIRM, productId, null, null, -qty);
     }
 
     private void validate(UUID productId, int qty) {
