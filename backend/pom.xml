@@ -266,10 +266,23 @@
                 <rule>
                   <element>BUNDLE</element>
                   <limits>
+                    <!--
+                      Measured at verify, where unit and integration coverage are merged: 59% of
+                      lines and 38% of branches. Set just under that, so a change that removes tests
+                      or adds a large untested class fails the build instead of drifting past.
+                      It was 0.22, which guarded nothing — most of the suite could have been deleted
+                      without the build noticing. Raise these as coverage climbs; never lower them
+                      to make a build pass.
+                    -->
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.22</minimum>
+                      <minimum>0.56</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.36</minimum>
                     </limit>
                   </limits>
                 </rule>

@@ -43,7 +43,8 @@ class AutoConfirmDeliveredDispatchesUseCaseTest {
         AutoConfirmDeliveredDispatchesUseCase useCase = new AutoConfirmDeliveredDispatchesUseCase(
                 dispatchRepository,
                 updateOrderStatusUseCase,
-                fixedClock
+                fixedClock,
+                15
         );
 
         int updated = useCase.execute();

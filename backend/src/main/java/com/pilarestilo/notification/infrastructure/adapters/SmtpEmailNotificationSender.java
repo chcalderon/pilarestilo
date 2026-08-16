@@ -96,23 +96,7 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             return;
         }
 
-        JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(config.host());
-        sender.setPort(config.port());
-        if (config.username() != null && !config.username().isBlank()) {
-            sender.setUsername(config.username());
-        }
-        if (config.password() != null && !config.password().isBlank()) {
-            sender.setPassword(config.password());
-        }
-        Properties props = sender.getJavaMailProperties();
-        props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", String.valueOf(config.authEnabled()));
-        props.put("mail.smtp.starttls.enable", String.valueOf(config.starttlsEnabled()));
-        props.put("mail.smtp.ssl.enable", String.valueOf(config.sslEnabled()));
-        props.put("mail.smtp.connectiontimeout", "5000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
+        JavaMailSenderImpl sender = buildSender(config);
 
         try {
             var message = sender.createMimeMessage();
@@ -132,6 +116,36 @@ public class SmtpEmailNotificationSender implements NotificationSender {
                     ex.getMessage()
             );
         }
+    }
+
+    /**
+     * The configured mail client, as its own step so a test can supply one that records instead of
+     * connecting.
+     *
+     * <p>This was inline in the send path, which made the whole adapter untestable: every case —
+     * which address wins, whether the password decrypts, what the subject says — needed a live SMTP
+     * server to reach. Package-private rather than public: it is a seam for the test beside it, not
+     * part of the adapter's contract.
+     */
+    JavaMailSenderImpl buildSender(EffectiveConfig config) {
+        JavaMailSenderImpl sender = new JavaMailSenderImpl();
+        sender.setHost(config.host());
+        sender.setPort(config.port());
+        if (config.username() != null && !config.username().isBlank()) {
+            sender.setUsername(config.username());
+        }
+        if (config.password() != null && !config.password().isBlank()) {
+            sender.setPassword(config.password());
+        }
+        Properties props = sender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", String.valueOf(config.authEnabled()));
+        props.put("mail.smtp.starttls.enable", String.valueOf(config.starttlsEnabled()));
+        props.put("mail.smtp.ssl.enable", String.valueOf(config.sslEnabled()));
+        props.put("mail.smtp.connectiontimeout", "5000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+        return sender;
     }
 
     private EffectiveConfig resolveConfig() {
@@ -256,7 +270,8 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         return value.trim();
     }
 
-    private record EffectiveConfig(
+    /** Package-private so the test beside this class can supply a recording sender. */
+    record EffectiveConfig(
             String host,
             int port,
             String username,
