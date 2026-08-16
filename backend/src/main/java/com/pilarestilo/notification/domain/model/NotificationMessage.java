@@ -36,6 +36,7 @@ public record NotificationMessage(
     public static final String PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
     public static final String ORDER_PREPARING = "ORDER_PREPARING";
     public static final String ORDER_SHIPPED = "ORDER_SHIPPED";
+    public static final String ORDER_DELIVERED = "ORDER_DELIVERED";
     public static final String DISCOUNT_CODE_ASSIGNED = "DISCOUNT_CODE_ASSIGNED";
     /** Sent to whoever can approve payments, not to the customer. */
     public static final String PAYMENT_PROOF_SUBMITTED = "PAYMENT_PROOF_SUBMITTED";

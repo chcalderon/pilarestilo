@@ -61,6 +61,14 @@ public class InAppNotificationSender implements InAppNotificationPort {
             Map.of("orderId", orderId.toString()));
     }
 
+    @Override
+    public void notifyOrderDelivered(UUID userId, UUID orderId) {
+        save(userId, NotificationType.ORDER_DELIVERED,
+            "Pedido entregado",
+            "Tu pedido quedo como entregado. Si aun no lo recibiste, avisanos.",
+            Map.of("orderId", orderId.toString()));
+    }
+
     private void save(UUID userId, NotificationType type, String title, String body, Map<String, Object> metadata) {
         try {
             repository.save(InAppNotification.create(userId, type, title, body, metadata));

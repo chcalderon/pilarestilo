@@ -1,9 +1,11 @@
 package com.pilarestilo.dispatch.application.usecases;
 
+import com.pilarestilo.dispatch.application.DispatchOrderSummaryService;
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.enums.DispatchStatus;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -13,9 +15,12 @@ import java.util.stream.Stream;
 @Service
 public class ListDispatchesUseCase {
     private final DispatchRepository dispatchRepository;
+    private final DispatchOrderSummaryService orderSummaryService;
 
-    public ListDispatchesUseCase(DispatchRepository dispatchRepository) {
+    public ListDispatchesUseCase(DispatchRepository dispatchRepository,
+                                 DispatchOrderSummaryService orderSummaryService) {
         this.dispatchRepository = dispatchRepository;
+        this.orderSummaryService = orderSummaryService;
     }
 
     public List<DispatchDto> executeForDispatcher(UUID dispatcherId) {
@@ -24,11 +29,12 @@ public class ListDispatchesUseCase {
         List<DispatchDto> inProgress = dispatchRepository
                 .findByDispatcherIdAndStatus(dispatcherId, DispatchStatus.IN_PROGRESS)
                 .stream().map(DispatchDto::from).toList();
-        return Stream.concat(inProgress.stream(), pending.stream()).toList();
+        return orderSummaryService.enrichWorkable(Stream.concat(inProgress.stream(), pending.stream()).toList());
     }
 
     public Page<DispatchDto> executeForAdmin(Pageable pageable) {
-        return dispatchRepository.findAll(pageable)
-                .map(DispatchDto::from);
+        Page<DispatchDto> page = dispatchRepository.findAll(pageable).map(DispatchDto::from);
+        List<DispatchDto> enriched = orderSummaryService.enrich(page.getContent());
+        return new PageImpl<>(enriched, pageable, page.getTotalElements());
     }
 }

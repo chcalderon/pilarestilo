@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,9 @@ public interface ProductRepository {
     Product save(Product product);
 
     Optional<Product> findById(UUID id);
+
+    /** Every product in the given set, in one query. Missing ids are simply absent. */
+    List<Product> findAllByIds(Collection<UUID> ids);
 
     Page<Product> findAll(ProductFilter filter, Pageable pageable);
 

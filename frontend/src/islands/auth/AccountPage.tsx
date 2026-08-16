@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin, X } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
+import { orderStatusLabel } from '../../lib/orderStatusLabels';
 import {
   getMyReviews,
   getLocationTree,
@@ -877,29 +878,7 @@ export default function AccountPage({ locale }: Props) {
     }).format(amount ?? 0);
   }
 
-  function orderStatusLabel(status: OrderDto['status']) {
-    const labelsEs: Record<OrderDto['status'], string> = {
-      CREATED: 'Creado',
-      PENDING_PAYMENT: 'Pendiente de pago',
-      PAYMENT_UNDER_REVIEW: 'Pago en revision',
-      PAID: 'Pagado',
-      PREPARING_ORDER: 'Preparando pedido',
-      SHIPPED: 'Enviado',
-      DELIVERED: 'Entregado',
-      CANCELLED: 'Cancelado',
-    };
-    const labelsEn: Record<OrderDto['status'], string> = {
-      CREATED: 'Created',
-      PENDING_PAYMENT: 'Pending payment',
-      PAYMENT_UNDER_REVIEW: 'Payment under review',
-      PAID: 'Paid',
-      PREPARING_ORDER: 'Preparing order',
-      SHIPPED: 'Shipped',
-      DELIVERED: 'Delivered',
-      CANCELLED: 'Cancelled',
-    };
-    return (es ? labelsEs : labelsEn)[status] ?? status;
-  }
+
 
   /** Accepts CANCELLED too: it is a terminal node on the track, not a step on the way. */
   function orderTimelineLabel(status: TimelineStepStatus | 'CANCELLED') {
@@ -1597,7 +1576,7 @@ export default function AccountPage({ locale }: Props) {
                             {paymentMethodLabel(order.paymentMethod)}
                           </span>
                           <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/10 text-pe-rose-deep">
-                            {orderStatusLabel(order.status)}
+                            {orderStatusLabel(order.status, es ? 'es' : 'en')}
                           </span>
                         </div>
                       </div>

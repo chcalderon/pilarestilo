@@ -8,4 +8,7 @@ public interface InAppNotificationPort {
     void notifyPaymentReceived(UUID userId, UUID paymentId);
     void notifyOrderPreparing(UUID userId, UUID orderId);
     void notifyOrderShipped(UUID userId, UUID orderId);
+
+    /** Reaches the customer whether they confirmed the delivery or the job did it for them. */
+    void notifyOrderDelivered(UUID userId, UUID orderId);
 }

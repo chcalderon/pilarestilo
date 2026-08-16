@@ -1,4 +1,4 @@
-package com.pilarestilo.dispatch.infrastructure.listeners;
+package com.pilarestilo.dispatch.application.usecases;
 
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OrderPaidDispatchListenerTest {
+class CreateDispatchForPaidOrderUseCaseTest {
 
     @Mock
     DispatchRepository dispatchRepository;
@@ -35,7 +35,7 @@ class OrderPaidDispatchListenerTest {
     GetOrderUseCase getOrderUseCase;
 
     @InjectMocks
-    OrderPaidDispatchListener listener;
+    CreateDispatchForPaidOrderUseCase useCase;
 
     @Test
     void creates_dispatch_with_shipping_snapshot_when_order_becomes_paid() {
@@ -43,7 +43,7 @@ class OrderPaidDispatchListenerTest {
         when(dispatchRepository.existsByOrderId(orderId)).thenReturn(false);
         when(getOrderUseCase.execute(orderId)).thenReturn(order(orderId));
 
-        listener.onOrderStatusChanged(new OrderStatusChanged(
+        useCase.onOrderStatusChanged(new OrderStatusChanged(
                 orderId,
                 UUID.randomUUID(),
                 OrderStatus.PENDING_PAYMENT,
@@ -66,7 +66,7 @@ class OrderPaidDispatchListenerTest {
         UUID orderId = UUID.randomUUID();
         when(dispatchRepository.existsByOrderId(orderId)).thenReturn(true);
 
-        listener.onOrderStatusChanged(new OrderStatusChanged(
+        useCase.onOrderStatusChanged(new OrderStatusChanged(
                 orderId,
                 UUID.randomUUID(),
                 OrderStatus.PENDING_PAYMENT,
@@ -74,7 +74,7 @@ class OrderPaidDispatchListenerTest {
                 Instant.now()
         ));
 
-        listener.onOrderStatusChanged(new OrderStatusChanged(
+        useCase.onOrderStatusChanged(new OrderStatusChanged(
                 orderId,
                 UUID.randomUUID(),
                 OrderStatus.PAID,

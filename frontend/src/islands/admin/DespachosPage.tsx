@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Search, X } from 'lucide-react';
 import { useAuthStore } from '../../lib/authStore';
+import { orderStatusLabel } from '../../lib/orderStatusLabels';
 import {
   getDispatchHistory,
   getOrderById,
@@ -25,6 +26,73 @@ interface QueueDispatchDto {
   carrierOverrideSelected?: string | null;
   carrierOverrideBy?: string | null;
   carrierOverrideAt?: string | null;
+  orderSummary?: DispatchOrderSummary | null;
+}
+
+/** What the queue needs to show so a row can be recognised without opening it. */
+interface DispatchOrderSummary {
+  publicReference: string | null;
+  itemCount: number;
+  firstItemName: string | null;
+  firstItemVariant: string | null;
+  firstItemImageUrl: string | null;
+  totalAmount: number | null;
+  currency: string | null;
+}
+
+function formatMoney(amount: number | null, currency: string | null): string | null {
+  if (amount == null) return null;
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: currency ?? 'CLP',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/**
+ * Identifies an order in the dispatch queue: the garment, then the reference people quote.
+ *
+ * <p>Rows used to read "Orden 25cd2521" — eight characters of a UUID, which matches nothing a
+ * person holds and says nothing about what has to be packed.
+ */
+function DispatchOrderHeader({ dispatch, compact = false }: { dispatch: QueueDispatchDto; compact?: boolean }) {
+  const summary = dispatch.orderSummary;
+  const reference = summary?.publicReference ?? `Orden ${dispatch.orderId.substring(0, 8)}`;
+  const extraItems = summary && summary.itemCount > 1 ? summary.itemCount - 1 : 0;
+  const total = formatMoney(summary?.totalAmount ?? null, summary?.currency ?? null);
+
+  return (
+    <div className="flex items-center gap-3 min-w-0">
+      {summary?.firstItemImageUrl ? (
+        <img
+          src={summary.firstItemImageUrl}
+          alt={summary.firstItemName ?? 'Prenda del pedido'}
+          loading="lazy"
+          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} object-cover border border-[#EDE3D8] shrink-0 bg-[#F8F4EF]`}
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} border border-dashed border-[#EDE3D8] shrink-0`}
+        />
+      )}
+      <div className="min-w-0">
+        <p className="text-sm text-pe-charcoal truncate">
+          {summary?.firstItemName ?? 'Pedido sin detalle'}
+          {summary?.firstItemVariant && (
+            <span className="text-pe-charcoal/60"> · {summary.firstItemVariant}</span>
+          )}
+          {extraItems > 0 && (
+            <span className="text-pe-charcoal/60"> +{extraItems} más</span>
+          )}
+        </p>
+        <p className="text-xs text-pe-charcoal/60 tabular-nums">
+          {reference}
+          {total && <span className="text-pe-charcoal/45"> · {total}</span>}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function toDateInputValue(date: Date): string {
@@ -272,7 +340,7 @@ export default function DespachosPage() {
                   <ul className="space-y-3">
                     {inProgress.map((d) => (
                       <li key={d.id} className="border border-[#EDE3D8] p-4">
-                        <p className="text-sm text-pe-charcoal/70 mb-2">Orden {d.orderId.substring(0, 8)}</p>
+                        <div className="mb-3"><DispatchOrderHeader dispatch={d} /></div>
                         {active?.id === d.id ? (
                           <div className="space-y-2">
                             <input
@@ -358,7 +426,7 @@ export default function DespachosPage() {
                 <ul className="space-y-2">
                   {pending.map((d) => (
                     <li key={d.id} className="border border-[#EDE3D8] p-4 flex items-center justify-between">
-                      <p className="text-sm text-pe-charcoal/70">Orden {d.orderId.substring(0, 8)}</p>
+                      <DispatchOrderHeader dispatch={d} />
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -387,7 +455,7 @@ export default function DespachosPage() {
                   <ul className="space-y-2">
                     {done.map((d) => (
                       <li key={d.id} className="border border-[#EDE3D8] p-3 flex items-center justify-between gap-3 text-sm">
-                        <span className="text-pe-charcoal/70">Orden {d.orderId.substring(0, 8)}</span>
+                        <DispatchOrderHeader dispatch={d} compact />
                         <div className="flex items-center gap-2">
                           <span
                             className={`text-xs tracking-widest uppercase ${
@@ -503,7 +571,7 @@ export default function DespachosPage() {
                       <td className="px-3 py-2 text-pe-charcoal/70">
                         {new Date(row.createdAt).toLocaleString('es-CL')}
                       </td>
-                      <td className="px-3 py-2 font-mono text-pe-charcoal/70">{row.orderId.substring(0, 8)}</td>
+                      <td className="px-3 py-2 font-mono text-pe-charcoal/70 tabular-nums">{row.orderReference ?? row.orderId.substring(0, 8)}</td>
                       <td className="px-3 py-2">{row.status}</td>
                       <td className="px-3 py-2 text-pe-charcoal/70">
                         <div className="flex flex-col gap-0.5">
@@ -590,9 +658,8 @@ export default function DespachosPage() {
               {orderDetail && (
                 <div className="space-y-3">
                   <div className="text-xs text-pe-charcoal/70">
-                    <p><span className="font-semibold">Orden:</span> {orderDetail.id}</p>
-                    <p><span className="font-semibold">Cliente:</span> {orderDetail.customerId}</p>
-                    <p><span className="font-semibold">Estado:</span> {orderDetail.status}</p>
+                    <p><span className="font-semibold">Referencia:</span> <span className="tabular-nums">{orderDetail.publicReference ?? orderDetail.id}</span></p>
+                    <p><span className="font-semibold">Estado:</span> {orderStatusLabel(orderDetail.status)}</p>
                     <p><span className="font-semibold">Fecha:</span> {new Date(orderDetail.createdAt).toLocaleString('es-CL')}</p>
                     <p><span className="font-semibold">Envío (zona):</span> {orderDetail.shippingZoneCode || '-'}</p>
                     <p><span className="font-semibold">Envío (courier):</span> {orderDetail.shippingCourierName || orderDetail.shippingCourierId || '-'}</p>
