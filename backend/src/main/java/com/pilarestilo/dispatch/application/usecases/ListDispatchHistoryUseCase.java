@@ -46,9 +46,11 @@ public class ListDispatchHistoryUseCase {
 
     private DispatchHistoryRowDto toHistoryRow(Dispatch dispatch) {
         Instant orderCreatedAt = null;
+        String orderReference = null;
         try {
             OrderDto order = getOrderUseCase.execute(dispatch.getOrderId());
             orderCreatedAt = order.createdAt();
+            orderReference = order.publicReference();
         } catch (Exception ignored) {
             // Keep null when order cannot be resolved.
         }
@@ -85,6 +87,7 @@ public class ListDispatchHistoryUseCase {
                 dispatch.getNotes(),
                 dispatch.getCreatedAt(),
                 orderCreatedAt,
+                orderReference,
                 soldBy
         );
     }

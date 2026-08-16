@@ -23,6 +23,8 @@ public record DispatchHistoryRowDto(
         String notes,
         LocalDateTime createdAt,
         Instant orderCreatedAt,
+        /** The reference the customer quotes; null when the order can no longer be read. */
+        String orderReference,
         String soldBy
 ) {
 }

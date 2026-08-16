@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -55,6 +56,14 @@ public class ProductRepositoryAdapter implements ProductRepository {
     @Override
     public Optional<Product> findById(UUID id) {
         return jpaRepository.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public List<Product> findAllByIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findAllById(ids).stream().map(this::toDomain).toList();
     }
 
     @Override

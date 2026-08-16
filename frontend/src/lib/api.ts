@@ -153,6 +153,8 @@ export interface OrderItemDto {
 
 export interface OrderDto {
   id: string;
+  /** Reference the customer and the bank statement both use (PE-XXXXXXXXXX). */
+  publicReference?: string | null;
   customerId: string;
   items: OrderItemDto[];
   subtotal: MoneyDto;
@@ -189,6 +191,8 @@ export interface DispatchHistoryRowDto {
   notes?: string | null;
   createdAt: string;
   orderCreatedAt?: string | null;
+  /** The reference the customer quotes (PE-XXXXXXXXXX); null when the order can no longer be read. */
+  orderReference?: string | null;
   soldBy: string;
 }
 

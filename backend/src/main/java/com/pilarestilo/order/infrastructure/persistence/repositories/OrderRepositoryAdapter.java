@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +36,14 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public Optional<Order> findById(UUID id) {
         return jpaRepository.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public List<Order> findAllByIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findAllByIdsWithItems(ids).stream().map(this::toDomain).toList();
     }
 
     @Override

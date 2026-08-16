@@ -17,7 +17,9 @@ public record DispatchDto(
         String carrierOverrideConfigured,
         String carrierOverrideSelected,
         UUID carrierOverrideBy,
-        LocalDateTime carrierOverrideAt
+        LocalDateTime carrierOverrideAt,
+        /** What the order is, for whoever has to recognise it. Null until the queue enriches it. */
+        DispatchOrderSummaryDto orderSummary
 ) {
     public static DispatchDto from(Dispatch d) {
         return new DispatchDto(d.getId(), d.getOrderId(), d.getDispatcherId(), d.getStatus().name(),
@@ -30,7 +32,8 @@ public record DispatchDto(
                 d.getCarrierOverrideConfigured(),
                 d.getCarrierOverrideSelected(),
                 d.getCarrierOverrideBy(),
-                d.getCarrierOverrideAt());
+                d.getCarrierOverrideAt(),
+                null);
     }
 
     public DispatchDto withOrderShipping(
@@ -58,7 +61,19 @@ public record DispatchDto(
                 carrierOverrideConfigured,
                 carrierOverrideSelected,
                 carrierOverrideBy,
-                carrierOverrideAt
+                carrierOverrideAt,
+                orderSummary
         );
+    }
+
+    /** Same dispatch, now carrying what a person needs to recognise the order. */
+    public DispatchDto withOrderSummary(DispatchOrderSummaryDto summary) {
+        return new DispatchDto(
+                id, orderId, dispatcherId, status, carrier, trackingCode, scheduledDate,
+                dispatchedAt, deliveredAt, notes, createdAt,
+                orderShippingZoneCode, orderShippingCourierId, orderShippingCourierName,
+                orderShippingAddressReference,
+                carrierOverrideConfigured, carrierOverrideSelected, carrierOverrideBy,
+                carrierOverrideAt, summary);
     }
 }
