@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
-import { createReview } from '../../lib/api';
+import { createReview, getProductReviews } from '../../lib/api';
 
 interface Props {
   productId: string;
@@ -10,7 +10,7 @@ interface Props {
   onSubmitted?: () => void;
 }
 
-export default function ReviewForm({ productId, token, locale = 'es', onSubmitted }: Props) {
+export default function ReviewForm({ productId, token, userId, locale = 'es', onSubmitted }: Props) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [title, setTitle] = useState('');
@@ -18,6 +18,24 @@ export default function ReviewForm({ productId, token, locale = 'es', onSubmitte
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  // Whether this customer already has a live review here. A second one replaces it rather than
+  // being refused, so the form loads what they wrote and says plainly that it is being replaced —
+  // offering "Escribir una reseña" to somebody who already wrote one hid what the button did.
+  const [replacing, setReplacing] = useState(false);
+
+  useEffect(() => {
+    if (!token || !userId) return;
+    let cancelled = false;
+    void getProductReviews(productId, token).then((reviews) => {
+      const mine = reviews.find((review) => review.userId === userId);
+      if (cancelled || !mine) return;
+      setReplacing(true);
+      setRating(mine.rating);
+      setTitle(mine.title ?? '');
+      setComment(mine.comment ?? '');
+    });
+    return () => { cancelled = true; };
+  }, [productId, token, userId]);
   const redirectPath = typeof window !== 'undefined' ? window.location.pathname : `/${locale}/products/${productId}`;
   const loginHref = `/${locale}/auth/login?redirect=${encodeURIComponent(redirectPath)}`;
 
@@ -49,7 +67,9 @@ export default function ReviewForm({ productId, token, locale = 'es', onSubmitte
     return (
       <div className="py-6 border-t border-[#EDE3D8]">
         <p className="text-[#B76E79] font-['Cormorant_Garamond',serif] text-lg">
-          {locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!'}
+          {replacing
+            ? (locale === 'es' ? '¡Gracias! Actualizamos tu reseña.' : 'Thanks! Your review was updated.')
+            : (locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!')}
         </p>
         <p className="text-[#3A3A3A]/50 text-sm mt-1">
           {locale === 'es' ? 'Será visible una vez aprobada.' : 'It will be visible once approved.'}
@@ -82,7 +102,9 @@ export default function ReviewForm({ productId, token, locale = 'es', onSubmitte
   return (
     <form onSubmit={handleSubmit} className="py-6 border-t border-[#EDE3D8] space-y-5">
       <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A]">
-        {locale === 'es' ? 'Escribir una reseña' : 'Write a review'}
+        {replacing
+          ? (locale === 'es' ? 'Actualizar tu reseña' : 'Update your review')
+          : (locale === 'es' ? 'Escribir una reseña' : 'Write a review')}
       </h3>
 
       {/* Star rating */}
@@ -148,7 +170,9 @@ export default function ReviewForm({ productId, token, locale = 'es', onSubmitte
       >
         {submitting
           ? (locale === 'es' ? 'Enviando...' : 'Submitting...')
-          : (locale === 'es' ? 'Publicar reseña' : 'Submit review')}
+          : replacing
+            ? (locale === 'es' ? 'Reemplazar reseña' : 'Replace review')
+            : (locale === 'es' ? 'Publicar reseña' : 'Submit review')}
       </button>
     </form>
   );

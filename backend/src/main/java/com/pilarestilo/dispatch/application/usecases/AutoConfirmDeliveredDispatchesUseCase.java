@@ -8,6 +8,7 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,23 +25,36 @@ public class AutoConfirmDeliveredDispatchesUseCase {
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
     private final Clock clock;
 
+    /**
+     * How long a dispatched order waits before the shop decides it arrived.
+     *
+     * <p>Configurable because it is a judgement about couriers, not a fact: fifteen days suits
+     * national shipping and is far too long for a courier that delivers next day. It was a literal
+     * in the middle of a query, so changing it meant a deploy.
+     */
+    private final int autoConfirmAfterDays;
+
     @Autowired
-    public AutoConfirmDeliveredDispatchesUseCase(DispatchRepository dispatchRepository,
-                                                 UpdateOrderStatusUseCase updateOrderStatusUseCase) {
-        this(dispatchRepository, updateOrderStatusUseCase, Clock.systemUTC());
+    public AutoConfirmDeliveredDispatchesUseCase(
+            DispatchRepository dispatchRepository,
+            UpdateOrderStatusUseCase updateOrderStatusUseCase,
+            @Value("${app.dispatch.auto-delivery.after-days:15}") int autoConfirmAfterDays) {
+        this(dispatchRepository, updateOrderStatusUseCase, Clock.systemUTC(), autoConfirmAfterDays);
     }
 
     AutoConfirmDeliveredDispatchesUseCase(DispatchRepository dispatchRepository,
                                           UpdateOrderStatusUseCase updateOrderStatusUseCase,
-                                          Clock clock) {
+                                          Clock clock,
+                                          int autoConfirmAfterDays) {
         this.dispatchRepository = dispatchRepository;
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
         this.clock = clock;
+        this.autoConfirmAfterDays = autoConfirmAfterDays;
     }
 
     @Transactional
     public int execute() {
-        LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(15);
+        LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(autoConfirmAfterDays);
         List<Dispatch> candidates = dispatchRepository.findByStatusAndDispatchedAtBefore(DispatchStatus.DISPATCHED, cutoff);
         int updated = 0;
         for (Dispatch dispatch : candidates) {
