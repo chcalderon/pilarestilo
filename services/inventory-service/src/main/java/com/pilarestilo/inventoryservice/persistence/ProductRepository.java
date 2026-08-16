@@ -84,4 +84,27 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
                             @Param("color") String color,
                             @Param("size") String size,
                             @Param("qty") int qty);
+
+    /**
+     * Turns a reservation into a sale: the units leave the shelf and stop being held.
+     *
+     * <p>Reserving only moves stock into stock_reserved, so without this the units are held for a
+     * completed order forever and stock_on_hand still counts them as sellable. Mirrors
+     * atomicConfirmVariantStock in the monolith, which is the other writer of this table.
+     */
+    @Modifying
+    @Query(value = """
+            update product_variants
+               set stock_on_hand = stock_on_hand - :qty,
+                   stock_reserved = stock_reserved - :qty
+             where product_id = :productId
+               and lower(trim(color)) = lower(trim(:color))
+               and upper(trim(size)) = upper(trim(:size))
+               and stock_reserved >= :qty
+               and stock_on_hand >= :qty
+            """, nativeQuery = true)
+    int confirmVariantStock(@Param("productId") UUID productId,
+                            @Param("color") String color,
+                            @Param("size") String size,
+                            @Param("qty") int qty);
 }

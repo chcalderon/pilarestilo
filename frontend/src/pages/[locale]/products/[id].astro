@@ -238,7 +238,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
           )}
         </div>
 
-        <ReviewList client:visible productId={product.id} locale={locale} />
+        <ReviewList client:visible productId={product.id} locale={locale} token={token} userId={userId} />
         <ReviewForm
           client:visible
           productId={product.id}

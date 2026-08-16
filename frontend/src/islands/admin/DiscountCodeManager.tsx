@@ -144,7 +144,7 @@ export default function DiscountCodeManager() {
               className={[
                 'font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 transition-colors',
                 tab === t.key
-                  ? 'bg-pe-charcoal text-pe-offwhite'
+                  ? 'bg-[#3A3A3A] text-white'
                   : 'border border-pe-black/12 text-pe-charcoal/55 hover:border-pe-charcoal/30',
               ].join(' ')}
             >

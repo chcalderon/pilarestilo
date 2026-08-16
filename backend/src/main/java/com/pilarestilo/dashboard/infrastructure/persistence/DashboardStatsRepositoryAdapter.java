@@ -7,6 +7,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,7 +72,7 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
                 """
         ).getResultList();
         List<DashboardStats.DailyRevenue> dailyRevenueSeries = seriesRows.stream()
-                .map(r -> new DashboardStats.DailyRevenue(((java.sql.Date) r[0]).toLocalDate(), toBigDecimal(r[1])))
+                .map(r -> new DashboardStats.DailyRevenue(toLocalDate(r[0]), toBigDecimal(r[1])))
                 .toList();
 
         return new DashboardStats.AdminStats(dailySales, weeklySales, openCashRegisters,
@@ -162,7 +163,7 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
                 .map(r -> new DashboardStats.ExpiringWorker(
                         r[0].toString(),
                         r[1] != null ? r[1].toString() : "",
-                        ((java.sql.Date) r[2]).toLocalDate()))
+                        toLocalDate(r[2])))
                 .toList();
 
         return new DashboardStats.AdministracionStats(
@@ -180,6 +181,21 @@ class DashboardStatsRepositoryAdapter implements DashboardStatsRepository {
         return ((Number) em.createNativeQuery(
                 "SELECT COUNT(*) FROM payments WHERE status IN ('SUBMITTED', 'UNDER_REVIEW')"
         ).getSingleResult()).intValue();
+    }
+
+    /**
+     * A native query's date column arrives as java.time.LocalDate from this driver and as
+     * java.sql.Date from others, so neither cast is safe on its own. Casting to java.sql.Date threw
+     * ClassCastException and took the whole dashboard down — invisibly, because the revenue series
+     * has no rows until the shop's first paid order, and the expiring-workers list none until
+     * somebody's vigency comes within a week. Both panels were broken from the day they were
+     * written and only failed once real data arrived.
+     */
+    private LocalDate toLocalDate(Object val) {
+        if (val instanceof LocalDate d) return d;
+        if (val instanceof java.sql.Date d) return d.toLocalDate();
+        if (val instanceof java.time.temporal.TemporalAccessor t) return LocalDate.from(t);
+        throw new IllegalStateException("Unsupported date type from query: " + val.getClass());
     }
 
     private BigDecimal toBigDecimal(Object val) {

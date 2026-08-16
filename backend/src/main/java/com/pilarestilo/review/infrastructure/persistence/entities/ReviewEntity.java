@@ -33,6 +33,10 @@ public class ReviewEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    /** Null while this is the customer's live review for the product. See V71. */
+    @Column(name = "superseded_at")
+    private Instant supersededAt;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -56,4 +60,7 @@ public class ReviewEntity {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public Instant getSupersededAt() { return supersededAt; }
+    public void setSupersededAt(Instant supersededAt) { this.supersededAt = supersededAt; }
 }

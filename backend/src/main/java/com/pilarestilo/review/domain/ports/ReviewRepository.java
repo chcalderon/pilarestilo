@@ -19,7 +19,11 @@ public interface ReviewRepository {
 
     List<Review> findByUserId(UUID userId);
 
-    boolean existsByProductIdAndUserId(UUID productId, UUID userId);
+    /**
+     * The customer's live review for this product, if they have one. A superseded review is never
+     * returned: it is history, and only the live row counts.
+     */
+    Optional<Review> findLiveByProductIdAndUserId(UUID productId, UUID userId);
 
     void deleteById(UUID id);
 

@@ -18,6 +18,8 @@ import java.util.UUID;
 @RestController
 public class ReviewController {
 
+    private static final String REVIEWS_MODERATE = "reviews.moderate";
+
     private final CreateReviewUseCase createReviewUseCase;
     private final ListReviewsForProductUseCase listReviewsForProductUseCase;
     private final GetReviewSummaryUseCase getReviewSummaryUseCase;
@@ -52,8 +54,10 @@ public class ReviewController {
     }
 
     @GetMapping("/api/products/{productId}/reviews")
-    public List<ReviewDto> list(@PathVariable UUID productId) {
-        return listReviewsForProductUseCase.execute(productId);
+    public List<ReviewDto> list(@PathVariable UUID productId,
+                                @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return listReviewsForProductUseCase.execute(productId,
+                currentUser == null ? null : currentUser.id());
     }
 
     @GetMapping("/api/products/{productId}/reviews/summary")
@@ -64,12 +68,14 @@ public class ReviewController {
     @DeleteMapping("/api/reviews/{reviewId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("isAuthenticated()")
-    public void delete(@PathVariable UUID reviewId) {
-        deleteReviewUseCase.execute(reviewId);
+    public void delete(@PathVariable UUID reviewId,
+                       @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        deleteReviewUseCase.execute(reviewId, currentUser.id(),
+                currentUser.permissionCodes().contains(REVIEWS_MODERATE));
     }
 
     @PatchMapping("/api/reviews/{reviewId}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public ReviewDto approve(@PathVariable UUID reviewId) {
         return approveReviewUseCase.execute(reviewId);
     }

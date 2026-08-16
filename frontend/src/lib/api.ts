@@ -1637,9 +1637,15 @@ export async function getDispatchHistory(
   });
 }
 
-export async function getProductReviews(productId: string): Promise<ReviewDto[]> {
+/**
+ * The live review of everyone who reviewed this product. Pass the token when somebody is signed
+ * in: the backend adds their own review to the list even while it awaits approval, so replacing a
+ * quick rating with a written one does not look like the review was lost.
+ */
+export async function getProductReviews(productId: string, token?: string): Promise<ReviewDto[]> {
   try {
-    return await apiFetch<ReviewDto[]>(`/products/${encodeURIComponent(productId)}/reviews`);
+    return await apiFetch<ReviewDto[]>(`/products/${encodeURIComponent(productId)}/reviews`,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   } catch {
     return [];
   }

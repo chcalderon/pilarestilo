@@ -11,7 +11,13 @@ export default {
         'pe-black': '#1A1A1A',
         'pe-offwhite': '#F2EAE0',
         'pe-cream': '#E3D2BE',
-        'pe-charcoal': '#3A3A3A',
+        /*
+         * Bound to the theme variable, not a fixed hex. The variables already flipped with the
+         * theme and Tailwind ignored them, so every text-pe-charcoal rendered #3A3A3A on a
+         * near-black panel — 423 places where muted text was dark-on-dark. The rgb(... /
+         * <alpha-value>) form is what keeps the /55 opacity modifiers working.
+         */
+        'pe-charcoal': 'rgb(var(--pe-charcoal-rgb) / <alpha-value>)',
         'pe-gold': '#C6A96B',
         'pe-white': '#FFFFFF',
         'pe-beige': '#F5F1EB',

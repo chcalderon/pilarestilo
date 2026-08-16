@@ -15,6 +15,14 @@ public class Review {
     private int rating;
     private String title;
     private String comment;
+    /**
+     * When a later review by the same customer replaced this one. Null means this is the live
+     * review — the only kind that counts towards the product's rating.
+     *
+     * <p>Kept rather than overwritten: what somebody thought before is a fact, and erasing it
+     * would hide the reason a rating moved.
+     */
+    private Instant supersededAt;
     private boolean approved;
     private Instant createdAt;
 
@@ -50,6 +58,17 @@ public class Review {
     public int getRating() { return rating; }
     public String getTitle() { return title; }
     public String getComment() { return comment; }
+
+    public Instant getSupersededAt() { return supersededAt; }
+    public void setSupersededAt(Instant supersededAt) { this.supersededAt = supersededAt; }
+    public boolean isLive() { return supersededAt == null; }
+
+    /** Marks this review replaced by a newer one from the same customer. */
+    public void supersede(Instant when) {
+        if (supersededAt == null) {
+            this.supersededAt = when;
+        }
+    }
     public boolean isApproved() { return approved; }
     public Instant getCreatedAt() { return createdAt; }
 

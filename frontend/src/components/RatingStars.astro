@@ -20,13 +20,13 @@ const filled = Math.round(value);
         stroke-width="1.25"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class={i <= filled ? 'fill-[#B76E79] stroke-[#B76E79]' : 'fill-none stroke-[#3A3A3A]/30'}
+        class={i <= filled ? 'fill-pe-rose stroke-pe-rose' : 'fill-none stroke-pe-charcoal/35'}
       >
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
     ))}
   </span>
   {count !== undefined && (
-    <span class="text-[10px] text-[#3A3A3A]/50">({count})</span>
+    <span class="text-[10px] text-pe-charcoal/55">({count})</span>
   )}
 </span>

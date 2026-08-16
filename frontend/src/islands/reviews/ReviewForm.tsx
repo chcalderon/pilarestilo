@@ -69,12 +69,9 @@ export default function ReviewForm({ productId, token, locale = 'es', onSubmitte
       setSuccess(true);
       onSubmitted?.();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('409') || msg.includes('already')) {
-        setError(locale === 'es' ? 'Ya reseñaste este producto.' : 'You already reviewed this product.');
-      } else {
-        setError(locale === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error submitting. Try again.');
-      }
+      // No duplicate branch here: a second review now replaces the first rather than being
+      // refused, so the only failure left is the request itself.
+      setError(locale === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error submitting. Try again.');
     } finally {
       setSubmitting(false);
     }

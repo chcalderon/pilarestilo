@@ -34,6 +34,18 @@
     respond @api_invalid_method "Method Not Allowed" 405
 
     route {
+        # Reviews live only in the monolith, and this must be matched before @product_reads or the
+        # path falls into it and reaches product-service, which answers 404. The fallback in that
+        # block does not save it: lb_policy first fails over on a dead connection, not on a
+        # successful 404, so the storefront silently showed no reviews at all.
+        @product_review_reads {
+            method GET HEAD
+            path /api/products/*/reviews /api/products/*/reviews/*
+        }
+        handle @product_review_reads {
+            reverse_proxy backend:8080
+        }
+
         # Catalog reads - route product GETs to extracted product-service when active,
         # with backend:8080 as fallback when running without the microservices profile.
         @product_reads {
