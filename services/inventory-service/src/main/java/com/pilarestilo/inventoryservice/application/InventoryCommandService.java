@@ -75,17 +75,39 @@ public class InventoryCommandService {
         productRepository.releaseStock(productId, qty, Instant.now());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void confirm(UUID productId, int qty) {
         confirm(productId, qty, null, null);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Turns the order's reservation into a sale.
+     *
+     * <p>This was a no-op on the grounds that "stock was already reserved during order creation",
+     * which is not what reserving does: it moves units into stock_reserved and leaves
+     * stock_on_hand untouched. So with APP_INVENTORY_REMOTE_ENABLED on — what production runs — a
+     * paid order never took its units off the shelf. Every completed sale left a reservation that
+     * was never released and never deducted, and the shop would eventually refuse orders for goods
+     * it still had. The monolith's confirmLocal has always done this correctly; only this copy
+     * did not.
+     */
+    @Transactional
     public void confirm(UUID productId, int qty, String variantColor, String variantSize) {
         validate(productId, qty);
         validateVariantSelector(variantColor, variantSize);
         ensureExists(productId);
-        // no-op: stock was already reserved during order creation.
+        if (variantColor != null && variantSize != null) {
+            int updated = productRepository.confirmVariantStock(productId, variantColor, variantSize, qty);
+            if (updated == 0) {
+                throw new IllegalStateException(
+                        "No reserved stock to confirm for variant " + variantColor + " / " + variantSize
+                                + " of product " + productId);
+            }
+            productRepository.syncProductStockFromVariants(productId, Instant.now());
+            return;
+        }
+        // Non-variant products follow the legacy aggregate model, where reserving already
+        // decremented the total. A second decrement here would double-count the sale.
     }
 
     private void validate(UUID productId, int qty) {
