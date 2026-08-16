@@ -341,14 +341,22 @@ export default function ShippingStep({
           </div>
         )}
 
+        {/*
+          * With no addresses saved, adding one is not a secondary option — it is the only way
+          * forward, and a ghost button under a grey sentence did not read as one. It takes the
+          * primary treatment in that case and returns to secondary once there is something to
+          * choose between.
+          */}
         {!formOpen && (
           <button
             type="button"
             onClick={openCreate}
-            className="mt-3 inline-flex items-center gap-2 min-h-11 px-4 border border-pe-charcoal/25
-              font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal
-              hover:border-pe-black hover:text-pe-black transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+            className={`mt-3 inline-flex items-center gap-2 min-h-11 px-4
+              font-sans text-[0.68rem] tracking-[0.16em] uppercase transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
+              ${book.addresses.length === 0 && !book.loading
+                ? 'bg-pe-black text-pe-white hover:opacity-90'
+                : 'border border-pe-charcoal/25 text-pe-charcoal hover:border-pe-black hover:text-pe-black'}`}
           >
             <Plus size={14} />
             {l.addAddress}

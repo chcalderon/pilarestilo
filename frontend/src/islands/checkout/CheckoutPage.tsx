@@ -5,6 +5,7 @@ import { readAuthTokenCookie, useAuthStore } from '../../lib/authStore';
 import {
   useCheckoutStore,
   slugToStep,
+  stepIndex,
   stepToSlug,
   type CheckoutStep,
 } from '../../lib/checkoutStore';
@@ -121,18 +122,29 @@ export default function CheckoutPage({ locale }: Props) {
     [subtotal, authUser?.role, appliedDiscount]
   );
 
-  /** Reads the step out of the URL so a shared link and the browser back button both work. */
+  /**
+   * Reads the step out of the URL so a shared link and the browser back button both work — but
+   * never past the furthest step actually reached.
+   *
+   * <p>Without the clamp, ?paso=resumen dropped anybody straight onto the review screen with no
+   * address, no courier and no zone chosen, and the only thing that noticed was the Pagar button,
+   * which failed at the last possible moment and told them to go back to the beginning. Going back
+   * to an earlier step stays free: revisiting what you already answered is not skipping.
+   */
   useEffect(() => {
-    const fromUrl = slugToStep(new URLSearchParams(window.location.search).get('paso'));
-    if (fromUrl) setStep(fromUrl);
+    const enter = (target: CheckoutStep | null) => {
+      if (!target) return;
+      setStep(stepIndex(target) > stepIndex(furthestStep) ? furthestStep : target);
+    };
+
+    enter(slugToStep(new URLSearchParams(window.location.search).get('paso')));
 
     const onPopState = () => {
-      const target = slugToStep(new URLSearchParams(window.location.search).get('paso'));
-      if (target) setStep(target);
+      enter(slugToStep(new URLSearchParams(window.location.search).get('paso')));
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [setStep]);
+  }, [setStep, furthestStep]);
 
   /** Keeps the URL in step with the machine without stacking a history entry per render. */
   useEffect(() => {
@@ -415,6 +427,7 @@ export default function CheckoutPage({ locale }: Props) {
                     removeItem(lineId);
                   }}
                   onBack={() => setStep('payment')}
+                  onFixShipping={() => setStep('shipping')}
                   onSubmit={placeOrder}
                 />
               )}

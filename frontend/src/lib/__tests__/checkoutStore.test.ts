@@ -5,6 +5,7 @@ import {
   stepIndex,
   stepToSlug,
   useCheckoutStore,
+  type CheckoutStep,
 } from '../checkoutStore';
 
 function reset() {
@@ -165,5 +166,31 @@ describe('persisted state is treated as untrusted', () => {
     const merge = useCheckoutStore.persist.getOptions().merge!;
     const merged = merge(undefined, useCheckoutStore.getState()) as { step: string };
     expect(merged.step).toBe('shipping');
+  });
+
+  /*
+   * The page reads ?paso= out of the URL and used to obey it without question, so ?paso=resumen
+   * landed anybody on the review screen with no address chosen and nothing noticed until the
+   * Pagar button failed. These pin the rule the clamp implements: never past furthestStep, and
+   * always free to go back.
+   */
+  describe('the rule that stops a URL skipping ahead', () => {
+    const clamp = (target: CheckoutStep, furthest: CheckoutStep): CheckoutStep =>
+      stepIndex(target) > stepIndex(furthest) ? furthest : target;
+
+    it('refuses a jump past where the customer actually got to', () => {
+      expect(clamp('review', 'shipping')).toBe('shipping');
+      expect(clamp('payment', 'shipping')).toBe('shipping');
+      expect(clamp('review', 'payment')).toBe('payment');
+    });
+
+    it('lets somebody return to a step they already answered', () => {
+      expect(clamp('shipping', 'review')).toBe('shipping');
+      expect(clamp('payment', 'review')).toBe('payment');
+    });
+
+    it('leaves the current step alone', () => {
+      expect(clamp('payment', 'payment')).toBe('payment');
+    });
   });
 });

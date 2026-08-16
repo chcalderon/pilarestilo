@@ -22,6 +22,8 @@ interface Props {
   stockIssues: StockIssues;
   onRemoveItem: (lineId: string) => void;
   onBack: () => void;
+  /** Returns to the shipping step, for when the summary has no address to show. */
+  onFixShipping: () => void;
   onSubmit: () => void;
 }
 
@@ -30,6 +32,8 @@ const copy = {
     heading: 'Revisa tu pedido',
     items: 'Productos',
     shipTo: 'Enviar a',
+    addressMissing: 'Falta la dirección de envío. Sin ella no podemos despachar tu pedido.',
+    addressMissingAction: 'Elegir dirección',
     shipping: 'Envío',
     payment: 'Pago',
     transfer: 'Transferencia bancaria',
@@ -45,6 +49,8 @@ const copy = {
     heading: 'Review your order',
     items: 'Items',
     shipTo: 'Ship to',
+    addressMissing: 'The shipping address is missing. We cannot dispatch without it.',
+    addressMissingAction: 'Choose an address',
     shipping: 'Shipping',
     payment: 'Payment',
     transfer: 'Bank transfer',
@@ -72,6 +78,7 @@ export default function ReviewStep({
   stockIssues,
   onRemoveItem,
   onBack,
+  onFixShipping,
   onSubmit,
 }: Props) {
   const l = copy[locale === 'es' ? 'es' : 'en'];
@@ -167,7 +174,24 @@ export default function ReviewStep({
               {address.phone}
             </address>
           ) : (
-            <p className="font-sans text-[0.8rem] text-pe-charcoal/60">—</p>
+            /*
+             * A dash said nothing and left Pagar enabled, so the first sign anything was wrong
+             * arrived after the click, as "vuelve al primer paso". The address can go missing
+             * legitimately — deleted from the address book after it was chosen — so this states
+             * the problem and offers the way out rather than only refusing.
+             */
+            <div role="alert" className="border border-[#8f2d3b]/40 bg-[#8f2d3b]/5 p-3">
+              <p className="font-sans text-[0.8rem] text-[#8f2d3b] mb-2">{l.addressMissing}</p>
+              <button
+                type="button"
+                onClick={onFixShipping}
+                className="font-sans text-[0.7rem] tracking-[0.14em] uppercase underline
+                  text-pe-charcoal hover:text-pe-black
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+              >
+                {l.addressMissingAction}
+              </button>
+            </div>
           )}
         </section>
 
@@ -216,7 +240,7 @@ export default function ReviewStep({
         <button
           type="button"
           onClick={onSubmit}
-          disabled={submitting || Object.keys(stockIssues).length > 0}
+          disabled={submitting || !address || Object.keys(stockIssues).length > 0}
           className="flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-8
             bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
             transition-opacity disabled:opacity-50 disabled:cursor-wait
