@@ -114,14 +114,16 @@ public class NotificationComposer {
      * a change to what the customer sees, not a refactor, so it is not made here.
      */
 
-    public NotificationMessage orderConfirmation(UUID orderId) {
+    public NotificationMessage orderConfirmation(Order order) {
+        UUID orderId = order.getId();
+        String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_CONFIRMATION,
-                "Pedido " + shortId(orderId) + " confirmado",
-                "Tu pedido " + orderId + " fue creado correctamente.\n"
+                "Pedido " + reference + " confirmado",
+                "Tu pedido " + reference + " fue creado correctamente.\n"
                         + "Te notificaremos por este canal cuando avance.\n",
                 null,
-                Map.of("orderId", orderId),
+                Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
 
@@ -136,25 +138,61 @@ public class NotificationComposer {
                 paymentId);
     }
 
-    public NotificationMessage orderPreparing(UUID orderId) {
+    /*
+     * These take the Order rather than its id so they can quote the public reference. They used to
+     * print the raw UUID into the customer's inbox -- "Tu pedido 053ec893-5011-4cbe-a078-... esta
+     * en preparación" -- which is nothing anybody can quote back, match against a bank statement or
+     * read out on the phone. transferInstructions had it right all along.
+     */
+    public NotificationMessage orderPreparing(Order order) {
+        UUID orderId = order.getId();
+        String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_PREPARING,
-                "Pedido " + shortId(orderId) + " en preparación",
-                "Tu pedido " + orderId + " está en preparación.\n"
+                "Pedido " + reference + " en preparación",
+                "Tu pedido " + reference + " está en preparación.\n"
                         + "Te avisaremos cuando sea despachado.\n",
                 null,
-                Map.of("orderId", orderId),
+                Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
 
-    public NotificationMessage orderShipped(UUID orderId) {
+    public NotificationMessage orderShipped(Order order) {
+        UUID orderId = order.getId();
+        String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_SHIPPED,
-                "Pedido " + shortId(orderId) + " enviado",
-                "Tu pedido " + orderId + " ya fue enviado.\n"
+                "Pedido " + reference + " enviado",
+                "Tu pedido " + reference + " ya fue enviado.\n"
                         + "Pronto llegará a destino.\n",
                 null,
-                Map.of("orderId", orderId),
+                Map.of("orderId", orderId, "reference", reference),
+                orderId);
+    }
+
+    /**
+     * Closes the loop out loud.
+     *
+     * <p>Nothing was sent when an order reached DELIVERED, which matters most in the case the
+     * customer did not cause: a dispatch sitting fifteen days is confirmed on their behalf. Told
+     * nothing, somebody whose parcel never arrived has no prompt to say so -- the order just closes.
+     *
+     * <p>One wording covers both routes deliberately. Nothing recorded distinguishes the job's
+     * confirmation from the customer's own, and guessing from elapsed time would eventually thank
+     * somebody for a click they never made. Offering the way out regardless costs a sentence and is
+     * true either way, since people misclick too.
+     */
+    public NotificationMessage orderDelivered(Order order) {
+        UUID orderId = order.getId();
+        String reference = order.getPublicReference();
+        return new NotificationMessage(
+                NotificationMessage.ORDER_DELIVERED,
+                "Pedido " + reference + " entregado",
+                "Tu pedido " + reference + " quedó como entregado.\n"
+                        + "Si aún no lo recibiste, respóndenos y lo revisamos.\n\n"
+                        + "Nos ayudarías mucho contándonos qué te pareció.\n",
+                null,
+                Map.of("orderId", orderId, "reference", reference),
                 orderId);
     }
 

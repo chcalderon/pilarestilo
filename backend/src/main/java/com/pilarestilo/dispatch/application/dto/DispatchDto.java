@@ -36,36 +36,6 @@ public record DispatchDto(
                 null);
     }
 
-    public DispatchDto withOrderShipping(
-            String shippingZoneCode,
-            String shippingCourierId,
-            String shippingCourierName,
-            String shippingAddressReference
-    ) {
-        return new DispatchDto(
-                id,
-                orderId,
-                dispatcherId,
-                status,
-                carrier,
-                trackingCode,
-                scheduledDate,
-                dispatchedAt,
-                deliveredAt,
-                notes,
-                createdAt,
-                shippingZoneCode,
-                shippingCourierId,
-                shippingCourierName,
-                shippingAddressReference,
-                carrierOverrideConfigured,
-                carrierOverrideSelected,
-                carrierOverrideBy,
-                carrierOverrideAt,
-                orderSummary
-        );
-    }
-
     /** Same dispatch, now carrying what a person needs to recognise the order. */
     public DispatchDto withOrderSummary(DispatchOrderSummaryDto summary) {
         return new DispatchDto(

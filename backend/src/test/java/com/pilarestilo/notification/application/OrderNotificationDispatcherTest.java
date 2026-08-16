@@ -132,6 +132,7 @@ class OrderNotificationDispatcherTest {
 
     @Test
     void writesTheInAppNotificationWhenAnOrderShips() {
+        givenPaymentMethod(PaymentMethod.TRANSFER);
         when(userRepository.findById(customerId)).thenReturn(Optional.of(customer()));
 
         dispatcher.onOrderStatusChanged(new OrderStatusChanged(
@@ -143,9 +144,42 @@ class OrderNotificationDispatcherTest {
         verify(inAppNotificationPort).notifyOrderShipped(customerId, orderId);
     }
 
+    /**
+     * The dispatch job confirms a delivery fifteen days after it was sent, without the customer
+     * doing anything. Saying nothing leaves somebody whose parcel never arrived with no prompt.
+     */
+    @Test
+    void tellsTheCustomerWhenTheOrderIsMarkedDelivered() {
+        givenPaymentMethod(PaymentMethod.TRANSFER);
+        when(userRepository.findById(customerId)).thenReturn(Optional.of(customer()));
+
+        dispatcher.onOrderStatusChanged(new OrderStatusChanged(
+                orderId, customerId, OrderStatus.SHIPPED, OrderStatus.DELIVERED, Instant.now()));
+
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.ORDER_DELIVERED.equals(m.templateKey())),
+                any(NotificationRecipient.class));
+        verify(inAppNotificationPort).notifyOrderDelivered(customerId, orderId);
+    }
+
+    /** The reference is the whole point of reading the order: a UUID is not quotable. */
+    @Test
+    void quotesThePublicReferenceRatherThanTheOrderUuid() {
+        givenPaymentMethod(PaymentMethod.TRANSFER);
+        when(userRepository.findById(customerId)).thenReturn(Optional.of(customer()));
+
+        dispatcher.onOrderStatusChanged(new OrderStatusChanged(
+                orderId, customerId, OrderStatus.PREPARING_ORDER, OrderStatus.SHIPPED, Instant.now()));
+
+        verify(notificationSender).send(
+                argThat(m -> m.subject().contains("PE-") && !m.bodyText().contains(orderId.toString())),
+                any(NotificationRecipient.class));
+    }
+
     /** An order whose customer row is gone still has a channel worth telling. */
     @Test
     void stillNotifiesWhenTheCustomerRowIsMissing() {
+        givenPaymentMethod(PaymentMethod.TRANSFER);
         when(userRepository.findById(customerId)).thenReturn(Optional.empty());
 
         dispatcher.onOrderStatusChanged(new OrderStatusChanged(

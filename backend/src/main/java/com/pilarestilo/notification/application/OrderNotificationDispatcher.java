@@ -2,14 +2,22 @@ package com.pilarestilo.notification.application;
 
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.notification.domain.ports.InAppNotificationPort;
+import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
+import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.user.domain.ports.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * What an order event means for notifications, in one place.
@@ -26,6 +34,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class OrderNotificationDispatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderNotificationDispatcher.class);
 
     private final NotificationSender notificationSender;
     private final NotificationComposer composer;
@@ -45,46 +55,71 @@ public class OrderNotificationDispatcher {
         this.orderRepository = orderRepository;
     }
 
+    /** The statuses a customer hears about. Anything else is internal bookkeeping. */
+    private static final Set<OrderStatus> NOTIFIED_STATUSES =
+            Set.of(OrderStatus.PREPARING_ORDER, OrderStatus.SHIPPED, OrderStatus.DELIVERED);
+
     public void onOrderCreated(OrderCreated event) {
         /*
          * A TRANSFER order gets its instructions from PaymentRegisteredNotificationListener,
          * carrying the amount, the bank details and the deadline. The generic confirmation on
          * top of that is a second email that tells the customer nothing they can act on.
          */
-        boolean isTransfer = orderRepository.findById(event.orderId())
-                .map(order -> order.getPaymentMethod() == PaymentMethod.TRANSFER)
+        Optional<Order> order = orderRepository.findById(event.orderId());
+        boolean isTransfer = order
+                .map(o -> o.getPaymentMethod() == PaymentMethod.TRANSFER)
                 .orElse(false);
 
         userRepository.findById(event.customerId()).ifPresent(user -> {
-            if (!isTransfer) {
-                notificationSender.send(composer.orderConfirmation(event.orderId()), recipientFor(user));
+            // No order row means no reference to quote, and a confirmation naming an order the
+            // customer cannot identify is worse than none.
+            if (!isTransfer && order.isPresent()) {
+                notificationSender.send(composer.orderConfirmation(order.get()), recipientFor(user));
             }
             inAppNotificationPort.notifyOrderConfirmed(user.getId(), event.orderId());
         });
     }
 
     public void onOrderStatusChanged(OrderStatusChanged event) {
-        if (event.newStatus() == OrderStatus.PREPARING_ORDER) {
-            userRepository.findById(event.customerId()).ifPresentOrElse(
-                    user -> {
-                        notificationSender.send(composer.orderPreparing(event.orderId()), recipientFor(user));
-                        inAppNotificationPort.notifyOrderPreparing(user.getId(), event.orderId());
-                    },
-                    /* No user row: still tell the channel, since the order is real. */
-                    () -> notificationSender.send(composer.orderPreparing(event.orderId()), NotificationRecipient.unknown())
-            );
+        if (!NOTIFIED_STATUSES.contains(event.newStatus())) {
             return;
         }
-
-        if (event.newStatus() != OrderStatus.SHIPPED) return;
+        // The composers quote the order's public reference, so the order has to be read. Without it
+        // there is nothing worth sending: a message naming an order the customer cannot identify.
+        Optional<Order> order = orderRepository.findById(event.orderId());
+        if (order.isEmpty()) {
+            log.warn("Order {} reached {} but could not be read; no message sent",
+                    event.orderId(), event.newStatus());
+            return;
+        }
+        NotificationMessage message = compose(order.get(), event.newStatus());
 
         userRepository.findById(event.customerId()).ifPresentOrElse(
                 user -> {
-                    notificationSender.send(composer.orderShipped(event.orderId()), recipientFor(user));
-                    inAppNotificationPort.notifyOrderShipped(user.getId(), event.orderId());
+                    notificationSender.send(message, recipientFor(user));
+                    notifyInApp(user.getId(), event);
                 },
-                () -> notificationSender.send(composer.orderShipped(event.orderId()), NotificationRecipient.unknown())
+                /* No user row: still tell the channel, since the order is real. */
+                () -> notificationSender.send(message, NotificationRecipient.unknown())
         );
+    }
+
+    private NotificationMessage compose(Order order, OrderStatus status) {
+        return switch (status) {
+            case PREPARING_ORDER -> composer.orderPreparing(order);
+            case SHIPPED -> composer.orderShipped(order);
+            case DELIVERED -> composer.orderDelivered(order);
+            default -> throw new IllegalStateException("No message defined for status " + status);
+        };
+    }
+
+    private void notifyInApp(UUID userId, OrderStatusChanged event) {
+        switch (event.newStatus()) {
+            case PREPARING_ORDER -> inAppNotificationPort.notifyOrderPreparing(userId, event.orderId());
+            case SHIPPED -> inAppNotificationPort.notifyOrderShipped(userId, event.orderId());
+            case DELIVERED -> inAppNotificationPort.notifyOrderDelivered(userId, event.orderId());
+            default -> { }
+        }
     }
 
     private NotificationRecipient recipientFor(com.pilarestilo.user.domain.model.User user) {
