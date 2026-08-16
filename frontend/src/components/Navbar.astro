@@ -137,7 +137,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
         <a href={`/${locale}/`} class="nav-logo-wrap group" aria-label="Pilar Estilo - Inicio">
           <img
             id="nav-logo-full"
-            src="/logo-full-dark-ref.png"
+            src="/logo-full.png"
             alt="Pilar Estilo - Lujo con proposito"
             width="380"
             height="122"
@@ -145,7 +145,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
           />
           <img
             id="nav-logo-compact"
-            src="/logo_princ.png"
+            src="/logo-isotipo.png"
             alt="Pilar Estilo"
             width="220"
             height="74"
@@ -885,20 +885,17 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
 
   function applyTheme(theme: string) {
     const header = document.getElementById('site-header');
-    const fullLogo = document.getElementById('nav-logo-full') as HTMLImageElement | null;
     const moonIcon = document.getElementById('icon-moon');
     const sunIcon = document.getElementById('icon-sun');
     const source = getMode();
 
     if (theme === 'light') {
       header?.classList.add('theme-light');
-      if (fullLogo) fullLogo.src = '/logo-full-light-ref.png';
       moonIcon?.classList.add('hidden');
       sunIcon?.classList.remove('hidden');
       document.documentElement.setAttribute('data-theme', 'light');
     } else {
       header?.classList.remove('theme-light');
-      if (fullLogo) fullLogo.src = '/logo-full-dark-ref.png';
       moonIcon?.classList.remove('hidden');
       sunIcon?.classList.add('hidden');
       document.documentElement.setAttribute('data-theme', 'dark');

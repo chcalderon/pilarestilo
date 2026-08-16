@@ -1,5 +1,6 @@
 package com.pilarestilo.notification.infrastructure.adapters;
 
+import com.pilarestilo.notification.application.EmailLayout;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.model.NotificationRecipient;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
@@ -105,6 +106,51 @@ class SmtpEmailNotificationSenderTest {
         };
 
         failing.send(message("Aviso", "Cuerpo"), NotificationRecipient.of(null, "a@b.cl", "EMAIL"));
+    }
+
+    @Test
+    @DisplayName("a message with an HTML body goes out multipart, carrying both versions")
+    void sendsBothPartsWhenThereIsHtml() throws Exception {
+        NotificationMessage withHtml = new NotificationMessage(
+                "ORDER_SHIPPED", "Pedido enviado", "Texto plano.",
+                "<html><body><p>Version disenada</p></body></html>",
+                Map.of(), UUID.randomUUID());
+
+        sender.send(withHtml, NotificationRecipient.of(null, "cliente@correo.cl", "EMAIL"));
+
+        // JavaMail settles the content type in saveChanges, which the real doSend calls and the
+        // recording override skips.
+        sender.sent.saveChanges();
+        assertThat(sender.sent.getContentType()).startsWith("multipart/");
+    }
+
+    @Test
+    @DisplayName("the logo travels inside the message, so no client has to fetch it")
+    void attachesTheLogoInline() throws Exception {
+        NotificationMessage withHtml = new NotificationMessage(
+                "ORDER_SHIPPED", "Pedido enviado", "Texto plano.",
+                EmailLayout.titled("Pedido").build(),
+                Map.of(), UUID.randomUUID());
+
+        sender.send(withHtml, NotificationRecipient.of(null, "cliente@correo.cl", "EMAIL"));
+
+        sender.sent.saveChanges();
+        // Spring nests the related part inside a mixed envelope, so the outer type says "mixed".
+        // Writing the message out and looking for the Content-ID is the direct evidence that the
+        // part the header points at is actually in there.
+        java.io.ByteArrayOutputStream raw = new java.io.ByteArrayOutputStream();
+        sender.sent.writeTo(raw);
+        assertThat(raw.toString(java.nio.charset.StandardCharsets.UTF_8))
+                .contains("Content-ID: <" + EmailLayout.LOGO_CONTENT_ID + ">");
+    }
+
+    @Test
+    @DisplayName("a message without one is still plain text, not an empty HTML shell")
+    void staysPlainWhenThereIsNoHtml() throws Exception {
+        sender.send(message("Aviso", "Cuerpo"), NotificationRecipient.of(null, "a@b.cl", "EMAIL"));
+
+        sender.sent.saveChanges();
+        assertThat(sender.sent.getContentType()).startsWith("text/plain");
     }
 
     private NotificationMessage message(String subject, String body) {
