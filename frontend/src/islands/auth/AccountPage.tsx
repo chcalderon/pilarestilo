@@ -3,11 +3,14 @@ import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin, X } from 'luc
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
+import RetractoButton from './RetractoButton';
 import {
   getMyReviews,
   getLocationTree,
   deleteReview,
   getMyOrders,
+  getMyReturns,
+  type ReturnRequestDto,
   getMyProfile,
   updateMyProfile,
   changeMyPassword,
@@ -120,6 +123,8 @@ function draftFromAddress(address: CustomerAddressDto): AddressDraft {
 export default function AccountPage({ locale }: Props) {
   const { user, token, clearAuth } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
+  /** Returns this customer already opened, so an order in progress does not offer the button twice. */
+  const [myReturns, setMyReturns] = useState<ReturnRequestDto[]>([]);
   const [tab, setTab] = useState<Tab>('profile');
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [orders, setOrders] = useState<OrderDto[]>([]);
@@ -254,6 +259,17 @@ export default function AccountPage({ locale }: Props) {
       window.history.replaceState(window.history.state, '', nextUrl);
     }
   }, []);
+
+  useEffect(() => {
+    if (tab !== 'orders' || !effectiveToken) return;
+    let cancelled = false;
+    getMyReturns(effectiveToken).then((list) => {
+      if (!cancelled) setMyReturns(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, effectiveToken]);
 
   useEffect(() => {
     if (tab !== 'reviews' || !effectiveToken) return;
@@ -1847,6 +1863,15 @@ export default function AccountPage({ locale }: Props) {
                       )}
 
                       <div className="border-t border-pe-black/7 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        {order.status === 'DELIVERED' && effectiveToken && (
+                          <RetractoButton
+                            orderId={order.id}
+                            token={effectiveToken}
+                            locale={es ? 'es' : 'en'}
+                            existing={myReturns.find((r) => r.orderId === order.id) ?? null}
+                            onRequested={(created) => setMyReturns((current) => [created, ...current])}
+                          />
+                        )}
                         {order.status === 'SHIPPED' && (
                           <button
                             onClick={() => {

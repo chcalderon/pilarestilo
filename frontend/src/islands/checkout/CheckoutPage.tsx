@@ -417,6 +417,9 @@ export default function CheckoutPage({ locale }: Props) {
                   method={paymentMethod}
                   courierName={selectedCourierName}
                   zoneName={selectedZoneName}
+                  shippingEta={
+                    selectedZone ? (locale === 'es' ? selectedZone.etaEs : selectedZone.etaEn) : ''
+                  }
                   total={totals.total}
                   currency={currency}
                   submitting={submitting}

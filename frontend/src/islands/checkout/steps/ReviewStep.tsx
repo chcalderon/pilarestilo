@@ -14,6 +14,8 @@ interface Props {
   method: CheckoutPaymentMethod;
   courierName: string;
   zoneName: string;
+  /** How long the chosen zone takes. Has to be visible before paying, not only on the product page. */
+  shippingEta: string;
   total: number;
   currency: string;
   submitting: boolean;
@@ -39,6 +41,9 @@ const copy = {
     transfer: 'Transferencia bancaria',
     gateway: 'Pago en línea',
     shippingOnDelivery: 'El envío se paga al recibir.',
+    retractoTitle: 'Puedes arrepentirte',
+    retractoBody:
+      'Tienes 10 días desde que recibes el pedido para arrepentirte y pedir la devolución del dinero, sin dar explicaciones. Te devolvemos todo lo pagado y el envío de vuelta corre por nuestra cuenta.',
     back: 'Volver a pago',
     pay: 'Confirmar pedido',
     submitting: 'Procesando…',
@@ -56,6 +61,9 @@ const copy = {
     transfer: 'Bank transfer',
     gateway: 'Online payment',
     shippingOnDelivery: 'Shipping is paid on delivery.',
+    retractoTitle: 'You can change your mind',
+    retractoBody:
+      'You have 10 days from receiving your order to withdraw and ask for your money back, with no explanation needed. We refund everything you paid and cover the return shipping.',
     back: 'Back to payment',
     pay: 'Place order',
     submitting: 'Processing…',
@@ -71,6 +79,7 @@ export default function ReviewStep({
   method,
   courierName,
   zoneName,
+  shippingEta,
   total,
   currency,
   submitting,
@@ -203,6 +212,9 @@ export default function ReviewStep({
             {courierName}
             {zoneName ? ` · ${zoneName}` : ''}
           </p>
+          {shippingEta && (
+            <p className="font-sans text-[0.8rem] text-pe-charcoal mt-0.5">{shippingEta}</p>
+          )}
           <p className="font-sans text-[0.74rem] text-pe-charcoal/60 mt-1">{l.shippingOnDelivery}</p>
 
           <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mt-4 mb-2">
@@ -223,6 +235,15 @@ export default function ReviewStep({
           <p className="font-sans text-[0.78rem] text-[#732731]">{error}</p>
         </div>
       )}
+
+      <div className="border-t border-pe-charcoal/12 pt-4 mb-5">
+        <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-1.5">
+          {l.retractoTitle}
+        </p>
+        <p className="font-sans text-[0.78rem] leading-relaxed text-pe-charcoal/80 max-w-[62ch]">
+          {l.retractoBody}
+        </p>
+      </div>
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 items-stretch sm:items-center">
         <button

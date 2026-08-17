@@ -33,18 +33,63 @@ const unavailableZones = inactiveZones.map((z) => isEs ? z.titleEs : z.titleEn);
 const couriersLabel = activeCouriers.map((c) => c.name).join(' o ') || (isEs ? 'courier autorizado' : 'authorized courier');
 const paymentLabel = isEs ? 'Envío por pagar' : 'Cash on delivery (shipping cost)';
 
+/**
+ * Rights, not courtesies: art. 3 bis of the Ley 19.496 (retracto), art. 21 as amended by the
+ * Ley 21.398 (six months of legal warranty) and the 45-day cap on giving the money back.
+ * Nothing here may be narrowed by the shop, so the copy states the plain minimum the law sets.
+ */
 const returns = isEs
   ? [
-      'Puedes solicitar revision dentro de 5 dias corridos desde la recepcion.',
-      'La pieza debe mantenerse en el mismo estado de entrega y con sus etiquetas.',
-      'Si existe diferencia relevante con la publicacion, gestionamos solucion o devolucion.',
-      'No aplican cambios por preferencia estetica en productos usados informados correctamente.',
+      {
+        title: '10 días para arrepentirte',
+        body: 'Desde que recibes el pedido tienes 10 días corridos para dejarlo sin efecto, sin dar explicaciones. La solicitud se hace desde Mi Cuenta, en el detalle del pedido.',
+      },
+      {
+        title: 'El envío de vuelta lo pagamos nosotros',
+        body: 'Coordinamos el retiro o te enviamos la etiqueta. No retenemos gastos de ningún tipo: se te devuelve todo lo que pagaste.',
+      },
+      {
+        title: 'La prenda vuelve como llegó',
+        body: 'Sin uso más allá de probártela, con sus etiquetas y en el mismo estado en que te la entregamos. Cada prenda que recibimos pasa por limpieza, planchado, sanitización y reparación antes de volver a la tienda.',
+      },
+      {
+        title: 'El dinero, en 45 días como máximo',
+        body: 'Te devolvemos por el mismo medio con que pagaste, apenas recibimos la prenda de vuelta y siempre dentro del plazo legal de 45 días. Si pagaste por transferencia, te pediremos tu cuenta para depositarte.',
+      },
+      {
+        title: '6 meses de garantía legal',
+        body: 'Si la prenda llega con una falla o no corresponde a lo publicado, tienes 6 meses para elegir entre reparación, cambio o la devolución del dinero. Esto es aparte del arrepentimiento y no depende de él.',
+      },
+      {
+        title: 'Cada prenda se publica como es',
+        body: 'Describimos el estado real, incluidas las marcas de uso, y las fotos son de la pieza que recibes. Si algo no calza con lo que viste, es una falla y entra en la garantía.',
+      },
     ]
   : [
-      'You can request a review within 5 calendar days after delivery.',
-      'Items must remain in the original delivered condition with tags attached.',
-      'If there is a material mismatch with the listing, we process a resolution or refund.',
-      'Returns are not available for aesthetic preference on correctly disclosed pre-loved items.',
+      {
+        title: '10 days to change your mind',
+        body: 'From the day your order arrives you have 10 calendar days to withdraw, with no explanation needed. Request it from My Account, in the order detail.',
+      },
+      {
+        title: 'Return shipping is on us',
+        body: 'We arrange the pickup or send you the label. We retain no costs of any kind: you get back everything you paid.',
+      },
+      {
+        title: 'The garment comes back as it arrived',
+        body: 'Unworn beyond trying it on, tags attached, in the same condition we delivered it. Every returned garment is cleaned, pressed, sanitised and repaired before going back on sale.',
+      },
+      {
+        title: 'Your money back within 45 days',
+        body: 'Refunded through the same method you paid with, as soon as the garment reaches us and always inside the 45-day legal limit. If you paid by bank transfer we will ask for your account details.',
+      },
+      {
+        title: 'Six months of legal warranty',
+        body: 'If the garment arrives faulty or does not match the listing, you have 6 months to choose repair, replacement or a refund. This is separate from withdrawal and does not depend on it.',
+      },
+      {
+        title: 'Every garment is listed as it is',
+        body: 'We describe the real condition, wear marks included, and the photos show the exact piece you receive. If something does not match what you saw, that is a fault and the warranty covers it.',
+      },
     ];
 ---
 
@@ -109,25 +154,30 @@ const returns = isEs
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
-        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-6">
-          {isEs ? 'Politica de devoluciones' : 'Return policy'}
+        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-3">
+          {isEs ? 'Devoluciones y garantía' : 'Returns and warranty'}
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-          {returns.map((rule, index) => (
-            <article class="border border-pe-white/15 p-6 md:p-7 bg-pe-white/5">
-              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
-                {isEs ? `Regla ${index + 1}` : `Rule ${index + 1}`}
-              </p>
-              <p class="font-sans text-sm text-pe-white/75 leading-relaxed">{rule}</p>
+        <p class="font-sans text-sm text-pe-white/60 leading-relaxed max-w-2xl mb-8 md:mb-10">
+          {isEs
+            ? 'Lo que sigue no son concesiones nuestras: es lo que la ley chilena te reconoce en toda compra a distancia. Lo escribimos aquí para que no tengas que ir a buscarlo.'
+            : 'What follows is not a favour from us: it is what Chilean law grants you on every distance purchase. We spell it out here so you do not have to go looking for it.'}
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 md:gap-y-10">
+          {returns.map((rule) => (
+            <article>
+              <h3 class="font-sans text-[0.72rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
+                {rule.title}
+              </h3>
+              <p class="font-sans text-sm text-pe-white/75 leading-relaxed max-w-[62ch]">{rule.body}</p>
             </article>
           ))}
         </div>
-        <div class="mt-10 flex flex-wrap gap-3">
-          <Button href={`/${locale}/contact`} variant="primary" trailingIcon="arrow-right">
-            {isEs ? 'Hablar con soporte' : 'Contact support'}
+        <div class="mt-12 flex flex-wrap gap-3">
+          <Button href={`/${locale}/account`} variant="primary" trailingIcon="arrow-right">
+            {isEs ? 'Ir a mis pedidos' : 'Go to my orders'}
           </Button>
-          <Button href={`/${locale}/products`} variant="outline-dark">
-            {isEs ? 'Volver a productos' : 'Back to products'}
+          <Button href={`/${locale}/contact`} variant="outline-light">
+            {isEs ? 'Hablar con soporte' : 'Contact support'}
           </Button>
         </div>
       </div>
