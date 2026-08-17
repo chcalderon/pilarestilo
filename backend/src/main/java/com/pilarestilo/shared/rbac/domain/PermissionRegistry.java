@@ -109,6 +109,17 @@ public final class PermissionRegistry {
             "documents.void", "Anular documentos", "Anular un documento tributario emitido",
             PermissionModule.BILLING, PermissionCategory.WORKFLOW);
 
+    public static final PermissionDefinition RETURNS_READ = define(
+            "returns.read", "Ver devoluciones", "Consultar solicitudes de devolucion y retracto",
+            PermissionModule.RETURNS, PermissionCategory.READ);
+    public static final PermissionDefinition RETURNS_MANAGE = define(
+            "returns.manage", "Gestionar devoluciones", "Aprobar, rechazar, recibir y disponer la prenda",
+            PermissionModule.RETURNS, PermissionCategory.WORKFLOW);
+    /** Separate from managing for the same reason cancelling is separate from issuing: it moves money. */
+    public static final PermissionDefinition RETURNS_REFUND = define(
+            "returns.refund", "Registrar reembolsos", "Registrar la devolucion del dinero",
+            PermissionModule.RETURNS, PermissionCategory.ADMIN);
+
     public static final PermissionDefinition DISPATCH_READ = define(
             "dispatch.read", "Ver despachos", "Consultar cola e historial de despachos",
             PermissionModule.DISPATCH, PermissionCategory.READ);
@@ -169,6 +180,7 @@ public final class PermissionRegistry {
             PAYMENTS_READ, PAYMENTS_REVIEW,
             CASH_READ, CASH_OPEN, CASH_CLOSE, CASH_ADJUST,
             DOCUMENTS_READ, DOCUMENTS_ISSUE, DOCUMENTS_VOID,
+            RETURNS_READ, RETURNS_MANAGE, RETURNS_REFUND,
             DISPATCH_READ, DISPATCH_CLAIM, DISPATCH_MANAGE, DISPATCH_ASSIGN,
             USERS_READ, USERS_UPDATE, USERS_ASSIGN_ROLE,
             ROLES_READ, ROLES_MANAGE,

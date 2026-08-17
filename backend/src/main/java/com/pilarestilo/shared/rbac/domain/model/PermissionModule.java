@@ -7,6 +7,7 @@ public enum PermissionModule {
     ORDERS("orders"),
     CASH("cash"),
     BILLING("billing"),
+    RETURNS("returns"),
     DISPATCH("dispatch"),
     USERS("users"),
     ROLES("roles"),
