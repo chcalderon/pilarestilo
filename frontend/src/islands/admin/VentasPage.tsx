@@ -60,6 +60,7 @@ export default function VentasPage() {
   const canReadSales = useCan('orders.read');
   const canIssue = useCan('documents.issue');
   const canVoid = useCan('documents.void');
+  const canCancelSale = useCan('orders.update');
 
   const [rows, setRows] = useState<SaleSummaryDto[]>([]);
   const [total, setTotal] = useState(0);
@@ -265,6 +266,7 @@ export default function VentasPage() {
           token={effectiveToken}
           canIssue={canIssue}
           canVoid={canVoid}
+          canCancelSale={canCancelSale}
           onClose={() => setSelected(null)}
           onChanged={() => void load()}
         />

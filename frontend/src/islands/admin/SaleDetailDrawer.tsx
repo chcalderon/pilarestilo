@@ -7,6 +7,7 @@ import {
   issueSalesDocument,
   voidSalesDocument,
   reissueSalesDocument,
+  cancelSale,
   uploadSalesDocumentFile,
   fetchSalesDocumentFile,
   type OrderDto,
@@ -15,6 +16,15 @@ import {
   type SalesDocumentDto,
 } from '../../lib/api';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
+
+/** A delivered order cannot be cancelled, and a cancelled one is already done. */
+const CANCELLABLE: string[] = [
+  'PENDING_PAYMENT',
+  'PAYMENT_UNDER_REVIEW',
+  'PAID',
+  'PREPARING_ORDER',
+  'SHIPPED',
+];
 
 const money = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -79,11 +89,21 @@ interface Props {
   token: string;
   canIssue: boolean;
   canVoid: boolean;
+  /** Undoing a sale that took money is heavier than correcting a folio; only ADMIN holds it. */
+  canCancelSale: boolean;
   onClose: () => void;
   onChanged: () => void;
 }
 
-export default function SaleDetailDrawer({ sale, token, canIssue, canVoid, onClose, onChanged }: Props) {
+export default function SaleDetailDrawer({
+  sale,
+  token,
+  canIssue,
+  canVoid,
+  canCancelSale,
+  onClose,
+  onChanged,
+}: Props) {
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [payment, setPayment] = useState<PaymentDto | null>(null);
   const [documents, setDocuments] = useState<SalesDocumentDto[]>([]);
@@ -97,6 +117,8 @@ export default function SaleDetailDrawer({ sale, token, canIssue, canVoid, onClo
   const [fileName, setFileName] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState('');
   const [mode, setMode] = useState<'idle' | 'void' | 'reissue'>('idle');
+  /** Voiding a boleta and undoing the sale are different acts, so the second one is opt-in. */
+  const [alsoCancelSale, setAlsoCancelSale] = useState(false);
 
   const live = documents.find((d) => d.status === 'ISSUED') ?? null;
   const history = documents.filter((d) => d.status === 'VOIDED');
@@ -192,24 +214,35 @@ export default function SaleDetailDrawer({ sale, token, canIssue, canVoid, onClo
   }
 
   async function handleVoid() {
-    if (!live) return;
     if (!voidReason.trim()) {
       setFeedback({ tone: 'error', text: 'Indica el motivo de la anulación.' });
       return;
     }
+    if (!alsoCancelSale && !live) return;
     setBusy(true);
     setFeedback(null);
     try {
-      await voidSalesDocument(live.id, voidReason.trim(), token);
+      if (alsoCancelSale) {
+        // One call: the backend voids the document and cancels the order together, and it is the
+        // cancellation that returns the units to the shelf.
+        await cancelSale(sale.orderId, voidReason.trim(), token);
+        setFeedback({
+          tone: 'success',
+          text: 'Venta anulada. La boleta quedó anulada y las unidades volvieron al stock.',
+        });
+      } else {
+        await voidSalesDocument(live!.id, voidReason.trim(), token);
+        setFeedback({
+          tone: 'success',
+          text: 'Boleta anulada. La venta sigue vigente y no podrá despacharse hasta emitir otra.',
+        });
+      }
       setVoidReason('');
+      setAlsoCancelSale(false);
       setMode('idle');
-      setFeedback({
-        tone: 'success',
-        text: 'Boleta anulada. La venta queda sin documento y no podrá despacharse hasta emitir otra.',
-      });
       await reload();
     } catch (error) {
-      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo anular la boleta' });
+      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo anular' });
     } finally {
       setBusy(false);
     }
@@ -355,9 +388,25 @@ export default function SaleDetailDrawer({ sale, token, canIssue, canVoid, onClo
                 </div>
               </div>
             ) : (
-              <p className="text-sm opacity-70">
-                Esta venta no tiene boleta registrada. No podrá despacharse hasta que se registre.
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm opacity-70">
+                  Esta venta no tiene boleta registrada. No podrá despacharse hasta que se registre.
+                </p>
+                {/* The pending-queue case: paid, undeclared, and being undone. There is no document
+                    to void, but the sale still has to give its units back. */}
+                {canCancelSale && CANCELLABLE.includes(sale.orderStatus) && mode === 'idle' && (
+                  <button
+                    type="button"
+                    className={btnDanger}
+                    onClick={() => {
+                      setAlsoCancelSale(true);
+                      setMode('void');
+                    }}
+                  >
+                    <Ban size={13} /> Anular la venta
+                  </button>
+                )}
+              </div>
             )}
 
             {(mode === 'void' || mode === 'reissue') && (
@@ -372,14 +421,40 @@ export default function SaleDetailDrawer({ sale, token, canIssue, canVoid, onClo
                   />
                 </label>
                 {mode === 'void' && (
-                  <div className="flex gap-2">
-                    <button type="button" className={btnDanger} disabled={busy} onClick={handleVoid}>
-                      Confirmar anulación
-                    </button>
-                    <button type="button" className={btnSecondary} onClick={() => setMode('idle')}>
-                      Cancelar
-                    </button>
-                  </div>
+                  <>
+                    {canCancelSale && (
+                      <label className="flex items-start gap-2 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={alsoCancelSale}
+                          onChange={(e) => setAlsoCancelSale(e.target.checked)}
+                          className="h-4 w-4 mt-0.5 accent-[var(--pe-ink)]"
+                        />
+                        <span className="text-[0.78rem]">
+                          Cerrar también la venta como anulada
+                          <span className="block text-[0.7rem] opacity-60">
+                            Devuelve las unidades al stock y libera el código de descuento. Sin esto,
+                            solo se anula la boleta y la venta sigue vigente.
+                          </span>
+                        </span>
+                      </label>
+                    )}
+                    <div className="flex gap-2">
+                      <button type="button" className={btnDanger} disabled={busy} onClick={handleVoid}>
+                        {alsoCancelSale ? 'Anular la venta completa' : 'Confirmar anulación'}
+                      </button>
+                      <button
+                        type="button"
+                        className={btnSecondary}
+                        onClick={() => {
+                          setMode('idle');
+                          setAlsoCancelSale(false);
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             )}

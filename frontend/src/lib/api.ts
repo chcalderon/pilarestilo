@@ -1437,6 +1437,18 @@ export async function getAdminSales(
   return apiFetch<Page<SaleSummaryDto>>(`/admin/sales${query}`, { headers: authHeaders(token) });
 }
 
+/**
+ * Voids the sale's document and cancels the order in one call. Cancelling is what puts the units
+ * back on the shelf, so this is not the same as voiding a boleta to correct its folio.
+ */
+export async function cancelSale(orderId: string, reason: string, token: string): Promise<OrderDto> {
+  return apiFetch<OrderDto>(`/admin/sales/${encodeURIComponent(orderId)}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+    headers: authHeaders(token),
+  });
+}
+
 export async function getPendingDocumentCount(token: string): Promise<number> {
   try {
     const res = await apiFetch<{ count: number }>('/admin/sales/pending-documents/count', {
