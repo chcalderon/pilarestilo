@@ -6,13 +6,16 @@ const RBAC_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.RBAC_DEBUG ===
 
 type HybridRouteRequirement = {
   permissionCode: string;
-  legacyViewKey: 'roles_permisos' | 'usuarios' | 'configuracion';
+  legacyViewKey: 'roles_permisos' | 'usuarios' | 'configuracion' | 'caja';
 };
 
 const HYBRID_ROUTE_REQUIREMENTS: Array<[string, HybridRouteRequirement]> = [
   ['/admin/roles-permisos', { permissionCode: 'roles.read', legacyViewKey: 'roles_permisos' }],
   ['/admin/users', { permissionCode: 'users.read', legacyViewKey: 'usuarios' }],
   ['/admin/settings', { permissionCode: 'settings.read', legacyViewKey: 'configuracion' }],
+  // The sales screen exposes buyer names, emails and amounts, so it is gated at the route as well
+  // as in the island. The backend guards every endpoint behind it independently.
+  ['/admin/ventas', { permissionCode: 'orders.read', legacyViewKey: 'caja' }],
 ];
 
 function resolveHybridRequirement(pathname: string): HybridRouteRequirement | null {

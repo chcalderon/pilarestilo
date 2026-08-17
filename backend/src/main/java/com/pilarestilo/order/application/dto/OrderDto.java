@@ -17,6 +17,10 @@ public record OrderDto(
         MoneyDto subtotal,
         MoneyDto discountAmount,
         MoneyDto totalAmount,
+        /** The total split as a boleta reports it: taxable base, VAT, and the rate applied. */
+        MoneyDto netAmount,
+        MoneyDto taxAmount,
+        java.math.BigDecimal taxRate,
         PaymentMethod paymentMethod,
         String shippingZoneCode,
         String shippingCourierId,

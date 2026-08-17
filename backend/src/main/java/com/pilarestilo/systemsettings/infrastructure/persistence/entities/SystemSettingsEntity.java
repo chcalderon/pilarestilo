@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -194,11 +195,62 @@ public class SystemSettingsEntity {
     @Column(name = "bank_transfer_auto_cancel_cron", nullable = false, length = 64)
     private String bankTransferAutoCancelCron;
 
+    @Column(name = "tax_payer_rut", length = 20)
+    private String taxPayerRut;
+
+    @Column(name = "tax_business_name", length = 160)
+    private String taxBusinessName;
+
+    @Column(name = "tax_business_activity", length = 160)
+    private String taxBusinessActivity;
+
+    @Column(name = "tax_acteco_code", length = 20)
+    private String taxActecoCode;
+
+    @Column(name = "tax_address", length = 200)
+    private String taxAddress;
+
+    @Column(name = "tax_commune", length = 120)
+    private String taxCommune;
+
+    @Column(name = "tax_city", length = 120)
+    private String taxCity;
+
+    @Column(name = "tax_vat_rate", precision = 5, scale = 2)
+    private BigDecimal taxVatRate;
+
+    @Column(name = "tax_document_required_before_dispatch")
+    private Boolean taxDocumentRequiredBeforeDispatch;
+
+    @Column(name = "tax_document_provider", length = 30)
+    private String taxDocumentProvider;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @Column(name = "updated_by", length = 120)
     private String updatedBy;
+
+    public String getTaxPayerRut() { return taxPayerRut; }
+    public void setTaxPayerRut(String taxPayerRut) { this.taxPayerRut = taxPayerRut; }
+    public String getTaxBusinessName() { return taxBusinessName; }
+    public void setTaxBusinessName(String taxBusinessName) { this.taxBusinessName = taxBusinessName; }
+    public String getTaxBusinessActivity() { return taxBusinessActivity; }
+    public void setTaxBusinessActivity(String taxBusinessActivity) { this.taxBusinessActivity = taxBusinessActivity; }
+    public String getTaxActecoCode() { return taxActecoCode; }
+    public void setTaxActecoCode(String taxActecoCode) { this.taxActecoCode = taxActecoCode; }
+    public String getTaxAddress() { return taxAddress; }
+    public void setTaxAddress(String taxAddress) { this.taxAddress = taxAddress; }
+    public String getTaxCommune() { return taxCommune; }
+    public void setTaxCommune(String taxCommune) { this.taxCommune = taxCommune; }
+    public String getTaxCity() { return taxCity; }
+    public void setTaxCity(String taxCity) { this.taxCity = taxCity; }
+    public BigDecimal getTaxVatRate() { return taxVatRate; }
+    public void setTaxVatRate(BigDecimal taxVatRate) { this.taxVatRate = taxVatRate; }
+    public Boolean getTaxDocumentRequiredBeforeDispatch() { return taxDocumentRequiredBeforeDispatch; }
+    public void setTaxDocumentRequiredBeforeDispatch(Boolean value) { this.taxDocumentRequiredBeforeDispatch = value; }
+    public String getTaxDocumentProvider() { return taxDocumentProvider; }
+    public void setTaxDocumentProvider(String taxDocumentProvider) { this.taxDocumentProvider = taxDocumentProvider; }
 
     public Short getId() { return id; }
     public void setId(Short id) { this.id = id; }

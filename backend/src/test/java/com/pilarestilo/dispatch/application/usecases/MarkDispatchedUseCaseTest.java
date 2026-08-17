@@ -4,6 +4,7 @@ import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.enums.DispatchStatus;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
+import com.pilarestilo.dispatch.domain.ports.SalesDocumentGate;
 import com.pilarestilo.order.application.dto.MoneyDto;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
@@ -39,6 +40,9 @@ class MarkDispatchedUseCaseTest {
     UpdateOrderStatusUseCase updateOrderStatusUseCase;
     @Mock
     GetOrderUseCase getOrderUseCase;
+    /** Answers false by default, i.e. the boleta is registered. The gate has its own tests. */
+    @Mock
+    SalesDocumentGate salesDocumentGate;
 
     @InjectMocks
     MarkDispatchedUseCase useCase;
@@ -176,6 +180,9 @@ class MarkDispatchedUseCaseTest {
                 new MoneyDto(BigDecimal.TEN, "CLP"),
                 new MoneyDto(BigDecimal.ZERO, "CLP"),
                 new MoneyDto(BigDecimal.TEN, "CLP"),
+                new MoneyDto(new BigDecimal("8"), "CLP"),
+                new MoneyDto(new BigDecimal("2"), "CLP"),
+                new BigDecimal("19.00"),
                 PaymentMethod.TRANSFER,
                 "LOCAL",
                 "chilexpress",

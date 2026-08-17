@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.orderservice.domain.OrderStatus;
 import com.pilarestilo.orderservice.domain.PaymentMethod;
 import com.pilarestilo.orderservice.domain.OrderReference;
+import com.pilarestilo.orderservice.domain.TaxBreakdown;
 import com.pilarestilo.orderservice.persistence.OrderEntity;
 import com.pilarestilo.orderservice.persistence.OrderItemEntity;
 import com.pilarestilo.orderservice.persistence.OrderRepository;
@@ -81,6 +82,7 @@ public class OrderCommandService {
         BigDecimal subtotal = calculateSubtotal(lines);
         BigDecimal discount = resolveDiscountAmount(request, subtotal, currency);
         BigDecimal total = subtotal.subtract(discount).setScale(2, RoundingMode.HALF_UP);
+        TaxBreakdown tax = TaxBreakdown.fromGross(total, request.taxRate());
 
         OrderEntity order = new OrderEntity();
         UUID orderId = UUID.randomUUID();
@@ -99,6 +101,9 @@ public class OrderCommandService {
         order.setDiscountCode(request.discountCode());
         order.setTotalAmount(total);
         order.setTotalCurrency(currency);
+        order.setNetAmount(tax.net());
+        order.setTaxAmount(tax.tax());
+        order.setTaxRate(tax.rate());
         order.setPaymentMethod(paymentMethod.name());
         order.setShippingZoneCode(shippingSelection.zoneCode());
         order.setShippingCourierId(shippingSelection.courierId());

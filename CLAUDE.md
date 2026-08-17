@@ -100,7 +100,7 @@ Every domain module follows the same three-layer pattern:
 
 Naming conventions: `{Action}UseCase`, `{Entity}RepositoryJpaAdapter`, `{Entity}Controller`. Domain objects carry no framework annotations — JPA entities are separate from domain models. Use cases take ports (interfaces) as constructor args; Spring wires them.
 
-Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`, `customeraddress` + `shared` (auth, rbac, kafka, common domain).
+Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`, `customeraddress`, `billing` + `shared` (auth, rbac, kafka, common domain).
 
 `cashregister` also exposes `POST /api/pos/sales` (stub, returns 501) — planned Windows POS integration; see `docs/pos-channel.md`.
 
@@ -135,6 +135,19 @@ All traffic enters through Caddy. In the `microservices` profile, read paths are
 
 Guardrails: 12 MB body cap, per-IP rate limits on auth and webhook endpoints.
 
+### The boleta gate
+
+A paid order cannot be claimed for dispatch, or dispatched, without a live row in
+`sales_documents` — checked at **both** steps, because a dispatch claimed while its boleta was live
+can still be in progress when that boleta is voided. The rule is `SalesDocumentGate` (port in
+`dispatch/domain/ports/`, adapter in `billing/`), and the shop can switch it off with
+`system_settings.tax_document_required_before_dispatch`.
+
+Approving the payment is deliberately **not** gated: the folio comes from the SII's eBoleta app by
+hand, and making the money wait on it invites a made-up folio. Boleta files live under
+`app.documents.storage-path`, never under `app.media.storage-path` — that whole tree is `permitAll`
+on `/api/media/**`, and a boleta carries a RUT, a buyer name and amounts.
+
 ### Two codebases write the `orders` table
 
 With `APP_ORDER_REMOTE_WRITE_ENABLED=true` — what production runs — `order-service` performs the
@@ -166,7 +179,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V68**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V78**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -186,6 +199,14 @@ Recent migrations (V54–V66):
 - V66: repair `shipping_origin_zone` alias `NATIONAL` → `NACIONAL`
 - V67: discount redemptions become reservable (`status` + `order_id` on `discount_code_usages`, partial unique index on `status <> 'RELEASED'`) + `orders.public_reference` + `orders.discount_id`/`discount_code` provenance
 - V68: `orders.public_reference` SET NOT NULL (contract half of V67's expand)
+- V75: `sales_documents` — the boleta/factura backing a sale. Append-only: a correction voids and
+  reissues, chained by `replaces_document_id`. Partial unique index keeps one live document per
+  order; `CHECK (net + tax = total)` pins the arithmetic
+- V76: `orders.net_amount` / `tax_amount` / `tax_rate` (expand, nullable — contract still pending)
+- V77: store tax identity in `system_settings` (RUT, razón social, giro, Acteco, dirección, comuna,
+  ciudad, `tax_vat_rate`, `tax_document_required_before_dispatch`, `tax_document_provider`)
+- V78: `billing` permissions — `documents.read` / `documents.issue` / `documents.void`, granted to
+  ADMIN and ADMINISTRACION; plus `orders.read` for ADMINISTRACION and SUPERVISOR
 
 ### Spring Boot 4 modular auto-configuration
 

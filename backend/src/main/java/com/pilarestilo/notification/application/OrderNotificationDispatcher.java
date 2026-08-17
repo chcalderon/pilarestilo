@@ -5,7 +5,6 @@ import com.pilarestilo.notification.domain.ports.InAppNotificationPort;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.order.domain.enums.OrderStatus;
-import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
 import com.pilarestilo.order.domain.model.Order;
@@ -61,19 +60,19 @@ public class OrderNotificationDispatcher {
 
     public void onOrderCreated(OrderCreated event) {
         /*
-         * A TRANSFER order gets its instructions from PaymentRegisteredNotificationListener,
-         * carrying the amount, the bank details and the deadline. The generic confirmation on
-         * top of that is a second email that tells the customer nothing they can act on.
+         * Sent for every payment method, TRANSFER included. It used to be skipped there on the
+         * grounds that the transfer-instructions email already covered it — but that message carries
+         * only bank details and a deadline, never what was bought or for how much. The Ley 21.398
+         * requires written confirmation of the conditions of the offer, and without it the right of
+         * withdrawal runs ninety days instead of ten. A transfer buyer now gets both: this one says
+         * what they agreed to, the other says how to pay for it.
          */
         Optional<Order> order = orderRepository.findById(event.orderId());
-        boolean isTransfer = order
-                .map(o -> o.getPaymentMethod() == PaymentMethod.TRANSFER)
-                .orElse(false);
 
         userRepository.findById(event.customerId()).ifPresent(user -> {
             // No order row means no reference to quote, and a confirmation naming an order the
             // customer cannot identify is worse than none.
-            if (!isTransfer && order.isPresent()) {
+            if (order.isPresent()) {
                 notificationSender.send(composer.orderConfirmation(order.get()), recipientFor(user));
             }
             inAppNotificationPort.notifyOrderConfirmed(user.getId(), event.orderId());

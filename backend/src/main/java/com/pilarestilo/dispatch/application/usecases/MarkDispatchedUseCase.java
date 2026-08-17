@@ -3,6 +3,7 @@ package com.pilarestilo.dispatch.application.usecases;
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
+import com.pilarestilo.dispatch.domain.ports.SalesDocumentGate;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
 import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
@@ -20,12 +21,16 @@ public class MarkDispatchedUseCase {
     private final UpdateOrderStatusUseCase updateOrderStatusUseCase;
     private final GetOrderUseCase getOrderUseCase;
 
+    private final SalesDocumentGate salesDocumentGate;
+
     public MarkDispatchedUseCase(DispatchRepository dispatchRepository,
                                  UpdateOrderStatusUseCase updateOrderStatusUseCase,
-                                 GetOrderUseCase getOrderUseCase) {
+                                 GetOrderUseCase getOrderUseCase,
+                                 SalesDocumentGate salesDocumentGate) {
         this.dispatchRepository = dispatchRepository;
         this.updateOrderStatusUseCase = updateOrderStatusUseCase;
         this.getOrderUseCase = getOrderUseCase;
+        this.salesDocumentGate = salesDocumentGate;
     }
 
     @Transactional
@@ -36,6 +41,15 @@ public class MarkDispatchedUseCase {
                 .orElseThrow(() -> new DomainException("Dispatch not found"));
         if (!dispatcherId.equals(d.getDispatcherId())) {
             throw new DomainException("You can only dispatch orders you have claimed");
+        }
+        /*
+         * Checked again here, not only at claim. A dispatch claimed while its boleta was live can
+         * still be sitting in progress when that boleta is voided, and the parcel would then leave
+         * undeclared. Guarding only the way in is how the checkout let ?paso=resumen through.
+         */
+        if (salesDocumentGate.blocksDispatch(d.getOrderId())) {
+            throw new DomainException(
+                    "This order has no registered boleta. Register it before dispatching.");
         }
         String normalizedCarrier = normalizeRequired(carrier, "carrier");
         String normalizedTrackingCode = normalizeRequired(trackingCode, "tracking code");

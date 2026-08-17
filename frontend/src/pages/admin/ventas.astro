@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import VentasPage from '../../islands/admin/VentasPage';
+---
+
+<AdminLayout
+  title="Ventas"
+  breadcrumbs={[{ label: 'Ventas' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Ventas</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      Cliente, productos, pago y boleta de cada venta. Una venta pagada sin boleta no se puede despachar.
+    </p>
+  </div>
+
+  <VentasPage client:load />
+</AdminLayout>

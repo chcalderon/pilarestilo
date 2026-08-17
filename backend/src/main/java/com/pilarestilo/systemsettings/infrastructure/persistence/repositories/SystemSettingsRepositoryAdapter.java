@@ -1,5 +1,6 @@
 package com.pilarestilo.systemsettings.infrastructure.persistence.repositories;
 
+import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
 import com.pilarestilo.systemsettings.domain.model.SystemSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.persistence.entities.SystemSettingsEntity;
@@ -92,6 +93,17 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setBankTransferAutoCancelEnabled(settings.isBankTransferAutoCancelEnabled());
         entity.setBankTransferAutoCancelTimeoutMinutes(settings.getBankTransferAutoCancelTimeoutMinutes());
         entity.setBankTransferAutoCancelCron(settings.getBankTransferAutoCancelCron());
+        StoreTaxSettings tax = settings.getTax();
+        entity.setTaxPayerRut(tax.payerRut());
+        entity.setTaxBusinessName(tax.businessName());
+        entity.setTaxBusinessActivity(tax.businessActivity());
+        entity.setTaxActecoCode(tax.actecoCode());
+        entity.setTaxAddress(tax.address());
+        entity.setTaxCommune(tax.commune());
+        entity.setTaxCity(tax.city());
+        entity.setTaxVatRate(tax.vatRate());
+        entity.setTaxDocumentRequiredBeforeDispatch(tax.documentRequiredBeforeDispatch());
+        entity.setTaxDocumentProvider(tax.provider().name());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -160,6 +172,17 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.isBankTransferAutoCancelEnabled(),
                 entity.getBankTransferAutoCancelTimeoutMinutes(),
                 entity.getBankTransferAutoCancelCron(),
+                StoreTaxSettings.of(
+                        entity.getTaxPayerRut(),
+                        entity.getTaxBusinessName(),
+                        entity.getTaxBusinessActivity(),
+                        entity.getTaxActecoCode(),
+                        entity.getTaxAddress(),
+                        entity.getTaxCommune(),
+                        entity.getTaxCity(),
+                        entity.getTaxVatRate(),
+                        entity.getTaxDocumentRequiredBeforeDispatch(),
+                        entity.getTaxDocumentProvider()),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

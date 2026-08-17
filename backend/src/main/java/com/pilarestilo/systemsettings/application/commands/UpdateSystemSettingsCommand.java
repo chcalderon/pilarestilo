@@ -70,5 +70,15 @@ public record UpdateSystemSettingsCommand(
         Boolean bankTransferAutoCancelEnabled,
         Integer bankTransferAutoCancelTimeoutMinutes,
         String bankTransferAutoCancelCron,
+        String taxPayerRut,
+        String taxBusinessName,
+        String taxBusinessActivity,
+        String taxActecoCode,
+        String taxAddress,
+        String taxCommune,
+        String taxCity,
+        java.math.BigDecimal taxVatRate,
+        Boolean taxDocumentRequiredBeforeDispatch,
+        String taxDocumentProvider,
         String updatedBy
 ) {}

@@ -99,6 +99,16 @@ public final class PermissionRegistry {
             "cash.adjust", "Ajustar caja", "Realizar ajustes de caja",
             PermissionModule.CASH, PermissionCategory.ADMIN);
 
+    public static final PermissionDefinition DOCUMENTS_READ = define(
+            "documents.read", "Ver documentos tributarios", "Consultar boletas y facturas de una venta",
+            PermissionModule.BILLING, PermissionCategory.READ);
+    public static final PermissionDefinition DOCUMENTS_ISSUE = define(
+            "documents.issue", "Registrar documentos", "Registrar la boleta o factura de una venta",
+            PermissionModule.BILLING, PermissionCategory.WORKFLOW);
+    public static final PermissionDefinition DOCUMENTS_VOID = define(
+            "documents.void", "Anular documentos", "Anular un documento tributario emitido",
+            PermissionModule.BILLING, PermissionCategory.WORKFLOW);
+
     public static final PermissionDefinition DISPATCH_READ = define(
             "dispatch.read", "Ver despachos", "Consultar cola e historial de despachos",
             PermissionModule.DISPATCH, PermissionCategory.READ);
@@ -158,6 +168,7 @@ public final class PermissionRegistry {
             ORDERS_READ, ORDERS_UPDATE,
             PAYMENTS_READ, PAYMENTS_REVIEW,
             CASH_READ, CASH_OPEN, CASH_CLOSE, CASH_ADJUST,
+            DOCUMENTS_READ, DOCUMENTS_ISSUE, DOCUMENTS_VOID,
             DISPATCH_READ, DISPATCH_CLAIM, DISPATCH_MANAGE, DISPATCH_ASSIGN,
             USERS_READ, USERS_UPDATE, USERS_ASSIGN_ROLE,
             ROLES_READ, ROLES_MANAGE,

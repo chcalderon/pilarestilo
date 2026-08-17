@@ -4,6 +4,7 @@ import com.pilarestilo.systemsettings.application.commands.UpdateSystemSettingsC
 import com.pilarestilo.systemsettings.application.dto.SystemSettingsDto;
 import com.pilarestilo.systemsettings.application.mappers.SystemSettingsMapper;
 import com.pilarestilo.systemsettings.domain.events.BankTransferSettingsChangedEvent;
+import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
 import com.pilarestilo.shared.infrastructure.cache.CacheNames;
@@ -138,6 +139,17 @@ public class UpdateSystemSettingsUseCase {
                 command.bankTransferAutoCancelEnabled(),
                 command.bankTransferAutoCancelTimeoutMinutes(),
                 command.bankTransferAutoCancelCron(),
+                StoreTaxSettings.of(
+                        command.taxPayerRut(),
+                        command.taxBusinessName(),
+                        command.taxBusinessActivity(),
+                        command.taxActecoCode(),
+                        command.taxAddress(),
+                        command.taxCommune(),
+                        command.taxCity(),
+                        command.taxVatRate(),
+                        command.taxDocumentRequiredBeforeDispatch(),
+                        command.taxDocumentProvider()),
                 command.updatedBy()
         );
 

@@ -1,5 +1,7 @@
 package com.pilarestilo.notification.application;
 
+import com.pilarestilo.billing.domain.enums.SalesDocumentType;
+import com.pilarestilo.billing.domain.model.SalesDocument;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.payment.domain.model.Payment;
@@ -152,21 +154,115 @@ public class NotificationComposer {
      * a change to what the customer sees, not a refactor, so it is not made here.
      */
 
+    /**
+     * The written confirmation of the conditions of the sale.
+     *
+     * <p>Not a courtesy note: the Ley 21.398 requires the supplier to send confirmation of the offer
+     * in writing, including what was bought and for how much. Without it the customer's right of
+     * withdrawal runs for ninety days instead of ten. So this message carries the lines, the amounts
+     * and the shipping, and it is sent for every payment method — including TRANSFER, which used to
+     * receive only bank details and therefore never learned what it had agreed to.
+     */
     public NotificationMessage orderConfirmation(Order order) {
         UUID orderId = order.getId();
         String reference = order.getPublicReference();
+        String total = formatAmount(order.getTotalAmount().amount().toPlainString(),
+                order.getTotalAmount().currency());
+
+        StringBuilder body = new StringBuilder()
+                .append("Tu pedido ").append(reference).append(" fue creado correctamente.\n\n")
+                .append("Detalle:\n");
+        for (var item : order.getItems()) {
+            body.append("  ").append(item.getProductName())
+                    .append(variantSuffix(item.getVariantColor(), item.getVariantSize()))
+                    .append(" x").append(item.getQuantity())
+                    .append(" — ")
+                    .append(formatAmount(item.getUnitPrice().amount().toPlainString(),
+                            item.getUnitPrice().currency()))
+                    .append('\n');
+        }
+        body.append('\n')
+                .append("Subtotal: ").append(formatAmount(
+                        order.getSubtotal().amount().toPlainString(), order.getSubtotal().currency())).append('\n');
+        if (order.getDiscountAmount().amount().signum() > 0) {
+            body.append("Descuento: -").append(formatAmount(
+                    order.getDiscountAmount().amount().toPlainString(),
+                    order.getDiscountAmount().currency())).append('\n');
+        }
+        body.append("Total: ").append(total).append("\n\n")
+                .append("Envío: ").append(shippingLine(order)).append("\n\n")
+                .append("Tienes 10 días desde que recibes el pedido para arrepentirte de la compra "
+                        + "y pedir la devolución, según la Ley del Consumidor.\n");
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", orderId);
+        data.put("reference", reference);
+        data.put("subtotalAmount", order.getSubtotal().amount());
+        data.put("discountAmount", order.getDiscountAmount().amount());
+        data.put("netAmount", order.getNetAmount().amount());
+        data.put("taxAmount", order.getTaxAmount().amount());
+        data.put("taxRate", order.getTaxRate());
+        data.put("totalAmount", order.getTotalAmount().amount());
+        data.put("currency", order.getTotalAmount().currency());
+        data.put("shippingCourierName", order.getShippingCourierName());
+        data.put("shippingZoneCode", order.getShippingZoneCode());
+
         return new NotificationMessage(
                 NotificationMessage.ORDER_CONFIRMATION,
                 "Pedido " + reference + " confirmado",
-                "Tu pedido " + reference + " fue creado correctamente.\n"
-                        + "Te notificaremos por este canal cuando avance.\n",
-                EmailLayout.titled("Recibimos tu pedido")
-                        .paragraph("Gracias por comprar en Pilar Estilo. Ya tenemos tu pedido y te "
-                                + "avisaremos por aquí en cada paso.")
-                        .highlight("Número de pedido", reference)
-                        .build(),
-                Map.of("orderId", orderId, "reference", reference),
+                body.toString(),
+                orderConfirmationHtml(order, reference, total),
+                data,
                 orderId);
+    }
+
+    private String orderConfirmationHtml(Order order, String reference, String total) {
+        List<String[]> lines = order.getItems().stream()
+                .map(item -> new String[]{
+                        item.getProductName() + variantSuffix(item.getVariantColor(), item.getVariantSize())
+                                + " x" + item.getQuantity(),
+                        formatAmount(item.getUnitPrice().amount().toPlainString(),
+                                item.getUnitPrice().currency())})
+                .toList();
+
+        EmailLayout.Builder email = EmailLayout.titled("Recibimos tu pedido")
+                .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
+                        + "avisaremos por aquí en cada paso.")
+                .highlight("Número de pedido", reference)
+                .details(lines);
+
+        List<String[]> amounts = new java.util.ArrayList<>();
+        amounts.add(new String[]{"Subtotal", formatAmount(
+                order.getSubtotal().amount().toPlainString(), order.getSubtotal().currency())});
+        if (order.getDiscountAmount().amount().signum() > 0) {
+            amounts.add(new String[]{"Descuento", "-" + formatAmount(
+                    order.getDiscountAmount().amount().toPlainString(),
+                    order.getDiscountAmount().currency())});
+        }
+        amounts.add(new String[]{"Total", total});
+        amounts.add(new String[]{"Envío", shippingLine(order)});
+
+        return email
+                .details(amounts)
+                .note("Tienes 10 días desde que recibes el pedido para arrepentirte de la compra y "
+                        + "pedir la devolución, según la Ley del Consumidor.")
+                .build();
+    }
+
+    private String shippingLine(Order order) {
+        String courier = Optional.ofNullable(order.getShippingCourierName())
+                .filter(name -> !name.isBlank())
+                .orElse(order.getShippingCourierId());
+        return Optional.ofNullable(courier).orElse("por confirmar")
+                + " · " + Optional.ofNullable(order.getShippingZoneCode()).orElse("");
+    }
+
+    private String variantSuffix(String color, String size) {
+        String variant = java.util.stream.Stream.of(color, size)
+                .filter(value -> value != null && !value.isBlank())
+                .reduce((a, b) -> a + " / " + b)
+                .orElse(null);
+        return variant == null ? "" : " (" + variant + ")";
     }
 
     public NotificationMessage paymentReceived(UUID paymentId) {
@@ -327,6 +423,56 @@ public class NotificationComposer {
         return local.toLocalDate().equals(now.toLocalDate())
                 ? local.format(TIME)
                 : local.format(DATE_TIME);
+    }
+
+    /**
+     * Tells the buyer their boleta exists and what it says.
+     *
+     * <p>The file is not attached: it lives outside the public media root and is read through an
+     * authenticated endpoint. What the customer needs to quote is the folio and the amounts, and
+     * those are here.
+     */
+    public NotificationMessage salesDocumentIssued(Order order, SalesDocument document) {
+        String reference = order.getPublicReference();
+        String currency = document.getTotalAmount().currency();
+        String documentName = document.getType() == SalesDocumentType.FACTURA ? "factura" : "boleta";
+
+        String body = "Emitimos la " + documentName + " de tu pedido " + reference + ".\n\n"
+                + "Folio: " + document.getFolio() + "\n"
+                + "Neto: " + formatAmount(document.getNetAmount().amount().toPlainString(), currency) + "\n"
+                + "IVA (" + document.getTaxRate().toPlainString() + "%): "
+                + formatAmount(document.getTaxAmount().amount().toPlainString(), currency) + "\n"
+                + "Total: " + formatAmount(document.getTotalAmount().amount().toPlainString(), currency) + "\n";
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("documentId", document.getId());
+        data.put("documentType", document.getType().name());
+        data.put("folio", document.getFolio());
+        data.put("netAmount", document.getNetAmount().amount());
+        data.put("taxAmount", document.getTaxAmount().amount());
+        data.put("taxRate", document.getTaxRate());
+        data.put("totalAmount", document.getTotalAmount().amount());
+        data.put("currency", currency);
+
+        return new NotificationMessage(
+                NotificationMessage.SALES_DOCUMENT_ISSUED,
+                "Boleta " + document.getFolio() + " de tu pedido " + reference,
+                body,
+                EmailLayout.titled("Tu " + documentName + " está emitida")
+                        .paragraph("Emitimos la " + documentName + " de tu pedido " + reference + ".")
+                        .highlight("Folio", document.getFolio())
+                        .details(List.of(
+                                new String[]{"Neto", formatAmount(
+                                        document.getNetAmount().amount().toPlainString(), currency)},
+                                new String[]{"IVA (" + document.getTaxRate().toPlainString() + "%)",
+                                        formatAmount(document.getTaxAmount().amount().toPlainString(), currency)},
+                                new String[]{"Total", formatAmount(
+                                        document.getTotalAmount().amount().toPlainString(), currency)}))
+                        .build(),
+                data,
+                order.getId());
     }
 
     private String formatAmount(String amount, String currency) {

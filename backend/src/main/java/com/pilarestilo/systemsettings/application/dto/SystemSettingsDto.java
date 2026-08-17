@@ -64,6 +64,16 @@ public record SystemSettingsDto(
         boolean bankTransferAutoCancelEnabled,
         int bankTransferAutoCancelTimeoutMinutes,
         String bankTransferAutoCancelCron,
+        String taxPayerRut,
+        String taxBusinessName,
+        String taxBusinessActivity,
+        String taxActecoCode,
+        String taxAddress,
+        String taxCommune,
+        String taxCity,
+        java.math.BigDecimal taxVatRate,
+        boolean taxDocumentRequiredBeforeDispatch,
+        String taxDocumentProvider,
         Instant updatedAt,
         String updatedBy
 ) {}

@@ -13,6 +13,10 @@ public record OrderDto(
         MoneyDto subtotal,
         MoneyDto discountAmount,
         MoneyDto totalAmount,
+        /** The total split as a boleta reports it. Mirrors the monolith's OrderDto. */
+        MoneyDto netAmount,
+        MoneyDto taxAmount,
+        java.math.BigDecimal taxRate,
         String paymentMethod,
         String shippingZoneCode,
         String shippingCourierId,

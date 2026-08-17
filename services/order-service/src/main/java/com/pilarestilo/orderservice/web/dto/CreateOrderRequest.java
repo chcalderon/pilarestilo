@@ -22,7 +22,13 @@ public record CreateOrderRequest(
          * validate the code and cannot redeem one.
          */
         UUID discountId,
-        String discountCode
+        String discountCode,
+        /*
+         * The shop's configured VAT rate, resolved by the monolith, which owns system settings.
+         * Only the rate travels: the total is computed here, so a net and a tax computed there
+         * could disagree with it. Null falls back to TaxBreakdown.DEFAULT_RATE.
+         */
+        BigDecimal taxRate
 ) {
     /**
      * A copy with the caller's identity substituted.
@@ -46,7 +52,8 @@ public record CreateOrderRequest(
                 employeeDiscountEligible,
                 salesChannel,
                 discountId,
-                discountCode
+                discountCode,
+                taxRate
         );
     }
 

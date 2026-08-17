@@ -4,8 +4,10 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.shared.application.TaxBreakdown;
 import com.pilarestilo.shared.domain.DomainException;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -29,6 +31,14 @@ public class Order {
     private UUID discountId;
     private String discountCode;
     private Money totalAmount;
+    /**
+     * The total split the way a boleta reports it. Derived from {@link #totalAmount} at the rate in
+     * force when the order was created, and snapshotted rather than recomputed on read: a future
+     * change to the IVA must not restate what a past sale declared.
+     */
+    private Money netAmount;
+    private Money taxAmount;
+    private BigDecimal taxRate;
     private PaymentMethod paymentMethod;
     private String shippingZoneCode;
     private String shippingCourierId;
@@ -69,7 +79,28 @@ public class Order {
                                      String notes, SalesChannel salesChannel,
                                      OrderStatus status, Instant createdAt, Instant updatedAt,
                                      String publicReference) {
+        return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount,
+                paymentMethod, shippingZoneCode, shippingCourierId, shippingCourierName,
+                shippingPaymentMode, shippingAddressId, shippingAddressReference, notes,
+                salesChannel, status, createdAt, updatedAt, publicReference, null);
+    }
+
+    /**
+     * @param taxRate the rate the order was created under. Only the rate is carried: net and tax are
+     *                derived from it and the total by {@link TaxBreakdown}, which is also what wrote
+     *                the columns and what V76 backfilled them with, so a stored pair and a derived
+     *                pair cannot disagree. Null means a row from before the column existed.
+     */
+    public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
+                                     Money subtotal, Money discountAmount, Money totalAmount,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                     String notes, SalesChannel salesChannel,
+                                     OrderStatus status, Instant createdAt, Instant updatedAt,
+                                     String publicReference, BigDecimal taxRate) {
         Order order = new Order();
+        order.applyTaxRate(totalAmount, taxRate);
         order.id = id;
         // Stored value wins. V67's repair loop salts duplicates, so a derived value could differ
         // from the code the customer was actually given. Older rows predate the column.
@@ -97,6 +128,19 @@ public class Order {
     }
 
     /**
+     * Splits the total into net and tax. The rate falls back to {@link TaxBreakdown#DEFAULT_RATE}
+     * so an order can never end up without a breakdown; a missing rate means a caller that predates
+     * the column, not a sale outside the VAT system.
+     */
+    private void applyTaxRate(Money totalAmount, BigDecimal taxRate) {
+        BigDecimal rate = taxRate == null ? TaxBreakdown.DEFAULT_RATE : taxRate;
+        TaxBreakdown breakdown = TaxBreakdown.fromGross(totalAmount, rate);
+        this.netAmount = breakdown.net();
+        this.taxAmount = breakdown.tax();
+        this.taxRate = rate;
+    }
+
+    /**
      * Records which code was applied. Deliberately not a constructor argument: it changes no
      * behaviour, and the factories already carry seventeen parameters.
      */
@@ -120,6 +164,21 @@ public class Order {
                                 String shippingCourierId, String shippingCourierName,
                                 String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                 String notes, SalesChannel salesChannel) {
+        return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
+                shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
+                shippingAddressReference, notes, salesChannel, null);
+    }
+
+    /**
+     * @param taxRate the VAT rate configured for the shop when the order is placed. Snapshotted onto
+     *                the order so a later change to it cannot restate this sale. Null falls back to
+     *                {@link TaxBreakdown#DEFAULT_RATE}.
+     */
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel, BigDecimal taxRate) {
         if (customerId == null) {
             throw new DomainException("Customer ID cannot be null");
         }
@@ -166,6 +225,7 @@ public class Order {
         order.subtotal = subtotal;
         order.discountAmount = discountAmount != null ? discountAmount : Money.zero();
         order.totalAmount = total;
+        order.applyTaxRate(total, taxRate);
         order.paymentMethod = paymentMethod;
         order.shippingZoneCode = shippingZoneCode.trim();
         order.shippingCourierId = shippingCourierId.trim();
@@ -250,6 +310,9 @@ public class Order {
     public UUID getDiscountId() { return discountId; }
     public String getDiscountCode() { return discountCode; }
     public Money getTotalAmount() { return totalAmount; }
+    public Money getNetAmount() { return netAmount; }
+    public Money getTaxAmount() { return taxAmount; }
+    public BigDecimal getTaxRate() { return taxRate; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public String getShippingZoneCode() { return shippingZoneCode; }
     public String getShippingCourierId() { return shippingCourierId; }

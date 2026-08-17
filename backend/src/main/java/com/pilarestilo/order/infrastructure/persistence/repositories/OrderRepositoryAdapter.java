@@ -69,6 +69,9 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setDiscountCode(order.getDiscountCode());
         entity.setTotalAmount(order.getTotalAmount().amount());
         entity.setTotalCurrency(order.getTotalAmount().currency());
+        entity.setNetAmount(order.getNetAmount().amount());
+        entity.setTaxAmount(order.getTaxAmount().amount());
+        entity.setTaxRate(order.getTaxRate());
         entity.setPaymentMethod(order.getPaymentMethod());
         entity.setShippingZoneCode(order.getShippingZoneCode());
         entity.setShippingCourierId(order.getShippingCourierId());
@@ -132,7 +135,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getStatus(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getPublicReference()
+                entity.getPublicReference(),
+                entity.getTaxRate()
         );
         order.recordDiscountProvenance(entity.getDiscountId(), entity.getDiscountCode());
         return order;

@@ -112,6 +112,16 @@ type FormState = {
   shippingZones: ShippingZoneConfig[];
   shippingCouriers: CourierConfig[];
   shippingPaymentMode: ShippingPaymentMode;
+  taxPayerRut: string;
+  taxBusinessName: string;
+  taxBusinessActivity: string;
+  taxActecoCode: string;
+  taxAddress: string;
+  taxCommune: string;
+  taxCity: string;
+  taxVatRate: string;
+  taxDocumentRequiredBeforeDispatch: boolean;
+  taxDocumentProvider: 'MANUAL' | 'TUU' | 'OPENFACTURA';
 };
 
 type ProviderOption = {
@@ -134,7 +144,7 @@ type PaymentGatewayProviderOption = {
   subtitle: string;
 };
 
-type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping';
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping' | 'tributarios';
 
 const PROVIDER_OPTIONS: ProviderOption[] = [
   {
@@ -226,7 +236,7 @@ const CHILE_BANK_OPTIONS = [
   'Scotiabank Chile',
 ];
 
-const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications', 'shipping'];
+const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications', 'shipping', 'tributarios'];
 
 const DEFAULT_SHIPPING_ZONES: ShippingZoneConfig[] = [
   { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
@@ -388,6 +398,16 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     shippingZones: parseShippingZones(settings.shippingZonesJson),
     shippingCouriers: parseShippingCouriers(settings.shippingCouriersJson),
     shippingPaymentMode: settings.shippingPaymentMode ?? 'POR_PAGAR',
+    taxPayerRut: settings.taxPayerRut ?? '',
+    taxBusinessName: settings.taxBusinessName ?? '',
+    taxBusinessActivity: settings.taxBusinessActivity ?? '',
+    taxActecoCode: settings.taxActecoCode ?? '',
+    taxAddress: settings.taxAddress ?? '',
+    taxCommune: settings.taxCommune ?? '',
+    taxCity: settings.taxCity ?? '',
+    taxVatRate: settings.taxVatRate != null ? String(settings.taxVatRate) : '19',
+    taxDocumentRequiredBeforeDispatch: settings.taxDocumentRequiredBeforeDispatch ?? true,
+    taxDocumentProvider: settings.taxDocumentProvider ?? 'MANUAL',
   };
 }
 
@@ -550,6 +570,16 @@ export default function SystemSettingsPanel() {
     shippingZones: DEFAULT_SHIPPING_ZONES,
     shippingCouriers: DEFAULT_SHIPPING_COURIERS,
     shippingPaymentMode: 'POR_PAGAR',
+    taxPayerRut: '',
+    taxBusinessName: '',
+    taxBusinessActivity: '',
+    taxActecoCode: '',
+    taxAddress: '',
+    taxCommune: '',
+    taxCity: '',
+    taxVatRate: '19',
+    taxDocumentRequiredBeforeDispatch: true,
+    taxDocumentProvider: 'MANUAL',
   });
 
   async function loadSettings() {
@@ -998,6 +1028,16 @@ export default function SystemSettingsPanel() {
       shippingZonesJson: JSON.stringify(form.shippingZones),
       shippingCouriersJson: JSON.stringify(form.shippingCouriers),
       shippingPaymentMode: form.shippingPaymentMode,
+      taxPayerRut: form.taxPayerRut.trim() || null,
+      taxBusinessName: form.taxBusinessName.trim() || null,
+      taxBusinessActivity: form.taxBusinessActivity.trim() || null,
+      taxActecoCode: form.taxActecoCode.trim() || null,
+      taxAddress: form.taxAddress.trim() || null,
+      taxCommune: form.taxCommune.trim() || null,
+      taxCity: form.taxCity.trim() || null,
+      taxVatRate: form.taxVatRate.trim() ? Number(form.taxVatRate) : null,
+      taxDocumentRequiredBeforeDispatch: form.taxDocumentRequiredBeforeDispatch,
+      taxDocumentProvider: form.taxDocumentProvider,
       bankTransferAutoCancelEnabled: form.bankTransferAutoCancelEnabled,
       bankTransferAutoCancelTimeoutMinutes: form.bankTransferAutoCancelTimeoutMinutes,
       bankTransferAutoCancelCron: form.bankTransferAutoCancelCron,
@@ -1843,6 +1883,150 @@ export default function SystemSettingsPanel() {
             clearText="Se eliminara el Secret Access Key al guardar."
           />
         </section>
+      )}
+
+      {activeSettingsTab === 'tributarios' && (
+      <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+        <h2 className="font-display text-2xl text-pe-black font-light">Datos tributarios</h2>
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          Identidad de la tienda ante el SII. Es lo que una boleta declara sobre quien la emite.
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">RUT</span>
+            <input
+              type="text"
+              value={form.taxPayerRut}
+              onChange={(e) => updateField('taxPayerRut', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="76.543.210-K"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Razon social</span>
+            <input
+              type="text"
+              value={form.taxBusinessName}
+              onChange={(e) => updateField('taxBusinessName', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="Comercializadora Pilar Estilo SpA"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Giro</span>
+            <input
+              type="text"
+              value={form.taxBusinessActivity}
+              onChange={(e) => updateField('taxBusinessActivity', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="Venta al por menor de prendas de vestir"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Codigo Acteco</span>
+            <input
+              type="text"
+              value={form.taxActecoCode}
+              onChange={(e) => updateField('taxActecoCode', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="477101"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 md:col-span-2">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Direccion</span>
+            <input
+              type="text"
+              value={form.taxAddress}
+              onChange={(e) => updateField('taxAddress', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="Av. Santa Teresa 1234"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Comuna</span>
+            <input
+              type="text"
+              value={form.taxCommune}
+              onChange={(e) => updateField('taxCommune', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="Los Andes"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Ciudad</span>
+            <input
+              type="text"
+              value={form.taxCity}
+              onChange={(e) => updateField('taxCity', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              placeholder="Los Andes"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/55 mb-2">
+            Impuesto y emision
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">IVA (%)</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={form.taxVatRate}
+                onChange={(e) => updateField('taxVatRate', e.target.value)}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              />
+              <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
+                Se guarda en cada venta al crearse. Cambiarlo no altera las ventas ya hechas.
+              </span>
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Emision</span>
+              <select
+                value={form.taxDocumentProvider}
+                onChange={(e) => updateField('taxDocumentProvider', e.target.value as FormState['taxDocumentProvider'])}
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              >
+                <option value="MANUAL">Manual (eBoleta del SII)</option>
+                <option value="TUU">TUU</option>
+                <option value="OPENFACTURA">OpenFactura</option>
+              </select>
+              <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
+                Hoy solo Manual esta implementado: el folio se escribe a mano en Ventas.
+              </span>
+            </label>
+          </div>
+
+          <label className="mt-3 flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={form.taxDocumentRequiredBeforeDispatch}
+              onChange={(e) => updateField('taxDocumentRequiredBeforeDispatch', e.target.checked)}
+              className="h-4 w-4 accent-pe-rose mt-0.5"
+            />
+            <span className="font-sans text-[0.78rem] text-pe-charcoal">
+              Exigir boleta antes de despachar
+              <span className="block text-[0.68rem] text-pe-charcoal/50">
+                Una venta pagada sin boleta no se puede tomar ni despachar. Desactivarlo permite que
+                salga mercaderia sin documento.
+              </span>
+            </span>
+          </label>
+        </div>
+      </section>
       )}
 
       {activeSettingsTab === 'shipping' && (

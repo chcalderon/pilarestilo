@@ -41,11 +41,18 @@ public class OrderRemoteCommandClient {
         return writeEnabled;
     }
 
-    public OrderDto create(CreateOrderCommand command) {
+    /**
+     * @param taxRate the shop's configured VAT rate. Only the rate crosses the wire: order-service
+     *                computes the total itself, so sending a net and a tax derived from a total the
+     *                monolith merely predicted would put three numbers on the row that need not add
+     *                up. The rate is the input both sides agree on; the arithmetic is pinned on each
+     *                side by the same test vectors.
+     */
+    public OrderDto create(CreateOrderCommand command, BigDecimal taxRate) {
         try {
             return restClient.post()
                     .uri("/api/orders")
-                    .body(toCreateRequest(command))
+                    .body(toCreateRequest(command, taxRate))
                     .retrieve()
                     .body(OrderDto.class);
         } catch (RestClientResponseException ex) {
@@ -98,7 +105,7 @@ public class OrderRemoteCommandClient {
         return null;
     }
 
-    private CreateOrderRequest toCreateRequest(CreateOrderCommand command) {
+    private CreateOrderRequest toCreateRequest(CreateOrderCommand command, BigDecimal taxRate) {
         List<CreateOrderRequest.OrderItemRequest> items = command.items().stream()
                 .map(item -> new CreateOrderRequest.OrderItemRequest(
                         item.productId(),
@@ -123,7 +130,8 @@ public class OrderRemoteCommandClient {
                 discountCurrency,
                 command.employeeDiscountEligible(),
                 command.resolvedDiscountId(),
-                command.discountCode()
+                command.discountCode(),
+                taxRate
         );
     }
 
@@ -140,7 +148,9 @@ public class OrderRemoteCommandClient {
             boolean employeeDiscountEligible,
             /* Provenance only. order-service stores these; the ledger stays in the monolith. */
             UUID discountId,
-            String discountCode
+            String discountCode,
+            /* order-service derives net and tax from this and the total it computes. */
+            BigDecimal taxRate
     ) {
         private record OrderItemRequest(
                 UUID productId,

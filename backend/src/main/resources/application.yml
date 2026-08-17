@@ -71,6 +71,10 @@ app:
     client-id: ${GOOGLE_CLIENT_ID:}
   media:
     storage-path: ${MEDIA_STORAGE_PATH:./media}
+  documents:
+    # Separate from media on purpose: everything under media.storage-path is served publicly by
+    # /api/media/**, and a boleta carries a RUT, a buyer name and amounts.
+    storage-path: ${DOCUMENTS_STORAGE_PATH:./documents}
   cache:
     redis:
       enabled: ${APP_CACHE_REDIS_ENABLED:false}

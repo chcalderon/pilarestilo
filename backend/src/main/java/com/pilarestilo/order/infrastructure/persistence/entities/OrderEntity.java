@@ -52,6 +52,20 @@ public class OrderEntity {
     @Column(name = "total_currency", nullable = false, length = 10)
     private String totalCurrency;
 
+    /*
+     * Nullable while V76 is the expand half. The contract migration turns them NOT NULL once both
+     * this codebase and order-service are writing them. They share total_currency: a net in one
+     * currency and a total in another would be a different bug entirely.
+     */
+    @Column(name = "net_amount", precision = 15, scale = 2)
+    private BigDecimal netAmount;
+
+    @Column(name = "tax_amount", precision = 15, scale = 2)
+    private BigDecimal taxAmount;
+
+    @Column(name = "tax_rate", precision = 5, scale = 2)
+    private BigDecimal taxRate;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 30)
     private PaymentMethod paymentMethod;
@@ -125,6 +139,13 @@ public class OrderEntity {
 
     public String getTotalCurrency() { return totalCurrency; }
     public void setTotalCurrency(String totalCurrency) { this.totalCurrency = totalCurrency; }
+
+    public BigDecimal getNetAmount() { return netAmount; }
+    public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
+    public BigDecimal getTaxAmount() { return taxAmount; }
+    public void setTaxAmount(BigDecimal taxAmount) { this.taxAmount = taxAmount; }
+    public BigDecimal getTaxRate() { return taxRate; }
+    public void setTaxRate(BigDecimal taxRate) { this.taxRate = taxRate; }
 
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }

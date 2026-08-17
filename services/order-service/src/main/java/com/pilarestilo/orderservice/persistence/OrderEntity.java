@@ -55,6 +55,20 @@ public class OrderEntity {
     @Column(name = "total_currency", nullable = false, length = 10)
     private String totalCurrency;
 
+    /*
+     * V76 in the monolith's migration folder. Nullable while it is the expand half; the contract
+     * migration turns them NOT NULL once both codebases write them. Twin of the same three columns
+     * on the monolith's OrderEntity — this table has two writers and no shared compiler.
+     */
+    @Column(name = "net_amount", precision = 15, scale = 2)
+    private BigDecimal netAmount;
+
+    @Column(name = "tax_amount", precision = 15, scale = 2)
+    private BigDecimal taxAmount;
+
+    @Column(name = "tax_rate", precision = 5, scale = 2)
+    private BigDecimal taxRate;
+
     @Column(name = "payment_method", nullable = false, length = 30)
     private String paymentMethod;
 
@@ -190,6 +204,30 @@ public class OrderEntity {
 
     public void setTotalCurrency(String totalCurrency) {
         this.totalCurrency = totalCurrency;
+    }
+
+    public BigDecimal getNetAmount() {
+        return netAmount;
+    }
+
+    public void setNetAmount(BigDecimal netAmount) {
+        this.netAmount = netAmount;
+    }
+
+    public BigDecimal getTaxAmount() {
+        return taxAmount;
+    }
+
+    public void setTaxAmount(BigDecimal taxAmount) {
+        this.taxAmount = taxAmount;
+    }
+
+    public BigDecimal getTaxRate() {
+        return taxRate;
+    }
+
+    public void setTaxRate(BigDecimal taxRate) {
+        this.taxRate = taxRate;
     }
 
     public String getPaymentMethod() {

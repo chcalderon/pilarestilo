@@ -67,6 +67,8 @@ class UpdateSystemSettingsUseCaseTest {
                 bankTransferAutoCancelEnabled,
                 bankTransferAutoCancelTimeoutMinutes,
                 bankTransferAutoCancelCron,
+                null, null, null, null, null, null, null, // tax identity: rut, razon social, giro, acteco, direccion, comuna, ciudad
+                null, null, null,  // taxVatRate → 19.00, taxDocumentRequiredBeforeDispatch → true, taxDocumentProvider → MANUAL
                 "test-user"
         );
     }

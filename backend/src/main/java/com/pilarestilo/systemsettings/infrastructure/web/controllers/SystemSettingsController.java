@@ -116,6 +116,16 @@ public class SystemSettingsController {
                 request.bankTransferAutoCancelEnabled(),
                 request.bankTransferAutoCancelTimeoutMinutes(),
                 request.bankTransferAutoCancelCron(),
+                request.taxPayerRut(),
+                request.taxBusinessName(),
+                request.taxBusinessActivity(),
+                request.taxActecoCode(),
+                request.taxAddress(),
+                request.taxCommune(),
+                request.taxCity(),
+                request.taxVatRate(),
+                request.taxDocumentRequiredBeforeDispatch(),
+                request.taxDocumentProvider(),
                 updatedBy
         ));
     }

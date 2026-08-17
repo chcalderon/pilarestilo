@@ -77,6 +77,7 @@ public class SystemSettings {
     private boolean bankTransferAutoCancelEnabled;
     private int bankTransferAutoCancelTimeoutMinutes;
     private String bankTransferAutoCancelCron;
+    private StoreTaxSettings tax;
     private Instant updatedAt;
     private String updatedBy;
 
@@ -141,6 +142,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelEnabled = true;
         settings.bankTransferAutoCancelTimeoutMinutes = 30;
         settings.bankTransferAutoCancelCron = "0 */15 * * * *";
+        settings.tax = StoreTaxSettings.empty();
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
         return settings;
@@ -208,6 +210,7 @@ public class SystemSettings {
             Boolean bankTransferAutoCancelEnabled,
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
+            StoreTaxSettings tax,
             Instant updatedAt,
             String updatedBy
     ) {
@@ -275,6 +278,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelEnabled = bankTransferAutoCancelEnabled != null && bankTransferAutoCancelEnabled;
         settings.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         settings.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
+        settings.tax = tax == null ? StoreTaxSettings.empty() : tax;
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
@@ -342,6 +346,7 @@ public class SystemSettings {
             Boolean bankTransferAutoCancelEnabled,
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
+            StoreTaxSettings tax,
             String updatedBy
     ) {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
@@ -404,6 +409,7 @@ public class SystemSettings {
         this.bankTransferAutoCancelEnabled = bankTransferAutoCancelEnabled != null && bankTransferAutoCancelEnabled;
         this.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         this.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
+        this.tax = tax == null ? StoreTaxSettings.empty() : tax;
         validateConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
@@ -416,7 +422,8 @@ public class SystemSettings {
         return value.trim();
     }
 
-    private static String normalizeNullable(String value) {
+    /** Package-private so {@link StoreTaxSettings} trims its fields by the same rule, not a copy of it. */
+    static String normalizeNullable(String value) {
         if (value == null) {
             return null;
         }
@@ -682,6 +689,7 @@ public class SystemSettings {
     public boolean isBankTransferAutoCancelEnabled() { return bankTransferAutoCancelEnabled; }
     public int getBankTransferAutoCancelTimeoutMinutes() { return bankTransferAutoCancelTimeoutMinutes; }
     public String getBankTransferAutoCancelCron() { return bankTransferAutoCancelCron; }
+    public StoreTaxSettings getTax() { return tax; }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getUpdatedBy() { return updatedBy; }
 }

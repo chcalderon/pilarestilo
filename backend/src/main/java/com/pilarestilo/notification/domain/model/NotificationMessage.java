@@ -40,6 +40,8 @@ public record NotificationMessage(
     public static final String DISCOUNT_CODE_ASSIGNED = "DISCOUNT_CODE_ASSIGNED";
     /** Sent to whoever can approve payments, not to the customer. */
     public static final String PAYMENT_PROOF_SUBMITTED = "PAYMENT_PROOF_SUBMITTED";
+    /** The boleta was registered: folio, net, VAT and total, so the buyer can quote it. */
+    public static final String SALES_DOCUMENT_ISSUED = "SALES_DOCUMENT_ISSUED";
 
     public NotificationMessage {
         // Not Map.copyOf: it rejects null values, and absent facts are legitimately null here --

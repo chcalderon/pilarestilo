@@ -160,6 +160,10 @@ export interface OrderDto {
   subtotal: MoneyDto;
   discountAmount: MoneyDto;
   totalAmount: MoneyDto;
+  /** The total split as a boleta reports it. Absent on orders created before V76. */
+  netAmount?: MoneyDto | null;
+  taxAmount?: MoneyDto | null;
+  taxRate?: number | null;
   paymentMethod: 'CASH' | 'DEBIT' | 'CREDIT' | 'TRANSFER' | 'WEBPAY' | 'MERCADOPAGO' | 'OTHER';
   shippingZoneCode?: ShippingZoneCode | null;
   shippingCourierId?: string | null;
@@ -314,6 +318,16 @@ export interface SystemSettingsDto {
   bankTransferAutoCancelEnabled: boolean;
   bankTransferAutoCancelTimeoutMinutes: number;
   bankTransferAutoCancelCron: string;
+  taxPayerRut: string | null;
+  taxBusinessName: string | null;
+  taxBusinessActivity: string | null;
+  taxActecoCode: string | null;
+  taxAddress: string | null;
+  taxCommune: string | null;
+  taxCity: string | null;
+  taxVatRate: number | null;
+  taxDocumentRequiredBeforeDispatch: boolean;
+  taxDocumentProvider: 'MANUAL' | 'TUU' | 'OPENFACTURA';
   updatedAt?: string;
   updatedBy?: string | null;
 }
@@ -386,6 +400,16 @@ export interface UpdateSystemSettingsRequest {
   bankTransferAutoCancelEnabled?: boolean;
   bankTransferAutoCancelTimeoutMinutes?: number;
   bankTransferAutoCancelCron?: string;
+  taxPayerRut?: string | null;
+  taxBusinessName?: string | null;
+  taxBusinessActivity?: string | null;
+  taxActecoCode?: string | null;
+  taxAddress?: string | null;
+  taxCommune?: string | null;
+  taxCity?: string | null;
+  taxVatRate?: number | null;
+  taxDocumentRequiredBeforeDispatch?: boolean;
+  taxDocumentProvider?: string;
 }
 
 export interface PublicStoreSettingsDto {
@@ -1352,6 +1376,157 @@ export async function createOrder(data: CreateOrderRequest, token: string): Prom
     body: JSON.stringify(data),
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+// ─── Ventas y documentos tributarios ─────────────────────────────────────────
+
+export interface SaleSummaryDto {
+  orderId: string;
+  publicReference: string | null;
+  createdAt: string;
+  orderStatus: OrderDto['status'];
+  customerName: string | null;
+  customerEmail: string | null;
+  totalAmount: number | null;
+  netAmount: number | null;
+  taxAmount: number | null;
+  currency: string | null;
+  paymentMethod: string | null;
+  paymentStatus: string | null;
+  /** Null means no live document: the sale is undeclared. */
+  documentId: string | null;
+  documentFolio: string | null;
+  itemCount: number;
+  firstItemName: string | null;
+}
+
+export interface SalesDocumentDto {
+  id: string;
+  orderId: string;
+  documentType: 'BOLETA' | 'FACTURA';
+  folio: string;
+  issuedAt: string;
+  netAmount: number;
+  taxAmount: number;
+  taxRate: number;
+  totalAmount: number;
+  currency: string;
+  receiverRut: string | null;
+  receiverName: string | null;
+  receiverEmail: string | null;
+  /** The file is never linked directly: /api/media/** is public, so it streams from an authed route. */
+  fileAttached: boolean;
+  status: 'ISSUED' | 'VOIDED';
+  voidedAt: string | null;
+  voidReason: string | null;
+  replacesDocumentId: string | null;
+  issuedBy: string;
+}
+
+export async function getAdminSales(
+  params: { q?: string; status?: string; missingDocument?: boolean; page?: number; size?: number },
+  token: string,
+): Promise<Page<SaleSummaryDto>> {
+  const query = buildQuery({
+    q: params.q || undefined,
+    status: params.status || undefined,
+    missingDocument: params.missingDocument ? true : undefined,
+    page: params.page ?? 0,
+    size: params.size ?? 20,
+  });
+  return apiFetch<Page<SaleSummaryDto>>(`/admin/sales${query}`, { headers: authHeaders(token) });
+}
+
+export async function getPendingDocumentCount(token: string): Promise<number> {
+  try {
+    const res = await apiFetch<{ count: number }>('/admin/sales/pending-documents/count', {
+      headers: authHeaders(token),
+    });
+    return res?.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function getSalesDocumentsByOrder(orderId: string, token: string): Promise<SalesDocumentDto[]> {
+  try {
+    return (await apiFetch<SalesDocumentDto[]>(
+      `/admin/sales-documents/order/${encodeURIComponent(orderId)}`,
+      { headers: authHeaders(token) },
+    )) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function issueSalesDocument(
+  payload: { orderId: string; documentType?: string; folio: string; receiverRut?: string | null; fileUrl?: string | null },
+  token: string,
+): Promise<SalesDocumentDto> {
+  return apiFetch<SalesDocumentDto>('/admin/sales-documents', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: authHeaders(token),
+  });
+}
+
+export async function voidSalesDocument(
+  documentId: string,
+  reason: string,
+  token: string,
+): Promise<SalesDocumentDto> {
+  return apiFetch<SalesDocumentDto>(`/admin/sales-documents/${encodeURIComponent(documentId)}/void`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+    headers: authHeaders(token),
+  });
+}
+
+export async function reissueSalesDocument(
+  documentId: string,
+  payload: { voidReason: string; documentType?: string; folio: string; receiverRut?: string | null; fileUrl?: string | null },
+  token: string,
+): Promise<SalesDocumentDto> {
+  return apiFetch<SalesDocumentDto>(`/admin/sales-documents/${encodeURIComponent(documentId)}/reissue`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: authHeaders(token),
+  });
+}
+
+/** Uploads the boleta file and returns the opaque name to send back on issue. */
+export async function uploadSalesDocumentFile(file: File, token: string): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/admin/sales-documents/files`, {
+    method: 'POST',
+    body: form,
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(body.detail ?? body.message ?? 'No se pudo subir el archivo', res.status);
+  }
+  const data = (await res.json()) as { fileUrl: string };
+  return data.fileUrl;
+}
+
+/**
+ * Fetches the stored file as a blob.
+ *
+ * <p>Not a link: the endpoint is authenticated and a plain `window.open` sends no Authorization
+ * header. The document lives outside the public media root precisely so that it cannot be opened
+ * by url alone.
+ */
+export async function fetchSalesDocumentFile(documentId: string, token: string): Promise<Blob> {
+  const res = await fetch(
+    `${API_BASE}/admin/sales-documents/${encodeURIComponent(documentId)}/file`,
+    { headers: authHeaders(token) },
+  );
+  if (!res.ok) {
+    throw new ApiError('No se pudo abrir el archivo de la boleta', res.status);
+  }
+  return res.blob();
 }
 
 export async function getOrderById(orderId: string, token: string): Promise<OrderDto> {

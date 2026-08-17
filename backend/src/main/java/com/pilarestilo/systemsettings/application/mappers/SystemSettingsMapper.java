@@ -70,6 +70,16 @@ public final class SystemSettingsMapper {
                 settings.isBankTransferAutoCancelEnabled(),
                 settings.getBankTransferAutoCancelTimeoutMinutes(),
                 settings.getBankTransferAutoCancelCron(),
+                settings.getTax().payerRut(),
+                settings.getTax().businessName(),
+                settings.getTax().businessActivity(),
+                settings.getTax().actecoCode(),
+                settings.getTax().address(),
+                settings.getTax().commune(),
+                settings.getTax().city(),
+                settings.getTax().vatRate(),
+                settings.getTax().documentRequiredBeforeDispatch(),
+                settings.getTax().provider().name(),
                 settings.getUpdatedAt(),
                 settings.getUpdatedBy()
         );

@@ -90,17 +90,22 @@ class OrderNotificationDispatcherTest {
     }
 
     /**
-     * The transfer instructions carry the amount, bank details and deadline. A generic
-     * confirmation alongside them is a second email the customer cannot act on.
+     * A transfer buyer used to receive only the bank details, never a statement of what they had
+     * bought. The Ley 21.398 requires written confirmation of the conditions of the offer, and
+     * without it the right of withdrawal runs ninety days instead of ten, so the confirmation now
+     * goes out for every payment method. The transfer instructions are a separate message.
      */
     @Test
-    void doesNotSendTheGenericConfirmationForATransfer() {
+    void sendsTheConfirmationForATransferToo() {
         givenPaymentMethod(PaymentMethod.TRANSFER);
         when(userRepository.findById(customerId)).thenReturn(Optional.of(customer()));
 
         dispatcher.onOrderCreated(new OrderCreated(orderId, customerId, Instant.now()));
 
-        verify(notificationSender, never()).send(any(NotificationMessage.class), any());
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.ORDER_CONFIRMATION.equals(m.templateKey())
+                        && orderId.equals(m.referenceId())),
+                any());
     }
 
     @Test

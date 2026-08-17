@@ -370,6 +370,9 @@ class CreateOrderUseCaseTest {
         MoneyDto money = new MoneyDto(BigDecimal.valueOf(15_000), "CLP");
         return new OrderDto(orderId, "PE-0123456789", CUSTOMER_ID, List.of(),
                 money, new MoneyDto(BigDecimal.ZERO, "CLP"), money,
+                new MoneyDto(BigDecimal.valueOf(12_605), "CLP"),
+                new MoneyDto(BigDecimal.valueOf(2_395), "CLP"),
+                new BigDecimal("19.00"),
                 PaymentMethod.TRANSFER, "LOCAL", "starken", "Starken", "POR_PAGAR",
                 ADDRESS_ID, "Casa", null, SalesChannel.ECOMMERCE,
                 OrderStatus.CREATED, Instant.now(), Instant.now());
@@ -420,7 +423,7 @@ class CreateOrderUseCaseTest {
         when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
                 .thenReturn(evaluation);
         when(discountRedemptionService.reserveWithoutOrder(evaluation, CUSTOMER_ID)).thenReturn(redemptionId);
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class))).thenReturn(remoteOrderDto(orderId));
+        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any())).thenReturn(remoteOrderDto(orderId));
 
         useCase.execute(commandWithCode("SAVE10"));
 
@@ -428,7 +431,7 @@ class CreateOrderUseCaseTest {
         // or an order in another service that would have to be cancelled.
         InOrder inOrder = inOrder(discountRedemptionService, orderRemoteCommandClient);
         inOrder.verify(discountRedemptionService).reserveWithoutOrder(evaluation, CUSTOMER_ID);
-        inOrder.verify(orderRemoteCommandClient).create(any(CreateOrderCommand.class));
+        inOrder.verify(orderRemoteCommandClient).create(any(CreateOrderCommand.class), any());
         inOrder.verify(discountRedemptionService).attachOrder(redemptionId, orderId);
     }
 
@@ -438,13 +441,13 @@ class CreateOrderUseCaseTest {
         when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
                 .thenReturn(evaluationWorth(new BigDecimal("1500.00")));
         when(discountRedemptionService.reserveWithoutOrder(any(), any())).thenReturn(UUID.randomUUID());
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class)))
+        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
                 .thenReturn(remoteOrderDto(UUID.randomUUID()));
 
         useCase.execute(commandWithCode("SAVE10"));
 
         ArgumentCaptor<CreateOrderCommand> sent = ArgumentCaptor.forClass(CreateOrderCommand.class);
-        verify(orderRemoteCommandClient).create(sent.capture());
+        verify(orderRemoteCommandClient).create(sent.capture(), any());
         assertThat(sent.getValue().discountAmount().amount()).isEqualByComparingTo("1500.00");
     }
 
@@ -457,7 +460,7 @@ class CreateOrderUseCaseTest {
 
         assertThrows(DomainException.class, () -> useCase.execute(commandWithCode("SAVE10")));
 
-        verify(orderRemoteCommandClient, never()).create(any());
+        verify(orderRemoteCommandClient, never()).create(any(), any());
         verify(discountRedemptionService, never()).reserveWithoutOrder(any(), any());
     }
 
@@ -473,13 +476,13 @@ class CreateOrderUseCaseTest {
 
         assertThrows(DomainException.class, () -> useCase.execute(commandWithCode("SAVE10")));
 
-        verify(orderRemoteCommandClient, never()).create(any());
+        verify(orderRemoteCommandClient, never()).create(any(), any());
     }
 
     @Test
     void remoteWrite_withoutACodeTouchesTheLedgerNotAtAll() {
         stubRemoteWrite();
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class)))
+        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
                 .thenReturn(remoteOrderDto(UUID.randomUUID()));
 
         useCase.execute(basicTransferCommand());
@@ -530,13 +533,13 @@ class CreateOrderUseCaseTest {
         when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
                 .thenReturn(evaluation);
         when(discountRedemptionService.reserveWithoutOrder(any(), any())).thenReturn(UUID.randomUUID());
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class)))
+        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
                 .thenReturn(remoteOrderDto(UUID.randomUUID()));
 
         useCase.execute(commandWithCode("SAVE10"));
 
         ArgumentCaptor<CreateOrderCommand> sent = ArgumentCaptor.forClass(CreateOrderCommand.class);
-        verify(orderRemoteCommandClient).create(sent.capture());
+        verify(orderRemoteCommandClient).create(sent.capture(), any());
         assertThat(sent.getValue().resolvedDiscountId()).isEqualTo(evaluation.discountId());
         assertThat(sent.getValue().discountCode()).isEqualTo("SAVE10");
     }

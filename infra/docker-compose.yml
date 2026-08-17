@@ -69,6 +69,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${PUBLIC_GOOGLE_CLIENT_ID:-}}
       SYSTEM_SETTINGS_CRYPTO_SECRET: ${SYSTEM_SETTINGS_CRYPTO_SECRET:-U2VjcmV0U3lzdGVtU2V0dGluZ3MxMjM0NTY3ODkw}
       MEDIA_STORAGE_PATH: /app/media
+      # Never under /app/media: that whole tree is served publicly by /api/media/**.
+      DOCUMENTS_STORAGE_PATH: /app/documents
       APP_CACHE_REDIS_ENABLED: ${APP_CACHE_REDIS_ENABLED:-false}
       APP_CACHE_REDIS_TTL_SECONDS: ${APP_CACHE_REDIS_TTL_SECONDS:-300}
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
@@ -154,6 +156,7 @@ services:
         condition: service_healthy
     volumes:
       - ./storage/media:/app/media
+      - ./storage/documents:/app/documents
     networks:
       - pe_net
     healthcheck:

@@ -77,5 +77,15 @@ public record UpdateSystemSettingsRequest(
         @Size(max = 32) String shippingPaymentMode,
         Boolean bankTransferAutoCancelEnabled,
         @Min(5) @Max(1440) Integer bankTransferAutoCancelTimeoutMinutes,
-        @Size(max = 64) String bankTransferAutoCancelCron
+        @Size(max = 64) String bankTransferAutoCancelCron,
+        @Size(max = 20) String taxPayerRut,
+        @Size(max = 160) String taxBusinessName,
+        @Size(max = 160) String taxBusinessActivity,
+        @Size(max = 20) String taxActecoCode,
+        @Size(max = 200) String taxAddress,
+        @Size(max = 120) String taxCommune,
+        @Size(max = 120) String taxCity,
+        @DecimalMin("0.00") @DecimalMax("100.00") java.math.BigDecimal taxVatRate,
+        Boolean taxDocumentRequiredBeforeDispatch,
+        @Size(max = 30) String taxDocumentProvider
 ) {}

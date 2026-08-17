@@ -75,7 +75,7 @@ public class CreateOrderUseCase {
         ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
 
         if (orderRemoteCommandClient.isWriteEnabled()) {
-            return createRemotely(command);
+            return createRemotely(command, settings.getTax().vatRate());
         }
 
         List<OrderItem> orderItems = new ArrayList<>();
@@ -139,7 +139,10 @@ public class CreateOrderUseCase {
                 shippingSelection.addressId(),
                 shippingSelection.addressReference(),
                 command.notes(),
-                command.salesChannel()
+                command.salesChannel(),
+                // Snapshotted onto the order, not read back from settings later: a boleta issued
+                // next year has to report the rate this sale was made under.
+                settings.getTax().vatRate()
         );
 
         if (evaluation != null) {
@@ -191,7 +194,7 @@ public class CreateOrderUseCase {
      * also currently hard to spot after the fact — {@code orders.discount_code} was added for
      * exactly that trail and no write path fills it in yet, on either side.
      */
-    private OrderDto createRemotely(CreateOrderCommand command) {
+    private OrderDto createRemotely(CreateOrderCommand command, BigDecimal taxRate) {
         DiscountRedemptionService.DiscountEvaluation evaluation = null;
         UUID redemptionId = null;
 
@@ -210,7 +213,7 @@ public class CreateOrderUseCase {
                 ? command
                 : command.withResolvedDiscount(evaluation.amount(), evaluation.discountId(), evaluation.code());
 
-        OrderDto created = orderRemoteCommandClient.create(outbound);
+        OrderDto created = orderRemoteCommandClient.create(outbound, taxRate);
 
         if (redemptionId != null) {
             discountRedemptionService.attachOrder(redemptionId, created.id());

@@ -20,8 +20,10 @@ import {
   Truck,
   Megaphone,
   Navigation,
+  Receipt,
 } from 'lucide-react';
-import { useAuthStore } from '../../lib/authStore';
+import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
+import { getPendingDocumentCount } from '../../lib/api';
 import { useCan } from '../../lib/permissions';
 
 interface Props {
@@ -29,7 +31,7 @@ interface Props {
   mobile?: boolean;
 }
 
-type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping';
+type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping' | 'tributarios';
 
 const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: string; viewKey: string }> = [
   { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard', viewKey: 'dashboard' },
@@ -37,6 +39,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/categories', icon: Tag, label: 'Categorias', viewKey: 'productos' },
   { href: '/admin/navegacion', icon: Navigation, label: 'Navegación', viewKey: 'productos' },
   { href: '/admin/reviews', icon: Star, label: 'Resenas', viewKey: 'productos' },
+  { href: '/admin/ventas', icon: Receipt, label: 'Ventas', viewKey: 'caja' },
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos', viewKey: 'caja' },
   { href: '/admin/caja', icon: DollarSign, label: 'Caja', viewKey: 'caja' },
   { href: '/admin/despachos', icon: Truck, label: 'Despachos', viewKey: 'despachos' },
@@ -55,6 +58,7 @@ const settingsSubmenuItems: Array<{
   { href: '/admin/settings?tab=store', tab: 'store', icon: Store, label: 'Canales tienda' },
   { href: '/admin/settings?tab=payments', tab: 'payments', icon: Wallet, label: 'Pagos' },
   { href: '/admin/settings?tab=shipping', tab: 'shipping', icon: Truck, label: 'Envios' },
+  { href: '/admin/settings?tab=tributarios', tab: 'tributarios', icon: Receipt, label: 'Tributarios' },
   { href: '/admin/settings?tab=media', tab: 'media', icon: Image, label: 'Media' },
   { href: '/admin/settings?tab=notifications', tab: 'notifications', icon: Bell, label: 'Notificaciones' },
 ];
@@ -63,10 +67,14 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(currentPath.startsWith('/admin/settings'));
   const [activeSettingsTab, setActiveSettingsTab] = useState<SettingsSubmenuTab>('store');
-  const { user, clearAuth } = useAuthStore();
+  const [pendingDocuments, setPendingDocuments] = useState(0);
+  const { user, token, clearAuth } = useAuthStore();
   const canSeeUsers = useCan('users.read', 'usuarios');
   const canSeeRoles = useCan('roles.read', 'roles_permisos');
   const canSeeSettings = useCan('settings.read', 'configuracion');
+  // ADMINISTRACION and SUPERVISOR hold orders.read from V78 but were never given the legacy
+  // 'caja' view key, so the modern code has to be enough on its own here.
+  const canSeeSales = useCan('orders.read');
 
   const permissions = user?.permissions ?? [];
   const visibleNavItems = user?.role === 'ADMIN'
@@ -74,6 +82,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
     : navItems.filter((item) => {
       if (item.href === '/admin/users') return canSeeUsers;
       if (item.href === '/admin/roles-permisos') return canSeeRoles;
+      if (item.href === '/admin/ventas') return canSeeSales || permissions.includes('caja');
       return permissions.includes(item.viewKey);
     });
   const showSettings = canSeeSettings;
@@ -87,12 +96,29 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab === 'payments' || tab === 'media' || tab === 'notifications' || tab === 'store') {
-      setActiveSettingsTab(tab);
-      return;
-    }
-    setActiveSettingsTab('store');
+    // Derived from the list rather than a hand-kept whitelist. The literal one omitted 'shipping',
+    // so the Envios link never highlighted and always fell through to 'store'.
+    const known = settingsSubmenuItems.find((item) => item.tab === tab);
+    setActiveSettingsTab(known ? known.tab : 'store');
   }, []);
+
+  /*
+   * The count of paid sales still missing a boleta, shown as a badge so an undeclared sale is
+   * visible without opening the screen. Only fetched on the copy of the sidebar that is actually
+   * rendered for this viewport, and it fails to zero rather than blocking the menu.
+   */
+  useEffect(() => {
+    if (mobile || !canSeeSales) return;
+    const authToken = token ?? readAuthTokenCookie();
+    if (!authToken) return;
+    let cancelled = false;
+    getPendingDocumentCount(authToken).then((count) => {
+      if (!cancelled) setPendingDocuments(count);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mobile, canSeeSales, token]);
 
   function closeMobileMenu() {
     if (!mobile) return;
@@ -166,6 +192,15 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                 >
                   <Icon size={16} className="flex-shrink-0" />
                   {!isCollapsed && <span>{item.label}</span>}
+                  {item.href === '/admin/ventas' && pendingDocuments > 0 && (
+                    <span
+                      className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1 py-0.5 text-[0.62rem] tabular-nums bg-pe-rose text-pe-white rounded-sm"
+                      title={`${pendingDocuments} ventas pagadas sin boleta`}
+                    >
+                      {pendingDocuments}
+                      <span className="sr-only"> ventas pagadas sin boleta</span>
+                    </span>
+                  )}
                 </a>
               </li>
             );
