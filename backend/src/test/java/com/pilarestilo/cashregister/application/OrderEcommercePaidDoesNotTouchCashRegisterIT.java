@@ -121,6 +121,12 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         orderEntity.setDiscountCurrency("CLP");
         orderEntity.setTotalAmount(BigDecimal.valueOf(10_000));
         orderEntity.setTotalCurrency("CLP");
+        // NOT NULL since V79, and the row has to reconcile: chk_orders_tax_reconciles asserts
+        // net + tax = total. Built by hand rather than through TaxBreakdown because this is a bare
+        // row for an FK, not a sale — but the numbers still have to be a real split of 10.000 at 19%.
+        orderEntity.setNetAmount(BigDecimal.valueOf(8_403));
+        orderEntity.setTaxAmount(BigDecimal.valueOf(1_597));
+        orderEntity.setTaxRate(new BigDecimal("19.00"));
         orderEntity.setPaymentMethod(PaymentMethod.TRANSFER);
         orderEntity.setShippingZoneCode("RM");
         orderEntity.setShippingCourierId("chilexpress");
