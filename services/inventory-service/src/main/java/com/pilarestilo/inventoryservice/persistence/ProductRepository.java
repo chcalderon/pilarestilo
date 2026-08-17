@@ -107,4 +107,25 @@ public interface ProductRepository extends JpaRepository<ProductEntity, UUID>, J
                             @Param("color") String color,
                             @Param("size") String size,
                             @Param("qty") int qty);
+
+    /**
+     * Puts confirmed units back on the shelf when a paid sale is undone.
+     *
+     * <p>The inverse of {@link #confirmVariantStock}, not of the reservation: by then the units are
+     * out of both columns, so only stock_on_hand goes back up. Releasing instead would decrement a
+     * reservation that no longer exists. Mirrors atomicReturnVariantStock in the monolith, which is
+     * the other writer of this table.
+     */
+    @Modifying
+    @Query(value = """
+            update product_variants
+               set stock_on_hand = stock_on_hand + :qty
+             where product_id = :productId
+               and lower(trim(color)) = lower(trim(:color))
+               and upper(trim(size)) = upper(trim(:size))
+            """, nativeQuery = true)
+    int returnVariantStock(@Param("productId") UUID productId,
+                           @Param("color") String color,
+                           @Param("size") String size,
+                           @Param("qty") int qty);
 }

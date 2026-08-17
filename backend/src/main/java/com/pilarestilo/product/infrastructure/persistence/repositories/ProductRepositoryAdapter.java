@@ -103,6 +103,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public int atomicReturnVariantStock(UUID productId, String color, String size, int qty) {
+        return jpaRepository.atomicReturnVariantStock(productId, color, size, qty);
+    }
+
+    @Override
     public Page<Product> search(String term,
                                 Boolean active,
                                 Boolean inStock,

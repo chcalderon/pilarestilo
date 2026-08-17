@@ -102,6 +102,25 @@ public class InventoryService {
     }
 
     /**
+     * Puts confirmed units back on the shelf when a paid sale is undone.
+     *
+     * <p>The inverse of {@link #confirm}, not of {@link #reserve}. By the time a sale is cancelled
+     * after payment the reservation is long gone: {@code confirm} took the units out of both
+     * {@code stock_on_hand} and {@code stock_reserved}. Releasing here would decrement a
+     * reservation that no longer exists and leave the shelf short.
+     *
+     * <p>Cancelling a paid order used to do nothing at all, so the units were simply lost.
+     */
+    @Transactional
+    public void returnToStock(UUID productId, int qty, String variantColor, String variantSize) {
+        if (remoteWriteEnabled) {
+            invokeRemoteCommand("/api/inventory/commands/return", productId, qty, variantColor, variantSize, "return");
+            return;
+        }
+        returnToStockLocal(productId, qty, variantColor, variantSize);
+    }
+
+    /**
      * POS direct sale: decrements stock without a prior reservation step.
      * For variant products: atomically decrements both stock_on_hand and stock_reserved
      * (stock_reserved is 0 for POS sales so the constraint check uses stock_reserved >= 0).
@@ -178,6 +197,27 @@ public class InventoryService {
         productRepository.findById(productId)
                 .orElseThrow(() -> new DomainException("Product not found: " + productId));
         recordMovement(productId, null, null, InventoryMovementType.CONFIRM, -qty);
+    }
+
+    private void returnToStockLocal(UUID productId, int qty, String variantColor, String variantSize) {
+        if (variantColor != null && variantSize != null) {
+            int updated = productRepository.atomicReturnVariantStock(productId, variantColor, variantSize, qty);
+            if (updated == 0) {
+                throw new DomainException("Variante no encontrada para devolucion: " + variantColor + " / " + variantSize);
+            }
+            productRepository.syncProductStockFromVariants(productId);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RETURN, qty);
+            return;
+        }
+        // Legacy aggregate: reserve was the only decrement and confirm is a no-op there, so putting
+        // units back is the same single operation release performs. Reused rather than duplicated —
+        // a second method adding to the same field is a second thing to keep correct.
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+        product.releaseStock(qty);
+        productRepository.save(product);
+        eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
+        recordMovement(productId, null, null, InventoryMovementType.RETURN, qty);
     }
 
     private void recordMovement(UUID productId, String variantColor, String variantSize,

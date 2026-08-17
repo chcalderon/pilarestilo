@@ -136,9 +136,20 @@ public class UpdateOrderStatusUseCase {
             }
             case CANCELLED -> {
                 discountRedemptionService.release(orderId);
-                if (stockWasStillReserved(previousStatus)) {
-                    for (ReservedLine line : lines) {
+                for (ReservedLine line : lines) {
+                    /*
+                     * Which operation depends on whether the units are still merely held.
+                     *
+                     * Cancelling after PAID used to do nothing here, on the reasoning that the goods
+                     * had already left the warehouse — but the goods had not left anything except a
+                     * column. A sale undone before it ships has its garments back on the rack, and
+                     * the shelf count has to say so. They were simply lost until now.
+                     */
+                    if (stockWasStillReserved(previousStatus)) {
                         inventoryService.release(line.productId(), line.quantity(),
+                                line.variantColor(), line.variantSize());
+                    } else {
+                        inventoryService.returnToStock(line.productId(), line.quantity(),
                                 line.variantColor(), line.variantSize());
                     }
                 }
@@ -150,10 +161,10 @@ public class UpdateOrderStatusUseCase {
     /**
      * True while the order's stock is merely held, not yet sold.
      *
-     * <p>Reaching PAID runs {@code inventoryService.confirm}, which takes the units out of
-     * on-hand for good. Releasing after that would hand back stock that already left the
-     * warehouse, so a cancellation from PAID or later returns nothing — the same asymmetry that
-     * keeps a paid-then-cancelled order from getting its discount code back.
+     * <p>Reaching PAID runs {@code inventoryService.confirm}, which takes the units out of both
+     * on-hand and reserved. So a cancellation before that releases a reservation, and one after it
+     * returns units to the shelf — {@code release} would decrement a reservation that no longer
+     * exists. The discount keeps the older asymmetry: a settled redemption is not handed back.
      */
     private static boolean stockWasStillReserved(OrderStatus previousStatus) {
         return previousStatus == OrderStatus.CREATED

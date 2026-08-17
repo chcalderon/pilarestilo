@@ -118,21 +118,35 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
     }
 
     /**
-     * Reaching PAID already took the units out of on-hand. Releasing on a later cancellation
-     * would invent stock that has left the warehouse, so this returns nothing — the same
-     * asymmetry that stops a paid-then-cancelled order from getting its code back.
+     * Reaching PAID took the units out of both on-hand and reserved, so a later cancellation puts
+     * them back on the shelf rather than releasing a reservation that no longer exists.
+     *
+     * <p>This used to return nothing at all, on the reasoning that the goods had left the
+     * warehouse — but a sale undone before it ships has its garments back on the rack, and the
+     * units were simply lost.
      */
     @Test
-    void cancelledAfterPaid_returnsNoStock() {
+    void cancelledAfterPaid_putsTheUnitsBackOnTheShelf() {
         order = orderInStatus(OrderStatus.PAID);
         stubLocalPath();
 
         useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
 
-        verifyNoInteractions(inventoryService);
+        verify(inventoryService).returnToStock(PRODUCT_ID, 2, "Rojo", "M");
+        verify(inventoryService, never()).release(any(), anyInt(), any(), any());
         // The discount is still released here; only PENDING redemptions respond, so a settled
         // one stays settled. That guard lives in the adapter, not in this branch.
         verify(discountRedemptionService).release(ORDER_ID);
+    }
+
+    /** And the reverse: while the stock is merely held, a cancellation frees the reservation. */
+    @Test
+    void cancelledBeforePaid_neverReturnsToStock() {
+        stubLocalPath();
+
+        useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
+
+        verify(inventoryService, never()).returnToStock(any(), anyInt(), any(), any());
     }
 
     /** The auto-cancel job and the admin cancel button both land here. */

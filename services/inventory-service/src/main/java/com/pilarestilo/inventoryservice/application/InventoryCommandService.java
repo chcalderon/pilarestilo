@@ -20,6 +20,7 @@ public class InventoryCommandService {
     private static final String RESERVE = "RESERVE";
     private static final String RELEASE = "RELEASE";
     private static final String CONFIRM = "CONFIRM";
+    private static final String RETURN = "RETURN";
 
     private final ProductRepository productRepository;
     private final InventoryMovementRepository movementRepository;
@@ -142,6 +143,38 @@ public class InventoryCommandService {
         // decremented the total. A second decrement here would double-count the sale. The ledger
         // still records it: the sale happened, and a gap in the trail would read as a lost movement.
         record(CONFIRM, productId, null, null, -qty);
+    }
+
+    /**
+     * Puts confirmed units back on the shelf when a paid sale is undone.
+     *
+     * <p>Not a release. By the time a sale is cancelled after payment the reservation is gone —
+     * {@code confirm} took the units out of both columns — so returning them touches only
+     * stock_on_hand. Calling release here would decrement a reservation that no longer exists and
+     * leave the shelf permanently short.
+     *
+     * <p>Twin of {@code InventoryService.returnToStock} in the monolith. Both write this table and
+     * share no compiler: a change to one needs the same change here, in the same commit.
+     */
+    @Transactional
+    public void returnToStock(UUID productId, int qty, String variantColor, String variantSize) {
+        validate(productId, qty);
+        validateVariantSelector(variantColor, variantSize);
+        ensureExists(productId);
+        if (variantColor != null && variantSize != null) {
+            int updated = productRepository.returnVariantStock(productId, variantColor, variantSize, qty);
+            if (updated == 0) {
+                throw new NoSuchElementException(
+                        "No variant " + variantColor + " / " + variantSize + " on product " + productId);
+            }
+            productRepository.syncProductStockFromVariants(productId, Instant.now());
+            record(RETURN, productId, variantColor, variantSize, qty);
+            return;
+        }
+        // Legacy aggregate: reserving was the only decrement, so this restores the same field —
+        // which is exactly what releaseStock does. The movement type is what tells them apart.
+        productRepository.releaseStock(productId, qty, Instant.now());
+        record(RETURN, productId, null, null, qty);
     }
 
     private void validate(UUID productId, int qty) {

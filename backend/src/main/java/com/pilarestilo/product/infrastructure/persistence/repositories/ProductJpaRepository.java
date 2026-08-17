@@ -77,6 +77,30 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
                                   @Param("qty") int qty);
 
     /**
+     * Puts confirmed units back on the shelf.
+     *
+     * <p>The inverse of confirm, and deliberately not the inverse of reserve: the units are already
+     * gone from {@code stock_on_hand} and no longer counted in {@code stock_reserved}, so returning
+     * them touches only the first. Releasing instead would decrement a reservation that no longer
+     * exists.
+     *
+     * <p>No lower bound to check — adding stock cannot go negative — so this always matches when the
+     * variant exists, and a zero result means the variant does not.
+     */
+    @Modifying
+    @Query(value = """
+      UPDATE product_variants
+         SET stock_on_hand = stock_on_hand + :qty
+       WHERE product_id = :productId
+         AND lower(trim(color)) = lower(trim(:color))
+         AND upper(trim(size)) = upper(trim(:size))
+      """, nativeQuery = true)
+    int atomicReturnVariantStock(@Param("productId") UUID productId,
+                                 @Param("color") String color,
+                                 @Param("size") String size,
+                                 @Param("qty") int qty);
+
+    /**
      * Recomputes products.stock from the variant rows.
      *
      * <p>products.stock is a cache of a value product_variants already holds — Product derives it

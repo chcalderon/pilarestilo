@@ -40,6 +40,9 @@ public interface ProductRepository {
 
     int atomicConfirmVariantStock(UUID productId, String color, String size, int qty);
 
+    /** Puts confirmed units back on the shelf when a paid sale is undone. */
+    int atomicReturnVariantStock(UUID productId, String color, String size, int qty);
+
     Page<Product> search(String term,
                          Boolean active,
                          Boolean inStock,

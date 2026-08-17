@@ -97,6 +97,18 @@ public class InventoryController {
         ));
     }
 
+    /** Undoes a confirmed sale: the units go back on the shelf. See InventoryCommandService.returnToStock. */
+    @PostMapping("/commands/return")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void returnToStock(@RequestBody InventoryCommandRequest request) {
+        executeCommand(() -> commandService.returnToStock(
+                request.productId(),
+                request.qty(),
+                request.variantColor(),
+                request.variantSize()
+        ));
+    }
+
     private void executeCommand(Runnable command) {
         try {
             command.run();
