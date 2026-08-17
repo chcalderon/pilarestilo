@@ -56,17 +56,17 @@ public class OrderEntity {
     private String totalCurrency;
 
     /*
-     * V76 in the monolith's migration folder. Nullable while it is the expand half; the contract
-     * migration turns them NOT NULL once both codebases write them. Twin of the same three columns
-     * on the monolith's OrderEntity — this table has two writers and no shared compiler.
+     * NOT NULL since V79 in the monolith's migration folder, which owns the schema. Twin of the same
+     * three columns on the monolith's OrderEntity — this table has two writers and no shared
+     * compiler, so a change to one needs the same change here in the same commit.
      */
-    @Column(name = "net_amount", precision = 15, scale = 2)
+    @Column(name = "net_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal netAmount;
 
-    @Column(name = "tax_amount", precision = 15, scale = 2)
+    @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal taxAmount;
 
-    @Column(name = "tax_rate", precision = 5, scale = 2)
+    @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal taxRate;
 
     @Column(name = "payment_method", nullable = false, length = 30)

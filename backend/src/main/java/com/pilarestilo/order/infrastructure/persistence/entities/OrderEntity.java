@@ -53,17 +53,18 @@ public class OrderEntity {
     private String totalCurrency;
 
     /*
-     * Nullable while V76 is the expand half. The contract migration turns them NOT NULL once both
-     * this codebase and order-service are writing them. They share total_currency: a net in one
-     * currency and a total in another would be a different bug entirely.
+     * NOT NULL since V79 contracted what V76 expanded. They share total_currency: a net in one
+     * currency and a total in another would be a different bug entirely. The database also checks
+     * that net + tax = total, which is what TaxBreakdown guarantees by deriving the tax as the
+     * remainder rather than a second multiplication.
      */
-    @Column(name = "net_amount", precision = 15, scale = 2)
+    @Column(name = "net_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal netAmount;
 
-    @Column(name = "tax_amount", precision = 15, scale = 2)
+    @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal taxAmount;
 
-    @Column(name = "tax_rate", precision = 5, scale = 2)
+    @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal taxRate;
 
     @Enumerated(EnumType.STRING)
