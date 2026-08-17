@@ -11,9 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Private storage for boleta files.
@@ -73,6 +76,46 @@ public class SalesDocumentFileStorage {
             throw new DomainException("Document file not found");
         }
         return target;
+    }
+
+    /**
+     * Deletes stored files that no document claims and that are older than {@code minAge}.
+     *
+     * <p>Uploading is a separate step from registering the boleta — the folio is typed the moment
+     * the document is emitted, the PDF often arrives later — so abandoning the drawer mid-way
+     * leaves a file nothing points at. One at a time is nothing; never cleaning is a directory that
+     * only grows.
+     *
+     * <p>The age threshold is the whole safety of this: a file uploaded seconds ago is on its way
+     * to being claimed, and deleting it would break the very flow it belongs to.
+     *
+     * @param claimed names currently referenced by a document, voided ones included — a voided
+     *                boleta keeps its file, since that is the record of what was voided
+     * @return how many files were removed
+     */
+    public int deleteOrphans(Set<String> claimed, Duration minAge) {
+        if (!Files.isDirectory(root)) {
+            return 0;
+        }
+        Instant cutoff = Instant.now().minus(minAge);
+        int removed = 0;
+        try (Stream<Path> files = Files.list(root)) {
+            for (Path file : files.filter(Files::isRegularFile).toList()) {
+                String name = file.getFileName().toString();
+                if (claimed.contains(name)) {
+                    continue;
+                }
+                if (Files.getLastModifiedTime(file).toInstant().isAfter(cutoff)) {
+                    continue;
+                }
+                Files.deleteIfExists(file);
+                removed++;
+            }
+        } catch (IOException e) {
+            // A sweep that cannot read the directory is not worth failing a scheduled run over.
+            return removed;
+        }
+        return removed;
     }
 
     public String contentTypeOf(String storedName) {

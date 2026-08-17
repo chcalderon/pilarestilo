@@ -75,6 +75,12 @@ app:
     # Separate from media on purpose: everything under media.storage-path is served publicly by
     # /api/media/**, and a boleta carries a RUT, a buyer name and amounts.
     storage-path: ${DOCUMENTS_STORAGE_PATH:./documents}
+    orphan-sweep:
+      # Uploading is a step apart from registering the boleta, so an abandoned drawer leaves a file
+      # nothing points at. The age threshold is what keeps the sweep from eating a file still on
+      # its way to being claimed.
+      cron: ${APP_DOCUMENTS_ORPHAN_SWEEP_CRON:0 30 4 * * *}
+      min-age-hours: ${APP_DOCUMENTS_ORPHAN_SWEEP_MIN_AGE_HOURS:24}
   cache:
     redis:
       enabled: ${APP_CACHE_REDIS_ENABLED:false}

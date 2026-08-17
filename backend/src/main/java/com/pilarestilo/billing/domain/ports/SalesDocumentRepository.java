@@ -5,6 +5,7 @@ import com.pilarestilo.billing.domain.model.SalesDocument;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface SalesDocumentRepository {
@@ -20,4 +21,10 @@ public interface SalesDocumentRepository {
     List<SalesDocument> findAllByOrderId(UUID orderId);
 
     boolean existsByTypeAndFolio(SalesDocumentType type, String folio);
+
+    /**
+     * Every stored file name a document points at, voided documents included: a voided boleta keeps
+     * its file, because that file is the record of what was voided. Feeds the orphan sweep.
+     */
+    Set<String> findAllStoredFileNames();
 }

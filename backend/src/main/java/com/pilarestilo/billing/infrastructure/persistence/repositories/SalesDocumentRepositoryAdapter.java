@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -48,6 +49,11 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
     @Override
     public boolean existsByTypeAndFolio(SalesDocumentType type, String folio) {
         return jpaRepository.existsByDocumentTypeAndFolio(type.name(), folio);
+    }
+
+    @Override
+    public Set<String> findAllStoredFileNames() {
+        return Set.copyOf(jpaRepository.findAllFileUrls());
     }
 
     private SalesDocumentEntity toEntity(SalesDocument document) {
