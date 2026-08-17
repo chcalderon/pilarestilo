@@ -16,6 +16,7 @@ const HYBRID_ROUTE_REQUIREMENTS: Array<[string, HybridRouteRequirement]> = [
   // The sales screen exposes buyer names, emails and amounts, so it is gated at the route as well
   // as in the island. The backend guards every endpoint behind it independently.
   ['/admin/ventas', { permissionCode: 'orders.read', legacyViewKey: 'caja' }],
+  ['/admin/devoluciones', { permissionCode: 'returns.read', legacyViewKey: 'caja' }],
 ];
 
 function resolveHybridRequirement(pathname: string): HybridRouteRequirement | null {

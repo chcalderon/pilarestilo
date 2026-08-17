@@ -1,0 +1,19 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import DevolucionesPage from '../../islands/admin/DevolucionesPage';
+---
+
+<AdminLayout
+  title="Devoluciones"
+  breadcrumbs={[{ label: 'Devoluciones' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Devoluciones y retractos</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      La ley da 45 días para devolver el dinero. La prenda va por su cuenta: pasa por
+      reacondicionamiento antes de volver a la venta.
+    </p>
+  </div>
+
+  <DevolucionesPage client:load />
+</AdminLayout>

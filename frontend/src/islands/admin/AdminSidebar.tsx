@@ -21,6 +21,7 @@ import {
   Megaphone,
   Navigation,
   Receipt,
+  Undo2,
 } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import { getPendingDocumentCount } from '../../lib/api';
@@ -43,6 +44,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/payments', icon: CreditCard, label: 'Pagos', viewKey: 'caja' },
   { href: '/admin/caja', icon: DollarSign, label: 'Caja', viewKey: 'caja' },
   { href: '/admin/despachos', icon: Truck, label: 'Despachos', viewKey: 'despachos' },
+  { href: '/admin/devoluciones', icon: Undo2, label: 'Devoluciones', viewKey: 'caja' },
   { href: '/admin/publicaciones', icon: Megaphone, label: 'Publicaciones', viewKey: 'productos' },
   { href: '/admin/discounts', icon: Ticket, label: 'Descuentos', viewKey: 'productos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios', viewKey: 'usuarios' },
@@ -75,6 +77,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   // ADMINISTRACION and SUPERVISOR hold orders.read from V78 but were never given the legacy
   // 'caja' view key, so the modern code has to be enough on its own here.
   const canSeeSales = useCan('orders.read');
+  const canSeeReturns = useCan('returns.read');
 
   const permissions = user?.permissions ?? [];
   const visibleNavItems = user?.role === 'ADMIN'
@@ -83,6 +86,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
       if (item.href === '/admin/users') return canSeeUsers;
       if (item.href === '/admin/roles-permisos') return canSeeRoles;
       if (item.href === '/admin/ventas') return canSeeSales || permissions.includes('caja');
+      if (item.href === '/admin/devoluciones') return canSeeReturns || permissions.includes('caja');
       return permissions.includes(item.viewKey);
     });
   const showSettings = canSeeSettings;

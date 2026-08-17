@@ -1541,6 +1541,140 @@ export async function fetchSalesDocumentFile(documentId: string, token: string):
   return res.blob();
 }
 
+// ─── Devoluciones y retracto ──────────────────────────────────────────────────
+
+export interface ReturnRequestDto {
+  id: string;
+  orderId: string;
+  kind: 'RETRACTO' | 'DEVOLUCION';
+  status: 'REQUESTED' | 'APPROVED' | 'RECEIVED' | 'REFUNDED' | 'REJECTED';
+  reason: string | null;
+  requestedBy: string | null;
+  requestedAt: string;
+  /** The legal limit to return the money: requestedAt + 45 days. */
+  deadlineAt: string;
+  daysUntilDeadline: number;
+  resolvedAt: string | null;
+  resolutionNote: string | null;
+  /** Where the garment stands, on its own clock: null until it arrives. */
+  itemDisposition: 'PENDING_RECONDITIONING' | 'RESTOCKED' | 'DISCARDED' | null;
+  dispositionAt: string | null;
+  dispositionNote: string | null;
+  refundAmount: number | null;
+  refundCurrency: string | null;
+  refundMethod: string | null;
+  refundReference: string | null;
+  refundFileAttached: boolean;
+  refundedAt: string | null;
+  /** Never the account number: it is erased once the refund settles. */
+  refundAccountHolder: string | null;
+  refundBankName: string | null;
+  refundAccountType: string | null;
+  refundAccountLast4: string | null;
+  refundAccountConfigured: boolean;
+  creditNoteId: string | null;
+}
+
+export async function getAdminReturns(
+  params: { openOnly?: boolean; page?: number; size?: number },
+  token: string,
+): Promise<Page<ReturnRequestDto>> {
+  const query = buildQuery({
+    openOnly: params.openOnly ?? true,
+    page: params.page ?? 0,
+    size: params.size ?? 20,
+  });
+  return apiFetch<Page<ReturnRequestDto>>(`/admin/returns${query}`, { headers: authHeaders(token) });
+}
+
+export async function getReturnsByOrder(orderId: string, token: string): Promise<ReturnRequestDto[]> {
+  try {
+    return (await apiFetch<ReturnRequestDto[]>(
+      `/admin/returns/order/${encodeURIComponent(orderId)}`,
+      { headers: authHeaders(token) },
+    )) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function openReturn(
+  payload: { orderId: string; kind?: string; reason: string },
+  token: string,
+): Promise<ReturnRequestDto> {
+  return apiFetch<ReturnRequestDto>('/admin/returns', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: authHeaders(token),
+  });
+}
+
+function returnAction<T>(id: string, action: string, body: unknown, token: string): Promise<T> {
+  return apiFetch<T>(`/admin/returns/${encodeURIComponent(id)}/${action}`, {
+    method: 'POST',
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: authHeaders(token),
+  });
+}
+
+export const approveReturn = (id: string, token: string) =>
+  returnAction<ReturnRequestDto>(id, 'approve', {}, token);
+
+/** Only a devolucion can be refused; the backend refuses this for a retracto. */
+export const rejectReturn = (id: string, note: string, token: string) =>
+  returnAction<ReturnRequestDto>(id, 'reject', { note }, token);
+
+/** The garment arrived. It goes into reconditioning; no stock moves here. */
+export const receiveReturn = (id: string, token: string) =>
+  returnAction<ReturnRequestDto>(id, 'receive', {}, token);
+
+/** The only call that moves stock, and only when the garment is put back on sale. */
+export const resolveDisposition = (id: string, disposition: string, note: string | null, token: string) =>
+  returnAction<ReturnRequestDto>(id, 'disposition', { disposition, note }, token);
+
+export const attachRefundAccount = (
+  id: string,
+  account: { holder: string; rut: string; bankName: string; accountType: string; accountNumber: string },
+  token: string,
+) => returnAction<ReturnRequestDto>(id, 'bank-account', account, token);
+
+export const registerRefund = (
+  id: string,
+  refund: { amount: number; currency?: string; method: string; reference: string; fileUrl?: string | null },
+  token: string,
+) => returnAction<ReturnRequestDto>(id, 'refund', refund, token);
+
+// The customer's own door.
+
+export async function getMyReturns(token: string): Promise<ReturnRequestDto[]> {
+  try {
+    return (await apiFetch<ReturnRequestDto[]>('/me/returns', { headers: authHeaders(token) })) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function requestRetracto(orderId: string, reason: string, token: string): Promise<ReturnRequestDto> {
+  return apiFetch<ReturnRequestDto>('/me/returns', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, reason }),
+    headers: authHeaders(token),
+  });
+}
+
+/** When the ten-day window closes, so the page can show the days left instead of a failing button. */
+export async function getRetractoWindow(orderId: string, token: string): Promise<string | null> {
+  try {
+    const res = await apiFetch<{ closesAt?: string }>(
+      `/me/returns/window/${encodeURIComponent(orderId)}`,
+      { headers: authHeaders(token) },
+    );
+    return res?.closesAt ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getOrderById(orderId: string, token: string): Promise<OrderDto> {
   return apiFetch<OrderDto>(`/orders/${encodeURIComponent(orderId)}`, {
     headers: authHeaders(token),
