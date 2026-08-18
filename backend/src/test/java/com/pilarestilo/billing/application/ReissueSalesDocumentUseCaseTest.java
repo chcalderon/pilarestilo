@@ -106,6 +106,6 @@ class ReissueSalesDocumentUseCaseTest {
                 UUID.randomUUID(), orderId, "BOLETA", folio, java.time.Instant.now(),
                 new BigDecimal("38647"), new BigDecimal("7343"), new BigDecimal("19.00"),
                 new BigDecimal("45990"), "CLP", null, null, null, false,
-                "ISSUED", null, null, previous.getId(), actor);
+                "ISSUED", null, null, previous.getId(), null, actor);
     }
 }

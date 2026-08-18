@@ -35,7 +35,12 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
     @Override
     public Optional<SalesDocument> findLiveByOrderId(UUID orderId) {
         return jpaRepository
-                .findByOrderIdAndStatusNot(orderId, SalesDocumentStatus.VOIDED.name())
+                .findByOrderIdAndStatusNotAndDocumentTypeNot(
+                        orderId,
+                        SalesDocumentStatus.VOIDED.name(),
+                        // A credit note is live alongside the boleta it counterweighs, by design.
+                        // Including it here would make this read find two rows and throw.
+                        SalesDocumentType.NOTA_CREDITO.name())
                 .map(this::toDomain);
     }
 
@@ -43,6 +48,16 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
     public List<SalesDocument> findAllByOrderId(UUID orderId) {
         return jpaRepository.findByOrderIdOrderByIssuedAtDesc(orderId).stream()
                 .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<SalesDocument> findLiveCreditNotesFor(UUID documentId) {
+        return jpaRepository
+                .findByReplacesDocumentIdAndStatusNot(documentId, SalesDocumentStatus.VOIDED.name())
+                .stream()
+                .map(this::toDomain)
+                .filter(document -> document.getType() == SalesDocumentType.NOTA_CREDITO)
                 .toList();
     }
 
@@ -77,6 +92,7 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
         entity.setVoidReason(document.getVoidReason());
         entity.setVoidedBy(document.getVoidedBy());
         entity.setReplacesDocumentId(document.getReplacesDocumentId());
+        entity.setReferenceCode(document.getReferenceCode());
         entity.setIssuedBy(document.getIssuedBy());
         entity.setCreatedAt(document.getCreatedAt());
         return entity;
@@ -103,6 +119,7 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
                 entity.getVoidReason(),
                 entity.getVoidedBy(),
                 entity.getReplacesDocumentId(),
+                entity.getReferenceCode(),
                 entity.getIssuedBy(),
                 entity.getCreatedAt()
         );

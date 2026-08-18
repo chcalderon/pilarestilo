@@ -143,6 +143,14 @@ can still be in progress when that boleta is voided. The rule is `SalesDocumentG
 `dispatch/domain/ports/`, adapter in `billing/`), and the shop can switch it off with
 `system_settings.tax_document_required_before_dispatch`.
 
+A credit note is a **document type, not a status**. Voiding is honest only while the boleta has not
+reached the SII; once the sale is declared, undoing it takes a nota de crédito (DTE 61) with its own
+folio that references the boleta, and both stay valid. So a credit note is the one document allowed
+to live beside another, and every "the live document for this order" read must exclude it — the
+partial index, `findLiveByOrderId` and the two drawers all do. It is registered from the return, in
+`/admin/devoluciones`, and the SII reference code is derived (whole total → 1 annuls, less → 3
+corrects the amount) rather than asked for.
+
 Approving the payment is deliberately **not** gated: the folio comes from the SII's eBoleta app by
 hand, and making the money wait on it invites a made-up folio. Boleta files live under
 `app.documents.storage-path`, never under `app.media.storage-path` — that whole tree is `permitAll`
@@ -179,7 +187,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V78**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V81**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -207,6 +215,12 @@ Recent migrations (V54–V66):
   ciudad, `tax_vat_rate`, `tax_document_required_before_dispatch`, `tax_document_provider`)
 - V78: `billing` permissions — `documents.read` / `documents.issue` / `documents.void`, granted to
   ADMIN and ADMINISTRACION; plus `orders.read` for ADMINISTRACION and SUPERVISOR
+- V79: `orders.net_amount` / `tax_amount` / `tax_rate` SET NOT NULL + `chk_orders_tax_reconciles`
+  (contract half of V76)
+- V80: `return_requests` (retracto and devolución, two independent tracks: money and garment) +
+  `NOTA_CREDITO` as a document type, `sales_documents.reference_code`, and the live-document index
+  narrowed to `uq_sales_documents_live_sale_per_order` so a boleta and its credit note coexist
+- V81: `returns.read` / `returns.manage` / `returns.refund` permissions
 
 ### Spring Boot 4 modular auto-configuration
 

@@ -24,5 +24,7 @@ public record SalesDocumentDto(
         Instant voidedAt,
         String voidReason,
         UUID replacesDocumentId,
+        /** Only on a NOTA_CREDITO: 1 annuls the referenced document, 2 corrects text, 3 an amount. */
+        Integer referenceCode,
         UUID issuedBy
 ) {}

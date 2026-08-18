@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Check, Ban, PackageCheck, Recycle, Trash2, Banknote } from 'lucide-react';
+import { X, Check, Ban, PackageCheck, Recycle, Trash2, Banknote, FileMinus, Upload } from 'lucide-react';
 import {
   approveReturn,
   rejectReturn,
@@ -8,8 +8,12 @@ import {
   attachRefundAccount,
   registerRefund,
   getOrderById,
+  getSalesDocumentsByOrder,
+  issueCreditNote,
+  uploadSalesDocumentFile,
   type OrderDto,
   type ReturnRequestDto,
+  type SalesDocumentDto,
 } from '../../lib/api';
 
 const money = new Intl.NumberFormat('es-CL', {
@@ -76,11 +80,19 @@ export default function ReturnDetailDrawer({
   });
   const [refund, setRefund] = useState({ amount: '', method: 'TRANSFERENCIA', reference: '' });
 
+  const [documents, setDocuments] = useState<SalesDocumentDto[]>([]);
+  const [creditNote, setCreditNote] = useState({ folio: '', amount: '', fileUrl: '' as string | null });
+  const [uploading, setUploading] = useState(false);
+
   const closed = request.status === 'REFUNDED' || request.status === 'REJECTED';
 
   useEffect(() => {
     getOrderById(request.orderId, token).then(setOrder).catch(() => setOrder(null));
   }, [request.orderId, token]);
+
+  useEffect(() => {
+    getSalesDocumentsByOrder(request.orderId, token).then(setDocuments).catch(() => setDocuments([]));
+  }, [request.orderId, token, request.status]);
 
   useEffect(() => {
     if (order && !refund.amount) {
@@ -89,12 +101,67 @@ export default function ReturnDetailDrawer({
   }, [order]);
 
   useEffect(() => {
+    if (request.refundAmount && !creditNote.amount) {
+      setCreditNote((current) => ({ ...current, amount: String(request.refundAmount) }));
+    }
+  }, [request.refundAmount]);
+
+  useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onEsc);
     return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
+
+  /** The document the sale still stands on; a credit note acts upon this one. */
+  const liveSale = documents.find(
+    (document) => document.status !== 'VOIDED' && document.documentType !== 'NOTA_CREDITO',
+  ) ?? null;
+  const issuedNote = documents.find(
+    (document) => document.documentType === 'NOTA_CREDITO' && document.status !== 'VOIDED',
+  ) ?? null;
+  /**
+   * The SII does not allow the débito fiscal to be reduced more than six months after the document.
+   * A warning rather than a block: the shop may still need the note for its own books.
+   */
+  const staleForCreditNote = liveSale
+    ? Date.now() - new Date(liveSale.issuedAt).getTime() > 183 * 86_400_000
+    : false;
+
+  async function attachFile(file: File) {
+    setUploading(true);
+    setFeedback(null);
+    try {
+      const stored = await uploadSalesDocumentFile(file, token);
+      setCreditNote((current) => ({ ...current, fileUrl: stored }));
+    } catch (error) {
+      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo subir el archivo' });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function registerCreditNote() {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      const created = await issueCreditNote({
+        orderId: request.orderId,
+        folio: creditNote.folio.trim(),
+        amount: Number(creditNote.amount),
+        fileUrl: creditNote.fileUrl,
+        returnId: request.id,
+      }, token);
+      setDocuments((current) => [created, ...current]);
+      setFeedback({ tone: 'success', text: `Nota de crédito ${created.folio} registrada.` });
+      onChanged({ ...request, creditNoteId: created.id });
+    } catch (error) {
+      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo registrar' });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function run(action: () => Promise<ReturnRequestDto>, success: string) {
     setBusy(true);
@@ -376,6 +443,78 @@ export default function ReturnDetailDrawer({
               <p className="text-sm opacity-60">
                 {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
               </p>
+            )}
+          </Section>
+
+          <Section label="Nota de crédito">
+            {issuedNote ? (
+              <>
+                <Row label="Folio" value={issuedNote.folio} />
+                <Row
+                  label="Referencia"
+                  value={issuedNote.referenceCode === 1
+                    ? `Anula la ${liveSale ? liveSale.documentType.toLowerCase() : 'boleta'} ${liveSale?.folio ?? ''}`
+                    : `Corrige el monto de la ${liveSale ? liveSale.documentType.toLowerCase() : 'boleta'} ${liveSale?.folio ?? ''}`}
+                />
+                <Row label="Monto" value={money.format(issuedNote.totalAmount)} />
+                <Row label="Neto / IVA" value={`${money.format(issuedNote.netAmount)} · ${money.format(issuedNote.taxAmount)}`} />
+              </>
+            ) : request.status !== 'REFUNDED' ? (
+              <p className="text-sm opacity-60">
+                Se registra una vez devuelto el dinero.
+              </p>
+            ) : !liveSale ? (
+              <p className="text-sm opacity-60">
+                Esta venta no tiene boleta viva, así que no hay documento que anular.
+              </p>
+            ) : !canRefund ? (
+              <p className="text-sm opacity-60">No tienes permiso para registrar documentos.</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-[0.75rem] opacity-70">
+                  La boleta {liveSale.folio} ya fue declarada al SII, así que no se anula: se
+                  contrapesa con una nota de crédito. Emítela en eBoleta o en el sitio del SII y
+                  registra aquí el folio que te dieron.
+                </p>
+                {staleForCreditNote && (
+                  <p className="text-[0.72rem] text-amber-600">
+                    La boleta tiene más de seis meses. Pasado ese plazo el SII ya no permite rebajar
+                    el débito fiscal; regístrala igual si la necesitas para tu contabilidad.
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="space-y-1">
+                    <span className={labelCls}>Folio</span>
+                    <input className={inputCls} value={creditNote.folio}
+                      onChange={(e) => setCreditNote({ ...creditNote, folio: e.target.value })} />
+                  </label>
+                  <label className="space-y-1">
+                    <span className={labelCls}>Monto acreditado</span>
+                    <input className={inputCls} inputMode="numeric" value={creditNote.amount}
+                      onChange={(e) => setCreditNote({ ...creditNote, amount: e.target.value })} />
+                  </label>
+                </div>
+                <p className="text-[0.68rem] opacity-50">
+                  {Number(creditNote.amount) >= liveSale.totalAmount
+                    ? `Anula la ${liveSale.documentType.toLowerCase()} completa (referencia 1).`
+                    : `Corrige el monto de la ${liveSale.documentType.toLowerCase()} (referencia 3).`}
+                </p>
+                <label className={`${btnSecondary} cursor-pointer`}>
+                  <Upload size={13} />
+                  {uploading ? 'Subiendo…' : creditNote.fileUrl ? 'Archivo listo' : 'Adjuntar archivo'}
+                  <input type="file" className="hidden" accept="application/pdf,image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void attachFile(file);
+                    }} />
+                </label>
+                <div>
+                  <button type="button" className={btnPrimary} disabled={busy || !creditNote.folio}
+                    onClick={() => void registerCreditNote()}>
+                    <FileMinus size={13} /> Registrar nota de crédito
+                  </button>
+                </div>
+              </div>
             )}
           </Section>
         </div>

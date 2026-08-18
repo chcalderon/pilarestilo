@@ -129,6 +129,7 @@ These are the explicit role checks currently present in controllers:
 | `GET /api/payments/{id}` | `hasAnyRole('ADMIN','SELLER')` |
 | `GET /api/payments` | `hasAnyRole('ADMIN','SELLER')` |
 | `POST /api/media/upload` | `hasAnyRole('ADMIN','SELLER')` |
+| `POST /api/admin/sales-documents/credit-notes` | `documents.issue` |
 | `POST /api/payment-proofs` | `isAuthenticated()` |
 | `GET /api/payment-proofs/{paymentId}` | `isAuthenticated()` + customer ownership check for `CUSTOMER` role |
 | `GET /api/media/payment-proofs/**` | `denyAll()` — receipts moved out of the public media root |

@@ -21,6 +21,10 @@ import java.util.UUID;
  *
  * <p>The buyer's name and email are copied in for the same reason. A tax document is kept for six
  * years, and the user row behind it may be anonymised long before that under Ley 21.719.
+ *
+ * <p>A {@code NOTA_CREDITO} is the same record with two extra obligations: it names the document it
+ * acts upon and says what it does to it. Nothing else about it differs, because it too is emitted by
+ * hand and only recorded here.
  */
 public class SalesDocument {
 
@@ -42,6 +46,7 @@ public class SalesDocument {
     private String voidReason;
     private UUID voidedBy;
     private UUID replacesDocumentId;
+    private Integer referenceCode;
     private UUID issuedBy;
     private Instant createdAt;
 
@@ -100,6 +105,54 @@ public class SalesDocument {
         return document;
     }
 
+    /**
+     * Registers the nota de credito that undoes a declared sale, in whole or in part.
+     *
+     * @param referenceCode what the SII asks a credit note to declare about the document it
+     *                      references: {@link #REFERENCE_ANNULS}, {@link #REFERENCE_CORRECTS_TEXT}
+     *                      or {@link #REFERENCE_CORRECTS_AMOUNT}
+     */
+    public static SalesDocument creditNote(
+            UUID orderId,
+            String folio,
+            TaxBreakdown amounts,
+            int referenceCode,
+            SalesDocument references,
+            String fileUrl,
+            UUID issuedBy
+    ) {
+        if (references == null) {
+            throw new DomainException("A credit note has to say which document it acts upon");
+        }
+        if (referenceCode != REFERENCE_ANNULS
+                && referenceCode != REFERENCE_CORRECTS_TEXT
+                && referenceCode != REFERENCE_CORRECTS_AMOUNT) {
+            throw new DomainException(
+                    "A credit note references with code 1 (annuls), 2 (corrects text) or 3 (corrects amount)");
+        }
+
+        SalesDocument document = issue(
+                orderId,
+                SalesDocumentType.NOTA_CREDITO,
+                folio,
+                amounts,
+                references.getReceiverRut(),
+                references.getReceiverName(),
+                references.getReceiverEmail(),
+                fileUrl,
+                issuedBy,
+                references.getId());
+        document.referenceCode = referenceCode;
+        return document;
+    }
+
+    /** The credit note leaves the referenced document without effect. */
+    public static final int REFERENCE_ANNULS = 1;
+    /** It corrects wording — a misspelled name — and moves no money. */
+    public static final int REFERENCE_CORRECTS_TEXT = 2;
+    /** It corrects an amount, which is what a partial refund needs. */
+    public static final int REFERENCE_CORRECTS_AMOUNT = 3;
+
     public void voidDocument(String reason, UUID voidedBy) {
         if (status == SalesDocumentStatus.VOIDED) {
             throw new DomainException("Sales document " + folio + " is already voided");
@@ -139,6 +192,7 @@ public class SalesDocument {
             String voidReason,
             UUID voidedBy,
             UUID replacesDocumentId,
+            Integer referenceCode,
             UUID issuedBy,
             Instant createdAt
     ) {
@@ -161,6 +215,7 @@ public class SalesDocument {
         document.voidReason = voidReason;
         document.voidedBy = voidedBy;
         document.replacesDocumentId = replacesDocumentId;
+        document.referenceCode = referenceCode;
         document.issuedBy = issuedBy;
         document.createdAt = createdAt;
         return document;
@@ -192,6 +247,7 @@ public class SalesDocument {
     public String getVoidReason() { return voidReason; }
     public UUID getVoidedBy() { return voidedBy; }
     public UUID getReplacesDocumentId() { return replacesDocumentId; }
+    public Integer getReferenceCode() { return referenceCode; }
     public UUID getIssuedBy() { return issuedBy; }
     public Instant getCreatedAt() { return createdAt; }
 }

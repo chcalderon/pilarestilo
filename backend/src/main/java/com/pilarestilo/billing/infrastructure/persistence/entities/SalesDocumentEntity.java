@@ -1,5 +1,7 @@
 package com.pilarestilo.billing.infrastructure.persistence.entities;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -75,6 +77,16 @@ public class SalesDocumentEntity {
     @Column(name = "replaces_document_id")
     private UUID replacesDocumentId;
 
+    /**
+     * SII reference code on a credit note: 1 annuls, 2 corrects text, 3 corrects an amount.
+     *
+     * <p>Mapped as SMALLINT because that is the column V80 created — three possible values need no
+     * more — and {@code ddl-auto: validate} refuses an Integer against it.
+     */
+    @Column(name = "reference_code")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    private Integer referenceCode;
+
     @Column(name = "issued_by", nullable = false)
     private UUID issuedBy;
 
@@ -119,6 +131,8 @@ public class SalesDocumentEntity {
     public void setVoidedBy(UUID voidedBy) { this.voidedBy = voidedBy; }
     public UUID getReplacesDocumentId() { return replacesDocumentId; }
     public void setReplacesDocumentId(UUID replacesDocumentId) { this.replacesDocumentId = replacesDocumentId; }
+    public Integer getReferenceCode() { return referenceCode; }
+    public void setReferenceCode(Integer referenceCode) { this.referenceCode = referenceCode; }
     public UUID getIssuedBy() { return issuedBy; }
     public void setIssuedBy(UUID issuedBy) { this.issuedBy = issuedBy; }
     public Instant getCreatedAt() { return createdAt; }

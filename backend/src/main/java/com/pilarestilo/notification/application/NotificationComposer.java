@@ -438,9 +438,19 @@ public class NotificationComposer {
     public NotificationMessage salesDocumentIssued(Order order, SalesDocument document) {
         String reference = order.getPublicReference();
         String currency = document.getTotalAmount().currency();
-        String documentName = document.getType() == SalesDocumentType.FACTURA ? "factura" : "boleta";
+        boolean isCreditNote = document.getType() == SalesDocumentType.NOTA_CREDITO;
+        String documentName = switch (document.getType()) {
+            case FACTURA -> "factura";
+            case NOTA_CREDITO -> "nota de crédito";
+            case BOLETA -> "boleta";
+        };
+        // A credit note is the document that undoes a purchase, so it cannot be announced with the
+        // wording of one that confirms it.
+        String opening = isCreditNote
+                ? "Emitimos la nota de crédito que deja sin efecto tu pedido " + reference + "."
+                : "Emitimos la " + documentName + " de tu pedido " + reference + ".";
 
-        String body = "Emitimos la " + documentName + " de tu pedido " + reference + ".\n\n"
+        String body = opening + "\n\n"
                 + "Folio: " + document.getFolio() + "\n"
                 + "Neto: " + formatAmount(document.getNetAmount().amount().toPlainString(), currency) + "\n"
                 + "IVA (" + document.getTaxRate().toPlainString() + "%): "
@@ -461,10 +471,13 @@ public class NotificationComposer {
 
         return new NotificationMessage(
                 NotificationMessage.SALES_DOCUMENT_ISSUED,
-                "Boleta " + document.getFolio() + " de tu pedido " + reference,
+                (isCreditNote ? "Nota de crédito " : "Boleta ") + document.getFolio()
+                        + " de tu pedido " + reference,
                 body,
-                EmailLayout.titled("Tu " + documentName + " está emitida")
-                        .paragraph("Emitimos la " + documentName + " de tu pedido " + reference + ".")
+                EmailLayout.titled(isCreditNote
+                                ? "Tu nota de crédito está emitida"
+                                : "Tu " + documentName + " está emitida")
+                        .paragraph(opening)
                         .highlight("Folio", document.getFolio())
                         .details(List.of(
                                 new String[]{"Neto", formatAmount(

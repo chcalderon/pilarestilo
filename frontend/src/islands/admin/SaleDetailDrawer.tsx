@@ -122,7 +122,14 @@ export default function SaleDetailDrawer({
   /** Voiding a boleta and undoing the sale are different acts, so the second one is opt-in. */
   const [alsoCancelSale, setAlsoCancelSale] = useState(false);
 
-  const live = documents.find((d) => d.status === 'ISSUED') ?? null;
+  // The document the sale stands on. A credit note is ISSUED too and comes back newest-first, so
+  // without excluding it this would hand the panel a note to void and reissue.
+  const live = documents.find(
+    (d) => d.status === 'ISSUED' && d.documentType !== 'NOTA_CREDITO',
+  ) ?? null;
+  const creditNotes = documents.filter(
+    (d) => d.documentType === 'NOTA_CREDITO' && d.status !== 'VOIDED',
+  );
   const history = documents.filter((d) => d.status === 'VOIDED');
 
   useEffect(() => {
@@ -392,6 +399,25 @@ export default function SaleDetailDrawer({
                     </button>
                   )}
                 </div>
+
+                {creditNotes.length > 0 && (
+                  <div className="pt-3 border-t border-[var(--pe-border)] space-y-2">
+                    <p className="text-[10px] tracking-widest uppercase opacity-60">
+                      Notas de crédito
+                    </p>
+                    {creditNotes.map((note) => (
+                      <div key={note.id} className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="opacity-60">
+                          {note.folio} · {note.referenceCode === 1 ? 'anula' : 'corrige monto'}
+                        </span>
+                        <span className="text-right tabular-nums">{money.format(note.totalAmount)}</span>
+                      </div>
+                    ))}
+                    <p className="text-[0.68rem] opacity-50">
+                      La boleta sigue válida: la nota la contrapesa. Se registra desde Devoluciones.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

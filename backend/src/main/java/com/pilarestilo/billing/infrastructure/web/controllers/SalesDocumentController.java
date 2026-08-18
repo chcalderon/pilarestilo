@@ -2,6 +2,7 @@ package com.pilarestilo.billing.infrastructure.web.controllers;
 
 import com.pilarestilo.billing.application.dto.SalesDocumentDto;
 import com.pilarestilo.billing.application.usecases.GetSalesDocumentsForOrderUseCase;
+import com.pilarestilo.billing.application.usecases.IssueCreditNoteUseCase;
 import com.pilarestilo.billing.application.usecases.IssueSalesDocumentUseCase;
 import com.pilarestilo.billing.application.usecases.ReissueSalesDocumentUseCase;
 import com.pilarestilo.billing.application.usecases.VoidSalesDocumentUseCase;
@@ -9,6 +10,7 @@ import com.pilarestilo.billing.domain.enums.SalesDocumentType;
 import com.pilarestilo.billing.domain.model.SalesDocument;
 import com.pilarestilo.billing.domain.ports.SalesDocumentRepository;
 import com.pilarestilo.billing.infrastructure.storage.SalesDocumentFileStorage;
+import com.pilarestilo.billing.infrastructure.web.requests.IssueCreditNoteRequest;
 import com.pilarestilo.billing.infrastructure.web.requests.IssueSalesDocumentRequest;
 import com.pilarestilo.billing.infrastructure.web.requests.ReissueSalesDocumentRequest;
 import com.pilarestilo.billing.infrastructure.web.requests.VoidSalesDocumentRequest;
@@ -39,6 +41,7 @@ public class SalesDocumentController {
     private final ReissueSalesDocumentUseCase reissueSalesDocumentUseCase;
     private final GetSalesDocumentsForOrderUseCase getSalesDocumentsForOrderUseCase;
     private final SalesDocumentRepository salesDocumentRepository;
+    private final IssueCreditNoteUseCase issueCreditNoteUseCase;
     private final SalesDocumentFileStorage fileStorage;
 
     public SalesDocumentController(IssueSalesDocumentUseCase issueSalesDocumentUseCase,
@@ -46,12 +49,14 @@ public class SalesDocumentController {
                                    ReissueSalesDocumentUseCase reissueSalesDocumentUseCase,
                                    GetSalesDocumentsForOrderUseCase getSalesDocumentsForOrderUseCase,
                                    SalesDocumentRepository salesDocumentRepository,
+                                   IssueCreditNoteUseCase issueCreditNoteUseCase,
                                    SalesDocumentFileStorage fileStorage) {
         this.issueSalesDocumentUseCase = issueSalesDocumentUseCase;
         this.voidSalesDocumentUseCase = voidSalesDocumentUseCase;
         this.reissueSalesDocumentUseCase = reissueSalesDocumentUseCase;
         this.getSalesDocumentsForOrderUseCase = getSalesDocumentsForOrderUseCase;
         this.salesDocumentRepository = salesDocumentRepository;
+        this.issueCreditNoteUseCase = issueCreditNoteUseCase;
         this.fileStorage = fileStorage;
     }
 
@@ -65,6 +70,25 @@ public class SalesDocumentController {
                 request.folio(),
                 request.receiverRut(),
                 request.fileUrl(),
+                actorId(currentUser));
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * Registers a nota de credito against the sale's live document. Separate from issuing, because
+     * what it validates is different: not that the sale can be documented, but that the document it
+     * undoes exists and has not already been credited in full.
+     */
+    @PostMapping("/credit-notes")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).DOCUMENTS_ISSUE)")
+    public ResponseEntity<SalesDocumentDto> creditNote(@Valid @RequestBody IssueCreditNoteRequest request,
+                                                       @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        SalesDocumentDto created = issueCreditNoteUseCase.execute(
+                request.orderId(),
+                request.folio(),
+                request.amount(),
+                request.fileUrl(),
+                request.returnId(),
                 actorId(currentUser));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

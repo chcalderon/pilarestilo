@@ -10,7 +10,10 @@ import java.util.UUID;
 
 public interface SalesDocumentJpaRepository extends JpaRepository<SalesDocumentEntity, UUID> {
 
-    Optional<SalesDocumentEntity> findByOrderIdAndStatusNot(UUID orderId, String status);
+    Optional<SalesDocumentEntity> findByOrderIdAndStatusNotAndDocumentTypeNot(
+            UUID orderId, String status, String documentType);
+
+    List<SalesDocumentEntity> findByReplacesDocumentIdAndStatusNot(UUID replacesDocumentId, String status);
 
     List<SalesDocumentEntity> findByOrderIdOrderByIssuedAtDesc(UUID orderId);
 

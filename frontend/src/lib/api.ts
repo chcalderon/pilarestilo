@@ -1427,7 +1427,7 @@ export interface SaleSummaryDto {
 export interface SalesDocumentDto {
   id: string;
   orderId: string;
-  documentType: 'BOLETA' | 'FACTURA';
+  documentType: 'BOLETA' | 'FACTURA' | 'NOTA_CREDITO';
   folio: string;
   issuedAt: string;
   netAmount: number;
@@ -1444,6 +1444,8 @@ export interface SalesDocumentDto {
   voidedAt: string | null;
   voidReason: string | null;
   replacesDocumentId: string | null;
+  /** Only on a NOTA_CREDITO: 1 annuls the referenced document, 2 corrects text, 3 an amount. */
+  referenceCode: number | null;
   issuedBy: string;
 }
 
@@ -1524,6 +1526,23 @@ export async function reissueSalesDocument(
   token: string,
 ): Promise<SalesDocumentDto> {
   return apiFetch<SalesDocumentDto>(`/admin/sales-documents/${encodeURIComponent(documentId)}/reissue`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: authHeaders(token),
+  });
+}
+
+/**
+ * Registers the nota de crédito (DTE 61) that undoes a declared sale.
+ *
+ * The document is emitted by hand in eBoleta or on the SII site, exactly like the boleta; this only
+ * records it. The reference code is not asked for: crediting the whole total annuls, less corrects.
+ */
+export async function issueCreditNote(
+  payload: { orderId: string; folio: string; amount: number; fileUrl?: string | null; returnId?: string | null },
+  token: string,
+): Promise<SalesDocumentDto> {
+  return apiFetch<SalesDocumentDto>('/admin/sales-documents/credit-notes', {
     method: 'POST',
     body: JSON.stringify(payload),
     headers: authHeaders(token),

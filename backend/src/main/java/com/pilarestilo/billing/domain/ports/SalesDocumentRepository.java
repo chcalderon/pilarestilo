@@ -14,8 +14,14 @@ public interface SalesDocumentRepository {
 
     Optional<SalesDocument> findById(UUID id);
 
-    /** The one document that counts for an order: everything else behind it has been voided. */
+    /**
+     * The one <em>sale</em> document that counts for an order: everything else behind it has been
+     * voided. Credit notes are excluded on purpose — one lives alongside the boleta it undoes.
+     */
     Optional<SalesDocument> findLiveByOrderId(UUID orderId);
+
+    /** Credit notes still standing against a document, to keep them from over-crediting it. */
+    List<SalesDocument> findLiveCreditNotesFor(UUID documentId);
 
     /** Every attempt for an order, newest first, so a correction can be read next to what it corrected. */
     List<SalesDocument> findAllByOrderId(UUID orderId);

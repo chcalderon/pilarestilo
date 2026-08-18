@@ -29,6 +29,7 @@ public final class SalesDocumentMapper {
                 document.getVoidedAt(),
                 document.getVoidReason(),
                 document.getReplacesDocumentId(),
+                document.getReferenceCode(),
                 document.getIssuedBy()
         );
     }
