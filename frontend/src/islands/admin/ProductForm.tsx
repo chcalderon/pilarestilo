@@ -24,7 +24,8 @@ import {
   getVariantSchema,
   allowedCategoryIds,
   legacyVariantToSelections,
-  listVariantSchemas,
+  listSelectableVariantSchemas,
+  isSelectableVariantType,
   normalizeAttributeValues,
   resolvePreferredCategoryType,
   selectionsToLegacyVariant,
@@ -1076,19 +1077,28 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
                 className={inputClass}
               >
                 <option value="">
-                  Según la categoría ({getVariantSchema(resolvedCategoryType).attributes[0].label}
+                  Según la categoría — {getVariantSchema(resolvedCategoryType).noun}
+                  {' ('}
+                  {getVariantSchema(resolvedCategoryType).attributes[0].label}
                   {' / '}
                   {getVariantSchema(resolvedCategoryType).attributes[1].label})
                 </option>
-                {listVariantSchemas().map((schema) => (
+                {listSelectableVariantSchemas().map((schema) => (
                   <option key={schema.key} value={schema.key}>
-                    {schema.attributes[0].label} / {schema.attributes[1].label}
+                    {schema.noun} ({schema.attributes[0].label} / {schema.attributes[1].label})
                   </option>
                 ))}
+                {/* A product saved before the picker narrowed keeps its stored type visible.
+                    Dropping it silently would show the wrong option as selected. */}
+                {form.variantType && !isSelectableVariantType(form.variantType) && (
+                  <option value={form.variantType}>
+                    {getVariantSchema(form.variantType).noun} (en desuso)
+                  </option>
+                )}
               </select>
               <p className="font-sans text-[0.68rem] text-pe-charcoal/60 dark:text-[#E8DCC8]/50 mt-1">
-                Define los dos campos de cada variante. Si lo dejas en «según la categoría», cambia
-                solo cuando cambies la categoría del producto.
+                Define los dos campos de cada variante y qué categorías puede tener el producto. Si
+                lo dejas en «según la categoría», cambia solo cuando cambies la categoría.
               </p>
             </div>
 

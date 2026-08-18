@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { allowedCategoryIds, getProductVariantSchema } from '../variantSchema';
+import {
+  allowedCategoryIds,
+  getProductVariantSchema,
+  isSelectableVariantType,
+  listSelectableVariantSchemas,
+} from '../variantSchema';
 import type { CategoryDto, CategoryType } from '../api';
 
 function category(
@@ -123,5 +128,41 @@ describe('getProductVariantSchema', () => {
     });
 
     expect(schema.key).toBe('CLOTHING');
+  });
+});
+
+describe('the variant type picker', () => {
+  it('offers no two options that read the same', () => {
+    const labels = listSelectableVariantSchemas().map(
+      (schema) => `${schema.attributes[0].label} / ${schema.attributes[1].label}`,
+    );
+
+    // Four category types share "Variante / Detalle", which is how the picker came to show what
+    // looked like duplicates. Only one of them may be offered.
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
+  it('names every option, so the pair of fields is not the only thing to go on', () => {
+    for (const schema of listSelectableVariantSchemas()) {
+      expect(schema.noun.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('leaves out the types that group products rather than shape them', () => {
+    const offered = listSelectableVariantSchemas().map((schema) => schema.key);
+
+    expect(offered).not.toContain('COLLECTION');
+    expect(offered).not.toContain('SEASON');
+    expect(offered).not.toContain('GENERIC');
+    expect(isSelectableVariantType('GENERIC')).toBe(false);
+    expect(isSelectableVariantType('CLOTHING')).toBe(true);
+  });
+
+  it('still renders a product whose only category is a collection', () => {
+    // The schemas stay; only the picker narrows. Otherwise such a product has nothing to render.
+    const schema = getProductVariantSchema({ categoryTypes: ['COLLECTION'], variantType: null });
+
+    expect(schema.attributes).toHaveLength(2);
+    expect(schema.noun).toBeTruthy();
   });
 });

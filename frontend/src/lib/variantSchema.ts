@@ -23,6 +23,8 @@ export interface CategoryAttributeDefinition {
 
 export interface VariantSchema {
   key: CategoryType;
+  /** What the product is, in the words the shop uses. The picker lists this, not the enum. */
+  noun: string;
   title: string;
   attributes: [CategoryAttributeDefinition, CategoryAttributeDefinition];
 }
@@ -37,38 +39,58 @@ function optionList(values: string[]): VariantAttributeOption[] {
   return values.map((value, index) => ({ value, label: value, position: index }));
 }
 
-const SCHEMAS: Record<CategoryType, VariantSchema> = {
-  GENERIC: {
-    key: 'GENERIC',
-    title: 'Variantes',
+/**
+ * The pair used by everything that is not a garment, a shoe or a piece of jewellery: a free primary
+ * value and a free detail. Four category types share it — they differ only in the examples they
+ * suggest, and writing them out four times is what made the picker look like it had duplicates.
+ */
+function variantAndDetail(
+  key: CategoryType,
+  noun: string,
+  codes: [string, string],
+  placeholders: [string, string],
+  detailDefaults?: string[],
+): VariantSchema {
+  return {
+    key,
+    noun,
+    title: 'Variante + detalle + stock',
     attributes: [
       {
-        code: 'primary',
+        code: codes[0],
         label: 'Variante',
         type: 'text',
         options: [],
         required: true,
         position: 0,
         allowCustom: true,
-        placeholder: 'Ej: Negro, Dorado, Cuero',
+        placeholder: placeholders[0],
         legacyField: 'color',
       },
       {
-        code: 'secondary',
+        code: codes[1],
         label: 'Detalle',
         type: 'text',
         options: [],
         required: true,
         position: 1,
         allowCustom: true,
-        placeholder: 'Ej: Unico, Mini, Trenzado',
+        placeholder: placeholders[1],
         legacyField: 'size',
-        defaultValues: ['UNICO'],
+        ...(detailDefaults ? { defaultValues: detailDefaults } : {}),
       },
     ],
-  },
+  };
+}
+
+const SCHEMAS: Record<CategoryType, VariantSchema> = {
+  GENERIC: variantAndDetail(
+    'GENERIC', 'Otro', ['primary', 'secondary'],
+    ['Ej: Negro, Dorado, Cuero', 'Ej: Unico, Mini, Trenzado'], ['UNICO'],
+  ),
   CLOTHING: {
     key: 'CLOTHING',
+    noun: 'Prenda',
     title: 'Color + talla + stock',
     attributes: [
       {
@@ -100,6 +122,7 @@ const SCHEMAS: Record<CategoryType, VariantSchema> = {
   },
   SHOES: {
     key: 'SHOES',
+    noun: 'Zapato',
     title: 'Color + numero + stock',
     attributes: [
       {
@@ -128,6 +151,7 @@ const SCHEMAS: Record<CategoryType, VariantSchema> = {
   },
   JEWELRY: {
     key: 'JEWELRY',
+    noun: 'Bisuteria',
     title: 'Material + diseno + stock',
     attributes: [
       {
@@ -154,91 +178,16 @@ const SCHEMAS: Record<CategoryType, VariantSchema> = {
       },
     ],
   },
-  ACCESSORY: {
-    key: 'ACCESSORY',
-    title: 'Variante + detalle + stock',
-    attributes: [
-      {
-        code: 'variant',
-        label: 'Variante',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Negro, Cuero, Gold',
-        legacyField: 'color',
-      },
-      {
-        code: 'detail',
-        label: 'Detalle',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: 'Ej: Unico, Mini, Trenzado',
-        legacyField: 'size',
-        defaultValues: ['UNICO'],
-      },
-    ],
-  },
-  COLLECTION: {
-    key: 'COLLECTION',
-    title: 'Variante + detalle + stock',
-    attributes: [
-      {
-        code: 'variant',
-        label: 'Variante',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Look 01',
-        legacyField: 'color',
-      },
-      {
-        code: 'detail',
-        label: 'Detalle',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: 'Ej: Editorial',
-        legacyField: 'size',
-      },
-    ],
-  },
-  SEASON: {
-    key: 'SEASON',
-    title: 'Variante + detalle + stock',
-    attributes: [
-      {
-        code: 'variant',
-        label: 'Variante',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Invierno',
-        legacyField: 'color',
-      },
-      {
-        code: 'detail',
-        label: 'Detalle',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: 'Ej: Capsula 01',
-        legacyField: 'size',
-      },
-    ],
-  },
+  ACCESSORY: variantAndDetail(
+    'ACCESSORY', 'Accesorio', ['variant', 'detail'],
+    ['Ej: Negro, Cuero, Gold', 'Ej: Unico, Mini, Trenzado'], ['UNICO'],
+  ),
+  COLLECTION: variantAndDetail(
+    'COLLECTION', 'Coleccion', ['variant', 'detail'], ['Ej: Look 01', 'Ej: Editorial'],
+  ),
+  SEASON: variantAndDetail(
+    'SEASON', 'Temporada', ['variant', 'detail'], ['Ej: Invierno', 'Ej: Capsula 01'],
+  ),
 };
 
 const CATEGORY_TYPE_PRIORITY: CategoryType[] = [
@@ -325,7 +274,7 @@ export function normalizeAttributeValues(
   return sortAttributeValues(attribute, canonical);
 }
 
-export function composeStoredAttributeValue(
+function composeStoredAttributeValue(
   attribute: CategoryAttributeDefinition,
   values: string[],
 ): string {
@@ -337,7 +286,7 @@ export function composeStoredAttributeValue(
   return normalized[0];
 }
 
-export function parseStoredAttributeValue(
+function parseStoredAttributeValue(
   attribute: CategoryAttributeDefinition,
   rawValue: string | null | undefined,
 ): string[] {
@@ -502,6 +451,9 @@ export function getProductVariantSchema(
  */
 const GROUPING_TYPES: ReadonlySet<CategoryType> = new Set(['GENERIC', 'COLLECTION', 'SEASON']);
 
+/** The shapes a product can be, which is exactly what the variant picker may offer. */
+const SELECTABLE_VARIANT_TYPES: CategoryType[] = ['CLOTHING', 'SHOES', 'JEWELRY', 'ACCESSORY'];
+
 /**
  * The categories selectable for a product whose variants use `variantType`.
  *
@@ -554,7 +506,22 @@ export function allowedCategoryIds(
   return allowed;
 }
 
-/** Every schema an admin can choose, in the order the picker lists them. */
-export function listVariantSchemas(): VariantSchema[] {
-  return Object.values(SCHEMAS);
+/**
+ * The variant shapes an admin can choose, in the order the picker lists them.
+ *
+ * <p>Deliberately not every {@link CategoryType}. A collection, a season and an unclassified
+ * category are ways of *grouping* products, not shapes a product has — the same distinction
+ * {@link GROUPING_TYPES} already draws for categories. Offering them here listed four options that
+ * all read "Variante / Detalle", which is how the picker came to look like it had duplicates. They
+ * remain as schemas because a product whose only category is a collection still has to render
+ * something.
+ */
+export function listSelectableVariantSchemas(): VariantSchema[] {
+  return SELECTABLE_VARIANT_TYPES.map((type) => SCHEMAS[type]);
 }
+
+/** True when a stored `variantType` is one the picker still offers. */
+export function isSelectableVariantType(type: CategoryType): boolean {
+  return SELECTABLE_VARIANT_TYPES.includes(type);
+}
+
