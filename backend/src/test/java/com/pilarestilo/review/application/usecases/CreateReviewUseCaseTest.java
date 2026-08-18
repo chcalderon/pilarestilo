@@ -5,7 +5,7 @@ import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.review.application.dto.ReviewDto;
 import com.pilarestilo.review.domain.model.Review;
 import com.pilarestilo.review.domain.ports.ReviewRepository;
-import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class CreateReviewUseCaseTest {
     void setUp() {
         reviewRepository = mock(ReviewRepository.class);
         productRepository = mock(ProductRepository.class);
-        useCase = new CreateReviewUseCase(reviewRepository, productRepository, mock(DomainEventPublisher.class));
+        useCase = new CreateReviewUseCase(reviewRepository, productRepository, mock(AfterCommitPublisher.class));
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(mock(Product.class)));
         when(reviewRepository.save(any(Review.class))).thenAnswer(call -> call.getArgument(0));

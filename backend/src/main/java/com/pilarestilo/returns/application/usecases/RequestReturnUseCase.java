@@ -11,7 +11,9 @@ import com.pilarestilo.returns.domain.RetractoWindow;
 import com.pilarestilo.returns.domain.enums.ReturnKind;
 import com.pilarestilo.returns.domain.enums.ReturnStatus;
 import com.pilarestilo.returns.domain.model.ReturnRequest;
+import com.pilarestilo.returns.domain.events.ReturnRequested;
 import com.pilarestilo.returns.domain.ports.ReturnRequestRepository;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,13 +37,16 @@ public class RequestReturnUseCase {
     private final ReturnRequestRepository returnRequestRepository;
     private final OrderRepository orderRepository;
     private final DispatchRepository dispatchRepository;
+    private final AfterCommitPublisher eventPublisher;
 
     public RequestReturnUseCase(ReturnRequestRepository returnRequestRepository,
                                 OrderRepository orderRepository,
-                                DispatchRepository dispatchRepository) {
+                                DispatchRepository dispatchRepository,
+                                AfterCommitPublisher eventPublisher) {
         this.returnRequestRepository = returnRequestRepository;
         this.orderRepository = orderRepository;
         this.dispatchRepository = dispatchRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -91,6 +96,8 @@ public class RequestReturnUseCase {
 
         ReturnRequest saved = returnRequestRepository.save(
                 ReturnRequest.open(orderId, kind, reason, requestedBy));
+        eventPublisher.publish(new ReturnRequested(
+                saved.getId(), orderId, saved.getKind().name(), Instant.now()));
         return ReturnRequestMapper.toDto(saved);
     }
 

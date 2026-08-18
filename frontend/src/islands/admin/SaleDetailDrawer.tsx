@@ -10,12 +10,14 @@ import {
   cancelSale,
   uploadSalesDocumentFile,
   fetchSalesDocumentFile,
+  fetchPaymentProof,
   type OrderDto,
   type PaymentDto,
   type SaleSummaryDto,
   type SalesDocumentDto,
 } from '../../lib/api';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
+import { openBlobInNewTab } from '../../lib/openBlob';
 
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
 const CANCELLABLE: string[] = [
@@ -250,12 +252,17 @@ export default function SaleDetailDrawer({
 
   async function openFile(documentId: string) {
     try {
-      const blob = await fetchSalesDocumentFile(documentId, token);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      openBlobInNewTab(await fetchSalesDocumentFile(documentId, token));
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo abrir el archivo' });
+    }
+  }
+
+  async function openProof(paymentId: string) {
+    try {
+      openBlobInNewTab(await fetchPaymentProof(paymentId, token));
+    } catch (error) {
+      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo abrir el comprobante' });
     }
   }
 
@@ -345,14 +352,13 @@ export default function SaleDetailDrawer({
             <Row label="Método" value={sale.paymentMethod ?? '—'} />
             <Row label="Estado" value={sale.paymentStatus ?? '—'} />
             {payment?.proofReference && (
-              <a
-                href={payment.proofReference}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => void openProof(payment.id)}
                 className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
               >
                 <ExternalLink size={12} /> Ver comprobante
-              </a>
+              </button>
             )}
           </Section>
 

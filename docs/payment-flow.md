@@ -47,9 +47,14 @@ Important implementation detail:
 | `GET` | `/api/payments/{id}` | Get payment detail |
 | `GET` | `/api/payments?status=...` | List/filter payments |
 
-Supporting media upload endpoint used by storefront proof flow:
+Supporting endpoints for the proof flow:
 
-- `POST /api/media/upload-proof` (authenticated)
+- `POST /api/payment-proofs` (authenticated) — stores the receipt outside the public media root and
+  returns an opaque filename, not a url
+- `GET /api/payment-proofs/{paymentId}` (authenticated; a `CUSTOMER` may only open her own) — the
+  only way to read one back. `GET /api/media/payment-proofs/**` is denied: a receipt shows the
+  buyer's name, her account and the amount, and that whole tree is otherwise `permitAll`. Rows
+  written before the move still carry the old `/api/media/...` reference and are read from there.
 
 `/review` request shape:
 
@@ -72,7 +77,7 @@ Supporting media upload endpoint used by storefront proof flow:
 ### Step 2 - Customer submits proof
 
 - Storefront account page resolves order payment with `GET /api/payments/order/{orderId}`.
-- Customer can upload a proof image with `POST /api/media/upload-proof` or paste a manual URL.
+- Customer can upload a proof image with `POST /api/payment-proofs` or paste a manual URL.
 - `PATCH /api/payments/{id}/proof`
 - `SubmitPaymentProofUseCase` sets status to `SUBMITTED`.
 - `PaymentSubmitted` event is published.

@@ -46,6 +46,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/wishlist/shared/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/navigation/**").permitAll()
+                        // Receipts are bank screenshots: the buyer's name, their account and the
+                        // amount. They used to live under the public media root, readable by anyone
+                        // holding the url. New ones are written outside it and read through
+                        // /api/payment-proofs/{paymentId}; the old path stays denied so the files
+                        // already on disk are not still hanging open. Must precede the rule below,
+                        // which the first match would otherwise win.
+                        .requestMatchers("/api/media/payment-proofs/**").denyAll()
                         .requestMatchers(HttpMethod.GET,  "/api/media/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/system-settings/public").permitAll()

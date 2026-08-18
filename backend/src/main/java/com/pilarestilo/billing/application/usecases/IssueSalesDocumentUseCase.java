@@ -10,14 +10,12 @@ import com.pilarestilo.billing.domain.ports.SalesDocumentRepository;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.shared.application.TaxBreakdown;
-import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -36,12 +34,12 @@ public class IssueSalesDocumentUseCase {
     private final SalesDocumentRepository salesDocumentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final DomainEventPublisher eventPublisher;
+    private final AfterCommitPublisher eventPublisher;
 
     public IssueSalesDocumentUseCase(SalesDocumentRepository salesDocumentRepository,
                                      OrderRepository orderRepository,
                                      UserRepository userRepository,
-                                     DomainEventPublisher eventPublisher) {
+                                     AfterCommitPublisher eventPublisher) {
         this.salesDocumentRepository = salesDocumentRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -107,21 +105,8 @@ public class IssueSalesDocumentUseCase {
         // document back to compose the email, and with Kafka the consumer gets there first:
         // announced from inside the transaction it finds no row and logs "could not be read back",
         // so the customer never hears that their boleta exists. Same race the reviews summary hit.
-        publishAfterCommit(new SalesDocumentIssued(
+        eventPublisher.publish(new SalesDocumentIssued(
                 saved.getId(), orderId, saved.getFolio(), Instant.now()));
         return SalesDocumentMapper.toDto(saved);
-    }
-
-    private void publishAfterCommit(SalesDocumentIssued event) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            eventPublisher.publish(event);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                eventPublisher.publish(event);
-            }
-        });
     }
 }

@@ -7,10 +7,12 @@ import {
   approvePayment,
   rejectPayment,
   simulateGatewayPaymentStatus,
+  fetchPaymentProof,
   type PaymentDto,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column } from './DataTable';
+import { openBlobInNewTab } from '../../lib/openBlob';
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700',
@@ -86,6 +88,19 @@ export default function PaymentReviewQueue() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** The receipt is behind an authenticated endpoint, so it is fetched and opened, not linked. */
+  async function openProof(paymentId: string) {
+    if (!effectiveToken) return;
+    try {
+      openBlobInNewTab(await fetchPaymentProof(paymentId, effectiveToken));
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'No se pudo abrir el comprobante.',
+      });
+    }
+  }
 
   async function handleAction(id: string, action: 'approve' | 'reject') {
     if (!effectiveToken) return;
@@ -181,15 +196,16 @@ export default function PaymentReviewQueue() {
       render: (row) => {
         if (row.proofReference) {
           return (
-            <a
-              href={String(row.proofReference)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className="inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                void openProof(String(row.id));
+              }}
             >
               <ExternalLink size={11} /> Ver
-            </a>
+            </button>
           );
         }
 

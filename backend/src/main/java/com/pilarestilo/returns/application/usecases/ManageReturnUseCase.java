@@ -2,12 +2,15 @@ package com.pilarestilo.returns.application.usecases;
 
 import com.pilarestilo.returns.application.dto.ReturnRequestDto;
 import com.pilarestilo.returns.application.mappers.ReturnRequestMapper;
+import com.pilarestilo.returns.domain.events.ReturnApproved;
 import com.pilarestilo.returns.domain.model.ReturnRequest;
 import com.pilarestilo.returns.domain.ports.ReturnRequestRepository;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -22,16 +25,21 @@ import java.util.UUID;
 public class ManageReturnUseCase {
 
     private final ReturnRequestRepository returnRequestRepository;
+    private final AfterCommitPublisher eventPublisher;
 
-    public ManageReturnUseCase(ReturnRequestRepository returnRequestRepository) {
+    public ManageReturnUseCase(ReturnRequestRepository returnRequestRepository,
+                               AfterCommitPublisher eventPublisher) {
         this.returnRequestRepository = returnRequestRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
     public ReturnRequestDto approve(UUID returnId) {
         ReturnRequest request = load(returnId);
         request.approve();
-        return ReturnRequestMapper.toDto(returnRequestRepository.save(request));
+        ReturnRequest saved = returnRequestRepository.save(request);
+        eventPublisher.publish(new ReturnApproved(saved.getId(), saved.getOrderId(), Instant.now()));
+        return ReturnRequestMapper.toDto(saved);
     }
 
     @Transactional

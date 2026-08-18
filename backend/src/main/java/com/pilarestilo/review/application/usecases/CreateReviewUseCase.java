@@ -5,12 +5,10 @@ import com.pilarestilo.review.application.dto.ReviewDto;
 import com.pilarestilo.review.domain.events.ReviewCreated;
 import com.pilarestilo.review.domain.model.Review;
 import com.pilarestilo.review.domain.ports.ReviewRepository;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.domain.DomainException;
-import com.pilarestilo.shared.domain.DomainEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,11 +18,11 @@ public class CreateReviewUseCase {
 
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
-    private final DomainEventPublisher eventPublisher;
+    private final AfterCommitPublisher eventPublisher;
 
     public CreateReviewUseCase(ReviewRepository reviewRepository,
                                ProductRepository productRepository,
-                               DomainEventPublisher eventPublisher) {
+                               AfterCommitPublisher eventPublisher) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
         this.eventPublisher = eventPublisher;
@@ -56,21 +54,8 @@ public class CreateReviewUseCase {
         // rating by querying the reviews table, and the publisher hands the event over immediately:
         // announced from inside the transaction, the listener reads a table that does not yet
         // contain this review and writes a rating of zero over a correct one.
-        publishAfterCommit(new ReviewCreated(saved.getId(), productId, userId, rating));
+        eventPublisher.publish(new ReviewCreated(saved.getId(), productId, userId, rating));
         return ReviewDto.from(saved);
-    }
-
-    private void publishAfterCommit(ReviewCreated event) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            eventPublisher.publish(event);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                eventPublisher.publish(event);
-            }
-        });
     }
 
     private boolean isBlank(String value) {

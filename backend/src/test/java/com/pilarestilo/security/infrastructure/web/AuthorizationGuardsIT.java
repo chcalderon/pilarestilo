@@ -85,6 +85,30 @@ class AuthorizationGuardsIT {
                 .andExpect(status().isForbidden());
     }
 
+    /**
+     * The receipts were readable by anyone holding the url, since the whole media root is public
+     * and that is where they used to be written. The path stays denied for the files already on
+     * disk, and the rest of the media root has to stay open or every product image breaks.
+     */
+    @Test
+    void transfer_receipts_are_not_readable_through_the_public_media_root() throws Exception {
+        mvc.perform(get("/api/media/payment-proofs/whatever.jpg"))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(get("/api/media/payment-proofs/nested/whatever.jpg"))
+                .andExpect(status().isForbidden());
+
+        // Missing, not forbidden: product images are still served to anyone.
+        mvc.perform(get("/api/media/products/whatever.jpg"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void the_receipt_endpoint_refuses_anonymous_readers() throws Exception {
+        mvc.perform(get("/api/payment-proofs/{paymentId}", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
+    }
+
     @Test
     void gateway_webhook_endpoint_is_public_but_still_validates_payload() throws Exception {
         String body = om.writeValueAsString(Map.of(

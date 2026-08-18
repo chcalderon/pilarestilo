@@ -998,11 +998,18 @@ export async function uploadProductImage(file: File, token: string): Promise<Med
   return res.json() as Promise<MediaUploadDto>;
 }
 
-export async function uploadPaymentProofImage(file: File, token: string): Promise<MediaUploadDto> {
+/**
+ * Uploads the transfer receipt and returns the opaque reference to send to `submitPaymentProof`.
+ *
+ * The receipt is written outside the public media root, so what comes back is a filename and not
+ * a url: a bank screenshot carries the buyer's name, their account and the amount, and anyone
+ * holding the old `/api/media/payment-proofs/...` link could read it with no session at all.
+ */
+export async function uploadPaymentProof(file: File, token: string): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${API_BASE}/media/upload-proof`, {
+  const res = await fetch(`${API_BASE}/payment-proofs`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -1019,7 +1026,24 @@ export async function uploadPaymentProofImage(file: File, token: string): Promis
     throw new Error(detail);
   }
 
-  return res.json() as Promise<MediaUploadDto>;
+  const data = await res.json() as { reference: string };
+  return data.reference;
+}
+
+/**
+ * Fetches the receipt of one payment as a blob.
+ *
+ * Not a link: the endpoint is authenticated and a plain anchor sends no Authorization header.
+ * The backend checks the payment belongs to whoever is asking, or that they are staff.
+ */
+export async function fetchPaymentProof(paymentId: string, token: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/payment-proofs/${encodeURIComponent(paymentId)}`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    throw new ApiError('No se pudo abrir el comprobante', res.status);
+  }
+  return res.blob();
 }
 
 async function listPaymentsByStatus(status: string, token?: string): Promise<PaymentDto[]> {

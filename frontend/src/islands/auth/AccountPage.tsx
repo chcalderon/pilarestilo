@@ -4,6 +4,7 @@ import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
 import RetractoButton from './RetractoButton';
+import { openBlobInNewTab } from '../../lib/openBlob';
 import {
   getMyReviews,
   getLocationTree,
@@ -22,7 +23,8 @@ import {
   confirmOrderDelivery,
   getPaymentByOrder,
   submitPaymentProof,
-  uploadPaymentProofImage,
+  uploadPaymentProof,
+  fetchPaymentProof,
   uploadMyAvatar,
   createGatewayCheckoutSession,
   simulateGatewayPaymentStatus,
@@ -788,6 +790,27 @@ export default function AccountPage({ locale }: Props) {
     }
   }
 
+  /**
+   * Her own receipt, fetched with her token. It stopped being a link the day it moved out of the
+   * public media root: the file shows her bank details.
+   */
+  async function openOwnProof(orderId: string, paymentId: string) {
+    if (!effectiveToken) return;
+    try {
+      openBlobInNewTab(await fetchPaymentProof(paymentId, effectiveToken));
+    } catch (error) {
+      setProofFeedbackByOrder((prev) => ({
+        ...prev,
+        [orderId]: {
+          type: 'error',
+          text: error instanceof Error
+            ? error.message
+            : (es ? 'No se pudo abrir el comprobante.' : 'Could not open the receipt.'),
+        },
+      }));
+    }
+  }
+
   async function handleSubmitProof(orderId: string) {
     if (!effectiveToken) return;
 
@@ -817,8 +840,7 @@ export default function AccountPage({ locale }: Props) {
     setProofFeedbackByOrder((prev) => ({ ...prev, [orderId]: undefined }));
 
     try {
-      const upload = await uploadPaymentProofImage(selectedFile, effectiveToken);
-      const proofReference = upload.url;
+      const proofReference = await uploadPaymentProof(selectedFile, effectiveToken);
 
       const updatedPayment = await submitPaymentProof(payment.id, proofReference, effectiveToken);
       setPaymentsByOrder((prev) => ({ ...prev, [orderId]: updatedPayment }));
@@ -1744,14 +1766,13 @@ export default function AccountPage({ locale }: Props) {
                             )}
 
                           {payment?.proofReference && (
-                            <a
-                              href={payment.proofReference}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2"
+                            <button
+                              type="button"
+                              onClick={() => void openOwnProof(order.id, payment.id)}
+                              className="self-start font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2"
                             >
                               {es ? 'Ver comprobante enviado' : 'View submitted proof'}
-                            </a>
+                            </button>
                           )}
 
                           {canUploadProof && (

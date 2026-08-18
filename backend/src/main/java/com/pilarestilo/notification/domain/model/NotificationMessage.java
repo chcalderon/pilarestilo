@@ -42,6 +42,14 @@ public record NotificationMessage(
     public static final String PAYMENT_PROOF_SUBMITTED = "PAYMENT_PROOF_SUBMITTED";
     /** The boleta was registered: folio, net, VAT and total, so the buyer can quote it. */
     public static final String SALES_DOCUMENT_ISSUED = "SALES_DOCUMENT_ISSUED";
+    /** Her return is on record, with the forty-five day clock the law starts. */
+    public static final String RETURN_REQUESTED = "RETURN_REQUESTED";
+    /** The return was accepted; the garment can travel back, at the shop's cost. */
+    public static final String RETURN_APPROVED = "RETURN_APPROVED";
+    /** The money went back, with the reference she needs to find it on her statement. */
+    public static final String REFUND_REGISTERED = "REFUND_REGISTERED";
+    /** Sent to whoever manages returns, not to the customer: a clock just started. */
+    public static final String RETURN_REQUESTED_STAFF = "RETURN_REQUESTED_STAFF";
 
     public NotificationMessage {
         // Not Map.copyOf: it rejects null values, and absent facts are legitimately null here --

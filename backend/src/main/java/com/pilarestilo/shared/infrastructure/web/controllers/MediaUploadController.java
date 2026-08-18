@@ -31,12 +31,6 @@ public class MediaUploadController {
         return storeFile(file, normalizeFolder(folder));
     }
 
-    @PostMapping("/upload-proof")
-    @PreAuthorize("isAuthenticated()")
-    public MediaUploadResponse uploadProof(@RequestParam("file") MultipartFile file) {
-        return storeFile(file, "payment-proofs");
-    }
-
     private MediaUploadResponse storeFile(MultipartFile file, String folder) {
         if (file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image file is required");

@@ -3,9 +3,11 @@ package com.pilarestilo.returns.application.usecases;
 import com.pilarestilo.returns.application.dto.ReturnRequestDto;
 import com.pilarestilo.returns.application.mappers.ReturnRequestMapper;
 import com.pilarestilo.returns.domain.enums.RefundMethod;
+import com.pilarestilo.returns.domain.events.RefundRegistered;
 import com.pilarestilo.returns.domain.model.RefundAccount;
 import com.pilarestilo.returns.domain.model.ReturnRequest;
 import com.pilarestilo.returns.domain.ports.ReturnRequestRepository;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -29,11 +32,14 @@ public class RegisterRefundUseCase {
 
     private final ReturnRequestRepository returnRequestRepository;
     private final SystemSettingsCryptoService cryptoService;
+    private final AfterCommitPublisher eventPublisher;
 
     public RegisterRefundUseCase(ReturnRequestRepository returnRequestRepository,
-                                 SystemSettingsCryptoService cryptoService) {
+                                 SystemSettingsCryptoService cryptoService,
+                                 AfterCommitPublisher eventPublisher) {
         this.returnRequestRepository = returnRequestRepository;
         this.cryptoService = cryptoService;
+        this.eventPublisher = eventPublisher;
     }
 
     /** Attaches where a transfer refund should be sent. Only needed for {@link RefundMethod#TRANSFERENCIA}. */
@@ -60,7 +66,9 @@ public class RegisterRefundUseCase {
                 ? Money.of(amount)
                 : Money.of(amount, currency);
         request.registerRefund(refund, method, reference, fileUrl);
-        return ReturnRequestMapper.toDto(returnRequestRepository.save(request));
+        ReturnRequest saved = returnRequestRepository.save(request);
+        eventPublisher.publish(new RefundRegistered(saved.getId(), saved.getOrderId(), Instant.now()));
+        return ReturnRequestMapper.toDto(saved);
     }
 
     private ReturnRequest load(UUID returnId) {

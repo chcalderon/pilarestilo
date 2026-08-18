@@ -5,6 +5,8 @@ import com.pilarestilo.billing.domain.model.SalesDocument;
 import com.pilarestilo.notification.domain.model.NotificationMessage;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.payment.domain.model.Payment;
+import com.pilarestilo.returns.domain.enums.ReturnKind;
+import com.pilarestilo.returns.domain.model.ReturnRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -29,6 +31,7 @@ public class NotificationComposer {
     private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM 'a las' HH:mm");
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public NotificationMessage transferInstructions(Order order, Payment payment, Instant deadline) {
         String reference = order.getPublicReference();
@@ -473,6 +476,178 @@ public class NotificationComposer {
                         .build(),
                 data,
                 order.getId());
+    }
+
+    /**
+     * The receipt of a return: what she asked for, and by when the law says the money is back.
+     *
+     * <p>The deadline is quoted rather than kept internal on purpose. It is the shop's obligation,
+     * not a secret, and a date in writing is what keeps a return from drifting.
+     */
+    public NotificationMessage returnRequested(Order order, ReturnRequest request) {
+        String reference = order.getPublicReference();
+        String deadline = formatDate(request.getDeadlineAt());
+        boolean isRetracto = request.getKind() == ReturnKind.RETRACTO;
+        String opening = isRetracto
+                ? "Recibimos tu arrepentimiento del pedido " + reference + "."
+                : "Recibimos tu solicitud de devolución del pedido " + reference + ".";
+
+        String body = opening + "\n\n"
+                + "No necesitas justificarlo. Te escribiremos con los pasos para enviarnos la prenda; "
+                + "el envío de vuelta lo pagamos nosotros.\n\n"
+                + "Te devolvemos el dinero a más tardar el " + deadline + ".\n";
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("returnId", request.getId());
+        data.put("kind", request.getKind().name());
+        data.put("reason", request.getReason());
+        data.put("deadlineAt", request.getDeadlineAt());
+
+        return new NotificationMessage(
+                NotificationMessage.RETURN_REQUESTED,
+                "Recibimos tu devolución del pedido " + reference,
+                body,
+                EmailLayout.titled(isRetracto
+                                ? "Tu arrepentimiento está registrado"
+                                : "Tu devolución está registrada")
+                        .paragraph(opening + " No necesitas justificarlo.")
+                        .highlight("Plazo para devolverte el dinero", deadline)
+                        .paragraph("Te escribiremos con los pasos para enviarnos la prenda. "
+                                + "El envío de vuelta lo pagamos nosotros.")
+                        .build(),
+                data,
+                order.getId());
+    }
+
+    /** Approved: the garment travels back, and the shop pays that trip. */
+    public NotificationMessage returnApproved(Order order, ReturnRequest request) {
+        String reference = order.getPublicReference();
+        String deadline = formatDate(request.getDeadlineAt());
+
+        String body = "Aprobamos la devolución de tu pedido " + reference + ".\n\n"
+                + "Coordinamos contigo el retiro o te enviamos la etiqueta de envío: el costo es "
+                + "nuestro, no tuyo.\n\n"
+                + "Apenas recibamos la prenda te devolvemos el dinero, y en todo caso antes del "
+                + deadline + ".\n";
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("returnId", request.getId());
+        data.put("deadlineAt", request.getDeadlineAt());
+
+        return new NotificationMessage(
+                NotificationMessage.RETURN_APPROVED,
+                "Devolución aprobada — pedido " + reference,
+                body,
+                EmailLayout.titled("Devolución aprobada")
+                        .paragraph("Aprobamos la devolución de tu pedido " + reference + ".")
+                        .paragraph("Coordinamos el retiro o te enviamos la etiqueta de envío. "
+                                + "El costo es nuestro, no tuyo.")
+                        .highlight("Dinero de vuelta antes del", deadline)
+                        .build(),
+                data,
+                order.getId());
+    }
+
+    /** The money moved. The garment may still be in the workshop; that is a separate track. */
+    public NotificationMessage refundRegistered(Order order, ReturnRequest request) {
+        String reference = order.getPublicReference();
+        String amount = request.getRefundAmount() == null
+                ? formatAmount(order.getTotalAmount().amount().toPlainString(),
+                        order.getTotalAmount().currency())
+                : formatAmount(request.getRefundAmount().amount().toPlainString(),
+                        request.getRefundAmount().currency());
+        String method = request.getRefundMethod() == null ? "—" : request.getRefundMethod().name();
+        boolean hasReference = request.getRefundReference() != null
+                && !request.getRefundReference().isBlank();
+
+        StringBuilder body = new StringBuilder()
+                .append("Te devolvimos el dinero de tu pedido ").append(reference).append(".\n\n")
+                .append("Monto: ").append(amount).append('\n')
+                .append("Medio: ").append(method).append('\n');
+        if (hasReference) {
+            body.append("Referencia: ").append(request.getRefundReference()).append('\n');
+        }
+        body.append("\nSegún tu banco puede tardar unos días en aparecer en tu cartola.\n");
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("returnId", request.getId());
+        data.put("refundAmount", request.getRefundAmount() == null
+                ? null : request.getRefundAmount().amount());
+        data.put("refundMethod", request.getRefundMethod() == null
+                ? null : request.getRefundMethod().name());
+        data.put("refundReference", request.getRefundReference());
+        data.put("refundedAt", request.getRefundedAt());
+
+        List<String[]> rows = hasReference
+                ? List.of(new String[]{"Monto", amount},
+                          new String[]{"Medio", method},
+                          new String[]{"Referencia", request.getRefundReference()})
+                : List.of(new String[]{"Monto", amount},
+                          new String[]{"Medio", method});
+
+        return new NotificationMessage(
+                NotificationMessage.REFUND_REGISTERED,
+                "Te devolvimos el dinero — pedido " + reference,
+                body.toString(),
+                EmailLayout.titled("Reembolso realizado")
+                        .paragraph("Te devolvimos el dinero de tu pedido " + reference + ".")
+                        .details(rows)
+                        .note("Según tu banco puede tardar unos días en aparecer en tu cartola.")
+                        .build(),
+                data,
+                order.getId());
+    }
+
+    /**
+     * Tells whoever manages returns that one just opened, and by when the money has to be back.
+     *
+     * <p>Addressed to staff rather than the customer, like the receipt alert: a return nobody looks
+     * at is how a forty-five day obligation quietly expires.
+     */
+    public NotificationMessage returnRequestedForStaff(Order order, ReturnRequest request,
+                                                       String buyerName) {
+        String reference = order.getPublicReference();
+        String deadline = formatDate(request.getDeadlineAt());
+        boolean isRetracto = request.getKind() == ReturnKind.RETRACTO;
+
+        String body = (isRetracto
+                        ? "Una clienta se arrepintió de su pedido " + reference + "."
+                        : "Se abrió una devolución del pedido " + reference + ".")
+                + "\n\n"
+                + "Cliente: " + buyerName + "\n"
+                + "Motivo: " + request.getReason() + "\n"
+                + "Plazo legal para devolver el dinero: " + deadline + "\n\n"
+                + (isRetracto
+                        ? "Un retracto dentro de plazo no se rechaza. Revísalo en el panel, en Devoluciones.\n"
+                        : "Revísalo en el panel, en Devoluciones.\n");
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", order.getId());
+        data.put("orderReference", reference);
+        data.put("returnId", request.getId());
+        data.put("kind", request.getKind().name());
+        data.put("reason", request.getReason());
+        data.put("buyerName", buyerName);
+        data.put("deadlineAt", request.getDeadlineAt());
+
+        return new NotificationMessage(
+                NotificationMessage.RETURN_REQUESTED_STAFF,
+                (isRetracto ? "Retracto" : "Devolución") + " — pedido " + reference,
+                body,
+                null,
+                data,
+                order.getId());
+    }
+
+    /** A date the customer can act on: local time, never an instant. */
+    private String formatDate(Instant instant) {
+        return instant == null ? "—" : DATE.format(instant.atZone(STORE_ZONE));
     }
 
     private String formatAmount(String amount, String currency) {

@@ -13,7 +13,7 @@ import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.application.TaxBreakdown;
-import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.model.User;
@@ -52,7 +52,7 @@ class IssueSalesDocumentUseCaseTest {
     @Mock
     UserRepository userRepository;
     @Mock
-    DomainEventPublisher eventPublisher;
+    AfterCommitPublisher eventPublisher;
 
     IssueSalesDocumentUseCase useCase;
 
