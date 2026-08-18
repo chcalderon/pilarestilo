@@ -4,6 +4,9 @@ import {
   getProductVariantSchema,
   isSelectableVariantType,
   listSelectableVariantSchemas,
+  describeVariantType,
+  GROUPING_VARIANT_TYPES,
+  SHAPE_VARIANT_TYPES,
 } from '../variantSchema';
 import type { CategoryDto, CategoryType } from '../api';
 
@@ -164,5 +167,23 @@ describe('the variant type picker', () => {
 
     expect(schema.attributes).toHaveLength(2);
     expect(schema.noun).toBeTruthy();
+  });
+});
+
+describe('the vocabulary shared by the category form and the product form', () => {
+  it('covers every category type exactly once between shapes and groupings', () => {
+    const every: CategoryType[] = [
+      'GENERIC', 'CLOTHING', 'SHOES', 'JEWELRY', 'ACCESSORY', 'COLLECTION', 'SEASON',
+    ];
+    const offered = [...SHAPE_VARIANT_TYPES, ...GROUPING_VARIANT_TYPES];
+
+    // A type in neither list is a category an admin could never classify again.
+    expect([...offered].sort()).toEqual([...every].sort());
+    expect(new Set(offered).size).toBe(offered.length);
+  });
+
+  it('describes a type by its name and the fields it produces', () => {
+    expect(describeVariantType('CLOTHING')).toBe('Prenda — Color / Talla');
+    expect(describeVariantType('SHOES')).toBe('Zapato — Color / Numero');
   });
 });

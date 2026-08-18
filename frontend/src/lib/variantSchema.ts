@@ -520,6 +520,35 @@ export function listSelectableVariantSchemas(): VariantSchema[] {
   return SELECTABLE_VARIANT_TYPES.map((type) => SCHEMAS[type]);
 }
 
+/**
+ * How a category is grouped, for the ones that shape nothing.
+ *
+ * <p>A category may legitimately be a collection or a season — that is what those types are for —
+ * so the category form offers all seven. The product form does not: see
+ * {@link listSelectableVariantSchemas}.
+ */
+export const GROUPING_VARIANT_TYPES: CategoryType[] = ['GENERIC', 'COLLECTION', 'SEASON'];
+
+/** The shape types, in picker order. Same list the product form offers. */
+export const SHAPE_VARIANT_TYPES: CategoryType[] = SELECTABLE_VARIANT_TYPES;
+
+/**
+ * What this type is called, and what it does to a variant: "Prenda — Color / Talla".
+ *
+ * <p>The category form and the product form used to name the same enum differently, one showing
+ * CLOTHING and the other "Color / Talla", which is what made the association between them
+ * invisible.
+ */
+export function describeVariantType(type: CategoryType): string {
+  return `${getVariantSchema(type).noun} — ${variantFieldsOf(type)}`;
+}
+
+/** The two fields a variant of this type carries: "Color / Talla". */
+export function variantFieldsOf(type: CategoryType): string {
+  const schema = getVariantSchema(type);
+  return `${schema.attributes[0].label} / ${schema.attributes[1].label}`;
+}
+
 /** True when a stored `variantType` is one the picker still offers. */
 export function isSelectableVariantType(type: CategoryType): boolean {
   return SELECTABLE_VARIANT_TYPES.includes(type);

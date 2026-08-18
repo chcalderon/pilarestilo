@@ -14,6 +14,13 @@ import {
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import ImageDropzone from './ImageDropzone';
+import {
+  describeVariantType,
+  getVariantSchema,
+  variantFieldsOf,
+  GROUPING_VARIANT_TYPES,
+  SHAPE_VARIANT_TYPES,
+} from '../../lib/variantSchema';
 import { useToast, Toaster } from './Toast';
 
 type EditForm = {
@@ -27,14 +34,16 @@ const EMPTY_FORM: EditForm = {
   menuVisible: true, categoryType: 'GENERIC', heroImageUrl: '',
 };
 
-const CATEGORY_TYPE_OPTIONS: CategoryDto['categoryType'][] = [
-  'GENERIC',
-  'CLOTHING',
-  'SHOES',
-  'JEWELRY',
-  'ACCESSORY',
-  'COLLECTION',
-  'SEASON',
+/**
+ * The two kinds of answer this field takes, kept apart because they are different questions.
+ *
+ * <p>A shape says what the products in this category *are*, and decides the two fields their
+ * variants carry. A grouping says how they are gathered — a collection, a season — and leaves the
+ * variant shape to be inherited or stated on the product.
+ */
+const CATEGORY_TYPE_GROUPS: Array<{ label: string; types: CategoryDto['categoryType'][] }> = [
+  { label: 'Forma del producto', types: SHAPE_VARIANT_TYPES },
+  { label: 'Agrupación', types: GROUPING_VARIANT_TYPES },
 ];
 
 function fromDto(dto: CategoryDto): EditForm {
@@ -95,16 +104,25 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Tipo variante</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Tipo de producto</label>
           <select
             className={INPUT_CLASS}
             value={form.categoryType}
             onChange={e => setForm(f => ({ ...f, categoryType: e.target.value as CategoryDto['categoryType'] }))}
           >
-            {CATEGORY_TYPE_OPTIONS.map((value) => (
-              <option key={value} value={value}>{value}</option>
+            {CATEGORY_TYPE_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.types.map((value) => (
+                  <option key={value} value={value}>{getVariantSchema(value).noun}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
+          {/* The consequence, next to the cause: this field is why a product asks for talla and
+              not número, and nothing else in this form says so. */}
+          <p className="font-sans text-[0.6rem] text-pe-charcoal/45 leading-snug">
+            Sus productos usarán {variantFieldsOf(form.categoryType)}.
+          </p>
         </div>
         <div className="sm:col-span-2 flex flex-col gap-0.5">
           <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Hero imagen</label>
@@ -248,8 +266,11 @@ function CategoryRow({
             <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" />
           </span>
         )}
-        <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/35 bg-pe-cream px-1.5 py-0.5">
-          {node.categoryType}
+        <span
+          className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/35 bg-pe-cream px-1.5 py-0.5"
+          title={describeVariantType(node.categoryType)}
+        >
+          {getVariantSchema(node.categoryType).noun}
         </span>
 
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
