@@ -80,6 +80,15 @@
     /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-charcoal/55. */
     --pe-charcoal-rgb: 58 58 58;
     --pe-black-rgb: 26 26 26;
+
+    /*
+     * Inks for surfaces that do not flip with the theme: a photograph, a modal scrim, the black
+     * footer. Every other token here is a role that inverts, so text-pe-offwhite means "the colour
+     * of the page background" and turns invisible the moment the page is light. These two are
+     * constants on purpose and are defined once, outside both themes.
+     */
+    --pe-on-dark: #F8F4EF;
+    --pe-on-light: #1A1A1A;
   }
 
   html[data-theme='dark'] {

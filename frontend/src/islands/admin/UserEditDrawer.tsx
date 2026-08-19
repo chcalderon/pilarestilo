@@ -8,6 +8,7 @@ import {
   updateAdminUser,
   type AdminUserDto,
 } from '../../lib/api';
+import Overlay from './Overlay';
 
 const WORKER_ROLES = ['SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'] as const;
 type WorkerRole = (typeof WORKER_ROLES)[number];
@@ -306,7 +307,7 @@ export default function UserEditDrawer({
   }
 
   return (
-    <>
+    <Overlay>
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
@@ -692,6 +693,6 @@ export default function UserEditDrawer({
           )}
         </div>
       </div>
-    </>
+    </Overlay>
   );
 }

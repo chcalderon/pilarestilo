@@ -210,6 +210,8 @@ function CategoryTreeItem({
 interface Props {
   product?: ProductDto | null;
   onSave: (saved: ProductDto) => void;
+  /** Announced so the panel can say it out loud; the inline message stays either way. */
+  onSaveFailed?: (message: string) => void;
   onCancel: () => void;
   token?: string;
 }
@@ -314,7 +316,7 @@ function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema
 }
 
 
-export default function ProductForm({ product, onSave, onCancel, token }: Props) {
+export default function ProductForm({ product, onSave, onSaveFailed, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
@@ -785,7 +787,11 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
 
       onSave(saved);
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Error al guardar');
+      const message = err instanceof Error ? err.message : 'Error al guardar';
+      // Inline for whoever is still looking at the field, and upward so the panel can say it out
+      // loud: a save that fails silently is indistinguishable from one that worked.
+      setApiError(message);
+      onSaveFailed?.(message);
     } finally {
       setSaving(false);
     }

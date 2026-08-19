@@ -18,6 +18,7 @@ import {
   type SalesDocumentDto,
 } from '../../lib/api';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
+import Overlay from './Overlay';
 
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
 const CANCELLABLE: string[] = [
@@ -38,10 +39,6 @@ const inputCls =
   'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
 const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
 
-/**
- * Mirrors PaymentProofStorage.isStoredFile: an absolute URL was never a file the shop stored, so
- * asking our own endpoint for it can only fail. Kept to one line, and to the same rule, on purpose.
- */
 /**
  * Shows a document rather than handing over a link to it.
  *
@@ -66,15 +63,33 @@ function DocumentViewer({
   const [broken, setBroken] = useState(false);
 
   useEffect(() => {
+    /*
+     * Reset with the source, not only on mount. Opening a dead external receipt and then the
+     * boleta showed the boleta as unreadable: the failure of the previous file was still being
+     * reported about the next one, because only the URL had changed.
+     */
+    setBroken(false);
     if (source.kind === 'external') {
       setUrl(source.url);
       return;
     }
     const objectUrl = URL.createObjectURL(source.blob);
     setUrl(objectUrl);
-    // Revoked on unmount: a drawer opened twenty times a day would otherwise hold twenty files.
+    // Revoked when the source changes or the viewer closes, so files are not held for a session.
     return () => URL.revokeObjectURL(objectUrl);
   }, [source]);
+
+  // Escape closes, like every other layer in this panel.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
 
   if (!url) return null;
 
@@ -83,47 +98,65 @@ function DocumentViewer({
       ? source.blob.type === 'application/pdf'
       : source.url.toLowerCase().split('?')[0].endsWith('.pdf');
 
+  /*
+   * Over everything, rather than inside the column. A boleta is checked at the size it was
+   * photographed, and squeezed into half a drawer it was legible only in principle. It sits above
+   * the drawer's own layer so the sale stays where it was: this covers the page, it does not
+   * navigate away from it.
+   */
   return (
-    <div className="border border-[var(--pe-border)]">
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--pe-border)]">
-        <span className="text-[10px] tracking-widest uppercase opacity-60">{label}</span>
-        <div className="flex items-center gap-3">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-black/80 backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label="Cerrar la vista del documento"
+        onClick={onClose}
+        className="absolute inset-0 cursor-zoom-out"
+      />
+      <div className="relative z-[1] flex items-center justify-between gap-3 px-4 py-3 text-[var(--pe-on-dark)]">
+        <span className="text-[11px] tracking-widest uppercase">{label}</span>
+        <div className="flex items-center gap-4">
           <a
             href={url}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-[0.7rem] underline underline-offset-2 hover:opacity-70"
+            className="text-[0.75rem] underline underline-offset-2 hover:opacity-70"
           >
             Abrir aparte
           </a>
-          <button type="button" onClick={onClose} aria-label="Cerrar vista" className="p-0.5 hover:opacity-60">
-            <X size={14} />
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1 hover:opacity-70">
+            <X size={20} />
           </button>
         </div>
       </div>
-      {broken ? (
-        /*
-         * A receipt on somebody else's host can be gone, moved, or behind a login, and a broken
-         * image icon tells whoever is checking the sale nothing about which of those happened.
-         */
-        <p className="px-3 py-6 text-[0.78rem] opacity-70">
-          No se pudo cargar el archivo desde {source.kind === 'external' ? new URL(url).host : 'la tienda'}.
-          El enlace quedó guardado con el pago, pero el archivo no responde.
-        </p>
-      ) : isPdf ? (
-        <iframe src={url} title={label} className="w-full h-[420px] lg:h-[560px] bg-white" />
-      ) : (
-        <img
-          src={url}
-          alt={label}
-          onError={() => setBroken(true)}
-          className="w-full max-h-[420px] lg:max-h-[560px] object-contain bg-black/5"
-        />
-      )}
+      <div className="relative z-[1] flex-1 min-h-0 px-4 pb-4 flex items-center justify-center">
+        {broken ? (
+          /*
+           * A receipt on somebody else's host can be gone, moved, or behind a login, and a broken
+           * image icon tells whoever is checking the sale nothing about which of those happened.
+           */
+          <p className="max-w-md text-center text-[0.9rem] leading-relaxed text-[var(--pe-on-dark)]">
+            No se pudo cargar el archivo desde {source.kind === 'external' ? new URL(url).host : 'la tienda'}.
+            El enlace quedó guardado con el pago, pero el archivo no responde.
+          </p>
+        ) : isPdf ? (
+          <iframe src={url} title={label} className="w-full h-full bg-white" />
+        ) : (
+          <img
+            src={url}
+            alt={label}
+            onError={() => setBroken(true)}
+            className="max-w-full max-h-full object-contain"
+          />
+        )}
+      </div>
     </div>
   );
 }
 
+/**
+ * Mirrors PaymentProofStorage.isStoredFile: an absolute URL was never a file the shop stored, so
+ * asking our own endpoint for it can only fail. Kept to one line, and to the same rule, on purpose.
+ */
 function isExternalProof(reference: string): boolean {
   return reference.startsWith('http://') || reference.startsWith('https://');
 }
@@ -397,7 +430,7 @@ export default function SaleDetailDrawer({
   }
 
   return (
-    <>
+    <Overlay>
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <aside
         role="dialog"
@@ -488,13 +521,6 @@ export default function SaleDetailDrawer({
             </div>
 
             <div className="space-y-4">
-              {viewing && (
-                <DocumentViewer
-                  source={viewing.source}
-                  label={viewing.label}
-                  onClose={() => setViewing(null)}
-                />
-              )}
           <Section label="Pago">
             <Row label="Método" value={sale.paymentMethod ?? '—'} />
             <Row label="Estado" value={sale.paymentStatus ?? '—'} />
@@ -750,6 +776,14 @@ export default function SaleDetailDrawer({
           </div>
         </div>
       </aside>
-    </>
+
+      {viewing && (
+        <DocumentViewer
+          source={viewing.source}
+          label={viewing.label}
+          onClose={() => setViewing(null)}
+        />
+      )}
+    </Overlay>
   );
 }

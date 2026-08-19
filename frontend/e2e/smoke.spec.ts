@@ -38,15 +38,22 @@ test.describe('Home page', () => {
 });
 
 test.describe('Products listing', () => {
+  /*
+   * The status is read from the response, not guessed from the text. Searching the body for "500"
+   * failed the moment the catalogue held a garment priced at $500.000, which is a working page and
+   * a good sale, not an error.
+   */
   test('Products page loads without error', async ({ page }) => {
-    await gotoApp(page, '/es/products');
-    await expect(page.locator('body')).not.toContainText('500');
+    const response = await page.goto('/es/products', { waitUntil: 'domcontentloaded' });
+    expect(response?.status(), 'the catalogue has to answer 200').toBe(200);
+    await expect(page.locator('main')).not.toContainText(/error interno|internal server error/i);
   });
 
   test('Category query filter route loads', async ({ page }) => {
-    await gotoApp(page, '/es/products?category=zapatos');
+    const response = await page.goto('/es/products?category=zapatos', { waitUntil: 'domcontentloaded' });
+    expect(response?.status()).toBe(200);
     await expect(page).toHaveURL(/\/es\/products\?category=zapatos/);
-    await expect(page.locator('body')).not.toContainText('500');
+    await expect(page.locator('main')).not.toContainText(/error interno|internal server error/i);
   });
 
   test('Category nav exposes products link', async ({ page }) => {
@@ -67,16 +74,17 @@ test.describe('Products listing', () => {
 
 test.describe('Product detail', () => {
   test('Product detail loads from fixture product', async ({ page }) => {
-    await gotoApp(page, '/es/products/fixture-1');
-    await expect(page.locator('body')).not.toContainText('500');
+    const response = await page.goto('/es/products/fixture-1', { waitUntil: 'domcontentloaded' });
+    expect(response?.status()).toBe(200);
     await expect(page.locator('main')).toBeVisible();
   });
 });
 
 test.describe('Cart', () => {
   test('Cart page loads', async ({ page }) => {
-    await gotoApp(page, '/es/cart');
-    await expect(page.locator('body')).not.toContainText('500');
+    const response = await page.goto('/es/cart', { waitUntil: 'domcontentloaded' });
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('main')).toBeVisible();
   });
 });
 

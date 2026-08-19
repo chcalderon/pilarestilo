@@ -15,6 +15,7 @@ import {
   type ReturnRequestDto,
   type SalesDocumentDto,
 } from '../../lib/api';
+import Overlay from './Overlay';
 
 const money = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -179,7 +180,7 @@ export default function ReturnDetailDrawer({
   }
 
   return (
-    <>
+    <Overlay>
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <aside
         role="dialog"
@@ -519,6 +520,6 @@ export default function ReturnDetailDrawer({
           </Section>
         </div>
       </aside>
-    </>
+    </Overlay>
   );
 }

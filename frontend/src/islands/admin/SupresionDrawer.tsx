@@ -5,6 +5,7 @@ import {
   refuseDeletionRequest,
   type DeletionRequestDto,
 } from '../../lib/api';
+import Overlay from './Overlay';
 
 interface Props {
   request: DeletionRequestDto;
@@ -75,7 +76,7 @@ export default function SupresionDrawer({ request, token, canResolve, onClose, o
   }
 
   return (
-    <>
+    <Overlay>
       <button
         type="button"
         aria-label="Cerrar"
@@ -259,6 +260,6 @@ export default function SupresionDrawer({ request, token, canResolve, onClose, o
           )}
         </div>
       </div>
-    </>
+    </Overlay>
   );
 }

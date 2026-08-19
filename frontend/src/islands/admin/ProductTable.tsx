@@ -25,6 +25,7 @@ import { getProductVariantSchema, getSecondaryAttribute } from '../../lib/varian
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
+import SaveResultModal from './SaveResultModal';
 
 type ViewMode = 'grid' | 'cards';
 
@@ -125,6 +126,9 @@ export default function ProductTable() {
   const [createdTo, setCreatedTo] = useState('');
   const [editTarget, setEditTarget] = useState<ProductDto | null | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [saveResult, setSaveResult] = useState<
+    { ok: boolean; title: string; detail?: string | null } | null
+  >(null);
   const [deleting, setDeleting] = useState(false);
   const [heroAssigningKey, setHeroAssigningKey] = useState<string | null>(null);
   const [heroAssignmentFeedback, setHeroAssignmentFeedback] = useState<string>('');
@@ -300,6 +304,11 @@ export default function ProductTable() {
   }
 
   function handleSaved(saved: ProductDto) {
+    setSaveResult({
+      ok: true,
+      title: editTarget === null ? 'Producto creado' : 'Producto guardado',
+      detail: saved.name,
+    });
     setProducts((prev) => {
       const idx = prev.findIndex((p) => p.id === saved.id);
       if (idx >= 0) {
@@ -738,7 +747,19 @@ export default function ProductTable() {
           product={editTarget}
           token={effectiveToken ?? undefined}
           onSave={handleSaved}
+          onSaveFailed={(message) =>
+            setSaveResult({ ok: false, title: 'No se pudo guardar', detail: message })
+          }
           onCancel={() => setEditTarget(undefined)}
+        />
+      )}
+
+      {saveResult && (
+        <SaveResultModal
+          ok={saveResult.ok}
+          title={saveResult.title}
+          detail={saveResult.detail}
+          onClose={() => setSaveResult(null)}
         />
       )}
 
