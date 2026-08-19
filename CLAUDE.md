@@ -77,6 +77,14 @@ One command scans everything with coverage:
 SONAR_TOKEN=<token> bash scripts/quality/sonar-scan.sh
 ```
 
+Sonar Community has **no taint analysis**, so it never follows a value from a request into a query
+— it says so in a banner on every project. That gap is covered locally and for free by
+`scripts/quality/security-scan.sh`: Find Security Bugs (bytecode taint for Java, run with
+`mvn -P security verify`), Semgrep (source rules for Java and TypeScript) and OSV-Scanner (known
+CVEs in dependencies, which no edition of Sonar covers). Findings refused on purpose live in
+`config/spotbugs-noise.xml`, each with its reason; anything not listed there is expected to be
+fixed.
+
 The default quality gate is **PilarEstilo sin smells**, and it applies to every project and every
 language: `new_violations = 0` — a single new smell, bug or vulnerability fails it — plus 60%
 coverage and under 3% duplication on new code, all hotspots reviewed, and maintainability rating A

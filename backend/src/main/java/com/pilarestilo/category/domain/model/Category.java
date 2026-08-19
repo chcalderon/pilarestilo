@@ -9,7 +9,13 @@ import java.util.regex.Pattern;
 
 public class Category {
 
-    private static final Pattern SLUG_PATTERN = Pattern.compile("^[a-z0-9]+(?:-[a-z0-9]+)*$");
+    /*
+     * Deliberately linear. The obvious spelling of this rule, "^[a-z0-9]+(?:-[a-z0-9]+)*$", is the
+     * classic catastrophic-backtracking shape: a long almost-matching slug makes the engine try
+     * every split of the groups before failing. The three checks below say the same thing — only
+     * these characters, no leading or trailing hyphen, no doubled hyphen — in one pass.
+     */
+    private static final Pattern SLUG_PATTERN = Pattern.compile("^[a-z0-9-]+$");
 
     private UUID id;
     private String slug;
@@ -65,7 +71,7 @@ public class Category {
     }
 
     private static void validate(String slug, String nameEs, String nameEn) {
-        if (slug == null || slug.isBlank() || !SLUG_PATTERN.matcher(slug.trim().toLowerCase()).matches()) {
+        if (slug == null || slug.isBlank() || !isValidSlug(slug.trim().toLowerCase())) {
             throw new DomainException("Category slug must be lowercase, hyphen-separated url-safe text");
         }
         if (nameEs == null || nameEs.isBlank()) throw new DomainException("Category nameEs is required");
@@ -96,4 +102,18 @@ public class Category {
     public void setMenuVisible(boolean menuVisible) { this.menuVisible = menuVisible; }
     public void setCategoryType(CategoryType categoryType) { this.categoryType = categoryType; }
     public void setHeroImageUrl(String heroImageUrl) { this.heroImageUrl = heroImageUrl; }
+
+    /**
+     * A slug is lowercase letters, digits and single hyphens between them.
+     *
+     * <p>Three checks rather than one grouped pattern: the natural spelling,
+     * {@code ^[a-z0-9]+(?:-[a-z0-9]+)*$}, is the classic catastrophic-backtracking shape — a long
+     * almost-valid slug makes the engine try every split of the groups before failing.
+     */
+    private static boolean isValidSlug(String candidate) {
+        return SLUG_PATTERN.matcher(candidate).matches()
+                && !candidate.startsWith("-")
+                && !candidate.endsWith("-")
+                && !candidate.contains("--");
+    }
 }

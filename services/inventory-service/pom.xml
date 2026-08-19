@@ -148,4 +148,60 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Security analysis Sonar Community cannot do.
+
+      Community Build has no taint analysis, so it never follows a user input through to a SQL
+      query: it only matches shapes. Find Security Bugs works on the compiled bytecode and does
+      follow it, covering SQL/HQL injection, XSS, path traversal, weak crypto and around a hundred
+      more. Free (LGPL), and the gap it fills is the one Sonar's own banner points at.
+
+      Its own profile so it does not sit in every `mvn verify`: it needs the classes compiled and
+      takes minutes. Run it deliberately:
+
+          mvn -P security verify
+
+      Fails the build on anything it finds, which is the point — see scripts/quality/README.md for
+      how to read and silence a false positive properly.
+    -->
+    <profile>
+      <id>security</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <version>4.9.8.0</version>
+            <configuration>
+              <effort>Max</effort>
+              <threshold>Low</threshold>
+              <!-- Only the security detectors: SpotBugs' general rules overlap with Sonar's, and
+                   two tools reporting the same smell twice is noise nobody reads. -->
+              <includeFilterFile>${project.basedir}/../../config/spotbugs-security.xml</includeFilterFile>
+              <excludeFilterFile>${project.basedir}/../../config/spotbugs-noise.xml</excludeFilterFile>
+              <plugins>
+                <plugin>
+                  <groupId>com.h3xstream.findsecbugs</groupId>
+                  <artifactId>findsecbugs-plugin</artifactId>
+                  <version>1.14.0</version>
+                </plugin>
+              </plugins>
+            </configuration>
+            <executions>
+              <execution>
+                <id>find-security-bugs</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

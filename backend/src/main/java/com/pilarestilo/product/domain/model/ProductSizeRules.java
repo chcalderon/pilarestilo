@@ -11,7 +11,12 @@ final class ProductSizeRules {
 
     private static final Set<String> ALLOWED_TOKENS = Set.of("XS", "S", "M", "L", "XL", "XXL", "XXXL", "UNICO");
     private static final String NUMERIC_SIZE_PATTERN = "\\d{1,2}(?:[.,]\\d{1,2})?";
-    private static final String DESCRIPTOR_PATTERN = "[\\p{L}\\p{N}]+(?:[ -][\\p{L}\\p{N}]+)*";
+    /*
+     * Linear on purpose. The grouped spelling, "[\\p{L}\\p{N}]+(?:[ -][\\p{L}\\p{N}]+)*", backtracks
+     * catastrophically on a long almost-valid size; the separator rules it encoded are checked
+     * below in one pass instead.
+     */
+    private static final String DESCRIPTOR_PATTERN = "[\\p{L}\\p{N} -]+";
 
     private ProductSizeRules() {}
 
@@ -31,7 +36,7 @@ final class ProductSizeRules {
         if (normalized.matches(NUMERIC_SIZE_PATTERN)) {
             return normalized.replace(',', '.');
         }
-        if (normalized.matches(DESCRIPTOR_PATTERN) && normalized.length() > 1) {
+        if (isValidDescriptor(normalized) && normalized.length() > 1) {
             return normalized;
         }
         throw new DomainException("Invalid product variant size: " + rawSize);
@@ -60,5 +65,21 @@ final class ProductSizeRules {
             return normalized;
         }
         throw new DomainException("Invalid product variant size: " + rawSize);
+    }
+
+    /** Letters, digits and single separators between them — never at an end, never doubled. */
+    private static boolean isValidDescriptor(String candidate) {
+        return candidate.matches(DESCRIPTOR_PATTERN)
+                && !startsOrEndsWithSeparator(candidate)
+                && !candidate.contains("  ")
+                && !candidate.contains("--")
+                && !candidate.contains(" -")
+                && !candidate.contains("- ");
+    }
+
+    private static boolean startsOrEndsWithSeparator(String candidate) {
+        char first = candidate.charAt(0);
+        char last = candidate.charAt(candidate.length() - 1);
+        return first == ' ' || first == '-' || last == ' ' || last == '-';
     }
 }

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Three detectors that are noise in this codebase. The first run raised 565 findings; 455 of them
+  were these, and a list that long is one nobody reads at all.
+
+  Each is dropped for a stated reason. Anything not listed here is expected to be read and either
+  fixed or refused deliberately.
+-->
+<FindBugsFilter>
+
+  <!--
+    A mutable object stored or returned by a getter (279). Real as a pattern, but in a domain model
+    built of Instants and Lists it fires on nearly every aggregate, and the exposure it warns about
+    - a caller mutating what it was handed - is not how this code is used.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,MS_MUTABLE_COLLECTION_PKGPROTECT"/>
+  </Match>
+
+  <!--
+    "This class is a Spring endpoint" (174). Informational rather than a finding: every controller
+    in the application matches it.
+  -->
+  <Match>
+    <Bug pattern="SPRING_ENDPOINT,STRUTS2_ENDPOINT"/>
+  </Match>
+
+  <!--
+    User data reaching a log line (60). Log forging matters where something parses the logs and
+    trusts them; here they are read by a person and the fields are emails and order references.
+  -->
+  <Match>
+    <Bug pattern="CRLF_INJECTION_LOGS"/>
+  </Match>
+
+  <!--
+    Unicode normalisation on strings that never take part in an authorisation decision (24): names,
+    addresses, product descriptions.
+  -->
+  <Match>
+    <Bug pattern="IMPROPER_UNICODE"/>
+  </Match>
+
+  <!--
+    Read and refused, each for its own reason. Anything not listed here is expected to be fixed.
+  -->
+
+  <!--
+    "Paths.get on a location that might come from user input". In all five cases the argument is
+    the configured storage root (@Value), not a request. What does come from outside is the stored
+    filename, and both storage classes resolve it and then check the result still starts with the
+    root - which is the guard this detector cannot see.
+  -->
+  <Match>
+    <Bug pattern="PATH_TRAVERSAL_IN"/>
+    <Or>
+      <Class name="com.pilarestilo.billing.infrastructure.storage.SalesDocumentFileStorage"/>
+      <Class name="com.pilarestilo.payment.infrastructure.storage.PaymentProofStorage"/>
+      <Class name="com.pilarestilo.category.application.usecases.OptimizeCategoryImagesUseCase"/>
+      <Class name="com.pilarestilo.product.application.usecases.OptimizeProductImagesUseCase"/>
+      <Class name="com.pilarestilo.category.application.usecases.MigrateCategoryImagesUseCase"/>
+      <Class name="com.pilarestilo.shared.infrastructure.adapters.LocalFileStorageAdapter"/>
+    </Or>
+  </Match>
+
+  <!--
+    "String appended into XML". EmailLayout builds HTML for an email and every interpolated value
+    goes through escape() first; the detector sees the append, not the call around it.
+  -->
+  <Match>
+    <Bug pattern="POTENTIAL_XML_INJECTION"/>
+    <Class name="~com\.pilarestilo\.notification\.application\.EmailLayout.*"/>
+  </Match>
+
+  <!--
+    MD5 on the public order reference. It is an identifier printed on the order and shared with the
+    customer, not a secret and not a password: the hash is there to make the reference short and
+    stable, and both codebases derive it identically. Replacing it would invalidate every reference
+    already given out.
+  -->
+  <Match>
+    <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
+    <Class name="com.pilarestilo.order.domain.model.OrderReference"/>
+  </Match>
+
+  <!--
+    CSRF disabled. The API is stateless and authenticates with a bearer token read from a header,
+    so there is no ambient credential for a cross-site request to ride on. Turning it on would
+    break every client without protecting anything.
+  -->
+  <Match>
+    <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    <Class name="com.pilarestilo.shared.infrastructure.bootstrap.SecurityConfig"/>
+  </Match>
+
+  <!--
+    Reading X-Forwarded-For and User-Agent. That is the point: they are recorded as evidence of a
+    consent, and evidence is what the client sent. They are never used to decide anything, and
+    Caddy always sits in front and rewrites the forwarded address.
+  -->
+  <Match>
+    <Bug pattern="SERVLET_HEADER,SERVLET_HEADER_USER_AGENT"/>
+    <Or>
+      <Class name="com.pilarestilo.privacy.infrastructure.web.controllers.MyPrivacyController"/>
+      <Class name="com.pilarestilo.shared.auth.infrastructure.web.AuthController"/>
+    </Or>
+  </Match>
+
+  <!--
+    Opening a URL the code did not build. The address is a product image already stored by an
+    administrator, fetched by the AI pipeline; there is no path from a customer to it.
+  -->
+  <Match>
+    <Bug pattern="URLCONNECTION_SSRF_FD"/>
+    <Class name="com.pilarestilo.productai.infrastructure.ai.ProductAiNodeBridgeClient"/>
+  </Match>
+
+  <!--
+    The rest of the "path might come from user input" family, all reading the configured media root
+    rather than a request. The one place a request value does become a path,
+    MediaAdminController.loadSourceImage, normalises it, refuses anything that does not still start
+    with the root, and checks the extension - the guard the detector cannot see.
+  -->
+  <Match>
+    <Bug pattern="PATH_TRAVERSAL_IN"/>
+    <Or>
+      <Class name="com.pilarestilo.shared.infrastructure.services.MediaStorageService"/>
+      <Class name="com.pilarestilo.shared.infrastructure.bootstrap.MediaResourceConfig"/>
+      <Class name="~com\.pilarestilo\.shared\.infrastructure\.web\.controllers\.MediaAdminController.*"/>
+      <Class name="com.pilarestilo.productai.infrastructure.ai.ProductAiNodeBridgeClient"/>
+      <Class name="com.pilarestilo.product.domain.model.Product"/>
+    </Or>
+  </Match>
+
+  <!--
+    Reading a request header in a filter: the Authorization header is where the token is, the
+    forwarded address is what the rate limiter counts per client, and the webhook token arrives in
+    a header by the provider's design. Spoofable by definition, which is why none of them is
+    trusted beyond what it is: the token is verified, and the rate limit is a courtesy rather than
+    a security boundary.
+  -->
+  <Match>
+    <Bug pattern="SERVLET_HEADER,SERVLET_HEADER_USER_AGENT"/>
+    <Or>
+      <Class name="com.pilarestilo.shared.auth.infrastructure.JwtAuthenticationFilter"/>
+      <Class name="com.pilarestilo.shared.infrastructure.web.ApiGatewayRateLimitFilter"/>
+      <Class name="com.pilarestilo.publication.infrastructure.web.controllers.PublicationWebhookController"/>
+      <Class name="com.pilarestilo.orderservice.auth.JwtAuthenticationFilter"/>
+      <Class name="com.pilarestilo.orderservice.web.OrderController"/>
+    </Or>
+  </Match>
+
+  <!--
+    The same two refusals on the order-service side, for the same reasons: the reference hash is a
+    public identifier both codebases derive identically, and the API is stateless with a bearer
+    token so there is no ambient credential for CSRF to ride on.
+  -->
+  <Match>
+    <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
+    <Class name="com.pilarestilo.orderservice.domain.OrderReference"/>
+  </Match>
+  <Match>
+    <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    <Class name="com.pilarestilo.orderservice.config.SecurityConfig"/>
+  </Match>
+
+</FindBugsFilter>

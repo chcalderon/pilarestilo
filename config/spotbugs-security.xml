@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  What Find Security Bugs is here for: the detectors that trace data.
+
+  Sonar Community has no taint analysis, so it never follows a value from a request into a query.
+  This does, on the compiled bytecode. The general SpotBugs rules are left out because they overlap
+  with what Sonar already reports, and two tools raising the same smell is noise nobody reads.
+-->
+<FindBugsFilter>
+  <Match>
+    <Bug category="SECURITY"/>
+  </Match>
+  <Match>
+    <Bug category="MALICIOUS_CODE"/>
+  </Match>
+</FindBugsFilter>
