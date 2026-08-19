@@ -34,9 +34,21 @@ las toca: publicar una versión nueva es un acto deliberado con un texto detrás
 
 - **Acceso**: `GET /api/me/privacy/export` devuelve todo lo que la tienda tiene de esa clienta —
   cuenta, pedidos, direcciones, reseñas, devoluciones y consentimientos — como archivo.
-- **Supresión**: anonimiza al usuario y sus pedidos. **No borra boletas ni pagos**: son documentos
-  tributarios con plazo legal propio, y por eso `sales_documents` guarda copia del nombre y correo
-  del comprador en el momento de emitir.
+- **Supresión**: `POST /api/me/privacy/deletion` deja la solicitud en cola. La resuelve el admin en
+  `/api/admin/privacy/deletions`, y **anonimiza, no borra**:
+
+  | Se va | Se queda |
+  |---|---|
+  | Correo, nombre, teléfono, avatar de la cuenta | La fila del usuario (pedidos y boletas apuntan a ella) |
+  | Todas las direcciones de despacho | Pedidos, pagos y documentos tributarios |
+  | La cuenta queda desactivada | Las reseñas, que no llevan nombre propio: el autor sale del usuario |
+
+  La cuenta pasa a `anonimo+<id>@pilarestilo.invalid` y "Cliente anonimizado". Es irreversible a
+  propósito. Las boletas siguen legibles porque guardan copia del nombre y correo del comprador
+  desde que se emiten — ese snapshot existe exactamente para este momento.
+
+  Ver los permisos: `privacy.read` para ver la cola, `privacy.resolve` para ejecutarla; separados
+  porque anonimizar no se deshace.
 
 ## Brecha de datos
 
@@ -63,5 +75,5 @@ persona; el nombre tiene que estar publicado en la política de privacidad.
 ## Lo que falta
 
 - Pantalla de la política de privacidad versionada en la tienda, enlazada desde el registro.
-- Cola de solicitudes de supresión en el admin, con la anonimización efectiva.
+- Pantalla del admin para la cola de supresión (el backend ya está; espera a que aterrice Astro).
 - Casilla de marketing en el registro (hoy el consentimiento existe en el backend, sin UI).

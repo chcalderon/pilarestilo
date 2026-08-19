@@ -2,10 +2,15 @@ package com.pilarestilo.privacy.infrastructure.web.controllers;
 
 import com.pilarestilo.privacy.application.dto.PersonalDataExportDto;
 import com.pilarestilo.privacy.application.usecases.ExportMyDataUseCase;
+import com.pilarestilo.privacy.application.dto.DataDeletionRequestDto;
 import com.pilarestilo.privacy.application.usecases.RecordConsentUseCase;
+import com.pilarestilo.privacy.application.usecases.RequestDataDeletionUseCase;
+import com.pilarestilo.privacy.infrastructure.web.requests.RequestDeletionRequest;
 import com.pilarestilo.privacy.domain.enums.ConsentType;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,11 +32,14 @@ public class MyPrivacyController {
 
     private final ExportMyDataUseCase exportMyDataUseCase;
     private final RecordConsentUseCase recordConsentUseCase;
+    private final RequestDataDeletionUseCase requestDataDeletionUseCase;
 
     public MyPrivacyController(ExportMyDataUseCase exportMyDataUseCase,
-                               RecordConsentUseCase recordConsentUseCase) {
+                               RecordConsentUseCase recordConsentUseCase,
+                               RequestDataDeletionUseCase requestDataDeletionUseCase) {
         this.exportMyDataUseCase = exportMyDataUseCase;
         this.recordConsentUseCase = recordConsentUseCase;
+        this.requestDataDeletionUseCase = requestDataDeletionUseCase;
     }
 
     /** Everything held about her, as a file she can keep. */
@@ -58,6 +66,18 @@ public class MyPrivacyController {
     @PreAuthorize("isAuthenticated()")
     public void revokeMarketing(@AuthenticationPrincipal AuthenticatedUser currentUser) {
         recordConsentUseCase.revokeMarketing(currentUser.id());
+    }
+
+    /**
+     * Asking to be forgotten. It queues rather than acting: an order in flight has to arrive first,
+     * and the shop has to be able to say when it was asked and what it did about it.
+     */
+    @PostMapping("/deletion")
+    @PreAuthorize("isAuthenticated()")
+    public DataDeletionRequestDto requestDeletion(@AuthenticationPrincipal AuthenticatedUser currentUser,
+                                                  @Valid @RequestBody(required = false) RequestDeletionRequest request) {
+        return DataDeletionRequestDto.from(requestDataDeletionUseCase.execute(
+                currentUser.id(), request == null ? null : request.reason()));
     }
 
     private static String callerAddress(HttpServletRequest request) {

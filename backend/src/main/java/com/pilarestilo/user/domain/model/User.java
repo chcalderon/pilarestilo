@@ -115,6 +115,30 @@ public class User {
     public boolean isAvatarManuallySet() { return avatarManuallySet; }
     public Instant getCreatedAt() { return createdAt; }
 
+    /**
+     * Stops this person being identifiable, without removing the row.
+     *
+     * <p>The row stays because orders, payments and boletas point at it, and those have retention
+     * of their own — six years for a tax document. What goes is everything that names a human: the
+     * address becomes an opaque one derived from the id, the name a placeholder, the phone and the
+     * avatar nothing. The account is deactivated in the same move, since there is no longer an
+     * address to sign in with.
+     *
+     * <p>Deliberately not reversible, and deliberately not a delete: a deleted user would leave a
+     * boleta pointing at nothing, and the shop would be unable to answer for a sale it made.
+     */
+    public void anonymise() {
+        this.email = "anonimo+" + id + "@pilarestilo.invalid";
+        this.fullName = "Cliente anonimizado";
+        this.phone = null;
+        this.avatarUrl = null;
+        this.avatarManuallySet = false;
+        this.active = false;
+        // The hash is replaced rather than blanked: a null would let a login path that skips the
+        // check through, and an empty string is a password somebody could type.
+        this.passwordHash = "anonymised-" + UUID.randomUUID();
+    }
+
     public void updateAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public void markAvatarAsManual() { this.avatarManuallySet = true; }
     public void setAvatarManuallySet(boolean avatarManuallySet) { this.avatarManuallySet = avatarManuallySet; }

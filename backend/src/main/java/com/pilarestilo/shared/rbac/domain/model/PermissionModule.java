@@ -12,6 +12,7 @@ public enum PermissionModule {
     USERS("users"),
     ROLES("roles"),
     SETTINGS("settings"),
+    PRIVACY("privacy"),
     POS("pos");
 
     private final String code;
