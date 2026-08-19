@@ -146,15 +146,22 @@ public class ProductQueryService {
     private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,
                                             jakarta.persistence.criteria.CriteriaQuery<?> query,
                                             jakarta.persistence.criteria.CriteriaBuilder cb) {
+        /*
+         * Variants only, which is what the monolith answers and what the shop actually decrements.
+         *
+         * The sizeStocks join stayed here after V56 moved stock onto product_variants, and nothing
+         * has written that table since. It held 24 units that no sale could ever reduce, so this
+         * service reported ten sold-out garments as available while the storefront's own SSR, which
+         * asks the monolith, showed none. In production Caddy routes GET /api/products here, so the
+         * two halves of the same page disagreed about what could be bought.
+         */
         Join<Object, Object> variants = root.join("variants", JoinType.LEFT);
-        Join<Object, Object> sizeStocks = root.join("sizeStocks", JoinType.LEFT);
         if (query != null) {
             query.distinct(true);
         }
         return cb.or(
                 cb.greaterThan(root.get("stock"), 0),
-                cb.greaterThan(variants.get("stockOnHand"), 0),
-                cb.greaterThan(sizeStocks.get("stock"), 0)
+                cb.greaterThan(variants.get("stockOnHand"), 0)
         );
     }
 }

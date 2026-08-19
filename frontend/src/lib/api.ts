@@ -890,9 +890,11 @@ function hasSellableStock(product: ProductDto): boolean {
   if (Array.isArray(product.variants) && product.variants.length > 0) {
     return product.variants.some((variant) => Number(variant.stock ?? 0) > 0);
   }
-  if (Array.isArray(product.sizeStocks) && product.sizeStocks.length > 0) {
-    return product.sizeStocks.some((sizeStock) => Number(sizeStock.stock ?? 0) > 0);
-  }
+  /*
+   * sizeStocks is not consulted: V56 moved stock onto the variants and nothing has written that
+   * table since, so it still holds units no sale can decrement. Asking it here made the browser
+   * offer sold-out garments, which is the same phantom the extracted product-service reported.
+   */
   return Number(product.stock ?? 0) > 0;
 }
 
@@ -1553,6 +1555,30 @@ export async function issueCreditNote(
 }
 
 /** Uploads the boleta file and returns the opaque name to send back on issue. */
+/**
+ * Files the picture of a boleta registered without one. The folio and the amounts are untouched:
+ * only the scan arrives, which is the usual order when the boleta is emitted by hand in the SII
+ * app and photographed afterwards.
+ */
+export async function attachSalesDocumentFile(
+  documentId: string,
+  file: File,
+  token: string,
+): Promise<SalesDocumentDto> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/admin/sales-documents/${encodeURIComponent(documentId)}/file`, {
+    method: 'POST',
+    body: form,
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(body.detail ?? body.message ?? 'No se pudo adjuntar el archivo', res.status);
+  }
+  return (await res.json()) as SalesDocumentDto;
+}
+
 export async function uploadSalesDocumentFile(file: File, token: string): Promise<string> {
   const form = new FormData();
   form.append('file', file);
