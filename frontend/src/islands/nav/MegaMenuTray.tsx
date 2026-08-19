@@ -337,7 +337,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                     <a
                       href={activeSection.bannerLink || `/${locale}/categories/${activeSection.rootCategorySlug}`}
                       role="menuitem"
-                      className="group relative block overflow-hidden rounded-sm"
+                      className="group relative block overflow-hidden rounded-xs"
                     >
                       <img
                         src={activeSection.bannerImageUrl}
@@ -370,7 +370,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                     <a
                       href={`/${locale}/categories/${activeSection.rootCategorySlug}`}
                       role="menuitem"
-                      className="group relative block overflow-hidden rounded-sm"
+                      className="group relative block overflow-hidden rounded-xs"
                     >
                       <img
                         src={activeSection.heroImageUrl}

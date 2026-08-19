@@ -348,7 +348,7 @@ export default function DespachosPage() {
                               value={carrier}
                               onChange={(e) => setCarrier(e.target.value)}
                               placeholder="Carrier (ej. Chilexpress)"
-                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]"
+                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]"
                             />
                             {d.orderShippingCourierName && (
                               <p className="text-[11px] text-pe-charcoal/55">
@@ -360,7 +360,7 @@ export default function DespachosPage() {
                               value={tracking}
                               onChange={(e) => setTracking(e.target.value)}
                               placeholder="Código de seguimiento"
-                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]"
+                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]"
                             />
                             {error && <p className="text-red-500 text-xs">{error}</p>}
                             <div className="flex gap-2">

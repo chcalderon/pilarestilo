@@ -142,7 +142,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
           value={title}
           onChange={e => setTitle(e.target.value)}
           maxLength={100}
-          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#B76E79] transition-colors"
+          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-hidden focus:border-[#B76E79] transition-colors"
         />
       </div>
 
@@ -156,7 +156,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
           onChange={e => setComment(e.target.value)}
           maxLength={1000}
           rows={4}
-          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#B76E79] transition-colors resize-none"
+          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-hidden focus:border-[#B76E79] transition-colors resize-none"
         />
         <p className="text-[10px] text-[#3A3A3A]/40 text-right mt-1">{comment.length}/1000</p>
       </div>

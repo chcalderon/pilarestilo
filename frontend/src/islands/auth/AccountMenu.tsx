@@ -59,7 +59,7 @@ export default function AccountMenu({ locale }: Props) {
 
   if (!ready) {
     return (
-      <div className="w-16 h-4 bg-[var(--pe-dropdown-border)] animate-pulse rounded" aria-hidden="true" />
+      <div className="w-16 h-4 bg-[var(--pe-dropdown-border)] animate-pulse rounded-sm" aria-hidden="true" />
     );
   }
 

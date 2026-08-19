@@ -149,7 +149,7 @@ export default function ReviewStep({
                       onClick={() => onRemoveItem(item.id)}
                       className="mt-1 inline-flex items-center gap-1.5 min-h-11 pr-2 font-sans
                         text-[0.66rem] tracking-[0.14em] uppercase text-[#8f2d3b] underline
-                        underline-offset-4 focus-visible:outline-none focus-visible:ring-2
+                        underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2
                         focus-visible:ring-pe-rose"
                     >
                       <Trash2 size={13} aria-hidden="true" />
@@ -196,7 +196,7 @@ export default function ReviewStep({
                 onClick={onFixShipping}
                 className="font-sans text-[0.7rem] tracking-[0.14em] uppercase underline
                   text-pe-charcoal hover:text-pe-black
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+                  focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
               >
                 {l.addressMissingAction}
               </button>
@@ -253,7 +253,7 @@ export default function ReviewStep({
           className="inline-flex items-center justify-center gap-2 min-h-12 px-5
             border border-pe-charcoal/25 font-sans text-[0.7rem] tracking-[0.16em] uppercase
             text-pe-charcoal hover:border-pe-black transition-colors disabled:opacity-40
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >
           <ArrowLeft size={14} />
           {l.back}
@@ -265,7 +265,7 @@ export default function ReviewStep({
           className="flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-8
             bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
             transition-opacity disabled:opacity-50 disabled:cursor-wait
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >
           {submitting ? (
             <>

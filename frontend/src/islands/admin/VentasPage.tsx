@@ -197,7 +197,7 @@ export default function VentasPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Referencia, nombre o correo"
-            className="w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-sm pl-9 pr-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30"
+            className="w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs pl-9 pr-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30"
           />
         </label>
 
@@ -206,7 +206,7 @@ export default function VentasPage() {
           id="ventas-status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-sm px-3 py-2 text-sm outline-none"
+          className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden"
         >
           {STATUS_FILTERS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -219,7 +219,7 @@ export default function VentasPage() {
           type="button"
           onClick={() => setMissingOnly((value) => !value)}
           aria-pressed={missingOnly}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border transition-colors ${
             missingOnly
               ? 'border-[var(--pe-ink)] bg-[var(--pe-ink)] text-[var(--pe-surface)]'
               : 'border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)]'
@@ -231,14 +231,14 @@ export default function VentasPage() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] transition-colors"
         >
           <RefreshCw size={13} /> Actualizar
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-sm border border-red-300/60 text-red-600">
+        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600">
           {error}
         </p>
       )}

@@ -134,7 +134,7 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
         onClick={() => setOpen(true)}
         className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-charcoal/55
           underline underline-offset-2 hover:text-pe-rose transition-colors
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+          focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
       >
         {openLabel}
       </button>

@@ -241,7 +241,7 @@ const clearUrl = `/${locale}/products`;
                   name="brand"
                   value={brand ?? ''}
                   placeholder={locale === 'es' ? 'Buscar marca...' : 'Search brand...'}
-                  class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
+                  class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
                   aria-label={locale === 'es' ? 'Filtrar por marca' : 'Filter by brand'}
                 />
                 {category && <input type="hidden" name="category" value={category} />}

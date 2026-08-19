@@ -284,7 +284,7 @@ export default function CartPage({ locale }: Props) {
                               className="inline-flex items-center gap-1.5 font-sans text-[10px] tracking-[0.14em]
                                 uppercase min-h-11 px-2.5 border border-[#8f2d3b]/40 text-[#8f2d3b]
                                 hover:bg-[#8f2d3b] hover:text-white transition-colors
-                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+                                focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                             >
                               <Trash2 size={13} aria-hidden="true" />
                               {l.removeUnavailable}
@@ -392,7 +392,7 @@ export default function CartPage({ locale }: Props) {
                     className="w-full inline-flex items-center justify-center gap-2 min-h-12 px-6
                       bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
                       hover:bg-pe-black/90 transition-colors
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+                      focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
                   >
                     {l.continueToCheckout}
                     <ArrowRight size={14} />
@@ -423,7 +423,7 @@ export default function CartPage({ locale }: Props) {
             onClick={undoRemove}
             className="inline-flex items-center gap-1.5 shrink-0 min-h-11 px-2 font-sans
               text-[0.68rem] tracking-[0.16em] uppercase text-pe-white underline underline-offset-4
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
           >
             <Undo2 size={13} aria-hidden="true" />
             {l.undo}

@@ -42,19 +42,19 @@ function SectionCard({ label, children }: { label: string; children: React.React
 
 // Uses CSS vars so it adapts to both light (data-theme='light') and dark (data-theme='dark')
 const inputCls =
-  'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-sm px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
+  'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
 
 const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
 
 // --pe-ink = #1A1A1A light / #F8F4EF dark → auto-inverts for bg/text
 const btnPrimary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
 
 const btnSecondary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
 function OkBadge({ show }: { show: boolean }) {
   if (!show) return null;
@@ -349,7 +349,7 @@ export default function UserEditDrawer({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-sm opacity-40 hover:opacity-100 transition-opacity"
+            className="p-1.5 rounded-xs opacity-40 hover:opacity-100 transition-opacity"
           >
             <X size={18} />
           </button>
@@ -431,12 +431,12 @@ export default function UserEditDrawer({
                 }}
                 disabled={!canEditBasics || statusSaving}
                 aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
-                className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-none disabled:opacity-40 ${
+                className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-hidden disabled:opacity-40 ${
                   active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
                 }`}
               >
                 <span
-                  className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ${
                     active ? 'translate-x-[20px]' : 'translate-x-0'
                   }`}
                 />

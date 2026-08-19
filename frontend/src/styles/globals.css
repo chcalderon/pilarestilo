@@ -7,11 +7,53 @@
 @import '@fontsource/montserrat/400.css';
 @import '@fontsource/montserrat/500.css';
 @import '@fontsource/montserrat/600.css';
-@import './ornaments.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/*
+ * ornaments.css carries no @layer of its own. Under Tailwind 3 that was harmless: utilities
+ * were emitted unlayered too, so `.chapter-mark` and `text-[0.9rem]` tied on specificity and
+ * source order let the utility win. Tailwind 4 emits every utility inside @layer utilities,
+ * and unlayered CSS outranks every layer no matter the order — which silently handed all 23
+ * ornament rules the last word. It cost `.chapter-mark` its text-[0.9rem] and opacity-30
+ * (rendering 25.6px at 0.85 instead of 14.4px at 0.3) and `.rose-rule-short` its mb-6.
+ * Importing it into `components` puts utilities back on top.
+ */
+@import './ornaments.css' layer(components);
+
+/*
+ * Tailwind 4 reads its theme from CSS, but the palette here is bound to runtime variables
+ * (text-pe-charcoal resolves through --pe-charcoal-rgb so the /55 modifiers keep working).
+ * @config keeps that single source of truth in tailwind.config.mjs instead of splitting it
+ * across two files that can drift.
+ */
+@config '../../tailwind.config.mjs';
+
+/*
+ * Tailwind 4 dropped two preflight defaults that this shop was built on top of.
+ *
+ * `border` with no colour used to mean gray-200; in v4 it means currentColor, which would
+ * repaint 449 bare borders in whatever the text colour happens to be — near-black on the
+ * storefront, rose inside the admin drawers.
+ *
+ * Placeholders used to be gray-400; in v4 they inherit the input's own colour, so every
+ * form field in checkout and the panel would show its placeholder as if it were an answer
+ * the customer had already typed.
+ */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: #e5e7eb;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+}
 
 @layer base {
   :root,

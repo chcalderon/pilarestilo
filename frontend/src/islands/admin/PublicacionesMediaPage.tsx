@@ -30,7 +30,7 @@ function StatusBadge({ status }: { status: ProductAiJobStatus }) {
   }[status];
 
   return (
-    <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.64rem] tracking-[0.1em] uppercase border ${cls}`}>
+    <span className={`inline-flex items-center rounded-sm px-2 py-0.5 text-[0.64rem] tracking-[0.1em] uppercase border ${cls}`}>
       {status}
     </span>
   );

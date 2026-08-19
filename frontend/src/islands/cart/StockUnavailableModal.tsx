@@ -71,7 +71,7 @@ export default function StockUnavailableModal({
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-pe-black/50 backdrop-blur-sm" aria-hidden="true" />
+          <div className="absolute inset-0 bg-pe-black/50 backdrop-blur-xs" aria-hidden="true" />
 
           <motion.div
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
@@ -106,7 +106,7 @@ export default function StockUnavailableModal({
               ref={btnRef}
               type="button"
               onClick={onClose}
-              className="w-full font-sans text-xs tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose text-pe-white hover:bg-pe-rose-deep transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-2"
+              className="w-full font-sans text-xs tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose text-pe-white hover:bg-pe-rose-deep transition-colors duration-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-2"
             >
               Entendido
             </button>

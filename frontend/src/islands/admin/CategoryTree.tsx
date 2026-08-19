@@ -55,7 +55,7 @@ function fromDto(dto: CategoryDto): EditForm {
   };
 }
 
-const INPUT_CLASS = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors';
+const INPUT_CLASS = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors';
 
 function slugify(text: string): string {
   return text
@@ -217,7 +217,7 @@ function CategoryRow({
   return (
     <div>
       <div
-        className="group flex items-center gap-2 rounded px-2 py-2 hover:bg-pe-cream/40 transition-colors"
+        className="group flex items-center gap-2 rounded-sm px-2 py-2 hover:bg-pe-cream/40 transition-colors"
         style={{ paddingLeft: `${(depth + 1) * 16}px` }}
       >
         {/* Drag handle */}
@@ -243,7 +243,7 @@ function CategoryRow({
         </button>
 
         {node.imageUrl ? (
-          <img src={node.imageUrl} alt="" className="w-6 h-6 object-cover shrink-0 rounded-sm opacity-80" />
+          <img src={node.imageUrl} alt="" className="w-6 h-6 object-cover shrink-0 rounded-xs opacity-80" />
         ) : (
           <span className="w-6 h-6 shrink-0" />
         )}
@@ -519,7 +519,7 @@ export default function CategoryTree() {
       )}
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="bg-pe-white border border-pe-black/6 shadow-sm py-1">
+        <div className="bg-pe-white border border-pe-black/6 shadow-xs py-1">
           {tree.length === 0 ? (
             <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
               No hay categorías. Crea la primera.

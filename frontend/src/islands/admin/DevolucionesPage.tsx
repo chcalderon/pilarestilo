@@ -172,7 +172,7 @@ export default function DevolucionesPage() {
       {overdue > 0 && (
         <p
           role="alert"
-          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-sm border border-red-300/60 text-red-600"
+          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600"
         >
           <AlertTriangle size={14} aria-hidden="true" />
           {overdue === 1
@@ -186,7 +186,7 @@ export default function DevolucionesPage() {
           type="button"
           onClick={() => setOpenOnly((value) => !value)}
           aria-pressed={openOnly}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border transition-colors ${
             openOnly
               ? 'border-[var(--pe-ink)] bg-[var(--pe-ink)] text-[var(--pe-surface)]'
               : 'border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)]'
@@ -197,7 +197,7 @@ export default function DevolucionesPage() {
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] transition-colors"
         >
           <RefreshCw size={13} /> Actualizar
         </button>
@@ -207,7 +207,7 @@ export default function DevolucionesPage() {
       </div>
 
       {error && (
-        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-sm border border-red-300/60 text-red-600">
+        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600">
           {error}
         </p>
       )}

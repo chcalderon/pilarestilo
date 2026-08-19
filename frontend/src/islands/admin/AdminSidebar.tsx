@@ -165,7 +165,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
         {!mobile && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="ml-auto p-1 text-pe-white/30 hover:text-pe-rose-soft transition-colors rounded"
+            className="ml-auto p-1 text-pe-white/30 hover:text-pe-rose-soft transition-colors rounded-sm"
             aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
           >
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -185,7 +185,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                   href={item.href}
                   onClick={closeMobileMenu}
                   className={[
-                    'flex items-center gap-3 px-3 py-2.5 rounded transition-colors duration-150 group',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-sm transition-colors duration-150 group',
                     'font-sans text-[0.78rem] tracking-[0.04em]',
                     active
                       ? 'bg-pe-rose/12 text-pe-rose-soft border-l-2 border-pe-rose pl-[10px]'
@@ -198,7 +198,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                   {!isCollapsed && <span>{item.label}</span>}
                   {item.href === '/admin/ventas' && pendingDocuments > 0 && (
                     <span
-                      className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1 py-0.5 text-[0.62rem] tabular-nums bg-pe-rose text-pe-white rounded-sm"
+                      className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1 py-0.5 text-[0.62rem] tabular-nums bg-pe-rose text-pe-white rounded-xs"
                       title={`${pendingDocuments} ventas pagadas sin boleta`}
                     >
                       {pendingDocuments}
@@ -215,7 +215,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
               type="button"
               onClick={handleSettingsToggle}
               className={[
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded transition-all duration-200 group border-l-2',
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all duration-200 group border-l-2',
                 'font-sans text-[0.78rem] tracking-[0.04em]',
                 settingsRouteActive
                   ? 'bg-pe-rose/12 text-pe-rose-soft border-pe-rose'
@@ -261,7 +261,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                         href={subitem.href}
                         onClick={closeMobileMenu}
                         className={[
-                          'flex items-center gap-2 px-2.5 py-2 rounded border-l transition-all duration-200',
+                          'flex items-center gap-2 px-2.5 py-2 rounded-sm border-l transition-all duration-200',
                           'font-sans text-[0.7rem] tracking-[0.06em]',
                           active
                             ? 'border-pe-rose text-pe-rose-soft bg-pe-rose/8'
@@ -289,7 +289,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-pe-white/40 hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors duration-150 font-sans text-[0.78rem]"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-pe-white/40 hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors duration-150 font-sans text-[0.78rem]"
           title={isCollapsed ? 'Cerrar sesion' : undefined}
         >
           <LogOut size={16} className="flex-shrink-0" />

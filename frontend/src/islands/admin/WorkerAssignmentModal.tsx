@@ -59,19 +59,19 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
           <div>
             <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">Rol</label>
             <select value={role} onChange={e => setRole(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]">
+              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]">
               {WORKER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">Inicio vigencia</label>
             <input type="date" value={vigencyStart} onChange={e => setVigencyStart(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]" />
+              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
           </div>
           <div>
             <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">Fin vigencia (opcional)</label>
             <input type="date" value={vigencyEnd} onChange={e => setVigencyEnd(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-[#B76E79]" />
+              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
           </div>
         </div>
         {error && <p className="text-red-500 text-sm mt-3">{error}</p>}

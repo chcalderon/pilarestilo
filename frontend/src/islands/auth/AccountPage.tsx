@@ -1156,7 +1156,7 @@ export default function AccountPage({ locale }: Props) {
                 autoComplete="name"
                 name="fullName"
                 disabled={profileLoading || profileSaving}
-                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? 'Tu nombre completo' : 'Your full name'}
               />
               <label className="font-sans text-[0.72rem] text-pe-charcoal/70">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
@@ -1168,7 +1168,7 @@ export default function AccountPage({ locale }: Props) {
                 autoComplete="tel"
                 inputMode="tel"
                 name="whatsappPhone"
-                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? '+56912345678' : '+14155550123'}
               />
               <label className="font-sans text-[0.72rem] text-pe-charcoal/70">
@@ -1178,7 +1178,7 @@ export default function AccountPage({ locale }: Props) {
                 value={profileNotificationChannel}
                 onChange={(event) => setProfileNotificationChannel(event.target.value as NotificationChannelPreference)}
                 disabled={profileLoading || profileSaving}
-                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose disabled:opacity-60"
+                className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
               >
                 <option value="AUTO">{es ? 'Automatico (recomendado)' : 'Automatic (recommended)'}</option>
                 <option value="WHATSAPP">WhatsApp</option>
@@ -1234,7 +1234,7 @@ export default function AccountPage({ locale }: Props) {
                   onChange={(event) => setCurrentPassword(event.target.value)}
                   autoComplete="current-password"
                   name="currentPassword"
-                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose"
                   placeholder={es ? 'Contraseña actual' : 'Current password'}
                 />
                 <input
@@ -1243,7 +1243,7 @@ export default function AccountPage({ locale }: Props) {
                   onChange={(event) => setNewPassword(event.target.value)}
                   autoComplete="new-password"
                   name="newPassword"
-                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose"
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose"
                   placeholder={es ? 'Nueva contraseña' : 'New password'}
                 />
                 <input
@@ -1252,7 +1252,7 @@ export default function AccountPage({ locale }: Props) {
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   autoComplete="new-password"
                   name="confirmPassword"
-                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-none focus:border-pe-rose sm:col-span-2"
+                  className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose sm:col-span-2"
                   placeholder={es ? 'Confirmar nueva contraseña' : 'Confirm new password'}
                 />
               </div>
@@ -1471,7 +1471,7 @@ export default function AccountPage({ locale }: Props) {
                       type="button"
                       onClick={() => setAddressModalOpen(false)}
                       aria-label={es ? 'Cerrar modal' : 'Close modal'}
-                      className="inline-flex h-10 w-10 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose/45"
+                      className="inline-flex h-10 w-10 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose/45"
                     >
                       <X size={17} strokeWidth={1.9} />
                     </button>

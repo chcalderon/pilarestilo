@@ -104,7 +104,7 @@ export default function OrderSummary({
                 aria-label={l.remove}
                 className="shrink-0 w-11 h-11 -mr-2 flex items-center justify-center text-pe-charcoal/60
                   hover:text-pe-black transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+                  focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
               >
                 <X size={16} />
               </button>
@@ -129,7 +129,7 @@ export default function OrderSummary({
               className="flex-1 min-w-0 h-11 border border-pe-charcoal/25 bg-pe-white px-3
                 font-mono text-[0.78rem] uppercase text-pe-black placeholder:font-sans
                 placeholder:normal-case placeholder:text-pe-charcoal/40
-                focus:outline-none focus:border-pe-black"
+                focus:outline-hidden focus:border-pe-black"
             />
             <button
               type="submit"
@@ -137,7 +137,7 @@ export default function OrderSummary({
               className="shrink-0 h-11 px-4 bg-pe-black text-pe-white font-sans text-[0.7rem]
                 tracking-[0.16em] uppercase transition-opacity
                 disabled:opacity-40 disabled:cursor-not-allowed
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+                focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
             >
               {applying ? <Loader2 size={14} className="animate-spin" /> : l.apply}
             </button>
