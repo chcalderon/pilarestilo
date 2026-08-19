@@ -18,6 +18,25 @@
   <description>Pilar Estilo - Extracted Inventory Read Service</description>
 
   <properties>
+    <!--
+      Patch versions pinned over the ones Spring Boot 4.0.7 brings, each because OSV-Scanner
+      reports a CVE in the version the BOM pins. Overriding the property is the mechanism the
+      parent offers for exactly this, and it keeps the rest of the platform where it was tested —
+      a minor bump of Boot itself is a bigger change than the fixes are worth.
+
+      Remove an override once Boot ships a version at or above it; leaving one behind pins the
+      platform to an old library nobody chose.
+
+        netty 4.2.15   -> GHSA-558v-64gr-wgg4 (8.7), GHSA-jppx-w49h-x2qq (8.7) and six more
+        postgresql 42.7.11 -> GHSA-j92g-9f8w-j867 (8.2)
+        jackson 3.1.4 / 2.21.4 -> GHSA-5gvw-p9qm-jgwh, GHSA-mhm7-754m-9p8w (6.5)
+        log4j-api 2.25.4   -> GHSA-qv9r-c865-cp47 (6.3)
+    -->
+    <netty.version>4.2.17.Final</netty.version>
+    <postgresql.version>42.7.13</postgresql.version>
+    <jackson-bom.version>3.1.6</jackson-bom.version>
+    <jackson-2-bom.version>2.21.6</jackson-2-bom.version>
+    <log4j2.version>2.25.5</log4j2.version>
     <!-- Coverage read by SonarQube. Written by jacoco at verify; without this Sonar reports 0%
          and every quality gate on new code passes for the wrong reason. -->
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
