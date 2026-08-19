@@ -25,5 +25,12 @@ public record PublicStoreSettingsDto(
          * cannot factor it into the decision.
          */
         boolean bankTransferAutoCancelEnabled,
-        int bankTransferAutoCancelTimeoutMinutes
+        int bankTransferAutoCancelTimeoutMinutes,
+        /*
+         * The versions the storefront is publishing right now. Exposed so the policy page shows the
+         * same number the consent is stored against: a page that states one version while the
+         * backend records another proves nothing, which is the whole point of storing it.
+         */
+        String privacyPolicyVersion,
+        String termsVersion
 ) {}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
-import { registerUser, googleLogin } from '../../lib/api';
+import { registerUser, googleLogin, acceptMarketingConsent } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
 
 interface Props {
@@ -15,6 +15,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
   const [showPass, setShowPass] = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [merged, setMerged]     = useState(false);
   const { setAuth }              = useAuthStore();
   const googleBtnRef             = useRef<HTMLDivElement>(null);
@@ -91,6 +92,19 @@ export default function RegisterForm({ locale, redirect }: Props) {
     setError('');
     try {
       const data = await registerUser(email, password, fullName);
+
+      /*
+       * Recorded after the account exists, and only if she ticked it. Failing here must not fail
+       * the registration: she has an account either way, and a missing marketing consent is the
+       * safe side of the two.
+       */
+      if (marketing) {
+        try {
+          await acceptMarketingConsent(data.accessToken);
+        } catch {
+          // Nothing to tell her: she is registered, and she can turn it on later from her account.
+        }
+      }
       setAuth(data.accessToken, {
         id: data.userId,
         email: data.email,
@@ -201,6 +215,42 @@ export default function RegisterForm({ locale, redirect }: Props) {
           {error}
         </p>
       )}
+
+      {/* Consent: the terms come with the account, marketing does not */}
+      <div className="flex flex-col gap-3">
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={marketing}
+            onChange={(e) => setMarketing(e.target.checked)}
+            className="mt-0.5 w-4 h-4 shrink-0 accent-pe-rose"
+          />
+          <span className="font-sans text-[0.76rem] leading-relaxed text-pe-charcoal/70">
+            {es
+              ? 'Quiero recibir novedades y prendas nuevas por correo. Puedes desactivarlo cuando quieras.'
+              : 'I want news and new arrivals by email. You can turn this off whenever you like.'}
+          </span>
+        </label>
+        <p className="font-sans text-[0.72rem] leading-relaxed text-pe-charcoal/50">
+          {es ? 'Al crear la cuenta aceptas los ' : 'Creating an account means accepting our '}
+          <a
+            href={`/${locale}/shipping-returns`}
+            className="text-pe-rose-deep hover:underline underline-offset-2"
+          >
+            {es ? 'términos de compra' : 'terms of sale'}
+          </a>
+          {es ? ' y la ' : ' and our '}
+          <a
+            href={`/${locale}/privacy`}
+            className="text-pe-rose-deep hover:underline underline-offset-2"
+          >
+            {es ? 'política de privacidad' : 'privacy policy'}
+          </a>
+          {es
+            ? '. Los correos sobre tus pedidos llegan siempre: son parte del servicio.'
+            : '. Emails about your orders always arrive: they are part of the service.'}
+        </p>
+      </div>
 
       {/* Submit */}
       <button

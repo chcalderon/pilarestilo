@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/Button.astro';
+import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
+import { getPublicStoreSettings } from '../../lib/api';
+
+const { locale } = Astro.params as { locale: Locale };
+
+if (!SUPPORTED_LOCALES.includes(locale)) {
+  return Astro.redirect('/es/privacy');
+}
+
+const isEs = locale === 'es';
+
+/*
+ * The version comes from the shop's settings, not from a constant in this file. Every consent is
+ * stored against the version published at the moment it was given, so a page stating one number
+ * while the backend records another would make both worthless as evidence.
+ */
+const settings = await getPublicStoreSettings();
+const version = settings?.privacyPolicyVersion ?? '2026-08';
+const supportEmail = settings?.supportEmail ?? 'contacto@pilarestilo.com';
+
+/**
+ * Written to be read by the person it is about, which the Ley 21.719 asks for in as many words:
+ * the information has to be intelligible, not merely available. So it says what is kept, why, for
+ * how long, and what she can do about it — in that order, because that is the order somebody asks.
+ */
+const sections = isEs
+  ? [
+      {
+        title: 'Qué guardamos y para qué',
+        rows: [
+          ['Nombre, correo y teléfono', 'Identificarte y escribirte por tu compra'],
+          ['Direcciones de despacho', 'Enviarte el pedido'],
+          ['Pedidos y sus productos', 'Ejecutar la venta y responder por ella'],
+          ['Comprobante de transferencia', 'Verificar tu pago'],
+          ['Boletas', 'Obligación tributaria: se conservan 6 años'],
+          ['Datos bancarios de reembolso', 'Devolverte el dinero; se borran al cerrar el reembolso'],
+          ['Consentimientos', 'Poder probar qué aceptaste y bajo qué versión'],
+        ],
+      },
+    ]
+  : [
+      {
+        title: 'What we keep, and why',
+        rows: [
+          ['Name, email and phone', 'To identify you and write to you about your order'],
+          ['Delivery addresses', 'To ship your order'],
+          ['Orders and their items', 'To carry out the sale and answer for it'],
+          ['Transfer receipt', 'To verify your payment'],
+          ['Tax documents', 'Legal obligation: kept for 6 years'],
+          ['Refund bank details', 'To give your money back; erased once the refund settles'],
+          ['Consents', 'To be able to show what you agreed to, and under which version'],
+        ],
+      },
+    ];
+
+const rights = isEs
+  ? [
+      {
+        title: 'Acceso',
+        body: 'Puedes pedir todo lo que tenemos sobre ti y te lo entregamos como archivo, desde Mi Cuenta.',
+      },
+      {
+        title: 'Rectificación',
+        body: 'Si algo está mal, lo corriges tú misma en tu perfil, o nos escribes y lo corregimos.',
+      },
+      {
+        title: 'Supresión',
+        body: 'Puedes pedir que te borremos. Anonimizamos tu cuenta: dejas de ser identificable. Las boletas se conservan porque la ley tributaria nos obliga a guardarlas seis años, y por eso guardan copia de tu nombre desde que se emiten.',
+      },
+      {
+        title: 'Oposición',
+        body: 'Los correos de marketing se activan y se desactivan cuando quieras, aparte de los correos de tu compra, que son parte del servicio.',
+      },
+    ]
+  : [
+      {
+        title: 'Access',
+        body: 'You can ask for everything we hold about you and we hand it over as a file, from My Account.',
+      },
+      {
+        title: 'Rectification',
+        body: 'If something is wrong you can correct it yourself in your profile, or write to us and we will.',
+      },
+      {
+        title: 'Erasure',
+        body: 'You can ask us to delete you. We anonymise your account: you stop being identifiable. Tax documents are kept because the law obliges us to hold them for six years, which is why they copy your name when they are issued.',
+      },
+      {
+        title: 'Objection',
+        body: 'Marketing emails go on and off whenever you want, separately from the emails about your order, which are part of the service.',
+      },
+    ];
+---
+
+<BaseLayout
+  title={isEs ? 'Política de privacidad' : 'Privacy policy'}
+  description={isEs
+    ? 'Qué datos guarda Pilar Estilo, para qué, y qué puedes hacer con ellos.'
+    : 'What data Pilar Estilo keeps, why, and what you can do about it.'}
+  locale={locale}
+>
+  <div class="bg-pe-offwhite">
+    <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
+      <div class="pe-container py-16 md:py-20 relative z-[1]">
+        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+          {isEs ? 'Tus datos' : 'Your data'}
+        </p>
+        <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
+          {isEs ? 'Política de privacidad' : 'Privacy policy'}
+        </h1>
+        <p class="mt-6 max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+          {isEs
+            ? 'Guardamos lo que hace falta para venderte y responder por la venta, y nada más. Acá está escrito qué, por qué, y qué puedes pedirnos.'
+            : 'We keep what it takes to sell to you and to answer for the sale, and nothing else. Here is what, why, and what you can ask of us.'}
+        </p>
+        <p class="mt-4 font-sans text-[0.72rem] tracking-[0.16em] uppercase text-pe-charcoal/50">
+          {isEs ? 'Versión' : 'Version'} {version}
+        </p>
+      </div>
+    </section>
+
+    {sections.map((section) => (
+      <section class="py-14 md:py-20">
+        <div class="pe-container">
+          <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-8">
+            {section.title}
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <tbody>
+                {section.rows.map(([what, why]) => (
+                  <tr class="border-b border-pe-black/10 align-top">
+                    <th scope="row" class="py-4 pr-8 font-sans text-sm font-medium text-pe-black whitespace-nowrap">
+                      {what}
+                    </th>
+                    <td class="py-4 font-sans text-sm text-pe-charcoal/75 leading-relaxed">{why}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <section class="bg-pe-black py-14 md:py-16">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-3">
+          {isEs ? 'Lo que puedes pedirnos' : 'What you can ask of us'}
+        </h2>
+        <p class="font-sans text-sm text-pe-white/60 leading-relaxed max-w-2xl mb-8 md:mb-10">
+          {isEs
+            ? 'Son derechos que te reconoce la Ley 21.719, no concesiones nuestras. Se ejercen desde Mi Cuenta o escribiéndonos.'
+            : 'These are rights the Ley 21.719 grants you, not favours from us. Exercise them from My Account or by writing to us.'}
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 md:gap-y-10">
+          {rights.map((right) => (
+            <article>
+              <h3 class="font-sans text-[0.72rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
+                {right.title}
+              </h3>
+              <p class="font-sans text-sm text-pe-white/75 leading-relaxed max-w-[62ch]">{right.body}</p>
+            </article>
+          ))}
+        </div>
+        <div class="mt-12 flex flex-wrap gap-3">
+          <Button href={`/${locale}/account`} variant="primary" trailingIcon="arrow-right">
+            {isEs ? 'Ir a mis datos' : 'Go to my data'}
+          </Button>
+          <Button href={`mailto:${supportEmail}`} variant="outline-light">
+            {isEs ? 'Escribirnos' : 'Write to us'}
+          </Button>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-12">
+      <div class="pe-container">
+        <p class="font-sans text-[0.78rem] text-pe-charcoal/60 leading-relaxed max-w-3xl">
+          {isEs
+            ? 'Responsable del tratamiento: Pilar Estilo. Si tienes una duda o un reclamo sobre tus datos, escríbenos a '
+            : 'Data controller: Pilar Estilo. For any question or complaint about your data, write to '}
+          <a href={`mailto:${supportEmail}`} class="underline underline-offset-4 hover:text-pe-rose-deep transition-colors">
+            {supportEmail}
+          </a>
+          {isEs
+            ? '. Si cambiamos esta política publicamos una versión nueva y te pedimos que la aceptes; la que aceptaste queda registrada con su número.'
+            : '. If we change this policy we publish a new version and ask you to accept it; the one you accepted is recorded with its number.'}
+        </p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -430,6 +430,9 @@ export interface PublicStoreSettingsDto {
   shippingPaymentMode?: ShippingPaymentMode;
   bankTransferAutoCancelEnabled?: boolean;
   bankTransferAutoCancelTimeoutMinutes?: number;
+  /** Published version of each text; a consent is stored against the one shown here. */
+  privacyPolicyVersion?: string | null;
+  termsVersion?: string | null;
 }
 
 export interface CustomerCreditDto {
@@ -1800,6 +1803,17 @@ export async function updateSystemSettings(
   return apiFetch<SystemSettingsDto>('/system-settings', {
     method: 'PATCH',
     body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+/**
+ * Opting in to marketing. Separate from registering on purpose: the Ley 21.719 asks for it freely
+ * given and apart from the terms, and bundling the two would make both worthless as evidence.
+ */
+export async function acceptMarketingConsent(token: string): Promise<void> {
+  await fetch(`${API_BASE}/me/privacy/marketing`, {
+    method: 'POST',
     headers: authHeaders(token),
   });
 }

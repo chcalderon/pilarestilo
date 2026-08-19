@@ -104,7 +104,9 @@ public final class SystemSettingsMapper {
                 settings.getShippingPaymentMode().name(),
                 settings.isBankTransferAutoCancelEnabled(),
                 settings.getBankTransferAutoCancelTimeoutMinutes()
-        );
+        ,
+                settings.getPrivacyPolicyVersion(),
+                settings.getTermsVersion());
     }
 
     private static String resolveSupportEmail(SystemSettings settings) {
