@@ -226,6 +226,13 @@ public class SystemSettingsEntity {
     @Column(name = "tax_document_provider", length = 30)
     private String taxDocumentProvider;
 
+    /** Published version of each text; every stored consent points at one of these. */
+    @Column(name = "privacy_policy_version", nullable = false, length = 20)
+    private String privacyPolicyVersion;
+
+    @Column(name = "terms_version", nullable = false, length = 20)
+    private String termsVersion;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -252,6 +259,10 @@ public class SystemSettingsEntity {
     public void setTaxDocumentRequiredBeforeDispatch(Boolean value) { this.taxDocumentRequiredBeforeDispatch = value; }
     public String getTaxDocumentProvider() { return taxDocumentProvider; }
     public void setTaxDocumentProvider(String taxDocumentProvider) { this.taxDocumentProvider = taxDocumentProvider; }
+    public String getPrivacyPolicyVersion() { return privacyPolicyVersion; }
+    public void setPrivacyPolicyVersion(String privacyPolicyVersion) { this.privacyPolicyVersion = privacyPolicyVersion; }
+    public String getTermsVersion() { return termsVersion; }
+    public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
 
     public Short getId() { return id; }
     public void setId(Short id) { this.id = id; }

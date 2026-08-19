@@ -150,6 +150,13 @@ public class UpdateSystemSettingsUseCase {
                         command.taxVatRate(),
                         command.taxDocumentRequiredBeforeDispatch(),
                         command.taxDocumentProvider()),
+                /*
+                 * Carried through untouched: publishing a new version of the privacy policy or the
+                 * terms is a deliberate act with a text behind it, not a field on the settings
+                 * form. Every consent already stored points at the version it was given under, and
+                 * bumping this by accident would silently claim they were given under the new one.
+                 */
+                settings.getPolicyVersions(),
                 command.updatedBy()
         );
 

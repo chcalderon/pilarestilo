@@ -1,5 +1,6 @@
 package com.pilarestilo.systemsettings.infrastructure.persistence.repositories;
 
+import com.pilarestilo.systemsettings.domain.model.PolicyVersions;
 import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
 import com.pilarestilo.systemsettings.domain.model.SystemSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
@@ -104,6 +105,8 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setTaxVatRate(tax.vatRate());
         entity.setTaxDocumentRequiredBeforeDispatch(tax.documentRequiredBeforeDispatch());
         entity.setTaxDocumentProvider(tax.provider().name());
+        entity.setPrivacyPolicyVersion(settings.getPolicyVersions().privacyPolicy());
+        entity.setTermsVersion(settings.getPolicyVersions().terms());
         entity.setUpdatedAt(settings.getUpdatedAt());
         entity.setUpdatedBy(settings.getUpdatedBy());
         return entity;
@@ -191,6 +194,7 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                         entity.getTaxVatRate(),
                         entity.getTaxDocumentRequiredBeforeDispatch(),
                         entity.getTaxDocumentProvider()),
+                PolicyVersions.of(entity.getPrivacyPolicyVersion(), entity.getTermsVersion()),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
         );

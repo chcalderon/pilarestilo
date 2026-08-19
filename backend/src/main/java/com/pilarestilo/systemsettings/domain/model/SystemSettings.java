@@ -79,6 +79,7 @@ public class SystemSettings {
     private int bankTransferAutoCancelTimeoutMinutes;
     private String bankTransferAutoCancelCron;
     private StoreTaxSettings tax;
+    private PolicyVersions policyVersions;
     private Instant updatedAt;
     private String updatedBy;
 
@@ -144,6 +145,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelTimeoutMinutes = 30;
         settings.bankTransferAutoCancelCron = "0 */15 * * * *";
         settings.tax = StoreTaxSettings.empty();
+        settings.policyVersions = PolicyVersions.initial();
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
         return settings;
@@ -212,6 +214,7 @@ public class SystemSettings {
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
             StoreTaxSettings tax,
+            PolicyVersions policyVersions,
             Instant updatedAt,
             String updatedBy
     ) {
@@ -280,6 +283,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         settings.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         settings.tax = tax == null ? StoreTaxSettings.empty() : tax;
+        settings.policyVersions = policyVersions == null ? PolicyVersions.initial() : policyVersions;
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
         settings.updatedBy = normalizeNullable(updatedBy);
@@ -348,6 +352,7 @@ public class SystemSettings {
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
             StoreTaxSettings tax,
+            PolicyVersions policyVersions,
             String updatedBy
     ) {
         this.whatsappNumber = normalizeRequired(whatsappNumber, "WhatsApp number");
@@ -411,6 +416,7 @@ public class SystemSettings {
         this.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         this.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         this.tax = tax == null ? StoreTaxSettings.empty() : tax;
+        this.policyVersions = policyVersions == null ? PolicyVersions.initial() : policyVersions;
         validateConfiguration();
         this.updatedAt = Instant.now();
         this.updatedBy = normalizeNullable(updatedBy);
@@ -712,6 +718,10 @@ public class SystemSettings {
     public int getBankTransferAutoCancelTimeoutMinutes() { return bankTransferAutoCancelTimeoutMinutes; }
     public String getBankTransferAutoCancelCron() { return bankTransferAutoCancelCron; }
     public StoreTaxSettings getTax() { return tax; }
+    public PolicyVersions getPolicyVersions() { return policyVersions; }
+    /** The version a consent recorded now has to be stored against. */
+    public String getPrivacyPolicyVersion() { return policyVersions.privacyPolicy(); }
+    public String getTermsVersion() { return policyVersions.terms(); }
     public Instant getUpdatedAt() { return updatedAt; }
     public String getUpdatedBy() { return updatedBy; }
 }

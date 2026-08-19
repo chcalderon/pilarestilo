@@ -11,6 +11,7 @@ import com.pilarestilo.shared.auth.infrastructure.web.requests.LoginRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RefreshRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RegisterRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.UpdateMyProfileRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,8 +50,24 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthTokenDto register(@RequestBody @Valid RegisterRequest req) {
-        return registerUseCase.execute(req.email(), req.password(), req.fullName());
+    public AuthTokenDto register(@RequestBody @Valid RegisterRequest req,
+                                 HttpServletRequest httpRequest) {
+        return registerUseCase.execute(
+                req.email(), req.password(), req.fullName(),
+                callerAddress(httpRequest),
+                httpRequest.getHeader("User-Agent"));
+    }
+
+    /**
+     * The address the acceptance came from. Caddy sits in front, so the socket address is Caddy;
+     * X-Forwarded-For carries the original, and only its first entry is worth anything.
+     */
+    private static String callerAddress(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/login")

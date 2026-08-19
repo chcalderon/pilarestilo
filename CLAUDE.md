@@ -68,7 +68,20 @@ cd backend && mvn -DskipTests sonar:sonar -Dsonar.host.url=http://localhost:9000
 
 Never deployed: the `quality` profile is off by default **and** `scripts/deploy/vps_deploy.sh`
 strips it from `DEPLOY_PROFILES`, so a profile list copied from a local `.env` cannot start a 2 GB
-Java process on the VPS.
+Java process on the VPS. Its database and indices live in `infra/storage/sonar/`, so the history
+survives `docker compose down -v`.
+
+One command scans everything with coverage:
+
+```bash
+SONAR_TOKEN=<token> bash scripts/quality/sonar-scan.sh
+```
+
+The default quality gate is **PilarEstilo sin smells**, and it applies to every project and every
+language: `new_violations = 0` — a single new smell, bug or vulnerability fails it — plus 60%
+coverage and under 3% duplication on new code, all hotspots reviewed, and maintainability rating A
+overall so the existing backlog cannot grow. Clean as you code: the ~890 smells already there do not
+block, and are burned down deliberately rather than by a gate nobody can turn green.
 
 ---
 

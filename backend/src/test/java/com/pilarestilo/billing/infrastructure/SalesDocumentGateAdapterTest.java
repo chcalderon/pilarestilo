@@ -6,6 +6,7 @@ import com.pilarestilo.billing.domain.ports.SalesDocumentRepository;
 import com.pilarestilo.billing.infrastructure.adapters.SalesDocumentGateAdapter;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.application.TaxBreakdown;
+import com.pilarestilo.systemsettings.domain.model.PolicyVersions;
 import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
 import com.pilarestilo.systemsettings.domain.model.SystemSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
@@ -84,6 +85,7 @@ class SalesDocumentGateAdapterTest {
                 true, 30, "0 */15 * * * *",
                 StoreTaxSettings.of(null, null, null, null, null, null, null,
                         new BigDecimal("19.00"), enabled, "MANUAL"),
+                PolicyVersions.initial(),
                 "test");
         when(systemSettingsRepository.get()).thenReturn(settings);
     }
