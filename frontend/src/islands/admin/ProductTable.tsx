@@ -372,7 +372,7 @@ export default function ProductTable() {
       header: 'Marca',
       sortable: true,
       render: (row) => (
-        <span className="font-sans text-[0.72rem] tracking-[0.1em] uppercase text-pe-rose-deep/80">{row.brand}</span>
+        <span className="font-sans text-[0.72rem] tracking-[0.1em] uppercase text-pe-rose-ink/80">{row.brand}</span>
       ),
     },
     {
@@ -400,13 +400,13 @@ export default function ProductTable() {
         return (
           <div className="flex flex-col leading-tight">
             {discountPct !== null && (
-              <span className="font-sans text-[0.68rem] text-pe-charcoal/45 line-through">
+              <span className="font-sans text-[0.68rem] text-pe-muted line-through">
                 {fmt(row.listPrice!.amount, row.listPrice!.currency)}
               </span>
             )}
             <span className="font-sans text-[0.82rem] text-pe-charcoal">
               {fmt(row.price.amount, row.price.currency)}
-              {discountPct !== null && <span className="ml-1 text-[0.66rem] text-emerald-700">-{discountPct}%</span>}
+              {discountPct !== null && <span className="ml-1 text-[0.66rem] text-pe-positive">-{discountPct}%</span>}
             </span>
           </div>
         );
@@ -430,12 +430,12 @@ export default function ProductTable() {
               {row.stock}
             </span>
             {combinationCount > 0 && (
-              <span className="font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/45">
+              <span className="font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted">
                 {combinationCount} comb.
               </span>
             )}
             {sizesSummary && (
-              <span className="font-sans text-[0.6rem] uppercase tracking-[0.08em] text-pe-charcoal/40">
+              <span className="font-sans text-[0.6rem] uppercase tracking-[0.08em] text-pe-muted">
                 {formatSecondaryAttributeLabel(row)}: {sizesSummary}
               </span>
             )}
@@ -451,7 +451,7 @@ export default function ProductTable() {
         <span
           className={[
             'inline-flex items-center rounded-sm px-2 py-0.5 font-sans text-[0.65rem] uppercase tracking-[0.1em]',
-            row.active ? 'bg-emerald-50 text-emerald-700' : 'bg-pe-cream text-pe-charcoal/45',
+            row.active ? 'bg-emerald-50 text-emerald-800' : 'bg-pe-cream text-pe-muted',
           ].join(' ')}
         >
           {row.active ? 'Si' : 'No'}
@@ -464,7 +464,7 @@ export default function ProductTable() {
       sortable: true,
       width: '110px',
       render: (row) => (
-        <span className="font-sans text-[0.74rem] text-pe-charcoal/65">
+        <span className="font-sans text-[0.74rem] text-pe-muted">
           {fmtCreatedAt(row.createdAt)}
         </span>
       ),
@@ -480,7 +480,7 @@ export default function ProductTable() {
               e.stopPropagation();
               setEditTarget(row);
             }}
-            className={`${actionButtonClass} text-pe-charcoal/55 hover:text-pe-rose-deep`}
+            className={`${actionButtonClass} text-pe-muted hover:text-pe-rose-ink`}
           >
             <PencilLine size={13} />
             Editar
@@ -490,7 +490,7 @@ export default function ProductTable() {
               e.stopPropagation();
               setDeleteConfirm(row.id);
             }}
-            className={`${actionButtonClass} text-pe-charcoal/55 hover:text-red-500`}
+            className={`${actionButtonClass} text-pe-muted hover:text-red-500`}
           >
             <Trash2 size={13} />
             Eliminar
@@ -501,7 +501,7 @@ export default function ProductTable() {
               void handleAssignHeroModel('left', row);
             }}
             disabled={heroAssigningKey !== null}
-            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
           >
             {heroAssigningKey === `${row.id}:left` ? '...' : 'Hero Izq'}
           </button>
@@ -511,7 +511,7 @@ export default function ProductTable() {
               void handleAssignHeroModel('right', row);
             }}
             disabled={heroAssigningKey !== null}
-            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
           >
             {heroAssigningKey === `${row.id}:right` ? '...' : 'Hero Der'}
           </button>
@@ -549,25 +549,25 @@ export default function ProductTable() {
 
     return (
       <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <p className="font-sans text-[0.72rem] text-pe-muted">
           {displayedFrom}-{displayedTo} de {total}
         </p>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="p-1.5 text-pe-charcoal/50 hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
             aria-label="Pagina anterior"
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="font-sans text-[0.78rem] text-pe-charcoal/60 px-2">
+          <span className="font-sans text-[0.78rem] text-pe-muted px-2">
             {page + 1} / {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page + 1 >= totalPages}
-            className="p-1.5 text-pe-charcoal/50 hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
             aria-label="Pagina siguiente"
           >
             <ChevronRight size={16} />
@@ -589,8 +589,8 @@ export default function ProductTable() {
     if (products.length === 0) {
       return (
         <div className="bg-pe-white border border-pe-black/6 p-10 text-center">
-          <PackageSearch size={22} className="mx-auto text-pe-charcoal/30 mb-2" />
-          <p className="font-sans text-[0.82rem] text-pe-charcoal/40">No hay productos que coincidan.</p>
+          <PackageSearch size={22} className="mx-auto text-pe-muted mb-2" />
+          <p className="font-sans text-[0.82rem] text-pe-muted">No hay productos que coincidan.</p>
         </div>
       );
     }
@@ -613,7 +613,7 @@ export default function ProductTable() {
                 <span
                   className={[
                     'absolute top-3 right-3 px-2 py-1 text-[0.62rem] uppercase tracking-[0.12em] font-sans',
-                    row.active ? 'bg-emerald-50 text-emerald-700' : 'bg-pe-cream text-pe-charcoal/50',
+                    row.active ? 'bg-emerald-50 text-emerald-800' : 'bg-pe-cream text-pe-muted',
                   ].join(' ')}
                 >
                   {row.active ? 'Activo' : 'Inactivo'}
@@ -621,27 +621,27 @@ export default function ProductTable() {
               </div>
 
               <div className="p-4">
-                <p className="font-sans text-[0.65rem] uppercase tracking-[0.14em] text-pe-rose-deep/80">{row.brand}</p>
+                <p className="font-sans text-[0.65rem] uppercase tracking-[0.14em] text-pe-rose-ink/80">{row.brand}</p>
                 <h3 className="font-sans text-[0.9rem] text-pe-charcoal font-medium leading-snug mt-1">{row.name}</h3>
 
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <div className="flex flex-col leading-tight">
                     {getDiscountPercent(row) !== null && (
-                      <p className="font-sans text-[0.68rem] text-pe-charcoal/45 line-through">
+                      <p className="font-sans text-[0.68rem] text-pe-muted line-through">
                         {fmt(row.listPrice!.amount, row.listPrice!.currency)}
                       </p>
                     )}
                     <p className="font-sans text-[0.85rem] text-pe-charcoal">
                       {fmt(row.price.amount, row.price.currency)}
                       {getDiscountPercent(row) !== null && (
-                        <span className="ml-1 text-[0.66rem] text-emerald-700">-{getDiscountPercent(row)}%</span>
+                        <span className="ml-1 text-[0.66rem] text-pe-positive">-{getDiscountPercent(row)}%</span>
                       )}
                     </p>
                   </div>
                   <p
                     className={[
                       'font-sans text-[0.75rem] uppercase tracking-[0.1em]',
-                      row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-charcoal/55',
+                      row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-muted',
                     ].join(' ')}
                   >
                     Stock {row.stock}
@@ -649,7 +649,7 @@ export default function ProductTable() {
                     {formatSizesSummary(row) ? ` · ${formatSecondaryAttributeLabel(row)}: ${formatSizesSummary(row)}` : ''}
                   </p>
                 </div>
-                <p className="mt-2 font-sans text-[0.68rem] uppercase tracking-[0.08em] text-pe-charcoal/45">
+                <p className="mt-2 font-sans text-[0.68rem] uppercase tracking-[0.08em] text-pe-muted">
                   Ingreso {fmtCreatedAt(row.createdAt)}
                 </p>
 
@@ -657,7 +657,7 @@ export default function ProductTable() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setEditTarget(row)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-black/12 text-pe-charcoal text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:border-pe-rose/50 hover:text-pe-rose-deep transition-colors"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-black/12 text-pe-charcoal text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors"
                     >
                       <PencilLine size={12} />
                       Editar
@@ -674,14 +674,14 @@ export default function ProductTable() {
                     <button
                       onClick={() => void handleAssignHeroModel('left', row)}
                       disabled={heroAssigningKey !== null}
-                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
                     >
                       {heroAssigningKey === `${row.id}:left` ? 'Asignando...' : 'Hero Izq'}
                     </button>
                     <button
                       onClick={() => void handleAssignHeroModel('right', row)}
                       disabled={heroAssigningKey !== null}
-                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
                     >
                       {heroAssigningKey === `${row.id}:right` ? 'Asignando...' : 'Hero Der'}
                     </button>
@@ -767,7 +767,7 @@ export default function ProductTable() {
         <div className="fixed inset-0 bg-pe-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-pe-white p-6 max-w-sm w-full shadow-2xl border border-pe-black/6">
             <h3 className="font-display text-pe-black text-lg font-light mb-2">Eliminar producto?</h3>
-            <p className="font-sans text-sm text-pe-charcoal/55 mb-6">Esta accion no se puede deshacer.</p>
+            <p className="font-sans text-sm text-pe-muted mb-6">Esta accion no se puede deshacer.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => handleDelete(deleteConfirm)}
@@ -794,19 +794,19 @@ export default function ProductTable() {
           <div className="relative flex-1 min-w-[260px]">
             <Search
               size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-charcoal/35 dark:text-[#D6C8B5]/45 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-muted dark:text-[#D6C8B5]/45 pointer-events-none"
             />
             <input
               type="text"
               placeholder="Buscar por nombre, marca, descripcion, categoria... (ej: vestido activo nuevo)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/45 dark:placeholder:text-[#D6C8B5]/50 focus:outline-hidden focus:border-pe-rose/50 transition-colors"
+              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-muted dark:placeholder:text-[#D6C8B5]/50 focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             />
             {searchInput && (
               <button
                 onClick={() => setSearchInput('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-muted hover:text-pe-rose transition-colors"
                 aria-label="Limpiar busqueda"
                 title="Limpiar"
               >
@@ -817,7 +817,7 @@ export default function ProductTable() {
 
           <button
             onClick={load}
-            className="p-2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+            className="p-2 text-pe-muted hover:text-pe-rose transition-colors"
             aria-label="Actualizar"
             title="Actualizar"
           >
@@ -827,7 +827,7 @@ export default function ProductTable() {
 
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
               Fecha desde
             </span>
             <input
@@ -838,7 +838,7 @@ export default function ProductTable() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
               Fecha hasta
             </span>
             <input
@@ -854,7 +854,7 @@ export default function ProductTable() {
                 setCreatedFrom('');
                 setCreatedTo('');
               }}
-              className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] text-pe-charcoal/50 hover:text-pe-rose transition-colors px-2 py-2"
+              className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] text-pe-muted hover:text-pe-rose transition-colors px-2 py-2"
             >
               <X size={12} />
               Limpiar fechas
@@ -865,14 +865,14 @@ export default function ProductTable() {
         {/* Active filter chips */}
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/40 dark:text-[#D6C8B5]/45">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted dark:text-[#D6C8B5]/45">
               Filtros activos:
             </span>
             {activeChips.map((chip) => (
               <button
                 key={chip.label}
                 onClick={chip.onClear}
-                className="inline-flex items-center gap-1 bg-pe-rose/10 dark:bg-[#E4B8BF]/12 border border-pe-rose/30 dark:border-[#E4B8BF]/30 text-pe-rose-deep dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
+                className="inline-flex items-center gap-1 bg-pe-rose/10 dark:bg-[#E4B8BF]/12 border border-pe-rose/30 dark:border-[#E4B8BF]/30 text-pe-rose-ink dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
                 title={`Quitar filtro ${chip.label}`}
               >
                 {chip.label}
@@ -883,7 +883,7 @@ export default function ProductTable() {
         )}
 
         {heroAssignmentFeedback && (
-          <div className="rounded-xs border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-emerald-700">
+          <div className="rounded-xs border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-pe-positive">
             {heroAssignmentFeedback}
           </div>
         )}
@@ -902,7 +902,7 @@ export default function ProductTable() {
                 onClick={() => setViewMode('grid')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
-                  viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                  viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
                 ].join(' ')}
                 title="Vista grilla"
               >
@@ -913,7 +913,7 @@ export default function ProductTable() {
                 onClick={() => setViewMode('cards')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
-                  viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                  viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
                 ].join(' ')}
                 title="Vista cards"
               >
@@ -923,7 +923,7 @@ export default function ProductTable() {
             </div>
           )}
 
-          <label className="inline-flex items-center gap-2 font-sans text-[0.72rem] text-pe-charcoal/45">
+          <label className="inline-flex items-center gap-2 font-sans text-[0.72rem] text-pe-muted">
             <span>Por página</span>
             <select
               value={pageSize}
@@ -936,11 +936,11 @@ export default function ProductTable() {
             </select>
           </label>
 
-          <span className="font-sans text-[0.72rem] text-pe-charcoal/35">{total} productos</span>
+          <span className="font-sans text-[0.72rem] text-pe-muted">{total} productos</span>
 
           <button
             onClick={() => setEditTarget(null)}
-            className="ml-auto inline-flex items-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+            className="ml-auto inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
           >
             <Plus size={13} />
             Nuevo producto

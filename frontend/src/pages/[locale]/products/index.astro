@@ -110,23 +110,23 @@ const clearUrl = `/${locale}/products`;
       )}
       <div class="relative pe-container py-10">
         <!-- Breadcrumbs -->
-        <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-charcoal/40 mb-3" aria-label="Breadcrumb">
-          <a href={`/${locale}/`} class="hover:text-pe-rose-deep transition-colors duration-200">
+        <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-muted mb-3" aria-label="Breadcrumb">
+          <a href={`/${locale}/`} class="hover:text-pe-rose-ink transition-colors duration-200">
             {locale === 'es' ? 'Inicio' : 'Home'}
           </a>
           <span aria-hidden="true"><Icon name="chevron-right" size={10} /></span>
           {currentCategory ? (
             <>
-              <a href={`/${locale}/products`} class="hover:text-pe-rose-deep transition-colors duration-200">
+              <a href={`/${locale}/products`} class="hover:text-pe-rose-ink transition-colors duration-200">
                 {locale === 'es' ? 'Productos' : 'Products'}
               </a>
               <span aria-hidden="true"><Icon name="chevron-right" size={10} /></span>
-              <span class="text-pe-charcoal/70" aria-current="page">
+              <span class="text-pe-muted" aria-current="page">
                 {locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs)}
               </span>
             </>
           ) : (
-            <span class="text-pe-charcoal/70" aria-current="page">
+            <span class="text-pe-muted" aria-current="page">
               {locale === 'es' ? 'Todos los productos' : 'All products'}
             </span>
           )}
@@ -137,7 +137,7 @@ const clearUrl = `/${locale}/products`;
               ? (locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs))
               : (locale === 'es' ? 'Colección' : 'Collection')}
           </h1>
-          <p class="font-sans text-[0.78rem] text-pe-charcoal/50">
+          <p class="font-sans text-[0.78rem] text-pe-muted">
             {productsPage.totalElements} {locale === 'es' ? 'piezas' : 'pieces'}
           </p>
         </div>
@@ -159,7 +159,7 @@ const clearUrl = `/${locale}/products`;
                 <button
                   type="button"
                   id="products-cat-tree-toggle"
-                  class="inline-flex items-center justify-center w-6 h-6 border border-pe-black/15 text-pe-charcoal/55 hover:text-pe-rose-deep hover:border-pe-rose/40 transition-colors"
+                  class="inline-flex items-center justify-center w-6 h-6 border border-pe-black/15 text-pe-muted hover:text-pe-rose-ink hover:border-pe-rose/40 transition-colors"
                   aria-expanded="true"
                   aria-label={locale === 'es' ? 'Contraer categorías' : 'Collapse categories'}
                   data-label-expand={locale === 'es' ? 'Expandir categorías' : 'Expand categories'}
@@ -174,8 +174,8 @@ const clearUrl = `/${locale}/products`;
                   <a
                     href={`/${locale}/products${condition ? `?condition=${condition}` : ''}${brand ? `${condition ? '&' : '?'}brand=${brand}` : ''}`}
                     class:list={[
-                      'block font-sans text-[0.78rem] py-1 hover:text-pe-rose-deep transition-colors duration-200',
-                      !category ? 'text-pe-rose-deep font-medium' : 'text-pe-charcoal/60',
+                      'block font-sans text-[0.78rem] py-1 hover:text-pe-rose-ink transition-colors duration-200',
+                      !category ? 'text-pe-rose-ink font-medium' : 'text-pe-muted',
                     ]}
                   >
                     {locale === 'es' ? 'Todo' : 'All'}
@@ -214,7 +214,7 @@ const clearUrl = `/${locale}/products`;
                       href={newUrl}
                       class:list={[
                         'flex items-center gap-2 font-sans text-[0.78rem] py-0.5',
-                        isActive ? 'text-pe-rose-deep' : 'text-pe-charcoal/60 hover:text-pe-rose-deep',
+                        isActive ? 'text-pe-rose-ink' : 'text-pe-muted hover:text-pe-rose-ink',
                       ]}
                     >
                       <span class:list={[
@@ -259,7 +259,7 @@ const clearUrl = `/${locale}/products`;
             {activeFilters.length > 0 && (
               <a
                 href={clearUrl}
-                class="font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2 flex items-center gap-1"
+                class="font-sans text-[0.72rem] text-pe-rose-ink hover:underline underline-offset-2 flex items-center gap-1"
               >
                 <Icon name="x" size={11} />
                 {locale === 'es' ? 'Limpiar filtros' : 'Clear filters'}
@@ -296,8 +296,8 @@ const clearUrl = `/${locale}/products`;
                   class:list={[
                     'font-sans text-xs w-8 h-8 flex items-center justify-center border transition-colors duration-200',
                     i === productsPage.number
-                      ? 'bg-pe-rose text-pe-offwhite border-pe-rose'
-                      : 'border-pe-black/15 text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep',
+                      ? 'bg-pe-rose-action text-pe-offwhite border-pe-rose'
+                      : 'border-pe-black/15 text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink',
                   ]}
                   aria-current={i === productsPage.number ? 'page' : undefined}
                 >

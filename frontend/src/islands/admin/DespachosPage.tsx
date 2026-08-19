@@ -95,15 +95,15 @@ function DispatchOrderHeader({ dispatch, compact = false }: { dispatch: QueueDis
         <p className="text-sm text-pe-charcoal truncate">
           {summary?.firstItemName ?? 'Pedido sin detalle'}
           {summary?.firstItemVariant && (
-            <span className="text-pe-charcoal/60"> · {summary.firstItemVariant}</span>
+            <span className="text-pe-muted"> · {summary.firstItemVariant}</span>
           )}
           {extraItems > 0 && (
-            <span className="text-pe-charcoal/60"> +{extraItems} más</span>
+            <span className="text-pe-muted"> +{extraItems} más</span>
           )}
         </p>
-        <p className="text-xs text-pe-charcoal/60 tabular-nums">
+        <p className="text-xs text-pe-muted tabular-nums">
           {reference}
-          {total && <span className="text-pe-charcoal/45"> · {total}</span>}
+          {total && <span className="text-pe-muted"> · {total}</span>}
         </p>
         {summary?.needsSalesDocument && (
           // Words, not a colour: this is the difference between a parcel that can leave and one
@@ -336,7 +336,7 @@ export default function DespachosPage() {
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'operacion'
                 ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
-                : 'border-[#EDE3D8] text-pe-charcoal/60'
+                : 'border-[#EDE3D8] text-pe-muted'
             }`}
           >
             Operación
@@ -346,7 +346,7 @@ export default function DespachosPage() {
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'historial'
                 ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
-                : 'border-[#EDE3D8] text-pe-charcoal/60'
+                : 'border-[#EDE3D8] text-pe-muted'
             }`}
           >
             Historial
@@ -357,7 +357,7 @@ export default function DespachosPage() {
       {mode === 'operacion' && (
         <>
           {loadingQueue ? (
-            <div className="flex items-center gap-2 text-sm text-pe-charcoal/60">
+            <div className="flex items-center gap-2 text-sm text-pe-muted">
               <Loader2 size={16} className="animate-spin" />
               Cargando despachos...
             </div>
@@ -373,7 +373,7 @@ export default function DespachosPage() {
               )}
               {inProgress.length > 0 && (
                 <section>
-                  <h2 className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 mb-3">En progreso</h2>
+                  <h2 className="text-[10px] tracking-widest uppercase text-pe-muted mb-3">En progreso</h2>
                   <ul className="space-y-3">
                     {inProgress.map((d) => (
                       <li key={d.id} className="border border-[#EDE3D8] p-4">
@@ -388,7 +388,7 @@ export default function DespachosPage() {
                               className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]"
                             />
                             {d.orderShippingCourierName && (
-                              <p className="text-[11px] text-pe-charcoal/55">
+                              <p className="text-[11px] text-pe-muted">
                                 Courier configurado en la orden: <span className="font-medium">{d.orderShippingCourierName}</span>
                               </p>
                             )}
@@ -412,13 +412,13 @@ export default function DespachosPage() {
                                 onClick={() => {
                                   void openOrderDetail(d.orderId);
                                 }}
-                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                               >
                                 Ver detalle
                               </button>
                               <button
                                 onClick={() => setActive(null)}
-                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                               >
                                 Cancelar
                               </button>
@@ -435,7 +435,7 @@ export default function DespachosPage() {
                             <button
                               onClick={() => unclaim(d.id)}
                               disabled={busy}
-                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                             >
                               Liberar
                             </button>
@@ -443,7 +443,7 @@ export default function DespachosPage() {
                               onClick={() => {
                                 void openOrderDetail(d.orderId);
                               }}
-                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                             >
                               Ver detalle
                             </button>
@@ -456,10 +456,10 @@ export default function DespachosPage() {
               )}
 
               <section>
-                <h2 className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 mb-3">
+                <h2 className="text-[10px] tracking-widest uppercase text-pe-muted mb-3">
                   Pendientes ({pending.length})
                 </h2>
-                {pending.length === 0 && <p className="text-pe-charcoal/40 text-sm">Sin órdenes pendientes.</p>}
+                {pending.length === 0 && <p className="text-pe-muted text-sm">Sin órdenes pendientes.</p>}
                 <ul className="space-y-2">
                   {pending.map((d) => (
                     <li key={d.id} className="border border-[#EDE3D8] p-4 flex items-center justify-between">
@@ -469,7 +469,7 @@ export default function DespachosPage() {
                           onClick={() => {
                             void openOrderDetail(d.orderId);
                           }}
-                          className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                          className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                         >
                           Ver detalle
                         </button>
@@ -497,7 +497,7 @@ export default function DespachosPage() {
 
               {done.length > 0 && (
                 <section>
-                  <h2 className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 mb-3">Completados</h2>
+                  <h2 className="text-[10px] tracking-widest uppercase text-pe-muted mb-3">Completados</h2>
                   <ul className="space-y-2">
                     {done.map((d) => (
                       <li key={d.id} className="border border-[#EDE3D8] p-3 flex items-center justify-between gap-3 text-sm">
@@ -506,7 +506,7 @@ export default function DespachosPage() {
                           <span
                             className={`text-xs tracking-widest uppercase ${
                               d.status === 'DELIVERED'
-                                ? 'text-green-600'
+                                ? 'text-pe-positive'
                                 : d.status === 'FAILED'
                                   ? 'text-red-500'
                                   : 'text-blue-500'
@@ -518,7 +518,7 @@ export default function DespachosPage() {
                             onClick={() => {
                               void openOrderDetail(d.orderId);
                             }}
-                            className="border border-[#EDE3D8] px-3 py-1 text-xs tracking-widest uppercase text-pe-charcoal/60 hover:bg-gray-50"
+                            className="border border-[#EDE3D8] px-3 py-1 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                           >
                             Ver detalle
                           </button>
@@ -536,7 +536,7 @@ export default function DespachosPage() {
       {mode === 'historial' && canViewHistory && (
         <section className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <label className="flex flex-col gap-1 text-xs text-pe-charcoal/60">
+            <label className="flex flex-col gap-1 text-xs text-pe-muted">
               Desde
               <input
                 type="date"
@@ -545,7 +545,7 @@ export default function DespachosPage() {
                 className="border border-[#EDE3D8] px-3 py-2 text-sm"
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-pe-charcoal/60">
+            <label className="flex flex-col gap-1 text-xs text-pe-muted">
               Hasta
               <input
                 type="date"
@@ -556,7 +556,7 @@ export default function DespachosPage() {
             </label>
             <div className="md:col-span-2 flex items-end gap-2">
               <div className="relative flex-1">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-charcoal/40" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-muted" />
                 <input
                   type="text"
                   value={searchTerm}
@@ -580,7 +580,7 @@ export default function DespachosPage() {
           {historyError && <p className="text-sm text-red-600">{historyError}</p>}
 
           {historyLoading ? (
-            <div className="flex items-center gap-2 text-sm text-pe-charcoal/60">
+            <div className="flex items-center gap-2 text-sm text-pe-muted">
               <Loader2 size={16} className="animate-spin" />
               Cargando historial...
             </div>
@@ -602,7 +602,7 @@ export default function DespachosPage() {
                 <tbody>
                   {searchedHistoryRows.length === 0 && (
                     <tr>
-                      <td className="px-3 py-4 text-pe-charcoal/50" colSpan={8}>
+                      <td className="px-3 py-4 text-pe-muted" colSpan={8}>
                         Sin resultados para el rango/filtro actual.
                       </td>
                     </tr>
@@ -611,15 +611,15 @@ export default function DespachosPage() {
                     const carrierOverride = resolveCarrierOverride(row);
                     return (
                     <tr key={row.id} className="border-t border-[#EDE3D8]">
-                      <td className="px-3 py-2 text-pe-charcoal/70">
+                      <td className="px-3 py-2 text-pe-muted">
                         {row.orderCreatedAt ? new Date(row.orderCreatedAt).toLocaleString('es-CL') : '-'}
                       </td>
-                      <td className="px-3 py-2 text-pe-charcoal/70">
+                      <td className="px-3 py-2 text-pe-muted">
                         {new Date(row.createdAt).toLocaleString('es-CL')}
                       </td>
-                      <td className="px-3 py-2 font-mono text-pe-charcoal/70 tabular-nums">{row.orderReference ?? row.orderId.substring(0, 8)}</td>
+                      <td className="px-3 py-2 font-mono text-pe-muted tabular-nums">{row.orderReference ?? row.orderId.substring(0, 8)}</td>
                       <td className="px-3 py-2">{row.status}</td>
-                      <td className="px-3 py-2 text-pe-charcoal/70">
+                      <td className="px-3 py-2 text-pe-muted">
                         <div className="flex flex-col gap-0.5">
                           <span>{row.carrier || '-'} {row.trackingCode ? `(${row.trackingCode})` : ''}</span>
                           {carrierOverride && (
@@ -630,8 +630,8 @@ export default function DespachosPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-pe-charcoal/70">{row.dispatchedBy || 'Sin asignar'}</td>
-                      <td className="px-3 py-2 text-pe-charcoal/70">{row.soldBy || 'Web'}</td>
+                      <td className="px-3 py-2 text-pe-muted">{row.dispatchedBy || 'Sin asignar'}</td>
+                      <td className="px-3 py-2 text-pe-muted">{row.soldBy || 'Web'}</td>
                       <td className="px-3 py-2">
                         <button
                           onClick={() => {
@@ -651,7 +651,7 @@ export default function DespachosPage() {
           )}
 
           <div className="flex items-center justify-between">
-            <p className="text-xs text-pe-charcoal/50">
+            <p className="text-xs text-pe-muted">
               Página {historyPage + 1} de {Math.max(historyTotalPages, 1)}
             </p>
             <div className="flex gap-2">
@@ -687,7 +687,7 @@ export default function DespachosPage() {
               <h3 className="text-base font-medium text-pe-charcoal">Detalle de orden</h3>
               <button
                 onClick={() => setOrderModalOpen(false)}
-                className="p-1 text-pe-charcoal/60 hover:text-pe-charcoal"
+                className="p-1 text-pe-muted hover:text-pe-charcoal"
                 aria-label="Cerrar"
               >
                 <X size={18} />
@@ -695,7 +695,7 @@ export default function DespachosPage() {
             </div>
             <div className="p-4">
               {orderDetailLoading && (
-                <div className="flex items-center gap-2 text-sm text-pe-charcoal/60">
+                <div className="flex items-center gap-2 text-sm text-pe-muted">
                   <Loader2 size={16} className="animate-spin" />
                   Cargando orden...
                 </div>
@@ -703,7 +703,7 @@ export default function DespachosPage() {
               {orderDetailError && <p className="text-sm text-red-600">{orderDetailError}</p>}
               {orderDetail && (
                 <div className="space-y-3">
-                  <div className="text-xs text-pe-charcoal/70">
+                  <div className="text-xs text-pe-muted">
                     <p><span className="font-semibold">Referencia:</span> <span className="tabular-nums">{orderDetail.publicReference ?? orderDetail.id}</span></p>
                     <p><span className="font-semibold">Estado:</span> {orderStatusLabel(orderDetail.status)}</p>
                     <p><span className="font-semibold">Fecha:</span> {new Date(orderDetail.createdAt).toLocaleString('es-CL')}</p>
@@ -715,7 +715,7 @@ export default function DespachosPage() {
                     {orderDetail.items.map((item) => (
                       <li key={item.id} className="px-3 py-2 flex items-center justify-between gap-2 text-sm">
                         <span>{item.productName} x{item.quantity}</span>
-                        <span className="text-pe-charcoal/70">
+                        <span className="text-pe-muted">
                           {new Intl.NumberFormat('es-CL', {
                             style: 'currency',
                             currency: item.unitPrice.currency,

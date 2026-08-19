@@ -109,10 +109,10 @@ export default function AddToCartButton({
           outOfStock
             ? 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed'
             : verifying
-            ? 'bg-pe-gold/50 text-pe-black cursor-wait'
+            ? 'bg-pe-gold/50 text-pe-on-light cursor-wait'
             : added
-            ? 'bg-pe-gold/80 text-pe-black'
-            : 'bg-pe-gold text-pe-black hover:bg-pe-gold/90 active:scale-95',
+            ? 'bg-pe-gold/80 text-pe-on-light'
+            : 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95',
         ].join(' ')}
       >
         {outOfStock

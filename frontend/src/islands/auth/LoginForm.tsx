@@ -114,7 +114,7 @@ export default function LoginForm({ locale, redirect }: Props) {
           <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
             {es ? '¡Cuentas unificadas!' : 'Accounts linked!'}
           </p>
-          <p className="font-sans text-[0.78rem] text-pe-charcoal/55 mt-1.5">
+          <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5">
             {es
               ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
               : 'Your existing account has been linked with Google. Redirecting…'}
@@ -128,7 +128,7 @@ export default function LoginForm({ locale, redirect }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {/* Email */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
+        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Correo electrónico' : 'Email'}
         </label>
         <input
@@ -137,14 +137,14 @@ export default function LoginForm({ locale, redirect }: Props) {
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-muted"
           placeholder={es ? 'tu@email.com' : 'you@email.com'}
         />
       </div>
 
       {/* Password */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
+        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Contraseña' : 'Password'}
         </label>
         <div className="relative">
@@ -160,7 +160,7 @@ export default function LoginForm({ locale, redirect }: Props) {
           <button
             type="button"
             onClick={() => setShowPass(v => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose transition-colors"
             aria-label={showPass ? (es ? 'Ocultar contraseña' : 'Hide password') : (es ? 'Mostrar contraseña' : 'Show password')}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -180,7 +180,7 @@ export default function LoginForm({ locale, redirect }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-action-action-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
         {loading ? (es ? 'Ingresando…' : 'Signing in…') : (es ? 'Iniciar sesión' : 'Sign in')}
@@ -189,7 +189,7 @@ export default function LoginForm({ locale, redirect }: Props) {
       {/* Google Sign-In */}
       <div className="flex items-center gap-3 my-1">
         <div className="flex-1 h-px bg-pe-black/10"></div>
-        <span className="font-sans text-[0.7rem] tracking-[0.12em] uppercase text-pe-charcoal/40">
+        <span className="font-sans text-[0.7rem] tracking-[0.12em] uppercase text-pe-muted">
           {es ? 'o continuar con' : 'or continue with'}
         </span>
         <div className="flex-1 h-px bg-pe-black/10"></div>
@@ -197,11 +197,11 @@ export default function LoginForm({ locale, redirect }: Props) {
       <div ref={googleBtnRef} className="flex justify-center"></div>
 
       {/* Register link */}
-      <p className="font-sans text-[0.78rem] text-pe-charcoal/50 text-center">
+      <p className="font-sans text-[0.78rem] text-pe-muted text-center">
         {es ? '¿No tienes cuenta?' : "Don't have an account?"}{' '}
         <a
           href={`/${locale}/auth/register`}
-          className="text-pe-rose-deep hover:underline underline-offset-2"
+          className="text-pe-rose-ink hover:underline underline-offset-2"
         >
           {es ? 'Regístrate' : 'Register'}
         </a>

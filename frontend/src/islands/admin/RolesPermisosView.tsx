@@ -77,9 +77,9 @@ export default function RolesPermisosView() {
   if (!canRead) {
     return (
       <div className="border border-pe-black/10 bg-pe-white p-6">
-        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Roles y permisos</p>
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-muted">Roles y permisos</p>
         <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
-        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-muted">
           Tu sesion no tiene capacidad para consultar la matriz RBAC. Si este acceso deberia estar disponible,
           inicia sesion de nuevo o solicita habilitacion al equipo administrador.
         </p>
@@ -87,13 +87,13 @@ export default function RolesPermisosView() {
     );
   }
 
-  if (loading) return <p className="text-pe-charcoal/50 text-sm">Cargando...</p>;
+  if (loading) return <p className="text-pe-muted text-sm">Cargando...</p>;
 
   return (
     <div className="space-y-6">
       {!canManage && (
         <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             Modo consulta. Puedes revisar la matriz vigente, pero los cambios solo estan habilitados para sesiones con <span className="font-mono text-[0.7rem]">roles.manage</span>.
           </p>
         </div>
@@ -102,16 +102,16 @@ export default function RolesPermisosView() {
         <table className="text-sm w-full border-collapse">
           <thead>
             <tr>
-              <th className="text-left py-2 pr-4 font-sans text-[0.65rem] tracking-widest uppercase text-pe-charcoal/40">Vista</th>
+              <th className="text-left py-2 pr-4 font-sans text-[0.65rem] tracking-widest uppercase text-pe-muted">Vista</th>
               {EDITABLE_ROLES.map(role => (
-                <th key={role} className="text-center py-2 px-3 font-sans text-[0.65rem] tracking-widest uppercase text-pe-charcoal/40">{role}</th>
+                <th key={role} className="text-center py-2 px-3 font-sans text-[0.65rem] tracking-widest uppercase text-pe-muted">{role}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {VIEW_KEYS.map(viewKey => (
               <tr key={viewKey} className="border-t border-pe-sand/30">
-                <td className="py-2 pr-4 text-pe-charcoal/70">{VIEW_LABELS[viewKey]}</td>
+                <td className="py-2 pr-4 text-pe-muted">{VIEW_LABELS[viewKey]}</td>
                 {EDITABLE_ROLES.map(role => (
                   <td key={role} className="py-2 px-3 text-center">
                     <input
@@ -130,7 +130,7 @@ export default function RolesPermisosView() {
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      {saved && <p className="text-green-600 text-sm">Permisos guardados. Los cambios aplican en el próximo inicio de sesión.</p>}
+      {saved && <p className="text-pe-positive text-sm">Permisos guardados. Los cambios aplican en el próximo inicio de sesión.</p>}
 
       <button
         onClick={save}

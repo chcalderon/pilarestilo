@@ -132,7 +132,7 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-charcoal/55
+        className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-muted
           underline underline-offset-2 hover:text-pe-rose transition-colors
           focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
       >

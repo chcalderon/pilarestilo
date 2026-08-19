@@ -191,7 +191,7 @@ export default function CartPopover({ locale }: Props) {
         ))}
         {hiddenCount > 0 && (
           <div className="px-4 py-2 text-center border-b border-pe-charcoal/8">
-            <span className="font-sans text-[0.62rem] text-pe-charcoal/40 tracking-wide">
+            <span className="font-sans text-[0.62rem] text-pe-muted tracking-wide">
               ...y {hiddenCount} producto{hiddenCount !== 1 ? 's' : ''} más
             </span>
           </div>
@@ -218,12 +218,12 @@ export default function CartPopover({ locale }: Props) {
       aria-expanded={open}
       aria-controls="cart-popover-content"
       aria-label={cartLabel}
-      className="relative flex items-center gap-1 text-pe-white/40 hover:text-pe-rose-soft transition-colors duration-200 p-1"
+      className="relative flex items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
     >
       <ShoppingBag size={20} strokeWidth={1.5} />
       {totalItems > 0 && (
         <span
-          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-pe-gold text-pe-black text-[10px] font-bold leading-none"
+          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-pe-gold text-pe-on-light text-[10px] font-bold leading-none"
           aria-hidden="true"
         >
           {totalItems > 99 ? '99+' : totalItems}
@@ -273,7 +273,7 @@ export default function CartPopover({ locale }: Props) {
                     autoFocus
                     onClick={closePopover}
                     aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
-                    className="text-pe-charcoal/40 hover:text-pe-charcoal transition-colors p-1"
+                    className="text-pe-muted hover:text-pe-charcoal transition-colors p-1"
                   >
                     <X size={18} />
                   </button>
@@ -286,7 +286,7 @@ export default function CartPopover({ locale }: Props) {
                 {items.length > 0 && (
                   <div className="border-t border-pe-charcoal/10 px-4 py-4 flex-shrink-0">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/70">
+                      <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">
                         Subtotal
                       </span>
                       <span className="font-sans text-sm font-medium text-pe-black">
@@ -296,7 +296,7 @@ export default function CartPopover({ locale }: Props) {
                     <a
                       href={viewCartHref}
                       onClick={closePopover}
-                      className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose text-pe-white hover:bg-pe-rose-deep transition-colors duration-200"
+                      className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200"
                     >
                       {locale === 'es' ? 'Ver carrito' : 'View cart'}
                     </a>
@@ -342,7 +342,7 @@ export default function CartPopover({ locale }: Props) {
                 <button
                   onClick={closePopover}
                   aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
-                  className="text-pe-charcoal/40 hover:text-pe-charcoal transition-colors"
+                  className="text-pe-muted hover:text-pe-charcoal transition-colors"
                 >
                   <X size={15} />
                 </button>
@@ -355,7 +355,7 @@ export default function CartPopover({ locale }: Props) {
               {items.length > 0 && (
                 <div className="border-t border-pe-charcoal/10 px-4 py-3 flex-shrink-0">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-sans text-xs tracking-widest uppercase text-pe-charcoal/70">
+                    <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">
                       Subtotal
                     </span>
                     <span className="font-sans text-sm font-medium text-pe-black">
@@ -365,7 +365,7 @@ export default function CartPopover({ locale }: Props) {
                   <a
                     href={viewCartHref}
                     onClick={closePopover}
-                    className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-2.5 bg-pe-rose text-pe-white hover:bg-pe-rose-deep transition-colors duration-200"
+                    className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-2.5 bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200"
                   >
                     {locale === 'es' ? 'Ver carrito' : 'View cart'}
                   </a>

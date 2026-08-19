@@ -221,7 +221,7 @@ export default function ShippingStep({
   return (
     <div className="bg-pe-white p-6">
       <h2 className="font-display text-pe-black text-xl font-semibold mb-6 flex items-center gap-2">
-        <Truck size={18} className="text-pe-charcoal/60" aria-hidden="true" />
+        <Truck size={18} className="text-pe-muted" aria-hidden="true" />
         {l.heading}
       </h2>
 
@@ -229,7 +229,7 @@ export default function ShippingStep({
         <div>
           <label
             htmlFor="checkout-zone"
-            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2"
+            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2"
           >
             {l.zone}
           </label>
@@ -250,7 +250,7 @@ export default function ShippingStep({
         <div>
           <label
             htmlFor="checkout-courier"
-            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2"
+            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2"
           >
             {l.courier}
           </label>
@@ -270,16 +270,16 @@ export default function ShippingStep({
       </div>
 
       <fieldset className="mb-6">
-        <legend className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-3">
+        <legend className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-3">
           {l.addresses}
         </legend>
 
         {book.loading ? (
           <div className="flex items-center gap-2 py-4">
-            <Loader2 size={16} className="animate-spin text-pe-charcoal/50" />
+            <Loader2 size={16} className="animate-spin text-pe-muted" />
           </div>
         ) : book.addresses.length === 0 ? (
-          <p className="font-sans text-sm text-pe-charcoal/70 py-2">{l.noAddresses}</p>
+          <p className="font-sans text-sm text-pe-muted py-2">{l.noAddresses}</p>
         ) : (
           <div className="space-y-2">
             {book.addresses.map((address) => {
@@ -310,15 +310,15 @@ export default function ShippingStep({
                         {address.label}
                       </span>
                       {address.isDefault && (
-                        <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-deep">
+                        <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
                           {l.defaultBadge}
                         </span>
                       )}
                     </span>
-                    <span className="block font-sans text-[0.78rem] text-pe-charcoal/75 mt-0.5">
+                    <span className="block font-sans text-[0.78rem] text-pe-charcoal mt-0.5">
                       {address.recipientName} · {address.phone}
                     </span>
-                    <span className="block font-sans text-[0.78rem] text-pe-charcoal/70">
+                    <span className="block font-sans text-[0.78rem] text-pe-muted">
                       {address.line1}
                       {address.line2 ? `, ${address.line2}` : ''} — {address.comuna}, {address.city}
                     </span>
@@ -330,7 +330,7 @@ export default function ShippingStep({
                       openEdit(address);
                     }}
                     className="shrink-0 min-h-11 px-2 font-sans text-[0.62rem] tracking-wider
-                      uppercase text-pe-charcoal/60 hover:text-pe-black transition-colors
+                      uppercase text-pe-muted hover:text-pe-black transition-colors
                       focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                   >
                     {l.edit}

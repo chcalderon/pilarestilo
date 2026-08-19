@@ -326,7 +326,7 @@ export default function CheckoutPage({ locale }: Props) {
     return (
       <div className="py-20 bg-pe-beige min-h-screen">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <p className="font-sans text-pe-charcoal/75 mb-6">{l.emptyCart}</p>
+          <p className="font-sans text-pe-charcoal mb-6">{l.emptyCart}</p>
           <a
             href={`/${locale}/products`}
             className="inline-flex items-center min-h-11 px-6 bg-pe-black text-pe-white
@@ -345,7 +345,7 @@ export default function CheckoutPage({ locale }: Props) {
         <a
           href={`/${locale}/cart`}
           className="inline-flex items-center gap-2 min-h-11 font-sans text-[0.7rem]
-            tracking-[0.16em] uppercase text-pe-charcoal/75 hover:text-pe-black transition-colors"
+            tracking-[0.16em] uppercase text-pe-charcoal hover:text-pe-black transition-colors"
         >
           <ArrowLeft size={14} />
           {l.backToCart}
@@ -366,8 +366,8 @@ export default function CheckoutPage({ locale }: Props) {
 
         {config.loading ? (
           <div className="bg-pe-white p-12 flex items-center justify-center gap-3">
-            <Loader2 size={18} className="animate-spin text-pe-charcoal/60" />
-            <span className="font-sans text-sm text-pe-charcoal/75">{l.loading}</span>
+            <Loader2 size={18} className="animate-spin text-pe-muted" />
+            <span className="font-sans text-sm text-pe-charcoal">{l.loading}</span>
           </div>
         ) : config.unavailable ? (
           <div

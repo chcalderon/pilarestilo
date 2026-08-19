@@ -47,7 +47,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
         <div>
           {item.brand && (
-            <p className="font-sans text-[0.6rem] tracking-[0.22em] uppercase text-pe-gold mb-0.5 truncate">
+            <p className="font-sans text-[0.6rem] tracking-[0.22em] uppercase text-pe-gold-ink mb-0.5 truncate">
               {item.brand}
             </p>
           )}
@@ -59,7 +59,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
             {item.name}
           </a>
           {item.variantLabel && (
-            <p className="font-sans text-[0.63rem] text-pe-charcoal/55 mt-0.5 truncate">
+            <p className="font-sans text-[0.63rem] text-pe-muted mt-0.5 truncate">
               {item.variantLabel}
             </p>
           )}
@@ -67,7 +67,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
 
         <div className="flex items-end justify-between mt-1.5">
           <div>
-            <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
+            <p className="font-sans text-[0.68rem] text-pe-muted">
               {locale === 'es' ? 'Cant' : 'Qty'}: {item.quantity}
             </p>
             <p className="font-sans text-[0.75rem] font-medium text-pe-black">
@@ -78,7 +78,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
             type="button"
             onClick={onRemove}
             aria-label={`${locale === 'es' ? 'Eliminar' : 'Remove'} ${item.name}`}
-            className="text-pe-charcoal/45 hover:text-pe-rose transition-colors duration-200 p-1 -mr-1"
+            className="text-pe-muted hover:text-pe-rose transition-colors duration-200 p-1 -mr-1"
           >
             <Trash2 size={13} strokeWidth={1.5} />
           </button>

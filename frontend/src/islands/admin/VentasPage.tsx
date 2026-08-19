@@ -38,7 +38,7 @@ function DocumentChip({ sale }: { sale: SaleSummaryDto }) {
   const documentable = ['PAID', 'PREPARING_ORDER', 'SHIPPED', 'DELIVERED'].includes(sale.orderStatus);
   if (sale.documentFolio) {
     return (
-      <span className="inline-flex items-center text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-green-50 text-green-700">
+      <span className="inline-flex items-center text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-green-50 text-green-800">
         Boleta {sale.documentFolio}
       </span>
     );

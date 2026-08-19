@@ -29,13 +29,13 @@ function fmtDate(d: string) {
 
 function StatusBadge({ dto }: { dto: DiscountCodeDto }) {
   if (!dto.active) return (
-    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-charcoal/40 px-1.5 py-0.5">Inactivo</span>
+    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-muted px-1.5 py-0.5">Inactivo</span>
   );
   if (isExpired(dto)) return (
     <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-red-50 text-red-400 px-1.5 py-0.5">Caducado</span>
   );
   return (
-    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-green-50 text-green-600 px-1.5 py-0.5">Vigente</span>
+    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-green-50 text-green-800 px-1.5 py-0.5">Vigente</span>
   );
 }
 
@@ -145,7 +145,7 @@ export default function DiscountCodeManager() {
                 'font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 transition-colors',
                 tab === t.key
                   ? 'bg-[#3A3A3A] text-white'
-                  : 'border border-pe-black/12 text-pe-charcoal/55 hover:border-pe-charcoal/30',
+                  : 'border border-pe-black/12 text-pe-muted hover:border-pe-charcoal/30',
               ].join(' ')}
             >
               {t.label}
@@ -154,7 +154,7 @@ export default function DiscountCodeManager() {
         </div>
         <button
           onClick={() => { setShowForm(v => !v); setError(''); }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors"
         >
           {showForm ? <X size={13} /> : <Plus size={13} />}
           {showForm ? 'Cancelar' : 'Nuevo código'}
@@ -164,15 +164,15 @@ export default function DiscountCodeManager() {
       {/* Create form */}
       {showForm && (
         <div className="mb-4 bg-pe-cream/50 border border-pe-black/8 p-4">
-          <p className="font-sans text-[0.65rem] uppercase tracking-wider text-pe-charcoal/40 mb-3">
+          <p className="font-sans text-[0.65rem] uppercase tracking-wider text-pe-muted mb-3">
             Nuevo código de descuento
           </p>
-          {error && <p className="font-sans text-[0.72rem] text-pe-rose-deep mb-2">{error}</p>}
+          {error && <p className="font-sans text-[0.72rem] text-pe-rose-ink mb-2">{error}</p>}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {/* Code */}
             <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-1">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Código *</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Código *</label>
               <div className="flex gap-1">
                 <input
                   className={INPUT_CLASS}
@@ -184,7 +184,7 @@ export default function DiscountCodeManager() {
                   type="button"
                   onClick={handleSuggest}
                   disabled={suggesting}
-                  className="shrink-0 px-2 border border-pe-black/12 text-pe-charcoal/50 hover:text-pe-rose hover:border-pe-rose/40 transition-colors"
+                  className="shrink-0 px-2 border border-pe-black/12 text-pe-muted hover:text-pe-rose hover:border-pe-rose/40 transition-colors"
                   title="Auto-sugerir código"
                 >
                   {suggesting ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
@@ -194,7 +194,7 @@ export default function DiscountCodeManager() {
 
             {/* Type */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Tipo *</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Tipo *</label>
               <select
                 className={INPUT_CLASS}
                 value={form.type}
@@ -207,7 +207,7 @@ export default function DiscountCodeManager() {
 
             {/* Value */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
                 Valor * {form.type === 'PERCENTAGE' ? '(%)' : '($)'}
               </label>
               <input
@@ -223,7 +223,7 @@ export default function DiscountCodeManager() {
 
             {/* Min order amount */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Monto mínimo</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Monto mínimo</label>
               <input
                 type="number"
                 min="0"
@@ -235,7 +235,7 @@ export default function DiscountCodeManager() {
 
             {/* Valid from */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Válido desde *</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido desde *</label>
               <input
                 type="date"
                 className={INPUT_CLASS}
@@ -246,7 +246,7 @@ export default function DiscountCodeManager() {
 
             {/* Valid until */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Válido hasta *</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido hasta *</label>
               <input
                 type="date"
                 className={INPUT_CLASS}
@@ -257,7 +257,7 @@ export default function DiscountCodeManager() {
 
             {/* Max uses */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Usos máximos</label>
+              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Usos máximos</label>
               <input
                 type="number"
                 min="1"
@@ -269,17 +269,17 @@ export default function DiscountCodeManager() {
 
             {/* User assignment */}
             <div style={{ position: 'relative' }}>
-              <label className="font-sans text-xs text-pe-charcoal/60 uppercase tracking-wider block mb-1">
+              <label className="font-sans text-xs text-pe-muted uppercase tracking-wider block mb-1">
                 Asignar a usuario (opcional)
               </label>
               {selectedUser ? (
                 <div className="flex items-center gap-2 border border-pe-black/20 px-3 py-2 text-sm font-sans">
                   <span className="text-pe-charcoal">{selectedUser.fullName}</span>
-                  <span className="text-pe-charcoal/50 text-xs">{selectedUser.email}</span>
+                  <span className="text-pe-muted text-xs">{selectedUser.email}</span>
                   <button
                     type="button"
                     onClick={() => { setSelectedUser(null); setUserQuery(''); }}
-                    className="ml-auto text-pe-charcoal/40 hover:text-pe-charcoal"
+                    className="ml-auto text-pe-muted hover:text-pe-charcoal"
                   >
                     ×
                   </button>
@@ -305,7 +305,7 @@ export default function DiscountCodeManager() {
                         className="w-full text-left px-3 py-2 hover:bg-pe-rose/5 flex gap-2 items-center"
                       >
                         <span className="font-sans text-sm text-pe-charcoal">{u.fullName}</span>
-                        <span className="font-sans text-xs text-pe-charcoal/50">{u.email}</span>
+                        <span className="font-sans text-xs text-pe-muted">{u.email}</span>
                       </button>
                     </li>
                   ))}
@@ -318,7 +318,7 @@ export default function DiscountCodeManager() {
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 bg-pe-rose text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
             >
               {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
               Crear código
@@ -334,7 +334,7 @@ export default function DiscountCodeManager() {
             <Loader2 size={22} className="animate-spin text-pe-rose/50" />
           </div>
         ) : codes.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-pe-charcoal/30">
+          <div className="flex flex-col items-center gap-2 py-16 text-pe-muted">
             <Ticket size={28} strokeWidth={1.2} />
             <p className="font-sans text-[0.82rem]">No hay códigos en esta categoría</p>
           </div>
@@ -343,11 +343,11 @@ export default function DiscountCodeManager() {
             <thead>
               <tr className="border-b border-pe-black/6">
                 {['Código', 'Descuento', 'Vigencia', 'Usos', 'Estado', ''].map(h => (
-                  <th key={h} className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/40 px-4 py-3">
+                  <th key={h} className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted px-4 py-3">
                     {h}
                   </th>
                 ))}
-                <th className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/40 px-4 py-3">
+                <th className="text-left font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted px-4 py-3">
                   Disponible para
                 </th>
               </tr>
@@ -361,10 +361,10 @@ export default function DiscountCodeManager() {
                   <td className="px-4 py-3 font-sans text-[0.78rem] text-pe-charcoal">
                     {c.type === 'PERCENTAGE' ? `${c.value}%` : `$${c.value.toLocaleString('es-CL')}`}
                   </td>
-                  <td className="px-4 py-3 font-sans text-[0.72rem] text-pe-charcoal/55 whitespace-nowrap">
+                  <td className="px-4 py-3 font-sans text-[0.72rem] text-pe-muted whitespace-nowrap">
                     {fmtDate(c.validFrom)} – {fmtDate(c.validUntil)}
                   </td>
-                  <td className="px-4 py-3 font-sans text-[0.78rem] text-pe-charcoal/60">
+                  <td className="px-4 py-3 font-sans text-[0.78rem] text-pe-muted">
                     {c.timesUsed} / {c.maxUses}
                   </td>
                   <td className="px-4 py-3">
@@ -373,7 +373,7 @@ export default function DiscountCodeManager() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => handleDelete(c.id, c.code)}
-                      className="p-1.5 text-pe-charcoal/30 hover:text-red-500 transition-colors"
+                      className="p-1.5 text-pe-muted hover:text-red-500 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 size={14} />
@@ -385,7 +385,7 @@ export default function DiscountCodeManager() {
                         {c.assignedUserName}
                       </span>
                     ) : (
-                      <span className="text-pe-charcoal/40">Todos</span>
+                      <span className="text-pe-muted">Todos</span>
                     )}
                   </td>
                 </tr>

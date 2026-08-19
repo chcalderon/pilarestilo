@@ -59,7 +59,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
+        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           Correo electrónico
         </label>
         <input
@@ -68,13 +68,13 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-muted"
           placeholder="admin@pilarestilo.com"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
+        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           Contraseña
         </label>
         <div className="relative">
@@ -90,7 +90,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
           <button
             type="button"
             onClick={() => setShowPass((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose transition-colors"
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -107,13 +107,13 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-action-action-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
         {loading ? 'Ingresando...' : 'Acceder al panel'}
       </button>
 
-      <p className="font-sans text-[0.72rem] text-pe-charcoal/40 text-center">
+      <p className="font-sans text-[0.72rem] text-pe-muted text-center">
         Acceso exclusivo para administradores
       </p>
     </form>

@@ -60,7 +60,7 @@ const btnDanger =
 function OkBadge({ show }: { show: boolean }) {
   if (!show) return null;
   return (
-    <span className="text-[0.7rem] text-green-600 flex items-center gap-1">
+    <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
       <Check size={12} /> Guardado
     </span>
   );
@@ -445,7 +445,7 @@ export default function UserEditDrawer({
             </div>
             {statusError && <p className="text-[0.7rem] text-red-500">{statusError}</p>}
             {statusOk && (
-              <span className="text-[0.7rem] text-green-600 flex items-center gap-1">
+              <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
                 <Check size={12} /> Estado actualizado
               </span>
             )}

@@ -160,7 +160,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
           <img src="/logo-pe.svg" alt="" width="28" height="28" aria-hidden="true" />
           {!isCollapsed && (
             <div className="flex flex-col leading-none">
-              <span className="font-sans text-[0.58rem] tracking-[0.25em] uppercase text-pe-white/40">Pilar Estilo</span>
+              <span className="font-sans text-[0.58rem] tracking-[0.25em] uppercase text-pe-on-dark-muted">Pilar Estilo</span>
               <span className="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-rose/60">Admin</span>
             </div>
           )}
@@ -169,7 +169,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
         {!mobile && (
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="ml-auto p-1 text-pe-white/30 hover:text-pe-rose-soft transition-colors rounded-sm"
+            className="ml-auto p-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors rounded-sm"
             aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
           >
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -193,7 +193,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                     'font-sans text-[0.78rem] tracking-[0.04em]',
                     active
                       ? 'bg-pe-rose/12 text-pe-rose-soft border-l-2 border-pe-rose pl-[10px]'
-                      : 'text-pe-white/50 hover:text-pe-white/80 hover:bg-pe-white/4 border-l-2 border-transparent',
+                      : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4 border-l-2 border-transparent',
                   ].join(' ')}
                   aria-current={active ? 'page' : undefined}
                   title={isCollapsed ? item.label : undefined}
@@ -202,7 +202,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                   {!isCollapsed && <span>{item.label}</span>}
                   {item.href === '/admin/ventas' && pendingDocuments > 0 && (
                     <span
-                      className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1 py-0.5 text-[0.62rem] tabular-nums bg-pe-rose text-pe-white rounded-xs"
+                      className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] px-1 py-0.5 text-[0.62rem] tabular-nums bg-pe-rose-action text-pe-white rounded-xs"
                       title={`${pendingDocuments} ventas pagadas sin boleta`}
                     >
                       {pendingDocuments}
@@ -223,7 +223,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                 'font-sans text-[0.78rem] tracking-[0.04em]',
                 settingsRouteActive
                   ? 'bg-pe-rose/12 text-pe-rose-soft border-pe-rose'
-                  : 'text-pe-white/50 hover:text-pe-white/80 hover:bg-pe-white/4 border-transparent',
+                  : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4 border-transparent',
               ].join(' ')}
               aria-expanded={showSettingsChildren}
               aria-controls={settingsSubmenuId}
@@ -242,7 +242,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                   size={14}
                   className={[
                     'ml-auto transition-all duration-300',
-                    showSettingsChildren ? 'rotate-90 text-pe-rose-soft' : 'text-pe-white/35',
+                    showSettingsChildren ? 'rotate-90 text-pe-rose-soft' : 'text-pe-on-dark-muted',
                   ].join(' ')}
                 />
               )}
@@ -269,11 +269,11 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                           'font-sans text-[0.7rem] tracking-[0.06em]',
                           active
                             ? 'border-pe-rose text-pe-rose-soft bg-pe-rose/8'
-                            : 'border-transparent text-pe-white/45 hover:text-pe-white/80 hover:bg-pe-white/4',
+                            : 'border-transparent text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4',
                         ].join(' ')}
                         aria-current={active ? 'page' : undefined}
                       >
-                        <SubIcon size={13} className={active ? 'text-pe-rose-soft' : 'text-pe-white/40'} />
+                        <SubIcon size={13} className={active ? 'text-pe-rose-soft' : 'text-pe-on-dark-muted'} />
                         <span>{subitem.label}</span>
                       </a>
                     </li>
@@ -288,12 +288,12 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
       <div className="border-t border-pe-white/8 p-3">
         {!isCollapsed && user && (
           <div className="px-2 py-1.5 mb-2">
-            <p className="font-sans text-[0.65rem] text-pe-white/25 truncate">{user.email}</p>
+            <p className="font-sans text-[0.65rem] text-pe-on-dark-muted truncate">{user.email}</p>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-pe-white/40 hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors duration-150 font-sans text-[0.78rem]"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors duration-150 font-sans text-[0.78rem]"
           title={isCollapsed ? 'Cerrar sesion' : undefined}
         >
           <LogOut size={16} className="flex-shrink-0" />

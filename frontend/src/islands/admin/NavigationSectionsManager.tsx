@@ -110,7 +110,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
       {/* Row 1: category, layout, columns, sortOrder */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Categoría raíz *
           </label>
           <select
@@ -130,7 +130,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Diseño
           </label>
           <select
@@ -147,7 +147,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Columnas (1–6)
           </label>
           <input
@@ -161,7 +161,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Orden
           </label>
           <input
@@ -190,11 +190,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
             />
           ) : (
             <div className="flex flex-col gap-0.5">
-              <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+              <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
                 Imagen del banner
               </span>
               <div className="h-48 border border-dashed border-pe-black/15 bg-pe-cream/20 flex items-center justify-center">
-                <span className="font-sans text-[0.68rem] text-pe-charcoal/30 text-center px-4">
+                <span className="font-sans text-[0.68rem] text-pe-muted text-center px-4">
                   Selecciona una categoría raíz primero
                 </span>
               </div>
@@ -203,7 +203,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: título
           </label>
           <input
@@ -216,7 +216,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: subtítulo
           </label>
           <input
@@ -229,7 +229,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: enlace
           </label>
           <input
@@ -244,7 +244,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
 
       {/* Row 3: active + buttons */}
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input
             type="checkbox"
             checked={form.active}
@@ -257,7 +257,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         <button
           onClick={onSubmit}
           disabled={saving}
-          className="flex items-center gap-1 bg-pe-rose text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
+          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
         >
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar
@@ -265,7 +265,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
 
         <button
           onClick={onCancel}
-          className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-charcoal/60"
+          className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-muted"
         >
           <X size={12} /> Cancelar
         </button>
@@ -404,7 +404,7 @@ export default function NavigationSectionsManager() {
           className={[
             'mb-4 px-4 py-2.5 font-sans text-[0.78rem] flex items-center gap-2',
             toast.type === 'success'
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
               : 'bg-red-50 border border-red-200 text-red-700',
           ].join(' ')}
           role="status"
@@ -417,7 +417,7 @@ export default function NavigationSectionsManager() {
 
       {/* Toolbar */}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <p className="font-sans text-[0.72rem] text-pe-muted">
           {sections.length} {sections.length === 1 ? 'sección' : 'secciones'}
         </p>
         <button
@@ -426,7 +426,7 @@ export default function NavigationSectionsManager() {
             setForm({ ...EMPTY_FORM });
             setEditing(null);
           }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nueva sección
@@ -451,7 +451,7 @@ export default function NavigationSectionsManager() {
       {/* Sections list */}
       <div className="bg-pe-white border border-pe-black/6 shadow-xs">
         {sections.length === 0 ? (
-          <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
+          <p className="font-sans text-[0.82rem] text-pe-muted text-center py-12">
             No hay secciones configuradas. Crea la primera.
           </p>
         ) : (
@@ -464,8 +464,8 @@ export default function NavigationSectionsManager() {
                     className={[
                       'font-sans text-[0.58rem] uppercase tracking-wider px-1.5 py-0.5 shrink-0',
                       section.active
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : 'bg-pe-cream text-pe-charcoal/35 border border-pe-black/8',
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-pe-cream text-pe-muted border border-pe-black/8',
                     ].join(' ')}
                   >
                     {section.active ? 'Activa' : 'Inactiva'}
@@ -477,17 +477,17 @@ export default function NavigationSectionsManager() {
                   </span>
 
                   {/* Layout */}
-                  <span className="font-sans text-[0.72rem] text-pe-charcoal/45 bg-pe-cream px-2 py-0.5 shrink-0">
+                  <span className="font-sans text-[0.72rem] text-pe-muted bg-pe-cream px-2 py-0.5 shrink-0">
                     {LAYOUT_LABELS[section.layout as LayoutOption] ?? section.layout}
                   </span>
 
                   {/* Column count */}
-                  <span className="font-sans text-[0.68rem] text-pe-charcoal/35 shrink-0">
+                  <span className="font-sans text-[0.68rem] text-pe-muted shrink-0">
                     {section.columnCount} col.
                   </span>
 
                   {/* Sort order */}
-                  <span className="font-sans text-[0.65rem] text-pe-charcoal/30 shrink-0">
+                  <span className="font-sans text-[0.65rem] text-pe-muted shrink-0">
                     orden: {section.sortOrder}
                   </span>
 
@@ -495,14 +495,14 @@ export default function NavigationSectionsManager() {
                   <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleEdit(section)}
-                      className="p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+                      className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
                       title="Editar"
                     >
                       <Edit3 size={14} />
                     </button>
                     <button
                       onClick={() => void handleDelete(section)}
-                      className="p-1 text-pe-charcoal/40 hover:text-red-500 transition-colors"
+                      className="p-1 text-pe-muted hover:text-red-500 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 size={14} />

@@ -102,13 +102,13 @@ const returns = isEs
     <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
       <div class="absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
       <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
-        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+        <p class="pe-eyebrow text-pe-rose-ink mb-4">
           {isEs ? 'Informacion logistica' : 'Logistics information'}
         </p>
         <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
           {isEs ? 'Envios y devoluciones' : 'Shipping and returns'}
         </h1>
-        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
           {isEs
             ? 'Trabajamos para que tu compra llegue segura y en tiempo, con reglas claras para revisiones y devoluciones.'
             : 'We make sure your order arrives safely and on time, with clear rules for reviews and returns.'}
@@ -124,27 +124,27 @@ const returns = isEs
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
           {shippingZones.map((item) => (
             <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
-              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-2">{item.zone}</p>
+              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-ink mb-2">{item.zone}</p>
               <h3 class="font-display text-2xl text-pe-black font-light mb-2">{item.eta}</h3>
-              <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">{item.note}</p>
+              <p class="font-sans text-sm text-pe-charcoal leading-relaxed">{item.note}</p>
             </article>
           ))}
         </div>
 
         <article class="mt-8 bg-pe-cream/60 border border-pe-rose/20 p-6 md:p-7">
-          <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-2">
+          <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-ink mb-2">
             {isEs ? 'Modalidad de despacho' : 'Shipping method'}
           </p>
           <h3 class="font-display text-xl text-pe-black font-light mb-2">
             {couriersLabel} ({paymentLabel.toLowerCase()})
           </h3>
-          <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">
+          <p class="font-sans text-sm text-pe-charcoal leading-relaxed">
             {isEs
               ? `El costo de envío se paga al retirar en sucursal del courier. Despachamos desde Los Andes; te enviamos el número de seguimiento una vez en tránsito.`
               : `Shipping cost is paid at pickup at the courier branch. Dispatched from Los Andes; tracking number shared once the parcel is in transit.`}
           </p>
           {unavailableZones.length > 0 && (
-            <p class="mt-3 font-sans text-[0.72rem] text-pe-charcoal/60 italic">
+            <p class="mt-3 font-sans text-[0.72rem] text-pe-muted italic">
               {isEs ? 'Zonas temporalmente no disponibles' : 'Zones currently unavailable'}: {unavailableZones.join(', ')}.
             </p>
           )}
@@ -154,10 +154,10 @@ const returns = isEs
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
-        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-3">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-on-dark font-light mb-3">
           {isEs ? 'Devoluciones y garantía' : 'Returns and warranty'}
         </h2>
-        <p class="font-sans text-sm text-pe-white/60 leading-relaxed max-w-2xl mb-8 md:mb-10">
+        <p class="font-sans text-sm text-pe-on-dark-muted leading-relaxed max-w-2xl mb-8 md:mb-10">
           {isEs
             ? 'Lo que sigue no son concesiones nuestras: es lo que la ley chilena te reconoce en toda compra a distancia. Lo escribimos aquí para que no tengas que ir a buscarlo.'
             : 'What follows is not a favour from us: it is what Chilean law grants you on every distance purchase. We spell it out here so you do not have to go looking for it.'}
@@ -168,7 +168,7 @@ const returns = isEs
               <h3 class="font-sans text-[0.72rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
                 {rule.title}
               </h3>
-              <p class="font-sans text-sm text-pe-white/75 leading-relaxed max-w-[62ch]">{rule.body}</p>
+              <p class="font-sans text-sm text-pe-on-dark leading-relaxed max-w-[62ch]">{rule.body}</p>
             </article>
           ))}
         </div>

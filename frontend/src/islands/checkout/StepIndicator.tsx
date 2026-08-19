@@ -49,8 +49,8 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
                     isCurrent
                       ? 'border-pe-black text-pe-black'
                       : isDone || reachable
-                        ? 'border-pe-charcoal/25 text-pe-charcoal/75 hover:text-pe-black hover:border-pe-charcoal/50 cursor-pointer'
-                        : 'border-pe-charcoal/15 text-pe-charcoal/40 cursor-not-allowed'
+                        ? 'border-pe-charcoal/25 text-pe-charcoal hover:text-pe-black hover:border-pe-charcoal/50 cursor-pointer'
+                        : 'border-pe-charcoal/15 text-pe-muted cursor-not-allowed'
                   }`}
               >
                 <span
@@ -61,7 +61,7 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
                         ? 'bg-pe-black text-pe-white'
                         : isCurrent
                           ? 'border border-pe-black text-pe-black'
-                          : 'border border-pe-charcoal/30 text-pe-charcoal/50'
+                          : 'border border-pe-charcoal/30 text-pe-muted'
                     }`}
                 >
                   {isDone ? <Check size={13} strokeWidth={2.5} /> : idx + 1}

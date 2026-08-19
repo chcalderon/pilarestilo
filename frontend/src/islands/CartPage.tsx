@@ -160,7 +160,7 @@ export default function CartPage({ locale }: Props) {
             {l.title}
           </h1>
           <div className="bg-pe-white p-12 text-center">
-            <p className="font-sans text-pe-charcoal/75 mb-6">{l.empty}</p>
+            <p className="font-sans text-pe-charcoal mb-6">{l.empty}</p>
             <a
               href={`/${locale}/products`}
               className="inline-flex items-center min-h-11 px-6 bg-pe-black text-pe-white
@@ -186,7 +186,7 @@ export default function CartPage({ locale }: Props) {
             <p
               role="status"
               aria-live="polite"
-              className="flex items-center gap-2 font-sans text-[0.75rem] text-pe-charcoal/70 mb-4"
+              className="flex items-center gap-2 font-sans text-[0.75rem] text-pe-muted mb-4"
             >
               <Loader2 size={13} className="animate-spin" aria-hidden="true" />
               {l.checkingStock}
@@ -231,7 +231,7 @@ export default function CartPage({ locale }: Props) {
                       loading="lazy"
                     />
                     <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <span className="font-sans text-[10px] tracking-[0.3em] uppercase text-pe-gold">
+                      <span className="font-sans text-[10px] tracking-[0.3em] uppercase text-pe-gold-ink">
                         {item.brand}
                       </span>
                       {conflict && (
@@ -242,14 +242,14 @@ export default function CartPage({ locale }: Props) {
                       <p
                         className={`font-display text-sm font-semibold truncate ${
                           conflict?.type === 'SOLD_OUT'
-                            ? 'text-pe-charcoal/50 line-through'
+                            ? 'text-pe-muted line-through'
                             : 'text-pe-black'
                         }`}
                       >
                         {item.name}
                       </p>
                       {item.variantLabel && (
-                        <p className="font-sans text-[11px] tracking-wide text-pe-charcoal/55">
+                        <p className="font-sans text-[11px] tracking-wide text-pe-muted">
                           {item.variantLabel}
                         </p>
                       )}
@@ -295,7 +295,7 @@ export default function CartPage({ locale }: Props) {
                                   ? `/${locale}/products/${item.productId ?? item.id.split('::')[0]}`
                                   : `/${locale}/products`
                               }
-                              className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-pe-black/20 text-pe-charcoal/70 hover:border-pe-gold hover:text-pe-gold transition-colors"
+                              className="font-sans text-[10px] tracking-[0.14em] uppercase px-2 py-1 border border-pe-black/20 text-pe-muted hover:border-pe-gold hover:text-pe-gold-ink transition-colors"
                             >
                               {conflict.type === 'NEEDS_VARIANT' ? l.chooseSize : l.findReplacement}
                             </a>
@@ -311,7 +311,7 @@ export default function CartPage({ locale }: Props) {
                               clearIssue(item.id);
                               updateQuantity(item.id, item.quantity - 1);
                             }}
-                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
+                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold-ink transition-colors"
                             aria-label={locale === 'es' ? 'Disminuir cantidad' : 'Decrease quantity'}
                           >
                             -
@@ -320,7 +320,7 @@ export default function CartPage({ locale }: Props) {
                           <button
                             type="button"
                             onClick={() => void increaseQuantity(item)}
-                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold transition-colors"
+                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold-ink transition-colors"
                             aria-label={locale === 'es' ? 'Aumentar cantidad' : 'Increase quantity'}
                           >
                             +
@@ -337,7 +337,7 @@ export default function CartPage({ locale }: Props) {
                             clearIssue(item.id);
                             removeItem(item.id);
                           }}
-                          className="font-sans text-[10px] tracking-widest uppercase text-pe-charcoal/65 hover:text-pe-gold transition-colors"
+                          className="font-sans text-[10px] tracking-widest uppercase text-pe-muted hover:text-pe-gold-ink transition-colors"
                           aria-label={`${l.remove} ${item.name}`}
                         >
                           {l.remove}
@@ -399,7 +399,7 @@ export default function CartPage({ locale }: Props) {
                   </a>
                 )}
 
-                <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mt-3 text-center">
+                <p className="font-sans text-[0.72rem] text-pe-muted mt-3 text-center">
                   {l.continueHint}
                 </p>
               </div>

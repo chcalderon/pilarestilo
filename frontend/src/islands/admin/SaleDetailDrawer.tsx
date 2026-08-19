@@ -203,7 +203,7 @@ function CopyField({ label, value }: { label: string; value: string | null | und
         aria-label={`Copiar ${label}`}
       >
         <span className="break-all">{value}</span>
-        {copied ? <Check size={12} className="text-green-600 shrink-0" /> : <Copy size={12} className="opacity-40 shrink-0" />}
+        {copied ? <Check size={12} className="text-pe-positive shrink-0" /> : <Copy size={12} className="opacity-40 shrink-0" />}
       </button>
     </div>
   );
@@ -458,7 +458,7 @@ export default function SaleDetailDrawer({
               role="status"
               className={`text-[0.78rem] px-3 py-2 rounded-xs border ${
                 feedback.tone === 'success'
-                  ? 'border-green-300/60 text-green-700'
+                  ? 'border-green-300/60 text-pe-positive'
                   : 'border-red-300/60 text-red-600'
               }`}
             >

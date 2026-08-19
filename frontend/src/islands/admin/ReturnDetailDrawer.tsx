@@ -208,7 +208,7 @@ export default function ReturnDetailDrawer({
             <p
               role="status"
               className={`text-[0.78rem] px-3 py-2 rounded-xs border ${
-                feedback.tone === 'success' ? 'border-green-300/60 text-green-700' : 'border-red-300/60 text-red-600'
+                feedback.tone === 'success' ? 'border-green-300/60 text-pe-positive' : 'border-red-300/60 text-red-600'
               }`}
             >
               {feedback.text}

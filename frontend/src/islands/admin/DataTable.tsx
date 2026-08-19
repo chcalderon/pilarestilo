@@ -95,19 +95,19 @@ export default function DataTable<T>({
   }
 
   function SortIcon({ colKey }: { colKey: string }) {
-    if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-charcoal/20" />;
+    if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-muted" />;
     return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose" /> : <ChevronDown size={12} className="text-pe-rose" />;
   }
 
   const thBase =
-    'font-sans text-[0.68rem] tracking-[0.1em] uppercase text-pe-charcoal/50 px-3 py-2.5 text-left whitespace-nowrap border-b border-pe-black/8 bg-pe-cream/60';
+    'font-sans text-[0.68rem] tracking-[0.1em] uppercase text-pe-muted px-3 py-2.5 text-left whitespace-nowrap border-b border-pe-black/8 bg-pe-cream/60';
   const tdBase = 'font-sans text-[0.82rem] px-3 py-2.5 border-b border-pe-black/5';
 
   return (
     <div className="flex flex-col gap-0">
       {selectable && selected.size > 0 && bulkActions && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 bg-pe-rose/8 border border-pe-rose/20 mb-2">
-          <span className="font-sans text-[0.78rem] text-pe-rose-deep">
+          <span className="font-sans text-[0.78rem] text-pe-rose-ink">
             {selected.size} seleccionado{selected.size > 1 ? 's' : ''}
           </span>
           <div className="flex flex-wrap gap-2">
@@ -132,7 +132,7 @@ export default function DataTable<T>({
           </div>
           <button
             onClick={() => setSelected(new Set())}
-            className="ml-auto inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-charcoal/40 hover:text-pe-charcoal transition-colors"
+            className="ml-auto inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-muted hover:text-pe-charcoal transition-colors"
           >
             <X size={12} />
             Cancelar
@@ -147,7 +147,7 @@ export default function DataTable<T>({
               <Loader2 size={22} className="animate-spin text-pe-rose/50 inline-block" />
             </div>
           ) : data.length === 0 ? (
-            <div className="py-14 text-center font-sans text-[0.82rem] text-pe-charcoal/35">{emptyMessage}</div>
+            <div className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">{emptyMessage}</div>
           ) : (
             data.map((row) => {
               const id = getRowId(row);
@@ -165,7 +165,7 @@ export default function DataTable<T>({
                 >
                   {selectable && (
                     <div className="mb-2">
-                      <label className="inline-flex items-center gap-2 font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-charcoal/50">
+                      <label className="inline-flex items-center gap-2 font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-muted">
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -183,7 +183,7 @@ export default function DataTable<T>({
                     {columns.map((col) => (
                       <div key={col.key} className="flex flex-col gap-1">
                         {col.header ? (
-                          <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+                          <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
                             {col.header}
                           </span>
                         ) : null}
@@ -238,7 +238,7 @@ export default function DataTable<T>({
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-charcoal/35">
+                  <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">
                     {emptyMessage}
                   </td>
                 </tr>
@@ -292,25 +292,25 @@ export default function DataTable<T>({
 
       {totalPages !== undefined && totalPages > 1 && (
         <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             {displayedFrom}-{displayedTo} de {total}
           </p>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onPageChange?.(page - 1)}
               disabled={page === 0}
-              className="p-1.5 text-pe-charcoal/50 hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
               aria-label="Pagina anterior"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="font-sans text-[0.78rem] text-pe-charcoal/60 px-2">
+            <span className="font-sans text-[0.78rem] text-pe-muted px-2">
               {page + 1} / {totalPages}
             </span>
             <button
               onClick={() => onPageChange?.(page + 1)}
               disabled={page + 1 >= totalPages}
-              className="p-1.5 text-pe-charcoal/50 hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
               aria-label="Pagina siguiente"
             >
               <ChevronRight size={16} />

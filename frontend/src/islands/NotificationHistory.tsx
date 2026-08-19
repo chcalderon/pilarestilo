@@ -113,7 +113,7 @@ export default function NotificationHistory({ locale }: Props) {
           <button
             onClick={handleMarkAll}
             disabled={marking}
-            className="font-sans text-xs text-pe-rose hover:text-pe-rose-deep transition-colors disabled:opacity-50"
+            className="font-sans text-xs text-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {es ? 'Marcar todas como leidas' : 'Mark all as read'}
           </button>
@@ -121,13 +121,13 @@ export default function NotificationHistory({ locale }: Props) {
       </div>
 
       {loading && (
-        <div className="font-sans text-sm text-pe-charcoal/70" style={{ padding: '2rem 0', textAlign: 'center' }}>
+        <div className="font-sans text-sm text-pe-muted" style={{ padding: '2rem 0', textAlign: 'center' }}>
           {es ? 'Cargando...' : 'Loading...'}
         </div>
       )}
 
       {!loading && page && page.content.length === 0 && (
-        <div className="font-sans text-sm text-pe-charcoal/70 border border-pe-black/10 p-8 text-center">
+        <div className="font-sans text-sm text-pe-muted border border-pe-black/10 p-8 text-center">
           {es ? 'No tienes notificaciones aun.' : "You don't have any notifications yet."}
         </div>
       )}
@@ -169,12 +169,12 @@ export default function NotificationHistory({ locale }: Props) {
                 <p className="font-sans text-sm text-pe-black" style={{ margin: 0, fontWeight: n.read ? 400 : 600 }}>
                   {n.title}
                 </p>
-                <p className="font-sans text-sm text-pe-charcoal/70" style={{ margin: '4px 0 0' }}>
+                <p className="font-sans text-sm text-pe-muted" style={{ margin: '4px 0 0' }}>
                   {n.body}
                 </p>
               </div>
               <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <span className="font-sans text-pe-charcoal/60" style={{ fontSize: '0.65rem' }}>
+                <span className="font-sans text-pe-muted" style={{ fontSize: '0.65rem' }}>
                   {relativeTime(n.createdAt, es)}
                 </span>
                 {!n.read && (
@@ -199,7 +199,7 @@ export default function NotificationHistory({ locale }: Props) {
           >
             {es ? 'Anterior' : 'Previous'}
           </button>
-          <span className="font-sans text-xs self-center text-pe-charcoal/60">
+          <span className="font-sans text-xs self-center text-pe-muted">
             {currentPage + 1} / {page.totalPages}
           </span>
           <button

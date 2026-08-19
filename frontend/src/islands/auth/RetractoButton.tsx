@@ -73,7 +73,7 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
 
   if (existing) {
     return (
-      <p className="font-sans text-[0.72rem] text-pe-charcoal/60">{l.already}</p>
+      <p className="font-sans text-[0.72rem] text-pe-muted">{l.already}</p>
     );
   }
   if (!closesAt) return null;
@@ -114,14 +114,14 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
 
   return (
     <div className="w-full border border-pe-charcoal/15 p-3 space-y-2">
-      <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75">
+      <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal">
         {l.title}
       </p>
-      <p className="font-sans text-[0.78rem] leading-relaxed text-pe-charcoal/80 max-w-[62ch]">
+      <p className="font-sans text-[0.78rem] leading-relaxed text-pe-charcoal max-w-[62ch]">
         {l.body}
       </p>
       <label className="block space-y-1">
-        <span className="font-sans text-[0.7rem] text-pe-charcoal/60">{l.reasonLabel}</span>
+        <span className="font-sans text-[0.7rem] text-pe-muted">{l.reasonLabel}</span>
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}

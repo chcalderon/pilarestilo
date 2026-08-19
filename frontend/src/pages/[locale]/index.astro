@@ -85,7 +85,7 @@ const categoryTiles = collectFeatured(categoryTree);
             <h2 class="font-display text-pe-black text-2xl md:text-[1.9rem] font-light mt-2 leading-tight">
               {pillar.title}
             </h2>
-            <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/65 mt-3 max-w-[36ch]">
+            <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-muted mt-3 max-w-[36ch]">
               {pillar.body}
             </p>
           </article>
@@ -108,7 +108,7 @@ const categoryTiles = collectFeatured(categoryTree);
           {locale === 'es' ? 'Recien Llegados' : 'Recently Added'}
         </h2>
 
-        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/55 max-w-[58ch] mx-auto mt-4">
+        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-muted max-w-[58ch] mx-auto mt-4">
           {locale === 'es'
             ? 'Una seleccion breve para descubrir primero lo mas nuevo de la vitrina.'
             : 'A short edit to discover the newest arrivals first.'}
@@ -122,7 +122,7 @@ const categoryTiles = collectFeatured(categoryTree);
           ))}
         </div>
       ) : (
-        <p class="text-center text-pe-charcoal/50 font-sans text-sm">
+        <p class="text-center text-pe-muted font-sans text-sm">
           {locale === 'es' ? 'No hay productos disponibles.' : 'No products available.'}
         </p>
       )}
@@ -149,7 +149,7 @@ const categoryTiles = collectFeatured(categoryTree);
           {locale === 'es' ? 'Por Categoria' : 'By Category'}
         </h2>
 
-        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-charcoal/55 max-w-[60ch] mx-auto mt-4">
+        <p class="font-sans text-sm md:text-[0.92rem] leading-relaxed text-pe-muted max-w-[60ch] mx-auto mt-4">
           {locale === 'es'
             ? 'Explora familias de productos con subcategorias para llegar mas rapido a lo que buscas.'
             : 'Browse product families with subcategories to get faster to what you are looking for.'}
@@ -157,7 +157,7 @@ const categoryTiles = collectFeatured(categoryTree);
       </div>
 
       {categoryTiles.length === 0 ? (
-        <p class="text-center text-pe-charcoal/40 font-sans text-sm py-8">
+        <p class="text-center text-pe-muted font-sans text-sm py-8">
           {locale === 'es' ? 'Proximamente.' : 'Coming soon.'}
         </p>
       ) : (
@@ -204,7 +204,7 @@ const categoryTiles = collectFeatured(categoryTree);
                     </a>
 
                     <div class="absolute bottom-0 left-0 right-0 p-5 z-10 pointer-events-none">
-                      <p class="font-display text-pe-offwhite text-xl md:text-2xl font-light leading-tight">
+                      <p class="font-display text-pe-on-dark text-xl md:text-2xl font-light leading-tight">
                         {name}
                       </p>
 
@@ -213,7 +213,7 @@ const categoryTiles = collectFeatured(categoryTree);
                           {subs.map(sub => (
                             <a
                               href={`/${locale}/categories/${sub.slug}`}
-                              class="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-offwhite/60 border border-pe-offwhite/22 px-2 py-0.5 hover:text-pe-offwhite hover:border-pe-offwhite/50 transition-colors"
+                              class="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-on-dark-muted border border-pe-offwhite/22 px-2 py-0.5 hover:text-pe-on-dark hover:border-pe-offwhite/50 transition-colors"
                             >
                               {locale === 'es' ? sub.nameEs : (sub.nameEn || sub.nameEs)}
                             </a>
@@ -741,11 +741,11 @@ const categoryTiles = collectFeatured(categoryTree);
     </div>
 
     <div class="pe-container relative z-10">
-      <p class="pe-script text-pe-rose" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
+      <p class="pe-script text-pe-rose-display" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
         {locale === 'es' ? 'Lujo con Proposito' : 'Luxury with Purpose'}
       </p>
 
-      <p class="font-display text-pe-offwhite/70 font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+      <p class="font-display text-pe-on-dark-muted font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
         {locale === 'es'
           ? 'Cada pieza tiene una historia. La nuestra es de calidad, cuidado y moda consciente.'
           : 'Every piece has a story. Ours is about quality, care, and mindful fashion.'}

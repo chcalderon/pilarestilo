@@ -48,7 +48,7 @@ export function Toaster({ toasts, dismiss }: Props) {
         >
           {t.type === 'error'
             ? <XCircle size={15} className="shrink-0 mt-0.5 text-red-500" />
-            : <CheckCircle size={15} className="shrink-0 mt-0.5 text-green-600" />}
+            : <CheckCircle size={15} className="shrink-0 mt-0.5 text-pe-positive" />}
           <span className="font-sans text-[0.72rem] flex-1 leading-snug">{t.message}</span>
           <button
             onClick={() => dismiss(t.id)}

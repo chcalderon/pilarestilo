@@ -40,19 +40,19 @@ const base =
 
 const variants: Record<string, string> = {
   primary:
-    'bg-pe-rose text-pe-offwhite shadow-card-lift hover:bg-pe-rose-deep hover:-translate-y-[1px] active:translate-y-0',
+    'bg-pe-rose-action text-pe-offwhite shadow-card-lift hover:bg-pe-rose-action-action-deep hover:-translate-y-[1px] active:translate-y-0',
   dark:
     'bg-pe-black text-pe-offwhite hover:bg-[#3A3A3A] hover:-translate-y-[1px]',
   outline:
-    'border border-pe-rose text-pe-rose-deep bg-transparent hover:bg-pe-rose hover:text-pe-offwhite',
+    'border border-pe-rose text-pe-rose-ink bg-transparent hover:bg-pe-rose-action-action hover:text-pe-offwhite',
   // The outline for dark sections: rose-deep on black does not carry, so the border and the label
   // go light and invert on hover.
   'outline-light':
     'border border-pe-white/30 text-pe-offwhite bg-transparent hover:border-pe-offwhite hover:bg-pe-offwhite hover:text-pe-black',
   ghost:
-    'text-pe-charcoal hover:text-pe-rose-deep after:content-[""] after:block after:h-px after:w-0 after:bg-pe-rose-deep after:transition-all after:duration-300 hover:after:w-full after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+    'text-pe-charcoal hover:text-pe-rose-ink after:content-[""] after:block after:h-px after:w-0 after:bg-pe-rose-deep after:transition-all after:duration-300 hover:after:w-full after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
   icon:
-    'h-10 w-10 p-0 rounded-full text-pe-charcoal hover:bg-pe-rose-soft hover:text-pe-rose-deep tracking-normal',
+    'h-10 w-10 p-0 rounded-full text-pe-charcoal hover:bg-pe-rose-soft hover:text-pe-rose-ink tracking-normal',
 };
 
 const iconOnly = variant === 'icon';

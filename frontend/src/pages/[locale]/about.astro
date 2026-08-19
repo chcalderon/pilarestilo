@@ -70,13 +70,13 @@ const processSteps = isEs
       <div class="absolute -top-40 left-1/2 h-[38rem] w-[38rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
       <div class="absolute -top-24 left-1/2 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full border border-pe-gold/20" aria-hidden="true"></div>
       <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
-        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+        <p class="pe-eyebrow text-pe-rose-ink mb-4">
           {isEs ? 'Sobre la marca' : 'About the brand'}
         </p>
         <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
           {isEs ? 'Sobre Pilar Estilo' : 'About Pilar Estilo'}
         </h1>
-        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
           {isEs
             ? 'Pilar Estilo nace para acercar la moda de lujo a una experiencia mas humana: curada, transparente y con mirada sostenible.'
             : 'Pilar Estilo was created to bring luxury fashion into a more human experience: curated, transparent, and sustainability-minded.'}
@@ -93,12 +93,12 @@ const processSteps = isEs
           <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-5">
             {isEs ? 'Lujo con proposito, no solo tendencia' : 'Luxury with purpose, beyond trends'}
           </h2>
-          <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed mb-4">
+          <p class="font-sans text-sm text-pe-charcoal leading-relaxed mb-4">
             {isEs
               ? 'Partimos con una idea simple: cada prenda premium merece una segunda oportunidad cuando su calidad lo permite. Hoy combinamos piezas nuevas y pre-loved para construir un catalogo con identidad.'
               : 'We started with a simple idea: premium garments deserve a second life when quality allows it. Today we blend new and pre-loved pieces to build a catalog with identity.'}
           </p>
-          <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">
+          <p class="font-sans text-sm text-pe-charcoal leading-relaxed">
             {isEs
               ? 'Trabajamos con una curaduria exigente y una experiencia de compra clara, para que elegir lujo sea tambien una decision inteligente.'
               : 'We work with strict curation and clear purchase flows, so choosing luxury also feels like a smart decision.'}
@@ -116,7 +116,7 @@ const processSteps = isEs
             <p class="font-sans text-[0.72rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-1">
               Pilar Estilo
             </p>
-            <p class="font-display text-pe-offwhite text-xl font-light">
+            <p class="font-display text-pe-on-dark text-xl font-light">
               {isEs ? 'Curaduria de lujo para cada historia' : 'Luxury curation for every story'}
             </p>
           </figcaption>
@@ -133,7 +133,7 @@ const processSteps = isEs
           {values.map((value) => (
             <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
               <h3 class="font-display text-2xl text-pe-black font-light mb-3">{value.title}</h3>
-              <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">{value.description}</p>
+              <p class="font-sans text-sm text-pe-charcoal leading-relaxed">{value.description}</p>
             </article>
           ))}
         </div>
@@ -142,7 +142,7 @@ const processSteps = isEs
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
-        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-8">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-on-dark font-light mb-8">
           {isEs ? 'Como trabajamos' : 'How we work'}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
@@ -151,8 +151,8 @@ const processSteps = isEs
               <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
                 {isEs ? `Paso ${index + 1}` : `Step ${index + 1}`}
               </p>
-              <h3 class="font-display text-2xl text-pe-offwhite font-light mb-2">{step.title}</h3>
-              <p class="font-sans text-sm text-pe-white/70 leading-relaxed">{step.description}</p>
+              <h3 class="font-display text-2xl text-pe-on-dark font-light mb-2">{step.title}</h3>
+              <p class="font-sans text-sm text-pe-on-dark-muted leading-relaxed">{step.description}</p>
             </article>
           ))}
         </div>

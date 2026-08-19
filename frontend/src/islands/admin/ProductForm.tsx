@@ -139,13 +139,13 @@ function CategoryTreeItem({
           <button
             type="button"
             onClick={() => onToggleExpand(node.id)}
-            className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-charcoal/45 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+            className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
             aria-label={isOpen ? 'Contraer' : 'Expandir'}
           >
             {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
         ) : (
-          <span className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-charcoal/25 dark:text-[#D6C8B5]/30">
+          <span className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted dark:text-[#D6C8B5]/30">
             <Tag size={9} />
           </span>
         )}
@@ -164,7 +164,7 @@ function CategoryTreeItem({
             onChange={() => onToggle(node.id)}
           />
           {hasChildren && (
-            <span className="shrink-0 text-pe-charcoal/45 dark:text-[#D6C8B5]/55 group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors">
+            <span className="shrink-0 text-pe-muted dark:text-[#D6C8B5]/55 group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors">
               {isOpen ? <FolderOpen size={12} /> : <Folder size={12} />}
             </span>
           )}
@@ -177,7 +177,7 @@ function CategoryTreeItem({
             </span>
           )}
           {hasChildren && (
-            <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-charcoal/40 dark:text-[#D6C8B5]/45">
+            <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45">
               {descendantsSelected > 0
                 ? `${descendantsSelected}/${node.children.length}`
                 : node.children.length}
@@ -945,8 +945,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         </div>
 
         {apiError && <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm px-4 py-2 mb-4">{apiError}</div>}
-        {aiInfo && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
-        {heroAssignFeedback && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300 text-sm px-4 py-2 mb-4">{heroAssignFeedback}</div>}
+        {aiInfo && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-pe-positive dark:text-emerald-300 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
+        {heroAssignFeedback && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-pe-positive dark:text-emerald-300 text-sm px-4 py-2 mb-4">{heroAssignFeedback}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
@@ -1043,7 +1043,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                       'px-3 py-2 font-sans text-[0.72rem] uppercase tracking-[0.1em] transition-colors',
                       form.condition === option.value
                         ? 'bg-[#B76E79] text-white'
-                        : 'text-pe-charcoal/70 dark:text-[#D6C8B5]/65 hover:bg-[#B76E79]/10',
+                        : 'text-pe-muted dark:text-[#D6C8B5]/65 hover:bg-[#B76E79]/10',
                     ].join(' ')}
                     aria-pressed={form.condition === option.value}
                   >
@@ -1069,7 +1069,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 readOnly
                 disabled
               />
-              <p className="font-sans text-[0.66rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55 mt-1">
+              <p className="font-sans text-[0.66rem] text-pe-muted dark:text-[#D6C8B5]/55 mt-1">
                 Se calcula automaticamente desde {primaryAttribute.label.toLowerCase()} + {secondaryAttribute.label.toLowerCase()} + stock por variante.
               </p>
             </div>
@@ -1119,7 +1119,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   </option>
                 )}
               </select>
-              <p className="font-sans text-[0.68rem] text-pe-charcoal/60 dark:text-[#E8DCC8]/50 mt-1">
+              <p className="font-sans text-[0.68rem] text-pe-muted dark:text-[#E8DCC8]/50 mt-1">
                 Define los dos campos de cada variante y qué categorías puede tener el producto. Si
                 lo dejas en «según la categoría», cambia solo cuando cambies la categoría.
               </p>
@@ -1164,7 +1164,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                                 'px-2 py-1 font-sans text-[0.62rem] uppercase tracking-[0.08em] border transition-colors',
                                 selected
                                   ? 'border-[#B76E79] bg-[#B76E79]/12 text-[#8E4F58] dark:text-[#E4B8BF]'
-                                  : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
+                                  : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
                               ].join(' ')}
                             >
                               {option.label}
@@ -1182,7 +1182,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                         onChange={(e) => updateVariantAttributeValue(index, secondaryAttribute, e.target.value)}
                       />
                     )}
-                    <p className="font-sans text-[0.62rem] text-pe-charcoal/60 dark:text-[#D6C8B5]/60">
+                    <p className="font-sans text-[0.62rem] text-pe-muted dark:text-[#D6C8B5]/60">
                       Valor guardado:{' '}
                       <span className="font-semibold">
                         {selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), variantSchema).size || '-'}
@@ -1212,7 +1212,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 </div>
               ))}
             </div>
-            <p className="font-sans text-[0.62rem] text-pe-charcoal/55 dark:text-[#D6C8B5]/55">
+            <p className="font-sans text-[0.62rem] text-pe-muted dark:text-[#D6C8B5]/55">
               {secondaryAttribute.allowMultiple
                 ? `Puedes seleccionar varias ${secondaryAttribute.label.toLowerCase()}s por fila. Se guardan como valor compuesto.`
                 : `La interfaz se adapta segun la metadata de categoria, sin asumir talla o color fijos.`}
@@ -1247,7 +1247,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleAssignHeroFromCurrentProduct('left')}
                   disabled={heroAssigningSlot !== null}
-                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
                 >
                   {heroAssigningSlot === 'left' ? 'Asignando...' : 'Usar como Hero Izq'}
                 </button>
@@ -1255,7 +1255,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleAssignHeroFromCurrentProduct('right')}
                   disabled={heroAssigningSlot !== null}
-                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
                 >
                   {heroAssigningSlot === 'right' ? 'Asignando...' : 'Usar como Hero Der'}
                 </button>
@@ -1307,7 +1307,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
 
                 {aiTransformPreviewUrl && (
                   <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1A1012] p-2.5 space-y-2">
-                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-charcoal/65 dark:text-[#D6C8B5]/65">
+                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-muted dark:text-[#D6C8B5]/65">
                       Preview transformada
                     </p>
                     <img
@@ -1350,15 +1350,15 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   <button
                     type="button"
                     onClick={expandAllCategories}
-                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/50 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
                   >
                     Expandir
                   </button>
-                  <span className="font-sans text-[0.6rem] text-pe-charcoal/30 dark:text-[#D6C8B5]/25">|</span>
+                  <span className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/25">|</span>
                   <button
                     type="button"
                     onClick={collapseAllCategories}
-                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/50 dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
                   >
                     Contraer
                   </button>
@@ -1380,7 +1380,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 ))}
               </div>
               {errors.categories && <p className={errorClass}>{errors.categories}</p>}
-              <p className="font-sans text-[0.6rem] text-pe-charcoal/45 dark:text-[#D6C8B5]/45 mt-1">
+              <p className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45 mt-1">
                 Al seleccionar una subcategoría, su categoría padre se marca automáticamente.
                 Las que no aplican al tipo de variante aparecen atenuadas.
               </p>
@@ -1432,7 +1432,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
               Salir sin guardar
             </h3>
-            <p className="font-sans text-[0.82rem] text-pe-charcoal/75 dark:text-[#D6C8B5]/75 leading-relaxed">
+            <p className="font-sans text-[0.82rem] text-pe-charcoal dark:text-[#D6C8B5]/75 leading-relaxed">
               Tienes cambios sin guardar en este producto. Si sales ahora, los cambios se perderan.
             </p>
             <div className="mt-4 flex flex-col sm:flex-row gap-2">

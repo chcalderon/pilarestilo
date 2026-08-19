@@ -199,7 +199,7 @@ export default function ImageDropzone({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+        <span className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
           {label}
         </span>
       )}
@@ -243,8 +243,8 @@ export default function ImageDropzone({
         ) : (
           /* Placeholder — shown when no image yet */
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-            <ImageIcon size={28} className="text-pe-charcoal/20 dark:text-[#D6C8B5]/30" strokeWidth={1.25} />
-            <span className="font-sans text-[0.68rem] text-pe-charcoal/35 dark:text-[#D6C8B5]/55 text-center px-6 leading-relaxed whitespace-pre-line">
+            <ImageIcon size={28} className="text-pe-muted dark:text-[#D6C8B5]/30" strokeWidth={1.25} />
+            <span className="font-sans text-[0.68rem] text-pe-muted dark:text-[#D6C8B5]/55 text-center px-6 leading-relaxed whitespace-pre-line">
               {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
             </span>
           </div>
@@ -295,8 +295,8 @@ export default function ImageDropzone({
         {/* No-image upload hint overlay on hover */}
         {!preview && !uploading && !dragging && (
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-1.5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-            <Upload size={11} className="text-pe-charcoal/40 dark:text-[#D6C8B5]/55" />
-            <span className="font-sans text-[0.6rem] text-pe-charcoal/40 dark:text-[#D6C8B5]/55">Clic para seleccionar</span>
+            <Upload size={11} className="text-pe-muted dark:text-[#D6C8B5]/55" />
+            <span className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/55">Clic para seleccionar</span>
           </div>
         )}
       </div>
@@ -304,7 +304,7 @@ export default function ImageDropzone({
       <button
         type="button"
         onClick={() => void openCamera()}
-        className="inline-flex items-center justify-center gap-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/65 dark:text-[#D6C8B5]/65 font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/65 font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
         disabled={uploading || cameraStarting}
       >
         {cameraStarting ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
@@ -336,7 +336,7 @@ export default function ImageDropzone({
       {cameraOpen && (
         <div className="fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-4">
           <div className="w-full max-w-[720px] bg-pe-white dark:bg-[#1B1215] border border-pe-black/20 dark:border-[#3F2A2F] p-3 space-y-3">
-            <p className="font-sans text-[0.72rem] uppercase tracking-[0.1em] text-pe-charcoal/70 dark:text-[#D6C8B5]/75">
+            <p className="font-sans text-[0.72rem] uppercase tracking-[0.1em] text-pe-muted dark:text-[#D6C8B5]/75">
               Camara
             </p>
             <div className="w-full bg-black">
@@ -352,7 +352,7 @@ export default function ImageDropzone({
               <button
                 type="button"
                 onClick={closeCamera}
-                className="px-3 py-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal/70 dark:text-[#D6C8B5]/70 font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:border-[#B76E79]/40 transition-colors"
+                className="px-3 py-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:border-[#B76E79]/40 transition-colors"
               >
                 Cancelar
               </button>

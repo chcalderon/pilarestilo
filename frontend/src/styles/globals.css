@@ -77,7 +77,7 @@
     --pe-white: var(--pe-surface-card);
     --pe-black: var(--pe-ink);
     --pe-charcoal: var(--pe-muted);
-    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-charcoal/55. */
+    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-muted. */
     --pe-charcoal-rgb: 58 58 58;
     --pe-black-rgb: 26 26 26;
 
@@ -89,6 +89,35 @@
      */
     --pe-on-dark: #F8F4EF;
     --pe-on-light: #1A1A1A;
+    /* Secondary text on a surface that is always dark, whatever the theme. 8.4:1 on #1A1A1A. */
+    --pe-on-dark-muted: #BFB2A9;
+
+    /*
+     * Secondary text, chosen to pass rather than dialled by eye. The panel expressed muted-ness by
+     * lowering the opacity of the body ink, and in light mode that ink is only 5.9:1 against the
+     * soft surface at full strength: every step below 90% failed AA, so forty places were faint
+     * rather than quiet. These two are the muted step, and they clear 4.5:1 on every surface of
+     * their own theme.
+     */
+    --pe-muted-ink: #4A4038;
+    /* The brand rose is 3.2:1 as text on the soft surface. This is the rose that can be read. */
+    --pe-rose-ink: #6B383F;
+    /*
+     * Gold and green are brand and status colours, not text colours: the gold is 1.2:1 against the
+     * soft surface and the green reads as a decoration rather than the discount it announces. These
+     * are the same hues taken to a lightness that carries meaning at small sizes, and they flip,
+     * because a value dark enough for cream is invisible on a near-black panel.
+     */
+    --pe-gold-ink: #584622;
+    --pe-positive-ink: #03513A;
+    /* The script is display-sized, so 3:1 is the bar it has to clear rather than 4.5. */
+    --pe-rose-display: #984C57;
+    /*
+     * The rose a button is painted in. #B76E79 carries light text at 3.2:1, and every primary
+     * action on the site is painted in it, so the most-clicked thing was the least readable. This
+     * is the same hue deep enough to hold the label; the decorative rose is untouched.
+     */
+    --pe-rose-action: #A1505C;
   }
 
   html[data-theme='dark'] {
@@ -110,9 +139,15 @@
     --pe-white: var(--pe-surface-card);
     --pe-black: var(--pe-ink);
     --pe-charcoal: var(--pe-muted);
-    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-charcoal/55. */
+    /* Channels, not a hex: Tailwind needs rgb(... / <alpha-value>) for text-pe-muted. */
     --pe-charcoal-rgb: 240 230 223;
     --pe-black-rgb: 248 244 239;
+    --pe-muted-ink: #BFB2A9;
+    --pe-rose-ink: #D8AEB3;
+    --pe-gold-ink: #C6A96B;
+    --pe-positive-ink: #06B382;
+    --pe-rose-display: #E8C9CC;
+    --pe-rose-action: #A1505C;
     color-scheme: dark;
   }
 
@@ -135,7 +170,7 @@
 @layer components {
   .pe-container { @apply max-w-7xl mx-auto px-5 sm:px-8 lg:px-12; }
   .pe-eyebrow {
-    @apply font-sans uppercase text-[0.7rem] tracking-[0.32em] text-pe-rose-deep;
+    @apply font-sans uppercase text-[0.7rem] tracking-[0.32em] text-pe-rose-ink;
   }
   .pe-script { font-family: 'Pinyon Script', cursive; font-weight: 400; }
 }

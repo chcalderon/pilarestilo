@@ -132,7 +132,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                 <a
                   href={`/${locale}/categories/${child.slug}`}
                   role="menuitem"
-                  className="block font-sans text-[0.7rem] tracking-[0.16em] uppercase text-pe-white/70 hover:text-pe-rose-soft transition-colors duration-150 py-0.5"
+                  className="block font-sans text-[0.7rem] tracking-[0.16em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-150 py-0.5"
                 >
                   {child.name}
                 </a>
@@ -141,7 +141,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                     key={gc.id}
                     href={`/${locale}/categories/${gc.slug}`}
                     role="menuitem"
-                    className="block ml-3 font-sans text-[0.61rem] tracking-[0.1em] uppercase text-pe-white/40 hover:text-pe-rose-soft/70 transition-colors duration-150 py-0.5"
+                    className="block ml-3 font-sans text-[0.61rem] tracking-[0.1em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft/70 transition-colors duration-150 py-0.5"
                   >
                     {gc.name}
                   </a>
@@ -194,7 +194,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
         </motion.div>
         {remainingChildren.length > 0 ? (
           <motion.div variants={itemMotion} className="space-y-2">
-            <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-white/35">
+            <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-on-dark-muted">
               {locale === 'es' ? 'Explorar' : 'Explore'}
             </p>
             <ul role="list" className="space-y-1.5">
@@ -203,7 +203,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                   <a
                     href={`/${locale}/categories/${child.slug}`}
                     role="menuitem"
-                    className="block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-pe-white/65 hover:text-pe-rose-soft transition-colors"
+                    className="block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors"
                   >
                     {child.name}
                   </a>
@@ -247,7 +247,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
           ))}
         </motion.div>
         <motion.div variants={itemMotion} className="space-y-3">
-          <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-white/35">
+          <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-on-dark-muted">
             {locale === 'es' ? 'Selecciones' : 'Selections'}
           </p>
           <ul role="list" className="space-y-2">

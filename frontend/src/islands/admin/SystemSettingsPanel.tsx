@@ -468,11 +468,11 @@ function SecurityHint({
   return (
     <div className="mt-3 inline-flex items-center gap-2 rounded-xs border border-pe-black/10 bg-pe-offwhite px-2.5 py-2">
       {configured && !clearFlag ? (
-        <ShieldCheck size={14} className="text-green-700" />
+        <ShieldCheck size={14} className="text-pe-positive" />
       ) : (
         <ShieldX size={14} className="text-amber-700" />
       )}
-      <span className="font-sans text-[0.72rem] text-pe-charcoal/65">{hint}</span>
+      <span className="font-sans text-[0.72rem] text-pe-muted">{hint}</span>
     </div>
   );
 }
@@ -1091,7 +1091,7 @@ export default function SystemSettingsPanel() {
 
   if (loading) {
     return (
-      <div className="border border-pe-black/10 bg-pe-white p-6 flex items-center gap-2 text-pe-charcoal/65">
+      <div className="border border-pe-black/10 bg-pe-white p-6 flex items-center gap-2 text-pe-muted">
         <Loader2 size={15} className="animate-spin" />
         <span className="font-sans text-sm">Cargando configuracion...</span>
       </div>
@@ -1101,9 +1101,9 @@ export default function SystemSettingsPanel() {
   if (!canReadSettings) {
     return (
       <div className="border border-pe-black/10 bg-pe-white p-6">
-        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Configuracion</p>
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-muted">Configuracion</p>
         <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
-        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-muted">
           Esta cuenta no tiene permiso para consultar la configuracion operativa de la tienda.
         </p>
       </div>
@@ -1113,14 +1113,14 @@ export default function SystemSettingsPanel() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="font-sans text-[0.74rem] text-pe-charcoal/55">
+        <div className="font-sans text-[0.74rem] text-pe-muted">
           Ultima actualizacion: {formatTimestamp(settings?.updatedAt)}{settings?.updatedBy ? ` por ${settings.updatedBy}` : ''}
         </div>
         <button
           type="button"
           onClick={() => void loadSettings()}
           disabled={saving}
-          className="inline-flex items-center gap-1 border border-pe-black/15 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.16em] text-pe-charcoal/70 hover:bg-pe-cream disabled:opacity-50"
+          className="inline-flex items-center gap-1 border border-pe-black/15 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.16em] text-pe-muted hover:bg-pe-cream disabled:opacity-50"
         >
           <RefreshCw size={12} />
           Recargar
@@ -1132,7 +1132,7 @@ export default function SystemSettingsPanel() {
           className={[
             'border px-3 py-2 font-sans text-[0.74rem]',
             feedback.tone === 'success'
-              ? 'border-green-200 bg-green-50 text-green-700'
+              ? 'border-green-200 bg-green-50 text-green-800'
               : 'border-red-200 bg-red-50 text-red-700',
           ].join(' ')}
         >
@@ -1142,7 +1142,7 @@ export default function SystemSettingsPanel() {
 
       {!canUpdateSettings && (
         <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             Modo consulta. Puedes revisar la configuracion vigente, pero guardar cambios requiere <span className="font-mono text-[0.7rem]">settings.update</span>.
           </p>
         </div>
@@ -1153,13 +1153,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'store' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Canales tienda</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Estos valores alimentan el boton flotante de WhatsApp y los enlaces sociales del storefront.
         </p>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 md:col-span-2">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Numero WhatsApp</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Numero WhatsApp</span>
             <input
               type="text"
               value={form.whatsappNumber}
@@ -1170,7 +1170,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">URL Instagram</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">URL Instagram</span>
             <input
               type="url"
               value={form.instagramUrl}
@@ -1181,7 +1181,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">URL Facebook</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">URL Facebook</span>
             <input
               type="url"
               value={form.facebookUrl}
@@ -1192,15 +1192,15 @@ export default function SystemSettingsPanel() {
           </label>
 
           <div className="md:col-span-2 mt-2 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
-            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
               Defaults inferencia IA (Productos)
             </p>
-            <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+            <p className="mt-1 font-sans text-[0.72rem] text-pe-muted">
               Se aplican al usar “Inferir texto con IA” en el formulario de productos.
             </p>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Marca por defecto</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Marca por defecto</span>
                 <input
                   type="text"
                   value={form.productAiInferDefaultBrand}
@@ -1211,7 +1211,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Condicion por defecto</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Condicion por defecto</span>
                 <select
                   value={form.productAiInferDefaultCondition}
                   onChange={(e) => updateField('productAiInferDefaultCondition', e.target.value as 'NEW' | 'USED')}
@@ -1223,7 +1223,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Precio base sugerido (CLP)</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Precio base sugerido (CLP)</span>
                 <input
                   type="number"
                   min="1000"
@@ -1236,7 +1236,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Multiplicador precio lista</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Multiplicador precio lista</span>
                 <input
                   type="number"
                   min="1"
@@ -1257,7 +1257,7 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'payments' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Medios de pago</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Controla que opciones de pago estaran disponibles en checkout. Siempre debe quedar al menos una activa.
         </p>
 
@@ -1293,15 +1293,15 @@ export default function SystemSettingsPanel() {
 
         {form.paymentMethodBankTransferEnabled && (
           <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
-            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
               Datos de transferencia bancaria
             </p>
-            <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+            <p className="mt-1 font-sans text-[0.72rem] text-pe-muted">
               Estos datos se muestran en checkout y se guardan como snapshot historico en cada pago por transferencia.
             </p>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nombre titular</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nombre titular</span>
                 <input
                   type="text"
                   value={form.bankTransferAccountHolder}
@@ -1312,7 +1312,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Correo contacto</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Correo contacto</span>
                 <input
                   type="email"
                   value={form.bankTransferContactEmail}
@@ -1323,7 +1323,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Numero de cuenta</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Numero de cuenta</span>
                 <input
                   type="text"
                   value={form.bankTransferAccountNumber}
@@ -1334,7 +1334,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Banco</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Banco</span>
                 <select
                   value={form.bankTransferBankName}
                   onChange={(e) => updateField('bankTransferBankName', e.target.value)}
@@ -1350,7 +1350,7 @@ export default function SystemSettingsPanel() {
               </label>
 
               <label className="flex flex-col gap-1">
-                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Tipo de cuenta</span>
+                <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Tipo de cuenta</span>
                 <select
                   value={form.bankTransferAccountType}
                   onChange={(e) => updateField('bankTransferAccountType', e.target.value)}
@@ -1364,7 +1364,7 @@ export default function SystemSettingsPanel() {
                   ))}
                 </select>
                 {!isBancoEstadoSelected && (
-                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">
+                  <span className="font-sans text-[0.7rem] text-pe-muted">
                     Cuenta RUT solo se habilita cuando seleccionas BancoEstado.
                   </span>
                 )}
@@ -1372,7 +1372,7 @@ export default function SystemSettingsPanel() {
             </div>
 
             <div className="mt-4 border-t border-pe-black/10 pt-4">
-              <p className="mb-3 font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+              <p className="mb-3 font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
                 Cancelación automática por falta de comprobante
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1387,7 +1387,7 @@ export default function SystemSettingsPanel() {
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
                     Minutos de espera
                   </span>
                   <input
@@ -1398,11 +1398,11 @@ export default function SystemSettingsPanel() {
                     onChange={(e) => updateField('bankTransferAutoCancelTimeoutMinutes', Number(e.target.value))}
                     className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   />
-                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Entre 5 y 1440 min</span>
+                  <span className="font-sans text-[0.7rem] text-pe-muted">Entre 5 y 1440 min</span>
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                  <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
                     Intervalo cron
                   </span>
                   <input
@@ -1412,7 +1412,7 @@ export default function SystemSettingsPanel() {
                     className="border border-pe-black/15 px-3 py-2 font-mono text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     placeholder="0 */15 * * * *"
                   />
-                  <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Expresión Spring cron (6 campos)</span>
+                  <span className="font-sans text-[0.7rem] text-pe-muted">Expresión Spring cron (6 campos)</span>
                 </label>
               </div>
             </div>
@@ -1421,7 +1421,7 @@ export default function SystemSettingsPanel() {
 
         {form.paymentMethodGatewayEnabled && (
           <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
-            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+            <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
               Proveedores de pasarela activos
             </p>
             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1439,7 +1439,7 @@ export default function SystemSettingsPanel() {
                     />
                     <span>
                       <strong className="font-medium">{option.label}</strong>
-                      <span className="block text-[0.72rem] text-pe-charcoal/60">{option.subtitle}</span>
+                      <span className="block text-[0.72rem] text-pe-muted">{option.subtitle}</span>
                     </span>
                   </label>
                 );
@@ -1448,16 +1448,16 @@ export default function SystemSettingsPanel() {
 
             {hasMercadoPagoSelected && (
               <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-white px-3 py-3">
-                <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
+                <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">
                   Configuracion Mercado Pago
                 </p>
-                <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/55">
+                <p className="mt-1 font-sans text-[0.72rem] text-pe-muted">
                   Se usa para crear sesiones de checkout y validar webhooks. Si dejas campos vacios, se usa fallback desde .env.
                 </p>
 
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">API base URL</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">API base URL</span>
                     <input
                       type="url"
                       value={form.paymentGatewayMpApiBaseUrl}
@@ -1468,7 +1468,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1 md:col-span-2">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Access Token</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nuevo Access Token</span>
                     <input
                       type="password"
                       value={form.paymentGatewayMpAccessToken}
@@ -1479,7 +1479,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL exito</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Back URL exito</span>
                     <input
                       type="url"
                       value={form.paymentGatewayMpSuccessUrl}
@@ -1490,7 +1490,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL pendiente</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Back URL pendiente</span>
                     <input
                       type="url"
                       value={form.paymentGatewayMpPendingUrl}
@@ -1501,7 +1501,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Back URL fallo</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Back URL fallo</span>
                     <input
                       type="url"
                       value={form.paymentGatewayMpFailureUrl}
@@ -1512,7 +1512,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Notification URL</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Notification URL</span>
                     <input
                       type="url"
                       value={form.paymentGatewayMpNotificationUrl}
@@ -1523,7 +1523,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1 md:col-span-2">
-                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Webhook Token (opcional)</span>
+                    <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nuevo Webhook Token (opcional)</span>
                     <input
                       type="password"
                       value={form.paymentGatewayMpWebhookToken}
@@ -1535,7 +1535,7 @@ export default function SystemSettingsPanel() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-4">
-                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
                     <input
                       type="checkbox"
                       checked={form.clearPaymentGatewayMpAccessToken}
@@ -1545,7 +1545,7 @@ export default function SystemSettingsPanel() {
                     Limpiar access token guardado
                   </label>
 
-                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+                  <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
                     <input
                       type="checkbox"
                       checked={form.clearPaymentGatewayMpWebhookToken}
@@ -1586,7 +1586,7 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'media' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Almacenamiento de imagenes</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Elige donde guardar imagenes de productos y comprobantes.
         </p>
 
@@ -1607,17 +1607,17 @@ export default function SystemSettingsPanel() {
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
-                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-charcoal/70'} />
+                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-muted'} />
                   <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
                 </div>
-                <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60 leading-relaxed">{option.subtitle}</p>
+                <p className="mt-2 font-sans text-[0.7rem] text-pe-muted leading-relaxed">{option.subtitle}</p>
               </button>
             );
           })}
         </div>
 
         <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
-          <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
+          <span className="font-sans text-[0.72rem] text-pe-muted">
             Activo ahora: <strong>{selectedMediaStorageProvider?.label ?? form.mediaStorageProvider}</strong>
           </span>
         </div>
@@ -1626,10 +1626,10 @@ export default function SystemSettingsPanel() {
         <div className="mt-5 border border-pe-black/10 bg-pe-offwhite/50 p-3 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+              <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
                 Modelos del hero (home)
               </p>
-              <p className="mt-1 font-sans text-[0.72rem] text-pe-charcoal/65">
+              <p className="mt-1 font-sans text-[0.72rem] text-pe-muted">
                 Arrastra y suelta 2 imagenes propias (izquierda/derecha). Cada slot sobrescribe la anterior.
               </p>
             </div>
@@ -1637,7 +1637,7 @@ export default function SystemSettingsPanel() {
               type="button"
               onClick={() => void loadHeroModels()}
               disabled={heroLoading}
-              className="inline-flex items-center gap-1 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-charcoal/70 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
             >
               {heroLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               Recargar
@@ -1653,7 +1653,7 @@ export default function SystemSettingsPanel() {
               const previewUrl = `${data?.url ?? fallbackUrl}?v=${data?.updatedAt ?? 0}`;
               return (
                 <article key={slot} className="border border-pe-black/10 bg-pe-white p-3">
-                  <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                  <p className="font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-muted">
                     {heroSlotLabel(slot)}
                   </p>
                   <div className="mt-2 h-36 w-full overflow-hidden border border-pe-black/10 bg-pe-black/3">
@@ -1664,7 +1664,7 @@ export default function SystemSettingsPanel() {
                       loading="lazy"
                     />
                   </div>
-                  <p className="mt-2 font-sans text-[0.68rem] text-pe-charcoal/55">
+                  <p className="mt-2 font-sans text-[0.68rem] text-pe-muted">
                     Actualizada: {formatEpochTimestamp(data?.updatedAt)}
                   </p>
                   <div className="mt-2">
@@ -1691,10 +1691,10 @@ export default function SystemSettingsPanel() {
 
         {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted mb-2">
             Migración de imágenes
           </p>
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+          <p className="font-sans text-[0.72rem] text-pe-muted mb-3">
             Descarga las imágenes de categorías desde URLs externas al almacenamiento configurado.
             Solo procesa imágenes que aún no estén almacenadas localmente.
           </p>
@@ -1708,7 +1708,7 @@ export default function SystemSettingsPanel() {
             {migrating ? 'Migrando...' : 'Migrar imágenes de categorías'}
           </button>
           {migrateResult && (
-            <p className={`font-sans text-[0.72rem] mt-2 ${migrateResult.failed === -1 ? 'text-red-500' : 'text-pe-charcoal/60'}`}>
+            <p className={`font-sans text-[0.72rem] mt-2 ${migrateResult.failed === -1 ? 'text-red-500' : 'text-pe-muted'}`}>
               {migrateResult.failed === -1
                 ? 'Error al ejecutar la migración.'
                 : `Migradas: ${migrateResult.migrated} · Fallidas: ${migrateResult.failed}`}
@@ -1719,10 +1719,10 @@ export default function SystemSettingsPanel() {
 
         {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted mb-2">
             Optimización de imágenes existentes
           </p>
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+          <p className="font-sans text-[0.72rem] text-pe-muted mb-3">
             Reescribe en disco las imágenes pesadas ya almacenadas (productos + categorías + resto).
             Reencodea JPEG y convierte PNG a JPEG, actualizando referencias en la base de datos.
             Idempotente: ejecutar de nuevo solo procesa lo que aún se pueda achicar. Pensado para corrida única tras la migración inicial.
@@ -1740,7 +1740,7 @@ export default function SystemSettingsPanel() {
             <p className="font-sans text-[0.72rem] mt-2 text-red-500">{optimizeError}</p>
           )}
           {optimizeResult && (
-            <div className="mt-2 space-y-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+            <div className="mt-2 space-y-1 font-sans text-[0.72rem] text-pe-muted">
               <p>
                 <strong>Productos:</strong> procesadas {optimizeResult.products.processed} ·
                 renombradas {optimizeResult.products.renamed} · saltadas {optimizeResult.products.skipped} ·
@@ -1763,10 +1763,10 @@ export default function SystemSettingsPanel() {
 
         {isLegacyAdmin && (
         <div className="pt-4 border-t border-pe-black/8">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-2">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted mb-2">
             Redimensionar imagenes de productos y categorias (15 cm)
           </p>
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60 mb-3">
+          <p className="font-sans text-[0.72rem] text-pe-muted mb-3">
             Ajusta el lado mayor de cada imagen a 15 cm (1772 px), conservando la relacion de aspecto.
           </p>
           <button
@@ -1782,7 +1782,7 @@ export default function SystemSettingsPanel() {
             <p className="font-sans text-[0.72rem] mt-2 text-red-500">{resizeTo15cmError}</p>
           )}
           {resizeTo15cmResult && (
-            <p className="font-sans text-[0.72rem] mt-2 text-pe-charcoal/70">
+            <p className="font-sans text-[0.72rem] mt-2 text-pe-muted">
               Procesadas {resizeTo15cmResult.processed} · Redimensionadas {resizeTo15cmResult.resized} ·
               Saltadas {resizeTo15cmResult.skipped} · Fallidas {resizeTo15cmResult.failed} ·
               objetivo {resizeTo15cmResult.targetLongSidePx}px.
@@ -1796,13 +1796,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'media' && hasS3CompatibleStorage && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Configuracion S3 compatible</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             Compatible con proveedores tipo S3/S2 (AWS S3, MinIO, Cloudflare R2, Wasabi, etc).
           </p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Endpoint</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Endpoint</span>
               <input
                 type="url"
                 value={form.mediaS3Endpoint}
@@ -1813,7 +1813,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Region</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Region</span>
               <input
                 type="text"
                 value={form.mediaS3Region}
@@ -1824,7 +1824,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Bucket</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Bucket</span>
               <input
                 type="text"
                 value={form.mediaS3Bucket}
@@ -1835,7 +1835,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Access Key ID</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Access Key ID</span>
               <input
                 type="text"
                 value={form.mediaS3AccessKeyId}
@@ -1846,7 +1846,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Secret Access Key</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nuevo Secret Access Key</span>
               <input
                 type="password"
                 value={form.mediaS3SecretKey}
@@ -1857,7 +1857,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Base URL publica (opcional)</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Base URL publica (opcional)</span>
               <input
                 type="url"
                 value={form.mediaS3PublicBaseUrl}
@@ -1869,7 +1869,7 @@ export default function SystemSettingsPanel() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-4">
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.mediaS3PathStyleEnabled}
@@ -1879,7 +1879,7 @@ export default function SystemSettingsPanel() {
               Path style habilitado
             </label>
 
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.clearMediaS3SecretKey}
@@ -1905,13 +1905,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'tributarios' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Datos tributarios</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Identidad de la tienda ante el SII. Es lo que una boleta declara sobre quien la emite.
         </p>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">RUT</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">RUT</span>
             <input
               type="text"
               value={form.taxPayerRut}
@@ -1922,7 +1922,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Razon social</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Razon social</span>
             <input
               type="text"
               value={form.taxBusinessName}
@@ -1933,7 +1933,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Giro</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Giro</span>
             <input
               type="text"
               value={form.taxBusinessActivity}
@@ -1944,7 +1944,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Codigo Acteco</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Codigo Acteco</span>
             <input
               type="text"
               value={form.taxActecoCode}
@@ -1955,7 +1955,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1 md:col-span-2">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Direccion</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Direccion</span>
             <input
               type="text"
               value={form.taxAddress}
@@ -1966,7 +1966,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Comuna</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Comuna</span>
             <input
               type="text"
               value={form.taxCommune}
@@ -1977,7 +1977,7 @@ export default function SystemSettingsPanel() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Ciudad</span>
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Ciudad</span>
             <input
               type="text"
               value={form.taxCity}
@@ -1989,13 +1989,13 @@ export default function SystemSettingsPanel() {
         </div>
 
         <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/55 mb-2">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted mb-2">
             Impuesto y emision
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">IVA (%)</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">IVA (%)</span>
               <input
                 type="number"
                 min={0}
@@ -2005,13 +2005,13 @@ export default function SystemSettingsPanel() {
                 onChange={(e) => updateField('taxVatRate', e.target.value)}
                 className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               />
-              <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
+              <span className="font-sans text-[0.68rem] text-pe-muted">
                 Se guarda en cada venta al crearse. Cambiarlo no altera las ventas ya hechas.
               </span>
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Emision</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Emision</span>
               <select
                 value={form.taxDocumentProvider}
                 onChange={(e) => updateField('taxDocumentProvider', e.target.value as FormState['taxDocumentProvider'])}
@@ -2021,7 +2021,7 @@ export default function SystemSettingsPanel() {
                 <option value="TUU">TUU</option>
                 <option value="OPENFACTURA">OpenFactura</option>
               </select>
-              <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
+              <span className="font-sans text-[0.68rem] text-pe-muted">
                 Hoy solo Manual esta implementado: el folio se escribe a mano en Ventas.
               </span>
             </label>
@@ -2036,7 +2036,7 @@ export default function SystemSettingsPanel() {
             />
             <span className="font-sans text-[0.78rem] text-pe-charcoal">
               Exigir boleta antes de despachar
-              <span className="block text-[0.68rem] text-pe-charcoal/50">
+              <span className="block text-[0.68rem] text-pe-muted">
                 Una venta pagada sin boleta no se puede tomar ni despachar. Desactivarlo permite que
                 salga mercaderia sin documento.
               </span>
@@ -2049,24 +2049,24 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'shipping' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Envios</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Configura zonas de despacho, comunas cubiertas, couriers y modalidad de pago de envio.
         </p>
 
         <div className="mt-5 rounded-xs border border-pe-rose/20 bg-pe-cream/40 px-4 py-3">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-rose-deep mb-1">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-rose-ink mb-1">
             Modalidad de pago envio
           </p>
           <p className="font-sans text-[0.84rem] text-pe-black font-medium">
             Envio por pagar (cliente paga al retirar en sucursal del courier)
           </p>
-          <p className="mt-1 font-sans text-[0.7rem] text-pe-charcoal/60">
+          <p className="mt-1 font-sans text-[0.7rem] text-pe-muted">
             Aplicada globalmente a todas las zonas. Tienda despacha desde Los Andes.
           </p>
         </div>
 
         <div className="mt-6">
-          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45 mb-3">
+          <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted mb-3">
             Zonas de envio
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -2078,7 +2078,7 @@ export default function SystemSettingsPanel() {
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="font-sans text-[0.6rem] tracking-[0.18em] uppercase text-pe-rose-deep font-semibold">
+                  <span className="font-sans text-[0.6rem] tracking-[0.18em] uppercase text-pe-rose-ink font-semibold">
                     {zone.code}
                   </span>
                   <label className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -2093,7 +2093,7 @@ export default function SystemSettingsPanel() {
                       className="w-3.5 h-3.5 accent-pe-rose"
                       aria-label={`Zona ${zone.code} activa`}
                     />
-                    <span className="font-sans text-[0.62rem] text-pe-charcoal/65">
+                    <span className="font-sans text-[0.62rem] text-pe-muted">
                       {zone.active ? 'Activa' : 'Inactiva'}
                     </span>
                   </label>
@@ -2101,7 +2101,7 @@ export default function SystemSettingsPanel() {
 
                 <div className="space-y-2">
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-muted">
                       Titulo (ES)
                     </span>
                     <input
@@ -2117,7 +2117,7 @@ export default function SystemSettingsPanel() {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-muted">
                       Titulo (EN)
                     </span>
                     <input
@@ -2134,7 +2134,7 @@ export default function SystemSettingsPanel() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <label className="flex flex-col gap-1">
-                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-muted">
                         ETA (ES)
                       </span>
                       <input
@@ -2150,7 +2150,7 @@ export default function SystemSettingsPanel() {
                       />
                     </label>
                     <label className="flex flex-col gap-1">
-                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55">
+                      <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-muted">
                         ETA (EN)
                       </span>
                       <input
@@ -2168,7 +2168,7 @@ export default function SystemSettingsPanel() {
                   </div>
 
                   <div className="pt-1">
-                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-charcoal/55 mb-1.5 block">
+                    <span className="font-sans text-[0.6rem] uppercase tracking-[0.14em] text-pe-muted mb-1.5 block">
                       Comunas
                     </span>
                     <div className="flex flex-wrap gap-1.5 mb-2">
@@ -2186,14 +2186,14 @@ export default function SystemSettingsPanel() {
                               next[idx] = { ...zone, comunas: zone.comunas.filter((c) => c !== comuna) };
                               updateField('shippingZones', next);
                             }}
-                            className="text-pe-charcoal/45 hover:text-pe-rose transition-colors leading-none text-[0.85rem]"
+                            className="text-pe-muted hover:text-pe-rose transition-colors leading-none text-[0.85rem]"
                           >
                             x
                           </button>
                         </span>
                       ))}
                       {zone.comunas.length === 0 && (
-                        <span className="font-sans text-[0.65rem] text-pe-charcoal/45 italic">
+                        <span className="font-sans text-[0.65rem] text-pe-muted italic">
                           Sin comunas
                         </span>
                       )}
@@ -2208,7 +2208,7 @@ export default function SystemSettingsPanel() {
                       className="w-full border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.75rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     />
                     {shippingCommuneLoading[zone.code] && (
-                      <p className="mt-1 font-sans text-[0.68rem] text-pe-charcoal/55">Buscando comunas...</p>
+                      <p className="mt-1 font-sans text-[0.68rem] text-pe-muted">Buscando comunas...</p>
                     )}
                     {(shippingCommuneResults[zone.code] ?? []).length > 0 && (
                       <ul className="mt-2 border border-pe-black/10 bg-pe-white max-h-44 overflow-y-auto">
@@ -2238,7 +2238,7 @@ export default function SystemSettingsPanel() {
 
         <div className="mt-6 pt-5 border-t border-pe-black/8">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">
+            <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
               Couriers de despacho
             </p>
             <button
@@ -2249,7 +2249,7 @@ export default function SystemSettingsPanel() {
                   { id: `courier-${Date.now()}`, name: '', logoUrl: null, active: true },
                 ]);
               }}
-              className="font-sans text-[0.62rem] tracking-[0.1em] uppercase text-pe-rose-deep hover:text-pe-rose transition-colors border border-pe-rose/30 px-2.5 py-1"
+              className="font-sans text-[0.62rem] tracking-[0.1em] uppercase text-pe-rose-ink hover:text-pe-rose transition-colors border border-pe-rose/30 px-2.5 py-1"
             >
               + Agregar courier
             </button>
@@ -2298,7 +2298,7 @@ export default function SystemSettingsPanel() {
                     className="w-3.5 h-3.5 accent-pe-rose"
                     aria-label={`Courier ${courier.name} activo`}
                   />
-                  <span className="font-sans text-[0.66rem] text-pe-charcoal/65">
+                  <span className="font-sans text-[0.66rem] text-pe-muted">
                     {courier.active ? 'Activo' : 'Pausado'}
                   </span>
                 </label>
@@ -2309,14 +2309,14 @@ export default function SystemSettingsPanel() {
                     const next = form.shippingCouriers.filter((_, i) => i !== idx);
                     updateField('shippingCouriers', next);
                   }}
-                  className="sm:col-span-1 font-sans text-[0.62rem] tracking-[0.08em] uppercase text-pe-charcoal/55 hover:text-pe-rose transition-colors border border-pe-black/12 hover:border-pe-rose/40 px-2 py-1.5"
+                  className="sm:col-span-1 font-sans text-[0.62rem] tracking-[0.08em] uppercase text-pe-muted hover:text-pe-rose transition-colors border border-pe-black/12 hover:border-pe-rose/40 px-2 py-1.5"
                 >
                   Quitar
                 </button>
               </article>
             ))}
             {form.shippingCouriers.length === 0 && (
-              <p className="font-sans text-[0.72rem] text-pe-charcoal/55 italic">
+              <p className="font-sans text-[0.72rem] text-pe-muted italic">
                 No hay couriers configurados.
               </p>
             )}
@@ -2328,7 +2328,7 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
         <h2 className="font-display text-2xl text-pe-black font-light">Canales de notificacion</h2>
-        <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
           Cada mensaje transaccional (pedidos, pagos y envios) sale por todos los canales activos.
           Puedes tener varios: el correo con el detalle de la compra es obligatorio por ley, y
           WhatsApp llega antes.
@@ -2356,21 +2356,21 @@ export default function SystemSettingsPanel() {
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
-                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-charcoal/70'} />
+                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-muted'} />
                   <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
                   {/* Never colour alone: the state is spelled out. */}
-                  <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+                  <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-muted">
                     {isActive ? 'Activo' : 'Apagado'}
                   </span>
                 </div>
-                <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60 leading-relaxed">{option.subtitle}</p>
+                <p className="mt-2 font-sans text-[0.7rem] text-pe-muted leading-relaxed">{option.subtitle}</p>
               </button>
             );
           })}
         </div>
 
         <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
-          <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
+          <span className="font-sans text-[0.72rem] text-pe-muted">
             Activos ahora:{' '}
             <strong>
               {form.notificationProviders
@@ -2385,12 +2385,12 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && hasProviderSimulated && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">WhatsApp Simulado</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             Este modo no envia mensajes reales. Deja trazas en logs para pruebas.
           </p>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Destino simulado</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Destino simulado</span>
               <input
                 type="text"
                 value={form.whatsappSimulatedTo}
@@ -2400,7 +2400,7 @@ export default function SystemSettingsPanel() {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Alias remitente</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Alias remitente</span>
               <input
                 type="text"
                 value={form.whatsappSimulatedSender}
@@ -2416,13 +2416,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && hasProviderRequiringTwilio && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">WhatsApp Twilio</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             Configura credenciales y numeros en formato internacional.
           </p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">API base URL</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">API base URL</span>
               <input
                 type="url"
                 value={form.whatsappTwilioApiBaseUrl}
@@ -2433,7 +2433,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Account SID</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Account SID</span>
               <input
                 type="text"
                 value={form.whatsappTwilioAccountSid}
@@ -2444,7 +2444,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">WhatsApp From</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">WhatsApp From</span>
               <input
                 type="text"
                 value={form.whatsappTwilioFrom}
@@ -2455,7 +2455,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Fallback destino</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Fallback destino</span>
               <input
                 type="text"
                 value={form.whatsappTwilioToFallback}
@@ -2466,7 +2466,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Alias remitente</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Alias remitente</span>
               <input
                 type="text"
                 value={form.whatsappTwilioSenderAlias}
@@ -2477,7 +2477,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo Auth Token</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nuevo Auth Token</span>
               <input
                 type="password"
                 value={form.whatsappTwilioAuthToken}
@@ -2489,7 +2489,7 @@ export default function SystemSettingsPanel() {
           </div>
 
           <div className="mt-4">
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.clearWhatsappTwilioAuthToken}
@@ -2515,13 +2515,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && hasProviderRequiringSendgrid && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Correo SendGrid</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             Usa API key cifrada y correo remitente para notificaciones transaccionales.
           </p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">API base URL</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">API base URL</span>
               <input
                 type="url"
                 value={form.sendgridApiBaseUrl}
@@ -2532,7 +2532,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Correo remitente</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Correo remitente</span>
               <input
                 type="email"
                 value={form.sendgridFromEmail}
@@ -2543,7 +2543,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nombre remitente</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nombre remitente</span>
               <input
                 type="text"
                 value={form.sendgridSenderName}
@@ -2554,7 +2554,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Fallback destino</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Fallback destino</span>
               <input
                 type="email"
                 value={form.sendgridToFallback}
@@ -2565,7 +2565,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nueva API key</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nueva API key</span>
               <input
                 type="password"
                 value={form.sendgridApiKey}
@@ -2577,7 +2577,7 @@ export default function SystemSettingsPanel() {
           </div>
 
           <div className="mt-4">
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.clearSendgridApiKey}
@@ -2603,13 +2603,13 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && hasProviderRequiringSmtp && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">Correo SMTP</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             La password se guarda cifrada en base de datos y no se muestra en texto plano.
           </p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Host SMTP</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Host SMTP</span>
               <input
                 type="text"
                 value={form.smtpHost}
@@ -2620,7 +2620,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Puerto SMTP</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Puerto SMTP</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -2632,7 +2632,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Usuario SMTP</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Usuario SMTP</span>
               <input
                 type="text"
                 value={form.smtpUsername}
@@ -2643,7 +2643,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Correo remitente</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Correo remitente</span>
               <input
                 type="email"
                 value={form.smtpFromEmail}
@@ -2654,7 +2654,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nueva password SMTP</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nueva password SMTP</span>
               <input
                 type="password"
                 value={form.smtpPassword}
@@ -2666,7 +2666,7 @@ export default function SystemSettingsPanel() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-4">
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.smtpAuthEnabled}
@@ -2676,7 +2676,7 @@ export default function SystemSettingsPanel() {
               SMTP auth habilitado
             </label>
 
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.smtpStarttlsEnabled}
@@ -2686,7 +2686,7 @@ export default function SystemSettingsPanel() {
               STARTTLS habilitado
             </label>
 
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.clearSmtpPassword}
@@ -2712,14 +2712,14 @@ export default function SystemSettingsPanel() {
       {activeSettingsTab === 'notifications' && hasProviderN8n && (
         <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
           <h2 className="font-display text-2xl text-pe-black font-light">N8N Webhook</h2>
-          <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
+          <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
             Configura webhook y token para delegar notificaciones a flujos n8n.
             Si dejas campos vacios, el backend usa fallback desde variables de entorno.
           </p>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 md:col-span-2">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Webhook URL</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Webhook URL</span>
               <input
                 type="url"
                 value={form.n8nWebhookUrl}
@@ -2730,7 +2730,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Header token</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Header token</span>
               <input
                 type="text"
                 value={form.n8nTokenHeaderName}
@@ -2741,7 +2741,7 @@ export default function SystemSettingsPanel() {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">Nuevo API key/token</span>
+              <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Nuevo API key/token</span>
               <input
                 type="password"
                 value={form.n8nApiKey}
@@ -2753,7 +2753,7 @@ export default function SystemSettingsPanel() {
           </div>
 
           <div className="mt-4">
-            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-charcoal/70">
+            <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
               <input
                 type="checkbox"
                 checked={form.clearN8nApiKey}
@@ -2774,7 +2774,7 @@ export default function SystemSettingsPanel() {
             clearText="Se eliminara la API key n8n al guardar."
           />
           <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
-            <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
+            <span className="font-sans text-[0.72rem] text-pe-muted">
               Tip: cada cliente puede elegir su canal preferido (WhatsApp/Correo/Ambos) en Mi Cuenta y n8n puede enrutar en base a ese dato.
               Si no completas estos campos, se usan fallback desde <span className="font-mono text-[0.7rem]">NOTIFICATION_N8N_*</span>.
             </span>

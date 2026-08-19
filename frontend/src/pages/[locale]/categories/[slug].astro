@@ -112,8 +112,8 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
               class:list={[
                 'font-sans text-xs w-8 h-8 flex items-center justify-center border transition-colors duration-200',
                 i === productsPage.number
-                  ? 'bg-pe-rose text-pe-offwhite border-pe-rose'
-                  : 'border-pe-black/15 text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep',
+                  ? 'bg-pe-rose-action text-pe-offwhite border-pe-rose'
+                  : 'border-pe-black/15 text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink',
               ]}
               aria-current={i === productsPage.number ? 'page' : undefined}
             >

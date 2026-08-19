@@ -70,13 +70,13 @@ const reasons = isEs
     <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
       <div class="absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
       <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
-        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+        <p class="pe-eyebrow text-pe-rose-ink mb-4">
           {isEs ? 'Canales de soporte' : 'Support channels'}
         </p>
         <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
           {isEs ? 'Contacto' : 'Contact'}
         </h1>
-        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
           {isEs
             ? 'Estamos disponibles para ayudarte antes, durante y despues de tu compra.'
             : 'We are available to support you before, during, and after your purchase.'}
@@ -89,8 +89,8 @@ const reasons = isEs
         {channels.map((channel) => (
           <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
             <h2 class="font-display text-2xl text-pe-black font-light mb-2">{channel.title}</h2>
-            <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed mb-3">{channel.detail}</p>
-            <p class="font-sans text-sm tracking-wide text-pe-rose-deep">{channel.value}</p>
+            <p class="font-sans text-sm text-pe-charcoal leading-relaxed mb-3">{channel.detail}</p>
+            <p class="font-sans text-sm tracking-wide text-pe-rose-ink">{channel.value}</p>
           </article>
         ))}
       </div>
@@ -99,12 +99,12 @@ const reasons = isEs
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 items-start">
         <article>
-          <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-4">
+          <h2 class="font-display text-3xl md:text-4xl text-pe-on-dark font-light mb-4">
             {isEs ? 'En que te ayudamos?' : 'What can we help with?'}
           </h2>
           <ul class="space-y-3">
             {reasons.map((reason, index) => (
-              <li class="font-sans text-sm text-pe-white/75 border border-pe-white/15 bg-pe-white/5 px-4 py-3">
+              <li class="font-sans text-sm text-pe-on-dark border border-pe-white/15 bg-pe-white/5 px-4 py-3">
                 <span class="text-pe-rose-soft mr-2">{String(index + 1).padStart(2, '0')}.</span>
                 {reason}
               </li>
@@ -113,10 +113,10 @@ const reasons = isEs
         </article>
 
         <article class="border border-pe-white/15 bg-pe-white/5 p-6 md:p-7">
-          <h3 class="font-display text-2xl text-pe-offwhite font-light mb-2">
+          <h3 class="font-display text-2xl text-pe-on-dark font-light mb-2">
             {isEs ? 'Respuesta recomendada' : 'Recommended channel'}
           </h3>
-          <p class="font-sans text-sm text-pe-white/75 leading-relaxed mb-6">
+          <p class="font-sans text-sm text-pe-on-dark leading-relaxed mb-6">
             {isEs
               ? 'Para consultas urgentes te recomendamos WhatsApp. Para respaldos formales, usa correo.'
               : 'For urgent issues we recommend WhatsApp. For formal records, use email.'}

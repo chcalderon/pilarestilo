@@ -23,9 +23,9 @@ const TAB_ITEMS: Array<{ key: TabKey; label: string }> = [
 
 function StatusBadge({ status }: { status: ProductAiJobStatus }) {
   const cls = {
-    PENDING: 'bg-pe-cream text-pe-charcoal/70 border-pe-black/10',
+    PENDING: 'bg-pe-cream text-pe-muted border-pe-black/10',
     PROCESSING: 'bg-blue-50 text-blue-700 border-blue-200',
-    SUCCESS: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    SUCCESS: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     ERROR: 'bg-red-50 text-red-700 border-red-200',
   }[status];
 
@@ -205,22 +205,22 @@ export default function PublicacionesMediaPage() {
         </div>
       )}
       {successMessage && (
-        <div className="border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-2 text-sm">
+        <div className="border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-2 text-sm">
           {successMessage}
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <article className="border border-pe-black/10 bg-pe-white p-4">
-          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-charcoal/45">Lotes</p>
+          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-muted">Lotes</p>
           <p className="font-display text-3xl text-pe-black font-light mt-1">{totalToday}</p>
         </article>
         <article className="border border-pe-black/10 bg-pe-white p-4">
-          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-charcoal/45">Procesando</p>
+          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-muted">Procesando</p>
           <p className="font-display text-3xl text-pe-black font-light mt-1">{processingCount}</p>
         </article>
         <article className="border border-pe-black/10 bg-pe-white p-4">
-          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-charcoal/45">Errores</p>
+          <p className="font-sans text-[0.64rem] tracking-[0.15em] uppercase text-pe-muted">Errores</p>
           <p className="font-display text-3xl text-pe-black font-light mt-1">{errorCount}</p>
         </article>
       </div>
@@ -235,7 +235,7 @@ export default function PublicacionesMediaPage() {
               'px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.11em] transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'bg-pe-black text-pe-offwhite'
-                : 'text-pe-charcoal/65 hover:text-pe-charcoal',
+                : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             {tab.label}
@@ -251,7 +251,7 @@ export default function PublicacionesMediaPage() {
               <h2 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Carga por carpeta</h2>
             </div>
             <div className="border-2 border-dashed border-pe-black/20 p-8 text-center bg-pe-cream/35">
-              <p className="font-sans text-sm text-pe-charcoal/70">
+              <p className="font-sans text-sm text-pe-muted">
                 Selecciona una carpeta o multiples imagenes y crea un lote IA en segundo plano.
               </p>
               <input
@@ -264,13 +264,13 @@ export default function PublicacionesMediaPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-4 inline-flex items-center gap-2 bg-pe-rose text-pe-offwhite px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase hover:bg-pe-rose-deep transition-colors"
+                className="mt-4 inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase hover:bg-pe-rose-action-action-deep transition-colors"
               >
                 <FolderUp size={14} />
                 Seleccionar imagenes
               </button>
               {selectedFiles.length > 0 && (
-                <p className="mt-3 font-sans text-xs text-pe-charcoal/65">
+                <p className="mt-3 font-sans text-xs text-pe-muted">
                   {selectedFiles.length} archivo(s) listos {sourceFolder ? `de "${sourceFolder}"` : ''}
                 </p>
               )}
@@ -290,12 +290,12 @@ export default function PublicacionesMediaPage() {
               <Sparkles size={16} className="text-pe-rose" />
               <h3 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Autorrelleno IA</h3>
             </div>
-            <p className="font-sans text-[0.78rem] text-pe-charcoal/60">
+            <p className="font-sans text-[0.78rem] text-pe-muted">
               Cada imagen infiere texto base y mantiene assets listos para aprobacion/publicacion posterior.
             </p>
             <div className="mt-3 border border-pe-black/10 p-3 bg-pe-cream/30">
-              <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-charcoal/55 mb-1">Reglas activas</p>
-              <ul className="font-sans text-[0.76rem] text-pe-charcoal/65 space-y-1">
+              <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-muted mb-1">Reglas activas</p>
+              <ul className="font-sans text-[0.76rem] text-pe-muted space-y-1">
                 <li>Salida visual 4:5 (1024x1280 por defecto)</li>
                 <li>Master + web optimizada + thumbnail</li>
                 <li>Descarga de imagen final desde admin</li>
@@ -312,7 +312,7 @@ export default function PublicacionesMediaPage() {
             <button
               type="button"
               onClick={() => void refreshJobs()}
-              className="inline-flex items-center gap-2 border border-pe-black/15 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.1em] text-pe-charcoal/70 hover:text-pe-charcoal"
+              className="inline-flex items-center gap-2 border border-pe-black/15 px-3 py-1.5 text-[0.68rem] uppercase tracking-[0.1em] text-pe-muted hover:text-pe-charcoal"
             >
               <RefreshCw size={12} className={loadingJobs ? 'animate-spin' : ''} />
               Actualizar
@@ -323,12 +323,12 @@ export default function PublicacionesMediaPage() {
             <table className="w-full min-w-[680px]">
               <thead>
                 <tr className="border-b border-pe-black/10 text-left">
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Lote</th>
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Estado</th>
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Progreso</th>
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Intento</th>
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Actualizado</th>
-                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-charcoal/45">Acciones</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Lote</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Estado</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Progreso</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Intento</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Actualizado</th>
+                  <th className="py-2 pr-3 font-sans text-[0.64rem] uppercase tracking-[0.12em] text-pe-muted">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -336,15 +336,15 @@ export default function PublicacionesMediaPage() {
                   <tr key={row.id} className="border-b border-pe-black/6">
                     <td className="py-3 pr-3 font-sans text-[0.8rem] text-pe-charcoal">{row.groupName}</td>
                     <td className="py-3 pr-3"><StatusBadge status={row.status} /></td>
-                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-charcoal/65">{row.progress}%</td>
-                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-charcoal/65">{row.attempt}</td>
-                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-charcoal/55">{row.updatedAt}</td>
+                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-muted">{row.progress}%</td>
+                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-muted">{row.attempt}</td>
+                    <td className="py-3 pr-3 font-sans text-[0.78rem] text-pe-muted">{row.updatedAt}</td>
                     <td className="py-3 pr-3">
                       <div className="inline-flex gap-2">
                         <button
                           type="button"
                           onClick={() => void handleDownload(row.id)}
-                          className="inline-flex items-center gap-1 border border-pe-black/12 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-charcoal/65"
+                          className="inline-flex items-center gap-1 border border-pe-black/12 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-muted"
                         >
                           <Download size={11} />
                           Descargar
@@ -363,7 +363,7 @@ export default function PublicacionesMediaPage() {
                           <button
                             type="button"
                             onClick={() => void handleApprovePublish(row.draftId)}
-                            className="inline-flex items-center gap-1 border border-emerald-300 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-emerald-700"
+                            className="inline-flex items-center gap-1 border border-emerald-300 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-positive"
                           >
                             <CheckCircle2 size={11} />
                             Aprobar/Publicar
@@ -375,7 +375,7 @@ export default function PublicacionesMediaPage() {
                 ))}
                 {jobRows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center font-sans text-sm text-pe-charcoal/50">
+                    <td colSpan={6} className="py-6 text-center font-sans text-sm text-pe-muted">
                       Aun no hay jobs de procesamiento.
                     </td>
                   </tr>
@@ -386,7 +386,7 @@ export default function PublicacionesMediaPage() {
 
           <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
             <div className="border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
-              <CheckCircle2 size={16} className="text-emerald-700 mt-0.5" />
+              <CheckCircle2 size={16} className="text-pe-positive mt-0.5" />
               <p className="font-sans text-[0.76rem] text-emerald-800">Lotes exitosos quedan listos para aprobar/publicar en catalogo.</p>
             </div>
             <div className="border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
@@ -404,16 +404,16 @@ export default function PublicacionesMediaPage() {
               <Workflow size={16} className="text-pe-rose" />
               <h2 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Flujos n8n</h2>
             </div>
-            <p className="font-sans text-[0.8rem] text-pe-charcoal/65 mb-3">
+            <p className="font-sans text-[0.8rem] text-pe-muted mb-3">
               Orquesta publicacion de campanas, reels e historias usando assets aprobados desde este modulo.
             </p>
             <div className="space-y-2">
               <div className="border border-pe-black/10 p-3">
-                <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-charcoal/50 mb-1">Workflow 1</p>
+                <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-muted mb-1">Workflow 1</p>
                 <p className="font-sans text-[0.8rem] text-pe-charcoal">Catalogo aprobado -&gt; copy IA -&gt; cola de campana</p>
               </div>
               <div className="border border-pe-black/10 p-3">
-                <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-charcoal/50 mb-1">Workflow 2</p>
+                <p className="font-sans text-[0.7rem] uppercase tracking-[0.1em] text-pe-muted mb-1">Workflow 2</p>
                 <p className="font-sans text-[0.8rem] text-pe-charcoal">Cron programado -&gt; publicar IG/FB -&gt; registrar resultado</p>
               </div>
             </div>
@@ -421,7 +421,7 @@ export default function PublicacionesMediaPage() {
 
           <article className="lg:col-span-2 border border-pe-black/10 bg-pe-white p-4">
             <h3 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal mb-2">Checklist base</h3>
-            <ul className="space-y-1.5 font-sans text-[0.78rem] text-pe-charcoal/65">
+            <ul className="space-y-1.5 font-sans text-[0.78rem] text-pe-muted">
               <li>Meta app en modo Live</li>
               <li>Credenciales Facebook Graph en n8n</li>
               <li>Webhook seguro para eventos de backend</li>

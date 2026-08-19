@@ -211,7 +211,7 @@ export default function UserManagement() {
       render: (row) => (
         <div className="flex flex-col">
           <span className="font-sans text-[0.78rem] text-pe-charcoal">{row.fullName}</span>
-          <span className="font-sans text-[0.68rem] text-pe-charcoal/45">{row.email}</span>
+          <span className="font-sans text-[0.68rem] text-pe-muted">{row.email}</span>
         </div>
       ),
     },
@@ -221,7 +221,7 @@ export default function UserManagement() {
       width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
-          row.active ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'].join(' ')}
+          row.active ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-700'].join(' ')}
         >
           {row.active ? 'Habilitado' : 'Bloqueado'}
         </span>
@@ -233,7 +233,7 @@ export default function UserManagement() {
       width: '100px',
       render: (row) => {
         const m = metricsByUser[row.id];
-        if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">Cargando...</span>;
+        if (!m || m.loading) return <span className="text-pe-muted text-[0.72rem]">Cargando...</span>;
         return <span className="font-sans text-[0.74rem] text-pe-charcoal">{moneyFormat(m.creditAvailable, m.currency)}</span>;
       },
     },
@@ -243,8 +243,8 @@ export default function UserManagement() {
       width: '90px',
       render: (row) => {
         const m = metricsByUser[row.id];
-        if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
-        return <span className="font-sans text-[0.74rem] text-pe-charcoal/65">{moneyFormat(m.creditUsed, m.currency)}</span>;
+        if (!m || m.loading) return <span className="text-pe-muted text-[0.72rem]">-</span>;
+        return <span className="font-sans text-[0.74rem] text-pe-muted">{moneyFormat(m.creditUsed, m.currency)}</span>;
       },
     },
     {
@@ -253,9 +253,9 @@ export default function UserManagement() {
       width: '130px',
       render: (row) => {
         const m = metricsByUser[row.id];
-        if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
+        if (!m || m.loading) return <span className="text-pe-muted text-[0.72rem]">-</span>;
         return (
-          <span className="font-sans text-[0.72rem] text-pe-charcoal/65">
+          <span className="font-sans text-[0.72rem] text-pe-muted">
             {m.paidOrders} pagados / {m.pendingOrders} pendientes
           </span>
         );
@@ -267,7 +267,7 @@ export default function UserManagement() {
       width: '150px',
       render: (row) => {
         if (!canUpdateUsers && !isLegacyAdmin) {
-          return <span className="font-sans text-[0.68rem] text-pe-charcoal/35">Solo lectura</span>;
+          return <span className="font-sans text-[0.68rem] text-pe-muted">Solo lectura</span>;
         }
         return (
           <div className="flex flex-wrap gap-1.5">
@@ -285,7 +285,7 @@ export default function UserManagement() {
               title={row.active ? 'Bloquear usuario' : 'Habilitar usuario'}
               onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
               disabled={busyUserId !== null || !canUpdateUsers}
-              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-muted hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
             >
               {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
             </button>
@@ -314,7 +314,7 @@ export default function UserManagement() {
       render: (row) => (
         <div className="flex flex-col">
           <span className="font-sans text-[0.78rem] text-pe-charcoal">{row.fullName}</span>
-          <span className="font-sans text-[0.68rem] text-pe-charcoal/45">{row.email}</span>
+          <span className="font-sans text-[0.68rem] text-pe-muted">{row.email}</span>
         </div>
       ),
     },
@@ -322,7 +322,7 @@ export default function UserManagement() {
       key: 'benefit',
       header: 'Beneficio',
       width: '140px',
-      render: () => <span className="font-sans text-[0.72rem] text-pe-rose-deep">Descuento compra 10%</span>,
+      render: () => <span className="font-sans text-[0.72rem] text-pe-rose-ink">Descuento compra 10%</span>,
     },
     {
       key: 'status',
@@ -330,7 +330,7 @@ export default function UserManagement() {
       width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
-          row.active ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'].join(' ')}
+          row.active ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-700'].join(' ')}
         >
           {row.active ? 'Habilitado' : 'Bloqueado'}
         </span>
@@ -342,9 +342,9 @@ export default function UserManagement() {
       width: '130px',
       render: (row) => {
         const m = metricsByUser[row.id];
-        if (!m || m.loading) return <span className="text-pe-charcoal/35 text-[0.72rem]">-</span>;
+        if (!m || m.loading) return <span className="text-pe-muted text-[0.72rem]">-</span>;
         return (
-          <span className="font-sans text-[0.72rem] text-pe-charcoal/65">
+          <span className="font-sans text-[0.72rem] text-pe-muted">
             {m.paidOrders} pagados / {m.pendingOrders} pendientes
           </span>
         );
@@ -356,7 +356,7 @@ export default function UserManagement() {
       width: '150px',
       render: (row) => {
         if (!canUpdateUsers && !isLegacyAdmin) {
-          return <span className="font-sans text-[0.68rem] text-pe-charcoal/35">Solo lectura</span>;
+          return <span className="font-sans text-[0.68rem] text-pe-muted">Solo lectura</span>;
         }
         return (
           <div className="flex flex-wrap gap-1.5">
@@ -374,7 +374,7 @@ export default function UserManagement() {
               title={row.active ? 'Bloquear trabajador' : 'Habilitar trabajador'}
               onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
               disabled={busyUserId !== null || !canUpdateUsers}
-              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-muted hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
             >
               {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
             </button>
@@ -406,9 +406,9 @@ export default function UserManagement() {
   if (!canReadUsers) {
     return (
       <div className="border border-pe-black/10 bg-pe-white p-6">
-        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-charcoal/40">Usuarios</p>
+        <p className="font-sans text-[0.66rem] uppercase tracking-[0.18em] text-pe-muted">Usuarios</p>
         <h2 className="mt-2 font-display text-2xl font-light text-pe-black">Acceso restringido</h2>
-        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-charcoal/60">
+        <p className="mt-2 max-w-xl font-sans text-[0.8rem] leading-relaxed text-pe-muted">
           Esta sesion no tiene permiso para consultar usuarios del panel administrativo.
         </p>
       </div>
@@ -419,22 +419,22 @@ export default function UserManagement() {
     <div className="flex flex-col gap-6">
       {!canUpdateUsers && (
         <div className="border border-pe-black/10 bg-pe-offwhite px-4 py-3">
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             Modo consulta. Puedes revisar clientes y trabajadores, pero editar requiere <span className="font-mono text-[0.7rem]">users.update</span>.
           </p>
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
-          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Clientes</p>
+          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-muted">Clientes</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.customers}</p>
         </article>
         <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
-          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Trabajadores</p>
+          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-muted">Trabajadores</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.workers}</p>
         </article>
         <article className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] p-4">
-          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-charcoal/45">Usuarios bloqueados</p>
+          <p className="font-sans text-[0.65rem] uppercase tracking-[0.2em] text-pe-muted">Usuarios bloqueados</p>
           <p className="font-display text-pe-black text-2xl font-light mt-1">{counters.blocked}</p>
         </article>
       </div>
@@ -447,7 +447,7 @@ export default function UserManagement() {
               onClick={() => setTab('customers')}
               className={[
                 'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-                tab === 'customers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                tab === 'customers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
               ].join(' ')}
             >
               Clientes
@@ -457,7 +457,7 @@ export default function UserManagement() {
               onClick={() => setTab('workers')}
               className={[
                 'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-                tab === 'workers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+                tab === 'workers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
               ].join(' ')}
             >
               Trabajadores
@@ -486,7 +486,7 @@ export default function UserManagement() {
             setMetricsByUser({});
             void refreshData();
           }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose transition-colors"
         >
           <RefreshCw size={13} /> Actualizar
         </button>
@@ -498,7 +498,7 @@ export default function UserManagement() {
             'flex items-start justify-between gap-3 border px-3 py-2',
             feedback.tone === 'error'
               ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-green-200 bg-green-50 text-green-700',
+              : 'border-green-200 bg-green-50 text-green-800',
           ].join(' ')}
         >
           <p className="font-sans text-[0.74rem]">{feedback.text}</p>
@@ -526,12 +526,12 @@ export default function UserManagement() {
 
       {user?.role === 'ADMIN' && (
         <div className="space-y-2">
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             El descuento trabajador (10%) se aplica automaticamente al checkout para usuarios con rol de trabajador.
           </p>
-          <p className="font-sans text-[0.72rem] text-pe-charcoal/45">
+          <p className="font-sans text-[0.72rem] text-pe-muted">
             Para editar tu usuario admin (nombre y contrasena), usa{' '}
-            <a href="/es/account?tab=profile" className="text-pe-rose-deep underline underline-offset-2 hover:text-pe-rose">
+            <a href="/es/account?tab=profile" className="text-pe-rose-ink underline underline-offset-2 hover:text-pe-rose">
               Mi cuenta
             </a>.
           </p>

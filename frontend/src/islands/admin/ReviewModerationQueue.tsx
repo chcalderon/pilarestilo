@@ -11,7 +11,7 @@ function StarRow({ rating }: { rating: number }) {
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star key={i} size={11}
-          className={i < rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-charcoal/20'} />
+          className={i < rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-muted'} />
       ))}
     </div>
   );
@@ -26,7 +26,7 @@ function ExpandableComment({ title, comment }: { title?: string | null; comment?
     <div className="max-w-xs">
       {title && <p className="font-sans text-[0.78rem] font-medium text-pe-charcoal mb-0.5">{title}</p>}
       {comment && (
-        <p className="font-sans text-[0.72rem] text-pe-charcoal/60 leading-relaxed">
+        <p className="font-sans text-[0.72rem] text-pe-muted leading-relaxed">
           {expanded ? comment : preview}
           {needsExpand && !expanded && '…'}
           {needsExpand && (
@@ -108,7 +108,7 @@ export default function ReviewModerationQueue() {
       render: row => (
         <span className={[
           'font-sans text-[0.65rem] tracking-wider uppercase px-2 py-0.5',
-          row.approved ? 'bg-green-50 text-green-700' : 'bg-pe-cream text-pe-charcoal/50',
+          row.approved ? 'bg-green-50 text-green-800' : 'bg-pe-cream text-pe-muted',
         ].join(' ')}>
           {row.approved ? 'Aprobada' : 'Pendiente'}
         </span>
@@ -119,7 +119,7 @@ export default function ReviewModerationQueue() {
       header: 'Fecha',
       width: '100px',
       render: row => (
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <span className="font-sans text-[0.72rem] text-pe-muted">
           {new Date(row.createdAt as string).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
         </span>
       ),
@@ -190,15 +190,15 @@ export default function ReviewModerationQueue() {
             className={[
               'whitespace-nowrap px-4 py-2.5 font-sans text-[0.72rem] tracking-[0.12em] uppercase border-b-2 -mb-px transition-colors duration-150',
               filter === f
-                ? 'border-pe-rose text-pe-rose-deep'
-                : 'border-transparent text-pe-charcoal/45 hover:text-pe-charcoal',
+                ? 'border-pe-rose text-pe-rose-ink'
+                : 'border-transparent text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             {f === 'pending' ? 'Pendientes' : f === 'approved' ? 'Aprobadas' : 'Todas'}
           </button>
         ))}
         </div>
-        <span className="block pb-2.5 pt-1 font-sans text-[0.72rem] text-pe-charcoal/35">
+        <span className="block pb-2.5 pt-1 font-sans text-[0.72rem] text-pe-muted">
           {reviews.length} reseña{reviews.length !== 1 ? 's' : ''}
         </span>
       </div>

@@ -97,7 +97,7 @@ export default function ReviewStep({
       <h2 className="font-display text-pe-black text-xl font-semibold mb-6">{l.heading}</h2>
 
       <section className="mb-6">
-        <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-3">
+        <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-3">
           {l.items}
         </h3>
         <ul className="space-y-3">
@@ -129,16 +129,16 @@ export default function ReviewStep({
                 <p
                   className={`font-sans text-sm truncate ${
                     issue?.type === 'SOLD_OUT'
-                      ? 'text-pe-charcoal/50 line-through'
+                      ? 'text-pe-muted line-through'
                       : 'text-pe-black'
                   }`}
                 >
                   {item.name}
                 </p>
                 {item.variantLabel && (
-                  <p className="font-sans text-[0.72rem] text-pe-charcoal/60">{item.variantLabel}</p>
+                  <p className="font-sans text-[0.72rem] text-pe-muted">{item.variantLabel}</p>
                 )}
-                <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+                <p className="font-sans text-[0.72rem] text-pe-muted">
                   {l.qty}: {item.quantity}
                 </p>
 
@@ -169,7 +169,7 @@ export default function ReviewStep({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6 border-t border-pe-charcoal/15 pt-6">
         <section>
-          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
+          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2">
             {l.shipTo}
           </h3>
           {address ? (
@@ -205,7 +205,7 @@ export default function ReviewStep({
         </section>
 
         <section>
-          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
+          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2">
             {l.shipping}
           </h3>
           <p className="font-sans text-[0.8rem] text-pe-charcoal">
@@ -215,9 +215,9 @@ export default function ReviewStep({
           {shippingEta && (
             <p className="font-sans text-[0.8rem] text-pe-charcoal mt-0.5">{shippingEta}</p>
           )}
-          <p className="font-sans text-[0.74rem] text-pe-charcoal/60 mt-1">{l.shippingOnDelivery}</p>
+          <p className="font-sans text-[0.74rem] text-pe-muted mt-1">{l.shippingOnDelivery}</p>
 
-          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mt-4 mb-2">
+          <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mt-4 mb-2">
             {l.payment}
           </h3>
           <p className="font-sans text-[0.8rem] text-pe-charcoal">
@@ -237,10 +237,10 @@ export default function ReviewStep({
       )}
 
       <div className="border-t border-pe-charcoal/12 pt-4 mb-5">
-        <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-1.5">
+        <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-1.5">
           {l.retractoTitle}
         </p>
-        <p className="font-sans text-[0.78rem] leading-relaxed text-pe-charcoal/80 max-w-[62ch]">
+        <p className="font-sans text-[0.78rem] leading-relaxed text-pe-charcoal max-w-[62ch]">
           {l.retractoBody}
         </p>
       </div>

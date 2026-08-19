@@ -58,7 +58,7 @@ const CATEGORY_LABELS: Record<CashMovementCategory, string> = {
 
 const CATEGORY_CHIP_CLASS: Record<CashMovementCategory, string> = {
   INITIAL_BALANCE: 'bg-pe-beige text-pe-charcoal dark:bg-pe-black/60 dark:text-pe-beige',
-  CASH_SALE: 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  CASH_SALE: 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   WITHDRAWAL: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   EXPENSE: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   REFUND: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
@@ -86,7 +86,7 @@ function BalanceTile({
 }) {
   return (
     <div className={`flex-1 min-w-0 px-5 py-4 ${className}`}>
-      <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">{label}</p>
+      <p className="text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">{label}</p>
       <p className="text-2xl font-light text-pe-black dark:text-pe-beige truncate">{value}</p>
     </div>
   );
@@ -161,7 +161,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
           </p>
           <button
             onClick={onClose}
-            className="text-pe-charcoal/50 dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
+            className="text-pe-muted dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
             aria-label="Cerrar"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -173,7 +173,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 px-5 py-6 overflow-y-auto">
           {category === 'ADJUSTMENT' && (
             <div>
-              <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
+              <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
                 Tipo de ajuste
               </label>
               <div className="flex gap-2">
@@ -185,7 +185,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
                     className={`flex-1 py-2 text-xs tracking-widest uppercase border transition-colors ${
                       adjustType === t
                         ? 'bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black border-[#1A1A1A] dark:border-pe-beige'
-                        : 'border-[#EDE3D8] dark:border-white/20 text-pe-charcoal/60 dark:text-pe-beige/60 hover:border-[#B76E79]'
+                        : 'border-[#EDE3D8] dark:border-white/20 text-pe-muted dark:text-pe-beige/60 hover:border-[#B76E79]'
                     }`}
                   >
                     {t === 'IN' ? 'Entrada' : 'Salida'}
@@ -196,7 +196,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
           )}
 
           <div>
-            <label htmlFor="drawer-amount" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
+            <label htmlFor="drawer-amount" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
               Monto (CLP)
             </label>
             <input
@@ -208,13 +208,13 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-muted dark:placeholder:text-pe-beige/30"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="drawer-description" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-2">
+            <label htmlFor="drawer-description" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
               Descripción
             </label>
             <input
@@ -223,7 +223,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalle del movimiento"
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-muted dark:placeholder:text-pe-beige/30"
               required
             />
           </div>
@@ -464,12 +464,12 @@ export default function CajaPage() {
   function renderOpenForm() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
-        <p className="font-display text-2xl text-pe-charcoal/50 dark:text-pe-beige/40 italic">
+        <p className="font-display text-2xl text-pe-muted dark:text-pe-beige/40 italic">
           {operationView === 'no_caja' ? 'Aún no hay caja abierta' : 'Abrir nueva caja'}
         </p>
         <div className="w-full max-w-xs space-y-4">
           <div>
-            <label htmlFor="open-balance" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
+            <label htmlFor="open-balance" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">
               Balance inicial (CLP)
             </label>
             <input
@@ -500,19 +500,19 @@ export default function CajaPage() {
     return (
       <div className="max-w-lg space-y-4">
         <div className="border border-[#EDE3D8] dark:border-white/10 p-4 space-y-2">
-          <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 dark:text-pe-beige/40">Resumen de cierre</p>
+          <p className="text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/40">Resumen de cierre</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Apertura</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Apertura</span>
             <span className="text-right text-pe-charcoal dark:text-pe-beige">{formatDateTime(caja.openedAt)}</span>
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Cierre</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Cierre</span>
             <span className="text-right text-pe-charcoal dark:text-pe-beige">{formatDateTime(caja.closedAt)}</span>
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Balance inicial</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Balance inicial</span>
             <span className="text-right text-pe-charcoal dark:text-pe-beige">{CLP(caja.openingBalance)}</span>
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Balance esperado</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Balance esperado</span>
             <span className="text-right text-pe-charcoal dark:text-pe-beige">{CLP(caja.expectedBalance)}</span>
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Balance declarado</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Balance declarado</span>
             <span className="text-right text-pe-charcoal dark:text-pe-beige">{CLP(caja.closingBalance ?? 0)}</span>
-            <span className="text-pe-charcoal/60 dark:text-pe-beige/60">Diferencia</span>
+            <span className="text-pe-muted dark:text-pe-beige/60">Diferencia</span>
             <span className={`text-right font-medium ${(caja.difference ?? 0) === 0 ? 'text-[#6B7A5E]' : 'text-[#B76E79]'}`}>
               {CLP(caja.difference ?? 0)}
             </span>
@@ -539,11 +539,11 @@ export default function CajaPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-            <span className="text-sm text-pe-charcoal/70 dark:text-pe-beige/70">
+            <span className="text-sm text-pe-muted dark:text-pe-beige/70">
               Caja abierta
-              <span className="mx-1.5 text-pe-charcoal/30 dark:text-pe-beige/30">·</span>
+              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
               Sesión #{shortId(caja.id)}
-              <span className="mx-1.5 text-pe-charcoal/30 dark:text-pe-beige/30">·</span>
+              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
               {formatTime(caja.openedAt)}h
             </span>
           </div>
@@ -552,7 +552,7 @@ export default function CajaPage() {
             className={`text-[10px] tracking-widest uppercase px-3 py-1.5 border transition-colors ${
               showPosSales
                 ? 'border-[#B76E79] text-[#B76E79]'
-                : 'border-[#EDE3D8] dark:border-white/20 text-pe-charcoal/50 dark:text-pe-beige/50 hover:border-[#B76E79] hover:text-[#B76E79]'
+                : 'border-[#EDE3D8] dark:border-white/20 text-pe-muted dark:text-pe-beige/50 hover:border-[#B76E79] hover:text-[#B76E79]'
             }`}
           >
             {showPosSales ? 'Ocultar ventas POS' : 'Mostrar ventas POS'}
@@ -571,7 +571,7 @@ export default function CajaPage() {
         {closingMode && (
           <div className="border border-[#EDE3D8] dark:border-white/10 flex divide-x divide-[#EDE3D8] dark:divide-white/10 overflow-auto">
             <div className="flex-1 min-w-0 px-5 py-4">
-              <label htmlFor="declared-balance" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Declarado</label>
+              <label htmlFor="declared-balance" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Declarado</label>
               <input
                 id="declared-balance"
                 type="number"
@@ -580,11 +580,11 @@ export default function CajaPage() {
                 value={declaredBalance}
                 onChange={(e) => setDeclaredBalance(e.target.value)}
                 placeholder="0"
-                className="w-full text-2xl font-light text-pe-black dark:text-pe-beige bg-transparent border-0 border-b border-[#EDE3D8] dark:border-white/20 focus:outline-hidden focus:border-[#B76E79] pb-0.5 placeholder:text-pe-charcoal/20 dark:placeholder:text-pe-beige/20"
+                className="w-full text-2xl font-light text-pe-black dark:text-pe-beige bg-transparent border-0 border-b border-[#EDE3D8] dark:border-white/20 focus:outline-hidden focus:border-[#B76E79] pb-0.5 placeholder:text-pe-muted dark:placeholder:text-pe-beige/20"
               />
             </div>
             <div className="flex-1 min-w-0 px-5 py-4">
-              <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Diferencia</p>
+              <p className="text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Diferencia</p>
               <p className={`text-2xl font-light ${differenceColor}`}>
                 {difference !== null ? CLP(difference) : '—'}
               </p>
@@ -618,7 +618,7 @@ export default function CajaPage() {
               <>
                 <button
                   onClick={() => { setClosingMode(false); setDeclaredBalance(''); setCloseNotes(''); }}
-                  className="text-xs tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
+                  className="text-xs tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
                 >
                   Cancelar
                 </button>
@@ -644,7 +644,7 @@ export default function CajaPage() {
         {/* Close notes (shown in closing mode) */}
         {closingMode && (
           <div>
-            <label htmlFor="close-notes" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
+            <label htmlFor="close-notes" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">
               Notas de cierre (opcional)
             </label>
             <textarea
@@ -653,7 +653,7 @@ export default function CajaPage() {
               onChange={(e) => setCloseNotes(e.target.value)}
               placeholder="Notas de cierre (opcional)"
               rows={2}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-muted dark:placeholder:text-pe-beige/30"
             />
           </div>
         )}
@@ -662,16 +662,16 @@ export default function CajaPage() {
 
         {/* Movement table */}
         <div>
-          <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 dark:text-pe-beige/40 mb-3">Movimientos</p>
+          <p className="text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/40 mb-3">Movimientos</p>
           {visibleMovements.length === 0 ? (
-            <p className="font-display italic text-pe-charcoal/40 dark:text-pe-beige/40 text-lg py-8 text-center">
+            <p className="font-display italic text-pe-muted dark:text-pe-beige/40 text-lg py-8 text-center">
               Aún sin movimientos
             </p>
           ) : (
             <div className="border border-[#EDE3D8] dark:border-white/10 overflow-auto">
               <table className="w-full min-w-[680px] text-sm">
                 <thead className="bg-[#F8F4EF] dark:bg-white/5">
-                  <tr className="text-left text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50">
+                  <tr className="text-left text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50">
                     <th className="px-3 py-2">Hora</th>
                     <th className="px-3 py-2">Categoría</th>
                     <th className="px-3 py-2">Concepto</th>
@@ -702,7 +702,7 @@ export default function CajaPage() {
       <div className="space-y-5">
         <div className="border border-[#EDE3D8] dark:border-white/10 p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Estado</label>
+            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Estado</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'OPEN' | 'CLOSED')}
@@ -714,7 +714,7 @@ export default function CajaPage() {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Desde</label>
+            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Desde</label>
             <input
               type="date"
               value={fromFilter}
@@ -723,7 +723,7 @@ export default function CajaPage() {
             />
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">Hasta</label>
+            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Hasta</label>
             <input
               type="date"
               value={toFilter}
@@ -732,7 +732,7 @@ export default function CajaPage() {
             />
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/50 mb-1">
+            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">
               {adminScope ? 'ID cajero (opcional)' : 'Accion'}
             </label>
             {adminScope ? (
@@ -765,12 +765,12 @@ export default function CajaPage() {
         </div>
 
         {historyError && <p className="text-red-500 text-sm">{historyError}</p>}
-        {historyLoading && <p className="text-pe-charcoal/50 dark:text-pe-beige/50 text-sm">Cargando registros...</p>}
+        {historyLoading && <p className="text-pe-muted dark:text-pe-beige/50 text-sm">Cargando registros...</p>}
 
         <div className="border border-[#EDE3D8] dark:border-white/10 overflow-auto">
           <table className="w-full min-w-[980px] text-sm">
             <thead className="bg-[#F8F4EF] dark:bg-white/5">
-              <tr className="text-left text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50">
+              <tr className="text-left text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50">
                 <th className="px-3 py-2">Apertura</th>
                 <th className="px-3 py-2">Cierre</th>
                 <th className="px-3 py-2">Estado</th>
@@ -785,7 +785,7 @@ export default function CajaPage() {
             <tbody>
               {registers.length === 0 && !historyLoading && (
                 <tr>
-                  <td className="px-3 py-4 text-pe-charcoal/50 dark:text-pe-beige/50" colSpan={9}>
+                  <td className="px-3 py-4 text-pe-muted dark:text-pe-beige/50" colSpan={9}>
                     No hay registros para los filtros seleccionados.
                   </td>
                 </tr>
@@ -797,8 +797,8 @@ export default function CajaPage() {
                   <td className="px-3 py-2">
                     <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded-sm ${
                       register.status === 'OPEN'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-pe-charcoal/10 text-pe-charcoal/70 dark:bg-white/10 dark:text-pe-beige/70'
+                        ? 'bg-green-100 text-pe-positive dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-pe-charcoal/10 text-pe-muted dark:bg-white/10 dark:text-pe-beige/70'
                     }`}>
                       {register.status === 'OPEN' ? 'Abierta' : 'Cerrada'}
                     </span>
@@ -813,7 +813,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2">
                     <button
                       onClick={() => setSelectedRegister(register)}
-                      className="text-xs tracking-widest uppercase text-pe-rose-deep dark:text-pe-rose hover:underline"
+                      className="text-xs tracking-widest uppercase text-pe-rose-ink dark:text-pe-rose hover:underline"
                     >
                       Ver
                     </button>
@@ -825,7 +825,7 @@ export default function CajaPage() {
         </div>
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-pe-charcoal/50 dark:text-pe-beige/50">
+          <p className="text-xs text-pe-muted dark:text-pe-beige/50">
             Total registros: {historyPage?.totalElements ?? 0}
           </p>
           <div className="flex gap-2">
@@ -849,31 +849,31 @@ export default function CajaPage() {
         {selectedRegister && (
           <div className="border border-[#EDE3D8] dark:border-white/10 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm tracking-widest uppercase text-pe-charcoal/60 dark:text-pe-beige/60">
+              <h3 className="text-sm tracking-widest uppercase text-pe-muted dark:text-pe-beige/60">
                 Detalle registro #{shortId(selectedRegister.id)}
               </h3>
-              <span className="text-xs text-pe-charcoal/45 dark:text-pe-beige/45">
+              <span className="text-xs text-pe-muted dark:text-pe-beige/45">
                 Cajero: {shortId(selectedRegister.sellerId)}
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
-                <p className="text-pe-charcoal/45 dark:text-pe-beige/45 text-xs uppercase tracking-widest">Apertura</p>
+                <p className="text-pe-muted dark:text-pe-beige/45 text-xs uppercase tracking-widest">Apertura</p>
                 <p className="text-pe-charcoal dark:text-pe-beige">{formatDateTime(selectedRegister.openedAt)}</p>
               </div>
               <div>
-                <p className="text-pe-charcoal/45 dark:text-pe-beige/45 text-xs uppercase tracking-widest">Cierre</p>
+                <p className="text-pe-muted dark:text-pe-beige/45 text-xs uppercase tracking-widest">Cierre</p>
                 <p className="text-pe-charcoal dark:text-pe-beige">{formatDateTime(selectedRegister.closedAt)}</p>
               </div>
               <div>
-                <p className="text-pe-charcoal/45 dark:text-pe-beige/45 text-xs uppercase tracking-widest">Notas</p>
+                <p className="text-pe-muted dark:text-pe-beige/45 text-xs uppercase tracking-widest">Notas</p>
                 <p className="text-pe-charcoal dark:text-pe-beige">{selectedRegister.notes?.trim() || '-'}</p>
               </div>
             </div>
             <div className="overflow-auto border border-[#EDE3D8] dark:border-white/10">
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="bg-[#F8F4EF] dark:bg-white/5">
-                  <tr className="text-left text-[10px] tracking-widest uppercase text-pe-charcoal/50 dark:text-pe-beige/50">
+                  <tr className="text-left text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50">
                     <th className="px-3 py-2">Hora</th>
                     <th className="px-3 py-2">Categoría</th>
                     <th className="px-3 py-2">Concepto</th>
@@ -885,7 +885,7 @@ export default function CajaPage() {
                 <tbody>
                   {selectedRegister.movements.length === 0 && (
                     <tr>
-                      <td className="px-3 py-3 text-pe-charcoal/50 dark:text-pe-beige/50" colSpan={6}>Sin movimientos.</td>
+                      <td className="px-3 py-3 text-pe-muted dark:text-pe-beige/50" colSpan={6}>Sin movimientos.</td>
                     </tr>
                   )}
                   {selectedRegister.movements.map((movement) => (
@@ -924,7 +924,7 @@ export default function CajaPage() {
                 className={`px-4 py-2 text-xs tracking-widest uppercase border-b-2 transition-colors ${
                   tab === t
                     ? 'border-[#B76E79] text-pe-black dark:text-pe-beige'
-                    : 'border-transparent text-pe-charcoal/50 dark:text-pe-beige/50 hover:text-pe-charcoal/80 dark:hover:text-pe-beige/80'
+                    : 'border-transparent text-pe-muted dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige/80'
                 }`}
               >
                 {t === 'operacion' ? 'Operacion' : 'Registros'}
@@ -937,7 +937,7 @@ export default function CajaPage() {
         {tab === 'operacion' && (
           <>
             {operationView === 'loading' && (
-              <p className="text-pe-charcoal/50 dark:text-pe-beige/50 text-sm">Cargando...</p>
+              <p className="text-pe-muted dark:text-pe-beige/50 text-sm">Cargando...</p>
             )}
             {(operationView === 'no_caja' || operationView === 'open_form') && renderOpenForm()}
             {operationView === 'closed' && renderClosed()}
@@ -957,7 +957,7 @@ function MovementRow({ movement }: { movement: CashMovementDto }) {
   const isIn = movement.type === 'IN';
   return (
     <tr className="border-t border-[#EDE3D8] dark:border-white/10">
-      <td className="px-3 py-2 text-pe-charcoal/60 dark:text-pe-beige/60 tabular-nums">{formatTime(ts)}</td>
+      <td className="px-3 py-2 text-pe-muted dark:text-pe-beige/60 tabular-nums">{formatTime(ts)}</td>
       <td className="px-3 py-2">
         <CategoryChip category={movement.category ?? 'ADJUSTMENT'} />
       </td>
@@ -968,7 +968,7 @@ function MovementRow({ movement }: { movement: CashMovementDto }) {
       <td className="px-3 py-2 text-right tabular-nums text-[#B76E79]">
         {!isIn ? CLP(movement.amount) : '—'}
       </td>
-      <td className="px-3 py-2 text-pe-charcoal/50 dark:text-pe-beige/50 font-mono text-xs">
+      <td className="px-3 py-2 text-pe-muted dark:text-pe-beige/50 font-mono text-xs">
         {shortId(movement.recordedBy)}
       </td>
     </tr>

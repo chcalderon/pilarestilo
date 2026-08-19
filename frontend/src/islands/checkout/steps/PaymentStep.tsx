@@ -95,7 +95,7 @@ export default function PaymentStep({
   return (
     <div className="bg-pe-white p-6">
       <h2 className="font-display text-pe-black text-xl font-semibold mb-6 flex items-center gap-2">
-        <CreditCard size={18} className="text-pe-charcoal/60" aria-hidden="true" />
+        <CreditCard size={18} className="text-pe-muted" aria-hidden="true" />
         {l.heading}
       </h2>
 
@@ -120,10 +120,10 @@ export default function PaymentStep({
             />
             <span className="flex-1">
               <span className="flex items-center gap-2 font-sans text-sm font-semibold text-pe-black">
-                <Building2 size={15} className="text-pe-charcoal/60" aria-hidden="true" />
+                <Building2 size={15} className="text-pe-muted" aria-hidden="true" />
                 {l.transfer}
               </span>
-              <span className="block font-sans text-[0.78rem] text-pe-charcoal/70 mt-1">
+              <span className="block font-sans text-[0.78rem] text-pe-muted mt-1">
                 {l.transferHint}
               </span>
 
@@ -131,7 +131,7 @@ export default function PaymentStep({
                 <span className="block mt-3 border-t border-pe-charcoal/15 pt-3 space-y-1">
                   {bankRows.map(([term, value]) => (
                     <span key={term} className="flex justify-between gap-3 font-sans text-[0.76rem]">
-                      <span className="text-pe-charcoal/60">{term}</span>
+                      <span className="text-pe-muted">{term}</span>
                       <span className="text-pe-charcoal font-medium text-right break-all">{value}</span>
                     </span>
                   ))}
@@ -159,13 +159,13 @@ export default function PaymentStep({
             />
             <span className="flex-1">
               <span className="flex items-center gap-2 font-sans text-sm font-semibold text-pe-black">
-                <CreditCard size={15} className="text-pe-charcoal/60" aria-hidden="true" />
+                <CreditCard size={15} className="text-pe-muted" aria-hidden="true" />
                 {l.gateway}
                 {gatewayLabel && (
-                  <span className="font-normal text-pe-charcoal/60">· {gatewayLabel}</span>
+                  <span className="font-normal text-pe-muted">· {gatewayLabel}</span>
                 )}
               </span>
-              <span className="block font-sans text-[0.78rem] text-pe-charcoal/70 mt-1">
+              <span className="block font-sans text-[0.78rem] text-pe-muted mt-1">
                 {l.gatewayHint}
               </span>
             </span>
@@ -176,9 +176,9 @@ export default function PaymentStep({
       {/* Only meaningful for a transfer, and only when the sweep is actually enabled. */}
       {method === 'TRANSFER' && transferWindowMinutes !== null && transferWindowMinutes > 0 && (
         <div className="flex items-start gap-3 border-l-2 border-pe-rose/50 bg-pe-cream/40 p-4 mb-6">
-          <Clock size={16} className="text-pe-rose-deep shrink-0 mt-0.5" aria-hidden="true" />
+          <Clock size={16} className="text-pe-rose-ink shrink-0 mt-0.5" aria-hidden="true" />
           <div>
-            <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75">
+            <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal">
               {l.windowTitle}
             </p>
             <p className="font-sans text-[0.8rem] text-pe-charcoal mt-1">

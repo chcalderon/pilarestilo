@@ -33,7 +33,7 @@ const links = {
 };
 ---
 
-<footer class="bg-pe-black text-pe-white/60" aria-label="Site footer">
+<footer class="bg-pe-black text-pe-on-dark-muted" aria-label="Site footer">
   <!-- Ornamental top rule -->
   <div class="h-px w-full bg-gradient-to-r from-transparent via-pe-gold/40 to-transparent"></div>
 
@@ -46,15 +46,15 @@ const links = {
           <img src="/logo-pe.svg" alt="Pilar Estilo" width="130" height="115"
                class="opacity-80 group-hover:opacity-100 transition-opacity duration-300 max-h-14 w-auto" />
           <div>
-            <p class="font-sans text-[0.62rem] tracking-[0.32em] uppercase text-pe-white/50 group-hover:text-pe-rose-soft transition-colors duration-300">
+            <p class="font-sans text-[0.62rem] tracking-[0.32em] uppercase text-pe-on-dark-muted group-hover:text-pe-rose-soft transition-colors duration-300">
               Pilar Estilo
             </p>
-            <p class="pe-script text-pe-rose-soft text-xl leading-tight">
+            <p class="pe-script text-pe-rose-display-display text-xl leading-tight">
               Lujo con Propósito
             </p>
           </div>
         </a>
-        <p class="font-sans text-[0.82rem] text-pe-white/40 leading-relaxed max-w-xs">
+        <p class="font-sans text-[0.82rem] text-pe-on-dark-muted leading-relaxed max-w-xs">
           {locale === 'es'
             ? 'Moda de lujo curada — piezas nuevas y de segunda mano de las marcas más deseadas del mundo.'
             : 'Curated luxury fashion — new and pre-loved pieces from the world\'s most desired brands.'}
@@ -65,12 +65,12 @@ const links = {
           <input
             type="email"
             placeholder={locale === 'es' ? 'Tu email' : 'Your email'}
-            class="flex-1 bg-pe-white/6 border border-pe-white/12 text-pe-white/70 placeholder-pe-white/25 px-3 py-2 text-[0.8rem] font-sans focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+            class="flex-1 bg-pe-white/6 border border-pe-white/12 text-pe-on-dark-muted placeholder-pe-white/25 px-3 py-2 text-[0.8rem] font-sans focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
             aria-label={locale === 'es' ? 'Correo electrónico para newsletter' : 'Newsletter email'}
           />
           <button
             type="submit"
-            class="bg-pe-rose hover:bg-pe-rose-deep transition-colors duration-200 text-pe-offwhite px-3 py-2"
+            class="bg-pe-rose-action hover:bg-pe-rose-action-action-deep transition-colors duration-200 text-pe-offwhite px-3 py-2"
             aria-label={locale === 'es' ? 'Suscribirse' : 'Subscribe'}
           >
             <Icon name="send" size={14} />
@@ -80,7 +80,7 @@ const links = {
 
       <!-- Colección links -->
       <div>
-        <h3 class="font-sans text-[0.65rem] tracking-[0.28em] uppercase text-pe-white/30 mb-5">
+        <h3 class="font-sans text-[0.65rem] tracking-[0.28em] uppercase text-pe-on-dark-muted mb-5">
           {locale === 'es' ? 'Colección' : 'Collection'}
         </h3>
         <ul class="flex flex-col gap-3" role="list">
@@ -88,7 +88,7 @@ const links = {
             <li>
               <a
                 href={l.href}
-                class="font-sans text-[0.82rem] text-pe-white/50 hover:text-pe-rose-soft transition-colors duration-200"
+                class="font-sans text-[0.82rem] text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200"
               >
                 {locale === 'es' ? l.labelEs : l.labelEn}
               </a>
@@ -99,7 +99,7 @@ const links = {
 
       <!-- Info links + socials -->
       <div>
-        <h3 class="font-sans text-[0.65rem] tracking-[0.28em] uppercase text-pe-white/30 mb-5">
+        <h3 class="font-sans text-[0.65rem] tracking-[0.28em] uppercase text-pe-on-dark-muted mb-5">
           {locale === 'es' ? 'Información' : 'Information'}
         </h3>
         <ul class="flex flex-col gap-3 mb-8" role="list">
@@ -107,7 +107,7 @@ const links = {
             <li>
               <a
                 href={l.href}
-                class="font-sans text-[0.82rem] text-pe-white/50 hover:text-pe-rose-soft transition-colors duration-200"
+                class="font-sans text-[0.82rem] text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200"
               >
                 {locale === 'es' ? l.labelEs : l.labelEn}
               </a>
@@ -117,10 +117,10 @@ const links = {
 
         <!-- Social icons -->
         <div class="flex gap-4">
-          <a href={instagramUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Instagram">
+          <a href={instagramUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200" aria-label="Instagram">
             <Icon name="instagram" size={17} strokeWidth={1.4} />
           </a>
-          <a href={facebookUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-white/30 hover:text-pe-rose-soft transition-colors duration-200" aria-label="Facebook">
+          <a href={facebookUrl ?? '#'} target="_blank" rel="noopener noreferrer" class="text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200" aria-label="Facebook">
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
             </svg>
@@ -131,7 +131,7 @@ const links = {
 
     <!-- Bottom bar -->
     <div class="mt-12 pt-6 border-t border-pe-white/8 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="font-sans text-[0.72rem] text-pe-white/25 tracking-wide">
+      <p class="font-sans text-[0.72rem] text-pe-on-dark-muted tracking-wide">
         {t('footer.rights', locale)}
       </p>
       <div class="chapter-mark text-[0.9rem] opacity-30">

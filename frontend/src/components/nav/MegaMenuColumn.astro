@@ -11,7 +11,7 @@ const { children, locale } = Astro.props;
     <li>
       <a
         href={`/${locale}/categories/${child.slug}`}
-        class="nav-mega-link group flex items-center gap-2 py-1 text-pe-white/80 hover:text-pe-rose-soft transition-colors duration-150"
+        class="nav-mega-link group flex items-center gap-2 py-1 text-pe-on-dark hover:text-pe-rose-soft transition-colors duration-150"
         aria-current={false}
       >
         <span class="font-sans text-[0.7rem] tracking-[0.15em] uppercase leading-snug">{child.name}</span>
@@ -22,7 +22,7 @@ const { children, locale } = Astro.props;
             <li>
               <a
                 href={`/${locale}/categories/${grandchild.slug}`}
-                class="block font-sans text-[0.63rem] tracking-[0.12em] uppercase text-pe-white/50 hover:text-pe-rose-soft/80 transition-colors duration-150 py-0.5"
+                class="block font-sans text-[0.63rem] tracking-[0.12em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft/80 transition-colors duration-150 py-0.5"
               >
                 {grandchild.name}
               </a>

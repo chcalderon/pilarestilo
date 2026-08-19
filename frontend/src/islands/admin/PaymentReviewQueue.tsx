@@ -17,9 +17,9 @@ import { openBlobInNewTab } from '../../lib/openBlob';
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700',
   UNDER_REVIEW: 'bg-blue-50 text-blue-700',
-  APPROVED: 'bg-green-50 text-green-700',
+  APPROVED: 'bg-green-50 text-green-800',
   REJECTED: 'bg-red-50 text-red-500',
-  SUBMITTED: 'bg-pe-cream text-pe-charcoal/60',
+  SUBMITTED: 'bg-pe-cream text-pe-muted',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -153,7 +153,7 @@ export default function PaymentReviewQueue() {
       key: 'orderId',
       header: 'ID Orden',
       render: (row) => (
-        <span className="font-mono text-[0.72rem] text-pe-charcoal/55 break-all">
+        <span className="font-mono text-[0.72rem] text-pe-muted break-all">
           {String(row.orderId)}
         </span>
       ),
@@ -163,9 +163,9 @@ export default function PaymentReviewQueue() {
       header: 'Metodo',
       render: (row) => (
         <div className="flex flex-col">
-          <span className="font-sans text-[0.78rem] uppercase tracking-wider text-pe-charcoal/70">{row.method}</span>
+          <span className="font-sans text-[0.78rem] uppercase tracking-wider text-pe-muted">{row.method}</span>
           {String(row.method) === 'TRANSFER' && row.transferAccountNumber && (
-            <span className="font-sans text-[0.66rem] text-pe-charcoal/45">
+            <span className="font-sans text-[0.66rem] text-pe-muted">
               Cuenta ****{String(row.transferAccountNumber).slice(-4)}
             </span>
           )}
@@ -182,7 +182,7 @@ export default function PaymentReviewQueue() {
           <span
             className={[
               'font-sans text-[0.65rem] tracking-wider uppercase px-2 py-0.5',
-              STATUS_STYLES[status] ?? 'text-pe-charcoal/50',
+              STATUS_STYLES[status] ?? 'text-pe-muted',
             ].join(' ')}
           >
             {STATUS_LABELS[status] ?? status}
@@ -198,7 +198,7 @@ export default function PaymentReviewQueue() {
           return (
             <button
               type="button"
-              className="inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2"
+              className="inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-rose-ink hover:underline underline-offset-2"
               onClick={(e) => {
                 e.stopPropagation();
                 void openProof(String(row.id));
@@ -210,10 +210,10 @@ export default function PaymentReviewQueue() {
         }
 
         if (String(row.status) === 'PENDING') {
-          return <span className="font-sans text-[0.68rem] text-pe-charcoal/45">Esperando comprobante</span>;
+          return <span className="font-sans text-[0.68rem] text-pe-muted">Esperando comprobante</span>;
         }
 
-        return <span className="text-pe-charcoal/25 text-[0.72rem]">-</span>;
+        return <span className="text-pe-muted text-[0.72rem]">-</span>;
       },
     },
     {
@@ -221,7 +221,7 @@ export default function PaymentReviewQueue() {
       header: 'Fecha',
       width: '140px',
       render: (row) => (
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <span className="font-sans text-[0.72rem] text-pe-muted">
           {new Date(String(row.createdAt)).toLocaleDateString('es-CL', {
             day: '2-digit',
             month: '2-digit',
@@ -248,7 +248,7 @@ export default function PaymentReviewQueue() {
         const canSimulate = status === 'PENDING' && (String(row.method) === 'WEBPAY' || String(row.method) === 'MERCADOPAGO');
 
         if (!canReview && !canSimulate) {
-          return <span className="font-sans text-[0.68rem] text-pe-charcoal/45">Sin accion</span>;
+          return <span className="font-sans text-[0.68rem] text-pe-muted">Sin accion</span>;
         }
 
         if (canSimulate) {
@@ -313,7 +313,7 @@ export default function PaymentReviewQueue() {
       header: 'Revision',
       width: '140px',
       render: (row) => (
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <span className="font-sans text-[0.72rem] text-pe-muted">
           {row.reviewedAt
             ? new Date(String(row.reviewedAt)).toLocaleDateString('es-CL', {
               day: '2-digit',
@@ -334,7 +334,7 @@ export default function PaymentReviewQueue() {
       key: 'rejectionReason',
       header: 'Motivo rechazo',
       render: (row) => (
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/60 italic">
+        <span className="font-sans text-[0.72rem] text-pe-muted italic">
           {row.rejectionReason ?? '-'}
         </span>
       ),
@@ -344,7 +344,7 @@ export default function PaymentReviewQueue() {
       header: 'Cancelado',
       width: '140px',
       render: (row) => (
-        <span className="font-sans text-[0.72rem] text-pe-charcoal/40">
+        <span className="font-sans text-[0.72rem] text-pe-muted">
           {row.reviewedAt
             ? new Date(String(row.reviewedAt)).toLocaleDateString('es-CL', {
               day: '2-digit',
@@ -398,7 +398,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('queue')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'queue' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              activeTab === 'queue' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Por revisar ({queuePayments.length})
@@ -408,7 +408,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('approved')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'approved' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              activeTab === 'approved' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Pagados ({approvedPayments.length})
@@ -418,7 +418,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('rejected')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'rejected' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-charcoal/55 hover:text-pe-charcoal',
+              activeTab === 'rejected' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Rechazados ({rejectedPayments.length})
@@ -431,7 +431,7 @@ export default function PaymentReviewQueue() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : activeTab === 'approved' ? 'Buscar pago aprobado...' : 'Buscar pago rechazado...'}
-            className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-hidden focus:border-pe-rose/45"
+            className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-muted focus:outline-hidden focus:border-pe-rose/45"
             aria-label="Buscar pagos"
           />
 
@@ -452,7 +452,7 @@ export default function PaymentReviewQueue() {
               setDateSort('desc');
             }}
             disabled={!canClearFilters}
-            className="w-full sm:w-auto px-2.5 py-1.5 font-sans text-[0.72rem] uppercase tracking-wider border border-pe-black/15 text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-cream transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-2.5 py-1.5 font-sans text-[0.72rem] uppercase tracking-wider border border-pe-black/15 text-pe-muted hover:text-pe-charcoal hover:bg-pe-cream transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
           >
             Limpiar filtros
           </button>
@@ -461,7 +461,7 @@ export default function PaymentReviewQueue() {
             onClick={() => {
               void load();
             }}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-charcoal/45 hover:text-pe-rose transition-colors"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose transition-colors"
             aria-label="Actualizar"
           >
             <RefreshCw size={13} /> Actualizar
@@ -475,7 +475,7 @@ export default function PaymentReviewQueue() {
             'mb-3 flex items-start justify-between gap-3 border px-3 py-2',
             feedback.type === 'error'
               ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-green-200 bg-green-50 text-green-700',
+              : 'border-green-200 bg-green-50 text-green-800',
           ].join(' ')}
         >
           <p className="font-sans text-[0.74rem]">{feedback.text}</p>
@@ -490,12 +490,12 @@ export default function PaymentReviewQueue() {
       )}
 
       {activeTab === 'queue' && (
-        <p className="font-sans text-[0.68rem] text-pe-charcoal/45 mb-2">
+        <p className="font-sans text-[0.68rem] text-pe-muted mb-2">
           Simulacion dev: en pagos `WEBPAY` / `MERCADOPAGO` pendientes puedes usar `Sim aprobar` o `Sim rechazar`.
         </p>
       )}
 
-      <p className="font-sans text-[0.7rem] text-pe-charcoal/45 mb-2">
+      <p className="font-sans text-[0.7rem] text-pe-muted mb-2">
         {visibleData.length} resultado{visibleData.length !== 1 ? 's' : ''}
       </p>
 

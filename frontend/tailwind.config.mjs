@@ -18,6 +18,16 @@ export default {
          * <alpha-value>) form is what keeps the /55 opacity modifiers working.
          */
         'pe-charcoal': 'rgb(var(--pe-charcoal-rgb) / <alpha-value>)',
+        /* Readable by construction: see the note beside these variables in globals.css. */
+        'pe-muted': 'var(--pe-muted-ink)',
+        'pe-rose-ink': 'var(--pe-rose-ink)',
+        'pe-gold-ink': 'var(--pe-gold-ink)',
+        'pe-rose-display': 'var(--pe-rose-display)',
+        'pe-rose-action': 'var(--pe-rose-action)',
+        'pe-positive': 'var(--pe-positive-ink)',
+        'pe-on-dark': 'var(--pe-on-dark)',
+        'pe-on-light': 'var(--pe-on-light)',
+        'pe-on-dark-muted': 'var(--pe-on-dark-muted)',
         'pe-gold': '#C6A96B',
         'pe-white': '#FFFFFF',
         'pe-beige': '#F5F1EB',

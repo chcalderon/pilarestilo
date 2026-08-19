@@ -105,18 +105,18 @@ const rights = isEs
   <div class="bg-pe-offwhite">
     <section class="relative overflow-hidden border-b border-pe-black/10 bg-pe-cream">
       <div class="pe-container py-16 md:py-20 relative z-[1]">
-        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+        <p class="pe-eyebrow text-pe-rose-ink mb-4">
           {isEs ? 'Tus datos' : 'Your data'}
         </p>
         <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
           {isEs ? 'Política de privacidad' : 'Privacy policy'}
         </h1>
-        <p class="mt-6 max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+        <p class="mt-6 max-w-3xl font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
           {isEs
             ? 'Guardamos lo que hace falta para venderte y responder por la venta, y nada más. Acá está escrito qué, por qué, y qué puedes pedirnos.'
             : 'We keep what it takes to sell to you and to answer for the sale, and nothing else. Here is what, why, and what you can ask of us.'}
         </p>
-        <p class="mt-4 font-sans text-[0.72rem] tracking-[0.16em] uppercase text-pe-charcoal/50">
+        <p class="mt-4 font-sans text-[0.72rem] tracking-[0.16em] uppercase text-pe-muted">
           {isEs ? 'Versión' : 'Version'} {version}
         </p>
       </div>
@@ -136,7 +136,7 @@ const rights = isEs
                     <th scope="row" class="py-4 pr-8 font-sans text-sm font-medium text-pe-black whitespace-nowrap">
                       {what}
                     </th>
-                    <td class="py-4 font-sans text-sm text-pe-charcoal/75 leading-relaxed">{why}</td>
+                    <td class="py-4 font-sans text-sm text-pe-charcoal leading-relaxed">{why}</td>
                   </tr>
                 ))}
               </tbody>
@@ -148,10 +148,10 @@ const rights = isEs
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
-        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-3">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-on-dark font-light mb-3">
           {isEs ? 'Lo que puedes pedirnos' : 'What you can ask of us'}
         </h2>
-        <p class="font-sans text-sm text-pe-white/60 leading-relaxed max-w-2xl mb-8 md:mb-10">
+        <p class="font-sans text-sm text-pe-on-dark-muted leading-relaxed max-w-2xl mb-8 md:mb-10">
           {isEs
             ? 'Son derechos que te reconoce la Ley 21.719, no concesiones nuestras. Se ejercen desde Mi Cuenta o escribiéndonos.'
             : 'These are rights the Ley 21.719 grants you, not favours from us. Exercise them from My Account or by writing to us.'}
@@ -162,7 +162,7 @@ const rights = isEs
               <h3 class="font-sans text-[0.72rem] tracking-[0.2em] uppercase text-pe-rose-soft mb-3">
                 {right.title}
               </h3>
-              <p class="font-sans text-sm text-pe-white/75 leading-relaxed max-w-[62ch]">{right.body}</p>
+              <p class="font-sans text-sm text-pe-on-dark leading-relaxed max-w-[62ch]">{right.body}</p>
             </article>
           ))}
         </div>
@@ -179,11 +179,11 @@ const rights = isEs
 
     <section class="py-12">
       <div class="pe-container">
-        <p class="font-sans text-[0.78rem] text-pe-charcoal/60 leading-relaxed max-w-3xl">
+        <p class="font-sans text-[0.78rem] text-pe-muted leading-relaxed max-w-3xl">
           {isEs
             ? 'Responsable del tratamiento: Pilar Estilo. Si tienes una duda o un reclamo sobre tus datos, escríbenos a '
             : 'Data controller: Pilar Estilo. For any question or complaint about your data, write to '}
-          <a href={`mailto:${supportEmail}`} class="underline underline-offset-4 hover:text-pe-rose-deep transition-colors">
+          <a href={`mailto:${supportEmail}`} class="underline underline-offset-4 hover:text-pe-rose-ink transition-colors">
             {supportEmail}
           </a>
           {isEs

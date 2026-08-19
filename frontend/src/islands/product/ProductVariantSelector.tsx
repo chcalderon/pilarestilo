@@ -264,8 +264,8 @@ export default function ProductVariantSelector({
           !canAdd
             ? 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed'
             : added
-            ? 'bg-pe-gold/80 text-pe-black'
-            : 'bg-pe-gold text-pe-black hover:bg-pe-gold/90 active:scale-95',
+            ? 'bg-pe-gold/80 text-pe-on-light'
+            : 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95',
         ].join(' ')}
       >
         {outOfStock ? labels.outOfStock : added ? labels.added : labels.addToCart}

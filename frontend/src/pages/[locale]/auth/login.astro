@@ -24,7 +24,7 @@ const redirect = safeRedirectPath(Astro.url.searchParams.get('redirect'), `/${lo
       <div class="absolute inset-0 bg-gradient-to-r from-pe-black/75 via-pe-black/40 to-transparent"></div>
       <div class="absolute inset-0 flex flex-col justify-end p-12 pb-16">
         <div class="rose-rule-short mb-6" aria-hidden="true"></div>
-        <p class="pe-script text-pe-rose-soft leading-tight" style="font-size: clamp(2rem, 4vw, 3.2rem);">
+        <p class="pe-script text-pe-rose-display-display leading-tight" style="font-size: clamp(2rem, 4vw, 3.2rem);">
           {locale === 'es' ? 'Lujo con Propósito' : 'Luxury with Purpose'}
         </p>
         <p class="font-display text-pe-offwhite/60 font-light text-lg mt-3 max-w-md">
@@ -42,7 +42,7 @@ const redirect = safeRedirectPath(Astro.url.searchParams.get('redirect'), `/${lo
         <!-- Logo -->
         <a href={`/${locale}/`} class="flex flex-col items-center mb-10">
           <img src="/logo-pe.svg" alt="Pilar Estilo" width="52" height="52" class="mb-2" />
-          <p class="pe-script text-pe-rose text-xl">{locale === 'es' ? 'Lujo con Prop\u00F3sito' : 'Luxury with Purpose'}</p>
+          <p class="pe-script text-pe-rose-display text-xl">{locale === 'es' ? 'Lujo con Prop\u00F3sito' : 'Luxury with Purpose'}</p>
         </a>
 
         <!-- Title -->

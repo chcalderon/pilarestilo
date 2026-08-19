@@ -47,7 +47,7 @@ const { locale } = Astro.props;
 
     <!-- Cursive flourish -->
     <p
-      class="pe-script text-pe-rose mb-10 fx-hero-script"
+      class="pe-script text-pe-rose-display mb-10 fx-hero-script"
       style="font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.15; opacity: 0;"
     >
       Lujo con Prop&oacute;sito
@@ -72,7 +72,7 @@ const { locale } = Astro.props;
 
     <!-- Subtle slogan below CTAs -->
     <p
-      class="font-sans text-pe-charcoal/45 text-[0.78rem] tracking-[0.25em] uppercase mt-14 fx-hero-cta"
+      class="font-sans text-pe-muted text-[0.78rem] tracking-[0.25em] uppercase mt-14 fx-hero-cta"
       style="opacity:0;"
     >
       {t('hero.slogan', locale)}
@@ -85,7 +85,7 @@ const { locale } = Astro.props;
     style="opacity:0;"
     aria-hidden="true"
   >
-    <span class="font-sans text-[0.6rem] tracking-[0.3em] uppercase text-pe-charcoal/30">
+    <span class="font-sans text-[0.6rem] tracking-[0.3em] uppercase text-pe-muted">
       {locale === 'es' ? 'Explorar' : 'Explore'}
     </span>
     <div class="w-px h-8 bg-gradient-to-b from-pe-rose/50 to-transparent animate-[rose-shimmer_3s_ease-in-out_infinite]"></div>

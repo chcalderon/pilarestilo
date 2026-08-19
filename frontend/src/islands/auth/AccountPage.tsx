@@ -1050,16 +1050,16 @@ export default function AccountPage({ locale }: Props) {
       <div className="bg-pe-cream border-b border-pe-black/6 py-10">
         <div className="pe-container flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <p className="pe-eyebrow text-pe-charcoal/40 mb-1">{es ? 'Mi cuenta' : 'My account'}</p>
+          <p className="pe-eyebrow text-pe-muted mb-1">{es ? 'Mi cuenta' : 'My account'}</p>
           <h1 className="font-display text-pe-black text-3xl font-light">{displayName}</h1>
-          <p className="font-sans text-[0.78rem] text-pe-charcoal/50 mt-1">{user.email}</p>
-          <span className="inline-block mt-1.5 font-sans text-[0.65rem] tracking-wider uppercase bg-pe-rose/12 text-pe-rose-deep px-2 py-0.5">
+          <p className="font-sans text-[0.78rem] text-pe-muted mt-1">{user.email}</p>
+          <span className="inline-block mt-1.5 font-sans text-[0.65rem] tracking-wider uppercase bg-pe-rose/12 text-pe-rose-ink px-2 py-0.5">
             {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
           </span>
         </div>
           <button
             onClick={handleLogout}
-            className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/40 hover:text-pe-rose-deep transition-colors duration-200"
+            className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200"
           >
             {es ? 'Cerrar sesion' : 'Sign out'}
           </button>
@@ -1074,8 +1074,8 @@ export default function AccountPage({ locale }: Props) {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-5 py-3 font-sans text-[0.72rem] tracking-[0.18em] uppercase transition-colors duration-200 border-b-2 -mb-px ${
                 tab === t.id
-                  ? 'border-pe-rose text-pe-rose-deep'
-                  : 'border-transparent text-pe-charcoal/50 hover:text-pe-charcoal'
+                  ? 'border-pe-rose text-pe-rose-ink'
+                  : 'border-transparent text-pe-muted hover:text-pe-charcoal'
               }`}
             >
               {t.icon}
@@ -1100,13 +1100,13 @@ export default function AccountPage({ locale }: Props) {
                 if (file) void handleAvatarFile(file);
               }}
             >
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Foto de perfil' : 'Profile photo'}</p>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Foto de perfil' : 'Profile photo'}</p>
               <div className="flex items-center gap-5">
                 <div className={`relative w-20 h-20 rounded-full shrink-0 overflow-hidden border-2 transition-colors duration-200 ${avatarDragging ? 'border-pe-rose' : 'border-pe-black/10'}`}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-pe-rose flex items-center justify-center text-pe-offwhite font-display text-2xl font-light">
+                    <div className="w-full h-full bg-pe-rose-action flex items-center justify-center text-pe-offwhite font-display text-2xl font-light">
                       {displayName.substring(0, 2).toUpperCase()}
                     </div>
                   )}
@@ -1117,12 +1117,12 @@ export default function AccountPage({ locale }: Props) {
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <p className="font-sans text-[0.72rem] text-pe-charcoal/50">
+                  <p className="font-sans text-[0.72rem] text-pe-muted">
                     {avatarDragging
                       ? (es ? 'Suelta la imagen aquí' : 'Drop the image here')
                       : (es ? 'Arrastra una foto aquí o' : 'Drag a photo here or')}
                   </p>
-                  <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-pe-black/15 font-sans text-[0.68rem] tracking-wider uppercase text-pe-charcoal/60 hover:border-pe-rose hover:text-pe-rose-deep transition-colors duration-200">
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-pe-black/15 font-sans text-[0.68rem] tracking-wider uppercase text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors duration-200">
                     <Camera size={12} />
                     {es ? 'Elegir archivo' : 'Choose file'}
                     <input
@@ -1138,7 +1138,7 @@ export default function AccountPage({ locale }: Props) {
                     />
                   </label>
                   {avatarFeedback && (
-                    <span className={`font-sans text-[0.7rem] ${avatarFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                    <span className={`font-sans text-[0.7rem] ${avatarFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
                       {avatarFeedback.text}
                     </span>
                   )}
@@ -1147,8 +1147,8 @@ export default function AccountPage({ locale }: Props) {
             </div>
 
             <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Datos de perfil' : 'Profile details'}</p>
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">{es ? 'Nombre completo' : 'Full name'}</label>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Datos de perfil' : 'Profile details'}</p>
+              <label className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Nombre completo' : 'Full name'}</label>
               <input
                 type="text"
                 value={profileName}
@@ -1159,7 +1159,7 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? 'Tu nombre completo' : 'Your full name'}
               />
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
+              <label className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
               <input
                 type="tel"
                 value={profilePhone}
@@ -1171,7 +1171,7 @@ export default function AccountPage({ locale }: Props) {
                 className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
                 placeholder={es ? '+56912345678' : '+14155550123'}
               />
-              <label className="font-sans text-[0.72rem] text-pe-charcoal/70">
+              <label className="font-sans text-[0.72rem] text-pe-muted">
                 {es ? 'Canal de notificaciones' : 'Notification channel'}
               </label>
               <select
@@ -1185,7 +1185,7 @@ export default function AccountPage({ locale }: Props) {
                 <option value="EMAIL">{es ? 'Correo' : 'Email'}</option>
                 <option value="BOTH">{es ? 'Ambos' : 'Both'}</option>
               </select>
-              <p className="font-sans text-[0.68rem] text-pe-charcoal/60">
+              <p className="font-sans text-[0.68rem] text-pe-muted">
                 {es
                   ? 'Si completas tu WhatsApp y eliges un canal, enviaremos notificaciones de pedido segun tu preferencia.'
                   : 'If you provide WhatsApp and choose a channel, order notifications will follow your preference.'}
@@ -1201,7 +1201,7 @@ export default function AccountPage({ locale }: Props) {
                   {profileSaving ? (es ? 'Guardando...' : 'Saving...') : (es ? 'Guardar perfil' : 'Save profile')}
                 </button>
                 {profileFeedback && (
-                  <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                  <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
                     {profileFeedback.text}
                   </span>
                 )}
@@ -1209,7 +1209,7 @@ export default function AccountPage({ locale }: Props) {
             </div>
 
             <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Cambiar contraseña' : 'Change password'}</p>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Cambiar contraseña' : 'Change password'}</p>
               {/*
                 Password managers look for the account these password fields belong to. With no
                 username field they guess, and Chrome was picking the WhatsApp input and filling
@@ -1267,7 +1267,7 @@ export default function AccountPage({ locale }: Props) {
                   {passwordSaving ? (es ? 'Actualizando...' : 'Updating...') : (es ? 'Actualizar contraseña' : 'Update password')}
                 </button>
                 {passwordFeedback && (
-                  <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                  <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
                     {passwordFeedback.text}
                   </span>
                 )}
@@ -1275,24 +1275,24 @@ export default function AccountPage({ locale }: Props) {
             </div>
 
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-              <p className="pe-eyebrow text-pe-charcoal/40">Email</p>
+              <p className="pe-eyebrow text-pe-muted">Email</p>
               <p className="font-sans text-pe-charcoal">{profile?.email ?? user.email}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</p>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</p>
               <p className="font-sans text-pe-charcoal">{profile?.phone ?? (es ? 'No configurado' : 'Not configured')}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Canal de notificaciones' : 'Notification channel'}</p>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Canal de notificaciones' : 'Notification channel'}</p>
               <p className="font-sans text-pe-charcoal">{notificationChannelLabel(profile?.notificationChannelPreference)}</p>
             </div>
             <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-              <p className="pe-eyebrow text-pe-charcoal/40">{es ? 'Rol' : 'Role'}</p>
+              <p className="pe-eyebrow text-pe-muted">{es ? 'Rol' : 'Role'}</p>
               <p className="font-sans text-pe-charcoal">
                 {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
               </p>
             </div>
-            <p className="font-sans text-[0.72rem] text-pe-charcoal/40">
+            <p className="font-sans text-[0.72rem] text-pe-muted">
               {es ? 'ID de cuenta: ' : 'Account ID: '}
               {user.id}
             </p>
@@ -1307,11 +1307,11 @@ export default function AccountPage({ locale }: Props) {
               </div>
             ) : reviews.length === 0 ? (
               <div className="text-center py-20">
-                <Star size={32} className="text-pe-charcoal/20 mx-auto mb-3" />
+                <Star size={32} className="text-pe-muted mx-auto mb-3" />
                 <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no escribiste resenas' : 'No reviews yet'}</p>
                 <a
                   href={`/${locale}/products`}
-                  className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-deep hover:underline underline-offset-2"
+                  className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
                 >
                   {es ? 'Explorar productos' : 'Browse products'}
                 </a>
@@ -1326,29 +1326,29 @@ export default function AccountPage({ locale }: Props) {
                           <Star
                             key={i}
                             size={13}
-                            className={i < review.rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-charcoal/20'}
+                            className={i < review.rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-muted'}
                           />
                         ))}
                       </div>
                       <button
                         onClick={() => handleDeleteReview(review.id)}
-                        className="text-pe-charcoal/30 hover:text-pe-rose-deep transition-colors duration-200 p-0.5"
+                        className="text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 p-0.5"
                         aria-label={es ? 'Eliminar resena' : 'Delete review'}
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                     {review.title && <p className="font-display text-pe-black font-medium text-[1rem]">{review.title}</p>}
-                    {review.comment && <p className="font-sans text-sm text-pe-charcoal/70 leading-relaxed">{review.comment}</p>}
+                    {review.comment && <p className="font-sans text-sm text-pe-muted leading-relaxed">{review.comment}</p>}
                     <div className="flex items-center gap-3 mt-1">
                       <span
                         className={`font-sans text-[0.65rem] tracking-wider uppercase px-2 py-0.5 ${
-                          review.approved ? 'bg-green-50 text-green-700' : 'bg-pe-cream text-pe-charcoal/40'
+                          review.approved ? 'bg-green-50 text-green-800' : 'bg-pe-cream text-pe-muted'
                         }`}
                       >
                         {review.approved ? (es ? 'Aprobada' : 'Approved') : (es ? 'Pendiente' : 'Pending')}
                       </span>
-                      <span className="font-sans text-[0.68rem] text-pe-charcoal/70">
+                      <span className="font-sans text-[0.68rem] text-pe-muted">
                         {new Date(review.createdAt).toLocaleDateString(es ? 'es-CL' : 'en-US')}
                       </span>
                     </div>
@@ -1375,7 +1375,7 @@ export default function AccountPage({ locale }: Props) {
             </div>
 
             {addressFeedback && (
-              <p className={`font-sans text-[0.74rem] ${addressFeedback.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>
+              <p className={`font-sans text-[0.74rem] ${addressFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-600'}`}>
                 {addressFeedback.text}
               </p>
             )}
@@ -1386,7 +1386,7 @@ export default function AccountPage({ locale }: Props) {
               </div>
             ) : addresses.length === 0 ? (
               <div className="bg-pe-white border border-pe-black/8 p-6">
-                <p className="font-sans text-sm text-pe-charcoal/70">
+                <p className="font-sans text-sm text-pe-muted">
                   {es
                     ? 'Aún no tienes direcciones. Agrega una para usarla en el carrito.'
                     : 'You have no addresses yet. Add one to use it at checkout.'}
@@ -1399,22 +1399,22 @@ export default function AccountPage({ locale }: Props) {
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-display text-pe-black text-lg">{address.label}</p>
                       {address.isDefault && (
-                        <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/12 text-pe-rose-deep">
+                        <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
                           {es ? 'Principal' : 'Default'}
                         </span>
                       )}
                     </div>
-                    <p className="font-sans text-sm text-pe-charcoal/80">{address.recipientName}</p>
-                    <p className="font-sans text-sm text-pe-charcoal/65">{address.phone}</p>
-                    <p className="font-sans text-sm text-pe-charcoal/70">
+                    <p className="font-sans text-sm text-pe-charcoal">{address.recipientName}</p>
+                    <p className="font-sans text-sm text-pe-muted">{address.phone}</p>
+                    <p className="font-sans text-sm text-pe-muted">
                       {address.line1}
                       {address.line2 ? `, ${address.line2}` : ''}
                     </p>
-                    <p className="font-sans text-sm text-pe-charcoal/70">
+                    <p className="font-sans text-sm text-pe-muted">
                       {address.comuna}, {address.city}, {address.region}
                     </p>
                     {address.reference && (
-                      <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+                      <p className="font-sans text-[0.72rem] text-pe-muted">
                         {es ? 'Referencia:' : 'Reference:'} {address.reference}
                       </p>
                     )}
@@ -1422,7 +1422,7 @@ export default function AccountPage({ locale }: Props) {
                       <button
                         type="button"
                         onClick={() => openEditAddressModal(address)}
-                        className="px-3 py-1.5 border border-pe-black/15 text-pe-charcoal/75 font-sans text-[0.66rem] tracking-wider uppercase hover:border-pe-charcoal/30 transition-colors"
+                        className="px-3 py-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-wider uppercase hover:border-pe-charcoal/30 transition-colors"
                       >
                         {es ? 'Editar' : 'Edit'}
                       </button>
@@ -1433,7 +1433,7 @@ export default function AccountPage({ locale }: Props) {
                             void handleSetDefaultAddress(address.id);
                           }}
                           disabled={addressDefaultingId === address.id}
-                          className="px-3 py-1.5 border border-pe-rose/30 text-pe-rose-deep font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors disabled:opacity-60"
+                          className="px-3 py-1.5 border border-pe-rose/30 text-pe-rose-ink font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors disabled:opacity-60"
                         >
                           {addressDefaultingId === address.id
                             ? (es ? 'Guardando...' : 'Saving...')
@@ -1471,7 +1471,7 @@ export default function AccountPage({ locale }: Props) {
                       type="button"
                       onClick={() => setAddressModalOpen(false)}
                       aria-label={es ? 'Cerrar modal' : 'Close modal'}
-                      className="inline-flex h-10 w-10 items-center justify-center border border-pe-black/15 text-pe-charcoal/65 transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose/45"
+                      className="inline-flex h-10 w-10 items-center justify-center border border-pe-black/15 text-pe-muted transition-colors hover:border-pe-black/30 hover:text-pe-charcoal focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose/45"
                     >
                       <X size={17} strokeWidth={1.9} />
                     </button>
@@ -1516,7 +1516,7 @@ export default function AccountPage({ locale }: Props) {
                     </select>
                     <input value={addressDraft.reference} onChange={(e) => setAddressDraft((p) => ({ ...p, reference: e.target.value }))} placeholder={es ? 'Referencia (opcional)' : 'Reference (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
                   </div>
-                  <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal/75">
+                  <label className="inline-flex items-center gap-2 font-sans text-sm text-pe-charcoal">
                     <input
                       type="checkbox"
                       checked={addressDraft.isDefault}
@@ -1539,7 +1539,7 @@ export default function AccountPage({ locale }: Props) {
                     <button
                       type="button"
                       onClick={() => setAddressModalOpen(false)}
-                      className="px-4 py-2 border border-pe-black/15 text-pe-charcoal/70 font-sans text-[0.68rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
+                      className="px-4 py-2 border border-pe-black/15 text-pe-muted font-sans text-[0.68rem] tracking-wider uppercase hover:border-pe-black/25 transition-colors"
                     >
                       {es ? 'Cancelar' : 'Cancel'}
                     </button>
@@ -1559,7 +1559,7 @@ export default function AccountPage({ locale }: Props) {
                 className={[
                   'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
                   gatewayReturnFeedback.type === 'success'
-                    ? 'border-green-200 bg-green-50 text-green-700'
+                    ? 'border-green-200 bg-green-50 text-green-800'
                     : 'border-red-200 bg-red-50 text-red-700',
                 ].join(' ')}
               >
@@ -1572,11 +1572,11 @@ export default function AccountPage({ locale }: Props) {
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-20">
-                <ShoppingBag size={32} className="text-pe-charcoal/20 mx-auto mb-3" />
+                <ShoppingBag size={32} className="text-pe-muted mx-auto mb-3" />
                 <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no tienes pedidos' : 'No orders yet'}</p>
                 <a
                   href={`/${locale}/products`}
-                  className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-deep hover:underline underline-offset-2"
+                  className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
                 >
                   {es ? 'Explorar productos' : 'Browse products'}
                 </a>
@@ -1604,16 +1604,16 @@ export default function AccountPage({ locale }: Props) {
                     <li key={order.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-3">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div>
-                          <p className="font-sans text-[0.65rem] tracking-[0.16em] uppercase text-pe-charcoal/70">
+                          <p className="font-sans text-[0.65rem] tracking-[0.16em] uppercase text-pe-muted">
                             {es ? 'Pedido' : 'Order'}
                           </p>
-                          <p className="font-mono text-[0.82rem] text-pe-charcoal/65 mt-0.5">{order.id}</p>
+                          <p className="font-mono text-[0.82rem] text-pe-muted mt-0.5">{order.id}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-charcoal/60">
+                          <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-muted">
                             {paymentMethodLabel(order.paymentMethod)}
                           </span>
-                          <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/10 text-pe-rose-deep">
+                          <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-rose/10 text-pe-rose-ink">
                             {orderStatusLabel(order.status, es ? 'es' : 'en')}
                           </span>
                         </div>
@@ -1621,21 +1621,21 @@ export default function AccountPage({ locale }: Props) {
 
                       {(shippingZone || shippingCourier || shippingMode || shippingReference) && (
                         <div className="border border-pe-black/8 bg-pe-cream/25 px-3 py-2">
-                          <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/60 mb-1">
+                          <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-muted mb-1">
                             {es ? 'Envio' : 'Shipping'}
                           </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-sans text-[0.72rem] text-pe-muted">
                             {shippingZone && (
-                              <p><span className="text-pe-charcoal/55">{es ? 'Zona:' : 'Zone:'}</span> {shippingZone}</p>
+                              <p><span className="text-pe-muted">{es ? 'Zona:' : 'Zone:'}</span> {shippingZone}</p>
                             )}
                             {shippingCourier && (
-                              <p><span className="text-pe-charcoal/55">{'Courier:'}</span> {shippingCourier}</p>
+                              <p><span className="text-pe-muted">{'Courier:'}</span> {shippingCourier}</p>
                             )}
                             {shippingMode && (
-                              <p><span className="text-pe-charcoal/55">{es ? 'Modalidad:' : 'Mode:'}</span> {shippingMode}</p>
+                              <p><span className="text-pe-muted">{es ? 'Modalidad:' : 'Mode:'}</span> {shippingMode}</p>
                             )}
                             {shippingReference && (
-                              <p><span className="text-pe-charcoal/55">{es ? 'Referencia:' : 'Reference:'}</span> {shippingReference}</p>
+                              <p><span className="text-pe-muted">{es ? 'Referencia:' : 'Reference:'}</span> {shippingReference}</p>
                             )}
                           </div>
                         </div>
@@ -1666,14 +1666,14 @@ export default function AccountPage({ locale }: Props) {
                                 className={[
                                   'font-sans text-[0.62rem] tracking-[0.08em] uppercase whitespace-nowrap',
                                   node.state === 'done'
-                                    ? 'text-emerald-700 dark:text-emerald-400'
+                                    ? 'text-pe-positive dark:text-emerald-400'
                                     : node.state === 'current'
-                                      ? 'text-pe-rose-deep dark:text-pe-rose'
+                                      ? 'text-pe-rose-ink dark:text-pe-rose'
                                       : node.state === 'ended'
                                         ? 'text-[#8f2d3b] dark:text-red-400 font-semibold'
                                         : node.state === 'skipped'
-                                          ? 'text-pe-charcoal/35 dark:text-pe-cream/25 line-through'
-                                          : 'text-pe-charcoal/60 dark:text-pe-cream/45',
+                                          ? 'text-pe-muted dark:text-pe-cream/25 line-through'
+                                          : 'text-pe-muted dark:text-pe-cream/45',
                                 ].join(' ')}
                               >
                                 {orderTimelineLabel(node.step)}
@@ -1704,10 +1704,10 @@ export default function AccountPage({ locale }: Props) {
                       <ul className="flex flex-col gap-1.5 border-t border-pe-black/7 pt-3">
                         {order.items.map((item) => (
                           <li key={item.id} className="flex items-center justify-between gap-3">
-                            <span className="font-sans text-sm text-pe-charcoal/75">
+                            <span className="font-sans text-sm text-pe-charcoal">
                               {item.productName} x{item.quantity}
                             </span>
-                            <span className="font-sans text-sm text-pe-charcoal/70">
+                            <span className="font-sans text-sm text-pe-muted">
                               {formatMoney(item.unitPrice.amount, item.unitPrice.currency)}
                             </span>
                           </li>
@@ -1717,15 +1717,15 @@ export default function AccountPage({ locale }: Props) {
                       {order.paymentMethod === 'TRANSFER' && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">
+                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-muted">
                               {es ? 'Comprobante de transferencia' : 'Transfer proof'}
                             </p>
                             {payment ? (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-charcoal/65">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-muted">
                                 {paymentStatusLabel(payment.status)}
                               </span>
                             ) : (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/70">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-muted">
                                 {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
                               </span>
                             )}
@@ -1737,28 +1737,28 @@ export default function AccountPage({ locale }: Props) {
                             || payment?.transferBankName
                             || payment?.transferAccountType) && (
                               <div className="border border-pe-black/8 bg-pe-cream/35 px-3 py-2">
-                                <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-charcoal/60 mb-1.5">
+                                <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-muted mb-1.5">
                                   {es ? 'Datos transferencia (snapshot)' : 'Transfer details (snapshot)'}
                                 </p>
-                                <dl className="grid grid-cols-1 gap-1 font-sans text-[0.72rem] text-pe-charcoal/70">
+                                <dl className="grid grid-cols-1 gap-1 font-sans text-[0.72rem] text-pe-muted">
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/60">{es ? 'Nombre' : 'Name'}</dt>
+                                    <dt className="text-pe-muted">{es ? 'Nombre' : 'Name'}</dt>
                                     <dd className="text-right">{payment?.transferAccountHolderName || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/60">{es ? 'Correo' : 'Email'}</dt>
+                                    <dt className="text-pe-muted">{es ? 'Correo' : 'Email'}</dt>
                                     <dd className="text-right">{payment?.transferAccountEmail || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/60">{es ? 'Cuenta' : 'Account'}</dt>
+                                    <dt className="text-pe-muted">{es ? 'Cuenta' : 'Account'}</dt>
                                     <dd className="text-right">{maskAccountNumber(payment?.transferAccountNumber)}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/60">{es ? 'Banco' : 'Bank'}</dt>
+                                    <dt className="text-pe-muted">{es ? 'Banco' : 'Bank'}</dt>
                                     <dd className="text-right">{payment?.transferBankName || '-'}</dd>
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <dt className="text-pe-charcoal/60">{es ? 'Tipo' : 'Type'}</dt>
+                                    <dt className="text-pe-muted">{es ? 'Tipo' : 'Type'}</dt>
                                     <dd className="text-right">{payment?.transferAccountType || '-'}</dd>
                                   </div>
                                 </dl>
@@ -1769,7 +1769,7 @@ export default function AccountPage({ locale }: Props) {
                             <button
                               type="button"
                               onClick={() => void openOwnProof(order.id, payment.id)}
-                              className="self-start font-sans text-[0.72rem] text-pe-rose-deep hover:underline underline-offset-2"
+                              className="self-start font-sans text-[0.72rem] text-pe-rose-ink hover:underline underline-offset-2"
                             >
                               {es ? 'Ver comprobante enviado' : 'View submitted proof'}
                             </button>
@@ -1778,7 +1778,7 @@ export default function AccountPage({ locale }: Props) {
                           {canUploadProof && (
                             <div className="flex flex-col gap-2">
                               <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                                <label className="inline-flex items-center justify-center px-3 py-2 border border-pe-black/12 text-pe-charcoal/70 hover:text-pe-charcoal hover:border-pe-black/20 transition-colors cursor-pointer font-sans text-[0.68rem] tracking-wider uppercase">
+                                <label className="inline-flex items-center justify-center px-3 py-2 border border-pe-black/12 text-pe-muted hover:text-pe-charcoal hover:border-pe-black/20 transition-colors cursor-pointer font-sans text-[0.68rem] tracking-wider uppercase">
                                   {selectedFile ? (es ? 'Cambiar imagen' : 'Change image') : (es ? 'Seleccionar imagen' : 'Select image')}
                                   <input
                                     type="file"
@@ -1803,7 +1803,7 @@ export default function AccountPage({ locale }: Props) {
                               </div>
 
                               {selectedFile && (
-                                <p className="font-sans text-[0.7rem] text-pe-charcoal/60">
+                                <p className="font-sans text-[0.7rem] text-pe-muted">
                                   {es ? 'Archivo:' : 'File:'} {selectedFile.name}
                                 </p>
                               )}
@@ -1811,13 +1811,13 @@ export default function AccountPage({ locale }: Props) {
                           )}
 
                           {payment?.status === 'UNDER_REVIEW' && (
-                            <p className="font-sans text-[0.72rem] text-pe-charcoal/60">
+                            <p className="font-sans text-[0.72rem] text-pe-muted">
                               {es ? 'Tu comprobante esta en revision del equipo.' : 'Your proof is being reviewed by our team.'}
                             </p>
                           )}
 
                           {proofFeedback && (
-                            <p className={`font-sans text-[0.72rem] ${proofFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                            <p className={`font-sans text-[0.72rem] ${proofFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
                               {proofFeedback.text}
                             </p>
                           )}
@@ -1827,15 +1827,15 @@ export default function AccountPage({ locale }: Props) {
                       {(order.paymentMethod === 'WEBPAY' || order.paymentMethod === 'MERCADOPAGO') && (
                         <div className="border-t border-pe-black/7 pt-3 flex flex-col gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-charcoal/60">
+                            <p className="font-sans text-[0.66rem] tracking-[0.16em] uppercase text-pe-muted">
                               {es ? 'Estado pasarela' : 'Gateway status'}
                             </p>
                             {payment ? (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-charcoal/65">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase px-2 py-0.5 bg-pe-cream text-pe-muted">
                                 {paymentStatusLabel(payment.status)}
                               </span>
                             ) : (
-                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-charcoal/70">
+                              <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-muted">
                                 {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
                               </span>
                             )}
@@ -1876,7 +1876,7 @@ export default function AccountPage({ locale }: Props) {
                           )}
 
                           {gatewayFeedback && (
-                            <p className={`font-sans text-[0.72rem] ${gatewayFeedback.type === 'success' ? 'text-green-700' : 'text-red-500'}`}>
+                            <p className={`font-sans text-[0.72rem] ${gatewayFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
                               {gatewayFeedback.text}
                             </p>
                           )}
@@ -1906,7 +1906,7 @@ export default function AccountPage({ locale }: Props) {
                               : (es ? 'Marcar como recibido' : 'Mark as received')}
                           </button>
                         )}
-                        <span className="font-sans text-[0.72rem] text-pe-charcoal/60">
+                        <span className="font-sans text-[0.72rem] text-pe-muted">
                           {new Date(order.createdAt).toLocaleDateString(es ? 'es-CL' : 'en-US', {
                             day: '2-digit',
                             month: '2-digit',

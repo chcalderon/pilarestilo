@@ -69,7 +69,7 @@ export default function OrderSummary({
       <h2 className="font-display text-pe-black text-xl font-semibold mb-6">{l.title}</h2>
 
       <div className="flex justify-between font-sans text-sm mb-4">
-        <span className="text-pe-charcoal/75">{l.subtotal}</span>
+        <span className="text-pe-charcoal">{l.subtotal}</span>
         <span className="font-semibold tabular-nums">
           {formatPrice(totals.subtotal, currency, locale)}
         </span>
@@ -77,39 +77,39 @@ export default function OrderSummary({
 
       {totals.employeeDiscount > 0 && (
         <div className="flex justify-between font-sans text-sm mb-4">
-          <span className="text-pe-charcoal/75">{l.employeeDiscount}</span>
-          <span className="font-semibold text-green-700 tabular-nums">
+          <span className="text-pe-charcoal">{l.employeeDiscount}</span>
+          <span className="font-semibold text-pe-positive tabular-nums">
             −{formatPrice(totals.employeeDiscount, currency, locale)}
           </span>
         </div>
       )}
 
       <div className="mb-4">
-        <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal/75 mb-2">
+        <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2">
           {l.discountLabel}
         </p>
 
         {appliedDiscount ? (
           <>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[0.78rem] text-green-700 border border-green-200 bg-green-50 px-2 py-1.5 flex-1 truncate">
+              <span className="font-mono text-[0.78rem] text-pe-positive border border-green-200 bg-green-50 px-2 py-1.5 flex-1 truncate">
                 {appliedDiscount.code}
               </span>
-              <span className="font-sans text-sm font-semibold text-green-700 tabular-nums">
+              <span className="font-sans text-sm font-semibold text-pe-positive tabular-nums">
                 −{formatPrice(totals.codeDiscount, currency, locale)}
               </span>
               <button
                 type="button"
                 onClick={onRemove}
                 aria-label={l.remove}
-                className="shrink-0 w-11 h-11 -mr-2 flex items-center justify-center text-pe-charcoal/60
+                className="shrink-0 w-11 h-11 -mr-2 flex items-center justify-center text-pe-muted
                   hover:text-pe-black transition-colors
                   focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
               >
                 <X size={16} />
               </button>
             </div>
-            <p className="font-sans text-[0.7rem] text-pe-charcoal/60 mt-2">{l.pendingNote}</p>
+            <p className="font-sans text-[0.7rem] text-pe-muted mt-2">{l.pendingNote}</p>
           </>
         ) : (
           <form onSubmit={submit} className="flex gap-2">
@@ -128,7 +128,7 @@ export default function OrderSummary({
               aria-describedby={error ? 'checkout-discount-error' : undefined}
               className="flex-1 min-w-0 h-11 border border-pe-charcoal/25 bg-pe-white px-3
                 font-mono text-[0.78rem] uppercase text-pe-black placeholder:font-sans
-                placeholder:normal-case placeholder:text-pe-charcoal/40
+                placeholder:normal-case placeholder:text-pe-muted
                 focus:outline-hidden focus:border-pe-black"
             />
             <button

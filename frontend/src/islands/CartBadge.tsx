@@ -9,7 +9,7 @@ export default function CartBadge() {
 
   return (
     <span
-      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-pe-gold text-pe-black text-[10px] font-bold leading-none"
+      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-pe-gold text-pe-on-light text-[10px] font-bold leading-none"
       aria-label={`${count} items en el carrito`}
     >
       {count > 99 ? '99+' : count}

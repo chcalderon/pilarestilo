@@ -120,13 +120,13 @@ const discountInfo = isEs
       <div class="absolute -top-36 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full border border-pe-rose/20" aria-hidden="true"></div>
       <div class="absolute -top-20 left-1/2 h-[24rem] w-[24rem] -translate-x-1/2 rounded-full border border-pe-gold/20" aria-hidden="true"></div>
       <div class="pe-container py-16 md:py-20 text-center relative z-[1]">
-        <p class="pe-eyebrow text-pe-rose-deep mb-4">
+        <p class="pe-eyebrow text-pe-rose-ink mb-4">
           {isEs ? 'Informacion de compra' : 'Purchase information'}
         </p>
         <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
           {isEs ? 'Como vendemos' : 'How we sell'}
         </h1>
-        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal/75 leading-relaxed">
+        <p class="mt-6 mx-auto max-w-3xl font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
           {isEs
             ? 'Un flujo claro y profesional: seleccionamos, publicamos con transparencia y acompanamos tu compra hasta la entrega.'
             : 'A clear and professional flow: we curate, publish transparently, and support your order until delivery.'}
@@ -142,11 +142,11 @@ const discountInfo = isEs
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
           {steps.map((step, index) => (
             <article class="bg-pe-white border border-pe-black/10 p-6 md:p-7">
-              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-deep mb-3">
+              <p class="font-sans text-[0.68rem] tracking-[0.2em] uppercase text-pe-rose-ink mb-3">
                 {isEs ? `Paso ${index + 1}` : `Step ${index + 1}`}
               </p>
               <h3 class="font-display text-2xl text-pe-black font-light mb-3">{step.title}</h3>
-              <p class="font-sans text-sm text-pe-charcoal/75 leading-relaxed">{step.description}</p>
+              <p class="font-sans text-sm text-pe-charcoal leading-relaxed">{step.description}</p>
             </article>
           ))}
         </div>
@@ -162,7 +162,7 @@ const discountInfo = isEs
           {discountInfo.items.map(item => (
             <li class="flex gap-3 bg-pe-white border border-pe-black/10 p-5">
               <span class="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-pe-rose"></span>
-              <p class="font-sans text-sm text-pe-charcoal/80 leading-relaxed">{item}</p>
+              <p class="font-sans text-sm text-pe-charcoal leading-relaxed">{item}</p>
             </li>
           ))}
         </ul>
@@ -171,14 +171,14 @@ const discountInfo = isEs
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
-        <h2 class="font-display text-3xl md:text-4xl text-pe-offwhite font-light mb-6">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-on-dark font-light mb-6">
           {isEs ? 'Preguntas frecuentes' : 'Frequently asked questions'}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
           {faqs.map((faq) => (
             <article class="border border-pe-white/15 p-6 md:p-7 bg-pe-white/5">
-              <h3 class="font-display text-2xl text-pe-offwhite font-light mb-3">{faq.q}</h3>
-              <p class="font-sans text-sm text-pe-white/70 leading-relaxed">{faq.a}</p>
+              <h3 class="font-display text-2xl text-pe-on-dark font-light mb-3">{faq.q}</h3>
+              <p class="font-sans text-sm text-pe-on-dark-muted leading-relaxed">{faq.a}</p>
             </article>
           ))}
         </div>

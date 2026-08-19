@@ -102,7 +102,7 @@ export default function AccountMenu({ locale }: Props) {
             className="w-6 h-6 rounded-full object-cover"
           />
         ) : (
-          <span className="w-6 h-6 rounded-full bg-pe-rose flex items-center justify-center text-pe-offwhite text-[0.6rem] font-medium">
+          <span className="w-6 h-6 rounded-full bg-pe-rose-action flex items-center justify-center text-pe-offwhite text-[0.6rem] font-medium">
             {initials}
           </span>
         )}

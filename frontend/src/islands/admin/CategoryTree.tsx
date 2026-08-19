@@ -82,29 +82,29 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
     <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Slug *</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Slug *</label>
           <input className={INPUT_CLASS} value={form.slug}
             onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))} placeholder="ej: zapatos" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Nombre ES *</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre ES *</label>
           <input className={INPUT_CLASS} value={form.nameEs}
             onChange={e => setForm(f => ({ ...f, nameEs: e.target.value }))} placeholder="Zapatos" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Nombre EN</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre EN</label>
           <input className={INPUT_CLASS} value={form.nameEn}
             onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))} placeholder="Shoes" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Orden</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Orden</label>
           <input type="number" min="0" className={INPUT_CLASS} value={form.sortOrder}
             onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Tipo de producto</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Tipo de producto</label>
           <select
             className={INPUT_CLASS}
             value={form.categoryType}
@@ -120,12 +120,12 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
           </select>
           {/* The consequence, next to the cause: this field is why a product asks for talla and
               not número, and nothing else in this form says so. */}
-          <p className="font-sans text-[0.6rem] text-pe-charcoal/45 leading-snug">
+          <p className="font-sans text-[0.6rem] text-pe-muted leading-snug">
             Sus productos usarán {variantFieldsOf(form.categoryType)}.
           </p>
         </div>
         <div className="sm:col-span-2 flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/45">Hero imagen</label>
+          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Hero imagen</label>
           <input
             className={INPUT_CLASS}
             value={form.heroImageUrl}
@@ -142,25 +142,25 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         token={token ?? ''}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />
           Activa
         </label>
-        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="accent-pe-rose" />
           <Star size={11} className="text-amber-500" /> Destacada en inicio
         </label>
-        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-charcoal/70 cursor-pointer">
+        <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />
           Visible en menu
         </label>
         <button onClick={onSubmit} disabled={saving}
-          className="flex items-center gap-1 bg-pe-rose text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50">
+          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50">
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar
         </button>
         <button onClick={onCancel}
-          className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-charcoal/60">
+          className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-muted">
           <X size={12} /> Cancelar
         </button>
       </div>
@@ -224,7 +224,7 @@ function CategoryRow({
         <button
           {...dragHandle?.listeners}
           {...dragHandle?.attributes}
-          className="p-0.5 text-pe-charcoal/25 hover:text-pe-charcoal/60 transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
+          className="p-0.5 text-pe-muted hover:text-pe-muted transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
           title="Arrastrar para reordenar"
           tabIndex={-1}
         >
@@ -237,7 +237,7 @@ function CategoryRow({
             next.has(node.id) ? next.delete(node.id) : next.add(node.id);
             return next;
           })}
-          className={['p-0.5 text-pe-charcoal/35 hover:text-pe-charcoal transition-colors', hasChildren ? '' : 'invisible'].join(' ')}
+          className={['p-0.5 text-pe-muted hover:text-pe-charcoal transition-colors', hasChildren ? '' : 'invisible'].join(' ')}
         >
           {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
@@ -247,17 +247,17 @@ function CategoryRow({
         ) : (
           <span className="w-6 h-6 shrink-0" />
         )}
-        <span className={['min-w-0 truncate font-sans text-[0.82rem]', node.active ? 'text-pe-charcoal' : 'text-pe-charcoal/35 line-through'].join(' ')}>
+        <span className={['min-w-0 truncate font-sans text-[0.82rem]', node.active ? 'text-pe-charcoal' : 'text-pe-muted line-through'].join(' ')}>
           {node.nameEs}
         </span>
-        <span className="min-w-0 truncate font-sans text-[0.65rem] text-pe-charcoal/35 ml-1">/{node.slug}</span>
+        <span className="min-w-0 truncate font-sans text-[0.65rem] text-pe-muted ml-1">/{node.slug}</span>
         {!node.active && (
-          <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/30 bg-pe-cream px-1.5 py-0.5">
+          <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted bg-pe-cream px-1.5 py-0.5">
             Inactiva
           </span>
         )}
         {!node.menuVisible && (
-          <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-charcoal/30 bg-pe-cream px-1.5 py-0.5">
+          <span className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted bg-pe-cream px-1.5 py-0.5">
             Oculta menu
           </span>
         )}
@@ -267,7 +267,7 @@ function CategoryRow({
           </span>
         )}
         <span
-          className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/35 bg-pe-cream px-1.5 py-0.5"
+          className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-muted bg-pe-cream px-1.5 py-0.5"
           title={describeVariantType(node.categoryType)}
         >
           {getVariantSchema(node.categoryType).noun}
@@ -277,7 +277,7 @@ function CategoryRow({
           {depth < 3 && (
             <button
               onClick={() => { setCreating(node.id); setForm({ ...EMPTY_FORM }); setEditing(null); }}
-              className="p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+              className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
               title="Agregar subcategoría"
             >
               <Plus size={13} />
@@ -285,14 +285,14 @@ function CategoryRow({
           )}
           <button
             onClick={() => { setEditing(node.id); setForm(fromDto(node)); setCreating(null); }}
-            className="p-1 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
+            className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
             title="Editar"
           >
             <Edit3 size={13} />
           </button>
           <button
             onClick={() => onDelete(node.id, node.nameEs)}
-            className="p-1 text-pe-charcoal/40 hover:text-red-500 transition-colors"
+            className="p-1 text-pe-muted hover:text-red-500 transition-colors"
             title="Eliminar"
           >
             <Trash2 size={13} />
@@ -317,7 +317,7 @@ function CategoryRow({
 
       {isCreatingChild && (
         <div style={{ paddingLeft: `${(depth + 2) * 16}px` }}>
-          <p className="font-sans text-[0.65rem] uppercase tracking-wider text-pe-charcoal/40 mb-1 mt-2 px-2">
+          <p className="font-sans text-[0.65rem] uppercase tracking-wider text-pe-muted mb-1 mt-2 px-2">
             Nueva subcategoría en {node.nameEs}
           </p>
           <FormRow form={form} setForm={setForm} saving={saving}
@@ -501,10 +501,10 @@ export default function CategoryTree() {
   return (
     <div>
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-sans text-[0.72rem] text-pe-charcoal/40">{tree.length} categorías raíz</p>
+        <p className="font-sans text-[0.72rem] text-pe-muted">{tree.length} categorías raíz</p>
         <button
           onClick={() => { setCreating('__root__'); setForm({ ...EMPTY_FORM }); setEditing(null); }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nueva categoría raíz
@@ -521,7 +521,7 @@ export default function CategoryTree() {
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="bg-pe-white border border-pe-black/6 shadow-xs py-1">
           {tree.length === 0 ? (
-            <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
+            <p className="font-sans text-[0.82rem] text-pe-muted text-center py-12">
               No hay categorías. Crea la primera.
             </p>
           ) : (
