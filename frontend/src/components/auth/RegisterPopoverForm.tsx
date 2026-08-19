@@ -142,7 +142,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               disabled={loading}
-              className="border border-[var(--pe-border)] px-3 py-2 text-sm bg-[var(--pe-surface)] focus:outline-none focus:border-[var(--pe-foreground)] disabled:opacity-50"
+              className="border border-[var(--pe-border)] px-3 py-2 text-sm bg-[var(--pe-surface)] focus:outline-hidden focus:border-[var(--pe-foreground)] disabled:opacity-50"
             />
           </div>
         )}
@@ -158,7 +158,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
             value={email}
             onChange={e => setEmail(e.target.value)}
             disabled={loading}
-            className="border border-[var(--pe-border)] px-3 py-2 text-sm bg-[var(--pe-surface)] focus:outline-none focus:border-[var(--pe-foreground)] disabled:opacity-50"
+            className="border border-[var(--pe-border)] px-3 py-2 text-sm bg-[var(--pe-surface)] focus:outline-hidden focus:border-[var(--pe-foreground)] disabled:opacity-50"
           />
         </div>
 
@@ -175,7 +175,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
               value={password}
               onChange={e => setPassword(e.target.value)}
               disabled={loading}
-              className="w-full border border-[var(--pe-border)] px-3 py-2 pr-9 text-sm bg-[var(--pe-surface)] focus:outline-none focus:border-[var(--pe-foreground)] disabled:opacity-50"
+              className="w-full border border-[var(--pe-border)] px-3 py-2 pr-9 text-sm bg-[var(--pe-surface)] focus:outline-hidden focus:border-[var(--pe-foreground)] disabled:opacity-50"
             />
             <button
               type="button"

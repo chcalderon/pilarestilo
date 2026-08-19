@@ -441,7 +441,7 @@ export default function ProductTable() {
       render: (row) => (
         <span
           className={[
-            'inline-flex items-center rounded px-2 py-0.5 font-sans text-[0.65rem] uppercase tracking-[0.1em]',
+            'inline-flex items-center rounded-sm px-2 py-0.5 font-sans text-[0.65rem] uppercase tracking-[0.1em]',
             row.active ? 'bg-emerald-50 text-emerald-700' : 'bg-pe-cream text-pe-charcoal/45',
           ].join(' ')}
         >
@@ -590,7 +590,7 @@ export default function ProductTable() {
       <>
         <div className="grid grid-cols-1 min-[460px]:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {products.map((row) => (
-            <article key={row.id} className="bg-pe-white border border-pe-black/6 shadow-sm overflow-hidden">
+            <article key={row.id} className="bg-pe-white border border-pe-black/6 shadow-xs overflow-hidden">
               <div className="relative">
                 <img src={row.imageUrl} alt={row.name} className="w-full aspect-[4/5] object-cover bg-pe-cream" loading="lazy" />
                 <span
@@ -780,7 +780,7 @@ export default function ProductTable() {
               placeholder="Buscar por nombre, marca, descripcion, categoria... (ej: vestido activo nuevo)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/45 dark:placeholder:text-[#D6C8B5]/50 focus:outline-none focus:border-pe-rose/50 transition-colors"
+              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-charcoal/45 dark:placeholder:text-[#D6C8B5]/50 focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             />
             {searchInput && (
               <button
@@ -813,7 +813,7 @@ export default function ProductTable() {
               type="date"
               value={createdFrom}
               onChange={(e) => setCreatedFrom(e.target.value)}
-              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -824,7 +824,7 @@ export default function ProductTable() {
               type="date"
               value={createdTo}
               onChange={(e) => setCreatedTo(e.target.value)}
-              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             />
           </label>
           {(createdFrom || createdTo) && (
@@ -862,13 +862,13 @@ export default function ProductTable() {
         )}
 
         {heroAssignmentFeedback && (
-          <div className="rounded-sm border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-emerald-700">
+          <div className="rounded-xs border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-emerald-700">
             {heroAssignmentFeedback}
           </div>
         )}
 
         {loadError && (
-          <div className="rounded-sm border border-red-300/70 bg-red-50 px-3 py-2 font-sans text-[0.72rem] text-red-700">
+          <div className="rounded-xs border border-red-300/70 bg-red-50 px-3 py-2 font-sans text-[0.72rem] text-red-700">
             Error cargando productos: {loadError}
           </div>
         )}
@@ -907,7 +907,7 @@ export default function ProductTable() {
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
-              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors"
+              className="font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-2 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             >
               {PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>{option}</option>

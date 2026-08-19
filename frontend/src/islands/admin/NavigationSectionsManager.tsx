@@ -51,10 +51,10 @@ const LAYOUT_LABELS: Record<LayoutOption, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const INPUT_CLASS =
-  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors w-full';
+  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors w-full';
 
 const SELECT_CLASS =
-  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors w-full';
+  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors w-full';
 
 function fromDto(dto: AdminNavigationSectionDto): SectionForm {
   return {
@@ -449,7 +449,7 @@ export default function NavigationSectionsManager() {
       )}
 
       {/* Sections list */}
-      <div className="bg-pe-white border border-pe-black/6 shadow-sm">
+      <div className="bg-pe-white border border-pe-black/6 shadow-xs">
         {sections.length === 0 ? (
           <p className="font-sans text-[0.82rem] text-pe-charcoal/35 text-center py-12">
             No hay secciones configuradas. Crea la primera.

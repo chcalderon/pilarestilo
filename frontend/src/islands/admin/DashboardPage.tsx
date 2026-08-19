@@ -83,7 +83,7 @@ function PaymentsAwaitingCard({ count }: { count: number }) {
       className="group border border-[var(--pe-border)] border-l-4 border-l-[#cb6070] p-4
         flex flex-col gap-1 transition-colors
         hover:border-[#cb6070] hover:bg-[#cb6070]/10
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#cb6070]"
+        focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#cb6070]"
     >
       <span className="text-[10px] tracking-widest uppercase text-[#cb6070] flex items-center gap-1.5">
         <AlertCircle size={11} aria-hidden="true" />
@@ -151,7 +151,7 @@ function QuickActions({ role }: { role: string }) {
             href={link.href}
             className="block border border-[var(--pe-border)] p-4 transition-colors
               hover:border-[var(--pe-rose)]
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pe-rose)]"
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--pe-rose)]"
           >
             <p className="text-sm font-medium">{link.label}</p>
             <p className="text-xs text-[var(--pe-muted)] mt-0.5">{link.sub}</p>
@@ -165,8 +165,8 @@ function QuickActions({ role }: { role: string }) {
 function SkeletonCard() {
   return (
     <div className="border border-[var(--pe-border)] p-4 animate-pulse">
-      <div className="h-3 w-24 bg-[var(--pe-border)] rounded mb-2" />
-      <div className="h-7 w-32 bg-[var(--pe-border)] rounded" />
+      <div className="h-3 w-24 bg-[var(--pe-border)] rounded-sm mb-2" />
+      <div className="h-7 w-32 bg-[var(--pe-border)] rounded-sm" />
     </div>
   );
 }

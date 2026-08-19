@@ -242,7 +242,7 @@ export default function CartPopover({ locale }: Props) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: reducedMotion ? 0.12 : 0.18 }}
-              className="fixed inset-0 z-[120] bg-pe-black/45 backdrop-blur-sm"
+              className="fixed inset-0 z-[120] bg-pe-black/45 backdrop-blur-xs"
               onClick={closePopover}
               aria-hidden="true"
             >

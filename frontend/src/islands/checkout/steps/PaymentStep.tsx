@@ -195,7 +195,7 @@ export default function PaymentStep({
           className="inline-flex items-center justify-center gap-2 min-h-12 px-5
             border border-pe-charcoal/25 font-sans text-[0.7rem] tracking-[0.16em] uppercase
             text-pe-charcoal hover:border-pe-black transition-colors
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >
           <ArrowLeft size={14} />
           {l.back}
@@ -205,7 +205,7 @@ export default function PaymentStep({
           onClick={onContinue}
           className="flex-1 sm:flex-none inline-flex items-center justify-center min-h-12 px-8
             bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >
           {l.continue}
         </button>

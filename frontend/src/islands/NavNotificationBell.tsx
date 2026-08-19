@@ -227,12 +227,12 @@ export default function NavNotificationBell({ locale }: Props) {
       <button
         ref={btnRef}
         onClick={() => setOpen(v => !v)}
-        className={`relative transition-colors duration-200 p-1 focus:outline-none ${dark ? 'text-pe-white/40 hover:text-pe-rose-soft' : 'text-pe-charcoal/50 hover:text-pe-rose'}`}
+        className={`relative transition-colors duration-200 p-1 focus:outline-hidden ${dark ? 'text-pe-white/40 hover:text-pe-rose-soft' : 'text-pe-charcoal/50 hover:text-pe-rose'}`}
         aria-label={unreadCount > 0 ? (es ? `${unreadCount} notificaciones sin leer` : `${unreadCount} unread notifications`) : (es ? 'Notificaciones' : 'Notifications')}
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pe-rose rounded-full flex items-center justify-center shadow-sm">
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pe-rose rounded-full flex items-center justify-center shadow-xs">
             <span className="font-sans text-[0.5rem] font-bold text-white leading-none">{unreadCount > 9 ? '9+' : unreadCount}</span>
           </span>
         )}

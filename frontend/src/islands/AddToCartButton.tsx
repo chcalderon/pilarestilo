@@ -105,14 +105,14 @@ export default function AddToCartButton({
         aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
         className={[
           'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
+          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
           outOfStock
             ? 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed'
             : verifying
             ? 'bg-pe-gold/50 text-pe-black cursor-wait'
             : added
             ? 'bg-pe-gold/80 text-pe-black'
-            : 'bg-pe-gold text-pe-black hover:bg-opacity-90 active:scale-95',
+            : 'bg-pe-gold text-pe-black hover:bg-pe-gold/90 active:scale-95',
         ].join(' ')}
       >
         {outOfStock

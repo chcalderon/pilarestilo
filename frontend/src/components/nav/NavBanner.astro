@@ -9,7 +9,7 @@ export interface Props {
 const { imageUrl, title, subtitle, link, locale } = Astro.props;
 ---
 {imageUrl && (
-  <div class="nav-banner flex flex-col overflow-hidden rounded-sm">
+  <div class="nav-banner flex flex-col overflow-hidden rounded-xs">
     <a href={link || '#'} class="group relative block overflow-hidden">
       <img
         src={imageUrl}

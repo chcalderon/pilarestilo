@@ -98,7 +98,7 @@ const FIELD_ORDER: (keyof AddressDraft)[] = [
 
 const inputClass =
   'w-full h-11 border border-pe-charcoal/25 bg-pe-white px-3 font-sans text-sm text-pe-black ' +
-  'focus:outline-none focus:border-pe-black';
+  'focus:outline-hidden focus:border-pe-black';
 
 export default function ShippingStep({
   locale,
@@ -331,7 +331,7 @@ export default function ShippingStep({
                     }}
                     className="shrink-0 min-h-11 px-2 font-sans text-[0.62rem] tracking-wider
                       uppercase text-pe-charcoal/60 hover:text-pe-black transition-colors
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+                      focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                   >
                     {l.edit}
                   </button>
@@ -353,7 +353,7 @@ export default function ShippingStep({
             onClick={openCreate}
             className={`mt-3 inline-flex items-center gap-2 min-h-11 px-4
               font-sans text-[0.68rem] tracking-[0.16em] uppercase transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
               ${book.addresses.length === 0 && !book.loading
                 ? 'bg-pe-black text-pe-white hover:opacity-90'
                 : 'border border-pe-charcoal/25 text-pe-charcoal hover:border-pe-black hover:text-pe-black'}`}
@@ -549,7 +549,7 @@ export default function ShippingStep({
               disabled={book.saving}
               className="inline-flex items-center gap-2 min-h-11 px-5 bg-pe-black text-pe-white
                 font-sans text-[0.68rem] tracking-[0.16em] uppercase disabled:opacity-40
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+                focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
             >
               {book.saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               {l.save}
@@ -559,7 +559,7 @@ export default function ShippingStep({
               onClick={() => setFormOpen(false)}
               className="min-h-11 px-5 border border-pe-charcoal/25 font-sans text-[0.68rem]
                 tracking-[0.16em] uppercase text-pe-charcoal hover:border-pe-black transition-colors
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+                focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
             >
               {l.cancel}
             </button>
@@ -580,7 +580,7 @@ export default function ShippingStep({
         className="w-full sm:w-auto inline-flex items-center justify-center min-h-12 px-8
           bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
           transition-opacity disabled:opacity-40 disabled:cursor-not-allowed
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+          focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
       >
         {l.continue}
       </button>

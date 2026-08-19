@@ -466,7 +466,7 @@ function SecurityHint({
   }
 
   return (
-    <div className="mt-3 inline-flex items-center gap-2 rounded-sm border border-pe-black/10 bg-pe-offwhite px-2.5 py-2">
+    <div className="mt-3 inline-flex items-center gap-2 rounded-xs border border-pe-black/10 bg-pe-offwhite px-2.5 py-2">
       {configured && !clearFlag ? (
         <ShieldCheck size={14} className="text-green-700" />
       ) : (
@@ -1164,7 +1164,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.whatsappNumber}
               onChange={(e) => updateField('whatsappNumber', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="+56912345678"
             />
           </label>
@@ -1175,7 +1175,7 @@ export default function SystemSettingsPanel() {
               type="url"
               value={form.instagramUrl}
               onChange={(e) => updateField('instagramUrl', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="https://instagram.com/tu_cuenta"
             />
           </label>
@@ -1186,12 +1186,12 @@ export default function SystemSettingsPanel() {
               type="url"
               value={form.facebookUrl}
               onChange={(e) => updateField('facebookUrl', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="https://facebook.com/tu_pagina"
             />
           </label>
 
-          <div className="md:col-span-2 mt-2 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+          <div className="md:col-span-2 mt-2 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
             <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
               Defaults inferencia IA (Productos)
             </p>
@@ -1205,7 +1205,7 @@ export default function SystemSettingsPanel() {
                   type="text"
                   value={form.productAiInferDefaultBrand}
                   onChange={(e) => updateField('productAiInferDefaultBrand', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="Pilar Estilo"
                 />
               </label>
@@ -1215,7 +1215,7 @@ export default function SystemSettingsPanel() {
                 <select
                   value={form.productAiInferDefaultCondition}
                   onChange={(e) => updateField('productAiInferDefaultCondition', e.target.value as 'NEW' | 'USED')}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 >
                   <option value="USED">Usado</option>
                   <option value="NEW">Nuevo</option>
@@ -1230,7 +1230,7 @@ export default function SystemSettingsPanel() {
                   step="1000"
                   value={form.productAiInferBasePrice}
                   onChange={(e) => updateField('productAiInferBasePrice', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="24990"
                 />
               </label>
@@ -1244,7 +1244,7 @@ export default function SystemSettingsPanel() {
                   step="0.01"
                   value={form.productAiInferListPriceMultiplier}
                   onChange={(e) => updateField('productAiInferListPriceMultiplier', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="1.35"
                 />
               </label>
@@ -1292,7 +1292,7 @@ export default function SystemSettingsPanel() {
         </div>
 
         {form.paymentMethodBankTransferEnabled && (
-          <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+          <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
             <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
               Datos de transferencia bancaria
             </p>
@@ -1306,7 +1306,7 @@ export default function SystemSettingsPanel() {
                   type="text"
                   value={form.bankTransferAccountHolder}
                   onChange={(e) => updateField('bankTransferAccountHolder', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="Pilar Estilo Spa"
                 />
               </label>
@@ -1317,7 +1317,7 @@ export default function SystemSettingsPanel() {
                   type="email"
                   value={form.bankTransferContactEmail}
                   onChange={(e) => updateField('bankTransferContactEmail', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="pagos@pilarestilo.com"
                 />
               </label>
@@ -1328,7 +1328,7 @@ export default function SystemSettingsPanel() {
                   type="text"
                   value={form.bankTransferAccountNumber}
                   onChange={(e) => updateField('bankTransferAccountNumber', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   placeholder="1234567890"
                 />
               </label>
@@ -1338,7 +1338,7 @@ export default function SystemSettingsPanel() {
                 <select
                   value={form.bankTransferBankName}
                   onChange={(e) => updateField('bankTransferBankName', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 >
                   <option value="">Selecciona banco</option>
                   {bankOptions.map((bankName) => (
@@ -1354,7 +1354,7 @@ export default function SystemSettingsPanel() {
                 <select
                   value={form.bankTransferAccountType}
                   onChange={(e) => updateField('bankTransferAccountType', e.target.value)}
-                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 >
                   <option value="">Selecciona tipo de cuenta</option>
                   {bankAccountTypeOptions.map((accountType) => (
@@ -1396,7 +1396,7 @@ export default function SystemSettingsPanel() {
                     max={1440}
                     value={form.bankTransferAutoCancelTimeoutMinutes}
                     onChange={(e) => updateField('bankTransferAutoCancelTimeoutMinutes', Number(e.target.value))}
-                    className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                   />
                   <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Entre 5 y 1440 min</span>
                 </label>
@@ -1409,7 +1409,7 @@ export default function SystemSettingsPanel() {
                     type="text"
                     value={form.bankTransferAutoCancelCron}
                     onChange={(e) => updateField('bankTransferAutoCancelCron', e.target.value)}
-                    className="border border-pe-black/15 px-3 py-2 font-mono text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                    className="border border-pe-black/15 px-3 py-2 font-mono text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     placeholder="0 */15 * * * *"
                   />
                   <span className="font-sans text-[0.7rem] text-pe-charcoal/55">Expresión Spring cron (6 campos)</span>
@@ -1420,7 +1420,7 @@ export default function SystemSettingsPanel() {
         )}
 
         {form.paymentMethodGatewayEnabled && (
-          <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+          <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
             <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
               Proveedores de pasarela activos
             </p>
@@ -1447,7 +1447,7 @@ export default function SystemSettingsPanel() {
             </div>
 
             {hasMercadoPagoSelected && (
-              <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-white px-3 py-3">
+              <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-white px-3 py-3">
                 <p className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-charcoal/55">
                   Configuracion Mercado Pago
                 </p>
@@ -1462,7 +1462,7 @@ export default function SystemSettingsPanel() {
                       type="url"
                       value={form.paymentGatewayMpApiBaseUrl}
                       onChange={(e) => updateField('paymentGatewayMpApiBaseUrl', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="https://api.mercadopago.com"
                     />
                   </label>
@@ -1473,7 +1473,7 @@ export default function SystemSettingsPanel() {
                       type="password"
                       value={form.paymentGatewayMpAccessToken}
                       onChange={(e) => updateField('paymentGatewayMpAccessToken', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="APP_USR-xxxxxxxxxxxxxxxx"
                     />
                   </label>
@@ -1484,7 +1484,7 @@ export default function SystemSettingsPanel() {
                       type="url"
                       value={form.paymentGatewayMpSuccessUrl}
                       onChange={(e) => updateField('paymentGatewayMpSuccessUrl', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="https://tudominio.com/es/account?tab=orders"
                     />
                   </label>
@@ -1495,7 +1495,7 @@ export default function SystemSettingsPanel() {
                       type="url"
                       value={form.paymentGatewayMpPendingUrl}
                       onChange={(e) => updateField('paymentGatewayMpPendingUrl', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="https://tudominio.com/es/account?tab=orders"
                     />
                   </label>
@@ -1506,7 +1506,7 @@ export default function SystemSettingsPanel() {
                       type="url"
                       value={form.paymentGatewayMpFailureUrl}
                       onChange={(e) => updateField('paymentGatewayMpFailureUrl', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="https://tudominio.com/es/account?tab=orders"
                     />
                   </label>
@@ -1517,7 +1517,7 @@ export default function SystemSettingsPanel() {
                       type="url"
                       value={form.paymentGatewayMpNotificationUrl}
                       onChange={(e) => updateField('paymentGatewayMpNotificationUrl', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="https://tudominio.com/api/payments/webhooks/gateway/mercadopago"
                     />
                   </label>
@@ -1528,7 +1528,7 @@ export default function SystemSettingsPanel() {
                       type="password"
                       value={form.paymentGatewayMpWebhookToken}
                       onChange={(e) => updateField('paymentGatewayMpWebhookToken', e.target.value)}
-                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                       placeholder="token-seguro-opcional"
                     />
                   </label>
@@ -1616,7 +1616,7 @@ export default function SystemSettingsPanel() {
           })}
         </div>
 
-        <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
+        <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
           <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
             Activo ahora: <strong>{selectedMediaStorageProvider?.label ?? form.mediaStorageProvider}</strong>
           </span>
@@ -1807,7 +1807,7 @@ export default function SystemSettingsPanel() {
                 type="url"
                 value={form.mediaS3Endpoint}
                 onChange={(e) => updateField('mediaS3Endpoint', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="https://s3.amazonaws.com"
               />
             </label>
@@ -1818,7 +1818,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.mediaS3Region}
                 onChange={(e) => updateField('mediaS3Region', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="us-east-1"
               />
             </label>
@@ -1829,7 +1829,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.mediaS3Bucket}
                 onChange={(e) => updateField('mediaS3Bucket', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="pilarestilo-media"
               />
             </label>
@@ -1840,7 +1840,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.mediaS3AccessKeyId}
                 onChange={(e) => updateField('mediaS3AccessKeyId', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="AKIA..."
               />
             </label>
@@ -1851,7 +1851,7 @@ export default function SystemSettingsPanel() {
                 type="password"
                 value={form.mediaS3SecretKey}
                 onChange={(e) => updateField('mediaS3SecretKey', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Deja vacio para mantener el actual"
               />
             </label>
@@ -1862,7 +1862,7 @@ export default function SystemSettingsPanel() {
                 type="url"
                 value={form.mediaS3PublicBaseUrl}
                 onChange={(e) => updateField('mediaS3PublicBaseUrl', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="https://cdn.tu-dominio.com"
               />
             </label>
@@ -1916,7 +1916,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxPayerRut}
               onChange={(e) => updateField('taxPayerRut', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="76.543.210-K"
             />
           </label>
@@ -1927,7 +1927,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxBusinessName}
               onChange={(e) => updateField('taxBusinessName', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="Comercializadora Pilar Estilo SpA"
             />
           </label>
@@ -1938,7 +1938,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxBusinessActivity}
               onChange={(e) => updateField('taxBusinessActivity', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="Venta al por menor de prendas de vestir"
             />
           </label>
@@ -1949,7 +1949,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxActecoCode}
               onChange={(e) => updateField('taxActecoCode', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="477101"
             />
           </label>
@@ -1960,7 +1960,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxAddress}
               onChange={(e) => updateField('taxAddress', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="Av. Santa Teresa 1234"
             />
           </label>
@@ -1971,7 +1971,7 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxCommune}
               onChange={(e) => updateField('taxCommune', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="Los Andes"
             />
           </label>
@@ -1982,13 +1982,13 @@ export default function SystemSettingsPanel() {
               type="text"
               value={form.taxCity}
               onChange={(e) => updateField('taxCity', e.target.value)}
-              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               placeholder="Los Andes"
             />
           </label>
         </div>
 
-        <div className="mt-4 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-3">
+        <div className="mt-4 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-3">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-charcoal/55 mb-2">
             Impuesto y emision
           </p>
@@ -2003,7 +2003,7 @@ export default function SystemSettingsPanel() {
                 step="0.01"
                 value={form.taxVatRate}
                 onChange={(e) => updateField('taxVatRate', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               />
               <span className="font-sans text-[0.68rem] text-pe-charcoal/45">
                 Se guarda en cada venta al crearse. Cambiarlo no altera las ventas ya hechas.
@@ -2015,7 +2015,7 @@ export default function SystemSettingsPanel() {
               <select
                 value={form.taxDocumentProvider}
                 onChange={(e) => updateField('taxDocumentProvider', e.target.value as FormState['taxDocumentProvider'])}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
               >
                 <option value="MANUAL">Manual (eBoleta del SII)</option>
                 <option value="TUU">TUU</option>
@@ -2053,7 +2053,7 @@ export default function SystemSettingsPanel() {
           Configura zonas de despacho, comunas cubiertas, couriers y modalidad de pago de envio.
         </p>
 
-        <div className="mt-5 rounded-sm border border-pe-rose/20 bg-pe-cream/40 px-4 py-3">
+        <div className="mt-5 rounded-xs border border-pe-rose/20 bg-pe-cream/40 px-4 py-3">
           <p className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-rose-deep mb-1">
             Modalidad de pago envio
           </p>
@@ -2112,7 +2112,7 @@ export default function SystemSettingsPanel() {
                         next[idx] = { ...zone, titleEs: e.target.value };
                         updateField('shippingZones', next);
                       }}
-                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     />
                   </label>
 
@@ -2128,7 +2128,7 @@ export default function SystemSettingsPanel() {
                         next[idx] = { ...zone, titleEn: e.target.value };
                         updateField('shippingZones', next);
                       }}
-                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     />
                   </label>
 
@@ -2145,7 +2145,7 @@ export default function SystemSettingsPanel() {
                           next[idx] = { ...zone, etaEs: e.target.value };
                           updateField('shippingZones', next);
                         }}
-                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                         placeholder="24-48 hs"
                       />
                     </label>
@@ -2161,7 +2161,7 @@ export default function SystemSettingsPanel() {
                           next[idx] = { ...zone, etaEn: e.target.value };
                           updateField('shippingZones', next);
                         }}
-                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                        className="border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                         placeholder="24-48h"
                       />
                     </label>
@@ -2205,7 +2205,7 @@ export default function SystemSettingsPanel() {
                       onChange={(e) => {
                         void handleShippingCommuneSearch(zone.code, e.target.value);
                       }}
-                      className="w-full border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.75rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                      className="w-full border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.75rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                     />
                     {shippingCommuneLoading[zone.code] && (
                       <p className="mt-1 font-sans text-[0.68rem] text-pe-charcoal/55">Buscando comunas...</p>
@@ -2273,7 +2273,7 @@ export default function SystemSettingsPanel() {
                     next[idx] = { ...courier, name: newName, id: courier.id || slugifyCourierId(newName) };
                     updateField('shippingCouriers', next);
                   }}
-                  className="sm:col-span-4 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="sm:col-span-4 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 />
                 <input
                   type="url"
@@ -2284,7 +2284,7 @@ export default function SystemSettingsPanel() {
                     next[idx] = { ...courier, logoUrl: e.target.value.trim() || null };
                     updateField('shippingCouriers', next);
                   }}
-                  className="sm:col-span-5 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                  className="sm:col-span-5 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.78rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 />
                 <label className="sm:col-span-2 inline-flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -2348,7 +2348,7 @@ export default function SystemSettingsPanel() {
                 onClick={() => toggleNotificationProvider(option.value)}
                 title={isLastActive ? 'Es el unico canal activo; activa otro antes de apagarlo.' : undefined}
                 className={[
-                  'text-left border px-3 py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose',
+                  'text-left border px-3 py-3 transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose',
                   isActive
                     ? 'border-pe-rose bg-pe-rose/10'
                     : 'border-pe-black/10 hover:border-pe-rose/45 hover:bg-pe-rose/10',
@@ -2369,7 +2369,7 @@ export default function SystemSettingsPanel() {
           })}
         </div>
 
-        <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
+        <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
           <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
             Activos ahora:{' '}
             <strong>
@@ -2395,7 +2395,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappSimulatedTo}
                 onChange={(e) => updateField('whatsappSimulatedTo', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="+56900000000"
               />
             </label>
@@ -2405,7 +2405,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappSimulatedSender}
                 onChange={(e) => updateField('whatsappSimulatedSender', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Pilar Estilo"
               />
             </label>
@@ -2427,7 +2427,7 @@ export default function SystemSettingsPanel() {
                 type="url"
                 value={form.whatsappTwilioApiBaseUrl}
                 onChange={(e) => updateField('whatsappTwilioApiBaseUrl', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="https://api.twilio.com"
               />
             </label>
@@ -2438,7 +2438,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappTwilioAccountSid}
                 onChange={(e) => updateField('whatsappTwilioAccountSid', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="ACxxxxxxxxxxxxxxxx"
               />
             </label>
@@ -2449,7 +2449,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappTwilioFrom}
                 onChange={(e) => updateField('whatsappTwilioFrom', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="whatsapp:+14155238886"
               />
             </label>
@@ -2460,7 +2460,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappTwilioToFallback}
                 onChange={(e) => updateField('whatsappTwilioToFallback', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="+56900000000"
               />
             </label>
@@ -2471,7 +2471,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.whatsappTwilioSenderAlias}
                 onChange={(e) => updateField('whatsappTwilioSenderAlias', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Pilar Estilo"
               />
             </label>
@@ -2482,7 +2482,7 @@ export default function SystemSettingsPanel() {
                 type="password"
                 value={form.whatsappTwilioAuthToken}
                 onChange={(e) => updateField('whatsappTwilioAuthToken', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Deja vacio para mantener el actual"
               />
             </label>
@@ -2526,7 +2526,7 @@ export default function SystemSettingsPanel() {
                 type="url"
                 value={form.sendgridApiBaseUrl}
                 onChange={(e) => updateField('sendgridApiBaseUrl', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="https://api.sendgrid.com"
               />
             </label>
@@ -2537,7 +2537,7 @@ export default function SystemSettingsPanel() {
                 type="email"
                 value={form.sendgridFromEmail}
                 onChange={(e) => updateField('sendgridFromEmail', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="ventas@pilarestilo.com"
               />
             </label>
@@ -2548,7 +2548,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.sendgridSenderName}
                 onChange={(e) => updateField('sendgridSenderName', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Pilar Estilo"
               />
             </label>
@@ -2559,7 +2559,7 @@ export default function SystemSettingsPanel() {
                 type="email"
                 value={form.sendgridToFallback}
                 onChange={(e) => updateField('sendgridToFallback', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="alerts@pilarestilo.com"
               />
             </label>
@@ -2570,7 +2570,7 @@ export default function SystemSettingsPanel() {
                 type="password"
                 value={form.sendgridApiKey}
                 onChange={(e) => updateField('sendgridApiKey', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Deja vacio para mantener la actual"
               />
             </label>
@@ -2614,7 +2614,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.smtpHost}
                 onChange={(e) => updateField('smtpHost', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="smtp.gmail.com"
               />
             </label>
@@ -2626,7 +2626,7 @@ export default function SystemSettingsPanel() {
                 inputMode="numeric"
                 value={form.smtpPort}
                 onChange={(e) => updateField('smtpPort', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="587"
               />
             </label>
@@ -2637,7 +2637,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.smtpUsername}
                 onChange={(e) => updateField('smtpUsername', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="usuario_smtp"
               />
             </label>
@@ -2648,7 +2648,7 @@ export default function SystemSettingsPanel() {
                 type="email"
                 value={form.smtpFromEmail}
                 onChange={(e) => updateField('smtpFromEmail', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="ventas@pilarestilo.com"
               />
             </label>
@@ -2659,7 +2659,7 @@ export default function SystemSettingsPanel() {
                 type="password"
                 value={form.smtpPassword}
                 onChange={(e) => updateField('smtpPassword', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Deja vacio para mantener la actual"
               />
             </label>
@@ -2724,7 +2724,7 @@ export default function SystemSettingsPanel() {
                 type="url"
                 value={form.n8nWebhookUrl}
                 onChange={(e) => updateField('n8nWebhookUrl', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="https://n8n.tudominio.com/webhook/pilar-notifications"
               />
             </label>
@@ -2735,7 +2735,7 @@ export default function SystemSettingsPanel() {
                 type="text"
                 value={form.n8nTokenHeaderName}
                 onChange={(e) => updateField('n8nTokenHeaderName', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="X-PE-N8N-TOKEN"
               />
             </label>
@@ -2746,7 +2746,7 @@ export default function SystemSettingsPanel() {
                 type="password"
                 value={form.n8nApiKey}
                 onChange={(e) => updateField('n8nApiKey', e.target.value)}
-                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+                className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
                 placeholder="Deja vacio para mantener el actual"
               />
             </label>
@@ -2773,7 +2773,7 @@ export default function SystemSettingsPanel() {
             replaceText="Se reemplazara la API key n8n actual."
             clearText="Se eliminara la API key n8n al guardar."
           />
-          <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
+          <div className="mt-3 rounded-xs border border-pe-black/10 bg-pe-offwhite px-3 py-2">
             <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
               Tip: cada cliente puede elegir su canal preferido (WhatsApp/Correo/Ambos) en Mi Cuenta y n8n puede enrutar en base a ese dato.
               Si no completas estos campos, se usan fallback desde <span className="font-mono text-[0.7rem]">NOTIFICATION_N8N_*</span>.

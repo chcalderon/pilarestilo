@@ -145,7 +145,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
           autoComplete="name"
           value={fullName}
           onChange={e => setFullName(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
           placeholder={es ? 'María García' : 'Jane Smith'}
         />
       </div>
@@ -161,7 +161,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-charcoal/30"
           placeholder={es ? 'tu@email.com' : 'you@email.com'}
         />
       </div>
@@ -181,7 +181,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
             autoComplete="new-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-none focus:border-pe-rose/60 transition-colors duration-200"
+            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
             placeholder="••••••••"
           />
           <button

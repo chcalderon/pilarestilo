@@ -276,7 +276,7 @@ export default function UserManagement() {
               title="Editar usuario"
               onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
               disabled={busyUserId !== null}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-xs border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
             >
               <Pencil size={13} /> Editar
             </button>
@@ -285,7 +285,7 @@ export default function UserManagement() {
               title={row.active ? 'Bloquear usuario' : 'Habilitar usuario'}
               onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
               disabled={busyUserId !== null || !canUpdateUsers}
-              className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
             >
               {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
             </button>
@@ -295,7 +295,7 @@ export default function UserManagement() {
                 title="Eliminar usuario"
                 onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
                 disabled={busyUserId !== null}
-                className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+                className="inline-flex items-center justify-center p-2 rounded-xs text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
               >
                 <Trash2 size={15} />
               </button>
@@ -365,7 +365,7 @@ export default function UserManagement() {
               title="Editar trabajador"
               onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
               disabled={busyUserId !== null}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-sm border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.66rem] font-sans uppercase tracking-wider rounded-xs border border-pe-black/12 text-pe-charcoal hover:border-pe-black/30 hover:bg-pe-black/[0.03] disabled:opacity-45 transition-all"
             >
               <Pencil size={13} /> Editar
             </button>
@@ -374,7 +374,7 @@ export default function UserManagement() {
               title={row.active ? 'Bloquear trabajador' : 'Habilitar trabajador'}
               onClick={(e) => { e.stopPropagation(); void handleToggleActive(row); }}
               disabled={busyUserId !== null || !canUpdateUsers}
-              className="inline-flex items-center justify-center p-2 rounded-sm text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
+              className="inline-flex items-center justify-center p-2 rounded-xs text-pe-charcoal/60 hover:text-pe-charcoal hover:bg-pe-black/[0.04] disabled:opacity-45 transition-all"
             >
               {row.active ? <ShieldOff size={15} /> : <ShieldCheck size={15} />}
             </button>
@@ -384,7 +384,7 @@ export default function UserManagement() {
                 title="Eliminar trabajador"
                 onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
                 disabled={busyUserId !== null}
-                className="inline-flex items-center justify-center p-2 rounded-sm text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+                className="inline-flex items-center justify-center p-2 rounded-xs text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
               >
                 <Trash2 size={15} />
               </button>
@@ -472,7 +472,7 @@ export default function UserManagement() {
               setCustomersPage(0);
               setWorkersPage(0);
             }}
-            className="h-[34px] w-full sm:w-auto border border-pe-black/12 bg-pe-white px-3 font-sans text-[0.72rem] uppercase tracking-[0.12em] text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+            className="h-[34px] w-full sm:w-auto border border-pe-black/12 bg-pe-white px-3 font-sans text-[0.72rem] uppercase tracking-[0.12em] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
           >
             <option value="ALL">Todos</option>
             <option value="ACTIVE">Habilitados</option>

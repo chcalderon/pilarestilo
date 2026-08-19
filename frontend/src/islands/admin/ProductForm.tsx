@@ -127,7 +127,7 @@ function CategoryTreeItem({
     <div>
       <div
         className={[
-          'flex items-center gap-1.5 py-1 pr-2 group transition-colors rounded-sm',
+          'flex items-center gap-1.5 py-1 pr-2 group transition-colors rounded-xs',
           isSelected
             ? 'bg-[#B76E79]/8 dark:bg-[#E4B8BF]/12'
             : 'hover:bg-[#B76E79]/5 dark:hover:bg-[#E4B8BF]/8',
@@ -904,7 +904,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   }
 
   const inputClass =
-    'w-full font-sans text-[0.82rem] border border-pe-black/30 dark:border-[#3F2A2F] px-2.5 py-1.5 bg-[#fffdfa] dark:bg-[#1F1518] text-[#1A1A1A] dark:text-[#E8DCC8] placeholder-pe-charcoal/40 dark:placeholder-[#D6C8B5]/35 focus:outline-none focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
+    'w-full font-sans text-[0.82rem] border border-pe-black/30 dark:border-[#3F2A2F] px-2.5 py-1.5 bg-[#fffdfa] dark:bg-[#1F1518] text-[#1A1A1A] dark:text-[#E8DCC8] placeholder-pe-charcoal/40 dark:placeholder-[#D6C8B5]/35 focus:outline-hidden focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
   const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 dark:text-[#D6C8B5]/65 mb-1';
   const errorClass = 'font-sans text-xs text-red-500 dark:text-red-300 mt-1';
 

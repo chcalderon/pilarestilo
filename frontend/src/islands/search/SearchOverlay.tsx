@@ -105,7 +105,7 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder={locale === 'es' ? 'Buscar productos, marcas...' : 'Search products, brands...'}
-              className="w-full bg-transparent text-[#F8F4EF] text-2xl font-light outline-none placeholder:text-[#F8F4EF]/30 font-['Cormorant_Garamond',serif]"
+              className="w-full bg-transparent text-[#F8F4EF] text-2xl font-light outline-hidden placeholder:text-[#F8F4EF]/30 font-['Cormorant_Garamond',serif]"
             />
           </form>
           <button

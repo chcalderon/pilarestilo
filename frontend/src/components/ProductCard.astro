@@ -96,7 +96,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
       client:visible
       productId={product.id}
       token={token}
-      className="p-1.5 bg-pe-offwhite/80 backdrop-blur-sm text-pe-charcoal/50 hover:text-pe-rose"
+      className="p-1.5 bg-pe-offwhite/80 backdrop-blur-xs text-pe-charcoal/50 hover:text-pe-rose"
     />
   </div>
 
@@ -148,7 +148,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
           class="w-full inline-flex items-center justify-center min-h-11 px-4 border border-pe-black/20
             font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal
             hover:border-pe-black hover:text-pe-black transition-colors
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
         >
           {locale === 'es' ? 'Elegir talla' : 'Choose size'}
         </a>

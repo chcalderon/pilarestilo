@@ -10,7 +10,7 @@ import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 type Tab = 'active' | 'expired' | 'all';
 
 const INPUT_CLASS =
-  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-none focus:border-pe-rose/50 transition-colors w-full';
+  'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors w-full';
 
 const EMPTY_FORM: CreateDiscountCodeRequest = {
   code: '', type: 'PERCENTAGE', value: 10, minOrderAmount: 0,
@@ -292,7 +292,7 @@ export default function DiscountCodeManager() {
                   onFocus={() => userResults.length > 0 && setUserSearchOpen(true)}
                   onBlur={() => setTimeout(() => setUserSearchOpen(false), 150)}
                   placeholder="Buscar por nombre o email..."
-                  className="w-full border border-pe-black/20 px-3 py-2 text-sm font-sans focus:outline-none focus:border-pe-rose"
+                  className="w-full border border-pe-black/20 px-3 py-2 text-sm font-sans focus:outline-hidden focus:border-pe-rose"
                 />
               )}
               {userSearchOpen && userResults.length > 0 && (
@@ -328,7 +328,7 @@ export default function DiscountCodeManager() {
       )}
 
       {/* Table */}
-      <div className="bg-pe-white border border-pe-black/6 shadow-sm overflow-x-auto">
+      <div className="bg-pe-white border border-pe-black/6 shadow-xs overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 size={22} className="animate-spin text-pe-rose/50" />

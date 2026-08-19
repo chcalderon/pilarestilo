@@ -67,7 +67,7 @@ const CATEGORY_CHIP_CLASS: Record<CashMovementCategory, string> = {
 
 function CategoryChip({ category }: { category: CashMovementCategory }) {
   return (
-    <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded ${CATEGORY_CHIP_CLASS[category] ?? 'bg-pe-beige text-pe-charcoal'}`}>
+    <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded-sm ${CATEGORY_CHIP_CLASS[category] ?? 'bg-pe-beige text-pe-charcoal'}`}>
       {CATEGORY_LABELS[category] ?? category}
     </span>
   );
@@ -208,7 +208,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
               required
             />
           </div>
@@ -223,7 +223,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalle del movimiento"
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
               required
             />
           </div>
@@ -477,7 +477,7 @@ export default function CajaPage() {
               type="number"
               value={openBalance}
               onChange={(e) => setOpenBalance(e.target.value)}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79]"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
             />
           </div>
           {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
@@ -580,7 +580,7 @@ export default function CajaPage() {
                 value={declaredBalance}
                 onChange={(e) => setDeclaredBalance(e.target.value)}
                 placeholder="0"
-                className="w-full text-2xl font-light text-pe-black dark:text-pe-beige bg-transparent border-0 border-b border-[#EDE3D8] dark:border-white/20 focus:outline-none focus:border-[#B76E79] pb-0.5 placeholder:text-pe-charcoal/20 dark:placeholder:text-pe-beige/20"
+                className="w-full text-2xl font-light text-pe-black dark:text-pe-beige bg-transparent border-0 border-b border-[#EDE3D8] dark:border-white/20 focus:outline-hidden focus:border-[#B76E79] pb-0.5 placeholder:text-pe-charcoal/20 dark:placeholder:text-pe-beige/20"
               />
             </div>
             <div className="flex-1 min-w-0 px-5 py-4">
@@ -653,7 +653,7 @@ export default function CajaPage() {
               onChange={(e) => setCloseNotes(e.target.value)}
               placeholder="Notas de cierre (opcional)"
               rows={2}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79] placeholder:text-pe-charcoal/30 dark:placeholder:text-pe-beige/30"
             />
           </div>
         )}
@@ -706,7 +706,7 @@ export default function CajaPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'OPEN' | 'CLOSED')}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79]"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
             >
               <option value="ALL">Todos</option>
               <option value="OPEN">Abierta</option>
@@ -719,7 +719,7 @@ export default function CajaPage() {
               type="date"
               value={fromFilter}
               onChange={(e) => setFromFilter(e.target.value)}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79]"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
             />
           </div>
           <div>
@@ -728,7 +728,7 @@ export default function CajaPage() {
               type="date"
               value={toFilter}
               onChange={(e) => setToFilter(e.target.value)}
-              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79]"
+              className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
             />
           </div>
           <div>
@@ -741,7 +741,7 @@ export default function CajaPage() {
                 value={sellerFilter}
                 onChange={(e) => setSellerFilter(e.target.value)}
                 placeholder="UUID cajero"
-                className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-none focus:border-[#B76E79]"
+                className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
               />
             ) : (
               <button
@@ -795,7 +795,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2 text-pe-charcoal dark:text-pe-beige">{formatDateTime(register.openedAt)}</td>
                   <td className="px-3 py-2 text-pe-charcoal dark:text-pe-beige">{formatDateTime(register.closedAt)}</td>
                   <td className="px-3 py-2">
-                    <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded ${
+                    <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded-sm ${
                       register.status === 'OPEN'
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-pe-charcoal/10 text-pe-charcoal/70 dark:bg-white/10 dark:text-pe-beige/70'

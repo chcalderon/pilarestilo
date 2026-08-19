@@ -23,14 +23,14 @@ const money = new Intl.NumberFormat('es-CL', {
 });
 
 const inputCls =
-  'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-sm px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
+  'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
 const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
 const btnPrimary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
 const btnSecondary =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-sm border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -206,7 +206,7 @@ export default function ReturnDetailDrawer({
           {feedback && (
             <p
               role="status"
-              className={`text-[0.78rem] px-3 py-2 rounded-sm border ${
+              className={`text-[0.78rem] px-3 py-2 rounded-xs border ${
                 feedback.tone === 'success' ? 'border-green-300/60 text-green-700' : 'border-red-300/60 text-red-600'
               }`}
             >
@@ -215,7 +215,7 @@ export default function ReturnDetailDrawer({
           )}
 
           {request.kind === 'RETRACTO' && request.status === 'REQUESTED' && (
-            <p className="text-[0.78rem] px-3 py-2 rounded-sm border border-[var(--pe-border)] bg-[var(--pe-surface-soft)]">
+            <p className="text-[0.78rem] px-3 py-2 rounded-xs border border-[var(--pe-border)] bg-[var(--pe-surface-soft)]">
               La clienta ejerció su derecho a retracto dentro de plazo. <strong>No se puede rechazar</strong>:
               la ley lo trata como un derecho, no como una solicitud.
             </p>

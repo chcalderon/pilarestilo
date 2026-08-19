@@ -103,7 +103,7 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
         className="inline-flex items-center gap-1.5 px-3 py-2 border border-pe-charcoal/25
           font-sans text-[0.66rem] tracking-wider uppercase text-pe-charcoal
           hover:border-pe-black transition-colors
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose"
+          focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
       >
         <Undo2 size={13} aria-hidden="true" />
         {l.open}
@@ -127,7 +127,7 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
           onChange={(e) => setReason(e.target.value)}
           placeholder={l.placeholder}
           className="w-full border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem]
-            text-pe-charcoal focus:border-pe-rose/45 focus:outline-none"
+            text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
         />
       </label>
       {error && <p className="font-sans text-[0.72rem] text-red-500">{error}</p>}

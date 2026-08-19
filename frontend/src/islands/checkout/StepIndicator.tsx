@@ -44,7 +44,7 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
                  */
                 className={`w-full min-h-11 flex items-center justify-center gap-2 px-2 sm:px-4 py-3
                   border-b-2 transition-colors duration-200
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
+                  focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
                   ${
                     isCurrent
                       ? 'border-pe-black text-pe-black'

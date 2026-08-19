@@ -431,14 +431,14 @@ export default function PaymentReviewQueue() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : activeTab === 'approved' ? 'Buscar pago aprobado...' : 'Buscar pago rechazado...'}
-            className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-none focus:border-pe-rose/45"
+            className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-charcoal/40 focus:outline-hidden focus:border-pe-rose/45"
             aria-label="Buscar pagos"
           />
 
           <select
             value={dateSort}
             onChange={(e) => setDateSort(e.target.value as DateSortDirection)}
-            className="w-full sm:w-auto bg-pe-white border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.72rem] text-pe-charcoal focus:outline-none focus:border-pe-rose/45"
+            className="w-full sm:w-auto bg-pe-white border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.72rem] text-pe-charcoal focus:outline-hidden focus:border-pe-rose/45"
             aria-label="Ordenar por fecha"
           >
             <option value="desc">Fecha: mas reciente</option>
