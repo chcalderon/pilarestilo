@@ -152,6 +152,12 @@ test.describe('Checkout -> dispatch -> customer delivery confirmation', () => {
           expect(dispatch.orderShippingAddressReference).toContain(address.line1);
         }
 
+        // A paid order cannot be claimed for dispatch without a live boleta: the gate landed in
+        // August and this spec predates it, so it was failing here on every run since. Registering
+        // one is what the shop actually does between approving the transfer and packing the
+        // parcel, so the flow is more truthful with it than it was without.
+        await registerSalesDocument(request, admin.accessToken, order.id, `E2E-${paymentMethod}-${ts}`);
+
         await claimAndShipDispatch(request, admin.accessToken, dispatch, shipping.courierId, ts);
         await waitForOrderStatus(request, customer.accessToken, order.id, 'SHIPPED');
 
@@ -411,6 +417,24 @@ async function pollDispatchByOrder(
     body: { orderId },
   });
   return seeded;
+}
+
+/**
+ * Registers the boleta the dispatch gate asks for.
+ *
+ * <p>The folio is invented because in real life it comes from the SII's eBoleta app by hand; what
+ * the gate checks is that a live document exists for the order, not what is printed on it.
+ */
+async function registerSalesDocument(
+  request: APIRequestContext,
+  adminToken: string,
+  orderId: string,
+  folio: string,
+): Promise<void> {
+  await apiJson(request, 'POST', '/admin/sales-documents', {
+    token: adminToken,
+    body: { orderId, folio },
+  });
 }
 
 async function claimAndShipDispatch(
