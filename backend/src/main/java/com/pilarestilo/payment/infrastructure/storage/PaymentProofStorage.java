@@ -1,5 +1,6 @@
 package com.pilarestilo.payment.infrastructure.storage;
 
+import com.pilarestilo.shared.infrastructure.storage.StoredFileType;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -34,16 +34,9 @@ import java.util.UUID;
 @Component
 public class PaymentProofStorage {
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "jpeg", "png", "webp");
+    private static final Set<String> ALLOWED_EXTENSIONS = StoredFileType.allowedExtensions();
     private static final long MAX_BYTES = 10L * 1024 * 1024;
     private static final String LEGACY_PREFIX = "/api/media/";
-    private static final Map<String, String> CONTENT_TYPES = Map.of(
-            "pdf", "application/pdf",
-            "jpg", "image/jpeg",
-            "jpeg", "image/jpeg",
-            "png", "image/png",
-            "webp", "image/webp");
-
     private final Path root;
     private final Path legacyMediaRoot;
 
@@ -103,10 +96,7 @@ public class PaymentProofStorage {
     }
 
     public String contentTypeOf(String reference) {
-        String lower = reference == null ? "" : reference.toLowerCase(Locale.ROOT);
-        int dot = lower.lastIndexOf('.');
-        String extension = dot >= 0 ? lower.substring(dot + 1) : "";
-        return CONTENT_TYPES.getOrDefault(extension, "application/octet-stream");
+        return StoredFileType.of(reference);
     }
 
     private String resolveExtension(String originalFilename) {

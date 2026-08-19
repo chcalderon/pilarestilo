@@ -5,6 +5,9 @@ import com.pilarestilo.dispatch.domain.ports.SalesDocumentGate;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -21,9 +24,24 @@ public class SalesDocumentGateAdapter implements SalesDocumentGate {
 
     @Override
     public boolean blocksDispatch(UUID orderId) {
-        if (!systemSettingsRepository.get().getTax().documentRequiredBeforeDispatch()) {
+        if (!required()) {
             return false;
         }
         return salesDocumentRepository.findLiveByOrderId(orderId).isEmpty();
+    }
+
+    @Override
+    public Set<UUID> blockedAmong(Collection<UUID> orderIds) {
+        if (orderIds.isEmpty() || !required()) {
+            return Set.of();
+        }
+        Set<UUID> blocked = new HashSet<>(orderIds);
+        blocked.removeAll(salesDocumentRepository.findOrderIdsWithLiveDocument(orderIds));
+        return blocked;
+    }
+
+    /** The shop can switch the rule off, and then nothing is blocked however few boletas exist. */
+    private boolean required() {
+        return systemSettingsRepository.get().getTax().documentRequiredBeforeDispatch();
     }
 }

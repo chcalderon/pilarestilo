@@ -4,6 +4,7 @@ import com.pilarestilo.billing.infrastructure.persistence.entities.SalesDocument
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,15 @@ public interface SalesDocumentJpaRepository extends JpaRepository<SalesDocumentE
     List<SalesDocumentEntity> findByOrderIdOrderByIssuedAtDesc(UUID orderId);
 
     boolean existsByDocumentTypeAndFolio(String documentType, String folio);
+
+    /** Same exclusions as the single-order read: voided documents and credit notes do not count. */
+    @Query("""
+            select distinct d.orderId from SalesDocumentEntity d
+            where d.orderId in :orderIds
+              and d.status <> :voided
+              and d.documentType <> :creditNote
+            """)
+    List<UUID> findOrderIdsWithLiveDocument(Collection<UUID> orderIds, String voided, String creditNote);
 
     @Query("select d.fileUrl from SalesDocumentEntity d where d.fileUrl is not null")
     List<String> findAllFileUrls();

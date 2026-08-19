@@ -19,6 +19,9 @@ import java.math.BigDecimal;
  * @param firstItemImageUrl thumbnail of that garment, null when the product has no image
  * @param totalAmount       order total
  * @param currency          currency of the total
+ * @param needsSalesDocument true when the boleta gate would refuse this row today. Named after the
+ *                          consequence, not the data: with the rule switched off it is always
+ *                          false, so the screen never warns about something that would not block
  */
 public record DispatchOrderSummaryDto(
         String publicReference,
@@ -27,5 +30,6 @@ public record DispatchOrderSummaryDto(
         String firstItemVariant,
         String firstItemImageUrl,
         BigDecimal totalAmount,
-        String currency
+        String currency,
+        boolean needsSalesDocument
 ) {}

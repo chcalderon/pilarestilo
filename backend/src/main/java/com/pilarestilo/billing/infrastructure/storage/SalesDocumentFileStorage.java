@@ -1,5 +1,6 @@
 package com.pilarestilo.billing.infrastructure.storage;
 
+import com.pilarestilo.shared.infrastructure.storage.StoredFileType;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -35,7 +36,7 @@ import java.util.stream.Stream;
 @Component
 public class SalesDocumentFileStorage {
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "jpeg", "png", "webp");
+    private static final Set<String> ALLOWED_EXTENSIONS = StoredFileType.allowedExtensions();
     private static final long MAX_BYTES = 10L * 1024 * 1024;
 
     private final Path root;
@@ -119,9 +120,7 @@ public class SalesDocumentFileStorage {
     }
 
     public String contentTypeOf(String storedName) {
-        return storedName != null && storedName.toLowerCase(Locale.ROOT).endsWith(".pdf")
-                ? "application/pdf"
-                : "application/octet-stream";
+        return StoredFileType.of(storedName);
     }
 
     private String resolveExtension(String originalFilename) {

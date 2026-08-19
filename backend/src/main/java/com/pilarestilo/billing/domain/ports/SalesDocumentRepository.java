@@ -3,6 +3,7 @@ package com.pilarestilo.billing.domain.ports;
 import com.pilarestilo.billing.domain.enums.SalesDocumentType;
 import com.pilarestilo.billing.domain.model.SalesDocument;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +20,9 @@ public interface SalesDocumentRepository {
      * voided. Credit notes are excluded on purpose — one lives alongside the boleta it undoes.
      */
     Optional<SalesDocument> findLiveByOrderId(UUID orderId);
+
+    /** The orders among these that have a live sale document. Same rule as above, asked in bulk. */
+    Set<UUID> findOrderIdsWithLiveDocument(Collection<UUID> orderIds);
 
     /** Credit notes still standing against a document, to keep them from over-crediting it. */
     List<SalesDocument> findLiveCreditNotesFor(UUID documentId);

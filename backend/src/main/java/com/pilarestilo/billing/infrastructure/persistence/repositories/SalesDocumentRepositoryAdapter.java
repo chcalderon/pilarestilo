@@ -8,6 +8,7 @@ import com.pilarestilo.billing.infrastructure.persistence.entities.SalesDocument
 import com.pilarestilo.shared.application.Money;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -42,6 +43,17 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
                         // Including it here would make this read find two rows and throw.
                         SalesDocumentType.NOTA_CREDITO.name())
                 .map(this::toDomain);
+    }
+
+    @Override
+    public Set<UUID> findOrderIdsWithLiveDocument(Collection<UUID> orderIds) {
+        if (orderIds.isEmpty()) {
+            return Set.of();
+        }
+        return Set.copyOf(jpaRepository.findOrderIdsWithLiveDocument(
+                orderIds,
+                SalesDocumentStatus.VOIDED.name(),
+                SalesDocumentType.NOTA_CREDITO.name()));
     }
 
     @Override

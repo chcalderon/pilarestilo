@@ -1,5 +1,7 @@
 package com.pilarestilo.dispatch.domain.ports;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -13,4 +15,11 @@ public interface SalesDocumentGate {
 
     /** True when the order has no live tax document and the shop requires one before dispatch. */
     boolean blocksDispatch(UUID orderId);
+
+    /**
+     * Which of these orders the gate would refuse. Asked in one go because the dispatch queue needs
+     * the answer for every row it draws, and a question per row would undo the two queries that
+     * screen is built on.
+     */
+    Set<UUID> blockedAmong(Collection<UUID> orderIds);
 }

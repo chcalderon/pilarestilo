@@ -2,6 +2,7 @@ package com.pilarestilo.dispatch.application;
 
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.application.dto.DispatchOrderSummaryDto;
+import com.pilarestilo.dispatch.domain.ports.SalesDocumentGate;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
@@ -33,11 +34,14 @@ public class DispatchOrderSummaryService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final SalesDocumentGate salesDocumentGate;
 
     public DispatchOrderSummaryService(OrderRepository orderRepository,
-                                       ProductRepository productRepository) {
+                                       ProductRepository productRepository,
+                                       SalesDocumentGate salesDocumentGate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.salesDocumentGate = salesDocumentGate;
     }
 
     /**
@@ -80,6 +84,10 @@ public class DispatchOrderSummaryService {
                 .filter(product -> product.getImageUrl() != null)
                 .collect(Collectors.toMap(Product::getId, Product::getImageUrl));
 
+        // Third query for the page, and only that: whoever works this queue should read why a row
+        // cannot be taken, rather than find out by pressing a button that answers nothing.
+        Set<UUID> blocked = salesDocumentGate.blockedAmong(orderIds);
+
         return dispatches.stream()
                 .filter(dispatch -> !onlyPaidFor || isPaidFor(orders.get(dispatch.orderId())))
                 .map(dispatch -> {
@@ -87,7 +95,10 @@ public class DispatchOrderSummaryService {
                     // An order can be missing: DeleteOrder is a hard delete, and the dispatch row
                     // outlives it. In the history the dispatch is still shown, just without the
                     // summary, rather than disappearing from a list somebody is reading.
-                    return order == null ? dispatch : dispatch.withOrderSummary(summarise(order, imagesByProduct));
+                    return order == null
+                            ? dispatch
+                            : dispatch.withOrderSummary(
+                                    summarise(order, imagesByProduct, blocked.contains(order.getId())));
                 })
                 .toList();
     }
@@ -96,7 +107,9 @@ public class DispatchOrderSummaryService {
         return order != null && PAID_FOR.contains(order.getStatus());
     }
 
-    private DispatchOrderSummaryDto summarise(Order order, Map<UUID, String> imagesByProduct) {
+    private DispatchOrderSummaryDto summarise(Order order,
+                                              Map<UUID, String> imagesByProduct,
+                                              boolean needsSalesDocument) {
         List<OrderItem> items = order.getItems();
         OrderItem first = items.isEmpty() ? null : items.getFirst();
         return new DispatchOrderSummaryDto(
@@ -106,7 +119,8 @@ public class DispatchOrderSummaryService {
                 first == null ? null : formatVariant(first),
                 first == null ? null : imagesByProduct.get(first.getProductId()),
                 order.getTotalAmount() == null ? null : order.getTotalAmount().amount(),
-                order.getTotalAmount() == null ? null : order.getTotalAmount().currency()
+                order.getTotalAmount() == null ? null : order.getTotalAmount().currency(),
+                needsSalesDocument
         );
     }
 

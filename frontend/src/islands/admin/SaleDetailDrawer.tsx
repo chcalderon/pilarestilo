@@ -4,6 +4,7 @@ import {
   getOrderById,
   getPaymentByOrder,
   getSalesDocumentsByOrder,
+  attachSalesDocumentFile,
   issueSalesDocument,
   voidSalesDocument,
   reissueSalesDocument,
@@ -17,7 +18,6 @@ import {
   type SalesDocumentDto,
 } from '../../lib/api';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
-import { openBlobInNewTab } from '../../lib/openBlob';
 
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
 const CANCELLABLE: string[] = [
@@ -37,6 +37,96 @@ const money = new Intl.NumberFormat('es-CL', {
 const inputCls =
   'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
 const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
+
+/**
+ * Mirrors PaymentProofStorage.isStoredFile: an absolute URL was never a file the shop stored, so
+ * asking our own endpoint for it can only fail. Kept to one line, and to the same rule, on purpose.
+ */
+/**
+ * Shows a document rather than handing over a link to it.
+ *
+ * A boleta is read, not downloaded: whoever is checking a sale wants to see the folio next to the
+ * amounts on the same screen. Both kinds that the shop actually files are covered — a photograph
+ * from the SII app and a PDF — because "open in a new tab" was losing the context that made the
+ * document worth opening.
+ *
+ * The shop's own files arrive as an authenticated blob; a receipt that lives on somebody else's
+ * host is pointed at directly, since there is no session of ours to send there.
+ */
+function DocumentViewer({
+  source,
+  label,
+  onClose,
+}: {
+  source: { kind: 'blob'; blob: Blob } | { kind: 'external'; url: string };
+  label: string;
+  onClose: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    if (source.kind === 'external') {
+      setUrl(source.url);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(source.blob);
+    setUrl(objectUrl);
+    // Revoked on unmount: a drawer opened twenty times a day would otherwise hold twenty files.
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [source]);
+
+  if (!url) return null;
+
+  const isPdf =
+    source.kind === 'blob'
+      ? source.blob.type === 'application/pdf'
+      : source.url.toLowerCase().split('?')[0].endsWith('.pdf');
+
+  return (
+    <div className="border border-[var(--pe-border)]">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--pe-border)]">
+        <span className="text-[10px] tracking-widest uppercase opacity-60">{label}</span>
+        <div className="flex items-center gap-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-[0.7rem] underline underline-offset-2 hover:opacity-70"
+          >
+            Abrir aparte
+          </a>
+          <button type="button" onClick={onClose} aria-label="Cerrar vista" className="p-0.5 hover:opacity-60">
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      {broken ? (
+        /*
+         * A receipt on somebody else's host can be gone, moved, or behind a login, and a broken
+         * image icon tells whoever is checking the sale nothing about which of those happened.
+         */
+        <p className="px-3 py-6 text-[0.78rem] opacity-70">
+          No se pudo cargar el archivo desde {source.kind === 'external' ? new URL(url).host : 'la tienda'}.
+          El enlace quedó guardado con el pago, pero el archivo no responde.
+        </p>
+      ) : isPdf ? (
+        <iframe src={url} title={label} className="w-full h-[420px] lg:h-[560px] bg-white" />
+      ) : (
+        <img
+          src={url}
+          alt={label}
+          onError={() => setBroken(true)}
+          className="w-full max-h-[420px] lg:max-h-[560px] object-contain bg-black/5"
+        />
+      )}
+    </div>
+  );
+}
+
+function isExternalProof(reference: string): boolean {
+  return reference.startsWith('http://') || reference.startsWith('https://');
+}
 const btnPrimary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
 const btnSecondary =
@@ -117,6 +207,12 @@ export default function SaleDetailDrawer({
   const [receiverRut, setReceiverRut] = useState('');
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  /** Shown at the control itself: the drawer is long, and the banner at the top can be scrolled away. */
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<
+    { source: { kind: 'blob'; blob: Blob } | { kind: 'external'; url: string }; label: string } | null
+  >(null);
   const [voidReason, setVoidReason] = useState('');
   const [mode, setMode] = useState<'idle' | 'void' | 'reissue'>('idle');
   /** Voiding a boleta and undoing the sale are different acts, so the second one is opt-in. */
@@ -167,12 +263,19 @@ export default function SaleDetailDrawer({
   async function handleUpload(file: File) {
     setBusy(true);
     setFeedback(null);
+    setFileError(null);
     try {
       const stored = await uploadSalesDocumentFile(file, token);
       setFileUrl(stored);
       setFileName(file.name);
     } catch (error) {
-      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo subir el archivo' });
+      /*
+       * Losing this used to be silent from where the operator was looking: the boleta registered
+       * without its image, the row said folio 153, and the file was never there to open.
+       */
+      setFileUrl(null);
+      setFileName(null);
+      setFileError(error instanceof Error ? error.message : 'No se pudo subir el archivo');
     } finally {
       setBusy(false);
     }
@@ -212,6 +315,7 @@ export default function SaleDetailDrawer({
       setReceiverRut('');
       setFileUrl(null);
       setFileName(null);
+      setFileError(null);
       setVoidReason('');
       setMode('idle');
       await reload();
@@ -257,17 +361,36 @@ export default function SaleDetailDrawer({
     }
   }
 
-  async function openFile(documentId: string) {
+  /** Filing the paper afterwards, which is how the boleta is actually made: by hand, then photographed. */
+  async function attachToLive(documentId: string, file: File) {
+    setBusy(true);
+    setAttachError(null);
     try {
-      openBlobInNewTab(await fetchSalesDocumentFile(documentId, token));
+      await attachSalesDocumentFile(documentId, file, token);
+      setFeedback({ tone: 'success', text: 'Archivo adjuntado a la boleta.' });
+      await reload();
+    } catch (error) {
+      setAttachError(error instanceof Error ? error.message : 'No se pudo adjuntar el archivo');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openFile(documentId: string, folio: string) {
+    setFeedback(null);
+    try {
+      const blob = await fetchSalesDocumentFile(documentId, token);
+      setViewing({ source: { kind: 'blob', blob }, label: `Boleta ${folio}` });
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo abrir el archivo' });
     }
   }
 
   async function openProof(paymentId: string) {
+    setFeedback(null);
     try {
-      openBlobInNewTab(await fetchPaymentProof(paymentId, token));
+      const blob = await fetchPaymentProof(paymentId, token);
+      setViewing({ source: { kind: 'blob', blob }, label: 'Comprobante de transferencia' });
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo abrir el comprobante' });
     }
@@ -280,7 +403,7 @@ export default function SaleDetailDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={`Venta ${sale.publicReference ?? sale.orderId}`}
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[520px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto"
+        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[560px] lg:max-w-[1000px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto"
       >
         <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--pe-border)] sticky top-0 bg-[var(--pe-surface-card)] z-10">
           <div>
@@ -310,6 +433,13 @@ export default function SaleDetailDrawer({
             </p>
           )}
 
+          {/*
+            * Two columns from lg up: reading a sale and acting on it are different jobs, and the
+            * single column made the second one live below the fold on every screen wide enough to
+            * have shown it. Left is what the sale is; right is the paperwork and the viewer.
+            */}
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+            <div className="space-y-4">
           <Section label="Cliente">
             <Row label="Nombre" value={sale.customerName ?? <span className="opacity-40">Sin nombre</span>} />
             <CopyField label="Correo" value={sale.customerEmail} />
@@ -355,17 +485,48 @@ export default function SaleDetailDrawer({
             )}
           </Section>
 
+            </div>
+
+            <div className="space-y-4">
+              {viewing && (
+                <DocumentViewer
+                  source={viewing.source}
+                  label={viewing.label}
+                  onClose={() => setViewing(null)}
+                />
+              )}
           <Section label="Pago">
             <Row label="Método" value={sale.paymentMethod ?? '—'} />
             <Row label="Estado" value={sale.paymentStatus ?? '—'} />
             {payment?.proofReference && (
-              <button
-                type="button"
-                onClick={() => void openProof(payment.id)}
-                className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
-              >
-                <ExternalLink size={12} /> Ver comprobante
-              </button>
+              isExternalProof(payment.proofReference) ? (
+                /*
+                 * A receipt that lives somewhere else is opened where it lives. Routing it through
+                 * our authenticated endpoint answered 400 and the drawer showed a broken link on a
+                 * sale that had a perfectly good proof: the endpoint serves the shop's own files,
+                 * and an absolute URL was never one of them.
+                 */
+                <button
+                  type="button"
+                  onClick={() =>
+                    setViewing({
+                      source: { kind: 'external', url: payment.proofReference as string },
+                      label: 'Comprobante (alojado fuera de la tienda)',
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
+                >
+                  <ExternalLink size={12} /> Ver comprobante
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void openProof(payment.id)}
+                  className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
+                >
+                  <ExternalLink size={12} /> Ver comprobante
+                </button>
+              )
             )}
           </Section>
 
@@ -383,10 +544,32 @@ export default function SaleDetailDrawer({
                 {live.receiverName && <Row label="A nombre de" value={live.receiverName} />}
                 <CopyField label="Enviar a" value={live.receiverEmail} />
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {live.fileAttached && (
-                    <button type="button" className={btnSecondary} onClick={() => openFile(live.id)}>
+                  {live.fileAttached ? (
+                    <button type="button" className={btnSecondary} onClick={() => void openFile(live.id, live.folio)}>
                       <FileText size={13} /> Ver archivo
                     </button>
+                  ) : (
+                    <div className="w-full space-y-1">
+                      <label className={`${btnSecondary} cursor-pointer w-fit`}>
+                        <Upload size={13} /> Adjuntar la imagen o el PDF
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          className="hidden"
+                          disabled={busy}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void attachToLive(live.id, file);
+                          }}
+                        />
+                      </label>
+                      <p className="text-[0.7rem] opacity-60">
+                        Quedó registrada sin archivo. Adjuntarlo no cambia el folio ni los montos.
+                      </p>
+                      {attachError && (
+                        <p role="alert" className="text-[0.7rem] text-red-500">{attachError}</p>
+                      )}
+                    </div>
                   )}
                   {canVoid && mode === 'idle' && (
                     <button type="button" className={btnDanger} onClick={() => setMode('void')}>
@@ -530,6 +713,11 @@ export default function SaleDetailDrawer({
                     />
                   </label>
                   {fileName && <p className="text-[0.7rem] opacity-60">{fileName}</p>}
+                  {fileError && (
+                    <p role="alert" className="text-[0.7rem] text-red-500">
+                      {fileError} La boleta se puede registrar igual, pero quedará sin imagen.
+                    </p>
+                  )}
                 </div>
                 <button type="button" className={btnPrimary} disabled={busy} onClick={handleIssue}>
                   {mode === 'reissue' ? 'Anular y registrar la nueva' : 'Registrar boleta'}
@@ -558,6 +746,8 @@ export default function SaleDetailDrawer({
               </ul>
             </Section>
           )}
+            </div>
+          </div>
         </div>
       </aside>
     </>

@@ -173,6 +173,32 @@ public class SalesDocument {
         return status == SalesDocumentStatus.ISSUED;
     }
 
+    /**
+     * Files the scan of a document that was registered without one.
+     *
+     * <p>Not a correction: nothing a tax authority reads changes, because the folio and the amounts
+     * are what the document says and they stay exactly as issued. What changes is whether the shop
+     * can find the paper again.
+     *
+     * <p>Only onto an empty slot, and only while the document stands. Replacing an attachment would
+     * let the picture of a boleta be swapped for another one after the fact, which is the one thing
+     * an append-only record exists to prevent; and a voided document keeps the file that proves
+     * what was voided.
+     */
+    public void attachFile(String storedName) {
+        if (!isLive()) {
+            throw new DomainException("A voided document keeps the file it was voided with");
+        }
+        if (fileUrl != null) {
+            throw new DomainException("This document already has a file; issue a correction instead of replacing it");
+        }
+        String trimmed = trimToNull(storedName);
+        if (trimmed == null) {
+            throw new DomainException("There is no file to attach");
+        }
+        this.fileUrl = trimmed;
+    }
+
     public static SalesDocument reconstruct(
             UUID id,
             UUID orderId,

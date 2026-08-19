@@ -3,6 +3,8 @@ package com.pilarestilo.billing.infrastructure.web.controllers;
 import com.pilarestilo.billing.application.dto.SalesDocumentDto;
 import com.pilarestilo.billing.application.usecases.GetSalesDocumentsForOrderUseCase;
 import com.pilarestilo.billing.application.usecases.IssueCreditNoteUseCase;
+import com.pilarestilo.billing.application.mappers.SalesDocumentMapper;
+import com.pilarestilo.billing.application.usecases.AttachDocumentFileUseCase;
 import com.pilarestilo.billing.application.usecases.IssueSalesDocumentUseCase;
 import com.pilarestilo.billing.application.usecases.ReissueSalesDocumentUseCase;
 import com.pilarestilo.billing.application.usecases.VoidSalesDocumentUseCase;
@@ -43,6 +45,7 @@ public class SalesDocumentController {
     private final SalesDocumentRepository salesDocumentRepository;
     private final IssueCreditNoteUseCase issueCreditNoteUseCase;
     private final SalesDocumentFileStorage fileStorage;
+    private final AttachDocumentFileUseCase attachDocumentFileUseCase;
 
     public SalesDocumentController(IssueSalesDocumentUseCase issueSalesDocumentUseCase,
                                    VoidSalesDocumentUseCase voidSalesDocumentUseCase,
@@ -50,7 +53,8 @@ public class SalesDocumentController {
                                    GetSalesDocumentsForOrderUseCase getSalesDocumentsForOrderUseCase,
                                    SalesDocumentRepository salesDocumentRepository,
                                    IssueCreditNoteUseCase issueCreditNoteUseCase,
-                                   SalesDocumentFileStorage fileStorage) {
+                                   SalesDocumentFileStorage fileStorage,
+                                   AttachDocumentFileUseCase attachDocumentFileUseCase) {
         this.issueSalesDocumentUseCase = issueSalesDocumentUseCase;
         this.voidSalesDocumentUseCase = voidSalesDocumentUseCase;
         this.reissueSalesDocumentUseCase = reissueSalesDocumentUseCase;
@@ -58,6 +62,7 @@ public class SalesDocumentController {
         this.salesDocumentRepository = salesDocumentRepository;
         this.issueCreditNoteUseCase = issueCreditNoteUseCase;
         this.fileStorage = fileStorage;
+        this.attachDocumentFileUseCase = attachDocumentFileUseCase;
     }
 
     @PostMapping
@@ -131,6 +136,17 @@ public class SalesDocumentController {
     @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).DOCUMENTS_ISSUE)")
     public Map<String, String> upload(@RequestParam("file") MultipartFile file) {
         return Map.of("fileUrl", fileStorage.store(file));
+    }
+
+    /**
+     * Files the picture of a boleta that was registered without one. Guarded by the issue
+     * permission rather than a new one: whoever may register the document may finish filing it.
+     */
+    @PostMapping("/{id}/file")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).DOCUMENTS_ISSUE)")
+    public SalesDocumentDto attachFile(@PathVariable UUID id, @RequestParam("file") MultipartFile file) {
+        return SalesDocumentMapper.toDto(
+                attachDocumentFileUseCase.execute(id, fileStorage.store(file)));
     }
 
     /**

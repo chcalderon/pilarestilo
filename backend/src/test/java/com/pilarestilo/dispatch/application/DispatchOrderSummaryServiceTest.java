@@ -2,6 +2,7 @@ package com.pilarestilo.dispatch.application;
 
 import com.pilarestilo.dispatch.application.dto.DispatchDto;
 import com.pilarestilo.dispatch.domain.model.Dispatch;
+import com.pilarestilo.dispatch.domain.ports.SalesDocumentGate;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.model.Order;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +31,7 @@ class DispatchOrderSummaryServiceTest {
 
     private OrderRepository orderRepository;
     private ProductRepository productRepository;
+    private SalesDocumentGate salesDocumentGate;
     private DispatchOrderSummaryService service;
 
     private final UUID productId = UUID.randomUUID();
@@ -37,7 +40,35 @@ class DispatchOrderSummaryServiceTest {
     void setUp() {
         orderRepository = mock(OrderRepository.class);
         productRepository = mock(ProductRepository.class);
-        service = new DispatchOrderSummaryService(orderRepository, productRepository);
+        salesDocumentGate = mock(SalesDocumentGate.class);
+        when(salesDocumentGate.blockedAmong(anyCollection())).thenReturn(Set.of());
+        service = new DispatchOrderSummaryService(orderRepository, productRepository, salesDocumentGate);
+    }
+
+    @Test
+    @DisplayName("a row the boleta gate would refuse says so before anybody presses Tomar")
+    void marksTheRowsMissingTheirBoleta() {
+        Order blocked = paidOrder("Negro", "M");
+        givenOrders(blocked);
+        givenProductImage("https://cdn/blazer.jpg");
+        when(salesDocumentGate.blockedAmong(anyCollection())).thenReturn(Set.of(blocked.getId()));
+
+        DispatchDto row = service.enrich(List.of(dispatchFor(blocked))).getFirst();
+
+        assertThat(row.orderSummary().needsSalesDocument()).isTrue();
+    }
+
+    /** With the rule switched off the gate blocks nothing, and the queue must not warn about it. */
+    @Test
+    @DisplayName("nothing is marked when the shop does not require a boleta before dispatch")
+    void marksNothingWhenTheRuleIsOff() {
+        Order order = paidOrder("Negro", "M");
+        givenOrders(order);
+        givenProductImage("https://cdn/blazer.jpg");
+
+        DispatchDto row = service.enrich(List.of(dispatchFor(order))).getFirst();
+
+        assertThat(row.orderSummary().needsSalesDocument()).isFalse();
     }
 
     @Test

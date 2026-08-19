@@ -38,6 +38,21 @@ interface DispatchOrderSummary {
   firstItemImageUrl: string | null;
   totalAmount: number | null;
   currency: string | null;
+  /** The boleta gate would refuse this row today. False whenever the shop has the rule switched off. */
+  needsSalesDocument?: boolean;
+}
+
+/**
+ * The backend speaks English to developers. This is the one refusal somebody packing parcels will
+ * meet in normal work, and it has a concrete next step, so it is said in their language and points
+ * at the screen that fixes it. Anything else is passed through rather than swallowed.
+ */
+function translateRefusal(detail: string | undefined | null): string | null {
+  if (!detail) return null;
+  if (detail.includes('no registered boleta')) {
+    return 'Esta venta todavía no tiene boleta registrada. Regístrala en Ventas y vuelve: la boleta acompaña a la mercadería.';
+  }
+  return detail;
 }
 
 function formatMoney(amount: number | null, currency: string | null): string | null {
@@ -90,6 +105,13 @@ function DispatchOrderHeader({ dispatch, compact = false }: { dispatch: QueueDis
           {reference}
           {total && <span className="text-pe-charcoal/45"> · {total}</span>}
         </p>
+        {summary?.needsSalesDocument && (
+          // Words, not a colour: this is the difference between a parcel that can leave and one
+          // that cannot, and it has to survive a printout and a colourblind reader alike.
+          <p className="mt-1 inline-flex items-center gap-1 text-[0.68rem] tracking-wider uppercase text-amber-600">
+            Sin boleta
+          </p>
+        )}
       </div>
     </div>
   );
@@ -219,27 +241,34 @@ export default function DespachosPage() {
     }
   }, [mode, token, canViewHistory]);
 
-  async function claim(id: string) {
+  /**
+   * Both of these used to throw the answer away and reload the list, so a refusal looked exactly
+   * like a success that changed nothing: the boleta gate returned 400, the row stayed put, and the
+   * only trace was in the browser console. Whoever is packing has to be told, in words they can act
+   * on, and the server's own message is preferred over a guess because it knows which rule refused.
+   */
+  async function command(id: string, action: 'claim' | 'unclaim', fallback: string) {
     if (!token) return;
     setBusy(true);
-    await fetch(`/api/despachos/${id}/claim`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    setError('');
+    try {
+      const response = await fetch(`/api/despachos/${id}/${action}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(translateRefusal(body?.detail) ?? fallback);
+      }
+    } catch {
+      setError('No se pudo conectar con el servidor. Reintenta.');
+    }
     await loadQueue();
     setBusy(false);
   }
 
-  async function unclaim(id: string) {
-    if (!token) return;
-    setBusy(true);
-    await fetch(`/api/despachos/${id}/unclaim`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    await loadQueue();
-    setBusy(false);
-  }
+  const claim = (id: string) => command(id, 'claim', 'No se pudo tomar el despacho.');
+  const unclaim = (id: string) => command(id, 'unclaim', 'No se pudo soltar el despacho.');
 
   async function dispatchOrder(id: string) {
     if (!token) return;
@@ -334,6 +363,14 @@ export default function DespachosPage() {
             </div>
           ) : (
             <>
+              {error && (
+                <p
+                  role="alert"
+                  className="mb-4 px-3 py-2 text-[0.8rem] border border-red-400/60 text-red-500"
+                >
+                  {error}
+                </p>
+              )}
               {inProgress.length > 0 && (
                 <section>
                   <h2 className="text-[10px] tracking-widest uppercase text-pe-charcoal/40 mb-3">En progreso</h2>
@@ -436,13 +473,22 @@ export default function DespachosPage() {
                         >
                           Ver detalle
                         </button>
-                        <button
-                          onClick={() => claim(d.id)}
-                          disabled={busy}
-                          className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
-                        >
-                          Tomar
-                        </button>
+                        {d.orderSummary?.needsSalesDocument ? (
+                          <a
+                            href="/admin/ventas"
+                            className="px-4 py-2 text-xs tracking-widest uppercase border border-amber-500/60 text-amber-600 hover:bg-amber-500/10 transition-colors"
+                          >
+                            Registrar boleta
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => claim(d.id)}
+                            disabled={busy}
+                            className="bg-[var(--pe-ink)] text-[var(--pe-surface)] px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose-deep hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            Tomar
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}
