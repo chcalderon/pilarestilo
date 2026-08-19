@@ -109,7 +109,7 @@ export default function LoginForm({ locale, redirect }: Props) {
   if (merged) {
     return (
       <div className="flex flex-col items-center gap-5 py-10 text-center">
-        <CheckCircle2 size={44} className="text-pe-rose" />
+        <CheckCircle2 size={44} className="text-pe-rose-ink" />
         <div>
           <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
             {es ? '¡Cuentas unificadas!' : 'Accounts linked!'}
@@ -160,7 +160,7 @@ export default function LoginForm({ locale, redirect }: Props) {
           <button
             type="button"
             onClick={() => setShowPass(v => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label={showPass ? (es ? 'Ocultar contraseña' : 'Hide password') : (es ? 'Mostrar contraseña' : 'Show password')}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

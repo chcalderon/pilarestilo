@@ -391,7 +391,7 @@ export default function NavigationSectionsManager() {
   if (loading) {
     return (
       <div className="flex justify-center py-16">
-        <Loader2 size={24} className="animate-spin text-pe-rose/50" />
+        <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
       </div>
     );
   }
@@ -495,7 +495,7 @@ export default function NavigationSectionsManager() {
                   <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleEdit(section)}
-                      className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
+                      className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
                       title="Editar"
                     >
                       <Edit3 size={14} />

@@ -432,7 +432,7 @@ export default function AccountPage({ locale }: Props) {
   if (!ready || !user) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 size={28} className="animate-spin text-pe-rose/60" />
+        <Loader2 size={28} className="animate-spin text-pe-rose-ink" />
       </div>
     );
   }
@@ -1303,7 +1303,7 @@ export default function AccountPage({ locale }: Props) {
           <div className="max-w-2xl">
             {loadingReviews ? (
               <div className="flex justify-center py-16">
-                <Loader2 size={24} className="animate-spin text-pe-rose/60" />
+                <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
               </div>
             ) : reviews.length === 0 ? (
               <div className="text-center py-20">
@@ -1326,7 +1326,7 @@ export default function AccountPage({ locale }: Props) {
                           <Star
                             key={i}
                             size={13}
-                            className={i < review.rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-muted'}
+                            className={i < review.rating ? 'text-pe-rose-ink fill-pe-rose' : 'text-pe-muted'}
                           />
                         ))}
                       </div>
@@ -1382,7 +1382,7 @@ export default function AccountPage({ locale }: Props) {
 
             {loadingAddresses ? (
               <div className="flex justify-center py-16">
-                <Loader2 size={24} className="animate-spin text-pe-rose/60" />
+                <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
               </div>
             ) : addresses.length === 0 ? (
               <div className="bg-pe-white border border-pe-black/8 p-6">
@@ -1568,7 +1568,7 @@ export default function AccountPage({ locale }: Props) {
             )}
             {loadingOrders ? (
               <div className="flex justify-center py-16">
-                <Loader2 size={24} className="animate-spin text-pe-rose/60" />
+                <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-20">
@@ -1668,7 +1668,7 @@ export default function AccountPage({ locale }: Props) {
                                   node.state === 'done'
                                     ? 'text-pe-positive dark:text-emerald-400'
                                     : node.state === 'current'
-                                      ? 'text-pe-rose-ink dark:text-pe-rose'
+                                      ? 'text-pe-rose-ink dark:text-pe-rose-ink'
                                       : node.state === 'ended'
                                         ? 'text-[#8f2d3b] dark:text-red-400 font-semibold'
                                         : node.state === 'skipped'

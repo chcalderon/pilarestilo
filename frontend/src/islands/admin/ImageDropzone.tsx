@@ -253,7 +253,7 @@ export default function ImageDropzone({
         {/* Drag-over overlay when image already present */}
         {preview && dragging && (
           <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-pe-rose bg-pe-rose/10 pointer-events-none">
-            <span className="font-sans text-[0.72rem] text-pe-rose font-medium">Suelta para reemplazar</span>
+            <span className="font-sans text-[0.72rem] text-pe-rose-ink font-medium">Suelta para reemplazar</span>
           </div>
         )}
 

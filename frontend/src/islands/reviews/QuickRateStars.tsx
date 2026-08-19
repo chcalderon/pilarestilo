@@ -98,7 +98,7 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
       return (
         <span
           role="status"
-          className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose"
+          className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-ink"
         >
           {doneLabel}
         </span>
@@ -133,7 +133,7 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
         type="button"
         onClick={() => setOpen(true)}
         className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-muted
-          underline underline-offset-2 hover:text-pe-rose transition-colors
+          underline underline-offset-2 hover:text-pe-rose-ink transition-colors
           focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
       >
         {openLabel}

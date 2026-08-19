@@ -11,7 +11,7 @@ function StarRow({ rating }: { rating: number }) {
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star key={i} size={11}
-          className={i < rating ? 'text-pe-rose fill-pe-rose' : 'text-pe-muted'} />
+          className={i < rating ? 'text-pe-rose-ink fill-pe-rose' : 'text-pe-muted'} />
       ))}
     </div>
   );
@@ -32,7 +32,7 @@ function ExpandableComment({ title, comment }: { title?: string | null; comment?
           {needsExpand && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="ml-1 text-pe-rose hover:underline inline-flex items-center gap-0.5"
+              className="ml-1 text-pe-rose-ink hover:underline inline-flex items-center gap-0.5"
             >
               {expanded ? <><ChevronUp size={10} /> menos</> : <><ChevronDown size={10} /> más</>}
             </button>

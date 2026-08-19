@@ -184,7 +184,7 @@ export default function DiscountCodeManager() {
                   type="button"
                   onClick={handleSuggest}
                   disabled={suggesting}
-                  className="shrink-0 px-2 border border-pe-black/12 text-pe-muted hover:text-pe-rose hover:border-pe-rose/40 transition-colors"
+                  className="shrink-0 px-2 border border-pe-black/12 text-pe-muted hover:text-pe-rose-ink hover:border-pe-rose/40 transition-colors"
                   title="Auto-sugerir código"
                 >
                   {suggesting ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
@@ -331,7 +331,7 @@ export default function DiscountCodeManager() {
       <div className="bg-pe-white border border-pe-black/6 shadow-xs overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-16">
-            <Loader2 size={22} className="animate-spin text-pe-rose/50" />
+            <Loader2 size={22} className="animate-spin text-pe-rose-ink" />
           </div>
         ) : codes.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-pe-muted">

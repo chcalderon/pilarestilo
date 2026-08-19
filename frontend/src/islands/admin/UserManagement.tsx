@@ -486,7 +486,7 @@ export default function UserManagement() {
             setMetricsByUser({});
             void refreshData();
           }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-1 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose-ink transition-colors"
         >
           <RefreshCw size={13} /> Actualizar
         </button>
@@ -531,7 +531,7 @@ export default function UserManagement() {
           </p>
           <p className="font-sans text-[0.72rem] text-pe-muted">
             Para editar tu usuario admin (nombre y contrasena), usa{' '}
-            <a href="/es/account?tab=profile" className="text-pe-rose-ink underline underline-offset-2 hover:text-pe-rose">
+            <a href="/es/account?tab=profile" className="text-pe-rose-ink underline underline-offset-2 hover:text-pe-rose-ink">
               Mi cuenta
             </a>.
           </p>

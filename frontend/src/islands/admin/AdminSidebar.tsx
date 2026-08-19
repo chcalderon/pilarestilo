@@ -161,7 +161,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
           {!isCollapsed && (
             <div className="flex flex-col leading-none">
               <span className="font-sans text-[0.58rem] tracking-[0.25em] uppercase text-pe-on-dark-muted">Pilar Estilo</span>
-              <span className="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-rose/60">Admin</span>
+              <span className="font-sans text-[0.58rem] tracking-[0.2em] uppercase text-pe-on-dark-muted">Admin</span>
             </div>
           )}
         </div>

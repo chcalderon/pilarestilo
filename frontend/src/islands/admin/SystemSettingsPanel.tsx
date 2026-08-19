@@ -1607,7 +1607,7 @@ export default function SystemSettingsPanel() {
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
-                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-muted'} />
+                  <Icon size={14} className={isActive ? 'text-pe-rose-ink' : 'text-pe-muted'} />
                   <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
                 </div>
                 <p className="mt-2 font-sans text-[0.7rem] text-pe-muted leading-relaxed">{option.subtitle}</p>
@@ -1637,7 +1637,7 @@ export default function SystemSettingsPanel() {
               type="button"
               onClick={() => void loadHeroModels()}
               disabled={heroLoading}
-              className="inline-flex items-center gap-1 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1 border border-pe-black/15 px-2.5 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.14em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
             >
               {heroLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               Recargar
@@ -1702,7 +1702,7 @@ export default function SystemSettingsPanel() {
             type="button"
             onClick={handleMigrateCategories}
             disabled={migrating}
-            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {migrating ? <Loader2 size={13} className="animate-spin" /> : null}
             {migrating ? 'Migrando...' : 'Migrar imágenes de categorías'}
@@ -1731,7 +1731,7 @@ export default function SystemSettingsPanel() {
             type="button"
             onClick={handleOptimizeAll}
             disabled={optimizing}
-            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {optimizing ? <Loader2 size={13} className="animate-spin" /> : null}
             {optimizing ? 'Optimizando...' : 'Optimizar imágenes existentes'}
@@ -1773,7 +1773,7 @@ export default function SystemSettingsPanel() {
             type="button"
             onClick={handleResizeTo15cm}
             disabled={resizingTo15cm}
-            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 border border-pe-black/15 text-pe-charcoal font-sans text-[0.66rem] tracking-[0.1em] uppercase px-3 py-2 hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {resizingTo15cm ? <Loader2 size={13} className="animate-spin" /> : null}
             {resizingTo15cm ? 'Redimensionando...' : 'Redimensionar productos y categorias'}
@@ -2186,7 +2186,7 @@ export default function SystemSettingsPanel() {
                               next[idx] = { ...zone, comunas: zone.comunas.filter((c) => c !== comuna) };
                               updateField('shippingZones', next);
                             }}
-                            className="text-pe-muted hover:text-pe-rose transition-colors leading-none text-[0.85rem]"
+                            className="text-pe-muted hover:text-pe-rose-ink transition-colors leading-none text-[0.85rem]"
                           >
                             x
                           </button>
@@ -2249,7 +2249,7 @@ export default function SystemSettingsPanel() {
                   { id: `courier-${Date.now()}`, name: '', logoUrl: null, active: true },
                 ]);
               }}
-              className="font-sans text-[0.62rem] tracking-[0.1em] uppercase text-pe-rose-ink hover:text-pe-rose transition-colors border border-pe-rose/30 px-2.5 py-1"
+              className="font-sans text-[0.62rem] tracking-[0.1em] uppercase text-pe-rose-ink hover:text-pe-rose-ink transition-colors border border-pe-rose/30 px-2.5 py-1"
             >
               + Agregar courier
             </button>
@@ -2309,7 +2309,7 @@ export default function SystemSettingsPanel() {
                     const next = form.shippingCouriers.filter((_, i) => i !== idx);
                     updateField('shippingCouriers', next);
                   }}
-                  className="sm:col-span-1 font-sans text-[0.62rem] tracking-[0.08em] uppercase text-pe-muted hover:text-pe-rose transition-colors border border-pe-black/12 hover:border-pe-rose/40 px-2 py-1.5"
+                  className="sm:col-span-1 font-sans text-[0.62rem] tracking-[0.08em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors border border-pe-black/12 hover:border-pe-rose/40 px-2 py-1.5"
                 >
                   Quitar
                 </button>
@@ -2356,7 +2356,7 @@ export default function SystemSettingsPanel() {
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
-                  <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-muted'} />
+                  <Icon size={14} className={isActive ? 'text-pe-rose-ink' : 'text-pe-muted'} />
                   <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
                   {/* Never colour alone: the state is spelled out. */}
                   <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-muted">

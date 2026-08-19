@@ -277,7 +277,7 @@ function CategoryRow({
           {depth < 3 && (
             <button
               onClick={() => { setCreating(node.id); setForm({ ...EMPTY_FORM }); setEditing(null); }}
-              className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
+              className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
               title="Agregar subcategoría"
             >
               <Plus size={13} />
@@ -285,7 +285,7 @@ function CategoryRow({
           )}
           <button
             onClick={() => { setEditing(node.id); setForm(fromDto(node)); setCreating(null); }}
-            className="p-1 text-pe-muted hover:text-pe-rose transition-colors"
+            className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
             title="Editar"
           >
             <Edit3 size={13} />
@@ -495,7 +495,7 @@ export default function CategoryTree() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-pe-rose/50" /></div>;
+    return <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-pe-rose-ink" /></div>;
   }
 
   return (

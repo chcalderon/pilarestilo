@@ -501,7 +501,7 @@ export default function ProductTable() {
               void handleAssignHeroModel('left', row);
             }}
             disabled={heroAssigningKey !== null}
-            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {heroAssigningKey === `${row.id}:left` ? '...' : 'Hero Izq'}
           </button>
@@ -511,7 +511,7 @@ export default function ProductTable() {
               void handleAssignHeroModel('right', row);
             }}
             disabled={heroAssigningKey !== null}
-            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 border border-pe-black/15 px-2 py-1 font-sans text-[0.58rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {heroAssigningKey === `${row.id}:right` ? '...' : 'Hero Der'}
           </button>
@@ -581,7 +581,7 @@ export default function ProductTable() {
     if (loading) {
       return (
         <div className="flex justify-center py-16">
-          <RefreshCw size={20} className="animate-spin text-pe-rose/60" />
+          <RefreshCw size={20} className="animate-spin text-pe-rose-ink" />
         </div>
       );
     }
@@ -674,14 +674,14 @@ export default function ProductTable() {
                     <button
                       onClick={() => void handleAssignHeroModel('left', row)}
                       disabled={heroAssigningKey !== null}
-                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
                     >
                       {heroAssigningKey === `${row.id}:left` ? 'Asignando...' : 'Hero Izq'}
                     </button>
                     <button
                       onClick={() => void handleAssignHeroModel('right', row)}
                       disabled={heroAssigningKey !== null}
-                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
                     >
                       {heroAssigningKey === `${row.id}:right` ? 'Asignando...' : 'Hero Der'}
                     </button>
@@ -806,7 +806,7 @@ export default function ProductTable() {
             {searchInput && (
               <button
                 onClick={() => setSearchInput('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-muted hover:text-pe-rose transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
                 aria-label="Limpiar busqueda"
                 title="Limpiar"
               >
@@ -817,7 +817,7 @@ export default function ProductTable() {
 
           <button
             onClick={load}
-            className="p-2 text-pe-muted hover:text-pe-rose transition-colors"
+            className="p-2 text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label="Actualizar"
             title="Actualizar"
           >
@@ -854,7 +854,7 @@ export default function ProductTable() {
                 setCreatedFrom('');
                 setCreatedTo('');
               }}
-              className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] text-pe-muted hover:text-pe-rose transition-colors px-2 py-2"
+              className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] text-pe-muted hover:text-pe-rose-ink transition-colors px-2 py-2"
             >
               <X size={12} />
               Limpiar fechas

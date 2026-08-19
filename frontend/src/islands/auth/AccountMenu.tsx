@@ -114,7 +114,7 @@ export default function AccountMenu({ locale }: Props) {
         <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--pe-dropdown-bg)] border border-[var(--pe-dropdown-border)] shadow-xl z-50">
           <div className="px-4 py-3 border-b border-[var(--pe-dropdown-border)]">
             <p className="font-sans text-[0.72rem] text-[var(--pe-nav-subtle)] truncate">{user.email}</p>
-            <p className="font-sans text-[0.65rem] tracking-wider uppercase text-pe-rose/70 mt-0.5">
+            <p className="font-sans text-[0.65rem] tracking-wider uppercase text-pe-rose-ink mt-0.5">
               {roleLabel(user.role, es)}
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function AccountMenu({ locale }: Props) {
               className="flex items-center gap-2.5 px-4 py-2.5 font-sans text-[0.78rem] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] hover:bg-[var(--pe-dropdown-hover)] transition-colors duration-200"
               onClick={() => setOpen(false)}
             >
-              <span className="text-[0.65rem] tracking-wider uppercase text-pe-rose/70">Panel admin</span>
+              <span className="text-[0.65rem] tracking-wider uppercase text-pe-rose-ink">Panel admin</span>
             </a>
           )}
           <button

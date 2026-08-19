@@ -247,7 +247,7 @@ export default function PublicacionesMediaPage() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
           <article className="xl:col-span-3 border border-pe-black/10 bg-pe-white p-4">
             <div className="flex items-center gap-2 mb-3">
-              <FolderUp size={16} className="text-pe-rose" />
+              <FolderUp size={16} className="text-pe-rose-ink" />
               <h2 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Carga por carpeta</h2>
             </div>
             <div className="border-2 border-dashed border-pe-black/20 p-8 text-center bg-pe-cream/35">
@@ -287,7 +287,7 @@ export default function PublicacionesMediaPage() {
           </article>
           <article className="xl:col-span-2 border border-pe-black/10 bg-pe-white p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={16} className="text-pe-rose" />
+              <Sparkles size={16} className="text-pe-rose-ink" />
               <h3 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Autorrelleno IA</h3>
             </div>
             <p className="font-sans text-[0.78rem] text-pe-muted">
@@ -401,7 +401,7 @@ export default function PublicacionesMediaPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
           <article className="lg:col-span-3 border border-pe-black/10 bg-pe-white p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Workflow size={16} className="text-pe-rose" />
+              <Workflow size={16} className="text-pe-rose-ink" />
               <h2 className="font-sans text-sm tracking-[0.06em] uppercase text-pe-charcoal">Flujos n8n</h2>
             </div>
             <p className="font-sans text-[0.8rem] text-pe-muted mb-3">

@@ -102,8 +102,13 @@ test.describe('Consent at sign-up', () => {
       async () => page.url().includes('/account'),
     );
 
-    // It navigates to the account on success, which is also the proof the account was created.
-    await page.waitForURL(/\/account/, { timeout: 20000 });
+    /*
+     * It navigates to the account on success, which is also the proof the account was created.
+     * The wait is generous because registering sends the welcome notification on the request
+     * thread: when the provider is slow the response is slow with it, and that is the shop's
+     * behaviour rather than the test's.
+     */
+    await page.waitForURL(/\/account/, { timeout: 40000 });
 
     const consents = await consentsOf(request, await tokenFromCookie(page));
     const live = consents.filter(c => c.revokedAt == null).map(c => c.type);

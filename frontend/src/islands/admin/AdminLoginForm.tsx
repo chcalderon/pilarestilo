@@ -90,7 +90,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
           <button
             type="button"
             onClick={() => setShowPass((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

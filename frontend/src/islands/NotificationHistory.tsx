@@ -113,7 +113,7 @@ export default function NotificationHistory({ locale }: Props) {
           <button
             onClick={handleMarkAll}
             disabled={marking}
-            className="font-sans text-xs text-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
+            className="font-sans text-xs text-pe-rose-ink hover:text-pe-rose-ink transition-colors disabled:opacity-50"
           >
             {es ? 'Marcar todas como leidas' : 'Mark all as read'}
           </button>

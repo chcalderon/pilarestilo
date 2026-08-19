@@ -461,7 +461,7 @@ export default function PaymentReviewQueue() {
             onClick={() => {
               void load();
             }}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose transition-colors"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 font-sans text-[0.72rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label="Actualizar"
           >
             <RefreshCw size={13} /> Actualizar

@@ -96,7 +96,7 @@ export default function DataTable<T>({
 
   function SortIcon({ colKey }: { colKey: string }) {
     if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-muted" />;
-    return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose" /> : <ChevronDown size={12} className="text-pe-rose" />;
+    return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose-ink" /> : <ChevronDown size={12} className="text-pe-rose-ink" />;
   }
 
   const thBase =
@@ -144,7 +144,7 @@ export default function DataTable<T>({
         <div className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] shadow-xs divide-y divide-[var(--pe-border)]">
           {loading ? (
             <div className="py-16 text-center">
-              <Loader2 size={22} className="animate-spin text-pe-rose/50 inline-block" />
+              <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
             </div>
           ) : data.length === 0 ? (
             <div className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">{emptyMessage}</div>
@@ -233,7 +233,7 @@ export default function DataTable<T>({
               {loading ? (
                 <tr>
                   <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16 text-center">
-                    <Loader2 size={22} className="animate-spin text-pe-rose/50 inline-block" />
+                    <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
                   </td>
                 </tr>
               ) : data.length === 0 ? (

@@ -123,6 +123,9 @@ const MEASURE = () => {
     seen.add(key);
 
     findings.push({
+      // Marked so the run can go back and look at the pixels actually painted there.
+      needsPixelCheck: true,
+      rect: { x: box.x, y: box.y, w: box.width, h: box.height },
       text: text.slice(0, 60),
       tag: el.tagName.toLowerCase(),
       cls: cls.slice(0, 80),
@@ -168,7 +171,70 @@ for (const theme of ['dark', 'light']) {
       const applied = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
       if (applied !== theme) console.log(`  !! ${path}: el tema quedó en ${applied}, no ${theme}`);
 
-      for (const f of await page.evaluate(MEASURE)) {
+      const found = await page.evaluate(MEASURE);
+
+      /*
+       * A second look, at the pixels. The CSS walk climbs ancestors, so it cannot see a sibling
+       * scrim or a photograph painted behind the text — every label over an image came back as
+       * unreadable when the gradient above it was doing its job. Here the element's own box is
+       * screenshotted and its most common colour taken as the real background, which is what the
+       * eye is up against.
+       */
+      for (const f of found) {
+        if (!f.needsPixelCheck || f.rect.w < 2 || f.rect.h < 2) continue;
+        try {
+          const shot = await page.screenshot({
+            clip: {
+              x: Math.max(0, f.rect.x),
+              y: Math.max(0, f.rect.y),
+              width: Math.min(f.rect.w, 1200),
+              height: Math.min(f.rect.h, 200),
+            },
+          });
+          const painted = await page.evaluate(async (bytes) => {
+            const blob = new Blob([new Uint8Array(bytes)], { type: 'image/png' });
+            const bitmap = await createImageBitmap(blob);
+            const c = document.createElement('canvas');
+            c.width = bitmap.width;
+            c.height = bitmap.height;
+            const ctx = c.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(bitmap, 0, 0);
+            const data = ctx.getImageData(0, 0, c.width, c.height).data;
+            const tally = new Map();
+            for (let i = 0; i < data.length; i += 4) {
+              // Quantised, so a photograph's noise still lands on one dominant tone.
+              const key = `${data[i] >> 4}|${data[i + 1] >> 4}|${data[i + 2] >> 4}`;
+              tally.set(key, (tally.get(key) ?? 0) + 1);
+            }
+            const [best] = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+            const [r, g, b] = best.split('|').map((v) => (Number(v) << 4) + 8);
+            return { r, g, b };
+          }, Array.from(shot));
+
+          const lum = ({ r, g, b }) => {
+            const ch = (v) => {
+              const x = v / 255;
+              return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+            };
+            return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+          };
+          const fg = f.color.match(/[\d.]+/g);
+          if (!fg) continue;
+          const ink = { r: Number(fg[0]), g: Number(fg[1]), b: Number(fg[2]) };
+          const [hi, lo] = [lum(ink), lum(painted)].sort((a, b) => b - a);
+          f.pixelRatio = Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100;
+          f.on = `pixeles rgb(${painted.r}, ${painted.g}, ${painted.b})`;
+        } catch {
+          // A clip outside the viewport is not worth failing the audit over.
+        }
+      }
+
+      for (const f of found) {
+        // The pixel reading wins when it exists: it is what somebody actually sees.
+        if (f.pixelRatio !== undefined) {
+          if (f.pixelRatio >= f.required) continue;
+          f.ratio = f.pixelRatio;
+        }
         sightings++;
         const cause = `${theme}|${f.color}|${f.on}|${f.cls || f.tag}`;
         const known = byCause.get(cause);

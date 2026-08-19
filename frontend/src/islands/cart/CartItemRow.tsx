@@ -54,7 +54,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
           <a
             href={cartHref}
             onClick={onNavigate}
-            className="block font-sans text-[0.76rem] text-pe-black leading-snug truncate hover:text-pe-rose transition-colors"
+            className="block font-sans text-[0.76rem] text-pe-black leading-snug truncate hover:text-pe-rose-ink transition-colors"
           >
             {item.name}
           </a>
@@ -78,7 +78,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
             type="button"
             onClick={onRemove}
             aria-label={`${locale === 'es' ? 'Eliminar' : 'Remove'} ${item.name}`}
-            className="text-pe-muted hover:text-pe-rose transition-colors duration-200 p-1 -mr-1"
+            className="text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 p-1 -mr-1"
           >
             <Trash2 size={13} strokeWidth={1.5} />
           </button>

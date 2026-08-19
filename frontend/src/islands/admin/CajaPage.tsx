@@ -596,19 +596,19 @@ export default function CajaPage() {
         <div className="flex flex-wrap gap-3 items-center">
           <button
             onClick={() => openDrawer('EXPENSE')}
-            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
+            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
             Registrar gasto
           </button>
           <button
             onClick={() => openDrawer('WITHDRAWAL')}
-            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
+            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
             Retiro
           </button>
           <button
             onClick={() => openDrawer('ADJUSTMENT')}
-            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
+            className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
             Ajuste
           </button>
@@ -813,7 +813,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2">
                     <button
                       onClick={() => setSelectedRegister(register)}
-                      className="text-xs tracking-widest uppercase text-pe-rose-ink dark:text-pe-rose hover:underline"
+                      className="text-xs tracking-widest uppercase text-pe-rose-ink dark:text-pe-rose-ink hover:underline"
                     >
                       Ver
                     </button>
