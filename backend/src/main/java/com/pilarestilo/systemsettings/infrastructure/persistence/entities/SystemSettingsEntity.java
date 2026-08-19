@@ -114,8 +114,9 @@ public class SystemSettingsEntity {
     @Column(name = "smtp_starttls_enabled", nullable = false)
     private boolean smtpStarttlsEnabled;
 
-    @Column(name = "notification_provider", nullable = false, length = 40)
-    private String notificationProvider;
+    /** Comma-joined, all active at once. Widened by V82; a single value was never a decision. */
+    @Column(name = "notification_providers", nullable = false, length = 255)
+    private String notificationProviders;
 
     @Column(name = "n8n_webhook_url", length = 500)
     private String n8nWebhookUrl;
@@ -352,8 +353,8 @@ public class SystemSettingsEntity {
     public void setSmtpAuthEnabled(boolean smtpAuthEnabled) { this.smtpAuthEnabled = smtpAuthEnabled; }
     public boolean isSmtpStarttlsEnabled() { return smtpStarttlsEnabled; }
     public void setSmtpStarttlsEnabled(boolean smtpStarttlsEnabled) { this.smtpStarttlsEnabled = smtpStarttlsEnabled; }
-    public String getNotificationProvider() { return notificationProvider; }
-    public void setNotificationProvider(String notificationProvider) { this.notificationProvider = notificationProvider; }
+    public String getNotificationProviders() { return notificationProviders; }
+    public void setNotificationProviders(String notificationProviders) { this.notificationProviders = notificationProviders; }
     public String getN8nWebhookUrl() { return n8nWebhookUrl; }
     public void setN8nWebhookUrl(String n8nWebhookUrl) { this.n8nWebhookUrl = n8nWebhookUrl; }
     public String getN8nApiKeyEncrypted() { return n8nApiKeyEncrypted; }

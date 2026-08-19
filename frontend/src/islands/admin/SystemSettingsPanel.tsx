@@ -77,7 +77,7 @@ type FormState = {
   clearMediaS3SecretKey: boolean;
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl: string;
-  notificationProvider: NotificationProvider;
+  notificationProviders: NotificationProvider[];
   n8nWebhookUrl: string;
   n8nTokenHeaderName: string;
   n8nApiKey: string;
@@ -360,7 +360,9 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     clearMediaS3SecretKey: false,
     mediaS3PathStyleEnabled: settings.mediaS3PathStyleEnabled ?? false,
     mediaS3PublicBaseUrl: settings.mediaS3PublicBaseUrl ?? '',
-    notificationProvider: settings.notificationProvider ?? 'LOG',
+    notificationProviders: settings.notificationProviders?.length
+      ? settings.notificationProviders
+      : ['LOG'],
     n8nWebhookUrl: settings.n8nWebhookUrl ?? '',
     n8nTokenHeaderName: settings.n8nTokenHeaderName ?? 'X-PE-N8N-TOKEN',
     n8nApiKey: '',
@@ -535,7 +537,7 @@ export default function SystemSettingsPanel() {
     clearMediaS3SecretKey: false,
     mediaS3PathStyleEnabled: false,
     mediaS3PublicBaseUrl: '',
-    notificationProvider: 'LOG',
+    notificationProviders: ['LOG'],
     n8nWebhookUrl: '',
     n8nTokenHeaderName: 'X-PE-N8N-TOKEN',
     n8nApiKey: '',
@@ -649,6 +651,25 @@ export default function SystemSettingsPanel() {
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setFeedback(null);
+  }
+
+  /**
+   * Channels are cumulative: a shop that sends WhatsApp still owes its customers the written
+   * confirmation by email. The last one cannot be turned off — a shop with no channel notifies
+   * nobody and says nothing about why.
+   */
+  function toggleNotificationProvider(provider: NotificationProvider) {
+    setForm((prev) => {
+      if (prev.notificationProviders.includes(provider)) {
+        if (prev.notificationProviders.length <= 1) return prev;
+        return {
+          ...prev,
+          notificationProviders: prev.notificationProviders.filter((value) => value !== provider),
+        };
+      }
+      return { ...prev, notificationProviders: [...prev.notificationProviders, provider] };
+    });
     setFeedback(null);
   }
 
@@ -796,11 +817,11 @@ export default function SystemSettingsPanel() {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const hasProviderRequiringSmtp = form.notificationProvider === 'EMAIL_SMTP';
-  const hasProviderRequiringSendgrid = form.notificationProvider === 'EMAIL_SENDGRID';
-  const hasProviderRequiringTwilio = form.notificationProvider === 'WHATSAPP_TWILIO';
-  const hasProviderSimulated = form.notificationProvider === 'WHATSAPP_SIMULATED';
-  const hasProviderN8n = form.notificationProvider === 'N8N_WEBHOOK';
+  const hasProviderRequiringSmtp = form.notificationProviders.includes('EMAIL_SMTP');
+  const hasProviderRequiringSendgrid = form.notificationProviders.includes('EMAIL_SENDGRID');
+  const hasProviderRequiringTwilio = form.notificationProviders.includes('WHATSAPP_TWILIO');
+  const hasProviderSimulated = form.notificationProviders.includes('WHATSAPP_SIMULATED');
+  const hasProviderN8n = form.notificationProviders.includes('N8N_WEBHOOK');
   const hasS3CompatibleStorage = form.mediaStorageProvider === 'S3_COMPATIBLE';
   const hasMercadoPagoSelected = form.paymentGatewayProviders.includes('MERCADO_PAGO');
   const isBancoEstadoSelected = isBancoEstado(form.bankTransferBankName);
@@ -838,8 +859,8 @@ export default function SystemSettingsPanel() {
       return;
     }
 
-    if (!form.notificationProvider) {
-      setFeedback({ tone: 'error', text: 'Debes seleccionar un proveedor de notificaciones.' });
+    if (form.notificationProviders.length === 0) {
+      setFeedback({ tone: 'error', text: 'Deja al menos un canal de notificaciones activo.' });
       return;
     }
 
@@ -993,7 +1014,7 @@ export default function SystemSettingsPanel() {
       clearMediaS3SecretKey: form.clearMediaS3SecretKey,
       mediaS3PathStyleEnabled: form.mediaS3PathStyleEnabled,
       mediaS3PublicBaseUrl: form.mediaS3PublicBaseUrl.trim(),
-      notificationProvider: form.notificationProvider,
+      notificationProviders: form.notificationProviders,
       n8nWebhookUrl: form.n8nWebhookUrl.trim(),
       n8nTokenHeaderName: form.n8nTokenHeaderName.trim(),
       n8nApiKey: form.n8nApiKey.trim(),
@@ -1063,10 +1084,6 @@ export default function SystemSettingsPanel() {
     }
   }
 
-  const selectedProvider = useMemo(
-    () => PROVIDER_OPTIONS.find((option) => option.value === form.notificationProvider),
-    [form.notificationProvider]
-  );
   const selectedMediaStorageProvider = useMemo(
     () => MEDIA_STORAGE_OPTIONS.find((option) => option.value === form.mediaStorageProvider),
     [form.mediaStorageProvider]
@@ -2310,30 +2327,41 @@ export default function SystemSettingsPanel() {
 
       {activeSettingsTab === 'notifications' && (
       <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
-        <h2 className="font-display text-2xl text-pe-black font-light">Proveedor de notificaciones</h2>
+        <h2 className="font-display text-2xl text-pe-black font-light">Canales de notificacion</h2>
         <p className="mt-1 font-sans text-[0.74rem] text-pe-charcoal/55">
-          Selecciona el canal transaccional (pedidos, pagos y envios). La configuracion queda guardada en la plataforma.
+          Cada mensaje transaccional (pedidos, pagos y envios) sale por todos los canales activos.
+          Puedes tener varios: el correo con el detalle de la compra es obligatorio por ley, y
+          WhatsApp llega antes.
         </p>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2.5">
           {PROVIDER_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const isActive = form.notificationProvider === option.value;
+            const isActive = form.notificationProviders.includes(option.value);
+            const isLastActive = isActive && form.notificationProviders.length === 1;
             return (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => updateField('notificationProvider', option.value)}
+                role="switch"
+                aria-checked={isActive}
+                onClick={() => toggleNotificationProvider(option.value)}
+                title={isLastActive ? 'Es el unico canal activo; activa otro antes de apagarlo.' : undefined}
                 className={[
-                  'text-left border px-3 py-3 transition',
+                  'text-left border px-3 py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pe-rose',
                   isActive
                     ? 'border-pe-rose bg-pe-rose/10'
                     : 'border-pe-black/10 hover:border-pe-rose/45 hover:bg-pe-rose/10',
+                  isLastActive ? 'cursor-not-allowed' : '',
                 ].join(' ')}
               >
                 <div className="inline-flex items-center gap-2">
                   <Icon size={14} className={isActive ? 'text-pe-rose' : 'text-pe-charcoal/70'} />
                   <span className="font-sans text-[0.72rem] uppercase tracking-[0.14em] text-pe-charcoal">{option.label}</span>
+                  {/* Never colour alone: the state is spelled out. */}
+                  <span className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-charcoal/45">
+                    {isActive ? 'Activo' : 'Apagado'}
+                  </span>
                 </div>
                 <p className="mt-2 font-sans text-[0.7rem] text-pe-charcoal/60 leading-relaxed">{option.subtitle}</p>
               </button>
@@ -2343,7 +2371,12 @@ export default function SystemSettingsPanel() {
 
         <div className="mt-3 rounded-sm border border-pe-black/10 bg-pe-offwhite px-3 py-2">
           <span className="font-sans text-[0.72rem] text-pe-charcoal/70">
-            Activo ahora: <strong>{selectedProvider?.label ?? form.notificationProvider}</strong>
+            Activos ahora:{' '}
+            <strong>
+              {form.notificationProviders
+                .map((value) => PROVIDER_OPTIONS.find((option) => option.value === value)?.label ?? value)
+                .join(' + ')}
+            </strong>
           </span>
         </div>
       </section>

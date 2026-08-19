@@ -222,6 +222,17 @@ Recent migrations (V54–V66):
   narrowed to `uq_sales_documents_live_sale_per_order` so a boleta and its credit note coexist
 - V81: `returns.read` / `returns.manage` / `returns.refund` permissions
 
+### Notifications go out on every enabled channel
+
+`system_settings.notification_providers` is a **set**, not a value (V82). `SystemSettingsNotificationSender`
+fans a message out to all of them, each inside its own try, so a dead SMTP host cannot take WhatsApp
+down with it; if none accepts, that is logged as an error rather than passing for silence. Before
+V82 the column held one provider and the sender switched on it, so turning on WhatsApp silently
+stopped every email — including the written confirmation the Ley 21.398 requires.
+
+The panel enforces one rule the domain repeats: the last active channel cannot be turned off.
+`NOTIFICATION_PROVIDER` remains as the fallback for a row nobody has saved yet.
+
 ### Spring Boot 4 modular auto-configuration
 
 Boot 4 split `spring-boot-autoconfigure` into per-technology modules. Putting a library on the
@@ -235,6 +246,16 @@ declared too, or the feature silently does nothing. The backend already declares
 | `spring-boot-kafka` | `spring-kafka` alone no longer brings `KafkaProperties` |
 | `spring-boot-security-test` (test) | `@AutoConfigureMockMvc` skips `springSecurity()`, so `@WithMockUser` stops authenticating and state-changing requests answer 403 |
 | `spring-boot-starter-webmvc-test` (test) | MockMvc / `@WebMvcTest` slice unavailable |
+| `spring-boot-micrometer-tracing-opentelemetry` | nothing binds `management.tracing.*`; the bridge is on the classpath and no span is ever sampled |
+| `spring-boot-opentelemetry` | nothing binds the OTLP exporter, so Tempo receives nothing however it is configured |
+
+Boot 4 also renamed the tracing keys: `management.tracing.enabled` is now
+`management.tracing.export.enabled`, and `management.otlp.tracing.endpoint` is now
+`management.opentelemetry.tracing.export.otlp.endpoint`. The old names still parse and bind to
+nothing.
+
+Custom `app.*` keys are declared in `src/main/resources/META-INF/additional-spring-configuration-metadata.json`
+— that is what stops the IDE calling them unknown, and it is where a new one gets its description.
 
 Jackson 3 is the default: use `tools.jackson.databind.*`, not `com.fasterxml.jackson.databind.*`
 (annotations stay on `com.fasterxml.jackson.annotation`). `JsonNode.asText(String)` is now
@@ -249,7 +270,7 @@ Jackson 3 is the default: use `tools.jackson.databind.*`, not `com.fasterxml.jac
 | Variable | Purpose |
 |---|---|
 | `JWT_SECRET` | HS256 signing key (min 32 bytes) |
-| `NOTIFICATION_PROVIDER` | LOG \| WHATSAPP_SIMULATED \| WHATSAPP_TWILIO \| EMAIL_SENDGRID \| EMAIL_SMTP \| N8N_WEBHOOK |
+| `NOTIFICATION_PROVIDER` | Fallback channel when `system_settings.notification_providers` is empty. The shop's own list — several at once — wins over this |
 | `PAYMENT_GATEWAY_PROVIDER` | STUB \| MERCADO_PAGO |
 | `APP_DOMAIN_EVENTS_KAFKA_ENABLED` | Enables Kafka transport |
 | `APP_PRODUCT_AI_ENABLED` | Enables AI pipeline |

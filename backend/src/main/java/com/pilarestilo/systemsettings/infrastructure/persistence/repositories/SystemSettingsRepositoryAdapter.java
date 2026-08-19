@@ -66,7 +66,7 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setSmtpPasswordEncrypted(settings.getSmtpPasswordEncrypted());
         entity.setSmtpAuthEnabled(settings.isSmtpAuthEnabled());
         entity.setSmtpStarttlsEnabled(settings.isSmtpStarttlsEnabled());
-        entity.setNotificationProvider(settings.getNotificationProvider().name());
+        entity.setNotificationProviders(joinProviders(settings.getNotificationProviders()));
         entity.setN8nWebhookUrl(settings.getN8nWebhookUrl());
         entity.setN8nTokenHeaderName(settings.getN8nTokenHeaderName());
         entity.setN8nApiKeyEncrypted(settings.getN8nApiKeyEncrypted());
@@ -109,6 +109,14 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         return entity;
     }
 
+    /** The column holds them comma-joined, the same way the payment gateways are stored. */
+    private static String joinProviders(java.util.Collection<? extends Enum<?>> providers) {
+        if (providers == null || providers.isEmpty()) {
+            return "";
+        }
+        return providers.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(","));
+    }
+
     private SystemSettings toDomain(SystemSettingsEntity entity) {
         return SystemSettings.reconstruct(
                 entity.getId(),
@@ -145,7 +153,7 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getSmtpPasswordEncrypted(),
                 entity.isSmtpAuthEnabled(),
                 entity.isSmtpStarttlsEnabled(),
-                entity.getNotificationProvider(),
+                entity.getNotificationProviders(),
                 entity.getN8nWebhookUrl(),
                 entity.getN8nTokenHeaderName(),
                 entity.getN8nApiKeyEncrypted(),

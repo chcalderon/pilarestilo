@@ -12,13 +12,17 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -43,8 +47,10 @@ class SystemSettingsNotificationSenderRoutingTest {
     private final SmtpEmailNotificationSender smtp = mock(SmtpEmailNotificationSender.class);
     private final N8nWebhookNotificationSender n8n = mock(N8nWebhookNotificationSender.class);
 
-    private SystemSettingsNotificationSender routerFor(NotificationProvider provider) {
-        lenient().when(settings.getNotificationProvider()).thenReturn(provider);
+    private SystemSettingsNotificationSender routerFor(NotificationProvider... providers) {
+        lenient().when(settings.getNotificationProviders())
+                .thenReturn(new LinkedHashSet<>(Set.of(providers)));
+        lenient().when(settings.getUpdatedBy()).thenReturn("admin@pilarestilo.com");
         lenient().when(systemSettingsRepository.get()).thenReturn(settings);
         return new SystemSettingsNotificationSender(
                 systemSettingsRepository, log, simulated, twilio, sendgrid, smtp, n8n,
@@ -83,7 +89,7 @@ class SystemSettingsNotificationSenderRoutingTest {
 
     @Test
     void fallsBackToTheEnvironmentProviderWhenSettingsHaveNone() {
-        lenient().when(settings.getNotificationProvider()).thenReturn(null);
+        lenient().when(settings.getNotificationProviders()).thenReturn(Set.of());
         lenient().when(systemSettingsRepository.get()).thenReturn(settings);
         var router = new SystemSettingsNotificationSender(
                 systemSettingsRepository, log, simulated, twilio, sendgrid, smtp, n8n,
@@ -92,5 +98,62 @@ class SystemSettingsNotificationSenderRoutingTest {
         router.send(message(), NotificationRecipient.unknown());
 
         verify(smtp).send(any(), any());
+    }
+
+    /**
+     * The bug this replaced: the shop could pick only one channel, so enabling WhatsApp silently
+     * stopped every email — the transfer instructions and the written confirmation included.
+     */
+    @Test
+    void sendsOverEveryEnabledChannel() {
+        var router = routerFor(NotificationProvider.EMAIL_SMTP, NotificationProvider.WHATSAPP_TWILIO);
+        var message = message();
+
+        router.send(message, NotificationRecipient.of("+56900000000", "cliente@test.com", "BOTH"));
+
+        verify(smtp).send(eq(message), any());
+        verify(twilio).send(eq(message), any());
+    }
+
+    /** A dead SMTP host must not take WhatsApp down with it. */
+    @Test
+    void oneChannelFailingDoesNotSwallowTheOthers() {
+        var router = routerFor(NotificationProvider.EMAIL_SMTP, NotificationProvider.WHATSAPP_TWILIO);
+        doThrow(new IllegalStateException("smtp down")).when(smtp).send(any(), any());
+        var message = message();
+
+        router.send(message, NotificationRecipient.of("+56900000000", "cliente@test.com", "BOTH"));
+
+        verify(twilio).send(eq(message), any());
+    }
+
+    /**
+     * A row nobody has saved is still on the seeded LOG, which is not a decision. The environment
+     * speaks until an admin does.
+     */
+    @Test
+    void aSeededRowStillDefersToTheEnvironment() {
+        lenient().when(settings.getNotificationProviders())
+                .thenReturn(new LinkedHashSet<>(Set.of(NotificationProvider.LOG)));
+        lenient().when(settings.getUpdatedBy()).thenReturn("system-seed");
+        lenient().when(systemSettingsRepository.get()).thenReturn(settings);
+        var router = new SystemSettingsNotificationSender(
+                systemSettingsRepository, log, simulated, twilio, sendgrid, smtp, n8n,
+                "EMAIL_SMTP");
+
+        router.send(message(), NotificationRecipient.unknown());
+
+        verify(smtp).send(any(), any());
+    }
+
+    /** But once an admin chooses LOG, LOG is what they get. */
+    @Test
+    void anAdminChoosingLogIsObeyed() {
+        var router = routerFor(NotificationProvider.LOG);
+
+        router.send(message(), NotificationRecipient.unknown());
+
+        verify(log).send(any(), any());
+        verify(smtp, never()).send(any(), any());
     }
 }

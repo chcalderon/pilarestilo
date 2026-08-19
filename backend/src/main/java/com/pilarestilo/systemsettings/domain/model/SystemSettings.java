@@ -11,6 +11,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,7 @@ public class SystemSettings {
     private String smtpPasswordEncrypted;
     private boolean smtpAuthEnabled;
     private boolean smtpStarttlsEnabled;
-    private NotificationProvider notificationProvider;
+    private Set<NotificationProvider> notificationProviders;
     private String n8nWebhookUrl;
     private String n8nApiKeyEncrypted;
     private String n8nTokenHeaderName;
@@ -123,7 +124,7 @@ public class SystemSettings {
         settings.mediaS3PathStyleEnabled = false;
         settings.smtpAuthEnabled = true;
         settings.smtpStarttlsEnabled = true;
-        settings.notificationProvider = NotificationProvider.LOG;
+        settings.notificationProviders = new LinkedHashSet<>(List.of(NotificationProvider.LOG));
         settings.n8nTokenHeaderName = "X-PE-N8N-TOKEN";
         settings.whatsappSimulatedTo = "+56900000000";
         settings.whatsappSimulatedSender = "Pilar Estilo";
@@ -183,7 +184,7 @@ public class SystemSettings {
             String smtpPasswordEncrypted,
             boolean smtpAuthEnabled,
             boolean smtpStarttlsEnabled,
-            String notificationProvider,
+            String notificationProviders,
             String n8nWebhookUrl,
             String n8nTokenHeaderName,
             String n8nApiKeyEncrypted,
@@ -251,7 +252,7 @@ public class SystemSettings {
         settings.smtpPasswordEncrypted = normalizeNullable(smtpPasswordEncrypted);
         settings.smtpAuthEnabled = smtpAuthEnabled;
         settings.smtpStarttlsEnabled = smtpStarttlsEnabled;
-        settings.notificationProvider = normalizeProvider(notificationProvider);
+        settings.notificationProviders = normalizeNotificationProviders(notificationProviders);
         settings.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
         settings.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
         settings.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
@@ -319,7 +320,7 @@ public class SystemSettings {
             String smtpPasswordEncrypted,
             boolean smtpAuthEnabled,
             boolean smtpStarttlsEnabled,
-            String notificationProvider,
+            String notificationProviders,
             String n8nWebhookUrl,
             String n8nTokenHeaderName,
             String n8nApiKeyEncrypted,
@@ -382,7 +383,7 @@ public class SystemSettings {
         this.smtpPasswordEncrypted = normalizeNullable(smtpPasswordEncrypted);
         this.smtpAuthEnabled = smtpAuthEnabled;
         this.smtpStarttlsEnabled = smtpStarttlsEnabled;
-        this.notificationProvider = normalizeProvider(notificationProvider);
+        this.notificationProviders = normalizeNotificationProviders(notificationProviders);
         this.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
         this.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
         this.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
@@ -431,14 +432,6 @@ public class SystemSettings {
         return normalized.isEmpty() ? null : normalized;
     }
 
-    private static NotificationProvider normalizeProvider(String rawProvider) {
-        try {
-            return NotificationProvider.fromRaw(rawProvider);
-        } catch (IllegalArgumentException ex) {
-            throw new DomainException("Unsupported notification provider: " + rawProvider);
-        }
-    }
-
     private static String normalizeN8nTokenHeaderName(String value) {
         String normalized = normalizeNullable(value);
         return normalized == null ? "X-PE-N8N-TOKEN" : normalized;
@@ -450,6 +443,35 @@ public class SystemSettings {
         } catch (IllegalArgumentException ex) {
             throw new DomainException("Unsupported media storage provider: " + rawProvider);
         }
+    }
+
+    /**
+     * Every channel the shop notifies over, from the comma-joined column.
+     *
+     * <p>A set, not a single value: a shop that sends WhatsApp still owes its customers the written
+     * confirmation the Ley 21.398 asks for, and picking one used to silence the other. Empty falls
+     * back to LOG rather than to nothing — a shop with no channel would send in silence, which is
+     * the failure that hides itself.
+     */
+    private static Set<NotificationProvider> normalizeNotificationProviders(String rawProviders) {
+        if (rawProviders == null || rawProviders.isBlank()) {
+            return new LinkedHashSet<>(List.of(NotificationProvider.LOG));
+        }
+        LinkedHashSet<NotificationProvider> providers = new LinkedHashSet<>();
+        for (String part : rawProviders.split(",")) {
+            String normalized = part == null ? "" : part.trim();
+            if (normalized.isEmpty()) {
+                continue;
+            }
+            try {
+                providers.add(NotificationProvider.fromRaw(normalized));
+            } catch (IllegalArgumentException ex) {
+                throw new DomainException("Unsupported notification provider: " + normalized);
+            }
+        }
+        return providers.isEmpty()
+                ? new LinkedHashSet<>(List.of(NotificationProvider.LOG))
+                : providers;
     }
 
     private static Set<PaymentGatewayProvider> normalizePaymentGatewayProviders(String rawProviders) {
@@ -662,7 +684,7 @@ public class SystemSettings {
     public String getSmtpPasswordEncrypted() { return smtpPasswordEncrypted; }
     public boolean isSmtpAuthEnabled() { return smtpAuthEnabled; }
     public boolean isSmtpStarttlsEnabled() { return smtpStarttlsEnabled; }
-    public NotificationProvider getNotificationProvider() { return notificationProvider; }
+    public Set<NotificationProvider> getNotificationProviders() { return notificationProviders; }
     public String getN8nWebhookUrl() { return n8nWebhookUrl; }
     public String getN8nApiKeyEncrypted() { return n8nApiKeyEncrypted; }
     public String getN8nTokenHeaderName() { return n8nTokenHeaderName; }

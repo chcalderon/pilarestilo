@@ -46,6 +46,18 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
     </dependency>
+    <!-- Boot 4 moved tracing out of spring-boot-actuator-autoconfigure, which now carries no
+         tracing class at all. The bridge and the exporter below are only libraries: without these
+         two modules nothing binds management.tracing.* or management.otlp.tracing.*, so the
+         endpoint was configured, Tempo was running, and not one span was ever exported. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-micrometer-tracing-opentelemetry</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-opentelemetry</artifactId>
+    </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-tracing-bridge-otel</artifactId>

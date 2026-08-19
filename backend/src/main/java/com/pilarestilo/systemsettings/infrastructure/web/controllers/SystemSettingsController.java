@@ -78,7 +78,7 @@ public class SystemSettingsController {
                 request.clearMediaS3SecretKey(),
                 request.mediaS3PathStyleEnabled(),
                 request.mediaS3PublicBaseUrl(),
-                request.notificationProvider(),
+                request.notificationProviders(),
                 request.n8nWebhookUrl(),
                 request.n8nTokenHeaderName(),
                 request.n8nApiKey(),

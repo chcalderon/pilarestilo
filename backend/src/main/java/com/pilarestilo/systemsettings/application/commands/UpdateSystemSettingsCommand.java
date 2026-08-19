@@ -32,7 +32,7 @@ public record UpdateSystemSettingsCommand(
         Boolean clearMediaS3SecretKey,
         Boolean mediaS3PathStyleEnabled,
         String mediaS3PublicBaseUrl,
-        String notificationProvider,
+        List<String> notificationProviders,
         String n8nWebhookUrl,
         String n8nTokenHeaderName,
         String n8nApiKey,

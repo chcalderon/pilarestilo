@@ -112,7 +112,7 @@ public class UpdateSystemSettingsUseCase {
                 nextSmtpPassword,
                 Boolean.TRUE.equals(command.smtpAuthEnabled()),
                 Boolean.TRUE.equals(command.smtpStarttlsEnabled()),
-                command.notificationProvider(),
+                serializeProviderList(command.notificationProviders()),
                 command.n8nWebhookUrl(),
                 command.n8nTokenHeaderName(),
                 nextN8nApiKey,
@@ -166,6 +166,11 @@ public class UpdateSystemSettingsUseCase {
         }
 
         return SystemSettingsMapper.toDto(saved);
+    }
+
+    /** Same joining the gateways use; kept as one helper so the two cannot drift. */
+    private String serializeProviderList(List<String> providers) {
+        return serializePaymentGatewayProviders(providers);
     }
 
     private String serializePaymentGatewayProviders(List<String> providers) {

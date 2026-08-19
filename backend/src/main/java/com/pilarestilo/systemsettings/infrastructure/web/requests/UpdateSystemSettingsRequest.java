@@ -3,6 +3,7 @@ package com.pilarestilo.systemsettings.infrastructure.web.requests;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.DecimalMax;
@@ -40,7 +41,7 @@ public record UpdateSystemSettingsRequest(
         Boolean clearMediaS3SecretKey,
         @NotNull Boolean mediaS3PathStyleEnabled,
         @Size(max = 500) String mediaS3PublicBaseUrl,
-        @NotBlank @Size(max = 40) String notificationProvider,
+        @NotEmpty List<@NotBlank @Size(max = 40) String> notificationProviders,
         @Size(max = 500) String n8nWebhookUrl,
         @Size(max = 120) String n8nTokenHeaderName,
         @Size(max = 500) String n8nApiKey,

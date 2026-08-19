@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 @Primary
 public class SystemSettingsNotificationSender implements NotificationSender {
@@ -46,13 +48,37 @@ public class SystemSettingsNotificationSender implements NotificationSender {
         this.envDefaultProvider = parseProvider(envDefaultProvider, NotificationProvider.LOG);
     }
 
+    /**
+     * Sends over every channel the shop has enabled, not one of them.
+     *
+     * <p>This used to switch on a single provider, so turning on WhatsApp silently stopped every
+     * email — including the transfer instructions and the written confirmation the Ley 21.398
+     * requires. A shop notifies over the channels it uses, usually more than one.
+     *
+     * <p>Each channel is attempted on its own. One provider throwing — a dead SMTP host, a Twilio
+     * outage — must not swallow the others, because the customer only needs to hear once and the
+     * shop has no way of knowing which channel reached her.
+     */
     @Override
     public void send(NotificationMessage message, NotificationRecipient recipient) {
-        resolveSender().send(message, recipient);
+        Set<NotificationProvider> providers = resolveProviders();
+        boolean delivered = false;
+        for (NotificationProvider provider : providers) {
+            try {
+                senderFor(provider).send(message, recipient);
+                delivered = true;
+            } catch (RuntimeException ex) {
+                log.warn("Notification provider {} failed for template {}: {}",
+                        provider, message.templateKey(), ex.getMessage());
+            }
+        }
+        if (!delivered) {
+            log.error("No notification channel accepted template {} ({} configured)",
+                    message.templateKey(), providers);
+        }
     }
 
-    private NotificationSender resolveSender() {
-        NotificationProvider provider = resolveProvider();
+    private NotificationSender senderFor(NotificationProvider provider) {
         return switch (provider) {
             case WHATSAPP_SIMULATED -> simulatedWhatsAppNotificationSender;
             case WHATSAPP_TWILIO -> twilioWhatsAppNotificationSender;
@@ -63,23 +89,29 @@ public class SystemSettingsNotificationSender implements NotificationSender {
         };
     }
 
-    private NotificationProvider resolveProvider() {
+    private Set<NotificationProvider> resolveProviders() {
         try {
-            var settings = systemSettingsRepository.get();
-            if (settings.getNotificationProvider() != null) {
-                if (
-                        settings.getNotificationProvider() == NotificationProvider.LOG
-                                && settings.getUpdatedBy() != null
-                                && settings.getUpdatedBy().startsWith("system-")
-                ) {
-                    return envDefaultProvider;
+            Set<NotificationProvider> configured = systemSettingsRepository.get().getNotificationProviders();
+            if (configured != null && !configured.isEmpty()) {
+                /*
+                 * A seeded row still on LOG is not a decision anybody made, so the environment gets
+                 * to speak. Once an admin saves the panel the stored set wins, LOG included.
+                 */
+                if (configured.equals(Set.of(NotificationProvider.LOG)) && seededBySystem()) {
+                    return Set.of(envDefaultProvider);
                 }
-                return settings.getNotificationProvider();
+                return configured;
             }
         } catch (Exception ex) {
-            log.warn("Could not read notification provider from system settings, using env fallback: {}", ex.getMessage());
+            log.warn("Could not read notification providers from system settings, using env fallback: {}",
+                    ex.getMessage());
         }
-        return envDefaultProvider;
+        return Set.of(envDefaultProvider);
+    }
+
+    private boolean seededBySystem() {
+        String updatedBy = systemSettingsRepository.get().getUpdatedBy();
+        return updatedBy != null && updatedBy.startsWith("system-");
     }
 
     private NotificationProvider parseProvider(String rawValue, NotificationProvider fallback) {

@@ -36,7 +36,7 @@ public final class SystemSettingsMapper {
                 settings.getMediaS3SecretKeyEncrypted() != null && !settings.getMediaS3SecretKeyEncrypted().isBlank(),
                 settings.isMediaS3PathStyleEnabled(),
                 settings.getMediaS3PublicBaseUrl(),
-                settings.getNotificationProvider().name(),
+                settings.getNotificationProviders().stream().map(Enum::name).toList(),
                 settings.getN8nWebhookUrl(),
                 settings.getN8nTokenHeaderName(),
                 settings.getN8nApiKeyEncrypted() != null && !settings.getN8nApiKeyEncrypted().isBlank(),

@@ -5,35 +5,537 @@
       "type": "java.lang.Object",
       "description": "Pilar Estilo application settings. Most leaves are injected with @Value rather than @ConfigurationProperties, so they carry no generated metadata; this file declares the namespace so IDEs stop reporting it as an unknown property."
     },
-    { "name": "app.jwt", "type": "java.lang.Object", "description": "JWT signing configuration." },
-    { "name": "app.google", "type": "java.lang.Object", "description": "Google Identity Services sign-in." },
-    { "name": "app.media", "type": "java.lang.Object", "description": "Product media storage." },
-    { "name": "app.cache", "type": "java.lang.Object", "description": "Hot-read cache (Redis)." },
-    { "name": "app.notification", "type": "java.lang.Object", "description": "Notification providers: log, WhatsApp, email, n8n." },
-    { "name": "app.payment", "type": "java.lang.Object", "description": "Payment gateway and remote payment-service delegation." },
-    { "name": "app.system-settings", "type": "java.lang.Object", "description": "Encryption of secrets stored in system_settings." },
-    { "name": "app.inventory", "type": "java.lang.Object", "description": "Remote inventory-service delegation." },
-    { "name": "app.order", "type": "java.lang.Object", "description": "Remote order-service delegation." },
-    { "name": "app.product-ai", "type": "java.lang.Object", "description": "AI product enrichment pipeline." },
-    { "name": "app.gateway", "type": "java.lang.Object", "description": "Per-IP rate limiting on auth and webhook endpoints." },
-    { "name": "app.tracing", "type": "java.lang.Object", "description": "OTLP distributed tracing." }
+    {
+      "name": "app.cache",
+      "type": "java.lang.Object",
+      "description": "Hot-read cache (Redis)."
+    },
+    {
+      "name": "app.cache.redis"
+    },
+    {
+      "name": "app.documents"
+    },
+    {
+      "name": "app.documents.orphan-sweep"
+    },
+    {
+      "name": "app.domain-events.kafka"
+    },
+    {
+      "name": "app.gateway",
+      "type": "java.lang.Object",
+      "description": "Per-IP rate limiting on auth and webhook endpoints."
+    },
+    {
+      "name": "app.gateway.rate-limit"
+    },
+    {
+      "name": "app.google",
+      "type": "java.lang.Object",
+      "description": "Google Identity Services sign-in."
+    },
+    {
+      "name": "app.inventory",
+      "type": "java.lang.Object",
+      "description": "Remote inventory-service delegation."
+    },
+    {
+      "name": "app.inventory.remote"
+    },
+    {
+      "name": "app.jwt",
+      "type": "java.lang.Object",
+      "description": "JWT signing configuration."
+    },
+    {
+      "name": "app.media",
+      "type": "java.lang.Object",
+      "description": "Product media storage."
+    },
+    {
+      "name": "app.notification",
+      "type": "java.lang.Object",
+      "description": "Notification providers: log, WhatsApp, email, n8n."
+    },
+    {
+      "name": "app.notification.email.sendgrid"
+    },
+    {
+      "name": "app.notification.email.smtp"
+    },
+    {
+      "name": "app.notification.n8n"
+    },
+    {
+      "name": "app.notification.whatsapp"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio"
+    },
+    {
+      "name": "app.order",
+      "type": "java.lang.Object",
+      "description": "Remote order-service delegation."
+    },
+    {
+      "name": "app.order.remote"
+    },
+    {
+      "name": "app.payment",
+      "type": "java.lang.Object",
+      "description": "Payment gateway and remote payment-service delegation."
+    },
+    {
+      "name": "app.payment.gateway"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago"
+    },
+    {
+      "name": "app.payment.remote"
+    },
+    {
+      "name": "app.product-ai",
+      "type": "java.lang.Object",
+      "description": "AI product enrichment pipeline."
+    },
+    {
+      "name": "app.product-ai.image"
+    },
+    {
+      "name": "app.product-ai.openai"
+    },
+    {
+      "name": "app.product-ai.worker"
+    },
+    {
+      "name": "app.social-publishing.n8n"
+    },
+    {
+      "name": "app.system-settings",
+      "type": "java.lang.Object",
+      "description": "Encryption of secrets stored in system_settings."
+    }
   ],
   "properties": [
     {
-      "name": "app.jwt.secret",
-      "type": "java.lang.String",
-      "description": "HS256 signing key, base64-encoded, minimum 32 bytes."
+      "name": "app.cache.redis.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Registers the Redis connection factory. Without a reachable Redis the app will not start.",
+      "defaultValue": false
     },
     {
-      "name": "app.system-settings.crypto-secret",
+      "name": "app.cache.redis.ttl-seconds",
+      "type": "java.lang.Integer",
+      "defaultValue": 300
+    },
+    {
+      "name": "app.documents.orphan-sweep.cron",
       "type": "java.lang.String",
-      "description": "Key used to encrypt secrets at rest in system_settings. Falls back to app.jwt.secret."
+      "description": "When to delete uploaded files no document claims.",
+      "defaultValue": "0 30 4 * * *"
+    },
+    {
+      "name": "app.documents.orphan-sweep.min-age-hours",
+      "type": "java.lang.Integer",
+      "description": "How old an unclaimed file must be before the sweep takes it; younger ones are still on their way to being claimed.",
+      "defaultValue": 24
+    },
+    {
+      "name": "app.documents.storage-path",
+      "type": "java.lang.String",
+      "description": "Private root for boletas and transfer receipts; read only through authenticated endpoints.",
+      "defaultValue": "./documents"
+    },
+    {
+      "name": "app.domain-events.kafka.consumer-group-id",
+      "type": "java.lang.String",
+      "defaultValue": "pe-backend-domain-events"
+    },
+    {
+      "name": "app.domain-events.kafka.dlt-suffix",
+      "type": "java.lang.String",
+      "defaultValue": ".dlt"
+    },
+    {
+      "name": "app.domain-events.kafka.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Makes KafkaDomainEventPublisher primary, which leaves every in-process @EventListener dead.",
+      "defaultValue": false
+    },
+    {
+      "name": "app.domain-events.kafka.retry-backoff-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 1500
+    },
+    {
+      "name": "app.domain-events.kafka.retry-max-attempts",
+      "type": "java.lang.Integer",
+      "defaultValue": 3
+    },
+    {
+      "name": "app.domain-events.kafka.topic-prefix",
+      "type": "java.lang.String",
+      "defaultValue": "pe.domain"
+    },
+    {
+      "name": "app.gateway.rate-limit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Per-IP limits on auth and webhook endpoints.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.gateway.rate-limit.login-max-requests",
+      "type": "java.lang.Integer",
+      "defaultValue": 12
+    },
+    {
+      "name": "app.gateway.rate-limit.register-max-requests",
+      "type": "java.lang.Integer",
+      "defaultValue": 6
+    },
+    {
+      "name": "app.gateway.rate-limit.webhook-max-requests",
+      "type": "java.lang.Integer",
+      "defaultValue": 180
+    },
+    {
+      "name": "app.gateway.rate-limit.window-seconds",
+      "type": "java.lang.Integer",
+      "defaultValue": 60
+    },
+    {
+      "name": "app.google.client-id",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.inventory.remote.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "http://inventory-service:8082"
+    },
+    {
+      "name": "app.inventory.remote.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Delegates reserve/release/confirm/return to inventory-service.",
+      "defaultValue": false
+    },
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "HS256 signing key, base64-encoded, minimum 32 bytes.",
+      "defaultValue": "U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
     },
     {
       "name": "app.media.storage-path",
       "type": "java.lang.String",
       "description": "Filesystem path where product media is written.",
       "defaultValue": "./media"
+    },
+    {
+      "name": "app.notification.email.sendgrid.api-base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://api.sendgrid.com"
+    },
+    {
+      "name": "app.notification.email.sendgrid.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.sendgrid.from-email",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.sendgrid.sender-name",
+      "type": "java.lang.String",
+      "defaultValue": "Pilar Estilo"
+    },
+    {
+      "name": "app.notification.email.sendgrid.to-fallback",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.auth-enabled",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.from-email",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.host",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.password",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.port",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.sender-name",
+      "type": "java.lang.String",
+      "defaultValue": "Pilar Estilo"
+    },
+    {
+      "name": "app.notification.email.smtp.ssl-enabled",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.starttls-enabled",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.to-fallback",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.email.smtp.username",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.n8n.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.n8n.token-header-name",
+      "type": "java.lang.String",
+      "defaultValue": "X-PE-N8N-TOKEN"
+    },
+    {
+      "name": "app.notification.n8n.webhook-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.provider",
+      "type": "java.lang.String",
+      "description": "Fallback channel when system_settings has none stored. The shop's own list wins.",
+      "defaultValue": "LOG"
+    },
+    {
+      "name": "app.notification.whatsapp.simulated-sender",
+      "type": "java.lang.String",
+      "defaultValue": "Pilar Estilo"
+    },
+    {
+      "name": "app.notification.whatsapp.simulated-to",
+      "type": "java.lang.String",
+      "defaultValue": "-+56900000000"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.account-sid",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.api-base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://api.twilio.com"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.auth-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.from",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.sender-alias",
+      "type": "java.lang.String",
+      "defaultValue": "Pilar Estilo"
+    },
+    {
+      "name": "app.notification.whatsapp.twilio.to-fallback",
+      "type": "java.lang.String",
+      "defaultValue": "-+56900000000"
+    },
+    {
+      "name": "app.order.remote.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "http://order-service:8083"
+    },
+    {
+      "name": "app.order.remote.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "app.order.remote.service-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.order.remote.write-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Lets order-service perform the INSERT into orders. What production runs.",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.access-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.api-base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://api.mercadopago.com"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.failure-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.notification-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.pending-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.success-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.mercadopago.webhook-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.gateway.provider",
+      "type": "java.lang.String",
+      "defaultValue": "STUB"
+    },
+    {
+      "name": "app.payment.gateway.stub-checkout-base-url",
+      "type": "java.lang.String",
+      "defaultValue": "/es/account?tab=orders"
+    },
+    {
+      "name": "app.payment.gateway.webhook-secret",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.payment.remote.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "http://payment-service:8084"
+    },
+    {
+      "name": "app.payment.remote.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payment.remote.service-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.product-ai.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Runs the AI job worker. Off means the cron never fires and no paid API is called.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.product-ai.engine",
+      "type": "java.lang.String",
+      "description": "'stub' short-circuits to the fake pipeline; any other value routes to app.product-ai.openai.base-url, which is what picks the provider.",
+      "defaultValue": "stub"
+    },
+    {
+      "name": "app.product-ai.image.thumb-height",
+      "type": "java.lang.Integer",
+      "defaultValue": 400
+    },
+    {
+      "name": "app.product-ai.image.thumb-jpeg-quality",
+      "type": "java.lang.Double",
+      "defaultValue": 0.82
+    },
+    {
+      "name": "app.product-ai.image.thumb-width",
+      "type": "java.lang.Integer",
+      "defaultValue": 320
+    },
+    {
+      "name": "app.product-ai.image.web-height",
+      "type": "java.lang.Integer",
+      "defaultValue": 1280
+    },
+    {
+      "name": "app.product-ai.image.web-jpeg-quality",
+      "type": "java.lang.Double",
+      "defaultValue": 0.88
+    },
+    {
+      "name": "app.product-ai.image.web-width",
+      "type": "java.lang.Integer",
+      "defaultValue": 1024
+    },
+    {
+      "name": "app.product-ai.max-attempts",
+      "type": "java.lang.Integer",
+      "defaultValue": 3
+    },
+    {
+      "name": "app.product-ai.openai.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.product-ai.openai.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://api.openai.com/v1"
+    },
+    {
+      "name": "app.product-ai.openai.image-model",
+      "type": "java.lang.String",
+      "defaultValue": "gpt-image-1"
+    },
+    {
+      "name": "app.product-ai.openai.infer-model",
+      "type": "java.lang.String",
+      "defaultValue": "gpt-4.1-mini"
+    },
+    {
+      "name": "app.product-ai.openai.model",
+      "type": "java.lang.String",
+      "defaultValue": "gpt-image-1"
+    },
+    {
+      "name": "app.product-ai.retry-backoff-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 2000
+    },
+    {
+      "name": "app.product-ai.worker.batch-size",
+      "type": "java.lang.Integer",
+      "defaultValue": 5
+    },
+    {
+      "name": "app.product-ai.worker.cron",
+      "type": "java.lang.String",
+      "defaultValue": "*/20 * * * * *"
+    },
+    {
+      "name": "app.social-publishing.n8n.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.n8n.callback-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.n8n.token-header-name",
+      "type": "java.lang.String",
+      "defaultValue": "X-PE-N8N-TOKEN"
+    },
+    {
+      "name": "app.social-publishing.n8n.webhook-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.system-settings.crypto-secret",
+      "type": "java.lang.String",
+      "description": "Key used to encrypt secrets at rest in system_settings. Falls back to app.jwt.secret.",
+      "defaultValue": "${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}"
     }
   ]
 }

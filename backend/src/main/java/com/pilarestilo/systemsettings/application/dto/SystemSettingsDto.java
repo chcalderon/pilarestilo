@@ -30,7 +30,7 @@ public record SystemSettingsDto(
         boolean mediaS3SecretKeyConfigured,
         boolean mediaS3PathStyleEnabled,
         String mediaS3PublicBaseUrl,
-        String notificationProvider,
+        List<String> notificationProviders,
         String n8nWebhookUrl,
         String n8nTokenHeaderName,
         boolean n8nApiKeyConfigured,

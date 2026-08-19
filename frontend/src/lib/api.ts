@@ -284,7 +284,7 @@ export interface SystemSettingsDto {
   mediaS3SecretKeyConfigured: boolean;
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl?: string | null;
-  notificationProvider: NotificationProvider;
+  notificationProviders: NotificationProvider[];
   n8nWebhookUrl?: string | null;
   n8nTokenHeaderName?: string | null;
   n8nApiKeyConfigured: boolean;
@@ -362,7 +362,7 @@ export interface UpdateSystemSettingsRequest {
   clearMediaS3SecretKey?: boolean;
   mediaS3PathStyleEnabled: boolean;
   mediaS3PublicBaseUrl?: string;
-  notificationProvider: NotificationProvider;
+  notificationProviders: NotificationProvider[];
   n8nWebhookUrl?: string;
   n8nTokenHeaderName?: string;
   n8nApiKey?: string;
