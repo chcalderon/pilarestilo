@@ -1,5 +1,9 @@
 ---
 import AdminLoginForm from '../../islands/admin/AdminLoginForm';
+import ThemeBootstrap from '../../components/ThemeBootstrap.astro';
+// Without this the page's Tailwind classes resolved to nothing: it is the only route that never
+// imported the stylesheet, so the form was laid out by the browser's defaults.
+import '../../styles/globals.css';
 import { safeRedirectPath } from '../../lib/safeRedirect';
 
 const redirect = safeRedirectPath(Astro.url.searchParams.get('redirect'), '/admin/dashboard');
@@ -15,6 +19,7 @@ const backendUnavailable = Astro.url.searchParams.get('reason') === 'backend_una
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Acceso Admin | Pilar Estilo</title>
     <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
+    <ThemeBootstrap />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />

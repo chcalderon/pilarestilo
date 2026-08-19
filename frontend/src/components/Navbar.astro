@@ -713,9 +713,6 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
 </style>
 
 <script>
-  const STORAGE_THEME_KEY = 'pe-theme';
-  const STORAGE_MODE_KEY = 'pe-theme-mode';
-  const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const COMPACT_ON_SCROLL_Y = 120;
   const EXPAND_ON_SCROLL_Y = 16;
   let isCompact = false;
@@ -867,67 +864,19 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
     window.addEventListener('scroll', positionOpenPanels, { passive: true });
   }
 
-  function safeGet(key: string) {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  }
-
-  function safeSet(key: string, value: string) {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // Ignore storage write failures.
-    }
-  }
-
-  function applyTheme(theme: string) {
+  /**
+   * The header's own dress, nothing else. ThemeBootstrap owns what the theme is; this used to be
+   * a fourth copy of that decision and it disagreed with the other three.
+   */
+  function dressHeaderFor(theme: string) {
     const header = document.getElementById('site-header');
     const moonIcon = document.getElementById('icon-moon');
     const sunIcon = document.getElementById('icon-sun');
-    const source = getMode();
+    const light = theme === 'light';
 
-    if (theme === 'light') {
-      header?.classList.add('theme-light');
-      moonIcon?.classList.add('hidden');
-      sunIcon?.classList.remove('hidden');
-      document.documentElement.setAttribute('data-theme', 'light');
-    } else {
-      header?.classList.remove('theme-light');
-      moonIcon?.classList.remove('hidden');
-      sunIcon?.classList.add('hidden');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-    document.documentElement.setAttribute('data-theme-source', source);
-    document.documentElement.setAttribute('data-theme-system', getSystemTheme());
-  }
-
-  function getStoredTheme() {
-    const raw = safeGet(STORAGE_THEME_KEY);
-    if (raw === 'light' || raw === 'dark') {
-      return raw;
-    }
-    if (getMode() === 'manual') {
-      safeSet(STORAGE_THEME_KEY, 'dark');
-      return 'dark';
-    }
-    return null;
-  }
-
-  function getMode() {
-    const mode = safeGet(STORAGE_MODE_KEY);
-    return mode === 'manual' ? 'manual' : 'system';
-  }
-
-  function getSystemTheme() {
-    return prefersDarkQuery.matches ? 'dark' : 'light';
-  }
-
-  function getRootTheme() {
-    const raw = document.documentElement.getAttribute('data-theme');
-    return raw === 'light' || raw === 'dark' ? raw : null;
+    header?.classList.toggle('theme-light', light);
+    moonIcon?.classList.toggle('hidden', light);
+    sunIcon?.classList.toggle('hidden', !light);
   }
 
   function syncHeaderHeightVar() {
@@ -976,14 +925,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
     lastScrollY = y;
   }
 
-  const mode = getMode();
-  const storedTheme = getStoredTheme();
-  const initialTheme = getRootTheme() ?? storedTheme ?? getSystemTheme();
-  if (!storedTheme) {
-    safeSet(STORAGE_THEME_KEY, initialTheme);
-  }
-  safeSet(STORAGE_MODE_KEY, mode);
-  applyTheme(initialTheme);
+  dressHeaderFor(window.peTheme.current());
   lastScrollY = window.scrollY;
   applyLogoScrollState();
   initCategorySlider();
@@ -1009,11 +951,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
   });
 
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
-    const next = current === 'dark' ? 'light' : 'dark';
-    safeSet(STORAGE_THEME_KEY, next);
-    safeSet(STORAGE_MODE_KEY, 'manual');
-    applyTheme(next);
+    dressHeaderFor(window.peTheme.toggle());
   });
 
   window.addEventListener('scroll', () => {

@@ -1,4 +1,5 @@
 ---
+import ThemeBootstrap from '../components/ThemeBootstrap.astro';
 import AdminSidebar from '../islands/admin/AdminSidebar';
 import '../styles/globals.css';
 
@@ -16,82 +17,7 @@ const currentPath = Astro.url.pathname;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#E7DDCF" />
-    <script is:inline>
-      (() => {
-        const STORAGE_THEME_KEY = 'pe-theme';
-        const STORAGE_MODE_KEY = 'pe-theme-mode';
-        const root = document.documentElement;
-        const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const userAgent = navigator.userAgent || '';
-        const platform = navigator.platform || '';
-
-        function detectOs() {
-          if (/Windows/i.test(userAgent) || /Win/i.test(platform)) return 'windows';
-          if (/Ubuntu/i.test(userAgent)) return 'ubuntu';
-          if (/Linux/i.test(userAgent)) return 'linux';
-          if (/Mac/i.test(platform) || /Mac OS X/i.test(userAgent)) return 'macos';
-          return 'other';
-        }
-
-        function isValidTheme(raw) {
-          return raw === 'light' || raw === 'dark';
-        }
-
-        function safeGet(key) {
-          try {
-            return localStorage.getItem(key);
-          } catch {
-            return null;
-          }
-        }
-
-        function safeSet(key, value) {
-          try {
-            localStorage.setItem(key, value);
-          } catch {
-            // Ignore storage write failures.
-          }
-        }
-
-        function getMode() {
-          const mode = safeGet(STORAGE_MODE_KEY);
-          return mode === 'manual' ? 'manual' : 'system';
-        }
-
-        function getStoredTheme() {
-          const raw = safeGet(STORAGE_THEME_KEY);
-          if (raw === 'light' || raw === 'dark') {
-            return raw;
-          }
-          if (getMode() === 'manual') {
-            safeSet(STORAGE_THEME_KEY, 'dark');
-            return 'dark';
-          }
-          return null;
-        }
-
-        function getSystemTheme() {
-          return prefersDarkQuery.matches ? 'dark' : 'light';
-        }
-
-        function applyRootTheme(theme, source) {
-          root.setAttribute('data-theme', theme);
-          root.setAttribute('data-theme-source', source);
-          root.setAttribute('data-theme-system', getSystemTheme());
-        }
-
-        root.setAttribute('data-os', detectOs());
-        const mode = getMode();
-        const storedTheme = getStoredTheme();
-        const initialTheme = storedTheme ?? getSystemTheme();
-        if (!storedTheme) {
-          safeSet(STORAGE_THEME_KEY, initialTheme);
-        }
-        safeSet(STORAGE_MODE_KEY, mode);
-        applyRootTheme(initialTheme, mode);
-      })();
-    </script>
+    <ThemeBootstrap />
     <title>{title} | Admin Pilar Estilo</title>
     <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -387,70 +313,19 @@ const currentPath = Astro.url.pathname;
 
     <script is:inline>
       (() => {
-        const STORAGE_THEME_KEY = 'pe-theme';
-        const STORAGE_MODE_KEY = 'pe-theme-mode';
         const moonIcon = document.getElementById('admin-icon-moon');
         const sunIcon = document.getElementById('admin-icon-sun');
         const toggleButton = document.getElementById('admin-theme-toggle');
-        const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
         const mobileMenuBtn = document.getElementById('admin-menu-toggle');
         const mobileCloseBtn = document.getElementById('admin-mobile-close');
         const mobileOverlay = document.getElementById('admin-mobile-overlay');
 
-        function safeGet(key) {
-          try {
-            return localStorage.getItem(key);
-          } catch {
-            return null;
-          }
-        }
-
-        function safeSet(key, value) {
-          try {
-            localStorage.setItem(key, value);
-          } catch {
-            // Ignore storage write failures.
-          }
-        }
-
-        function getStoredTheme() {
-          const raw = safeGet(STORAGE_THEME_KEY);
-          if (raw === 'light' || raw === 'dark') {
-            return raw;
-          }
-          if (getMode() === 'manual') {
-            safeSet(STORAGE_THEME_KEY, 'dark');
-            return 'dark';
-          }
-          return null;
-        }
-
-        function getMode() {
-          const mode = safeGet(STORAGE_MODE_KEY);
-          return mode === 'manual' ? 'manual' : 'system';
-        }
-
-        function getSystemTheme() {
-          return prefersDarkQuery.matches ? 'dark' : 'light';
-        }
-
-        function getRootTheme() {
-          const raw = document.documentElement.getAttribute('data-theme');
-          return raw === 'light' || raw === 'dark' ? raw : null;
-        }
-
-        function applyTheme(theme) {
-          document.documentElement.setAttribute('data-theme', theme);
-          document.documentElement.setAttribute('data-theme-source', getMode());
-          document.documentElement.setAttribute('data-theme-system', getSystemTheme());
-          if (theme === 'light') {
-            moonIcon?.setAttribute('style', 'display:none;');
-            sunIcon?.setAttribute('style', 'display:block;');
-          } else {
-            moonIcon?.setAttribute('style', 'display:block;');
-            sunIcon?.setAttribute('style', 'display:none;');
-          }
+        /** Only the icon: what the theme *is* belongs to ThemeBootstrap, and to it alone. */
+        function showIconsFor(theme) {
+          const light = theme === 'light';
+          moonIcon?.setAttribute('style', light ? 'display:none;' : 'display:block;');
+          sunIcon?.setAttribute('style', light ? 'display:block;' : 'display:none;');
         }
 
         function openMobileMenu() {
@@ -461,22 +336,8 @@ const currentPath = Astro.url.pathname;
           document.body.classList.remove('admin-mobile-open');
         }
 
-        const mode = getMode();
-        const storedTheme = getStoredTheme();
-        const initialTheme = getRootTheme() ?? storedTheme ?? getSystemTheme();
-        if (!storedTheme) {
-          safeSet(STORAGE_THEME_KEY, initialTheme);
-        }
-        safeSet(STORAGE_MODE_KEY, mode);
-        applyTheme(initialTheme);
-
-        toggleButton?.addEventListener('click', () => {
-          const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
-          const next = current === 'dark' ? 'light' : 'dark';
-          safeSet(STORAGE_THEME_KEY, next);
-          safeSet(STORAGE_MODE_KEY, 'manual');
-          applyTheme(next);
-        });
+        showIconsFor(window.peTheme.current());
+        toggleButton?.addEventListener('click', () => showIconsFor(window.peTheme.toggle()));
 
         mobileMenuBtn?.addEventListener('click', openMobileMenu);
         mobileCloseBtn?.addEventListener('click', closeMobileMenu);

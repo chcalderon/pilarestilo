@@ -49,7 +49,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
       if (/API error 5\d{2}\b|API timeout\b/i.test(detail)) {
         setError(BACKEND_UNAVAILABLE_MESSAGE);
       } else {
-        setError('Email o contrase\u00f1a incorrectos.');
+        setError('Email o contraseña incorrectos.');
       }
     } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="flex flex-col gap-1.5">
         <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
-          Correo electr\u00f3nico
+          Correo electrónico
         </label>
         <input
           type="email"
@@ -75,7 +75,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
 
       <div className="flex flex-col gap-1.5">
         <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-charcoal/60">
-          Contrase\u00f1a
+          Contraseña
         </label>
         <div className="relative">
           <input
@@ -91,7 +91,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
             type="button"
             onClick={() => setShowPass((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-charcoal/40 hover:text-pe-rose transition-colors"
-            aria-label={showPass ? 'Ocultar contrase\u00f1a' : 'Mostrar contrase\u00f1a'}
+            aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>

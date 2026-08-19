@@ -41,3 +41,7 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
 frontend/.cache/
+# Uploaded boletas and payment receipts. These carry a RUT, a buyer's name and amounts, which is
+# exactly why they live outside the public media root; they must never reach the repository either.
+infra/storage/documents/
+infra/storage/media/

@@ -1,0 +1,97 @@
+---
+/**
+ * Decides the theme before the first paint, in one place.
+ *
+ * Four copies of this used to exist (both layouts, the navbar, the admin topbar) and they had
+ * already drifted: the storefront defaulted to dark, the panel followed the operating system, and
+ * both wrote whatever they resolved into storage as if the visitor had chosen it. So a light
+ * desktop turned the shop light on the first visit and kept it that way forever, while the toggle
+ * reported it as a preference nobody had expressed.
+ *
+ * Dark is the default because of where this shop is read: a phone, at night, arriving from an
+ * Instagram story, screen dimmed. The product is the photograph of a garment, and a dark page
+ * makes the photograph the only light in it. Light stays one tap away and is remembered.
+ *
+ * Storage now means one thing: `pe-theme` is present only when somebody picked a side.
+ */
+---
+
+<script is:inline>
+  (() => {
+    const KEY = 'pe-theme';
+    const LEGACY_MODE_KEY = 'pe-theme-mode';
+    const DEFAULT_THEME = 'dark';
+    const BAR_COLOR = { dark: '#1E1719', light: '#D9CDB8' };
+    const root = document.documentElement;
+
+    function safeGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+
+    function safeSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // A visitor who blocks storage gets the default every time, which is a working shop.
+      }
+    }
+
+    function safeRemove(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Same: nothing to repair if nothing can be written.
+      }
+    }
+
+    /*
+     * One-time repair for the old behaviour. Anything stored while the mode was not 'manual' was
+     * written by the page itself, not chosen, so it is discarded rather than honoured for years.
+     */
+    const legacyMode = safeGet(LEGACY_MODE_KEY);
+    if (legacyMode !== null) {
+      if (legacyMode !== 'manual') safeRemove(KEY);
+      safeRemove(LEGACY_MODE_KEY);
+    }
+
+    function chosenTheme() {
+      const raw = safeGet(KEY);
+      return raw === 'light' || raw === 'dark' ? raw : null;
+    }
+
+    function apply(theme) {
+      root.setAttribute('data-theme', theme);
+      // The browser's own chrome follows, or the phone frames a dark page in a cream bar.
+      let bar = document.querySelector('meta[name="theme-color"]');
+      if (!bar) {
+        bar = document.createElement('meta');
+        bar.setAttribute('name', 'theme-color');
+        document.head.appendChild(bar);
+      }
+      bar.setAttribute('content', BAR_COLOR[theme] ?? BAR_COLOR.dark);
+    }
+
+    apply(chosenTheme() ?? DEFAULT_THEME);
+
+    /** The one way to change it, so the navbar and the panel cannot disagree about what it means. */
+    window.peTheme = {
+      current() {
+        return root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      },
+      set(theme) {
+        const next = theme === 'light' ? 'light' : 'dark';
+        safeSet(KEY, next);
+        apply(next);
+        window.dispatchEvent(new CustomEvent('pe-theme:change', { detail: { theme: next } }));
+        return next;
+      },
+      toggle() {
+        return window.peTheme.set(window.peTheme.current() === 'dark' ? 'light' : 'dark');
+      },
+    };
+  })();
+</script>

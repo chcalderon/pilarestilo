@@ -1,4 +1,5 @@
 ---
+import ThemeBootstrap from '../components/ThemeBootstrap.astro';
 import type { Locale } from '../i18n/index';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
@@ -30,83 +31,8 @@ const storeSettings = await getPublicStoreSettings();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#E9DFD2" />
     <meta name="generator" content={Astro.generator} />
-    <script is:inline>
-      (() => {
-        const STORAGE_THEME_KEY = 'pe-theme';
-        const STORAGE_MODE_KEY = 'pe-theme-mode';
-        const root = document.documentElement;
-        const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const userAgent = navigator.userAgent || '';
-        const platform = navigator.platform || '';
-
-        function detectOs() {
-          if (/Windows/i.test(userAgent) || /Win/i.test(platform)) return 'windows';
-          if (/Ubuntu/i.test(userAgent)) return 'ubuntu';
-          if (/Linux/i.test(userAgent)) return 'linux';
-          if (/Mac/i.test(platform) || /Mac OS X/i.test(userAgent)) return 'macos';
-          return 'other';
-        }
-
-        function isValidTheme(raw) {
-          return raw === 'light' || raw === 'dark';
-        }
-
-        function safeGet(key) {
-          try {
-            return localStorage.getItem(key);
-          } catch {
-            return null;
-          }
-        }
-
-        function safeSet(key, value) {
-          try {
-            localStorage.setItem(key, value);
-          } catch {
-            // Ignore storage write failures.
-          }
-        }
-
-        function getMode() {
-          const mode = safeGet(STORAGE_MODE_KEY);
-          return mode === 'manual' ? 'manual' : 'system';
-        }
-
-        function getStoredTheme() {
-          const raw = safeGet(STORAGE_THEME_KEY);
-          if (raw === 'light' || raw === 'dark') {
-            return raw;
-          }
-          if (getMode() === 'manual') {
-            safeSet(STORAGE_THEME_KEY, 'dark');
-            return 'dark';
-          }
-          return null;
-        }
-
-        function getSystemTheme() {
-          return prefersDarkQuery.matches ? 'dark' : 'light';
-        }
-
-        function applyRootTheme(theme, source) {
-          root.setAttribute('data-theme', theme);
-          root.setAttribute('data-theme-source', source);
-          root.setAttribute('data-theme-system', getSystemTheme());
-        }
-
-        root.setAttribute('data-os', detectOs());
-        const mode = getMode();
-        const storedTheme = getStoredTheme();
-        const initialTheme = storedTheme ?? 'dark';
-        if (!storedTheme) {
-          safeSet(STORAGE_THEME_KEY, initialTheme);
-        }
-        safeSet(STORAGE_MODE_KEY, mode);
-        applyRootTheme(initialTheme, mode);
-      })();
-    </script>
+    <ThemeBootstrap />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <title>{title} | Pilar Estilo</title>
     <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
