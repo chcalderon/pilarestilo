@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { registerUser, loginUser, googleLogin } from "@/lib/api";
+import { registerUser, loginUser, googleLogin, acceptMarketingConsent } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
 
 type Tab = "register" | "login";
@@ -17,6 +17,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const googleBtnRef = useRef<HTMLDivElement>(null);
@@ -90,6 +91,18 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
       const data = tab === "register"
         ? await registerUser(email, password, fullName)
         : await loginUser(email, password);
+
+      /*
+       * Recorded after the account exists and only if she ticked it. A failure here must not fail
+       * the registration: she has an account either way, and no marketing consent is the safe side.
+       */
+      if (tab === "register" && marketing) {
+        try {
+          await acceptMarketingConsent(data.accessToken);
+        } catch {
+          // Nothing to tell her: she can turn it on later from her account.
+        }
+      }
       setAuth(data.accessToken, {
         id: data.userId,
         email: data.email,
@@ -205,6 +218,23 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
           </p>
         )}
 
+        {tab === "register" && (
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={marketing}
+              onChange={e => setMarketing(e.target.checked)}
+              disabled={loading}
+              className="mt-0.5 w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
+            />
+            <span className="text-[0.68rem] leading-relaxed text-[var(--pe-muted)]">
+              {es
+                ? "Quiero recibir novedades por correo. Puedes desactivarlo cuando quieras."
+                : "I want news by email. You can turn this off whenever you like."}
+            </span>
+          </label>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -229,6 +259,18 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
       </div>
 
       <div ref={googleBtnRef} className="flex justify-center" />
+
+      <p className="text-[0.66rem] leading-relaxed text-[var(--pe-muted)]">
+        {es ? "Al crear la cuenta aceptas los " : "Creating an account means accepting our "}
+        <a href={`/${locale}/shipping-returns`} className="underline hover:text-[var(--pe-foreground)]">
+          {es ? "términos de compra" : "terms of sale"}
+        </a>
+        {es ? " y la " : " and our "}
+        <a href={`/${locale}/privacy`} className="underline hover:text-[var(--pe-foreground)]">
+          {es ? "política de privacidad" : "privacy policy"}
+        </a>
+        {es ? "." : "."}
+      </p>
 
       <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
         {tab === "login" ? (

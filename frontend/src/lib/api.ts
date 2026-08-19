@@ -1633,6 +1633,55 @@ export async function getAdminReturns(
   return apiFetch<Page<ReturnRequestDto>>(`/admin/returns${query}`, { headers: authHeaders(token) });
 }
 
+export interface DeletionRequestDto {
+  id: string;
+  userId: string;
+  /** Read live, not copied: once resolved this shows the anonymised account, which is the proof. */
+  customerName: string | null;
+  customerEmail: string | null;
+  status: 'REQUESTED' | 'ANONYMISED' | 'REFUSED';
+  reason: string | null;
+  requestedAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  resolution: string | null;
+  /** Days the person has been waiting, frozen once answered. */
+  daysWaiting: number;
+}
+
+export async function getDeletionRequests(
+  params: { openOnly?: boolean; page?: number; size?: number },
+  token: string,
+): Promise<Page<DeletionRequestDto>> {
+  const query = buildQuery({
+    openOnly: params.openOnly ?? true,
+    page: params.page ?? 0,
+    size: params.size ?? 20,
+  });
+  return apiFetch<Page<DeletionRequestDto>>(`/admin/privacy/deletions${query}`, {
+    headers: authHeaders(token),
+  });
+}
+
+export async function anonymiseDeletionRequest(id: string, token: string): Promise<DeletionRequestDto> {
+  return apiFetch<DeletionRequestDto>(`/admin/privacy/deletions/${encodeURIComponent(id)}/anonymise`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+export async function refuseDeletionRequest(
+  id: string,
+  reason: string,
+  token: string,
+): Promise<DeletionRequestDto> {
+  return apiFetch<DeletionRequestDto>(`/admin/privacy/deletions/${encodeURIComponent(id)}/refuse`, {
+    method: 'POST',
+    headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+}
+
 export async function getReturnsByOrder(orderId: string, token: string): Promise<ReturnRequestDto[]> {
   try {
     return (await apiFetch<ReturnRequestDto[]>(

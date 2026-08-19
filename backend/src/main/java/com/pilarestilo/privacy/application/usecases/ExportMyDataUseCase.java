@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -81,49 +82,63 @@ public class ExportMyDataUseCase {
 
         List<Map<String, Object>> addresses = addressRepository
                 .findByCustomerIdOrderByUpdatedAtDesc(userId).stream()
-                .map(address -> Map.<String, Object>of(
-                        "recipient", String.valueOf(address.getRecipientName()),
-                        "line", String.valueOf(address.getLine1()),
-                        "commune", String.valueOf(address.getComuna()),
-                        "city", String.valueOf(address.getCity()),
-                        "region", String.valueOf(address.getRegion()),
-                        "phone", String.valueOf(address.getPhone())))
+                .map(address -> fields(
+                        "recipient", address.getRecipientName(),
+                        "line", address.getLine1(),
+                        "commune", address.getComuna(),
+                        "city", address.getCity(),
+                        "region", address.getRegion(),
+                        "phone", address.getPhone()))
                 .toList();
 
         List<Map<String, Object>> reviews = reviewRepository.findByUserId(userId).stream()
-                .map(review -> Map.<String, Object>of(
+                .map(review -> fields(
                         "rating", review.getRating(),
-                        "title", String.valueOf(review.getTitle()),
-                        "comment", String.valueOf(review.getComment()),
-                        "writtenAt", String.valueOf(review.getCreatedAt())))
+                        "title", review.getTitle(),
+                        "comment", review.getComment(),
+                        "writtenAt", review.getCreatedAt()))
                 .toList();
 
         List<Map<String, Object>> returns = returnRequestRepository.findByRequestedBy(userId).stream()
-                .map(request -> Map.<String, Object>of(
+                .map(request -> fields(
                         "kind", request.getKind().name(),
                         "status", request.getStatus().name(),
-                        "reason", String.valueOf(request.getReason()),
+                        "reason", request.getReason(),
                         "requestedAt", request.getRequestedAt()))
                 .toList();
 
         List<Map<String, Object>> consents = consentRepository.findByUserId(userId).stream()
-                .map(consent -> Map.<String, Object>of(
+                .map(consent -> fields(
                         "type", consent.getType().name(),
                         "policyVersion", consent.getPolicyVersion(),
                         "acceptedAt", consent.getAcceptedAt(),
-                        "revokedAt", String.valueOf(consent.getRevokedAt())))
+                        "revokedAt", consent.getRevokedAt()))
                 .toList();
 
         return new PersonalDataExportDto(
-                Map.of(
-                        "email", String.valueOf(user.getEmail()),
-                        "fullName", String.valueOf(user.getFullName()),
-                        "phone", String.valueOf(user.getPhone()),
-                        "registeredAt", String.valueOf(user.getCreatedAt())),
+                fields(
+                        "email", user.getEmail(),
+                        "fullName", user.getFullName(),
+                        "phone", user.getPhone(),
+                        "registeredAt", user.getCreatedAt()),
                 orderSummaries,
                 addresses,
                 reviews,
                 returns,
                 consents);
+    }
+
+    /**
+     * Builds one section of the copy, keeping the order the keys were written in and letting a
+     * missing value stay missing. {@code Map.of} refuses nulls, and wrapping them in
+     * {@code String.valueOf} was handing the customer the literal text "null" where she has no
+     * phone and no revocation - a document about her that reads like a stack trace.
+     */
+    private static Map<String, Object> fields(Object... keysAndValues) {
+        Map<String, Object> section = new LinkedHashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            section.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return section;
     }
 }

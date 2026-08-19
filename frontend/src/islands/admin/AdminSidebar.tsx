@@ -16,6 +16,7 @@ import {
   Bell,
   Ticket,
   ShieldCheck,
+  ShieldOff,
   DollarSign,
   Truck,
   Megaphone,
@@ -48,6 +49,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/publicaciones', icon: Megaphone, label: 'Publicaciones', viewKey: 'productos' },
   { href: '/admin/discounts', icon: Ticket, label: 'Descuentos', viewKey: 'productos' },
   { href: '/admin/users', icon: Users, label: 'Usuarios', viewKey: 'usuarios' },
+  { href: '/admin/privacidad', icon: ShieldOff, label: 'Privacidad', viewKey: 'privacy.read' },
   { href: '/admin/roles-permisos', icon: ShieldCheck, label: 'Roles/Permisos', viewKey: 'roles_permisos' },
 ];
 
@@ -78,6 +80,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
   // 'caja' view key, so the modern code has to be enough on its own here.
   const canSeeSales = useCan('orders.read');
   const canSeeReturns = useCan('returns.read');
+  const canSeePrivacy = useCan('privacy.read');
 
   const permissions = user?.permissions ?? [];
   const visibleNavItems = user?.role === 'ADMIN'
@@ -87,6 +90,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
       if (item.href === '/admin/roles-permisos') return canSeeRoles;
       if (item.href === '/admin/ventas') return canSeeSales || permissions.includes('caja');
       if (item.href === '/admin/devoluciones') return canSeeReturns || permissions.includes('caja');
+      if (item.href === '/admin/privacidad') return canSeePrivacy;
       return permissions.includes(item.viewKey);
     });
   const showSettings = canSeeSettings;

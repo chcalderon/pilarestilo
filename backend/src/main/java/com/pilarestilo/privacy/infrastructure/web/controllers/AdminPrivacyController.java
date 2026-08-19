@@ -1,8 +1,8 @@
 package com.pilarestilo.privacy.infrastructure.web.controllers;
 
-import com.pilarestilo.privacy.application.dto.DataDeletionRequestDto;
+import com.pilarestilo.privacy.application.dto.DeletionQueueItemDto;
+import com.pilarestilo.privacy.application.usecases.ReadDeletionQueueUseCase;
 import com.pilarestilo.privacy.application.usecases.ResolveDeletionRequestUseCase;
-import com.pilarestilo.privacy.domain.ports.DataDeletionRequestRepository;
 import com.pilarestilo.privacy.infrastructure.web.requests.RefuseDeletionRequest;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.shared.domain.DomainException;
@@ -37,42 +37,38 @@ public class AdminPrivacyController {
     private static final String RESOLVE =
             "hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PRIVACY_RESOLVE)";
 
-    private final DataDeletionRequestRepository deletionRepository;
+    private final ReadDeletionQueueUseCase readDeletionQueueUseCase;
     private final ResolveDeletionRequestUseCase resolveDeletionRequestUseCase;
 
-    public AdminPrivacyController(DataDeletionRequestRepository deletionRepository,
+    public AdminPrivacyController(ReadDeletionQueueUseCase readDeletionQueueUseCase,
                                   ResolveDeletionRequestUseCase resolveDeletionRequestUseCase) {
-        this.deletionRepository = deletionRepository;
+        this.readDeletionQueueUseCase = readDeletionQueueUseCase;
         this.resolveDeletionRequestUseCase = resolveDeletionRequestUseCase;
     }
 
     /** Oldest first when open: the queue is read by how long somebody has been waiting. */
     @GetMapping
     @PreAuthorize(READ)
-    public Page<DataDeletionRequestDto> list(@RequestParam(defaultValue = "true") boolean openOnly,
-                                             @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "20") int size) {
-        PageRequest pageable = PageRequest.of(page, size);
-        return (openOnly
-                ? deletionRepository.findOpen(pageable)
-                : deletionRepository.findAll(pageable))
-                .map(DataDeletionRequestDto::from);
+    public Page<DeletionQueueItemDto> list(@RequestParam(defaultValue = "true") boolean openOnly,
+                                           @RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        return readDeletionQueueUseCase.page(openOnly, PageRequest.of(page, size));
     }
 
     @PostMapping("/{id}/anonymise")
     @PreAuthorize(RESOLVE)
-    public DataDeletionRequestDto anonymise(@PathVariable UUID id,
-                                            @AuthenticationPrincipal AuthenticatedUser currentUser) {
-        return DataDeletionRequestDto.from(
+    public DeletionQueueItemDto anonymise(@PathVariable UUID id,
+                                          @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return readDeletionQueueUseCase.describe(
                 resolveDeletionRequestUseCase.anonymise(id, actorId(currentUser)));
     }
 
     @PostMapping("/{id}/refuse")
     @PreAuthorize(RESOLVE)
-    public DataDeletionRequestDto refuse(@PathVariable UUID id,
-                                         @Valid @RequestBody RefuseDeletionRequest request,
-                                         @AuthenticationPrincipal AuthenticatedUser currentUser) {
-        return DataDeletionRequestDto.from(
+    public DeletionQueueItemDto refuse(@PathVariable UUID id,
+                                       @Valid @RequestBody RefuseDeletionRequest request,
+                                       @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return readDeletionQueueUseCase.describe(
                 resolveDeletionRequestUseCase.refuse(id, request.reason(), actorId(currentUser)));
     }
 

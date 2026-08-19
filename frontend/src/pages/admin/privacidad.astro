@@ -1,0 +1,19 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import PrivacidadPage from '../../islands/admin/PrivacidadPage';
+---
+
+<AdminLayout
+  title="Privacidad"
+  breadcrumbs={[{ label: 'Privacidad' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Solicitudes de datos</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-charcoal/45 mt-1">
+      Quien pide que borren sus datos tiene derecho a una respuesta dentro de 30 días. Borrar
+      significa anonimizar: la boleta se queda seis años por obligación tributaria, la persona no.
+    </p>
+  </div>
+
+  <PrivacidadPage client:load />
+</AdminLayout>

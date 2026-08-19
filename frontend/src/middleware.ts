@@ -6,7 +6,12 @@ const RBAC_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.RBAC_DEBUG ===
 
 type HybridRouteRequirement = {
   permissionCode: string;
-  legacyViewKey: 'roles_permisos' | 'usuarios' | 'configuracion' | 'caja';
+  /**
+   * The pre-RBAC view key that also opens the route. Optional: a screen added after the modern
+   * permissions exist has no legacy equivalent, and inventing one would hand it to every account
+   * that happens to hold an old key.
+   */
+  legacyViewKey?: 'roles_permisos' | 'usuarios' | 'configuracion' | 'caja';
 };
 
 const HYBRID_ROUTE_REQUIREMENTS: Array<[string, HybridRouteRequirement]> = [
@@ -17,6 +22,9 @@ const HYBRID_ROUTE_REQUIREMENTS: Array<[string, HybridRouteRequirement]> = [
   // as in the island. The backend guards every endpoint behind it independently.
   ['/admin/ventas', { permissionCode: 'orders.read', legacyViewKey: 'caja' }],
   ['/admin/devoluciones', { permissionCode: 'returns.read', legacyViewKey: 'caja' }],
+  // No legacy view key: privacy.read arrived with V84 and the old keys predate it, so an
+  // account without the modern permission has no business reading who asked to be erased.
+  ['/admin/privacidad', { permissionCode: 'privacy.read' }],
 ];
 
 function resolveHybridRequirement(pathname: string): HybridRouteRequirement | null {
@@ -57,10 +65,9 @@ function hasHybridRouteAccess(
   if (permissionCodes.includes(requirement.permissionCode)) {
     return { allowed: true, usedLegacyFallback: false };
   }
-  return {
-    allowed: legacyPermissions.includes(requirement.legacyViewKey),
-    usedLegacyFallback: legacyPermissions.includes(requirement.legacyViewKey),
-  };
+  const legacyAllows =
+    requirement.legacyViewKey !== undefined && legacyPermissions.includes(requirement.legacyViewKey);
+  return { allowed: legacyAllows, usedLegacyFallback: legacyAllows };
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -140,7 +147,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             pathname,
             role,
             hybridRequirement.permissionCode,
-            hybridRequirement.legacyViewKey,
+            hybridRequirement.legacyViewKey ?? 'none',
           );
         }
         if (access.allowed) {

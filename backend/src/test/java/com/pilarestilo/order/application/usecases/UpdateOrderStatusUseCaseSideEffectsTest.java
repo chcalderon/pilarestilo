@@ -1,6 +1,5 @@
 package com.pilarestilo.order.application.usecases;
 
-import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
