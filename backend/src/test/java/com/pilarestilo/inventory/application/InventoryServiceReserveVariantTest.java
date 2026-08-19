@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
@@ -63,7 +64,7 @@ class InventoryServiceReserveVariantTest {
                 .thenReturn(0);
 
         assertThrows(DomainException.class, () ->
-                inventoryService.reserve(productId, 2, "Rojo", "M")
+                inventoryService.reserve(productId, 2, "Rojo", "M", StockMovementOrigin.unknown())
         );
     }
 
@@ -73,6 +74,6 @@ class InventoryServiceReserveVariantTest {
         when(productRepository.atomicReserveVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        assertDoesNotThrow(() -> inventoryService.reserve(productId, 1, "Azul", "L"));
+        assertDoesNotThrow(() -> inventoryService.reserve(productId, 1, "Azul", "L", StockMovementOrigin.unknown()));
     }
 }

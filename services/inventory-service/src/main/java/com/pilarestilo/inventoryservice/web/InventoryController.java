@@ -71,7 +71,11 @@ public class InventoryController {
                 request.productId(),
                 request.qty(),
                 request.variantColor(),
-                request.variantSize()
+                request.variantSize(),
+                new InventoryCommandService.StockOrigin(
+                        request.referenceType(),
+                        request.referenceId(),
+                        request.recordedBy())
         ));
     }
 
@@ -82,7 +86,11 @@ public class InventoryController {
                 request.productId(),
                 request.qty(),
                 request.variantColor(),
-                request.variantSize()
+                request.variantSize(),
+                new InventoryCommandService.StockOrigin(
+                        request.referenceType(),
+                        request.referenceId(),
+                        request.recordedBy())
         ));
     }
 
@@ -93,7 +101,11 @@ public class InventoryController {
                 request.productId(),
                 request.qty(),
                 request.variantColor(),
-                request.variantSize()
+                request.variantSize(),
+                new InventoryCommandService.StockOrigin(
+                        request.referenceType(),
+                        request.referenceId(),
+                        request.recordedBy())
         ));
     }
 
@@ -105,7 +117,11 @@ public class InventoryController {
                 request.productId(),
                 request.qty(),
                 request.variantColor(),
-                request.variantSize()
+                request.variantSize(),
+                new InventoryCommandService.StockOrigin(
+                        request.referenceType(),
+                        request.referenceId(),
+                        request.recordedBy())
         ));
     }
 

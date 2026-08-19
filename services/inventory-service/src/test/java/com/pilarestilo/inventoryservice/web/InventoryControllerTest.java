@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,23 +67,23 @@ class InventoryControllerTest {
     void reserve_release_confirm_map_domain_errors_to_bad_request() {
         InventoryController controller = new InventoryController(queryService, commandService);
         UUID productId = UUID.randomUUID();
-        InventoryCommandRequest req = new InventoryCommandRequest(productId, 1, null, null);
+        InventoryCommandRequest req = new InventoryCommandRequest(productId, 1, null, null, null, null, null);
 
-        doThrow(new IllegalStateException("boom")).when(commandService).reserve(eq(productId), eq(1), eq(null), eq(null));
+        doThrow(new IllegalStateException("boom")).when(commandService).reserve(eq(productId), eq(1), eq(null), eq(null), any());
         ResponseStatusException reserveEx = assertThrows(ResponseStatusException.class, () -> controller.reserve(req));
         assertEquals(HttpStatus.BAD_REQUEST, reserveEx.getStatusCode());
 
-        doThrow(new IllegalArgumentException("bad")).when(commandService).release(eq(productId), eq(1), eq(null), eq(null));
+        doThrow(new IllegalArgumentException("bad")).when(commandService).release(eq(productId), eq(1), eq(null), eq(null), any());
         ResponseStatusException releaseEx = assertThrows(ResponseStatusException.class, () -> controller.release(req));
         assertEquals(HttpStatus.BAD_REQUEST, releaseEx.getStatusCode());
 
-        doThrow(new NoSuchElementException("not found")).when(commandService).confirm(eq(productId), eq(1), eq(null), eq(null));
+        doThrow(new NoSuchElementException("not found")).when(commandService).confirm(eq(productId), eq(1), eq(null), eq(null), any());
         ResponseStatusException confirmEx = assertThrows(ResponseStatusException.class, () -> controller.confirm(req));
         assertEquals(HttpStatus.NOT_FOUND, confirmEx.getStatusCode());
 
-        verify(commandService).reserve(productId, 1, null, null);
-        verify(commandService).release(productId, 1, null, null);
-        verify(commandService).confirm(productId, 1, null, null);
+        verify(commandService).reserve(eq(productId), eq(1), isNull(), isNull(), any());
+        verify(commandService).release(eq(productId), eq(1), isNull(), isNull(), any());
+        verify(commandService).confirm(eq(productId), eq(1), isNull(), isNull(), any());
     }
 
     private ProductEntity product(UUID id) {

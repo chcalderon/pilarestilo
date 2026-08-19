@@ -10,6 +10,7 @@ import com.pilarestilo.returns.domain.enums.ItemDisposition;
 import com.pilarestilo.returns.domain.enums.RefundMethod;
 import com.pilarestilo.returns.domain.enums.ReturnKind;
 import com.pilarestilo.returns.infrastructure.web.requests.ReturnRequests;
+import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.shared.domain.DomainException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -98,9 +100,11 @@ public class ReturnController {
     @PostMapping("/{id}/disposition")
     @PreAuthorize(MANAGE)
     public ReturnRequestDto disposition(@PathVariable UUID id,
-                                        @Valid @RequestBody ReturnRequests.Disposition request) {
+                                        @Valid @RequestBody ReturnRequests.Disposition request,
+                                        @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return resolveItemDispositionUseCase.execute(
-                id, parseDisposition(request.disposition()), request.note());
+                id, parseDisposition(request.disposition()), request.note(),
+                currentUser == null ? null : currentUser.id());
     }
 
     @PostMapping("/{id}/bank-account")

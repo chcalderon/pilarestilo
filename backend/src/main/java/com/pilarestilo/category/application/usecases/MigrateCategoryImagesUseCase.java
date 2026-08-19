@@ -70,6 +70,12 @@ public class MigrateCategoryImagesUseCase {
                 migrated++;
                 log.info("Migrated category {} image: {} → {}", cat.getId(), imageUrl, storedUrl);
 
+            } catch (InterruptedException e) {
+                // Migrating hundreds of images is exactly the loop somebody stops halfway.
+                Thread.currentThread().interrupt();
+                failed++;
+                errors.add(new MigrationError(cat.getId(), imageUrl, "interrupted"));
+                break;
             } catch (Exception e) {
                 failed++;
                 errors.add(new MigrationError(cat.getId(), imageUrl, e.getMessage()));

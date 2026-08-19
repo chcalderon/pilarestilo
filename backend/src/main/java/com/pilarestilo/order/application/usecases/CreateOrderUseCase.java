@@ -6,6 +6,7 @@ import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
@@ -108,12 +109,19 @@ public class CreateOrderUseCase {
                     command.discountCode(), Money.of(subtotalAmount), command.customerId());
         }
 
+        /*
+         * The order id is minted here rather than after saving, so the ledger line written by the
+         * reservation can name the order that caused it. Reserving first and naming later would
+         * leave the movements of a failed order pointing at nothing.
+         */
+        UUID orderId = UUID.randomUUID();
         for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
             inventoryService.reserve(
                     itemCmd.productId(),
                     itemCmd.quantity(),
                     itemCmd.variantColor(),
-                    itemCmd.variantSize()
+                    itemCmd.variantSize(),
+                    StockMovementOrigin.forOrder(orderId)
             );
         }
 

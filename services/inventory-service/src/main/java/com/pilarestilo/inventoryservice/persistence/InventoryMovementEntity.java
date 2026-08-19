@@ -84,8 +84,15 @@ public class InventoryMovementEntity {
      *                 shelf went down by one. Filter by type before summing anything.
      */
     public static InventoryMovementEntity record(UUID productId, String variantColor, String variantSize,
-                                                 String type, int quantity, String reason, Instant at) {
-        return new InventoryMovementEntity(productId, variantColor, variantSize, type, quantity, reason, at);
+                                                 String type, int quantity, String referenceType,
+                                                 UUID referenceId, UUID recordedBy, String reason,
+                                                 Instant at) {
+        InventoryMovementEntity entity =
+                new InventoryMovementEntity(productId, variantColor, variantSize, type, quantity, reason, at);
+        entity.referenceType = referenceType;
+        entity.referenceId = referenceId;
+        entity.recordedBy = recordedBy;
+        return entity;
     }
 
     public UUID getId() {

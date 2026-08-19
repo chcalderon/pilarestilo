@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
@@ -93,7 +94,7 @@ class ProductConcurrentReserveTest {
             executor.submit(() -> {
                 try {
                     startGate.await(); // all threads start at the same instant
-                    inventoryService.reserve(productId, 1, "Rojo", "M");
+                    inventoryService.reserve(productId, 1, "Rojo", "M", StockMovementOrigin.unknown());
                     successes.incrementAndGet();
                 } catch (DomainException ex) {
                     exceptions.add(ex);
@@ -124,7 +125,7 @@ class ProductConcurrentReserveTest {
 
         org.junit.jupiter.api.Assertions.assertThrows(
                 DomainException.class,
-                () -> inventoryService.reserve(productId, 5, "Azul", "XL")
+                () -> inventoryService.reserve(productId, 5, "Azul", "XL", StockMovementOrigin.unknown())
         );
     }
 }

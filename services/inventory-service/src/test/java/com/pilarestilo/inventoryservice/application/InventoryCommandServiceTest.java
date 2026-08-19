@@ -45,7 +45,7 @@ class InventoryCommandServiceTest {
     void reserveRejectsMissingVariantSelectorWhenProductHasVariants() {
         when(productRepository.hasVariants(PRODUCT_ID)).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> service.reserve(PRODUCT_ID, 1, null, null));
+        assertThrows(IllegalArgumentException.class, () -> service.reserve(PRODUCT_ID, 1, null, null, InventoryCommandService.StockOrigin.none()));
 
         verify(productRepository, never()).reserveStock(any(), anyInt(), any());
         verify(productRepository, never()).reserveVariantStock(any(), any(), any(), anyInt());
@@ -56,7 +56,7 @@ class InventoryCommandServiceTest {
         when(productRepository.hasVariants(PRODUCT_ID)).thenReturn(true);
         when(productRepository.reserveVariantStock(PRODUCT_ID, "Base", "UNICO", 1)).thenReturn(1);
 
-        service.reserve(PRODUCT_ID, 1, "Base", "UNICO");
+        service.reserve(PRODUCT_ID, 1, "Base", "UNICO", InventoryCommandService.StockOrigin.none());
 
         verify(productRepository).syncProductStockFromVariants(eq(PRODUCT_ID), any());
         verify(productRepository, never()).reserveStock(any(), anyInt(), any());
@@ -64,7 +64,7 @@ class InventoryCommandServiceTest {
 
     @Test
     void releaseWithVariantSyncsProductStockFromVariants() {
-        service.release(PRODUCT_ID, 1, "Base", "UNICO");
+        service.release(PRODUCT_ID, 1, "Base", "UNICO", InventoryCommandService.StockOrigin.none());
 
         verify(productRepository).releaseVariantStock(PRODUCT_ID, "Base", "UNICO", 1);
         /* No size-stock call: the variant row is the only gate now. */
@@ -82,7 +82,7 @@ class InventoryCommandServiceTest {
         when(productRepository.hasVariants(PRODUCT_ID)).thenReturn(true);
         when(productRepository.reserveVariantStock(PRODUCT_ID, "Negro", "M", 2)).thenReturn(1);
 
-        service.reserve(PRODUCT_ID, 2, "Negro", "M");
+        service.reserve(PRODUCT_ID, 2, "Negro", "M", InventoryCommandService.StockOrigin.none());
 
         ArgumentCaptor<InventoryMovementEntity> line = ArgumentCaptor.forClass(InventoryMovementEntity.class);
         verify(movementRepository).save(line.capture());
@@ -96,7 +96,7 @@ class InventoryCommandServiceTest {
     void recordsAConfirmAsUnitsLeavingTheShelf() {
         when(productRepository.confirmVariantStock(PRODUCT_ID, "Negro", "M", 1)).thenReturn(1);
 
-        service.confirm(PRODUCT_ID, 1, "Negro", "M");
+        service.confirm(PRODUCT_ID, 1, "Negro", "M", InventoryCommandService.StockOrigin.none());
 
         ArgumentCaptor<InventoryMovementEntity> line = ArgumentCaptor.forClass(InventoryMovementEntity.class);
         verify(movementRepository).save(line.capture());
@@ -106,7 +106,7 @@ class InventoryCommandServiceTest {
 
     @Test
     void recordsAReleaseAsUnitsComingBack() {
-        service.release(PRODUCT_ID, 3, "Negro", "M");
+        service.release(PRODUCT_ID, 3, "Negro", "M", InventoryCommandService.StockOrigin.none());
 
         ArgumentCaptor<InventoryMovementEntity> line = ArgumentCaptor.forClass(InventoryMovementEntity.class);
         verify(movementRepository).save(line.capture());
@@ -120,7 +120,7 @@ class InventoryCommandServiceTest {
         when(productRepository.hasVariants(PRODUCT_ID)).thenReturn(true);
         when(productRepository.reserveVariantStock(PRODUCT_ID, "Negro", "M", 99)).thenReturn(0);
 
-        assertThrows(IllegalStateException.class, () -> service.reserve(PRODUCT_ID, 99, "Negro", "M"));
+        assertThrows(IllegalStateException.class, () -> service.reserve(PRODUCT_ID, 99, "Negro", "M", InventoryCommandService.StockOrigin.none()));
 
         verifyNoInteractions(movementRepository);
     }

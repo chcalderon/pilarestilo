@@ -391,6 +391,47 @@ services:
     networks:
       - pe_net
 
+  # ── Code quality ────────────────────────────────────────────────────────────
+  # Its own profile, and deliberately not part of the app stack: it is a tool for looking at the
+  # code, not something the shop runs. `docker compose --profile quality up -d sonarqube`.
+  sonar-db:
+    image: postgres:16-alpine
+    container_name: pe_sonar_db
+    profiles: ["quality"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      # A local folder rather than a named volume: the analysis history and the tokens are worth
+      # keeping across `docker compose down -v`, and worth being able to look at.
+      - ./storage/sonar/db:/var/lib/postgresql/data
+    networks:
+      - pe_net
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: pe_sonarqube
+    profiles: ["quality"]
+    restart: unless-stopped
+    depends_on:
+      - sonar-db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      # Elasticsearch inside the image refuses to bootstrap-check on a Docker Desktop host.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./storage/sonar/data:/opt/sonarqube/data
+      - ./storage/sonar/extensions:/opt/sonarqube/extensions
+      - ./storage/sonar/logs:/opt/sonarqube/logs
+    networks:
+      - pe_net
+
 networks:
   pe_net:
     driver: bridge

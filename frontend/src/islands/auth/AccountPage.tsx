@@ -1629,7 +1629,7 @@ export default function AccountPage({ locale }: Props) {
                               <p><span className="text-pe-charcoal/55">{es ? 'Zona:' : 'Zone:'}</span> {shippingZone}</p>
                             )}
                             {shippingCourier && (
-                              <p><span className="text-pe-charcoal/55">{es ? 'Courier:' : 'Courier:'}</span> {shippingCourier}</p>
+                              <p><span className="text-pe-charcoal/55">{'Courier:'}</span> {shippingCourier}</p>
                             )}
                             {shippingMode && (
                               <p><span className="text-pe-charcoal/55">{es ? 'Modalidad:' : 'Mode:'}</span> {shippingMode}</p>
@@ -1916,7 +1916,7 @@ export default function AccountPage({ locale }: Props) {
                           })}
                         </span>
                         <p className="font-display text-[1.05rem] text-pe-black">
-                          {es ? 'Total: ' : 'Total: '}
+                          {'Total: '}
                           {formatMoney(order.totalAmount.amount, order.totalAmount.currency)}
                         </p>
                       </div>

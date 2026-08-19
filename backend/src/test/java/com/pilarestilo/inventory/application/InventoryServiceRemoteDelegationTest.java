@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
@@ -66,7 +67,7 @@ class InventoryServiceRemoteDelegationTest {
     void reserveGoesToTheService() {
         expect("/api/inventory/commands/reserve").andRespond(withSuccess());
 
-        service.reserve(productId, 2, "Negro", "M");
+        service.reserve(productId, 2, "Negro", "M", StockMovementOrigin.unknown());
 
         server.verify();
         // The monolith must not also write: two writers of one table is how the stock bugs started.
@@ -79,7 +80,7 @@ class InventoryServiceRemoteDelegationTest {
     void releaseGoesToTheService() {
         expect("/api/inventory/commands/release").andRespond(withSuccess());
 
-        service.release(productId, 1, "Negro", "M");
+        service.release(productId, 1, "Negro", "M", StockMovementOrigin.unknown());
 
         server.verify();
         verifyNoInteractions(productRepository);
@@ -90,7 +91,7 @@ class InventoryServiceRemoteDelegationTest {
     void confirmGoesToTheService() {
         expect("/api/inventory/commands/confirm").andRespond(withSuccess());
 
-        service.confirm(productId, 1, "Negro", "M");
+        service.confirm(productId, 1, "Negro", "M", StockMovementOrigin.unknown());
 
         server.verify();
         verifyNoInteractions(productRepository);
@@ -101,7 +102,7 @@ class InventoryServiceRemoteDelegationTest {
     void translatesNotFound() {
         expect("/api/inventory/commands/reserve").andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M"))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("Product not found");
     }
@@ -111,7 +112,7 @@ class InventoryServiceRemoteDelegationTest {
     void refusalBecomesAnError() {
         expect("/api/inventory/commands/reserve").andRespond(withStatus(HttpStatus.CONFLICT));
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M"))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("rejected reserve");
     }
@@ -122,7 +123,7 @@ class InventoryServiceRemoteDelegationTest {
         expect("/api/inventory/commands/reserve")
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M"))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
                 .isInstanceOf(DomainException.class);
     }
 
@@ -135,7 +136,7 @@ class InventoryServiceRemoteDelegationTest {
                 .andExpect(jsonPath("$.variantSize").doesNotExist())
                 .andRespond(withSuccess());
 
-        service.reserve(productId, 3);
+        service.reserve(productId, 3, StockMovementOrigin.unknown());
 
         server.verify();
     }

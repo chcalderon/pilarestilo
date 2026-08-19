@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.enums.InventoryMovementType;
 import com.pilarestilo.inventory.domain.model.InventoryMovement;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
@@ -70,7 +71,7 @@ class InventoryMovementsRecordedOnReserveTest {
         when(productRepository.atomicReserveVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        inventoryService.reserve(productId, 3, "Rojo", "M");
+        inventoryService.reserve(productId, 3, "Rojo", "M", StockMovementOrigin.unknown());
 
         ArgumentCaptor<InventoryMovement> captor = ArgumentCaptor.forClass(InventoryMovement.class);
         verify(inventoryMovementRepository).save(captor.capture());
@@ -98,7 +99,7 @@ class InventoryMovementsRecordedOnReserveTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         when(productRepository.save(any())).thenReturn(product);
 
-        inventoryService.reserve(productId, 2);
+        inventoryService.reserve(productId, 2, StockMovementOrigin.unknown());
 
         ArgumentCaptor<InventoryMovement> captor = ArgumentCaptor.forClass(InventoryMovement.class);
         verify(inventoryMovementRepository).save(captor.capture());

@@ -375,6 +375,16 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
   const previousSchemaRef = useRef<VariantSchema>(variantSchema);
+  /*
+   * The schema the form is currently rendering, readable without depending on it.
+   *
+   * <p>The effect that seeds the form used to list variantSchema among its dependencies, so
+   * choosing a variant type re-ran it: on a new product it restored EMPTY_FORM, wiping everything
+   * typed and putting the selector back to "inherit"; on an existing one it restored the saved
+   * type. Either way the choice could not stick, because making it undid it.
+   */
+  const currentSchemaRef = useRef<VariantSchema>(variantSchema);
+  currentSchemaRef.current = variantSchema;
   const catInitKeyRef = useRef('');
 
   useEffect(() => {
@@ -478,10 +488,10 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         /* Blank keeps it inherited, which is what a product saved before V69 has. */
         variantType: (product.variantType ?? '') as CategoryType | '',
       };
-      const nextRows = toVariantRows(reconciledRows, variantSchema);
+      const nextRows = toVariantRows(reconciledRows, currentSchemaRef.current);
       setForm(nextForm);
       setVariantRows(nextRows);
-      previousSchemaRef.current = variantSchema;
+      previousSchemaRef.current = currentSchemaRef.current;
       /*
        * The warning that the rows had been rewritten to match products.stock. Nothing rewrites
        * them any more — the aggregate is recomputed from the variants on every movement — so
@@ -489,17 +499,17 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
        */
       setStockSyncHint('');
       // Categories are initialized by the separate categories useEffect.
-      // Do not reset them here — doing so would undo interactive toggles when variantSchema changes.
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], variantSchema));
+      // Do not reset them here — doing so would undo interactive toggles when the schema changes.
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], currentSchemaRef.current));
     } else {
       const nextForm = { ...EMPTY_FORM };
-      const nextRows = [createVariantRow(variantSchema, EMPTY_FORM.stock)];
+      const nextRows = [createVariantRow(currentSchemaRef.current, EMPTY_FORM.stock)];
       setForm(nextForm);
       setVariantRows(nextRows);
-      previousSchemaRef.current = variantSchema;
+      previousSchemaRef.current = currentSchemaRef.current;
       setStockSyncHint('');
       // Categories for new products are cleared by the dedicated product-change effect below.
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], variantSchema));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], currentSchemaRef.current));
     }
     setErrors({});
     setApiError('');
@@ -513,7 +523,7 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     setHeroAssignFeedback('');
     setHeroAssigningSlot(null);
     setUnsavedConfirmOpen(false);
-  }, [product, variantSchema, primaryAttribute.label, secondaryAttribute.label]);
+  }, [product]);
 
   useEffect(() => {
     // Guard: only reinitialize when the product or the categories list changes,
@@ -679,6 +689,11 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
     return Object.keys(e).length === 0;
   }
 
+  function compareIds(left: string, right: string): number {
+    if (left === right) return 0;
+    return left < right ? -1 : 1;
+  }
+
   function makeSnapshot(nextForm: typeof form, nextRows: VariantRow[], nextCatIds: string[], schema: VariantSchema): string {
     const variants = normalizeVariantRows(nextRows, schema)
       .map((variant) => ({
@@ -687,7 +702,9 @@ export default function ProductForm({ product, onSave, onCancel, token }: Props)
         stock: Number(variant.stock),
       }))
       .sort((a, b) => `${a.color}::${a.size}`.localeCompare(`${b.color}::${b.size}`));
-    const cats = [...nextCatIds].sort();
+    // Explicitly ordered, and deliberately not by locale: this is a key for comparing snapshots,
+    // so it has to be the same string on every machine.
+    const cats = [...nextCatIds].sort(compareIds);
     return JSON.stringify({
       name: nextForm.name.trim(),
       description: nextForm.description.trim(),

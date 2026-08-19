@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
@@ -69,7 +70,7 @@ class InventoryServiceReleaseVariantTest {
         when(productRepository.atomicReleaseVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        assertDoesNotThrow(() -> inventoryService.release(productId, 2, "Rojo", "M"));
+        assertDoesNotThrow(() -> inventoryService.release(productId, 2, "Rojo", "M", StockMovementOrigin.unknown()));
 
         verify(productRepository).atomicReleaseVariantStock(productId, "Rojo", "M", 2);
         verify(productRepository, never()).findById(any());
@@ -81,7 +82,7 @@ class InventoryServiceReleaseVariantTest {
         when(productRepository.atomicReleaseVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
 
-        assertThrows(DomainException.class, () -> inventoryService.release(productId, 2, "Verde", "XL"));
+        assertThrows(DomainException.class, () -> inventoryService.release(productId, 2, "Verde", "XL", StockMovementOrigin.unknown()));
     }
 
     @Test
@@ -90,7 +91,7 @@ class InventoryServiceReleaseVariantTest {
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         when(productRepository.save(any())).thenReturn(product);
 
-        assertDoesNotThrow(() -> inventoryService.release(productId, 1));
+        assertDoesNotThrow(() -> inventoryService.release(productId, 1, StockMovementOrigin.unknown()));
 
         verify(productRepository).findById(productId);
         verify(productRepository, never()).atomicReleaseVariantStock(any(), any(), any(), anyInt());

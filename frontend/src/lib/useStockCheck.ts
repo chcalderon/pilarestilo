@@ -130,7 +130,12 @@ export function useStockCheck(items: CartItem[]) {
    * <p>Line ids rather than the items themselves, so adjusting a quantity does not fire a burst
    * of requests and make the badges flicker while the customer is still deciding.
    */
-  const lineKey = items.map((item) => item.id).sort().join('|');
+  const lineKey = items
+    .map((item) => item.id)
+    // Ordered so the same cart always produces the same key, and not by locale: a dependency that
+    // changed with the browser's language would refire the check for no reason.
+    .sort((left, right) => (left === right ? 0 : left < right ? -1 : 1))
+    .join('|');
   useEffect(() => {
     void check();
     // eslint-disable-next-line react-hooks/exhaustive-deps

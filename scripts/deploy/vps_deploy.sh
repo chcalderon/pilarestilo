@@ -33,7 +33,10 @@ if [[ -n "${DEPLOY_PROFILES:-}" ]]; then
   IFS=',' read -r -a profile_items <<< "${DEPLOY_PROFILES}"
   for profile in "${profile_items[@]}"; do
     item="$(printf '%s' "${profile}" | tr -d '[:space:]')"
-    if [[ -z "${item}" || "${item}" == "ai" ]]; then
+    # "quality" runs SonarQube, which is a tool for reading the code on a developer's machine,
+    # not something the shop serves. Dropped here as well as being off by default, so a profile
+    # list copied from a local .env cannot start a 2 GB Java process on the VPS.
+    if [[ -z "${item}" || "${item}" == "ai" || "${item}" == "quality" ]]; then
       continue
     fi
     if [[ -z "${sanitized_profiles}" ]]; then

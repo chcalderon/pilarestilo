@@ -1,5 +1,6 @@
 package com.pilarestilo.order.application.usecases;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
@@ -27,6 +28,8 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -103,7 +106,8 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
 
         useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
 
-        verify(inventoryService).release(PRODUCT_ID, 2, "Rojo", "M");
+        verify(inventoryService).release(eq(PRODUCT_ID), eq(2), eq("Rojo"), eq("M"),
+                argThat(origin -> ORDER_ID.equals(origin.referenceId())));
     }
 
     @Test
@@ -113,8 +117,9 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
 
         useCase.execute(ORDER_ID, OrderStatus.PAID);
 
-        verify(inventoryService).confirm(PRODUCT_ID, 2, "Rojo", "M");
-        verify(inventoryService, never()).release(any(), anyInt(), any(), any());
+        verify(inventoryService).confirm(eq(PRODUCT_ID), eq(2), eq("Rojo"), eq("M"),
+                argThat(origin -> ORDER_ID.equals(origin.referenceId())));
+        verify(inventoryService, never()).release(any(), anyInt(), any(), any(), any());
     }
 
     /**
@@ -132,8 +137,9 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
 
         useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
 
-        verify(inventoryService).returnToStock(PRODUCT_ID, 2, "Rojo", "M");
-        verify(inventoryService, never()).release(any(), anyInt(), any(), any());
+        verify(inventoryService).returnToStock(eq(PRODUCT_ID), eq(2), eq("Rojo"), eq("M"),
+                argThat(origin -> ORDER_ID.equals(origin.referenceId())));
+        verify(inventoryService, never()).release(any(), anyInt(), any(), any(), any());
         // The discount is still released here; only PENDING redemptions respond, so a settled
         // one stays settled. That guard lives in the adapter, not in this branch.
         verify(discountRedemptionService).release(ORDER_ID);
@@ -146,7 +152,7 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
 
         useCase.execute(ORDER_ID, OrderStatus.CANCELLED);
 
-        verify(inventoryService, never()).returnToStock(any(), anyInt(), any(), any());
+        verify(inventoryService, never()).returnToStock(any(), anyInt(), any(), any(), any());
     }
 
     /** The auto-cancel job and the admin cancel button both land here. */

@@ -1,0 +1,4 @@
+# SonarQube's database, indices and logs live here so the analysis history survives a
+# `docker compose down -v` and can be looked at. None of it belongs in the repository.
+*
+!.gitignore

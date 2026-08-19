@@ -3,6 +3,7 @@ package com.pilarestilo.inventory.application;
 import com.pilarestilo.inventory.domain.enums.InventoryMovementType;
 import com.pilarestilo.inventory.domain.events.StockUpdated;
 import com.pilarestilo.inventory.domain.model.InventoryMovement;
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
@@ -43,39 +44,41 @@ public class InventoryService {
     }
 
     @Transactional
-    public void reserve(UUID productId, int qty) {
+    public void reserve(UUID productId, int qty, StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, null, null, "reserve");
+            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, null, null, origin, "reserve");
             return;
         }
-        reserveLocal(productId, qty, null, null);
+        reserveLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
-    public void reserve(UUID productId, int qty, String variantColor, String variantSize) {
+    public void reserve(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, variantColor, variantSize, "reserve");
+            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, variantColor, variantSize, origin, "reserve");
             return;
         }
-        reserveLocal(productId, qty, variantColor, variantSize);
+        reserveLocal(productId, qty, variantColor, variantSize, origin);
     }
 
     @Transactional
-    public void release(UUID productId, int qty) {
+    public void release(UUID productId, int qty, StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, null, null, "release");
+            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, null, null, origin, "release");
             return;
         }
-        releaseLocal(productId, qty, null, null);
+        releaseLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
-    public void release(UUID productId, int qty, String variantColor, String variantSize) {
+    public void release(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, variantColor, variantSize, "release");
+            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, variantColor, variantSize, origin, "release");
             return;
         }
-        releaseLocal(productId, qty, variantColor, variantSize);
+        releaseLocal(productId, qty, variantColor, variantSize, origin);
     }
 
     /**
@@ -84,21 +87,22 @@ public class InventoryService {
      * For non-variant products: decrements the legacy aggregate stock field.
      */
     @Transactional
-    public void confirm(UUID productId, int qty) {
+    public void confirm(UUID productId, int qty, StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, null, null, "confirm");
+            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, null, null, origin, "confirm");
             return;
         }
-        confirmLocal(productId, qty, null, null);
+        confirmLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
-    public void confirm(UUID productId, int qty, String variantColor, String variantSize) {
+    public void confirm(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, variantColor, variantSize, "confirm");
+            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, variantColor, variantSize, origin, "confirm");
             return;
         }
-        confirmLocal(productId, qty, variantColor, variantSize);
+        confirmLocal(productId, qty, variantColor, variantSize, origin);
     }
 
     /**
@@ -112,12 +116,13 @@ public class InventoryService {
      * <p>Cancelling a paid order used to do nothing at all, so the units were simply lost.
      */
     @Transactional
-    public void returnToStock(UUID productId, int qty, String variantColor, String variantSize) {
+    public void returnToStock(UUID productId, int qty, String variantColor, String variantSize,
+                              StockMovementOrigin origin) {
         if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/return", productId, qty, variantColor, variantSize, "return");
+            invokeRemoteCommand("/api/inventory/commands/return", productId, qty, variantColor, variantSize, origin, "return");
             return;
         }
-        returnToStockLocal(productId, qty, variantColor, variantSize);
+        returnToStockLocal(productId, qty, variantColor, variantSize, origin);
     }
 
     /**
@@ -127,13 +132,14 @@ public class InventoryService {
      * For non-variant products: decrements the legacy aggregate stock field.
      */
     @Transactional
-    public void posSale(UUID productId, int qty, String variantColor, String variantSize) {
+    public void posSale(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicConfirmVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
                 throw new DomainException("Stock insuficiente para venta POS de variante: " + variantColor + " / " + variantSize);
             }
-            recordMovement(productId, variantColor, variantSize, InventoryMovementType.POS_SALE, -qty);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.POS_SALE, -qty, origin);
             return;
         }
         Product product = productRepository.findById(productId)
@@ -141,17 +147,18 @@ public class InventoryService {
         product.decrementStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
-        recordMovement(productId, null, null, InventoryMovementType.POS_SALE, -qty);
+        recordMovement(productId, null, null, InventoryMovementType.POS_SALE, -qty, origin);
     }
 
-    private void reserveLocal(UUID productId, int qty, String variantColor, String variantSize) {
+    private void reserveLocal(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicReserveVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
                 throw new DomainException("Stock insuficiente para variante: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
-            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RESERVE, qty);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RESERVE, qty, origin);
             return;
         }
         // Legacy path: aggregate stock for products without variants
@@ -160,17 +167,18 @@ public class InventoryService {
         product.decrementStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
-        recordMovement(productId, null, null, InventoryMovementType.RESERVE, qty);
+        recordMovement(productId, null, null, InventoryMovementType.RESERVE, qty, origin);
     }
 
-    private void releaseLocal(UUID productId, int qty, String variantColor, String variantSize) {
+    private void releaseLocal(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicReleaseVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
                 throw new DomainException("Variante no encontrada para release: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
-            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RELEASE, -qty);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RELEASE, -qty, origin);
             return;
         }
         Product product = productRepository.findById(productId)
@@ -178,17 +186,18 @@ public class InventoryService {
         product.releaseStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
-        recordMovement(productId, null, null, InventoryMovementType.RELEASE, -qty);
+        recordMovement(productId, null, null, InventoryMovementType.RELEASE, -qty, origin);
     }
 
-    private void confirmLocal(UUID productId, int qty, String variantColor, String variantSize) {
+    private void confirmLocal(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicConfirmVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
                 throw new DomainException("Stock reservado insuficiente para confirmar variante: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
-            recordMovement(productId, variantColor, variantSize, InventoryMovementType.CONFIRM, -qty);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.CONFIRM, -qty, origin);
             return;
         }
         // Non-variant products: stock was already decremented at reserve time (legacy aggregate model).
@@ -196,17 +205,18 @@ public class InventoryService {
         // migrated to the on_hand/reserved model. Guard ensures the product exists before recording.
         productRepository.findById(productId)
                 .orElseThrow(() -> new DomainException("Product not found: " + productId));
-        recordMovement(productId, null, null, InventoryMovementType.CONFIRM, -qty);
+        recordMovement(productId, null, null, InventoryMovementType.CONFIRM, -qty, origin);
     }
 
-    private void returnToStockLocal(UUID productId, int qty, String variantColor, String variantSize) {
+    private void returnToStockLocal(UUID productId, int qty, String variantColor, String variantSize,
+                        StockMovementOrigin origin) {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicReturnVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
                 throw new DomainException("Variante no encontrada para devolucion: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
-            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RETURN, qty);
+            recordMovement(productId, variantColor, variantSize, InventoryMovementType.RETURN, qty, origin);
             return;
         }
         // Legacy aggregate: reserve was the only decrement and confirm is a no-op there, so putting
@@ -217,14 +227,17 @@ public class InventoryService {
         product.releaseStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
-        recordMovement(productId, null, null, InventoryMovementType.RETURN, qty);
+        recordMovement(productId, null, null, InventoryMovementType.RETURN, qty, origin);
     }
 
+    /** One line of the ledger, and what caused it. */
     private void recordMovement(UUID productId, String variantColor, String variantSize,
-                                 InventoryMovementType type, int quantity) {
+                                 InventoryMovementType type, int quantity,
+                                 StockMovementOrigin origin) {
+        StockMovementOrigin cause = origin == null ? StockMovementOrigin.unknown() : origin;
         inventoryMovementRepository.save(InventoryMovement.record(
                 productId, variantColor, variantSize, type, quantity,
-                null, null, null, null
+                cause.referenceType(), cause.referenceId(), cause.recordedBy(), null
         ));
     }
 
@@ -233,12 +246,15 @@ public class InventoryService {
                                      int qty,
                                      String variantColor,
                                      String variantSize,
+                                     StockMovementOrigin origin,
                                      String operation) {
+        StockMovementOrigin cause = origin == null ? StockMovementOrigin.unknown() : origin;
         try {
             remoteInventoryClient.post()
                     .uri(path)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new InventoryCommandRequest(productId, qty, variantColor, variantSize))
+                    .body(new InventoryCommandRequest(productId, qty, variantColor, variantSize,
+                            cause.referenceType(), cause.referenceId(), cause.recordedBy()))
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientResponseException ex) {
@@ -253,11 +269,19 @@ public class InventoryService {
         }
     }
 
+    /**
+     * Mirrors {@code InventoryCommandRequest} in inventory-service. The cause travels with the
+     * command: when the write is delegated, that service writes the ledger line, and a payload
+     * without an origin produces exactly the blank row this change exists to end.
+     */
     private record InventoryCommandRequest(
             UUID productId,
             int qty,
             String variantColor,
-            String variantSize
+            String variantSize,
+            String referenceType,
+            UUID referenceId,
+            UUID recordedBy
     ) {
     }
 }

@@ -1,5 +1,6 @@
 package com.pilarestilo.order.application.usecases;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.customeraddress.application.CustomerAddressBookService;
 import com.pilarestilo.customeraddress.domain.model.CustomerAddress;
 import com.pilarestilo.discount.domain.enums.DiscountType;
@@ -163,7 +164,9 @@ class CreateOrderUseCaseTest {
 
         assertThat(result).isNotNull();
 
-        verify(inventoryService).reserve(PRODUCT_ID, 1, "Rojo", "M");
+        verify(inventoryService).reserve(eq(PRODUCT_ID), eq(1), eq("Rojo"), eq("M"),
+                argThat(origin -> StockMovementOrigin.ORDER.equals(origin.referenceType())
+                        && origin.referenceId() != null));
         verify(orderRepository).save(any(Order.class));
     }
 

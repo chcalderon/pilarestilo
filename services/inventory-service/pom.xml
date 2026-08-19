@@ -18,6 +18,9 @@
   <description>Pilar Estilo - Extracted Inventory Read Service</description>
 
   <properties>
+    <!-- Coverage read by SonarQube. Written by jacoco at verify; without this Sonar reports 0%
+         and every quality gate on new code passes for the wrong reason. -->
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <java.version>25</java.version>
     <jacoco.version>0.8.14</jacoco.version>
   </properties>

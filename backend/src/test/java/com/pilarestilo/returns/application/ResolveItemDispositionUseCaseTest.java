@@ -1,5 +1,6 @@
 package com.pilarestilo.returns.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.model.Order;
@@ -30,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -41,6 +44,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ResolveItemDispositionUseCaseTest {
+
+    private static final UUID RESOLVER = UUID.randomUUID();
 
     private static final UUID PRODUCT_ID = UUID.randomUUID();
 
@@ -72,18 +77,22 @@ class ResolveItemDispositionUseCaseTest {
 
     @Test
     void a_reconditioned_garment_goes_back_on_the_shelf() {
-        useCase.execute(request.getId(), ItemDisposition.RESTOCKED, null);
+        useCase.execute(request.getId(), ItemDisposition.RESTOCKED, null, RESOLVER);
 
         // returnToStock, never release: the units were confirmed out of both columns at payment,
         // so releasing would decrement a reservation that no longer exists.
-        verify(inventoryService).returnToStock(PRODUCT_ID, 2, "Rojo", "M");
-        verify(inventoryService, never()).release(any(), anyInt(), any(), any());
+        // And the ledger line says which return moved them, and who judged the garment sellable.
+        verify(inventoryService).returnToStock(eq(PRODUCT_ID), eq(2), eq("Rojo"), eq("M"),
+                argThat(origin -> StockMovementOrigin.RETURN_REQUEST.equals(origin.referenceType())
+                        && request.getId().equals(origin.referenceId())
+                        && RESOLVER.equals(origin.recordedBy())));
+        verify(inventoryService, never()).release(any(), anyInt(), any(), any(), any());
         assertEquals(ItemDisposition.RESTOCKED, request.getItemDisposition());
     }
 
     @Test
     void a_discarded_garment_moves_no_stock_and_says_why() {
-        useCase.execute(request.getId(), ItemDisposition.DISCARDED, "Mancha irrecuperable");
+        useCase.execute(request.getId(), ItemDisposition.DISCARDED, "Mancha irrecuperable", RESOLVER);
 
         verifyNoInteractions(inventoryService);
         assertEquals(ItemDisposition.DISCARDED, request.getItemDisposition());
@@ -93,7 +102,7 @@ class ResolveItemDispositionUseCaseTest {
     @Test
     void discarding_without_a_reason_moves_nothing_at_all() {
         assertThrows(DomainException.class,
-                () -> useCase.execute(request.getId(), ItemDisposition.DISCARDED, "  "));
+                () -> useCase.execute(request.getId(), ItemDisposition.DISCARDED, "  ", RESOLVER));
 
         verifyNoInteractions(inventoryService);
         verify(returnRequestRepository, never()).save(any());
@@ -107,7 +116,7 @@ class ResolveItemDispositionUseCaseTest {
         when(returnRequestRepository.findById(notReceived.getId())).thenReturn(Optional.of(notReceived));
 
         assertThrows(DomainException.class,
-                () -> useCase.execute(notReceived.getId(), ItemDisposition.RESTOCKED, null));
+                () -> useCase.execute(notReceived.getId(), ItemDisposition.RESTOCKED, null, RESOLVER));
 
         verifyNoInteractions(inventoryService);
     }
@@ -118,7 +127,7 @@ class ResolveItemDispositionUseCaseTest {
         when(returnRequestRepository.findById(unknown)).thenReturn(Optional.empty());
 
         assertThrows(DomainException.class,
-                () -> useCase.execute(unknown, ItemDisposition.RESTOCKED, null));
+                () -> useCase.execute(unknown, ItemDisposition.RESTOCKED, null, RESOLVER));
     }
 
     private Order orderWithOneItem() {

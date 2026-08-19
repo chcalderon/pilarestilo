@@ -122,22 +122,26 @@ public class GoogleLoginUseCase {
     }
 
     private String downloadAndSaveAvatar(String pictureUrl, String userId) {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
+        // Closed on the way out: HttpClient holds a selector thread and a connection pool, and one
+        // was leaked per Google sign-in.
+        try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(pictureUrl)).GET().build();
             HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
             if (response.statusCode() != 200) return null;
 
             String url = mediaStorageService.storeRaw(response.body(), "users", userId + ".jpg", "image/jpeg");
             return url + "?v=" + System.currentTimeMillis();
+        } catch (InterruptedException e) {
+            // The flag is the only way the caller upstream learns the thread was asked to stop.
+            Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             return null;
         }
     }
 
     private JsonNode verifyIdToken(String idToken) {
-        try {
-            HttpClient client = HttpClient.newHttpClient();
+        try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(TOKENINFO_URL + idToken))
                     .GET()
@@ -149,6 +153,9 @@ public class GoogleLoginUseCase {
             return objectMapper.readTree(response.body());
         } catch (DomainException e) {
             throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DomainException("Failed to verify Google token");
         } catch (Exception e) {
             throw new DomainException("Failed to verify Google token");
         }

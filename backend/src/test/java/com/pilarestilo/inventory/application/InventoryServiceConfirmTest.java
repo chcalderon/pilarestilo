@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.inventory.domain.ports.InventoryMovementRepository;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
@@ -71,7 +72,7 @@ class InventoryServiceConfirmTest {
         when(productRepository.atomicConfirmVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        assertDoesNotThrow(() -> inventoryService.confirm(productId, 3, "Rojo", "M"));
+        assertDoesNotThrow(() -> inventoryService.confirm(productId, 3, "Rojo", "M", StockMovementOrigin.unknown()));
 
         verify(productRepository).atomicConfirmVariantStock(productId, "Rojo", "M", 3);
         verify(productRepository, never()).findById(any());
@@ -84,7 +85,7 @@ class InventoryServiceConfirmTest {
                 .thenReturn(0);
 
         assertThrows(DomainException.class, () ->
-                inventoryService.confirm(productId, 3, "Rojo", "M")
+                inventoryService.confirm(productId, 3, "Rojo", "M", StockMovementOrigin.unknown())
         );
     }
 
@@ -94,7 +95,7 @@ class InventoryServiceConfirmTest {
         when(productRepository.atomicConfirmVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        inventoryService.confirm(productId, 2, "Azul", "L");
+        inventoryService.confirm(productId, 2, "Azul", "L", StockMovementOrigin.unknown());
 
         verify(productRepository, never()).atomicReserveVariantStock(any(), any(), any(), anyInt());
         verify(productRepository, never()).atomicReleaseVariantStock(any(), any(), any(), anyInt());
@@ -107,7 +108,7 @@ class InventoryServiceConfirmTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
 
-        assertDoesNotThrow(() -> inventoryService.confirm(productId, 1));
+        assertDoesNotThrow(() -> inventoryService.confirm(productId, 1, StockMovementOrigin.unknown()));
 
         // Existence guard runs but no stock mutation occurs — confirm is a no-op for legacy products.
         verify(productRepository).findById(productId);
@@ -122,7 +123,7 @@ class InventoryServiceConfirmTest {
         when(productRepository.atomicConfirmVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(1);
 
-        assertDoesNotThrow(() -> inventoryService.posSale(productId, 2, "Rojo", "M"));
+        assertDoesNotThrow(() -> inventoryService.posSale(productId, 2, "Rojo", "M", StockMovementOrigin.unknown()));
 
         verify(productRepository).atomicConfirmVariantStock(productId, "Rojo", "M", 2);
     }
@@ -134,7 +135,7 @@ class InventoryServiceConfirmTest {
                 .thenReturn(0);
 
         assertThrows(DomainException.class, () ->
-                inventoryService.posSale(productId, 1, "Rojo", "M")
+                inventoryService.posSale(productId, 1, "Rojo", "M", StockMovementOrigin.unknown())
         );
     }
 }

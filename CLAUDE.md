@@ -59,6 +59,17 @@ cd infra && docker compose --env-file .env up -d --build
 
 Seed admin credentials: `admin@pilarestilo.com` / `admin2026`
 
+### SonarQube, local only
+
+```bash
+cd infra && docker compose --env-file .env --profile quality up -d sonarqube   # http://localhost:9000
+cd backend && mvn -DskipTests sonar:sonar -Dsonar.host.url=http://localhost:9000 -Dsonar.token=<token>   -Dsonar.projectKey=pilarestilo-backend
+```
+
+Never deployed: the `quality` profile is off by default **and** `scripts/deploy/vps_deploy.sh`
+strips it from `DEPLOY_PROFILES`, so a profile list copied from a local `.env` cannot start a 2 GB
+Java process on the VPS.
+
 ---
 
 ## Architecture

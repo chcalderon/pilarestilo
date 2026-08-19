@@ -1,6 +1,7 @@
 package com.pilarestilo.returns.application.usecases;
 
 import com.pilarestilo.inventory.application.InventoryService;
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
@@ -41,8 +42,14 @@ public class ResolveItemDispositionUseCase {
         this.inventoryService = inventoryService;
     }
 
+    /**
+     * @param resolvedBy who judged the garment fit to sell again, recorded on the ledger line. A
+     *                   unit going back on the shelf is somebody's call, and a shelf count that
+     *                   disagrees later has to be able to name them.
+     */
     @Transactional
-    public ReturnRequestDto execute(UUID returnId, ItemDisposition disposition, String note) {
+    public ReturnRequestDto execute(UUID returnId, ItemDisposition disposition, String note,
+                                    UUID resolvedBy) {
         ReturnRequest request = returnRequestRepository.findById(returnId)
                 .orElseThrow(() -> new DomainException("Return not found: " + returnId));
 
@@ -55,7 +62,8 @@ public class ResolveItemDispositionUseCase {
                 // returnToStock, not release: by now the units were confirmed out of both on-hand
                 // and reserved, so only on-hand goes back up.
                 inventoryService.returnToStock(item.getProductId(), item.getQuantity(),
-                        item.getVariantColor(), item.getVariantSize());
+                        item.getVariantColor(), item.getVariantSize(),
+                        StockMovementOrigin.forReturn(request.getId(), resolvedBy));
             }
         }
 

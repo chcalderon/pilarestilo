@@ -18,6 +18,9 @@
   <description>Pilar Estilo - Luxury Boutique Backend</description>
 
   <properties>
+    <!-- Coverage read by SonarQube. Written by jacoco at verify; without this Sonar reports 0%
+         and every quality gate on new code passes for the wrong reason. -->
+    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <java.version>25</java.version>
     <!-- testcontainers.version intentionally not set: it would shadow the Boot 4 BOM property
          and pin Testcontainers back to 1.x. -->
@@ -279,8 +282,8 @@
                   <element>BUNDLE</element>
                   <limits>
                     <!--
-                      Measured at verify, where unit and integration coverage are merged: 59% of
-                      lines and 38% of branches. Set just under that, so a change that removes tests
+                      Measured at verify, where unit and integration coverage are merged: 61% of
+                      lines and 41% of branches. Set just under that, so a change that removes tests
                       or adds a large untested class fails the build instead of drifting past.
                       It was 0.22, which guarded nothing — most of the suite could have been deleted
                       without the build noticing. Raise these as coverage climbs; never lower them
@@ -289,12 +292,12 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.56</minimum>
+                      <minimum>0.60</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.36</minimum>
+                      <minimum>0.40</minimum>
                     </limit>
                   </limits>
                 </rule>

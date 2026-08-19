@@ -76,7 +76,13 @@ public class OrderCommandService {
         Instant now = Instant.now();
 
         List<OrderLineSnapshot> lines = loadOrderLines(request.items());
-        reserveStock(lines);
+        /*
+         * Minted before the reservation rather than after, so the ledger line can name the order
+         * that caused it. Reserving first and naming later leaves the movements of an order that
+         * never lands pointing at nothing.
+         */
+        UUID orderId = UUID.randomUUID();
+        reserveStock(lines, orderId);
 
         String currency = resolveCurrency(lines);
         BigDecimal subtotal = calculateSubtotal(lines);
@@ -85,7 +91,6 @@ public class OrderCommandService {
         TaxBreakdown tax = TaxBreakdown.fromGross(total, request.taxRate());
 
         OrderEntity order = new OrderEntity();
-        UUID orderId = UUID.randomUUID();
         order.setId(orderId);
         // public_reference is NOT NULL and shared with the monolith, which mints it in
         // Order.create. Same derivation from the id, so both services agree.
@@ -213,13 +218,14 @@ public class OrderCommandService {
         return lines;
     }
 
-    private void reserveStock(List<OrderLineSnapshot> lines) {
+    private void reserveStock(List<OrderLineSnapshot> lines, UUID orderId) {
         for (OrderLineSnapshot line : lines) {
             inventoryCommandClient.reserve(
                     line.product().getId(),
                     line.quantity(),
                     line.variantColor(),
-                    line.variantSize()
+                    line.variantSize(),
+                    orderId
             );
         }
     }

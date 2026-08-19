@@ -2,6 +2,7 @@ package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
 import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
@@ -130,7 +131,8 @@ public class UpdateOrderStatusUseCase {
                 if (stockWasStillReserved(previousStatus)) {
                     for (ReservedLine line : lines) {
                         inventoryService.confirm(line.productId(), line.quantity(),
-                                line.variantColor(), line.variantSize());
+                                line.variantColor(), line.variantSize(),
+                                StockMovementOrigin.forOrder(orderId));
                     }
                 }
             }
@@ -147,10 +149,12 @@ public class UpdateOrderStatusUseCase {
                      */
                     if (stockWasStillReserved(previousStatus)) {
                         inventoryService.release(line.productId(), line.quantity(),
-                                line.variantColor(), line.variantSize());
+                                line.variantColor(), line.variantSize(),
+                                StockMovementOrigin.forOrder(orderId));
                     } else {
                         inventoryService.returnToStock(line.productId(), line.quantity(),
-                                line.variantColor(), line.variantSize());
+                                line.variantColor(), line.variantSize(),
+                                StockMovementOrigin.forOrder(orderId));
                     }
                 }
             }
