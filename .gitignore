@@ -45,3 +45,7 @@ frontend/.cache/
 # exactly why they live outside the public media root; they must never reach the repository either.
 infra/storage/documents/
 infra/storage/media/
+
+# Playwright artifacts land wherever the runner was started from, not only under frontend/.
+test-results/
+playwright-report/
