@@ -119,7 +119,8 @@ class ResolveDeletionRequestUseCaseTest {
 
     @Test
     void refusing_without_a_reason_is_not_an_answer() {
-        assertThrows(DomainException.class, () -> useCase.refuse(request.getId(), "  ", actor));
+        UUID id = request.getId();
+        assertThrows(DomainException.class, () -> useCase.refuse(id, "  ", actor));
         verify(userRepository, never()).save(any());
     }
 
@@ -136,8 +137,9 @@ class ResolveDeletionRequestUseCaseTest {
     /** Resolving twice would let a refusal quietly become an anonymisation, or the reverse. */
     @Test
     void a_resolved_request_cannot_be_resolved_again() {
-        useCase.anonymise(request.getId(), actor);
+        UUID id = request.getId();
+        useCase.anonymise(id, actor);
 
-        assertThrows(DomainException.class, () -> useCase.refuse(request.getId(), "tarde", actor));
+        assertThrows(DomainException.class, () -> useCase.refuse(id, "tarde", actor));
     }
 }

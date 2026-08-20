@@ -91,9 +91,10 @@ class AttachDocumentFileUseCaseTest {
     @Test
     void an_existing_attachment_cannot_be_replaced() {
         SalesDocument withFile = issued("la-original.png");
-        when(salesDocumentRepository.findById(withFile.getId())).thenReturn(Optional.of(withFile));
+        UUID id = withFile.getId();
+        when(salesDocumentRepository.findById(id)).thenReturn(Optional.of(withFile));
 
-        assertThrows(DomainException.class, () -> useCase.execute(withFile.getId(), "otra.png"));
+        assertThrows(DomainException.class, () -> useCase.execute(id, "otra.png"));
         verify(salesDocumentRepository, never()).save(any());
     }
 
@@ -101,17 +102,19 @@ class AttachDocumentFileUseCaseTest {
     @Test
     void a_voided_document_does_not_accept_a_new_file() {
         document.voidDocument("Folio equivocado", UUID.randomUUID());
-        when(salesDocumentRepository.findById(document.getId())).thenReturn(Optional.of(document));
+        UUID id = document.getId();
+        when(salesDocumentRepository.findById(id)).thenReturn(Optional.of(document));
 
-        assertThrows(DomainException.class, () -> useCase.execute(document.getId(), "boleta.png"));
+        assertThrows(DomainException.class, () -> useCase.execute(id, "boleta.png"));
         verify(salesDocumentRepository, never()).save(any());
     }
 
     @Test
     void an_empty_name_is_not_a_file() {
-        when(salesDocumentRepository.findById(document.getId())).thenReturn(Optional.of(document));
+        UUID id = document.getId();
+        when(salesDocumentRepository.findById(id)).thenReturn(Optional.of(document));
 
-        assertThrows(DomainException.class, () -> useCase.execute(document.getId(), "   "));
+        assertThrows(DomainException.class, () -> useCase.execute(id, "   "));
         verify(salesDocumentRepository, never()).save(any());
     }
 
