@@ -63,6 +63,13 @@ public final class OrderReference {
         return cleaned.isEmpty() ? null : PREFIX + cleaned;
     }
 
+    /*
+     * MD5 on purpose, and it stays. Sonar reads this as a weak hash and it is right about the
+     * algorithm and wrong about the use: the reference is an identifier, printed in emails, never
+     * secret and never checked for authorisation. What pins it is OrderReferenceSqlParityIT, which
+     * holds this byte-for-byte against V67's SQL backfill — changing it here alone would let a
+     * customer quote a code that matches no order, which is the failure this is guarded against.
+     */
     private static byte[] md5(String input) {
         try {
             return MessageDigest.getInstance("MD5").digest(input.getBytes(StandardCharsets.UTF_8));

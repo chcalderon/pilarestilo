@@ -4,7 +4,6 @@ import com.pilarestilo.order.domain.enums.OrderStatus;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Which orders can carry a tax document: those whose money is already in.
@@ -29,10 +28,8 @@ public final class DocumentableSale {
         return STATUSES.contains(status);
     }
 
-    /** The same set as a SQL {@code IN} list, quoted and parenthesised. */
-    public static String sqlInList() {
-        return STATUSES.stream()
-                .map(status -> "'" + status.name() + "'")
-                .collect(Collectors.joining(",", "(", ")"));
+    /** The same set as plain names, to be bound as an array rather than spliced into a query. */
+    public static String[] statusNames() {
+        return STATUSES.stream().map(Enum::name).toArray(String[]::new);
     }
 }

@@ -61,6 +61,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                /*
+                 * Safe because the credential cannot ride along. JwtAuthenticationFilter reads the
+                 * token from the Authorization header and from nowhere else — never from a cookie —
+                 * so a form posted by another site arrives unauthenticated however many cookies the
+                 * browser attaches. The pe_token cookie exists for the frontend's own SSR guard and
+                 * is never presented to this API as proof of anything.
+                 *
+                 * This stops being true the day the filter accepts a cookie. If that is ever added,
+                 * CSRF protection has to come back with it.
+                 */
                 .csrf(csrf -> csrf.disable())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

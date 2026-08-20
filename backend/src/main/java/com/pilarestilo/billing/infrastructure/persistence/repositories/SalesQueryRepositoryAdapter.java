@@ -27,8 +27,13 @@ import java.util.UUID;
 @Repository
 class SalesQueryRepositoryAdapter implements SalesQueryRepository {
 
-    /** Derived from {@link DocumentableSale}, never spelled out here — see its javadoc. */
-    private static final String DOCUMENTABLE_STATUSES = DocumentableSale.sqlInList();
+    /**
+     * Bound, not spliced. The statuses come from an enum and never from a request, so the old
+     * string built into the query was safe — but "safe because of where the value came from" is a
+     * property a reader has to reconstruct and a scanner cannot, and it stops being true the first
+     * time somebody passes this a filter. Now there is no concatenation left to reason about.
+     */
+    private static final String[] DOCUMENTABLE_STATUSES = DocumentableSale.statusNames();
 
     /*
      * LEFT JOIN LATERAL for the payment: an order can carry several attempts and only the newest one
@@ -55,7 +60,8 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
                    OR u.email ILIKE CAST(:query AS text))
               AND (CAST(:orderStatus AS text) IS NULL OR o.status = CAST(:orderStatus AS text))
               AND (:missingOnly = FALSE
-                   OR (d.id IS NULL AND o.status IN """ + DOCUMENTABLE_STATUSES + "))\n";
+                   OR (d.id IS NULL AND o.status = ANY(CAST(:documentable AS text[]))))
+            """;
 
     @PersistenceContext
     private EntityManager em;
@@ -102,6 +108,7 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
     }
 
     private void bind(Query query, String like, String status, boolean missingOnly) {
+        query.setParameter("documentable", DOCUMENTABLE_STATUSES);
         query.setParameter("query", like);
         query.setParameter("orderStatus", status);
         query.setParameter("missingOnly", missingOnly);
