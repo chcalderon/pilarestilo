@@ -39,15 +39,20 @@ public class RbacAuthorizationEvaluator {
     }
 
     private String principalSummary(Authentication authentication) {
-        if (authentication == null || authentication.getPrincipal() == null) {
+        if (authentication == null) {
             return "anonymous";
         }
+        // Read once: getPrincipal() was called twice, so the null check guarded one value and the
+        // use returned another. Spring never hands back null authorities, so that branch was dead.
         Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            return "anonymous";
+        }
         if (principal instanceof AuthenticatedUser user) {
             return "%s(%s) authorities=%d".formatted(
                     user.email(),
                     user.role().name(),
-                    authentication.getAuthorities() == null ? 0 : authentication.getAuthorities().size()
+                    authentication.getAuthorities().size()
             );
         }
         return principal.toString();

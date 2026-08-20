@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 public class UploadMyAvatarUseCase {
 
-    private static final long MAX_BYTES = 5 * 1024 * 1024;
+    private static final long MAX_BYTES = 5L * 1024 * 1024;
 
     private final UserRepository userRepository;
     private final MediaStorageService mediaStorageService;

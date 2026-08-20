@@ -215,7 +215,7 @@ public class MediaAdminController {
                     byte[] original = Files.readAllBytes(file);
                     byte[] optimized = imageOptimizer.reencodeJpeg(original);
                     if (optimized.length < original.length) {
-                        bytesSaved.addAndGet(original.length - optimized.length);
+                        bytesSaved.addAndGet((long) original.length - optimized.length);
                         Files.write(file, optimized);
                     }
                     processed.incrementAndGet();
