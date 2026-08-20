@@ -1,4 +1,4 @@
-package com.pilarestilo.notification.infrastructure.persistence.entities;
+package com.pilarestilo.notifications.persistence.entities;
 
 import com.pilarestilo.notification.domain.enums.NotificationType;
 import jakarta.persistence.*;
