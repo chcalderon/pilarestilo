@@ -23,12 +23,19 @@ dominio con dueño, así que ninguno posee un conjunto propio de tablas.
 
 - **Una sola tabla**: `notifications`.
 - **Cero joins y cero relaciones JPA** con nada fuera del módulo.
-- **Ninguna escritura transaccional**: el módulo solo declara `@Transactional(readOnly = true)`,
-  en sus dos casos de uso de lectura. Lo que graba se dispara desde eventos de dominio, después
-  del commit, por `AfterCommitPublisher` o por Kafka.
+- **Ninguna transacción compartida**: ninguna transacción escribe hoy `notifications` y otra tabla
+  a la vez. Lo que graba se dispara desde eventos de dominio, después del commit, por
+  `AfterCommitPublisher` o por Kafka.
 
 Ese último punto es el que abarata todo: mover la tabla a otra base **no parte ninguna
-transacción**, porque hoy ya no comparte ninguna.
+transacción**, porque hoy ninguna cruza la frontera.
+
+No es que el módulo no escriba: hay ocho `@Transactional` de escritura —tres en
+`NotificationRepositoryAdapter`, `MarkNotificationReadUseCase`, `MarkAllNotificationsReadUseCase` y
+dos ramas de `KafkaPaymentNotificationListener`—. Lo que ninguna hace es mezclar tablas de los dos
+lados, y esa es la propiedad que importa. La más cercana al límite es `onPaymentSubmitted`, que
+escribe `orders` vía `UpdateOrderStatusUseCase` pero no graba notificación alguna: avisa a los
+revisores por correo.
 
 Segundo candidato, para después: `publication`, con cinco tablas todas bajo su propio prefijo.
 
@@ -57,11 +64,61 @@ join: parece una separación y no lo es, y al primer apuro alguien cruza la lín
 
 ### 2. El acceso
 
-- Segundo `DataSource` en el monolito, acotado al paquete `notification`.
+- Segundo `DataSource` en el monolito, acotado al paquete `com.pilarestilo.notifications`.
 - `@EnableJpaRepositories` con `basePackages` y `entityManagerFactoryRef` propios, para que ningún
-  repositorio de otro módulo pueda alcanzarlo por accidente.
+  repositorio de otro módulo pueda alcanzarlo por accidente. El principal necesita lo suyo también:
+  si se queda con `com.pilarestilo`, se lleva `NotificationJpaRepository` al `EntityManagerFactory`
+  equivocado.
 - Directorio de Flyway propio (`db/migration-notifications`), con su historial separado. Dos bases,
   dos historiales: una migración de una nunca debe correr sobre la otra.
+- Un `PlatformTransactionManager` por `DataSource`, y **cada `@Transactional` de escritura que
+  alcance el repositorio de notificaciones tiene que nombrar el suyo**. Sin calificador se queda
+  con el principal, que gobierna la base vieja, y la escritura cae fuera de la transacción que se
+  creyó abrir. La incómoda es `KafkaPaymentNotificationListener.onPaymentConfirmed`: una sola
+  transacción que lee `orders` y `users` de la base vieja y graba `notifications` en la nueva.
+  Ahí hay que separar la lectura de la escritura, no calificar la anotación y seguir.
+
+### 2b. La parte espinosa: el EntityManager principal
+
+Este es el detalle que decide cuánto cuesta el cambio, y conviene saberlo antes de empezar.
+
+Con dos `DataSource` hacen falta dos `EntityManagerFactory`. Spring Boot, por defecto, escanea
+`com.pilarestilo` entero, así que `NotificationEntity` quedaría mapeada **también** en el
+principal. Con `ddl-auto: validate`, eso hace que el arranque exija la tabla `notifications` en la
+base vieja — justo la que se va a eliminar. El backend no levanta.
+
+Es decir: no basta con agregar el segundo `DataSource`; hay que **decirle al principal que no mape
+esa entidad**, y Spring no ofrece un "escanea todo menos esto".
+
+Las salidas, con su costo:
+
+- **Listar los paquetes del principal, uno por uno.** Hoy son 24 (`billing`, `cashregister`,
+  `category`, …). Funciona y es explícito, pero cada módulo nuevo que alguien agregue y olvide
+  listar desaparece del mapeo en silencio. Cambia un problema por otro del mismo tipo.
+- **Mover la entidad fuera del árbol escaneado**, a un paquete raíz propio, y darle a cada
+  `EntityManagerFactory` su raíz: dos listas de una línea cada una, y un módulo nuevo cae en el
+  principal por defecto. Por sí sola no alcanza. `packagesToScan` incluye por prefijo y de forma
+  recursiva, así que `com.pilarestilo.notifications` —el nombre correcto para el dominio— sigue
+  cayendo dentro de la raíz del principal, `com.pilarestilo`, y la entidad vuelve a quedar mapeada
+  dos veces. Escapar de verdad obligaría a una raíz fuera de `com.pilarestilo`, es decir a un
+  nombre de paquete que miente sobre el dominio.
+- Un `PersistenceManagedTypes` a medida que filtre. Más código propio para un problema que las
+  otras dos resuelven sin escribir código.
+
+**Decidido: las dos primeras juntas.** La entidad y su repositorio JPA se mueven a
+`com.pilarestilo.notifications.persistence` —el paquete correcto para el dominio, y una lista de
+una línea para el `EntityManagerFactory` de notificaciones— y el principal enumera sus 24 paquetes
+de módulo.
+
+El silencio de la enumeración se tapa con un test: compara los subdirectorios de `com/pilarestilo/`
+contra la lista del `EntityManagerFactory` principal, y falla si alguno no está ni en esa lista ni
+en la de notificaciones. Así el módulo nuevo que nadie listó deja de ser un arranque roto en
+producción y pasa a ser un test rojo en la máquina de quien lo agregó.
+
+Mover el paquete no cambia comportamiento por sí solo: `com.pilarestilo.notifications` sigue bajo
+la raíz de escaneo por defecto, así que mientras haya un solo `DataSource` todo queda igual. Nada
+fuera del módulo referencia la entidad ni el repositorio —se verificó sobre `backend`, sus tests y
+`services/`— así que el cambio queda contenido.
 
 ### 3. Los datos
 

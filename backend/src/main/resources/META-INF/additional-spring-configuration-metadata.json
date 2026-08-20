@@ -233,6 +233,22 @@
       "defaultValue": "./media"
     },
     {
+      "name": "app.notification.datasource.password",
+      "type": "java.lang.String",
+      "defaultValue": "pilar"
+    },
+    {
+      "name": "app.notification.datasource.url",
+      "type": "java.lang.String",
+      "description": "JDBC URL of the notifications database. A database of its own, not a schema: Postgres joins across schemas, so a schema would look like a boundary without being one.",
+      "defaultValue": "jdbc:postgresql://localhost:5432/pilarestilo_notifications"
+    },
+    {
+      "name": "app.notification.datasource.username",
+      "type": "java.lang.String",
+      "defaultValue": "pilar"
+    },
+    {
       "name": "app.notification.email.sendgrid.api-base-url",
       "type": "java.lang.String",
       "defaultValue": "https://api.sendgrid.com"
@@ -294,6 +310,12 @@
     {
       "name": "app.notification.email.smtp.username",
       "type": "java.lang.String"
+    },
+    {
+      "name": "app.notification.flyway.locations",
+      "type": "java.lang.String",
+      "description": "Migrations for the notifications database, kept apart from the main history so a migration for one never runs on the other. spring.flyway.* does not reach here: this side cannot be a Flyway bean without silently disabling the main auto-configuration.",
+      "defaultValue": "classpath:db/migration-notifications"
     },
     {
       "name": "app.notification.n8n.api-key",

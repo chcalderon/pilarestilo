@@ -1,5 +1,6 @@
 package com.pilarestilo.shared.auth.infrastructure.web;
 
+import com.pilarestilo.support.NotificationsTestDatabase;
 import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.user.domain.enums.UserRole;
@@ -40,6 +41,7 @@ class AuthMePermissionCompatibilityIT {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
+        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired MockMvc mvc;

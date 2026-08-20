@@ -18,6 +18,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+      # Boot's own defaults, written out because the bean that normally supplies them lives in
+      # HibernateJpaConfiguration, and that whole auto-configuration backs off the moment an
+      # EntityManagerFactory is declared -- which PersistenceConfig has to do, since notifications
+      # need a second one. Left implicit, Hibernate falls back to its own strategies and every
+      # column not carrying an explicit @Column name stops resolving: createdAt would look for
+      # "createdAt", not "created_at".
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.springframework.boot.hibernate.SpringImplicitNamingStrategy
     show-sql: false
     open-in-view: false
   flyway:
@@ -91,6 +100,18 @@ app:
       enabled: ${APP_CACHE_REDIS_ENABLED:false}
       ttl-seconds: ${APP_CACHE_REDIS_TTL_SECONDS:300}
   notification:
+    # The notifications database. A second instance would cost 200-400 MB and buy nothing: the
+    # boundary is the database, not the process. A separate schema would not be a boundary at all
+    # -- Postgres still joins across schemas, so it would look like separation and not be any.
+    datasource:
+      url: ${APP_NOTIFICATION_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo_notifications}
+      username: ${APP_NOTIFICATION_DATASOURCE_USERNAME:pilar}
+      password: ${APP_NOTIFICATION_DATASOURCE_PASSWORD:pilar}
+    # Its own history. Two databases, two histories: a migration for one must never run on the
+    # other. spring.flyway.* does not reach here -- see NotificationsFlywayMigrator for why this
+    # side cannot be a Flyway bean.
+    flyway:
+      locations: ${APP_NOTIFICATION_FLYWAY_LOCATIONS:classpath:db/migration-notifications}
     provider: ${NOTIFICATION_PROVIDER:LOG}
     n8n:
       webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}

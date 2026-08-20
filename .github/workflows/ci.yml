@@ -30,6 +30,35 @@ jobs:
       - name: Run tests
         run: mvn -B verify
 
+  # The four extracted services were never built here. Their first compilation happened on the VPS,
+  # during the deploy, so a broken one surfaced as a failed production deploy rather than a failed
+  # pull request -- and their tests, seventy-nine of them, ran nowhere at all. That is the same
+  # blind spot that let them ship without the CVE pins the monolith already carried and answer
+  # catalogue queries differently from it.
+  service-tests:
+    name: Service Tests (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [order-service, inventory-service, product-service, payment-service]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Run tests
+        run: mvn -B verify
+
   frontend-build:
     name: Frontend Build (Astro)
     runs-on: ubuntu-latest

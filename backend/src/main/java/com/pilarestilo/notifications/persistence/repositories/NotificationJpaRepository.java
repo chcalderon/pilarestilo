@@ -1,6 +1,6 @@
-package com.pilarestilo.notification.infrastructure.persistence.repositories;
+package com.pilarestilo.notifications.persistence.repositories;
 
-import com.pilarestilo.notification.infrastructure.persistence.entities.NotificationEntity;
+import com.pilarestilo.notifications.persistence.entities.NotificationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
