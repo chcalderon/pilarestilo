@@ -161,6 +161,19 @@ export default function DataTable<T>({
                     isSelected ? 'bg-pe-rose/6' : 'hover:bg-pe-cream/40',
                     onRowClick ? 'cursor-pointer' : '',
                   ].join(' ')}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? 'button' : undefined}
+                  onKeyDown={
+                    onRowClick
+                      ? (event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onRowClick(row);
+                          }
+                        }
+                      : undefined
+                  }
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {selectable && (
@@ -254,7 +267,24 @@ export default function DataTable<T>({
                         isSelected ? 'bg-pe-rose/4' : 'hover:bg-pe-cream/50',
                         onRowClick ? 'cursor-pointer' : '',
                       ].join(' ')}
+                      /*
+                       * A row that opens a drawer is the only way into most of these screens, so
+                       * it cannot be mouse-only. tabIndex puts it in the tab order and Enter or
+                       * Space opens it, which is what a button would have done.
+                       */
+                      tabIndex={onRowClick ? 0 : undefined}
                       onClick={onRowClick ? () => onRowClick(row) : undefined}
+                      onKeyDown={
+                        onRowClick
+                          ? (event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                onRowClick(row);
+                              }
+                            }
+                          : undefined
+                      }
                     >
                       {selectable && (
                         <td

@@ -309,8 +309,10 @@ export default function UserEditDrawer({
   return (
     <Overlay>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+      <button
+        type="button"
+        aria-label="Cerrar"
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] cursor-default"
         onClick={onClose}
       />
 

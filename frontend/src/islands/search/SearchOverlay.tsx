@@ -92,7 +92,12 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
       style={{ background: 'rgba(26,26,26,0.92)', backdropFilter: 'blur(4px)' }}
     >
       {/* backdrop close */}
-      <div className="absolute inset-0" onClick={() => setOpen(false)} />
+      <button
+        type="button"
+        aria-label="Cerrar la busqueda"
+        className="absolute inset-0 cursor-default"
+        onClick={() => setOpen(false)}
+      />
 
       <div className="relative z-10 flex flex-col h-full max-w-3xl mx-auto w-full px-6 pt-10 pb-8">
         {/* search input row */}

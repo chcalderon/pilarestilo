@@ -144,8 +144,10 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
   return (
     <>
       {/* Overlay */}
-      <div
-        className={`fixed inset-0 bg-pe-black/30 z-40 transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      <button
+        type="button"
+        aria-label="Cerrar"
+        className={`fixed inset-0 bg-pe-black/30 z-40 cursor-default transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
       {/* Drawer panel */}
