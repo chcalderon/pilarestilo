@@ -63,6 +63,33 @@ join: parece una separación y no lo es, y al primer apuro alguien cruza la lín
 - Directorio de Flyway propio (`db/migration-notifications`), con su historial separado. Dos bases,
   dos historiales: una migración de una nunca debe correr sobre la otra.
 
+### 2b. La parte espinosa: el EntityManager principal
+
+Este es el detalle que decide cuánto cuesta el cambio, y conviene saberlo antes de empezar.
+
+Con dos `DataSource` hacen falta dos `EntityManagerFactory`. Spring Boot, por defecto, escanea
+`com.pilarestilo` entero, así que `NotificationEntity` quedaría mapeada **también** en el
+principal. Con `ddl-auto: validate`, eso hace que el arranque exija la tabla `notifications` en la
+base vieja — justo la que se va a eliminar. El backend no levanta.
+
+Es decir: no basta con agregar el segundo `DataSource`; hay que **decirle al principal que no mape
+esa entidad**, y Spring no ofrece un "escanea todo menos esto".
+
+Las salidas, con su costo:
+
+- **Listar los paquetes del principal, uno por uno.** Hoy son 22 (`billing`, `cashregister`,
+  `category`, …). Funciona y es explícito, pero cada módulo nuevo que alguien agregue y olvide
+  listar desaparece del mapeo en silencio. Cambia un problema por otro del mismo tipo.
+- **Mover la entidad fuera del árbol escaneado**, a un paquete raíz propio (por ejemplo
+  `com.pilarestilo.notifications.persistence`), y darle a cada `EntityManagerFactory` su raíz.
+  Dos listas de una línea cada una, y un módulo nuevo cae en el principal por defecto, que es el
+  comportamiento seguro. **Es la que recomiendo.**
+- Un `PersistenceManagedTypes` a medida que filtre. Más código propio para un problema que la
+  opción anterior resuelve moviendo una carpeta.
+
+La opción recomendada implica renombrar el paquete de la entidad y su repositorio JPA. Nada fuera
+del módulo los referencia — se verificó — así que el cambio queda contenido.
+
 ### 3. Los datos
 
 `notifications` se mueve **con su historia**, no se recrea vacía:
