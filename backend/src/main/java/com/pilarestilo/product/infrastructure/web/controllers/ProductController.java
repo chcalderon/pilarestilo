@@ -1,5 +1,7 @@
 package com.pilarestilo.product.infrastructure.web.controllers;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import com.pilarestilo.product.application.dto.ProductDto;
 import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.product.application.usecases.*;
@@ -22,6 +24,22 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    /*
+     * A page with no order is not a page. Neither implementation stated one, so Postgres returned
+     * rows in whatever order suited it and the two disagreed about the same fifteen products —
+     * which means paging the catalogue could show a garment twice or never. Newest first is what a
+     * boutique wants, and the id breaks ties so the sequence is total.
+     */
+    private static final Sort DEFAULT_ORDER = Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by("id"));
+
+    /** Honours whatever the caller asked for, and supplies an order when they asked for none. */
+    private static Pageable ordered(Pageable pageable) {
+        return pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), DEFAULT_ORDER);
+    }
+
 
     private final CreateProductUseCase createProductUseCase;
     private final UpdateProductUseCase updateProductUseCase;
@@ -78,7 +96,7 @@ public class ProductController {
                 category,
                 createdFrom,
                 createdTo,
-                pageable
+                ordered(pageable)
         );
     }
 
@@ -115,7 +133,7 @@ public class ProductController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             Pageable pageable) {
-        return searchProductsUseCase.execute(q, active, inStock, condition, category, createdFrom, createdTo, pageable);
+        return searchProductsUseCase.execute(q, active, inStock, condition, category, createdFrom, createdTo, ordered(pageable));
     }
 
     private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {
