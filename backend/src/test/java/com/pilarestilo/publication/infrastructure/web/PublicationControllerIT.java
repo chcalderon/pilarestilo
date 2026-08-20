@@ -1,5 +1,6 @@
 package com.pilarestilo.publication.infrastructure.web;
 
+import com.pilarestilo.support.NotificationsTestDatabase;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
@@ -45,6 +46,7 @@ class PublicationControllerIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        NotificationsTestDatabase.register(registry, postgres);
         registry.add("app.social-publishing.n8n.callback-token", () -> "test-social-token");
     }
 

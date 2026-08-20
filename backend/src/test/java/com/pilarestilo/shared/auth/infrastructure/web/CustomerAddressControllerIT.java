@@ -1,5 +1,6 @@
 package com.pilarestilo.shared.auth.infrastructure.web;
 
+import com.pilarestilo.support.NotificationsTestDatabase;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ class CustomerAddressControllerIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        NotificationsTestDatabase.register(registry, postgres);
     }
 
     @Autowired

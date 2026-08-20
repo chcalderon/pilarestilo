@@ -1,5 +1,6 @@
 package com.pilarestilo.shared.infrastructure.config;
 
+import com.pilarestilo.notifications.NotificationsPersistenceConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 
@@ -34,7 +35,14 @@ class EntityScanCoversEveryModuleTest {
     void entity_scan_names_every_module_package_and_nothing_else() throws IOException {
         Set<String> declared = Arrays.stream(
                         EntityScanConfig.class.getAnnotation(EntityScan.class).basePackages())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(java.util.HashSet::new));
+
+        /*
+         * The notifications root is mapped by the other factory, so it is absent from the main
+         * list on purpose. Checking the two together is what makes the rule "every module is
+         * mapped by exactly one factory" rather than "every module is in this list".
+         */
+        declared.add(NotificationsPersistenceConfig.ROOT_PACKAGE);
 
         Set<String> onDisk;
         try (Stream<Path> entries = Files.list(MODULE_ROOT)) {
@@ -49,9 +57,10 @@ class EntityScanCoversEveryModuleTest {
                 .isNotEmpty();
 
         assertThat(declared)
-                .as("EntityScanConfig must name every package under com/pilarestilo. A module "
-                        + "missing from it is silently unmapped; a package named here that no "
-                        + "longer exists hides the next real omission.")
+                .as("Every package under com/pilarestilo must be mapped by exactly one factory: "
+                        + "named in EntityScanConfig, or the notifications root. A module in "
+                        + "neither is silently unmapped; a package named in EntityScanConfig that "
+                        + "no longer exists hides the next real omission.")
                 .containsExactlyInAnyOrderElementsOf(onDisk);
     }
 }

@@ -20,8 +20,9 @@ import org.springframework.context.annotation.Configuration;
  * <p>Packages with no entity of their own are listed too. They cost nothing to scan, and the day
  * one of them gains an entity it is already covered.
  *
- * <p>com.pilarestilo.notifications is still here. It comes off in the same commit that gives it a
- * DataSource of its own; until then it is mapped like everything else.
+ * <p>com.pilarestilo.notifications is deliberately absent: it belongs to
+ * {@code NotificationsPersistenceConfig} and its own factory. That is the whole reason this list
+ * exists, so the guard test checks the two lists together rather than this one alone.
  */
 @Configuration
 @EntityScan(basePackages = {
@@ -37,7 +38,6 @@ import org.springframework.context.annotation.Configuration;
         "com.pilarestilo.location",
         "com.pilarestilo.navigation",
         "com.pilarestilo.notification",
-        "com.pilarestilo.notifications",
         "com.pilarestilo.order",
         "com.pilarestilo.payment",
         "com.pilarestilo.privacy",

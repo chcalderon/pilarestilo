@@ -1,5 +1,6 @@
 package com.pilarestilo.dispatch.infrastructure.web;
 
+import com.pilarestilo.support.NotificationsTestDatabase;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ class DespachoIT {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
+        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired MockMvc mvc;

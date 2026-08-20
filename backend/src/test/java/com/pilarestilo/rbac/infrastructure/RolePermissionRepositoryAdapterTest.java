@@ -1,5 +1,6 @@
 package com.pilarestilo.rbac.infrastructure;
 
+import com.pilarestilo.support.NotificationsTestDatabase;
 import com.pilarestilo.shared.rbac.domain.ports.RolePermissionRepository;
 import com.pilarestilo.user.domain.enums.UserRole;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ class RolePermissionRepositoryAdapterTest {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
+        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired

@@ -2,6 +2,7 @@ package com.pilarestilo.notification.infrastructure.persistence.repositories;
 
 import com.pilarestilo.notification.domain.model.InAppNotification;
 import com.pilarestilo.notification.domain.ports.InAppNotificationRepository;
+import com.pilarestilo.notifications.NotificationsPersistenceConfig;
 import com.pilarestilo.notifications.persistence.entities.NotificationEntity;
 import com.pilarestilo.notifications.persistence.repositories.NotificationJpaRepository;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,13 @@ import java.util.UUID;
 @Component
 public class NotificationRepositoryAdapter implements InAppNotificationRepository {
 
+    /*
+     * The writes name the notifications transaction manager. Unqualified they would get the main
+     * one, which governs the other database: the write would then run outside the transaction it
+     * looks like it is in, and this module hides that -- InAppNotificationSender logs and
+     * swallows, so a lost notification would leave a WARN and nothing else.
+     */
+
     private final NotificationJpaRepository jpa;
 
     public NotificationRepositoryAdapter(NotificationJpaRepository jpa) {
@@ -23,7 +31,7 @@ public class NotificationRepositoryAdapter implements InAppNotificationRepositor
     }
 
     @Override
-    @Transactional
+    @Transactional(NotificationsPersistenceConfig.TRANSACTION_MANAGER)
     public InAppNotification save(InAppNotification n) {
         return toDomain(jpa.save(toEntity(n)));
     }
@@ -49,13 +57,13 @@ public class NotificationRepositoryAdapter implements InAppNotificationRepositor
     }
 
     @Override
-    @Transactional
+    @Transactional(NotificationsPersistenceConfig.TRANSACTION_MANAGER)
     public void markAsRead(UUID id, UUID userId) {
         jpa.markAsRead(id, userId);
     }
 
     @Override
-    @Transactional
+    @Transactional(NotificationsPersistenceConfig.TRANSACTION_MANAGER)
     public void markAllAsRead(UUID userId) {
         jpa.markAllAsReadByUserId(userId);
     }

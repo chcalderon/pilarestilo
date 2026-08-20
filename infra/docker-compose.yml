@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
     volumes:
       - pe_pgdata:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
       - pe_net
     healthcheck:
@@ -62,6 +63,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      # Notifications live in a database of their own, same instance. Created by
+      # infra/postgres/init/01-notifications-database.sh on a fresh volume; an existing volume
+      # needs it created by hand, since that hook only runs when the data directory is empty.
+      APP_NOTIFICATION_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_NOTIFICATIONS_DB:-pilarestilo_notifications}
+      APP_NOTIFICATION_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      APP_NOTIFICATION_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       SPRING_DATA_REDIS_PASSWORD: ${SPRING_DATA_REDIS_PASSWORD:-}
