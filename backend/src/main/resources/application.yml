@@ -18,6 +18,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+      # Boot's own defaults, written out because the bean that normally supplies them lives in
+      # HibernateJpaConfiguration, and that whole auto-configuration backs off the moment an
+      # EntityManagerFactory is declared -- which PersistenceConfig has to do, since notifications
+      # need a second one. Left implicit, Hibernate falls back to its own strategies and every
+      # column not carrying an explicit @Column name stops resolving: createdAt would look for
+      # "createdAt", not "created_at".
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.springframework.boot.hibernate.SpringImplicitNamingStrategy
     show-sql: false
     open-in-view: false
   flyway:
