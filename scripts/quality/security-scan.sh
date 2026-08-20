@@ -24,6 +24,12 @@ for module in backend services/order-service services/inventory-service; do
   fi
 done
 
+# Git Bash rewrites any argument that looks like a Unix path before docker sees it, so the /src
+# inside these containers arrived as C:/Program Files/Git/src and both tools scanned an empty
+# directory while reporting success. Nothing was being checked and nothing said so.
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+
 echo
 echo "== Semgrep (Java + TypeScript)"
 # --config=auto pulls the community rulesets, including the OWASP Top 10 packs.
