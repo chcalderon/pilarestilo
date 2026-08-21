@@ -30,6 +30,15 @@ public final class OrderReference {
                 .substring(0, HEX_LENGTH);
     }
 
+    /*
+     * MD5 on purpose, and it stays. Sonar reads this as a weak hash and it is right about the
+     * algorithm and wrong about the use: the reference is an identifier, printed in emails, never
+     * secret and never checked for authorisation. It must also stay byte-for-byte identical to the
+     * monolith's OrderReference and to V67's SQL backfill — this service and the monolith both
+     * write the orders table, so a change on one side alone would let a customer quote a code that
+     * matches no order.
+     */
+    @SuppressWarnings("java:S4790")
     private static byte[] md5(String input) {
         try {
             return MessageDigest.getInstance("MD5").digest(input.getBytes(StandardCharsets.UTF_8));

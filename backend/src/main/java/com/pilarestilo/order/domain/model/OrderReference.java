@@ -70,6 +70,7 @@ public final class OrderReference {
      * holds this byte-for-byte against V67's SQL backfill — changing it here alone would let a
      * customer quote a code that matches no order, which is the failure this is guarded against.
      */
+    @SuppressWarnings("java:S4790")
     private static byte[] md5(String input) {
         try {
             return MessageDigest.getInstance("MD5").digest(input.getBytes(StandardCharsets.UTF_8));

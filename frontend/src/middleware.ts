@@ -106,6 +106,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       );
 
     // Server-side validation against backend to reject stale/invalid signatures.
+    // NOSONAR: same internal Docker address as in lib/api.ts — SSR to backend, never a browser.
     const apiBase = import.meta.env.INTERNAL_API_BASE_URL ?? 'http://backend:8080/api';
     let res: Response;
     try {
