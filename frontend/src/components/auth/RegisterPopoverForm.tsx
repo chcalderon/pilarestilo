@@ -268,8 +268,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
         {es ? " y la " : " and our "}
         <a href={`/${locale}/privacy`} className="underline hover:text-[var(--pe-foreground)]">
           {es ? "política de privacidad" : "privacy policy"}
-        </a>
-        .
+        </a>.
       </p>
 
       <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
