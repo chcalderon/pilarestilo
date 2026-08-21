@@ -78,6 +78,12 @@ public class DataDeletionRequest {
         }
     }
 
+    /**
+     * Rehydration from the stored row, so the parameter count follows the schema rather than a
+     * caller's convenience. Every other module reconstructs the same way — {@code Order} takes far
+     * more — and a builder for the two smallest would be a second pattern to keep straight.
+     */
+    @SuppressWarnings("java:S107")
     public static DataDeletionRequest reconstruct(UUID id,
                                                   UUID userId,
                                                   DeletionStatus status,
