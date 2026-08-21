@@ -11,9 +11,9 @@ const PUBLIC_API_BASE: string =
 const INTERNAL_API_BASE: string =
   RUNTIME_ENV?.INTERNAL_API_BASE_URL
   ?? import.meta.env.INTERNAL_API_BASE_URL
-  // NOSONAR: a Docker service name reached from SSR inside the compose network. It is not a
-  // URL a browser ever resolves, and there is no TLS between containers to fall back from.
-  ?? 'http://backend:8080/api';
+  // A Docker service name reached from SSR inside the compose network: not an address a
+  // browser ever resolves, and there is no TLS between containers to fall back from.
+  ?? 'http://backend:8080/api'; // NOSONAR
 
 const INTERNAL_PRODUCTS_API_BASE: string =
   RUNTIME_ENV?.INTERNAL_PRODUCTS_API_BASE_URL
