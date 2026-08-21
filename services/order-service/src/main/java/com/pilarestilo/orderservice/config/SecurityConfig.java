@@ -23,6 +23,14 @@ public class SecurityConfig {
     }
 
     @Bean
+    /*
+     * CSRF stays off, and the reason is checked rather than assumed: JwtAuthenticationFilter reads
+     * the credential from the Authorization header and from nowhere else, never from a cookie, and
+     * the session policy is STATELESS. A form posted by another site therefore arrives
+     * unauthenticated however many cookies the browser attaches. The day the filter accepts a
+     * cookie, CSRF protection has to come back with it.
+     */
+    @SuppressWarnings("java:S4502")
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth

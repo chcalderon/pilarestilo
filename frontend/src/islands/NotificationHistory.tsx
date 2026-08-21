@@ -137,7 +137,17 @@ export default function NotificationHistory({ locale }: Props) {
           {page.content.map((n) => (
             <div
               key={n.id}
+              // Marking one as read is a real action, so it has to be reachable without a mouse.
+              role={n.read ? undefined : 'button'}
+              tabIndex={n.read ? undefined : 0}
               onClick={() => { void handleMarkOne(n); }}
+              onKeyDown={(event) => {
+                if (n.read) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  void handleMarkOne(n);
+                }
+              }}
               style={{
                 display: 'flex',
                 gap: '1rem',

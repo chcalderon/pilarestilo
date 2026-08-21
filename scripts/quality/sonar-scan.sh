@@ -41,7 +41,11 @@ echo "== PilarEstilo frontend"
 
 # -Xmx4g on purpose: the container's default heap dies partway through the Astro/TSX tree, and the
 # failure reads as a scanner crash rather than as running out of memory.
-docker run --rm --network "$SONAR_NETWORK" \
+# MSYS_NO_PATHCONV only here: Git Bash rewrites the container-side /usr/src into
+# C:/Program Files/Git/usr/src and the mount lands nowhere. It cannot be exported for the whole
+# script -- with it set, the mvn wrapper hands java a POSIX path and Maven dies on
+# ClassNotFoundException: plexus.classworlds.launcher.Launcher. Unset on Linux, so it is inert.
+MSYS_NO_PATHCONV=1 docker run --rm --network "$SONAR_NETWORK" \
   -e SONAR_HOST_URL="http://sonarqube:9000" \
   -e SONAR_TOKEN="$SONAR_TOKEN" \
   -e SONAR_SCANNER_OPTS="-Xmx4g" \

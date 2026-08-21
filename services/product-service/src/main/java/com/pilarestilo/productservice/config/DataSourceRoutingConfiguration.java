@@ -67,7 +67,8 @@ public class DataSourceRoutingConfiguration {
             log.info("Read replica disabled or not configured. Product queries use primary datasource.");
             return writeDataSource;
         }
-        if (readReplicaProperties.getUrl() == null || readReplicaProperties.getUrl().isBlank()) {
+        String readReplicaUrl = readReplicaProperties.getUrl();
+        if (readReplicaUrl == null || readReplicaUrl.isBlank()) {
             throw new IllegalStateException("Read replica is enabled but APP_DB_READ_REPLICA_URL is missing.");
         }
 
