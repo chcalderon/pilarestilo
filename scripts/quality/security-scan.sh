@@ -13,7 +13,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FAILED=0
 
 echo "== Find Security Bugs (Java)"
-for module in backend services/order-service services/inventory-service; do
+# All five, not three: product-service and payment-service answer production read traffic and
+# their first security analysis was none at all.
+for module in backend services/order-service services/inventory-service \n              services/product-service services/payment-service; do
   printf '   %-28s ' "$module"
   if (cd "$REPO_ROOT/$module" && mvn -B -q -P security -DskipTests -Djacoco.skip=true verify > /tmp/fsb.log 2>&1); then
     echo "sin hallazgos"

@@ -170,4 +170,44 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <!-- Find Security Bugs, run by scripts/quality/security-scan.sh. Sonar Community has no taint
+         analysis, so this is what follows a value from a request into a query for this service. -->
+    <profile>
+      <id>security</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <version>4.9.8.0</version>
+            <configuration>
+              <effort>Max</effort>
+              <threshold>Low</threshold>
+              <!-- Only the security detectors: SpotBugs' general rules overlap with Sonar's, and
+                   two tools reporting the same smell twice is noise nobody reads. -->
+              <includeFilterFile>${project.basedir}/../../config/spotbugs-security.xml</includeFilterFile>
+              <excludeFilterFile>${project.basedir}/../../config/spotbugs-noise.xml</excludeFilterFile>
+              <plugins>
+                <plugin>
+                  <groupId>com.h3xstream.findsecbugs</groupId>
+                  <artifactId>findsecbugs-plugin</artifactId>
+                  <version>1.14.0</version>
+                </plugin>
+              </plugins>
+            </configuration>
+            <executions>
+              <execution>
+                <id>find-security-bugs</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

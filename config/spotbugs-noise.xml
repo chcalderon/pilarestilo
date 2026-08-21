@@ -147,13 +147,16 @@
       <Class name="com.pilarestilo.publication.infrastructure.web.controllers.PublicationWebhookController"/>
       <Class name="com.pilarestilo.orderservice.auth.JwtAuthenticationFilter"/>
       <Class name="com.pilarestilo.orderservice.web.OrderController"/>
+      <Class name="com.pilarestilo.paymentservice.auth.JwtAuthenticationFilter"/>
     </Or>
   </Match>
 
   <!--
-    The same two refusals on the order-service side, for the same reasons: the reference hash is a
-    public identifier both codebases derive identically, and the API is stateless with a bearer
-    token so there is no ambient credential for CSRF to ride on.
+    The same two refusals on the extracted services, for the same reasons: the reference hash is a
+    public identifier both codebases derive identically, and every one of these APIs is stateless
+    with a bearer token read from a header, so there is no ambient credential for CSRF to ride on.
+    Checked rather than assumed - each JwtAuthenticationFilter reads Authorization and never a
+    cookie, and each chain is SessionCreationPolicy.STATELESS.
   -->
   <Match>
     <Bug pattern="WEAK_MESSAGE_DIGEST_MD5"/>
@@ -161,7 +164,10 @@
   </Match>
   <Match>
     <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
-    <Class name="com.pilarestilo.orderservice.config.SecurityConfig"/>
+    <Or>
+      <Class name="com.pilarestilo.orderservice.config.SecurityConfig"/>
+      <Class name="com.pilarestilo.paymentservice.config.SecurityConfig"/>
+    </Or>
   </Match>
 
 </FindBugsFilter>
