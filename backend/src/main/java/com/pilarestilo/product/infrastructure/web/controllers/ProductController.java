@@ -31,7 +31,9 @@ public class ProductController {
      * which means paging the catalogue could show a garment twice or never. Newest first is what a
      * boutique wants, and the id breaks ties so the sequence is total.
      */
-    private static final Sort DEFAULT_ORDER = Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by("id"));
+    private static final String CREATED_AT = "createdAt";
+    private static final String ID = "id";
+    private static final Sort DEFAULT_ORDER = Sort.by(Sort.Direction.DESC, CREATED_AT).and(Sort.by(ID));
 
     /** Honours whatever the caller asked for, and supplies an order when they asked for none. */
     private static Pageable ordered(Pageable pageable) {
