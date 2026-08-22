@@ -70,11 +70,14 @@ public class InAppNotificationSender implements InAppNotificationPort {
     }
 
     @Override
-    public void notifyWelcome(UUID userId) {
+    public void notifyWelcome(UUID userId, String couponCode) {
+        String body = couponCode == null
+                ? "Gracias por crear tu cuenta. Ya puedes explorar el catalogo y hacer tu primera compra."
+                : "Gracias por crear tu cuenta. Tienes un codigo de bienvenida: " + couponCode + ".";
         save(userId, NotificationType.WELCOME,
             "Bienvenida a Pilar Estilo",
-            "Gracias por crear tu cuenta. Ya puedes explorar el catalogo y hacer tu primera compra.",
-            Map.of());
+            body,
+            couponCode == null ? Map.of() : Map.of("code", couponCode));
     }
 
     private void save(UUID userId, NotificationType type, String title, String body, Map<String, Object> metadata) {

@@ -55,7 +55,8 @@ public class AuthController {
         return registerUseCase.execute(
                 req.email(), req.password(), req.fullName(),
                 callerAddress(httpRequest),
-                httpRequest.getHeader("User-Agent"));
+                httpRequest.getHeader("User-Agent"),
+                req.acceptsMarketing());
     }
 
     /**

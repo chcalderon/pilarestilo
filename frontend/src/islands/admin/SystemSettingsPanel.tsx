@@ -122,6 +122,12 @@ type FormState = {
   taxVatRate: string;
   taxDocumentRequiredBeforeDispatch: boolean;
   taxDocumentProvider: 'MANUAL' | 'TUU' | 'OPENFACTURA';
+  /** Configured from /admin/descuentos, not this page — carried through untouched on save. */
+  welcomeDiscountEnabled: boolean;
+  welcomeDiscountType: 'PERCENTAGE' | 'FIXED';
+  welcomeDiscountValue: number;
+  welcomeDiscountMinOrderAmount: number;
+  welcomeDiscountRequiresMarketing: boolean;
 };
 
 type ProviderOption = {
@@ -410,6 +416,11 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     taxVatRate: settings.taxVatRate != null ? String(settings.taxVatRate) : '19',
     taxDocumentRequiredBeforeDispatch: settings.taxDocumentRequiredBeforeDispatch ?? true,
     taxDocumentProvider: settings.taxDocumentProvider ?? 'MANUAL',
+    welcomeDiscountEnabled: settings.welcomeDiscountEnabled ?? false,
+    welcomeDiscountType: settings.welcomeDiscountType ?? 'PERCENTAGE',
+    welcomeDiscountValue: settings.welcomeDiscountValue ?? 10,
+    welcomeDiscountMinOrderAmount: settings.welcomeDiscountMinOrderAmount ?? 0,
+    welcomeDiscountRequiresMarketing: settings.welcomeDiscountRequiresMarketing ?? true,
   };
 }
 
@@ -582,6 +593,11 @@ export default function SystemSettingsPanel() {
     taxVatRate: '19',
     taxDocumentRequiredBeforeDispatch: true,
     taxDocumentProvider: 'MANUAL',
+    welcomeDiscountEnabled: false,
+    welcomeDiscountType: 'PERCENTAGE',
+    welcomeDiscountValue: 10,
+    welcomeDiscountMinOrderAmount: 0,
+    welcomeDiscountRequiresMarketing: true,
   });
 
   async function loadSettings() {
@@ -1062,6 +1078,12 @@ export default function SystemSettingsPanel() {
       bankTransferAutoCancelEnabled: form.bankTransferAutoCancelEnabled,
       bankTransferAutoCancelTimeoutMinutes: form.bankTransferAutoCancelTimeoutMinutes,
       bankTransferAutoCancelCron: form.bankTransferAutoCancelCron,
+      // Configured on /admin/descuentos; carried through untouched so this save doesn't reset it.
+      welcomeDiscountEnabled: form.welcomeDiscountEnabled,
+      welcomeDiscountType: form.welcomeDiscountType,
+      welcomeDiscountValue: form.welcomeDiscountValue,
+      welcomeDiscountMinOrderAmount: form.welcomeDiscountMinOrderAmount,
+      welcomeDiscountRequiresMarketing: form.welcomeDiscountRequiresMarketing,
     };
 
     setSaving(true);

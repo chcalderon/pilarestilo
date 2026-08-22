@@ -88,5 +88,10 @@ public record UpdateSystemSettingsRequest(
         @Size(max = 120) String taxCity,
         @DecimalMin("0.00") @DecimalMax("100.00") java.math.BigDecimal taxVatRate,
         Boolean taxDocumentRequiredBeforeDispatch,
-        @Size(max = 30) String taxDocumentProvider
+        @Size(max = 30) String taxDocumentProvider,
+        @NotNull Boolean welcomeDiscountEnabled,
+        @Size(max = 20) String welcomeDiscountType,
+        @DecimalMin("0.01") java.math.BigDecimal welcomeDiscountValue,
+        @DecimalMin("0.00") java.math.BigDecimal welcomeDiscountMinOrderAmount,
+        Boolean welcomeDiscountRequiresMarketing
 ) {}

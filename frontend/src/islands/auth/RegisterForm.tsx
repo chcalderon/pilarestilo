@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
-import { registerUser, googleLogin, acceptMarketingConsent } from '../../lib/api';
+import { registerUser, googleLogin } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
 
 interface Props {
@@ -102,20 +102,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
     setLoading(true);
     setError('');
     try {
-      const data = await registerUser(email, password, fullName);
-
-      /*
-       * Recorded after the account exists, and only if she ticked it. Failing here must not fail
-       * the registration: she has an account either way, and a missing marketing consent is the
-       * safe side of the two.
-       */
-      if (marketing) {
-        try {
-          await acceptMarketingConsent(data.accessToken);
-        } catch {
-          // Nothing to tell her: she is registered, and she can turn it on later from her account.
-        }
-      }
+      const data = await registerUser(email, password, fullName, marketing);
       finishAuth(data);
     } catch {
       setError(

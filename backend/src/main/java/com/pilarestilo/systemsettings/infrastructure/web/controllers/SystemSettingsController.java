@@ -126,6 +126,11 @@ public class SystemSettingsController {
                 request.taxVatRate(),
                 request.taxDocumentRequiredBeforeDispatch(),
                 request.taxDocumentProvider(),
+                request.welcomeDiscountEnabled(),
+                request.welcomeDiscountType(),
+                request.welcomeDiscountValue(),
+                request.welcomeDiscountMinOrderAmount(),
+                request.welcomeDiscountRequiresMarketing(),
                 updatedBy
         ));
     }

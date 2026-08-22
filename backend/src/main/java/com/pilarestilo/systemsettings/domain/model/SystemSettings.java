@@ -79,6 +79,7 @@ public class SystemSettings {
     private int bankTransferAutoCancelTimeoutMinutes;
     private String bankTransferAutoCancelCron;
     private StoreTaxSettings tax;
+    private WelcomeDiscountSettings welcomeDiscount;
     private PolicyVersions policyVersions;
     private Instant updatedAt;
     private String updatedBy;
@@ -145,6 +146,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelTimeoutMinutes = 30;
         settings.bankTransferAutoCancelCron = "0 */15 * * * *";
         settings.tax = StoreTaxSettings.empty();
+        settings.welcomeDiscount = WelcomeDiscountSettings.disabled();
         settings.policyVersions = PolicyVersions.initial();
         settings.updatedAt = Instant.now();
         settings.updatedBy = "system-default";
@@ -214,6 +216,7 @@ public class SystemSettings {
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
             StoreTaxSettings tax,
+            WelcomeDiscountSettings welcomeDiscount,
             PolicyVersions policyVersions,
             Instant updatedAt,
             String updatedBy
@@ -283,6 +286,7 @@ public class SystemSettings {
         settings.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         settings.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         settings.tax = tax == null ? StoreTaxSettings.empty() : tax;
+        settings.welcomeDiscount = welcomeDiscount == null ? WelcomeDiscountSettings.disabled() : welcomeDiscount;
         settings.policyVersions = policyVersions == null ? PolicyVersions.initial() : policyVersions;
         settings.validateConfiguration();
         settings.updatedAt = updatedAt == null ? Instant.now() : updatedAt;
@@ -352,6 +356,7 @@ public class SystemSettings {
             Integer bankTransferAutoCancelTimeoutMinutes,
             String bankTransferAutoCancelCron,
             StoreTaxSettings tax,
+            WelcomeDiscountSettings welcomeDiscount,
             PolicyVersions policyVersions,
             String updatedBy
     ) {
@@ -416,6 +421,7 @@ public class SystemSettings {
         this.bankTransferAutoCancelTimeoutMinutes = normalizeCancelTimeout(bankTransferAutoCancelTimeoutMinutes);
         this.bankTransferAutoCancelCron = normalizeCancelCron(bankTransferAutoCancelCron);
         this.tax = tax == null ? StoreTaxSettings.empty() : tax;
+        this.welcomeDiscount = welcomeDiscount == null ? WelcomeDiscountSettings.disabled() : welcomeDiscount;
         this.policyVersions = policyVersions == null ? PolicyVersions.initial() : policyVersions;
         validateConfiguration();
         this.updatedAt = Instant.now();
@@ -718,6 +724,7 @@ public class SystemSettings {
     public int getBankTransferAutoCancelTimeoutMinutes() { return bankTransferAutoCancelTimeoutMinutes; }
     public String getBankTransferAutoCancelCron() { return bankTransferAutoCancelCron; }
     public StoreTaxSettings getTax() { return tax; }
+    public WelcomeDiscountSettings getWelcomeDiscount() { return welcomeDiscount; }
     public PolicyVersions getPolicyVersions() { return policyVersions; }
     /** The version a consent recorded now has to be stored against. */
     public String getPrivacyPolicyVersion() { return policyVersions.privacyPolicy(); }
