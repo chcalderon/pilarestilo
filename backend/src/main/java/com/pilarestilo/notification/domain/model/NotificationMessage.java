@@ -50,6 +50,8 @@ public record NotificationMessage(
     public static final String REFUND_REGISTERED = "REFUND_REGISTERED";
     /** Sent to whoever manages returns, not to the customer: a clock just started. */
     public static final String RETURN_REQUESTED_STAFF = "RETURN_REQUESTED_STAFF";
+    /** The first message a new account gets, right after registration. */
+    public static final String WELCOME = "WELCOME";
 
     public NotificationMessage {
         // Not Map.copyOf: it rejects null values, and absent facts are legitimately null here --

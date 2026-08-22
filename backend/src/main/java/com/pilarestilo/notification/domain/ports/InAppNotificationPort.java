@@ -11,4 +11,6 @@ public interface InAppNotificationPort {
 
     /** Reaches the customer whether they confirmed the delivery or the job did it for them. */
     void notifyOrderDelivered(UUID userId, UUID orderId);
+
+    void notifyWelcome(UUID userId);
 }

@@ -69,6 +69,14 @@ public class InAppNotificationSender implements InAppNotificationPort {
             Map.of("orderId", orderId.toString()));
     }
 
+    @Override
+    public void notifyWelcome(UUID userId) {
+        save(userId, NotificationType.WELCOME,
+            "Bienvenida a Pilar Estilo",
+            "Gracias por crear tu cuenta. Ya puedes explorar el catalogo y hacer tu primera compra.",
+            Map.of());
+    }
+
     private void save(UUID userId, NotificationType type, String title, String body, Map<String, Object> metadata) {
         try {
             repository.save(InAppNotification.create(userId, type, title, body, metadata));

@@ -414,6 +414,23 @@ public class NotificationComposer {
                 order.getId());
     }
 
+    /** The first message a new account gets, right after registration. */
+    public NotificationMessage welcome(String fullName) {
+        String body = "Hola " + fullName + ", bienvenida a Pilar Estilo.\n\n"
+                + "Ya puedes explorar el catálogo y hacer tu primera compra.\n";
+
+        return new NotificationMessage(
+                NotificationMessage.WELCOME,
+                "Bienvenida a Pilar Estilo",
+                body,
+                EmailLayout.titled("Bienvenida a Pilar Estilo")
+                        .paragraph("Hola " + fullName + ", gracias por crear tu cuenta.")
+                        .paragraph("Ya puedes explorar el catálogo y hacer tu primera compra.")
+                        .build(),
+                Map.of("fullName", fullName),
+                null);
+    }
+
     /** The first segment of a UUID: enough for a customer to quote, short enough for a subject. */
     private static String shortId(UUID id) {
         return id == null ? "" : id.toString().substring(0, 8);

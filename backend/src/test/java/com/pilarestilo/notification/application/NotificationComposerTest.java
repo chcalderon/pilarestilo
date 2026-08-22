@@ -140,4 +140,13 @@ class NotificationComposerTest {
 
         assertThat(message.bodyText()).contains(REFERENCE).doesNotContain("Motivo:");
     }
+
+    @Test
+    void welcomeGreetsTheNewCustomerByName() {
+        var message = composer.welcome("Camila Torres");
+
+        assertThat(message.templateKey()).isEqualTo(NotificationMessage.WELCOME);
+        assertThat(message.bodyText()).contains("Camila Torres");
+        assertThat(message.bodyHtml()).contains("Camila Torres");
+    }
 }
