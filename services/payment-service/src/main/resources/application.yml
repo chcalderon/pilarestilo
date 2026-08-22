@@ -23,12 +23,17 @@ management:
       exposure:
         include: health,info,metrics,prometheus
   tracing:
-    enabled: ${APP_TRACING_ENABLED:false}
+    # Boot 4 renamed both of these. The old management.tracing.enabled and
+    # management.otlp.tracing.endpoint still parse and bind to nothing.
+    export:
+      enabled: ${APP_TRACING_ENABLED:false}
     sampling:
       probability: ${APP_TRACING_SAMPLING_PROBABILITY:1.0}
-  otlp:
+  opentelemetry:
     tracing:
-      endpoint: ${APP_TRACING_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+      export:
+        otlp:
+          endpoint: ${APP_TRACING_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
 
 app:
   jwt:
