@@ -175,10 +175,11 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         {tab === "register" && (
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+            <label htmlFor="popover-full-name" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
               {es ? "Nombre" : "Name"}
             </label>
             <input
+              id="popover-full-name"
               type="text"
               required
               autoComplete="name"
@@ -191,10 +192,11 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         )}
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+          <label htmlFor="popover-email" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
             Email
           </label>
           <input
+            id="popover-email"
             type="email"
             required
             autoComplete="email"
@@ -206,11 +208,12 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+          <label htmlFor="popover-password" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
             {es ? "Contrasena" : "Password"}
           </label>
           <div className="relative">
             <input
+              id="popover-password"
               type={showPassword ? "text" : "password"}
               required
               minLength={8}
