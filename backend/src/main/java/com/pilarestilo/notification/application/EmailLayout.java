@@ -182,7 +182,7 @@ public final class EmailLayout {
             return "<tr><td style=\"padding:20px 32px 28px;border-top:1px solid " + BORDER + ";\">"
                     + "<p style=\"margin:0;font-family:" + SANS + ";font-size:12px;line-height:1.6;"
                     + "color:" + MUTED + ";\">"
-                    + "Este mensaje se envió automáticamente por tu compra en Pilar Estilo. "
+                    + "Este mensaje se envió automáticamente desde Pilar Estilo. "
                     + "Si tienes dudas, respóndelo y te contestamos.</p></td></tr>";
         }
     }

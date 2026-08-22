@@ -2,15 +2,18 @@ package com.pilarestilo.shared.auth.application.usecases;
 
 import com.pilarestilo.privacy.domain.enums.ConsentType;
 import com.pilarestilo.privacy.application.usecases.RecordConsentUseCase;
+import com.pilarestilo.shared.application.AfterCommitPublisher;
 import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.domain.ports.PasswordEncoder;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.user.domain.enums.UserRole;
+import com.pilarestilo.user.domain.events.UserRegistered;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -20,15 +23,18 @@ public class RegisterUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RecordConsentUseCase recordConsentUseCase;
+    private final AfterCommitPublisher afterCommitPublisher;
 
     public RegisterUseCase(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider,
-                           RecordConsentUseCase recordConsentUseCase) {
+                           RecordConsentUseCase recordConsentUseCase,
+                           AfterCommitPublisher afterCommitPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.recordConsentUseCase = recordConsentUseCase;
+        this.afterCommitPublisher = afterCommitPublisher;
     }
 
     /**
@@ -52,6 +58,8 @@ public class RegisterUseCase {
          */
         recordConsentUseCase.execute(saved.getId(), ConsentType.TERMS, ipAddress, userAgent);
         recordConsentUseCase.execute(saved.getId(), ConsentType.PRIVACY, ipAddress, userAgent);
+
+        afterCommitPublisher.publish(new UserRegistered(saved.getId(), Instant.now()));
 
         List<String> permissions = List.of(); // CUSTOMER has no worker permissions
         List<String> permissionCodes = List.of();
