@@ -1,6 +1,8 @@
 import { defineMiddleware } from 'astro:middleware';
 import { decodeJwtPayload } from './lib/jwt';
 import { isAdminPanelRole } from './lib/roles';
+import { resolveAuthLocale } from './lib/authRedirect';
+import { safeRedirectPath } from './lib/safeRedirect';
 
 const RBAC_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.RBAC_DEBUG === 'true';
 
@@ -200,6 +202,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return context.redirect(
         `/${checkoutLocale}/auth/login?redirect=${encodeURIComponent(target)}`,
       );
+    }
+  }
+
+  const authLocale = resolveAuthLocale(pathname);
+  if (authLocale) {
+    const token = context.cookies.get('pe_token')?.value;
+    const payload = token ? decodeJwtPayload(token) : null;
+    const expired =
+      !!payload && typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp'];
+
+    // Already signed in: the form has nothing to offer, so send them where they were headed.
+    if (payload && !expired) {
+      if (isAdminPanelRole(payload['role'])) {
+        return context.redirect('/admin/dashboard');
+      }
+      const target = safeRedirectPath(
+        context.url.searchParams.get('redirect'),
+        `/${authLocale}/account`,
+      );
+      return context.redirect(target);
     }
   }
 
