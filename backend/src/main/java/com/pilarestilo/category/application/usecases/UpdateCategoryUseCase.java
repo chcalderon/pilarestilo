@@ -32,7 +32,7 @@ public class UpdateCategoryUseCase {
         CategoryType type;
         try {
             type = categoryType != null ? CategoryType.valueOf(categoryType) : CategoryType.GENERIC;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Invalid categoryType: " + categoryType);
         }
         c.updateMenuMetadata(menuVisible, type, heroImageUrl);

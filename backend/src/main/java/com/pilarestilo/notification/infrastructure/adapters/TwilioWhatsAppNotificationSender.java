@@ -21,6 +21,8 @@ import java.util.UUID;
 @Component
 public class TwilioWhatsAppNotificationSender implements NotificationSender {
 
+    private static final String WHATSAPP_PREFIX = "whatsapp:";
+
     private static final Logger log = LoggerFactory.getLogger(TwilioWhatsAppNotificationSender.class);
 
     private final RestClient.Builder restClientBuilder;
@@ -194,14 +196,14 @@ public class TwilioWhatsAppNotificationSender implements NotificationSender {
             return null;
         }
         String candidate = value.trim();
-        if (candidate.regionMatches(true, 0, "whatsapp:", 0, "whatsapp:".length())) {
-            candidate = candidate.substring("whatsapp:".length());
+        if (candidate.regionMatches(true, 0, WHATSAPP_PREFIX, 0, WHATSAPP_PREFIX.length())) {
+            candidate = candidate.substring(WHATSAPP_PREFIX.length());
         }
         String normalizedPhone = normalizePhone(candidate);
         if (normalizedPhone == null) {
             return null;
         }
-        return "whatsapp:" + normalizedPhone;
+        return WHATSAPP_PREFIX + normalizedPhone;
     }
 
     private String normalizePhone(String value) {

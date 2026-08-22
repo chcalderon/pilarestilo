@@ -99,7 +99,7 @@ public class ProductAiNodeBridgeClient {
         BufferedImage source;
         try {
             source = ImageIO.read(new ByteArrayInputStream(sourceBytes));
-        } catch (IOException ex) {
+        } catch (IOException _) {
             throw new DomainException("Could not decode generated image for JPEG resize");
         }
         if (source == null) {

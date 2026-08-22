@@ -21,6 +21,8 @@ import java.util.UUID;
 
 public class Product {
 
+    private static final String VARIANT_NOT_FOUND_PREFIX = "Variante no encontrada: ";
+
     private UUID id;
     private String name;
     private String description;
@@ -220,7 +222,7 @@ public class Product {
 
     public void reserveVariant(int qty, String color, String size) {
         ProductVariant v = findVariant(color, size)
-                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+                .orElseThrow(() -> new DomainException(VARIANT_NOT_FOUND_PREFIX + color + " / " + size));
         if (v.available() < qty) {
             throw new DomainException("Stock insuficiente para variante: " + color + " / " + size);
         }
@@ -235,7 +237,7 @@ public class Product {
 
     public void releaseVariant(int qty, String color, String size) {
         ProductVariant v = findVariant(color, size)
-                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+                .orElseThrow(() -> new DomainException(VARIANT_NOT_FOUND_PREFIX + color + " / " + size));
         if (v.getStockReserved() < qty) {
             throw new DomainException("Stock reservado insuficiente para variante: " + color + " / " + size);
         }
@@ -250,7 +252,7 @@ public class Product {
 
     public void confirmVariant(int qty, String color, String size) {
         ProductVariant v = findVariant(color, size)
-                .orElseThrow(() -> new DomainException("Variante no encontrada: " + color + " / " + size));
+                .orElseThrow(() -> new DomainException(VARIANT_NOT_FOUND_PREFIX + color + " / " + size));
         if (v.getStockReserved() < qty) {
             throw new DomainException("Stock reservado insuficiente para confirmar variante: " + color + " / " + size);
         }

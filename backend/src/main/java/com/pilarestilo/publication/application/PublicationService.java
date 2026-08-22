@@ -55,6 +55,8 @@ import java.util.UUID;
 @Service
 public class PublicationService {
 
+    private static final String DISPATCH_ERROR_CODE = "DISPATCH_ERROR";
+
     private final PublicationJpaRepository publicationRepository;
     private final ProductRepository productRepository;
     private final PublicationWebhookDispatcher publicationWebhookDispatcher;
@@ -283,14 +285,14 @@ public class PublicationService {
         } catch (DomainException ex) {
             attempt.setStatus(PublicationAttemptStatus.FAILED);
             attempt.setFinishedAt(Instant.now());
-            attempt.setErrorCode("DISPATCH_ERROR");
+            attempt.setErrorCode(DISPATCH_ERROR_CODE);
             attempt.setErrorMessage(ex.getMessage());
             saved.setStatus(PublicationStatus.FAILED);
-            saved.setLastErrorCode("DISPATCH_ERROR");
+            saved.setLastErrorCode(DISPATCH_ERROR_CODE);
             saved.setLastErrorMessage(ex.getMessage());
             saved.setUpdatedAt(Instant.now());
             publicationRepository.save(saved);
-            eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), attempt.getAttemptNumber(), "DISPATCH_ERROR"));
+            eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), attempt.getAttemptNumber(), DISPATCH_ERROR_CODE));
             if (isRetry) {
                 throw new DomainException("Publication retry failed: " + ex.getMessage());
             }
@@ -448,7 +450,7 @@ public class PublicationService {
                 .toList();
         try {
             return objectMapper.writeValueAsString(normalized);
-        } catch (JacksonException ex) {
+        } catch (JacksonException _) {
             throw new DomainException("Could not serialize publication hashtags");
         }
     }
@@ -461,7 +463,7 @@ public class PublicationService {
             List<String> parsed = objectMapper.readValue(rawJson, new TypeReference<>() {
             });
             return new ArrayList<>(new LinkedHashSet<>(parsed));
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not read publication hashtags");
         }
     }

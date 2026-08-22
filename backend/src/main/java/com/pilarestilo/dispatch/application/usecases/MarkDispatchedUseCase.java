@@ -87,7 +87,7 @@ public class MarkDispatchedUseCase {
                 return byName;
             }
             return normalizeOptional(order.shippingCourierId());
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return null;
         }
     }

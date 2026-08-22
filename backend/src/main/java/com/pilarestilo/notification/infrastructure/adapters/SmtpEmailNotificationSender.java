@@ -269,7 +269,7 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         }
         try {
             return Integer.parseInt(value.trim());
-        } catch (NumberFormatException ex) {
+        } catch (NumberFormatException _) {
             return null;
         }
     }

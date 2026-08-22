@@ -34,13 +34,28 @@ public class NotificationComposer {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM 'a las' HH:mm");
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    // n8n forwards `data` verbatim, so these keys are the contract with every downstream workflow --
+    // one place to change a key name is what keeps that contract from drifting between messages.
+    private static final String KEY_ORDER_ID = "orderId";
+    private static final String KEY_ORDER_REFERENCE = "orderReference";
+    private static final String KEY_REFERENCE = "reference";
+    private static final String KEY_TOTAL_AMOUNT = "totalAmount";
+    private static final String KEY_CURRENCY = "currency";
+    private static final String KEY_DEADLINE_AT = "deadlineAt";
+    private static final String KEY_REASON = "reason";
+    private static final String KEY_RETURN_ID = "returnId";
+
+    private static final String PREFIX_TU_PEDIDO = "Tu pedido ";
+    private static final String PREFIX_PEDIDO = "Pedido ";
+    private static final String LABEL_NUMERO_PEDIDO = "Número de pedido";
+
     public NotificationMessage transferInstructions(Order order, Payment payment, Instant deadline) {
         String reference = order.getPublicReference();
         String amount = formatAmount(order.getTotalAmount().amount().toPlainString(),
                 order.getTotalAmount().currency());
 
         StringBuilder body = new StringBuilder()
-                .append("Tu pedido ").append(reference).append(" está reservado.\n\n")
+                .append(PREFIX_TU_PEDIDO).append(reference).append(" está reservado.\n\n")
                 .append("Monto a transferir: ").append(amount).append("\n\n")
                 .append("Datos para la transferencia:\n")
                 .append("  Titular: ").append(payment.getTransferAccountHolderName()).append('\n')
@@ -66,21 +81,21 @@ public class NotificationComposer {
         }
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("totalAmount", order.getTotalAmount().amount());
-        data.put("currency", order.getTotalAmount().currency());
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_TOTAL_AMOUNT, order.getTotalAmount().amount());
+        data.put(KEY_CURRENCY, order.getTotalAmount().currency());
         data.put("bankHolder", payment.getTransferAccountHolderName());
         data.put("bankName", payment.getTransferBankName());
         data.put("bankAccountType", payment.getTransferAccountType());
         data.put("bankAccountNumber", payment.getTransferAccountNumber());
         data.put("bankContactEmail", payment.getTransferAccountEmail());
-        data.put("deadlineAt", deadline);
+        data.put(KEY_DEADLINE_AT, deadline);
         data.put("deadlineLocal", deadline != null ? formatDeadline(deadline) : null);
 
         return new NotificationMessage(
                 NotificationMessage.TRANSFER_INSTRUCTIONS,
-                "Pedido " + reference + " — datos para tu transferencia",
+                PREFIX_PEDIDO + reference + " — datos para tu transferencia",
                 body.toString(),
                 transferInstructionsHtml(payment, deadline, reference, amount),
                 data,
@@ -101,7 +116,7 @@ public class NotificationComposer {
                                             String reference,
                                             String amount) {
         EmailLayout.Builder email = EmailLayout.titled("Datos para tu transferencia")
-                .paragraph("Tu pedido " + reference + " está reservado. Transfiere el monto exacto "
+                .paragraph(PREFIX_TU_PEDIDO + reference + " está reservado. Transfiere el monto exacto "
                         + "a la cuenta de abajo.")
                 .highlight("Monto a transferir", amount)
                 .details(List.of(
@@ -126,7 +141,7 @@ public class NotificationComposer {
 
     public NotificationMessage orderCancelled(Order order, String reason) {
         String reference = order.getPublicReference();
-        String body = "Tu pedido " + reference + " fue cancelado.\n\n"
+        String body = PREFIX_TU_PEDIDO + reference + " fue cancelado.\n\n"
                 + Optional.ofNullable(reason).filter(r -> !r.isBlank())
                         .map(r -> "Motivo: " + r + "\n\n")
                         .orElse("")
@@ -134,13 +149,13 @@ public class NotificationComposer {
                 + "puedes hacer un nuevo pedido.\n";
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("reason", reason);
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_REASON, reason);
 
         return new NotificationMessage(
                 NotificationMessage.ORDER_CANCELLED,
-                "Pedido " + reference + " cancelado",
+                PREFIX_PEDIDO + reference + " cancelado",
                 body,
                 orderCancelledHtml(reference, reason),
                 data,
@@ -174,7 +189,7 @@ public class NotificationComposer {
                 order.getTotalAmount().currency());
 
         StringBuilder body = new StringBuilder()
-                .append("Tu pedido ").append(reference).append(" fue creado correctamente.\n\n")
+                .append(PREFIX_TU_PEDIDO).append(reference).append(" fue creado correctamente.\n\n")
                 .append("Detalle:\n");
         for (var item : order.getItems()) {
             body.append("  ").append(item.getProductName())
@@ -199,21 +214,21 @@ public class NotificationComposer {
                         + "y pedir la devolución, según la Ley del Consumidor.\n");
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", orderId);
-        data.put("reference", reference);
+        data.put(KEY_ORDER_ID, orderId);
+        data.put(KEY_REFERENCE, reference);
         data.put("subtotalAmount", order.getSubtotal().amount());
         data.put("discountAmount", order.getDiscountAmount().amount());
         data.put("netAmount", order.getNetAmount().amount());
         data.put("taxAmount", order.getTaxAmount().amount());
         data.put("taxRate", order.getTaxRate());
-        data.put("totalAmount", order.getTotalAmount().amount());
-        data.put("currency", order.getTotalAmount().currency());
+        data.put(KEY_TOTAL_AMOUNT, order.getTotalAmount().amount());
+        data.put(KEY_CURRENCY, order.getTotalAmount().currency());
         data.put("shippingCourierName", order.getShippingCourierName());
         data.put("shippingZoneCode", order.getShippingZoneCode());
 
         return new NotificationMessage(
                 NotificationMessage.ORDER_CONFIRMATION,
-                "Pedido " + reference + " confirmado",
+                PREFIX_PEDIDO + reference + " confirmado",
                 body.toString(),
                 orderConfirmationHtml(order, reference, total),
                 data,
@@ -232,7 +247,7 @@ public class NotificationComposer {
         EmailLayout.Builder email = EmailLayout.titled("Recibimos tu pedido")
                 .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
                         + "avisaremos por aquí en cada paso.")
-                .highlight("Número de pedido", reference)
+                .highlight(LABEL_NUMERO_PEDIDO, reference)
                 .details(lines);
 
         List<String[]> amounts = new java.util.ArrayList<>();
@@ -288,7 +303,7 @@ public class NotificationComposer {
      */
     private String orderCancelledHtml(String reference, String reason) {
         EmailLayout.Builder email = EmailLayout.titled("Tu pedido fue cancelado")
-                .highlight("Número de pedido", reference);
+                .highlight(LABEL_NUMERO_PEDIDO, reference);
         Optional.ofNullable(reason)
                 .filter(r -> !r.isBlank())
                 .ifPresent(r -> email.note("Motivo: " + r));
@@ -309,15 +324,15 @@ public class NotificationComposer {
         String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_PREPARING,
-                "Pedido " + reference + " en preparación",
-                "Tu pedido " + reference + " está en preparación.\n"
+                PREFIX_PEDIDO + reference + " en preparación",
+                PREFIX_TU_PEDIDO + reference + " está en preparación.\n"
                         + "Te avisaremos cuando sea despachado.\n",
                 EmailLayout.titled("Estamos preparando tu pedido")
                         .paragraph("Tu pago quedó confirmado y ya estamos armando el paquete.")
-                        .highlight("Número de pedido", reference)
+                        .highlight(LABEL_NUMERO_PEDIDO, reference)
                         .paragraph("Te escribimos de nuevo apenas salga.")
                         .build(),
-                Map.of("orderId", orderId, "reference", reference),
+                Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
                 orderId);
     }
 
@@ -326,15 +341,15 @@ public class NotificationComposer {
         String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_SHIPPED,
-                "Pedido " + reference + " enviado",
-                "Tu pedido " + reference + " ya fue enviado.\n"
+                PREFIX_PEDIDO + reference + " enviado",
+                PREFIX_TU_PEDIDO + reference + " ya fue enviado.\n"
                         + "Pronto llegará a destino.\n",
                 EmailLayout.titled("Tu pedido va en camino")
                         .paragraph("Ya salió de nuestras manos y está en viaje.")
-                        .highlight("Número de pedido", reference)
+                        .highlight(LABEL_NUMERO_PEDIDO, reference)
                         .paragraph("Cuando llegue, avísanos desde tu cuenta para cerrar el pedido.")
                         .build(),
-                Map.of("orderId", orderId, "reference", reference),
+                Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
                 orderId);
     }
 
@@ -355,16 +370,16 @@ public class NotificationComposer {
         String reference = order.getPublicReference();
         return new NotificationMessage(
                 NotificationMessage.ORDER_DELIVERED,
-                "Pedido " + reference + " entregado",
-                "Tu pedido " + reference + " quedó como entregado.\n"
+                PREFIX_PEDIDO + reference + " entregado",
+                PREFIX_TU_PEDIDO + reference + " quedó como entregado.\n"
                         + "Si aún no lo recibiste, respóndenos y lo revisamos.\n\n"
                         + "Nos ayudarías mucho contándonos qué te pareció.\n",
                 EmailLayout.titled("Tu pedido quedó como entregado")
-                        .highlight("Número de pedido", reference)
+                        .highlight(LABEL_NUMERO_PEDIDO, reference)
                         .note("Si aún no lo recibiste, respóndenos este correo y lo revisamos.")
                         .paragraph("Nos ayudarías mucho contándonos qué te pareció.")
                         .build(),
-                Map.of("orderId", orderId, "reference", reference),
+                Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
                 orderId);
     }
 
@@ -394,11 +409,11 @@ public class NotificationComposer {
                 order.getTotalAmount().amount().toPlainString(), order.getTotalAmount().currency());
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
         data.put("paymentId", payment.getId());
         data.put("amount", order.getTotalAmount().amount().toPlainString());
-        data.put("currency", order.getTotalAmount().currency());
+        data.put(KEY_CURRENCY, order.getTotalAmount().currency());
         data.put("buyerName", buyerName);
         data.put("proofReference", payment.getProofReference());
 
@@ -509,16 +524,16 @@ public class NotificationComposer {
                 + "Total: " + formatAmount(document.getTotalAmount().amount().toPlainString(), currency) + "\n";
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
         data.put("documentId", document.getId());
         data.put("documentType", document.getType().name());
         data.put("folio", document.getFolio());
         data.put("netAmount", document.getNetAmount().amount());
         data.put("taxAmount", document.getTaxAmount().amount());
         data.put("taxRate", document.getTaxRate());
-        data.put("totalAmount", document.getTotalAmount().amount());
-        data.put("currency", currency);
+        data.put(KEY_TOTAL_AMOUNT, document.getTotalAmount().amount());
+        data.put(KEY_CURRENCY, currency);
 
         return new NotificationMessage(
                 NotificationMessage.SALES_DOCUMENT_ISSUED,
@@ -562,12 +577,12 @@ public class NotificationComposer {
                 + "Te devolvemos el dinero a más tardar el " + deadline + ".\n";
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("returnId", request.getId());
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_RETURN_ID, request.getId());
         data.put("kind", request.getKind().name());
-        data.put("reason", request.getReason());
-        data.put("deadlineAt", request.getDeadlineAt());
+        data.put(KEY_REASON, request.getReason());
+        data.put(KEY_DEADLINE_AT, request.getDeadlineAt());
 
         return new NotificationMessage(
                 NotificationMessage.RETURN_REQUESTED,
@@ -597,10 +612,10 @@ public class NotificationComposer {
                 + deadline + ".\n";
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("returnId", request.getId());
-        data.put("deadlineAt", request.getDeadlineAt());
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_RETURN_ID, request.getId());
+        data.put(KEY_DEADLINE_AT, request.getDeadlineAt());
 
         return new NotificationMessage(
                 NotificationMessage.RETURN_APPROVED,
@@ -638,9 +653,9 @@ public class NotificationComposer {
         body.append("\nSegún tu banco puede tardar unos días en aparecer en tu cartola.\n");
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("returnId", request.getId());
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_RETURN_ID, request.getId());
         data.put("refundAmount", request.getRefundAmount() == null
                 ? null : request.getRefundAmount().amount());
         data.put("refundMethod", request.getRefundMethod() == null
@@ -692,13 +707,13 @@ public class NotificationComposer {
                         : "Revísalo en el panel, en Devoluciones.\n");
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", order.getId());
-        data.put("orderReference", reference);
-        data.put("returnId", request.getId());
+        data.put(KEY_ORDER_ID, order.getId());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put(KEY_RETURN_ID, request.getId());
         data.put("kind", request.getKind().name());
-        data.put("reason", request.getReason());
+        data.put(KEY_REASON, request.getReason());
         data.put("buyerName", buyerName);
-        data.put("deadlineAt", request.getDeadlineAt());
+        data.put(KEY_DEADLINE_AT, request.getDeadlineAt());
 
         return new NotificationMessage(
                 NotificationMessage.RETURN_REQUESTED_STAFF,

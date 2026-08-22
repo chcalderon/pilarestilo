@@ -114,7 +114,7 @@ public class SalesDocumentController {
         }
         try {
             return SalesDocumentType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unknown document type: " + raw);
         }
     }

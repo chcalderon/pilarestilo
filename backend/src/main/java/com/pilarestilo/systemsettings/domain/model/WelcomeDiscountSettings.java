@@ -62,7 +62,7 @@ public record WelcomeDiscountSettings(
     private static DiscountType parseType(String type) {
         try {
             return DiscountType.valueOf(type.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unsupported welcome discount type: " + type);
         }
     }

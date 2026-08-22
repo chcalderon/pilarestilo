@@ -17,6 +17,9 @@ import java.util.stream.Collectors;
 
 public class SystemSettings {
 
+    private static final String DEFAULT_STORE_NAME = "Pilar Estilo";
+    private static final String DEFAULT_WHATSAPP_NUMBER = "+56900000000";
+
     private short id;
     private String whatsappNumber;
     private String instagramUrl;
@@ -109,10 +112,10 @@ public class SystemSettings {
     public static SystemSettings createDefault() {
         SystemSettings settings = new SystemSettings();
         settings.id = 1;
-        settings.whatsappNumber = "+56900000000";
+        settings.whatsappNumber = DEFAULT_WHATSAPP_NUMBER;
         settings.instagramUrl = "https://instagram.com/pilarestilo";
         settings.facebookUrl = "https://facebook.com/pilarestilo";
-        settings.bankTransferAccountHolder = "Pilar Estilo";
+        settings.bankTransferAccountHolder = DEFAULT_STORE_NAME;
         settings.bankTransferContactEmail = "admin@pilarestilo.com";
         settings.bankTransferAccountNumber = "0000000000";
         settings.bankTransferBankName = "Banco de Chile";
@@ -128,14 +131,14 @@ public class SystemSettings {
         settings.smtpStarttlsEnabled = true;
         settings.notificationProviders = new LinkedHashSet<>(List.of(NotificationProvider.LOG));
         settings.n8nTokenHeaderName = "X-PE-N8N-TOKEN";
-        settings.whatsappSimulatedTo = "+56900000000";
-        settings.whatsappSimulatedSender = "Pilar Estilo";
+        settings.whatsappSimulatedTo = DEFAULT_WHATSAPP_NUMBER;
+        settings.whatsappSimulatedSender = DEFAULT_STORE_NAME;
         settings.whatsappTwilioApiBaseUrl = "https://api.twilio.com";
-        settings.whatsappTwilioToFallback = "+56900000000";
-        settings.whatsappTwilioSenderAlias = "Pilar Estilo";
+        settings.whatsappTwilioToFallback = DEFAULT_WHATSAPP_NUMBER;
+        settings.whatsappTwilioSenderAlias = DEFAULT_STORE_NAME;
         settings.sendgridApiBaseUrl = "https://api.sendgrid.com";
-        settings.sendgridSenderName = "Pilar Estilo";
-        settings.productAiInferDefaultBrand = "Pilar Estilo";
+        settings.sendgridSenderName = DEFAULT_STORE_NAME;
+        settings.productAiInferDefaultBrand = DEFAULT_STORE_NAME;
         settings.productAiInferDefaultCondition = "USED";
         settings.productAiInferBasePrice = 24990;
         settings.productAiInferListPriceMultiplier = new BigDecimal("1.35");
@@ -452,7 +455,7 @@ public class SystemSettings {
     private static MediaStorageProvider normalizeMediaStorageProvider(String rawProvider) {
         try {
             return MediaStorageProvider.fromRaw(rawProvider);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unsupported media storage provider: " + rawProvider);
         }
     }
@@ -477,7 +480,7 @@ public class SystemSettings {
             }
             try {
                 providers.add(NotificationProvider.fromRaw(normalized));
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException _) {
                 throw new DomainException("Unsupported notification provider: " + normalized);
             }
         }
@@ -499,7 +502,7 @@ public class SystemSettings {
             }
             try {
                 providers.add(PaymentGatewayProvider.fromRaw(normalized));
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException _) {
                 throw new DomainException("Unsupported payment gateway provider: " + normalized);
             }
         }
@@ -518,7 +521,7 @@ public class SystemSettings {
     private static String normalizeInferDefaultBrand(String value) {
         String normalized = normalizeNullable(value);
         if (normalized == null) {
-            return "Pilar Estilo";
+            return DEFAULT_STORE_NAME;
         }
         if (normalized.length() > 120) {
             return normalized.substring(0, 120).trim();
@@ -573,7 +576,7 @@ public class SystemSettings {
     private static ShippingPaymentMode normalizeShippingPaymentMode(String value) {
         try {
             return ShippingPaymentMode.fromRaw(value);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unsupported shipping payment mode: " + value);
         }
     }
@@ -590,7 +593,7 @@ public class SystemSettings {
         if (normalized == null) return "0 */15 * * * *";
         try {
             org.springframework.scheduling.support.CronExpression.parse(normalized);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Invalid cron expression: " + normalized);
         }
         return normalized;

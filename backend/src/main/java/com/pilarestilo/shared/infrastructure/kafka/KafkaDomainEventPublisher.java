@@ -40,14 +40,14 @@ public class KafkaDomainEventPublisher implements DomainEventPublisher {
         try {
             kafkaTemplate.send(topic, key, event).get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             log.debug("Published domain event {} to topic {}", event.getClass().getSimpleName(), topic);
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException _) {
             /*
              * Swallowing this cleared the flag and left the thread running as if nothing had asked
              * it to stop, which on shutdown means a request the container is trying to drain.
              */
             Thread.currentThread().interrupt();
             throw new DomainException("Could not publish domain event " + event.getClass().getSimpleName() + " to Kafka");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not publish domain event " + event.getClass().getSimpleName() + " to Kafka");
         }
     }
@@ -63,7 +63,7 @@ public class KafkaDomainEventPublisher implements DomainEventPublisher {
                 if (value != null) {
                     return value.toString();
                 }
-            } catch (Exception ignored) {
+            } catch (Exception _) {
                 // Try next candidate.
             }
         }

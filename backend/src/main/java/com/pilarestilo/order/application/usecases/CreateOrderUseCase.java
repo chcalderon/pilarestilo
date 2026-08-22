@@ -41,6 +41,7 @@ import java.util.UUID;
 public class CreateOrderUseCase {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String ACTIVE_FIELD = "active";
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
@@ -305,7 +306,7 @@ public class CreateOrderUseCase {
                 if (node == null || !node.isObject()) {
                     continue;
                 }
-                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
                 String code = node.path("code").asString("").trim();
                 if (!active || code.isBlank()) {
                     continue;
@@ -318,7 +319,7 @@ public class CreateOrderUseCase {
             return Set.copyOf(zoneCodes);
         } catch (DomainException ex) {
             throw ex;
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not parse shipping zones configuration");
         }
     }
@@ -337,7 +338,7 @@ public class CreateOrderUseCase {
                 if (node == null || !node.isObject()) {
                     continue;
                 }
-                boolean active = !node.has("active") || node.path("active").asBoolean(true);
+                boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
                 String id = node.path("id").asString("").trim();
                 String name = node.path("name").asString("").trim();
                 if (!active || id.isBlank() || name.isBlank()) {
@@ -351,7 +352,7 @@ public class CreateOrderUseCase {
             return Map.copyOf(couriers);
         } catch (DomainException ex) {
             throw ex;
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not parse shipping couriers configuration");
         }
     }

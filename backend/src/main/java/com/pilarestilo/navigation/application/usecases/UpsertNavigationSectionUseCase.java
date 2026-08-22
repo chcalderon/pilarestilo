@@ -29,7 +29,7 @@ public class UpsertNavigationSectionUseCase {
         NavigationLayout layout;
         try {
             layout = NavigationLayout.valueOf(req.layout());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Invalid layout: " + req.layout());
         }
         if (id != null) {

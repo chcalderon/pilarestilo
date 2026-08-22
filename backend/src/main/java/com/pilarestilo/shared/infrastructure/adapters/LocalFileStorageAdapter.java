@@ -51,7 +51,7 @@ public class LocalFileStorageAdapter implements MediaStoragePort {
         }
         try {
             Files.deleteIfExists(target);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // deletion failure is non-critical
         }
     }

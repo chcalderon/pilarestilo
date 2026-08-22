@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 @Component
 public class ProductRepositoryAdapter implements ProductRepository {
 
+    private static final String CATEGORIES_ATTR = "categories";
+
     private final ProductJpaRepository jpaRepository;
     private final CategoryJpaRepository categoryJpaRepository;
 
@@ -121,7 +123,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         Specification<ProductEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (pattern != null) {
-                Join<Object, Object> textCats = root.join("categories", JoinType.LEFT);
+                Join<Object, Object> textCats = root.join(CATEGORIES_ATTR, JoinType.LEFT);
                 var namePred = cb.like(cb.lower(root.get("name")), pattern);
                 var brandPred = cb.like(cb.lower(root.get("brand")), pattern);
                 var descPred = cb.like(cb.lower(root.get("description")), pattern);
@@ -140,7 +142,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 predicates.add(cb.equal(root.get("condition"), ProductCondition.valueOf(condition)));
             }
             if (categorySlug != null && !categorySlug.isBlank()) {
-                Join<Object, Object> filterCats = root.join("categories", JoinType.INNER);
+                Join<Object, Object> filterCats = root.join(CATEGORIES_ATTR, JoinType.INNER);
                 predicates.add(cb.equal(filterCats.get("slug"), categorySlug));
             }
             appendCreatedAtPredicates(predicates, root, cb, createdFrom, createdTo);
@@ -175,7 +177,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 predicates.add(buildInStockPredicate(root, query, cb));
             }
             if (filter.categorySlug() != null) {
-                Join<Object, Object> cats = root.join("categories", jakarta.persistence.criteria.JoinType.INNER);
+                Join<Object, Object> cats = root.join(CATEGORIES_ATTR, jakarta.persistence.criteria.JoinType.INNER);
                 predicates.add(cb.equal(cats.get("slug"), filter.categorySlug()));
                 if (query != null) query.distinct(true);
             }

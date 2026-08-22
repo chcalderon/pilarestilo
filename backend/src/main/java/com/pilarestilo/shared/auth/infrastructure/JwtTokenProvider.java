@@ -77,7 +77,7 @@ public class JwtTokenProvider {
         try {
             parseToken(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException _) {
             return false;
         }
     }

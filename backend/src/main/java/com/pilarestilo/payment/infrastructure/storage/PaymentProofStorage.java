@@ -63,7 +63,7 @@ public class PaymentProofStorage {
         try (InputStream data = file.getInputStream()) {
             Files.createDirectories(root);
             Files.copy(data, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new DomainException("Could not store the proof file");
         }
         return filename;

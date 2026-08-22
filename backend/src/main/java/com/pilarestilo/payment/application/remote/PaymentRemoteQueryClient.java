@@ -54,7 +54,7 @@ public class PaymentRemoteQueryClient {
                 return Optional.empty();
             }
             throw new DomainException("Could not fetch payment from payment-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not fetch payment from payment-service");
         }
     }
@@ -72,7 +72,7 @@ public class PaymentRemoteQueryClient {
                 return Optional.empty();
             }
             throw new DomainException("Could not fetch payment by order from payment-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not fetch payment by order from payment-service");
         }
     }
@@ -90,7 +90,7 @@ public class PaymentRemoteQueryClient {
             return new PageImpl<>(content, pageable, response.totalElements());
         } catch (RestClientResponseException ex) {
             throw new DomainException("Could not list payments from payment-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not list payments from payment-service");
         }
     }

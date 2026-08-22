@@ -284,7 +284,7 @@ public class ProductAiOpenAiClient {
         String normalized = normalizePotentialJson(text);
         try {
             return objectMapper.readTree(normalized);
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return null;
         }
     }
@@ -429,7 +429,7 @@ public class ProductAiOpenAiClient {
             if (!message.isBlank()) {
                 return message.trim();
             }
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             // fallback to compact body preview below
         }
         String compact = body.replaceAll("\\s+", " ").trim();

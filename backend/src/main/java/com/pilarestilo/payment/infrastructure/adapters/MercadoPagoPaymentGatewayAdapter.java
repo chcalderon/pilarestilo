@@ -91,7 +91,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
                     .body(buildPreferencePayload(orderId, amount, config))
                     .retrieve()
                     .body(JsonNode.class);
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not create Mercado Pago checkout session");
         }
 
@@ -136,7 +136,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
                 case "expired", "cancelled" -> PaymentStatus.REJECTED;
                 default -> PaymentStatus.PENDING;
             };
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return PaymentStatus.PENDING;
         }
     }
@@ -154,7 +154,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
                     .uri("/v1/payments/{id}", mercadoPagoPaymentId.trim())
                     .retrieve()
                     .body(JsonNode.class);
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not resolve Mercado Pago payment webhook");
         }
 
@@ -170,7 +170,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         UUID orderId;
         try {
             orderId = UUID.fromString(externalReference.trim());
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Invalid external_reference received from Mercado Pago");
         }
 
@@ -340,7 +340,7 @@ public class MercadoPagoPaymentGatewayAdapter implements PaymentGatewayPort {
         }
         try {
             return OffsetDateTime.parse(value).toInstant();
-        } catch (DateTimeParseException ex) {
+        } catch (DateTimeParseException _) {
             return null;
         }
     }
