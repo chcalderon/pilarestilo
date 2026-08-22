@@ -34,8 +34,10 @@ public class UserNotificationDispatcher {
 
     public void onUserRegistered(UserRegistered event) {
         userRepository.findById(event.userId()).ifPresent(user -> {
-            notificationSender.send(composer.welcome(user.getFullName()), recipientFor(user));
-            inAppNotificationPort.notifyWelcome(user.getId());
+            notificationSender.send(
+                    composer.welcome(user.getFullName(), event.welcomeDiscount()), recipientFor(user));
+            String couponCode = event.welcomeDiscount() == null ? null : event.welcomeDiscount().code();
+            inAppNotificationPort.notifyWelcome(user.getId(), couponCode);
         });
     }
 

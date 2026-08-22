@@ -19,8 +19,13 @@ const EMPTY_FORM: CreateDiscountCodeRequest = {
   maxUses: 1,
 };
 
-function isExpired(dto: DiscountCodeDto) {
-  return !dto.active || new Date(dto.validUntil) < new Date();
+/** A single-use code that has already been claimed is not vigente, whatever its date says. */
+export function isSpent(dto: DiscountCodeDto) {
+  return dto.timesUsed >= dto.maxUses;
+}
+
+export function isExpired(dto: DiscountCodeDto) {
+  return !dto.active || new Date(dto.validUntil) < new Date() || isSpent(dto);
 }
 
 function fmtDate(d: string) {
@@ -30,6 +35,9 @@ function fmtDate(d: string) {
 function StatusBadge({ dto }: { dto: DiscountCodeDto }) {
   if (!dto.active) return (
     <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-muted px-1.5 py-0.5">Inactivo</span>
+  );
+  if (isSpent(dto)) return (
+    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-muted px-1.5 py-0.5">Usado</span>
   );
   if (isExpired(dto)) return (
     <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-red-50 text-red-400 px-1.5 py-0.5">Caducado</span>

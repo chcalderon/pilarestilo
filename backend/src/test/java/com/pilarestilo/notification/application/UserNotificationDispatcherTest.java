@@ -6,6 +6,8 @@ import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.events.UserRegistered;
 import com.pilarestilo.user.domain.model.User;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +71,23 @@ class UserNotificationDispatcherTest {
 
         dispatcher.onUserRegistered(new UserRegistered(userId, Instant.now()));
 
-        verify(inAppNotificationPort).notifyWelcome(userId);
+        verify(inAppNotificationPort).notifyWelcome(userId, null);
+    }
+
+    @Test
+    void writesTheCouponCodeIntoTheInAppNotificationWhenOneWasIssued() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(registeredUser()));
+        var coupon = new UserRegistered.WelcomeDiscount(
+                "BIENVENIDA-ABC123", "PERCENTAGE", BigDecimal.TEN, BigDecimal.ZERO,
+                LocalDate.now().plusDays(30));
+
+        dispatcher.onUserRegistered(new UserRegistered(userId, Instant.now(), coupon));
+
+        verify(inAppNotificationPort).notifyWelcome(userId, "BIENVENIDA-ABC123");
+        verify(notificationSender).send(
+                argThat(m -> NotificationMessage.WELCOME.equals(m.templateKey())
+                        && m.bodyText().contains("BIENVENIDA-ABC123")),
+                any());
     }
 
     /** No row means nothing to greet — no address, no name, nothing worth sending. */
@@ -80,6 +98,6 @@ class UserNotificationDispatcherTest {
         dispatcher.onUserRegistered(new UserRegistered(userId, Instant.now()));
 
         verify(notificationSender, never()).send(any(), any());
-        verify(inAppNotificationPort, never()).notifyWelcome(any());
+        verify(inAppNotificationPort, never()).notifyWelcome(any(), any());
     }
 }

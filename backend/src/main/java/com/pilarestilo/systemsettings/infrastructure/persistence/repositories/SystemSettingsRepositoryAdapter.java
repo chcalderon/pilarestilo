@@ -3,6 +3,7 @@ package com.pilarestilo.systemsettings.infrastructure.persistence.repositories;
 import com.pilarestilo.systemsettings.domain.model.PolicyVersions;
 import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
 import com.pilarestilo.systemsettings.domain.model.SystemSettings;
+import com.pilarestilo.systemsettings.domain.model.WelcomeDiscountSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.persistence.entities.SystemSettingsEntity;
 import org.springframework.stereotype.Component;
@@ -105,6 +106,12 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setTaxVatRate(tax.vatRate());
         entity.setTaxDocumentRequiredBeforeDispatch(tax.documentRequiredBeforeDispatch());
         entity.setTaxDocumentProvider(tax.provider().name());
+        WelcomeDiscountSettings welcomeDiscount = settings.getWelcomeDiscount();
+        entity.setWelcomeDiscountEnabled(welcomeDiscount.enabled());
+        entity.setWelcomeDiscountType(welcomeDiscount.type());
+        entity.setWelcomeDiscountValue(welcomeDiscount.value());
+        entity.setWelcomeDiscountMinOrderAmount(welcomeDiscount.minOrderAmount());
+        entity.setWelcomeDiscountRequiresMarketing(welcomeDiscount.requiresMarketingConsent());
         entity.setPrivacyPolicyVersion(settings.getPolicyVersions().privacyPolicy());
         entity.setTermsVersion(settings.getPolicyVersions().terms());
         entity.setUpdatedAt(settings.getUpdatedAt());
@@ -194,6 +201,12 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                         entity.getTaxVatRate(),
                         entity.getTaxDocumentRequiredBeforeDispatch(),
                         entity.getTaxDocumentProvider()),
+                WelcomeDiscountSettings.of(
+                        entity.isWelcomeDiscountEnabled(),
+                        entity.getWelcomeDiscountType(),
+                        entity.getWelcomeDiscountValue(),
+                        entity.getWelcomeDiscountMinOrderAmount(),
+                        entity.isWelcomeDiscountRequiresMarketing()),
                 PolicyVersions.of(entity.getPrivacyPolicyVersion(), entity.getTermsVersion()),
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()

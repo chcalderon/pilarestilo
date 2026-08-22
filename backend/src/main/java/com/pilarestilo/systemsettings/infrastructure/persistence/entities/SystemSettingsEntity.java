@@ -226,6 +226,21 @@ public class SystemSettingsEntity {
     @Column(name = "tax_document_provider", length = 30)
     private String taxDocumentProvider;
 
+    @Column(name = "welcome_discount_enabled", nullable = false)
+    private boolean welcomeDiscountEnabled;
+
+    @Column(name = "welcome_discount_type", nullable = false, length = 20)
+    private String welcomeDiscountType;
+
+    @Column(name = "welcome_discount_value", nullable = false, precision = 12, scale = 2)
+    private BigDecimal welcomeDiscountValue;
+
+    @Column(name = "welcome_discount_min_order_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal welcomeDiscountMinOrderAmount;
+
+    @Column(name = "welcome_discount_requires_marketing", nullable = false)
+    private boolean welcomeDiscountRequiresMarketing;
+
     /** Published version of each text; every stored consent points at one of these. */
     @Column(name = "privacy_policy_version", nullable = false, length = 20)
     private String privacyPolicyVersion;
@@ -259,6 +274,16 @@ public class SystemSettingsEntity {
     public void setTaxDocumentRequiredBeforeDispatch(Boolean value) { this.taxDocumentRequiredBeforeDispatch = value; }
     public String getTaxDocumentProvider() { return taxDocumentProvider; }
     public void setTaxDocumentProvider(String taxDocumentProvider) { this.taxDocumentProvider = taxDocumentProvider; }
+    public boolean isWelcomeDiscountEnabled() { return welcomeDiscountEnabled; }
+    public void setWelcomeDiscountEnabled(boolean value) { this.welcomeDiscountEnabled = value; }
+    public String getWelcomeDiscountType() { return welcomeDiscountType; }
+    public void setWelcomeDiscountType(String value) { this.welcomeDiscountType = value; }
+    public BigDecimal getWelcomeDiscountValue() { return welcomeDiscountValue; }
+    public void setWelcomeDiscountValue(BigDecimal value) { this.welcomeDiscountValue = value; }
+    public BigDecimal getWelcomeDiscountMinOrderAmount() { return welcomeDiscountMinOrderAmount; }
+    public void setWelcomeDiscountMinOrderAmount(BigDecimal value) { this.welcomeDiscountMinOrderAmount = value; }
+    public boolean isWelcomeDiscountRequiresMarketing() { return welcomeDiscountRequiresMarketing; }
+    public void setWelcomeDiscountRequiresMarketing(boolean value) { this.welcomeDiscountRequiresMarketing = value; }
     public String getPrivacyPolicyVersion() { return privacyPolicyVersion; }
     public void setPrivacyPolicyVersion(String privacyPolicyVersion) { this.privacyPolicyVersion = privacyPolicyVersion; }
     public String getTermsVersion() { return termsVersion; }

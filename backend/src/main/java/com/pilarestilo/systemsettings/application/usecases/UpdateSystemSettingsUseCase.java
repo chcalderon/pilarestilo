@@ -5,6 +5,7 @@ import com.pilarestilo.systemsettings.application.dto.SystemSettingsDto;
 import com.pilarestilo.systemsettings.application.mappers.SystemSettingsMapper;
 import com.pilarestilo.systemsettings.domain.events.BankTransferSettingsChangedEvent;
 import com.pilarestilo.systemsettings.domain.model.StoreTaxSettings;
+import com.pilarestilo.systemsettings.domain.model.WelcomeDiscountSettings;
 import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryptoService;
 import com.pilarestilo.shared.infrastructure.cache.CacheNames;
@@ -150,6 +151,12 @@ public class UpdateSystemSettingsUseCase {
                         command.taxVatRate(),
                         command.taxDocumentRequiredBeforeDispatch(),
                         command.taxDocumentProvider()),
+                WelcomeDiscountSettings.of(
+                        command.welcomeDiscountEnabled(),
+                        command.welcomeDiscountType(),
+                        command.welcomeDiscountValue(),
+                        command.welcomeDiscountMinOrderAmount(),
+                        command.welcomeDiscountRequiresMarketing()),
                 /*
                  * Carried through untouched: publishing a new version of the privacy policy or the
                  * terms is a deliberate act with a text behind it, not a field on the settings

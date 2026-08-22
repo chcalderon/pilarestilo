@@ -39,10 +39,17 @@ public interface DiscountJpaRepository extends JpaRepository<DiscountEntity, UUI
         """, nativeQuery = true)
     int atomicReleaseUsage(@Param("discountId") UUID discountId);
 
-    @Query("SELECT d FROM DiscountEntity d WHERE d.active = true AND d.validUntil >= :today ORDER BY d.validUntil ASC")
+    /**
+     * "Vigente" means still redeemable: on, within its date window, and with a slot left. A
+     * single-use code (the shape of every welcome coupon) that has already been claimed is not
+     * vigente just because {@code validUntil} has not arrived yet.
+     */
+    @Query("SELECT d FROM DiscountEntity d WHERE d.active = true AND d.validUntil >= :today "
+            + "AND d.timesUsed < d.maxUses ORDER BY d.validUntil ASC")
     List<DiscountEntity> findActiveDiscounts(@Param("today") LocalDate today);
 
-    @Query("SELECT d FROM DiscountEntity d WHERE d.active = false OR d.validUntil < :today ORDER BY d.validUntil DESC")
+    @Query("SELECT d FROM DiscountEntity d WHERE d.active = false OR d.validUntil < :today "
+            + "OR d.timesUsed >= d.maxUses ORDER BY d.validUntil DESC")
     List<DiscountEntity> findExpiredDiscounts(@Param("today") LocalDate today);
 
     @Query("SELECT COUNT(d) FROM DiscountEntity d WHERE d.code LIKE :pattern")

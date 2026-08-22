@@ -330,6 +330,11 @@ export interface SystemSettingsDto {
   taxVatRate: number | null;
   taxDocumentRequiredBeforeDispatch: boolean;
   taxDocumentProvider: 'MANUAL' | 'TUU' | 'OPENFACTURA';
+  welcomeDiscountEnabled: boolean;
+  welcomeDiscountType: 'PERCENTAGE' | 'FIXED';
+  welcomeDiscountValue: number;
+  welcomeDiscountMinOrderAmount: number;
+  welcomeDiscountRequiresMarketing: boolean;
   updatedAt?: string;
   updatedBy?: string | null;
 }
@@ -412,6 +417,11 @@ export interface UpdateSystemSettingsRequest {
   taxVatRate?: number | null;
   taxDocumentRequiredBeforeDispatch?: boolean;
   taxDocumentProvider?: string;
+  welcomeDiscountEnabled: boolean;
+  welcomeDiscountType?: string;
+  welcomeDiscountValue?: number;
+  welcomeDiscountMinOrderAmount?: number;
+  welcomeDiscountRequiresMarketing?: boolean;
 }
 
 export interface PublicStoreSettingsDto {
@@ -1263,11 +1273,12 @@ export async function loginUser(email: string, password: string): Promise<AuthTo
 export async function registerUser(
   email: string,
   password: string,
-  fullName: string
+  fullName: string,
+  acceptsMarketing = false
 ): Promise<AuthTokenResponse> {
   return apiFetch<AuthTokenResponse>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, fullName }),
+    body: JSON.stringify({ email, password, fullName, acceptsMarketing }),
   });
 }
 
@@ -1880,17 +1891,6 @@ export async function updateSystemSettings(
   return apiFetch<SystemSettingsDto>('/system-settings', {
     method: 'PATCH',
     body: JSON.stringify(data),
-    headers: authHeaders(token),
-  });
-}
-
-/**
- * Opting in to marketing. Separate from registering on purpose: the Ley 21.719 asks for it freely
- * given and apart from the terms, and bundling the two would make both worthless as evidence.
- */
-export async function acceptMarketingConsent(token: string): Promise<void> {
-  await fetch(`${API_BASE}/me/privacy/marketing`, {
-    method: 'POST',
     headers: authHeaders(token),
   });
 }

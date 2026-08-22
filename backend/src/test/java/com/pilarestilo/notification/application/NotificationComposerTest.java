@@ -8,6 +8,7 @@ import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.payment.domain.model.Payment;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.user.domain.events.UserRegistered;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -148,5 +149,24 @@ class NotificationComposerTest {
         assertThat(message.templateKey()).isEqualTo(NotificationMessage.WELCOME);
         assertThat(message.bodyText()).contains("Camila Torres");
         assertThat(message.bodyHtml()).contains("Camila Torres");
+    }
+
+    @Test
+    void welcomeWithoutACouponHasNoCodeInIt() {
+        var message = composer.welcome("Camila Torres", null);
+
+        assertThat(message.bodyText()).doesNotContain("BIENVENIDA-");
+    }
+
+    @Test
+    void welcomeWithACouponNamesTheCodeAndItsConditions() {
+        var coupon = new UserRegistered.WelcomeDiscount(
+                "BIENVENIDA-ABC123", "PERCENTAGE", BigDecimal.TEN, BigDecimal.ZERO,
+                java.time.LocalDate.now().plusDays(30));
+
+        var message = composer.welcome("Camila Torres", coupon);
+
+        assertThat(message.bodyText()).contains("BIENVENIDA-ABC123").contains("10%");
+        assertThat(message.bodyHtml()).contains("BIENVENIDA-ABC123");
     }
 }

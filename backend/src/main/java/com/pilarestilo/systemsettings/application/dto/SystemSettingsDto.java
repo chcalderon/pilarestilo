@@ -74,6 +74,11 @@ public record SystemSettingsDto(
         java.math.BigDecimal taxVatRate,
         boolean taxDocumentRequiredBeforeDispatch,
         String taxDocumentProvider,
+        boolean welcomeDiscountEnabled,
+        String welcomeDiscountType,
+        java.math.BigDecimal welcomeDiscountValue,
+        java.math.BigDecimal welcomeDiscountMinOrderAmount,
+        boolean welcomeDiscountRequiresMarketing,
         Instant updatedAt,
         String updatedBy
 ) {}

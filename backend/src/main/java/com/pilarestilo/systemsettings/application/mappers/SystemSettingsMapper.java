@@ -80,6 +80,11 @@ public final class SystemSettingsMapper {
                 settings.getTax().vatRate(),
                 settings.getTax().documentRequiredBeforeDispatch(),
                 settings.getTax().provider().name(),
+                settings.getWelcomeDiscount().enabled(),
+                settings.getWelcomeDiscount().type(),
+                settings.getWelcomeDiscount().value(),
+                settings.getWelcomeDiscount().minOrderAmount(),
+                settings.getWelcomeDiscount().requiresMarketingConsent(),
                 settings.getUpdatedAt(),
                 settings.getUpdatedBy()
         );

@@ -85,6 +85,7 @@ class SalesDocumentGateAdapterTest {
                 true, 30, "0 */15 * * * *",
                 StoreTaxSettings.of(null, null, null, null, null, null, null,
                         new BigDecimal("19.00"), enabled, "MANUAL"),
+                com.pilarestilo.systemsettings.domain.model.WelcomeDiscountSettings.disabled(),
                 PolicyVersions.initial(),
                 "test");
         when(systemSettingsRepository.get()).thenReturn(settings);

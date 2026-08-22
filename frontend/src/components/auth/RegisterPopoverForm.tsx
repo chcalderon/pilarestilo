@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { registerUser, loginUser, googleLogin, acceptMarketingConsent, type AuthTokenResponse } from "@/lib/api";
+import { registerUser, loginUser, googleLogin, type AuthTokenResponse } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
 
 type Tab = "register" | "login";
@@ -116,20 +116,9 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
     setLoading(true);
     try {
       const data = tab === "register"
-        ? await registerUser(email, password, fullName)
+        ? await registerUser(email, password, fullName, marketing)
         : await loginUser(email, password);
 
-      /*
-       * Recorded after the account exists and only if she ticked it. A failure here must not fail
-       * the registration: she has an account either way, and no marketing consent is the safe side.
-       */
-      if (tab === "register" && marketing) {
-        try {
-          await acceptMarketingConsent(data.accessToken);
-        } catch {
-          // Nothing to tell her: she can turn it on later from her account.
-        }
-      }
       finishAuth(data);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (es ? "Error al procesar" : "Failed to process request");
@@ -175,10 +164,11 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         {tab === "register" && (
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+            <label htmlFor="popover-full-name" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
               {es ? "Nombre" : "Name"}
             </label>
             <input
+              id="popover-full-name"
               type="text"
               required
               autoComplete="name"
@@ -191,10 +181,11 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         )}
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+          <label htmlFor="popover-email" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
             Email
           </label>
           <input
+            id="popover-email"
             type="email"
             required
             autoComplete="email"
@@ -206,11 +197,12 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
+          <label htmlFor="popover-password" className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">
             {es ? "Contrasena" : "Password"}
           </label>
           <div className="relative">
             <input
+              id="popover-password"
               type={showPassword ? "text" : "password"}
               required
               minLength={8}

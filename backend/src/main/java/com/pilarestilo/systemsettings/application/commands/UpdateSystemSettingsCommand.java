@@ -80,5 +80,10 @@ public record UpdateSystemSettingsCommand(
         java.math.BigDecimal taxVatRate,
         Boolean taxDocumentRequiredBeforeDispatch,
         String taxDocumentProvider,
+        Boolean welcomeDiscountEnabled,
+        String welcomeDiscountType,
+        java.math.BigDecimal welcomeDiscountValue,
+        java.math.BigDecimal welcomeDiscountMinOrderAmount,
+        Boolean welcomeDiscountRequiresMarketing,
         String updatedBy
 ) {}

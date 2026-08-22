@@ -1,6 +1,7 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import DiscountCodeManager from '../../islands/admin/DiscountCodeManager';
+import WelcomeDiscountPanel from '../../islands/admin/WelcomeDiscountPanel';
 ---
 
 <AdminLayout
@@ -14,5 +15,6 @@ import DiscountCodeManager from '../../islands/admin/DiscountCodeManager';
     </p>
   </div>
 
+  <WelcomeDiscountPanel client:load />
   <DiscountCodeManager client:load />
 </AdminLayout>

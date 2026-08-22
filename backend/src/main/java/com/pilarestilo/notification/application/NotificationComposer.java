@@ -7,6 +7,7 @@ import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.payment.domain.model.Payment;
 import com.pilarestilo.returns.domain.enums.ReturnKind;
 import com.pilarestilo.returns.domain.model.ReturnRequest;
+import com.pilarestilo.user.domain.events.UserRegistered;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -416,19 +417,52 @@ public class NotificationComposer {
 
     /** The first message a new account gets, right after registration. */
     public NotificationMessage welcome(String fullName) {
-        String body = "Hola " + fullName + ", bienvenida a Pilar Estilo.\n\n"
-                + "Ya puedes explorar el catálogo y hacer tu primera compra.\n";
+        return welcome(fullName, null);
+    }
+
+    /**
+     * Same message, with a coupon block when the shop is running one and this account qualified
+     * for it. {@code coupon} is null whenever none was issued — feature off, or marketing consent
+     * required and not given.
+     */
+    public NotificationMessage welcome(String fullName, UserRegistered.WelcomeDiscount coupon) {
+        StringBuilder body = new StringBuilder("Hola ").append(fullName).append(", bienvenida a Pilar Estilo.\n\n")
+                .append("Ya puedes explorar el catálogo y hacer tu primera compra.\n");
+
+        EmailLayout.Builder email = EmailLayout.titled("Bienvenida a Pilar Estilo")
+                .paragraph("Hola " + fullName + ", gracias por crear tu cuenta.")
+                .paragraph("Ya puedes explorar el catálogo y hacer tu primera compra.");
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("fullName", fullName);
+
+        if (coupon != null) {
+            String condition = couponCondition(coupon);
+            body.append("\nTienes un código de bienvenida: ").append(coupon.code())
+                    .append(" (").append(condition).append("), válido hasta ")
+                    .append(coupon.validUntil()).append(".\n");
+            email.highlight("Tu código de bienvenida", coupon.code())
+                    .note(condition + ". Válido hasta " + coupon.validUntil() + ".");
+            data.put("welcomeDiscountCode", coupon.code());
+            data.put("welcomeDiscountValidUntil", coupon.validUntil());
+        }
 
         return new NotificationMessage(
                 NotificationMessage.WELCOME,
                 "Bienvenida a Pilar Estilo",
-                body,
-                EmailLayout.titled("Bienvenida a Pilar Estilo")
-                        .paragraph("Hola " + fullName + ", gracias por crear tu cuenta.")
-                        .paragraph("Ya puedes explorar el catálogo y hacer tu primera compra.")
-                        .build(),
-                Map.of("fullName", fullName),
+                body.toString(),
+                email.build(),
+                data,
                 null);
+    }
+
+    private String couponCondition(UserRegistered.WelcomeDiscount coupon) {
+        String amount = "PERCENTAGE".equals(coupon.type())
+                ? coupon.value().toPlainString() + "%"
+                : formatAmount(coupon.value().toPlainString(), "CLP");
+        return coupon.minOrderAmount() != null && coupon.minOrderAmount().signum() > 0
+                ? amount + " de descuento en compras sobre " + formatAmount(coupon.minOrderAmount().toPlainString(), "CLP")
+                : amount + " de descuento en tu próxima compra";
     }
 
     /** The first segment of a UUID: enough for a customer to quote, short enough for a subject. */
