@@ -70,7 +70,7 @@ function formatMoney(amount: number | null, currency: string | null): string | n
  * <p>Rows used to read "Orden 25cd2521" — eight characters of a UUID, which matches nothing a
  * person holds and says nothing about what has to be packed.
  */
-function DispatchOrderHeader({ dispatch, compact = false }: { dispatch: QueueDispatchDto; compact?: boolean }) {
+function DispatchOrderHeader({ dispatch, compact = false }: { readonly dispatch: QueueDispatchDto; readonly compact?: boolean }) {
   const summary = dispatch.orderSummary;
   const reference = summary?.publicReference ?? `Orden ${dispatch.orderId.substring(0, 8)}`;
   const extraItems = summary && summary.itemCount > 1 ? summary.itemCount - 1 : 0;
@@ -115,6 +115,12 @@ function DispatchOrderHeader({ dispatch, compact = false }: { dispatch: QueueDis
       </div>
     </div>
   );
+}
+
+function dispatchStatusColor(status: string): string {
+  if (status === 'DELIVERED') return 'text-pe-positive';
+  if (status === 'FAILED') return 'text-red-500';
+  return 'text-blue-500';
 }
 
 function toDateInputValue(date: Date): string {
@@ -332,6 +338,7 @@ export default function DespachosPage() {
       {canViewHistory && (
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setMode('operacion')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'operacion'
@@ -342,6 +349,7 @@ export default function DespachosPage() {
             Operación
           </button>
           <button
+            type="button"
             onClick={() => setMode('historial')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'historial'
@@ -402,6 +410,7 @@ export default function DespachosPage() {
                             {error && <p className="text-red-500 text-xs">{error}</p>}
                             <div className="flex gap-2">
                               <button
+                                type="button"
                                 onClick={() => dispatchOrder(d.id)}
                                 disabled={busy}
                                 className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
@@ -409,6 +418,7 @@ export default function DespachosPage() {
                                 Marcar despachado
                               </button>
                               <button
+                                type="button"
                                 onClick={() => {
                                   void openOrderDetail(d.orderId);
                                 }}
@@ -417,6 +427,7 @@ export default function DespachosPage() {
                                 Ver detalle
                               </button>
                               <button
+                                type="button"
                                 onClick={() => setActive(null)}
                                 className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                               >
@@ -427,12 +438,14 @@ export default function DespachosPage() {
                         ) : (
                           <div className="flex gap-2">
                             <button
+                              type="button"
                               onClick={() => startDispatch(d)}
                               className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors"
                             >
                               Despachar
                             </button>
                             <button
+                              type="button"
                               onClick={() => unclaim(d.id)}
                               disabled={busy}
                               className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
@@ -440,6 +453,7 @@ export default function DespachosPage() {
                               Liberar
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 void openOrderDetail(d.orderId);
                               }}
@@ -466,6 +480,7 @@ export default function DespachosPage() {
                       <DispatchOrderHeader dispatch={d} />
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => {
                             void openOrderDetail(d.orderId);
                           }}
@@ -482,6 +497,7 @@ export default function DespachosPage() {
                           </a>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => claim(d.id)}
                             disabled={busy}
                             className="bg-[var(--pe-ink)] text-[var(--pe-surface)] px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose-deep hover:text-white transition-colors disabled:opacity-50"
@@ -504,17 +520,12 @@ export default function DespachosPage() {
                         <DispatchOrderHeader dispatch={d} compact />
                         <div className="flex items-center gap-2">
                           <span
-                            className={`text-xs tracking-widest uppercase ${
-                              d.status === 'DELIVERED'
-                                ? 'text-pe-positive'
-                                : d.status === 'FAILED'
-                                  ? 'text-red-500'
-                                  : 'text-blue-500'
-                            }`}
+                            className={`text-xs tracking-widest uppercase ${dispatchStatusColor(d.status)}`}
                           >
                             {d.status}
                           </span>
                           <button
+                            type="button"
                             onClick={() => {
                               void openOrderDetail(d.orderId);
                             }}
@@ -566,6 +577,7 @@ export default function DespachosPage() {
                 />
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setHistoryPage(0);
                   void loadHistory(0);
@@ -634,6 +646,7 @@ export default function DespachosPage() {
                       <td className="px-3 py-2 text-pe-muted">{row.soldBy || 'Web'}</td>
                       <td className="px-3 py-2">
                         <button
+                          type="button"
                           onClick={() => {
                             void openOrderDetail(row.orderId);
                           }}
@@ -656,6 +669,7 @@ export default function DespachosPage() {
             </p>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => {
                   const next = Math.max(historyPage - 1, 0);
                   void loadHistory(next);
@@ -666,6 +680,7 @@ export default function DespachosPage() {
                 Anterior
               </button>
               <button
+                type="button"
                 onClick={() => {
                   const next = historyPage + 1;
                   void loadHistory(next);
@@ -686,6 +701,7 @@ export default function DespachosPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#EDE3D8]">
               <h3 className="text-base font-medium text-pe-charcoal">Detalle de orden</h3>
               <button
+                type="button"
                 onClick={() => setOrderModalOpen(false)}
                 className="p-1 text-pe-muted hover:text-pe-charcoal"
                 aria-label="Cerrar"

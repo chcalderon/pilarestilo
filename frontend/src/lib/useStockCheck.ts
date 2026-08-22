@@ -132,9 +132,10 @@ export function useStockCheck(items: CartItem[]) {
    */
   const lineKey = items
     .map((item) => item.id)
-    // Ordered so the same cart always produces the same key, and not by locale: a dependency that
-    // changed with the browser's language would refire the check for no reason.
-    .sort((left, right) => (left === right ? 0 : left < right ? -1 : 1))
+    // Ordered so the same cart always produces the same key. Default sort compares strings by
+    // UTF-16 code unit, not by locale: a dependency that changed with the browser's language
+    // would refire the check for no reason.
+    .sort()
     .join('|');
   useEffect(() => {
     void check();

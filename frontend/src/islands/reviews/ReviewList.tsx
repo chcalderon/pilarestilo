@@ -4,15 +4,15 @@ import { getProductReviews } from '../../lib/api';
 import type { ReviewDto } from '../../lib/api';
 
 interface Props {
-  productId: string;
-  locale?: string;
+  readonly productId: string;
+  readonly locale?: string;
   /** Sent so the backend includes the reader's own review while it awaits approval. */
-  token?: string;
+  readonly token?: string;
   /** Who is reading, so their own pending review stays visible to them and nobody else. */
-  userId?: string;
+  readonly userId?: string;
 }
 
-function Stars({ value }: { value: number }) {
+function Stars({ value }: { readonly value: number }) {
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
@@ -71,10 +71,17 @@ export default function ReviewList({ productId, locale = 'es', token, userId }: 
     );
   }
 
+  let reviewCountLabel: string;
+  if (locale === 'es') {
+    reviewCountLabel = visible.length === 1 ? 'reseña' : 'reseñas';
+  } else {
+    reviewCountLabel = visible.length === 1 ? 'review' : 'reviews';
+  }
+
   return (
     <div>
       <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-6">
-        {visible.length} {locale === 'es' ? (visible.length === 1 ? 'reseña' : 'reseñas') : (visible.length === 1 ? 'review' : 'reviews')}
+        {visible.length} {reviewCountLabel}
       </p>
       <ul className="space-y-8">
         {paged.map(r => (
@@ -105,6 +112,7 @@ export default function ReviewList({ productId, locale = 'es', token, userId }: 
       {totalPages > 1 && (
         <div className="flex items-center gap-4 mt-8">
           <button
+            type="button"
             disabled={page === 0}
             onClick={() => setPage(p => p - 1)}
             className="text-xs tracking-widest uppercase text-[#B76E79] disabled:opacity-30 hover:text-[#8E4F58] transition-colors"
@@ -113,6 +121,7 @@ export default function ReviewList({ productId, locale = 'es', token, userId }: 
           </button>
           <span className="text-xs text-[#3A3A3A]/50">{page + 1} / {totalPages}</span>
           <button
+            type="button"
             disabled={page === totalPages - 1}
             onClick={() => setPage(p => p + 1)}
             className="text-xs tracking-widest uppercase text-[#B76E79] disabled:opacity-30 hover:text-[#8E4F58] transition-colors"

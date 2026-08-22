@@ -29,8 +29,8 @@ import { getPendingDocumentCount } from '../../lib/api';
 import { useCan } from '../../lib/permissions';
 
 interface Props {
-  currentPath: string;
-  mobile?: boolean;
+  readonly currentPath: string;
+  readonly mobile?: boolean;
 }
 
 type SettingsSubmenuTab = 'store' | 'payments' | 'media' | 'notifications' | 'shipping' | 'tributarios';
@@ -150,10 +150,17 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
     setSettingsExpanded((value) => !value);
   }
 
+  let sidebarWidth = '240px';
+  if (mobile) {
+    sidebarWidth = '100%';
+  } else if (isCollapsed) {
+    sidebarWidth = '60px';
+  }
+
   return (
     <div
       className="flex flex-col h-full bg-pe-black text-pe-offwhite transition-all duration-300"
-      style={{ width: mobile ? '100%' : isCollapsed ? '60px' : '240px' }}
+      style={{ width: sidebarWidth }}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-pe-white/8 min-h-[64px]">
         <div className="flex items-center gap-2 overflow-hidden">
@@ -168,6 +175,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
 
         {!mobile && (
           <button
+            type="button"
             onClick={() => setCollapsed((v) => !v)}
             className="ml-auto p-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors rounded-sm"
             aria-label={isCollapsed ? 'Expandir menu' : 'Colapsar menu'}
@@ -292,6 +300,7 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
           </div>
         )}
         <button
+          type="button"
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors duration-150 font-sans text-[0.78rem]"
           title={isCollapsed ? 'Cerrar sesion' : undefined}

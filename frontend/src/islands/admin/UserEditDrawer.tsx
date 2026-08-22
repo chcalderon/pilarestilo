@@ -14,13 +14,13 @@ const WORKER_ROLES = ['SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'] a
 type WorkerRole = (typeof WORKER_ROLES)[number];
 
 interface Props {
-  user: AdminUserDto;
-  token: string;
-  currentUserId: string;
-  canUpdate: boolean;
-  isLegacyAdmin: boolean;
-  onClose: () => void;
-  onSaved: () => void;
+  readonly user: AdminUserDto;
+  readonly token: string;
+  readonly currentUserId: string;
+  readonly canUpdate: boolean;
+  readonly isLegacyAdmin: boolean;
+  readonly onClose: () => void;
+  readonly onSaved: () => void;
 }
 
 function initials(name: string): string {
@@ -32,7 +32,7 @@ function initials(name: string): string {
     .join('');
 }
 
-function SectionCard({ label, children }: { label: string; children: React.ReactNode }) {
+function SectionCard({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <div className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-surface-soft)] p-4 space-y-3">
       <p className="text-[10px] tracking-widest uppercase opacity-50">{label}</p>
@@ -57,7 +57,7 @@ const btnSecondary =
 const btnDanger =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
-function OkBadge({ show }: { show: boolean }) {
+function OkBadge({ show }: { readonly show: boolean }) {
   if (!show) return null;
   return (
     <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
@@ -351,6 +351,7 @@ export default function UserEditDrawer({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-xs opacity-40 hover:opacity-100 transition-opacity"
           >
@@ -642,18 +643,24 @@ export default function UserEditDrawer({
               Zona de riesgo
             </p>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={changeRole}
-                disabled={isSelf || roleChangeSaving}
-                className={btnSecondary}
-              >
-                {roleChangeSaving
-                  ? 'Cambiando...'
-                  : isCustomer
-                    ? 'Pasar a trabajador'
-                    : 'Pasar a cliente'}
-              </button>
+              {(() => {
+                let roleChangeLabel = 'Pasar a cliente';
+                if (roleChangeSaving) {
+                  roleChangeLabel = 'Cambiando...';
+                } else if (isCustomer) {
+                  roleChangeLabel = 'Pasar a trabajador';
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={changeRole}
+                    disabled={isSelf || roleChangeSaving}
+                    className={btnSecondary}
+                  >
+                    {roleChangeLabel}
+                  </button>
+                );
+              })()}
 
               {!deleteConfirm ? (
                 <button

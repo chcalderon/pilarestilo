@@ -457,13 +457,13 @@ function SecurityHint({
   clearText,
   keepText,
 }: {
-  configured: boolean;
-  clearFlag: boolean;
-  newValue: string;
-  emptyText: string;
-  replaceText: string;
-  clearText: string;
-  keepText: string;
+  readonly configured: boolean;
+  readonly clearFlag: boolean;
+  readonly newValue: string;
+  readonly emptyText: string;
+  readonly replaceText: string;
+  readonly clearText: string;
+  readonly keepText: string;
 }) {
   let hint = emptyText;
   if (configured) {

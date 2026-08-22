@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { NavigationSectionDto } from '../../lib/api';
 
 interface Props {
-  sections: NavigationSectionDto[];
-  locale: string;
+  readonly sections: NavigationSectionDto[];
+  readonly locale: string;
 }
 
 const INTENT_DELAY = 120;   // ms before showing
@@ -325,11 +325,11 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                 initial="hidden"
                 animate="show"
               >
-                {activeSection.layout === 'FEATURED_GRID'
-                  ? renderFeaturedGridLayout(activeSection)
-                  : activeSection.layout === 'EDITORIAL'
-                    ? renderEditorialLayout(activeSection)
-                    : renderColumnsLayout(activeSection)}
+                {(() => {
+                  if (activeSection.layout === 'FEATURED_GRID') return renderFeaturedGridLayout(activeSection);
+                  if (activeSection.layout === 'EDITORIAL') return renderEditorialLayout(activeSection);
+                  return renderColumnsLayout(activeSection);
+                })()}
 
                 {/* Banner column (last) */}
                 {activeSection.bannerImageUrl && (

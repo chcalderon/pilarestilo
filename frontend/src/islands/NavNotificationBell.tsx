@@ -11,7 +11,7 @@ import {
 } from '../lib/api';
 
 interface Props {
-  locale: 'es' | 'en';
+  readonly locale: 'es' | 'en';
 }
 
 function getTheme() {
@@ -160,7 +160,7 @@ export default function NavNotificationBell({ locale }: Props) {
         <span style={{ fontFamily: 'var(--font-sans, sans-serif)', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: label }}>
           {es ? 'Notificaciones' : 'Notifications'}
         </span>
-        <button onClick={() => setOpen(false)} style={{ color: closeClr, background: 'none', border: 'none', cursor: 'pointer', padding: '2px', lineHeight: 0 }}
+        <button type="button" onClick={() => setOpen(false)} style={{ color: closeClr, background: 'none', border: 'none', cursor: 'pointer', padding: '2px', lineHeight: 0 }}
           onMouseEnter={e => (e.currentTarget.style.color = closeHov)} onMouseLeave={e => (e.currentTarget.style.color = closeClr)}>
           <X size={13} />
         </button>
@@ -170,7 +170,7 @@ export default function NavNotificationBell({ locale }: Props) {
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '280px', overflowY: 'auto' }}>
           {unreadRecent.map(n => (
             <li key={n.id} style={{ borderBottom: `1px solid ${divider}`, backgroundColor: unreadBg }}>
-              <button onClick={() => handleNotifClick(n)}
+              <button type="button" onClick={() => handleNotifClick(n)}
                 style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', transition: 'background-color 150ms' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
@@ -222,13 +222,21 @@ export default function NavNotificationBell({ locale }: Props) {
     </div>
   );
 
+  let bellLabel: string;
+  if (unreadCount > 0) {
+    bellLabel = es ? `${unreadCount} notificaciones sin leer` : `${unreadCount} unread notifications`;
+  } else {
+    bellLabel = es ? 'Notificaciones' : 'Notifications';
+  }
+
   return (
     <div style={{ position: 'relative' }}>
       <button
+        type="button"
         ref={btnRef}
         onClick={() => setOpen(v => !v)}
         className={`relative transition-colors duration-200 p-1 focus:outline-hidden ${dark ? 'text-pe-on-dark-muted hover:text-pe-rose-soft' : 'text-pe-muted hover:text-pe-rose-ink'}`}
-        aria-label={unreadCount > 0 ? (es ? `${unreadCount} notificaciones sin leer` : `${unreadCount} unread notifications`) : (es ? 'Notificaciones' : 'Notifications')}
+        aria-label={bellLabel}
       >
         <Bell size={18} />
         {unreadCount > 0 && (

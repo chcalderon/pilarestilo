@@ -32,15 +32,19 @@ const DISPOSITION_LABELS: Record<string, string> = {
  * The refund has forty-five days by law. Ten days out it turns red, which is the whole reason the
  * deadline is stored rather than recomputed: a legal countdown has to be visible, not remembered.
  */
-function Deadline({ days, closed }: { days: number; closed: boolean }) {
+function Deadline({ days, closed }: { readonly days: number; readonly closed: boolean }) {
   if (closed) return <span className="text-[0.72rem] opacity-40">—</span>;
   const overdue = days < 0;
   const urgent = days <= 10;
+  let deadlineColor = 'opacity-70';
+  if (overdue) {
+    deadlineColor = 'text-red-600 font-medium';
+  } else if (urgent) {
+    deadlineColor = 'text-amber-700';
+  }
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[0.72rem] tabular-nums ${
-        overdue ? 'text-red-600 font-medium' : urgent ? 'text-amber-700' : 'opacity-70'
-      }`}
+      className={`inline-flex items-center gap-1 text-[0.72rem] tabular-nums ${deadlineColor}`}
     >
       {(overdue || urgent) && <Clock size={12} aria-hidden="true" />}
       {overdue ? `Vencido hace ${Math.abs(days)} d` : `${days} d para reembolsar`}

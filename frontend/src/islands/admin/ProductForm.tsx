@@ -88,15 +88,15 @@ function CategoryTreeItem({
   allowedIds,
   variantType,
 }: {
-  node: CatNode;
-  depth: number;
-  selected: string[];
-  onToggle: (id: string) => void;
-  expanded: Set<string>;
-  onToggleExpand: (id: string) => void;
+  readonly node: CatNode;
+  readonly depth: number;
+  readonly selected: string[];
+  readonly onToggle: (id: string) => void;
+  readonly expanded: Set<string>;
+  readonly onToggleExpand: (id: string) => void;
   /** Ids selectable for the current variant type; see allowedCategoryIds. */
-  allowedIds: Set<string>;
-  variantType: CategoryType;
+  readonly allowedIds: Set<string>;
+  readonly variantType: CategoryType;
 }) {
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
@@ -112,14 +112,12 @@ function CategoryTreeItem({
   const descendantsSelected = hasChildren ? collectSelectedDescendantCount(node, selected) : 0;
 
   // Visual hierarchy by depth — stronger contrast, clearer rhythm
-  const rowClass =
-    depth === 0
-      ? 'text-[0.82rem] font-semibold text-[#1A1A1A] dark:text-[#E8DCC8] tracking-tight'
-      : depth === 1
-        ? 'text-[0.78rem] font-medium text-[#2A2A2A] dark:text-[#D6C8B5]'
-        : depth === 2
-          ? 'text-[0.74rem] text-[#4A4A4A] dark:text-[#C2B49E]'
-          : 'text-[0.7rem] text-[#6A6A6A] dark:text-[#A89C88]';
+  const ROW_CLASS_BY_DEPTH = [
+    'text-[0.82rem] font-semibold text-[#1A1A1A] dark:text-[#E8DCC8] tracking-tight',
+    'text-[0.78rem] font-medium text-[#2A2A2A] dark:text-[#D6C8B5]',
+    'text-[0.74rem] text-[#4A4A4A] dark:text-[#C2B49E]',
+  ];
+  const rowClass = ROW_CLASS_BY_DEPTH[depth] ?? 'text-[0.7rem] text-[#6A6A6A] dark:text-[#A89C88]';
 
   const indent = depth * 16;
 
@@ -208,12 +206,12 @@ function CategoryTreeItem({
 }
 
 interface Props {
-  product?: ProductDto | null;
-  onSave: (saved: ProductDto) => void;
+  readonly product?: ProductDto | null;
+  readonly onSave: (saved: ProductDto) => void;
   /** Announced so the panel can say it out loud; the inline message stays either way. */
-  onSaveFailed?: (message: string) => void;
-  onCancel: () => void;
-  token?: string;
+  readonly onSaveFailed?: (message: string) => void;
+  readonly onCancel: () => void;
+  readonly token?: string;
 }
 
 const EMPTY_FORM = {
@@ -605,11 +603,16 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         if (rowIndex !== index) return row;
         const currentValues = getAttributeValues(row.attributes, attribute);
         const alreadySelected = currentValues.includes(optionValue);
-        const nextRawValues = attribute.allowMultiple
-          ? (alreadySelected
-            ? currentValues.filter((value) => value !== optionValue)
-            : [...currentValues.filter((value) => value !== 'UNICO'), optionValue])
-          : (alreadySelected ? [] : [optionValue]);
+        let nextRawValues: string[];
+        if (attribute.allowMultiple) {
+          if (alreadySelected) {
+            nextRawValues = currentValues.filter((value) => value !== optionValue);
+          } else {
+            nextRawValues = [...currentValues.filter((value) => value !== 'UNICO'), optionValue];
+          }
+        } else {
+          nextRawValues = alreadySelected ? [] : [optionValue];
+        }
         return {
           ...row,
           attributes: {
@@ -632,11 +635,11 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
     if (!form.name.trim()) e.name = 'Nombre requerido';
     if (!form.brand.trim()) e.brand = 'Marca requerida';
     if (!form.description.trim()) e.description = 'Descripcion requerida';
-    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
+    if (!form.amount || Number.isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
     if (form.listAmount.trim()) {
-      if (isNaN(Number(form.listAmount)) || Number(form.listAmount) <= 0) {
+      if (Number.isNaN(Number(form.listAmount)) || Number(form.listAmount) <= 0) {
         e.listAmount = 'Precio lista valido requerido';
-      } else if (!isNaN(Number(form.amount)) && Number(form.listAmount) <= Number(form.amount)) {
+      } else if (!Number.isNaN(Number(form.amount)) && Number(form.listAmount) <= Number(form.amount)) {
         e.listAmount = 'El precio lista debe ser mayor al precio oferta';
       }
     }
@@ -659,7 +662,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
           }
         }
         if (e.combinations) break;
-        if (!row.stock || isNaN(Number(row.stock)) || Number(row.stock) < 0) {
+        if (!row.stock || Number.isNaN(Number(row.stock)) || Number(row.stock) < 0) {
           e.combinations = `Stock valido requerido en fila ${idx + 1}`;
           break;
         }
@@ -810,7 +813,12 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       throw new Error('No se pudo leer la imagen actual para procesarla con IA');
     }
     const blob = await response.blob();
-    const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+    let ext = 'jpg';
+    if (blob.type.includes('png')) {
+      ext = 'png';
+    } else if (blob.type.includes('webp')) {
+      ext = 'webp';
+    }
     return new File([blob], `producto-ia.${ext}`, { type: blob.type || 'image/jpeg' });
   }
 
@@ -936,6 +944,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <button
+            type="button"
             onClick={handleAttemptClose}
             className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 dark:text-[#D6C8B5]/45 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
             aria-label="Cerrar formulario"

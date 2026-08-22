@@ -3,8 +3,8 @@ import type { StockIssue } from '../../lib/useStockCheck';
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  issue: StockIssue;
-  locale: Locale;
+  readonly issue: StockIssue;
+  readonly locale: Locale;
 }
 
 const copy = {
@@ -34,11 +34,12 @@ export function stockIssueLabel(issue: StockIssue, locale: Locale): string {
 export default function StockBadge({ issue, locale }: Props) {
   /* Both are blockers — the line cannot be ordered as it stands — so both get the loud fill. */
   const blocking = issue.type === 'SOLD_OUT' || issue.type === 'NEEDS_VARIANT';
-  const Icon = issue.type === 'NEEDS_VARIANT'
-    ? Ruler
-    : issue.type === 'SOLD_OUT'
-      ? PackageX
-      : AlertTriangle;
+  let Icon = AlertTriangle;
+  if (issue.type === 'NEEDS_VARIANT') {
+    Icon = Ruler;
+  } else if (issue.type === 'SOLD_OUT') {
+    Icon = PackageX;
+  }
 
   return (
     <span

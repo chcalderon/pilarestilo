@@ -38,12 +38,12 @@ const copy = {
 } as const;
 
 interface Props {
-  orderId: string;
-  token: string;
-  locale: 'es' | 'en';
+  readonly orderId: string;
+  readonly token: string;
+  readonly locale: 'es' | 'en';
   /** Returns already opened by this customer, so an order in progress does not offer the button. */
-  existing: ReturnRequestDto | null;
-  onRequested: (created: ReturnRequestDto) => void;
+  readonly existing: ReturnRequestDto | null;
+  readonly onRequested: (created: ReturnRequestDto) => void;
 }
 
 /**

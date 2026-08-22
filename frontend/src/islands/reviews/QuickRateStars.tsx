@@ -3,9 +3,9 @@ import { Star } from 'lucide-react';
 import { createReview } from '../../lib/api';
 
 interface Props {
-  productId: string;
-  token?: string;
-  locale?: string;
+  readonly productId: string;
+  readonly token?: string;
+  readonly locale?: string;
 }
 
 /**

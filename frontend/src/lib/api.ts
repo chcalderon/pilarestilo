@@ -883,7 +883,6 @@ function buildQuery(params: Record<string, unknown>): string {
 // Backend serializes Money as flat fields (priceAmount/priceCurrency).
 // Frontend types use nested price: { amount, currency }.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizeProduct(raw: any): ProductDto {
   return {
     ...raw,

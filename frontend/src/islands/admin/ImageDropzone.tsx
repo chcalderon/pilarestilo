@@ -3,15 +3,15 @@ import { Upload, Loader2, X, ImageIcon, Camera } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/api';
 
 interface Props {
-  value?: string;
-  onUpload: (url: string) => void;
-  onUploadedFile?: (file: File | null) => void;
-  folder: string;
-  token: string;
-  label?: string;
-  customUpload?: (file: File) => Promise<string>;
-  allowClear?: boolean;
-  preserveOriginalFile?: boolean;
+  readonly value?: string;
+  readonly onUpload: (url: string) => void;
+  readonly onUploadedFile?: (file: File | null) => void;
+  readonly folder: string;
+  readonly token: string;
+  readonly label?: string;
+  readonly customUpload?: (file: File) => Promise<string>;
+  readonly allowClear?: boolean;
+  readonly preserveOriginalFile?: boolean;
 }
 
 type State = 'idle' | 'dragging' | 'uploading' | 'error';
@@ -196,6 +196,13 @@ export default function ImageDropzone({
   const dragging = state === 'dragging';
   const uploading = state === 'uploading';
 
+  let idleBorderClass = 'border-pe-black/20 bg-pe-cream/30 hover:border-pe-rose/40 dark:border-[#3F2A2F] dark:bg-[#1F1518] dark:hover:border-[#E4B8BF]/40';
+  if (dragging) {
+    idleBorderClass = 'border-pe-rose bg-pe-rose/5 dark:bg-pe-rose/10';
+  } else if (state === 'error') {
+    idleBorderClass = 'border-red-400 bg-red-50/30 dark:bg-red-900/20';
+  }
+
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
@@ -212,14 +219,7 @@ export default function ImageDropzone({
         className={[
           'relative h-48 w-full overflow-hidden cursor-pointer select-none',
           !preview
-            ? [
-                'border-2 border-dashed transition-colors',
-                dragging
-                  ? 'border-pe-rose bg-pe-rose/5 dark:bg-pe-rose/10'
-                  : state === 'error'
-                    ? 'border-red-400 bg-red-50/30 dark:bg-red-900/20'
-                    : 'border-pe-black/20 bg-pe-cream/30 hover:border-pe-rose/40 dark:border-[#3F2A2F] dark:bg-[#1F1518] dark:hover:border-[#E4B8BF]/40',
-              ].join(' ')
+            ? ['border-2 border-dashed transition-colors', idleBorderClass].join(' ')
             : 'bg-pe-cream/40 dark:bg-[#0F0A0C]',
         ].join(' ')}
         onClick={() => !uploading && inputRef.current?.click()}

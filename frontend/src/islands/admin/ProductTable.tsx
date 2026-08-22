@@ -111,6 +111,11 @@ function parseSearchInput(input: string, categories: CategoryDto[]): ParsedQuery
   };
 }
 
+function stockColorClass(stock: number, defaultClass: string) {
+  if (stock === 0) return 'text-red-500';
+  return stock <= 2 ? 'text-amber-600' : defaultClass;
+}
+
 export default function ProductTable() {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
@@ -150,7 +155,7 @@ export default function ProductTable() {
     }
 
     const savedSizeRaw = window.localStorage.getItem(PAGE_SIZE_KEY);
-    const savedSize = savedSizeRaw ? Number(savedSizeRaw) : NaN;
+    const savedSize = savedSizeRaw ? Number(savedSizeRaw) : Number.NaN;
     if (PAGE_SIZE_OPTIONS.includes(savedSize as (typeof PAGE_SIZE_OPTIONS)[number])) {
       setPageSize(savedSize);
     }
@@ -424,7 +429,7 @@ export default function ProductTable() {
             <span
               className={[
                 'font-sans text-[0.82rem]',
-                row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-charcoal',
+                stockColorClass(row.stock, 'text-pe-charcoal'),
               ].join(' ')}
             >
               {row.stock}
@@ -476,6 +481,7 @@ export default function ProductTable() {
       render: (row) => (
         <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setEditTarget(row);
@@ -486,6 +492,7 @@ export default function ProductTable() {
             Editar
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setDeleteConfirm(row.id);
@@ -496,6 +503,7 @@ export default function ProductTable() {
             Eliminar
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               void handleAssignHeroModel('left', row);
@@ -506,6 +514,7 @@ export default function ProductTable() {
             {heroAssigningKey === `${row.id}:left` ? '...' : 'Hero Izq'}
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               void handleAssignHeroModel('right', row);
@@ -554,6 +563,7 @@ export default function ProductTable() {
         </p>
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
@@ -565,6 +575,7 @@ export default function ProductTable() {
             {page + 1} / {totalPages}
           </span>
           <button
+            type="button"
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page + 1 >= totalPages}
             className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
@@ -641,7 +652,7 @@ export default function ProductTable() {
                   <p
                     className={[
                       'font-sans text-[0.75rem] uppercase tracking-[0.1em]',
-                      row.stock === 0 ? 'text-red-500' : row.stock <= 2 ? 'text-amber-600' : 'text-pe-muted',
+                      stockColorClass(row.stock, 'text-pe-muted'),
                     ].join(' ')}
                   >
                     Stock {row.stock}
@@ -656,6 +667,7 @@ export default function ProductTable() {
                 <div className="mt-4 space-y-2">
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setEditTarget(row)}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-black/12 text-pe-charcoal text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors"
                     >
@@ -663,6 +675,7 @@ export default function ProductTable() {
                       Editar
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeleteConfirm(row.id)}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 border border-red-300 text-red-500 text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
                     >
@@ -672,6 +685,7 @@ export default function ProductTable() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button
+                      type="button"
                       onClick={() => void handleAssignHeroModel('left', row)}
                       disabled={heroAssigningKey !== null}
                       className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
@@ -679,6 +693,7 @@ export default function ProductTable() {
                       {heroAssigningKey === `${row.id}:left` ? 'Asignando...' : 'Hero Izq'}
                     </button>
                     <button
+                      type="button"
                       onClick={() => void handleAssignHeroModel('right', row)}
                       disabled={heroAssigningKey !== null}
                       className="inline-flex items-center justify-center border border-pe-black/15 px-2 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors disabled:opacity-50"
@@ -770,6 +785,7 @@ export default function ProductTable() {
             <p className="font-sans text-sm text-pe-muted mb-6">Esta accion no se puede deshacer.</p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => handleDelete(deleteConfirm)}
                 disabled={deleting}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 bg-red-600 text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:bg-red-700 disabled:opacity-50 transition-colors"
@@ -778,6 +794,7 @@ export default function ProductTable() {
                 {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
               <button
+                type="button"
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 border border-pe-black/15 font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:border-pe-charcoal transition-colors"
               >
@@ -805,6 +822,7 @@ export default function ProductTable() {
             />
             {searchInput && (
               <button
+                type="button"
                 onClick={() => setSearchInput('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
                 aria-label="Limpiar busqueda"
@@ -816,6 +834,7 @@ export default function ProductTable() {
           </div>
 
           <button
+            type="button"
             onClick={load}
             className="p-2 text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label="Actualizar"
@@ -850,6 +869,7 @@ export default function ProductTable() {
           </label>
           {(createdFrom || createdTo) && (
             <button
+              type="button"
               onClick={() => {
                 setCreatedFrom('');
                 setCreatedTo('');
@@ -870,6 +890,7 @@ export default function ProductTable() {
             </span>
             {activeChips.map((chip) => (
               <button
+                type="button"
                 key={chip.label}
                 onClick={chip.onClear}
                 className="inline-flex items-center gap-1 bg-pe-rose/10 dark:bg-[#E4B8BF]/12 border border-pe-rose/30 dark:border-[#E4B8BF]/30 text-pe-rose-ink dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
@@ -899,6 +920,7 @@ export default function ProductTable() {
           {!isMobileViewport && (
             <div className="inline-flex border border-pe-black/12 bg-pe-white">
               <button
+                type="button"
                 onClick={() => setViewMode('grid')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
@@ -910,6 +932,7 @@ export default function ProductTable() {
                 Grilla
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('cards')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
@@ -939,6 +962,7 @@ export default function ProductTable() {
           <span className="font-sans text-[0.72rem] text-pe-muted">{total} productos</span>
 
           <button
+            type="button"
             onClick={() => setEditTarget(null)}
             className="ml-auto inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
           >

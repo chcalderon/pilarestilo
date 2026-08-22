@@ -50,7 +50,7 @@ function formatCLP(amount: number) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(amount);
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatCard({ label, value, sub }: { readonly label: string; readonly value: string; readonly sub?: string }) {
   return (
     <div className="border border-[var(--pe-border)] p-4 flex flex-col gap-1">
       <span className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">{label}</span>
@@ -68,7 +68,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
  * colour. At zero it stays a quiet stat: a permanent red badge reading 0 teaches people to
  * ignore red.
  */
-function PaymentsAwaitingCard({ count }: { count: number }) {
+function PaymentsAwaitingCard({ count }: { readonly count: number }) {
   if (count === 0) {
     return <StatCard label="Pagos por revisar" value="0" sub="nada pendiente" />;
   }
@@ -135,7 +135,7 @@ const QUICK_ACTIONS: Record<string, Array<{ href: string; label: string; sub: st
   ],
 };
 
-function QuickActions({ role }: { role: string }) {
+function QuickActions({ role }: { readonly role: string }) {
   const links = QUICK_ACTIONS[role] ?? [];
   if (links.length === 0) return null;
 
@@ -171,7 +171,7 @@ function SkeletonCard() {
   );
 }
 
-function AdminDashboard({ data }: { data: AdminData }) {
+function AdminDashboard({ data }: { readonly data: AdminData }) {
   const chartData = data.dailyRevenueSeries.map(d => ({
     date: d.date.slice(5),
     amount: d.amount / 1000,
@@ -227,7 +227,7 @@ function AdminDashboard({ data }: { data: AdminData }) {
   );
 }
 
-function SellerDashboard({ data }: { data: SellerData }) {
+function SellerDashboard({ data }: { readonly data: SellerData }) {
   const caja = data.currentCaja;
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -254,7 +254,7 @@ function SellerDashboard({ data }: { data: SellerData }) {
   );
 }
 
-function DespachadorDashboard({ data }: { data: DespachadorData }) {
+function DespachadorDashboard({ data }: { readonly data: DespachadorData }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       <StatCard label="Pendientes" value={String(data.pendingDispatches)} />
@@ -264,7 +264,7 @@ function DespachadorDashboard({ data }: { data: DespachadorData }) {
   );
 }
 
-function AdministracionDashboard({ data }: { data: AdministracionData }) {
+function AdministracionDashboard({ data }: { readonly data: AdministracionData }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">

@@ -6,14 +6,14 @@ import { formatPrice } from '../../lib/formatPrice';
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  currency: string;
-  totals: CheckoutTotals;
-  appliedDiscount: DiscountCodeDto | null;
-  applying: boolean;
-  error: string;
-  onApply: (code: string) => void;
-  onRemove: () => void;
+  readonly locale: Locale;
+  readonly currency: string;
+  readonly totals: CheckoutTotals;
+  readonly appliedDiscount: DiscountCodeDto | null;
+  readonly applying: boolean;
+  readonly error: string;
+  readonly onApply: (code: string) => void;
+  readonly onRemove: () => void;
 }
 
 const copy = {

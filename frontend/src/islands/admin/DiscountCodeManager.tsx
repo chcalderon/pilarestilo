@@ -32,7 +32,7 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function StatusBadge({ dto }: { dto: DiscountCodeDto }) {
+function StatusBadge({ dto }: { readonly dto: DiscountCodeDto }) {
   if (!dto.active) return (
     <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-muted px-1.5 py-0.5">Inactivo</span>
   );
@@ -147,6 +147,7 @@ export default function DiscountCodeManager() {
         <div className="flex gap-1">
           {TABS.map(t => (
             <button
+              type="button"
               key={t.key}
               onClick={() => setTab(t.key)}
               className={[
@@ -161,6 +162,7 @@ export default function DiscountCodeManager() {
           ))}
         </div>
         <button
+          type="button"
           onClick={() => { setShowForm(v => !v); setError(''); }}
           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors"
         >
@@ -324,6 +326,7 @@ export default function DiscountCodeManager() {
 
           <div className="mt-3 flex gap-2">
             <button
+              type="button"
               onClick={handleCreate}
               disabled={saving}
               className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
@@ -337,16 +340,19 @@ export default function DiscountCodeManager() {
 
       {/* Table */}
       <div className="bg-pe-white border border-pe-black/6 shadow-xs overflow-x-auto">
-        {loading ? (
+        {(() => {
+        if (loading) { return (
           <div className="flex justify-center py-16">
             <Loader2 size={22} className="animate-spin text-pe-rose-ink" />
           </div>
-        ) : codes.length === 0 ? (
+        ); }
+        if (codes.length === 0) { return (
           <div className="flex flex-col items-center gap-2 py-16 text-pe-muted">
             <Ticket size={28} strokeWidth={1.2} />
             <p className="font-sans text-[0.82rem]">No hay códigos en esta categoría</p>
           </div>
-        ) : (
+        ); }
+        return (
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b border-pe-black/6">
@@ -380,6 +386,7 @@ export default function DiscountCodeManager() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
+                      type="button"
                       onClick={() => handleDelete(c.id, c.code)}
                       className="p-1.5 text-pe-muted hover:text-red-500 transition-colors"
                       title="Eliminar"
@@ -400,7 +407,8 @@ export default function DiscountCodeManager() {
               ))}
             </tbody>
           </table>
-        )}
+        );
+        })()}
       </div>
     </div>
   );

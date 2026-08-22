@@ -2,8 +2,8 @@ import { ShoppingBag } from 'lucide-react';
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  onClose: () => void;
+  readonly locale: Locale;
+  readonly onClose: () => void;
 }
 
 export default function CartEmptyState({ locale, onClose }: Props) {

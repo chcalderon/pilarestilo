@@ -4,17 +4,17 @@ import type { BankTransferDetails } from '../useCheckoutConfig';
 import type { Locale } from '../../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  method: CheckoutPaymentMethod;
-  transferEnabled: boolean;
-  gatewayEnabled: boolean;
-  gatewayLabel: string;
-  transfer: BankTransferDetails;
+  readonly locale: Locale;
+  readonly method: CheckoutPaymentMethod;
+  readonly transferEnabled: boolean;
+  readonly gatewayEnabled: boolean;
+  readonly gatewayLabel: string;
+  readonly transfer: BankTransferDetails;
   /** Minutes to upload the receipt, or null when auto-cancel is off — then there is no deadline. */
-  transferWindowMinutes: number | null;
-  onSelect: (method: CheckoutPaymentMethod) => void;
-  onBack: () => void;
-  onContinue: () => void;
+  readonly transferWindowMinutes: number | null;
+  readonly onSelect: (method: CheckoutPaymentMethod) => void;
+  readonly onBack: () => void;
+  readonly onContinue: () => void;
 }
 
 const copy = {
@@ -61,7 +61,14 @@ function windowText(minutes: number, locale: Locale): string {
   const es = locale === 'es';
 
   const parts: string[] = [];
-  if (hours > 0) parts.push(es ? `${hours} ${hours === 1 ? 'hora' : 'horas'}` : `${hours}h`);
+  if (hours > 0) {
+    if (es) {
+      const unit = hours === 1 ? 'hora' : 'horas';
+      parts.push(`${hours} ${unit}`);
+    } else {
+      parts.push(`${hours}h`);
+    }
+  }
   if (rest > 0) parts.push(es ? `${rest} minutos` : `${rest}m`);
   const span = parts.join(es ? ' y ' : ' ');
 

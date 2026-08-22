@@ -21,7 +21,7 @@ const TAB_ITEMS: Array<{ key: TabKey; label: string }> = [
   { key: 'campaigns', label: 'Campanas (n8n)' },
 ];
 
-function StatusBadge({ status }: { status: ProductAiJobStatus }) {
+function StatusBadge({ status }: { readonly status: ProductAiJobStatus }) {
   const cls = {
     PENDING: 'bg-pe-cream text-pe-muted border-pe-black/10',
     PROCESSING: 'bg-blue-50 text-blue-700 border-blue-200',

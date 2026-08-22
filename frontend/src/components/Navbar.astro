@@ -1,13 +1,12 @@
 ---
 import type { Locale } from '../i18n/index';
-import { t } from '../i18n/index';
 import LocaleSwitcher from './LocaleSwitcher.astro';
 import CartPopover from '../islands/cart/CartPopover';
 import AccountMenu from '../islands/auth/AccountMenu';
 import NavNotificationBell from '../islands/NavNotificationBell';
 import Icon from './Icon.astro';
 import CategoryTreeNav from './CategoryTreeNav.astro';
-import { getNavigationTree, getCategoryTree, type CategoryTreeNode, type NavigationSectionDto } from '../lib/api';
+import { getNavigationTree, type CategoryTreeNode, type NavigationSectionDto } from '../lib/api';
 import MegaMenuTray from '../islands/nav/MegaMenuTray';
 import MobileNavOverlay from '../islands/nav/MobileNavOverlay';
 
@@ -16,13 +15,6 @@ export interface Props {
 }
 
 const { locale } = Astro.props;
-
-let categoryTree: CategoryTreeNode[] = [];
-try {
-  categoryTree = (await getCategoryTree()).filter((node) => node.active);
-} catch {
-  // fallback — empty nav rather than broken page
-}
 
 let navTree: import('../lib/api').NavigationTreeDto = { sections: [] };
 try {

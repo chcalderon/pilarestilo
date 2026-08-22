@@ -11,16 +11,16 @@ import {
 } from '../../lib/variantSchema';
 
 interface Props {
-  productId: string;
-  name: string;
-  brand: string;
-  price: { amount: number; currency: string };
-  imageUrl: string;
-  condition: 'NEW' | 'USED';
-  stock: number;
-  locale: Locale;
-  categoryTypes?: CategoryType[];
-  variants?: ProductVariantDto[];
+  readonly productId: string;
+  readonly name: string;
+  readonly brand: string;
+  readonly price: { amount: number; currency: string };
+  readonly imageUrl: string;
+  readonly condition: 'NEW' | 'USED';
+  readonly stock: number;
+  readonly locale: Locale;
+  readonly categoryTypes?: CategoryType[];
+  readonly variants?: ProductVariantDto[];
 }
 
 function slugify(input: string) {
@@ -28,6 +28,14 @@ function slugify(input: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'variant';
+}
+
+const OPTION_SELECTED_CLASS = 'border-[#B76E79] bg-[#B76E79] text-white';
+const OPTION_DEFAULT_CLASS = 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]';
+
+function optionButtonClass(disabled: boolean, isSelected: boolean, disabledClass: string) {
+  if (disabled) return disabledClass;
+  return isSelected ? OPTION_SELECTED_CLASS : OPTION_DEFAULT_CLASS;
 }
 
 export default function ProductVariantSelector({
@@ -197,11 +205,9 @@ export default function ProductVariantSelector({
                     disabled={depletedByGlobalStock}
                     className={[
                       'px-3 py-2 text-xs tracking-wider border transition-colors',
-                      depletedByGlobalStock
-                        ? 'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed'
-                        : isSelected
-                        ? 'border-[#B76E79] bg-[#B76E79] text-white'
-                        : 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]',
+                      optionButtonClass(
+                        depletedByGlobalStock, isSelected,
+                        'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed'),
                     ].join(' ')}
                   >
                     {primaryValue}
@@ -233,11 +239,9 @@ export default function ProductVariantSelector({
                     onClick={() => setSelectedSecondary(value)}
                     className={[
                       'min-w-12 px-2 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
-                      depletedByGlobalStock || noStock
-                        ? 'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed line-through'
-                        : isSelected
-                        ? 'border-[#B76E79] bg-[#B76E79] text-white'
-                        : 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]',
+                      optionButtonClass(
+                        depletedByGlobalStock || noStock, isSelected,
+                        'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed line-through'),
                     ].join(' ')}
                   >
                     {value}
@@ -253,23 +257,39 @@ export default function ProductVariantSelector({
         <p className="text-xs text-[#8E4F58]">{labels.chooseVariant}</p>
       )}
 
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={!canAdd}
-        aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
-        className={[
-          'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
-          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
-          !canAdd
-            ? 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed'
-            : added
-            ? 'bg-pe-gold/80 text-pe-on-light'
-            : 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95',
-        ].join(' ')}
-      >
-        {outOfStock ? labels.outOfStock : added ? labels.added : labels.addToCart}
-      </button>
+      {(() => {
+        let addButtonClass: string;
+        if (!canAdd) {
+          addButtonClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
+        } else if (added) {
+          addButtonClass = 'bg-pe-gold/80 text-pe-on-light';
+        } else {
+          addButtonClass = 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95';
+        }
+        let addButtonLabel: string;
+        if (outOfStock) {
+          addButtonLabel = labels.outOfStock;
+        } else if (added) {
+          addButtonLabel = labels.added;
+        } else {
+          addButtonLabel = labels.addToCart;
+        }
+        return (
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!canAdd}
+            aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
+            className={[
+              'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
+              'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
+              addButtonClass,
+            ].join(' ')}
+          >
+            {addButtonLabel}
+          </button>
+        );
+      })()}
     </div>
   );
 }

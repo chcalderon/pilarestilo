@@ -6,8 +6,8 @@ import { useAuthStore } from "@/lib/authStore";
 type Tab = "register" | "login";
 
 interface Props {
-  initialTab?: Tab;
-  locale: "es" | "en";
+  readonly initialTab?: Tab;
+  readonly locale: "es" | "en";
 }
 
 /** How long the welcome message stays up before the reload it promises. Long enough to read
@@ -121,7 +121,8 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
 
       finishAuth(data);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : (es ? "Error al procesar" : "Failed to process request");
+      const fallbackMsg = es ? "Error al procesar" : "Failed to process request";
+      const msg = err instanceof Error ? err.message : fallbackMsg;
       setError(msg);
     } finally {
       setLoading(false);
@@ -140,6 +141,30 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         </p>
       </div>
     );
+  }
+
+  let togglePasswordLabel: string;
+  if (showPassword) {
+    togglePasswordLabel = es ? "Ocultar contrasena" : "Hide password";
+  } else {
+    togglePasswordLabel = es ? "Mostrar contrasena" : "Show password";
+  }
+
+  let submitLabel: React.ReactNode;
+  if (loading) {
+    submitLabel = (
+      <span className="flex items-center justify-center gap-2">
+        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        {es ? "Procesando" : "Processing"}
+      </span>
+    );
+  } else if (tab === "register") {
+    submitLabel = es ? "Crear cuenta" : "Create account";
+  } else {
+    submitLabel = es ? "Iniciar sesion" : "Log in";
   }
 
   return (
@@ -216,7 +241,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
               type="button"
               onClick={() => setShowPassword(v => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--pe-muted)] hover:text-[var(--pe-foreground)]"
-              aria-label={showPassword ? (es ? "Ocultar contrasena" : "Hide password") : (es ? "Mostrar contrasena" : "Show password")}
+              aria-label={togglePasswordLabel}
             >
               {showPassword ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -262,15 +287,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
           disabled={loading}
           className="bg-[#1A1A1A] text-[#F8F4EF] py-2 text-sm tracking-widest uppercase hover:bg-[#B76E79] disabled:opacity-50 transition-colors"
         >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-              </svg>
-              {es ? "Procesando" : "Processing"}
-            </span>
-          ) : tab === "register" ? (es ? "Crear cuenta" : "Create account") : (es ? "Iniciar sesion" : "Log in")}
+          {submitLabel}
         </button>
       </form>
 

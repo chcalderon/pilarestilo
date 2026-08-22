@@ -3,11 +3,11 @@ import { useWishlistStore } from '../../lib/wishlistStore';
 import { useEffect, useState } from 'react';
 
 interface Props {
-  productId: string;
-  token?: string;
-  className?: string;
-  showLabel?: boolean;
-  locale?: 'es' | 'en';
+  readonly productId: string;
+  readonly token?: string;
+  readonly className?: string;
+  readonly showLabel?: boolean;
+  readonly locale?: 'es' | 'en';
 }
 
 export default function WishlistButton({ productId, token, className = '', showLabel = false, locale = 'es' }: Props) {

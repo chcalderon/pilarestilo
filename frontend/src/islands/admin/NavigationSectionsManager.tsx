@@ -94,13 +94,13 @@ interface ToastState {
 // ─── SectionForm ──────────────────────────────────────────────────────────────
 
 interface SectionFormPanelProps {
-  form: SectionForm;
-  setForm: React.Dispatch<React.SetStateAction<SectionForm>>;
-  saving: boolean;
-  categories: CategoryDto[];
-  token: string;
-  onSubmit: () => void;
-  onCancel: () => void;
+  readonly form: SectionForm;
+  readonly setForm: React.Dispatch<React.SetStateAction<SectionForm>>;
+  readonly saving: boolean;
+  readonly categories: CategoryDto[];
+  readonly token: string;
+  readonly onSubmit: () => void;
+  readonly onCancel: () => void;
 }
 
 function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, onCancel }: SectionFormPanelProps) {
@@ -255,6 +255,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </label>
 
         <button
+          type="button"
           onClick={onSubmit}
           disabled={saving}
           className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
@@ -264,6 +265,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </button>
 
         <button
+          type="button"
           onClick={onCancel}
           className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-muted"
         >
@@ -421,6 +423,7 @@ export default function NavigationSectionsManager() {
           {sections.length} {sections.length === 1 ? 'sección' : 'secciones'}
         </p>
         <button
+          type="button"
           onClick={() => {
             setCreating(true);
             setForm({ ...EMPTY_FORM });
@@ -494,6 +497,7 @@ export default function NavigationSectionsManager() {
                   {/* Actions */}
                   <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
+                      type="button"
                       onClick={() => handleEdit(section)}
                       className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
                       title="Editar"
@@ -501,6 +505,7 @@ export default function NavigationSectionsManager() {
                       <Edit3 size={14} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => void handleDelete(section)}
                       className="p-1 text-pe-muted hover:text-red-500 transition-colors"
                       title="Eliminar"

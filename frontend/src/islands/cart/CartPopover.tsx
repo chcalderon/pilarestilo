@@ -8,7 +8,7 @@ import CartItemRow from './CartItemRow';
 import CartEmptyState from './CartEmptyState';
 
 interface Props {
-  locale: Locale;
+  readonly locale: Locale;
 }
 
 const EASING = [0.22, 0.61, 0.36, 1] as const;
@@ -270,6 +270,7 @@ export default function CartPopover({ locale }: Props) {
                     {locale === 'es' ? 'Tu carrito' : 'Your cart'}
                   </h2>
                   <button
+                    type="button"
                     autoFocus
                     onClick={closePopover}
                     aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
@@ -340,6 +341,7 @@ export default function CartPopover({ locale }: Props) {
                   {locale === 'es' ? 'Tu carrito' : 'Your cart'}
                 </h2>
                 <button
+                  type="button"
                   onClick={closePopover}
                   aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
                   className="text-pe-muted hover:text-pe-charcoal transition-colors"

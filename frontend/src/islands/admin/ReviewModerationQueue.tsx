@@ -6,7 +6,13 @@ import DataTable, { type Column, type BulkAction } from './DataTable';
 
 type FilterStatus = 'pending' | 'approved' | 'all';
 
-function StarRow({ rating }: { rating: number }) {
+const FILTER_LABELS: Record<FilterStatus, string> = {
+  pending: 'Pendientes',
+  approved: 'Aprobadas',
+  all: 'Todas',
+};
+
+function StarRow({ rating }: { readonly rating: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
@@ -17,7 +23,7 @@ function StarRow({ rating }: { rating: number }) {
   );
 }
 
-function ExpandableComment({ title, comment }: { title?: string | null; comment?: string | null }) {
+function ExpandableComment({ title, comment }: { readonly title?: string | null; readonly comment?: string | null }) {
   const [expanded, setExpanded] = useState(false);
   const preview = comment ? comment.slice(0, 80) : '';
   const needsExpand = comment && comment.length > 80;
@@ -31,6 +37,7 @@ function ExpandableComment({ title, comment }: { title?: string | null; comment?
           {needsExpand && !expanded && '…'}
           {needsExpand && (
             <button
+              type="button"
               onClick={() => setExpanded(v => !v)}
               className="ml-1 text-pe-rose-ink hover:underline inline-flex items-center gap-0.5"
             >
@@ -55,7 +62,12 @@ export default function ReviewModerationQueue() {
     if (!effectiveToken) return;
     setLoading(true);
     try {
-      const approved = filter === 'pending' ? false : filter === 'approved' ? true : undefined;
+      let approved: boolean | undefined;
+      if (filter === 'pending') {
+        approved = false;
+      } else if (filter === 'approved') {
+        approved = true;
+      }
       const data = await getAdminReviews(effectiveToken, approved);
       setReviews(data);
     } finally {
@@ -132,6 +144,7 @@ export default function ReviewModerationQueue() {
         <div className="flex gap-2">
           {!row.approved && (
             <button
+              type="button"
               onClick={() => handleApprove(row.id as string)}
               disabled={acting === row.id}
               className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-green-600 text-white px-2 py-1 hover:bg-green-700 transition-colors disabled:opacity-50"
@@ -141,6 +154,7 @@ export default function ReviewModerationQueue() {
             </button>
           )}
           <button
+            type="button"
             onClick={() => handleDelete(row.id as string)}
             disabled={acting === row.id}
             className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-red-300 text-red-500 px-2 py-1 hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -185,6 +199,7 @@ export default function ReviewModerationQueue() {
         <div className="flex gap-0 overflow-x-auto">
         {(['pending', 'approved', 'all'] as FilterStatus[]).map(f => (
           <button
+            type="button"
             key={f}
             onClick={() => setFilter(f)}
             className={[
@@ -194,7 +209,7 @@ export default function ReviewModerationQueue() {
                 : 'border-transparent text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
-            {f === 'pending' ? 'Pendientes' : f === 'approved' ? 'Aprobadas' : 'Todas'}
+            {FILTER_LABELS[f]}
           </button>
         ))}
         </div>

@@ -8,25 +8,25 @@ import StockBadge, { stockImageClass } from '../../cart/StockBadge';
 import type { Locale } from '../../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  items: CartItem[];
-  address: CustomerAddressDto | null;
-  method: CheckoutPaymentMethod;
-  courierName: string;
-  zoneName: string;
+  readonly locale: Locale;
+  readonly items: CartItem[];
+  readonly address: CustomerAddressDto | null;
+  readonly method: CheckoutPaymentMethod;
+  readonly courierName: string;
+  readonly zoneName: string;
   /** How long the chosen zone takes. Has to be visible before paying, not only on the product page. */
-  shippingEta: string;
-  total: number;
-  currency: string;
-  submitting: boolean;
-  error: string;
+  readonly shippingEta: string;
+  readonly total: number;
+  readonly currency: string;
+  readonly submitting: boolean;
+  readonly error: string;
   /** Lines the last check found unavailable, keyed by cart line id. */
-  stockIssues: StockIssues;
-  onRemoveItem: (lineId: string) => void;
-  onBack: () => void;
+  readonly stockIssues: StockIssues;
+  readonly onRemoveItem: (lineId: string) => void;
+  readonly onBack: () => void;
   /** Returns to the shipping step, for when the summary has no address to show. */
-  onFixShipping: () => void;
-  onSubmit: () => void;
+  readonly onFixShipping: () => void;
+  readonly onSubmit: () => void;
 }
 
 const copy = {
