@@ -397,6 +397,65 @@
         </plugins>
       </build>
     </profile>
+
+    <!--
+      Static analysis that runs before Sonar ever sees the code, in the IDE, while writing,
+      not after a push. PMD ships an IntelliJ plugin that reads this same ruleset file, so it
+      can flag an empty catch block or a fifth duplicated literal as the line is typed instead
+      of a scan finding it days later.
+
+      Deliberately scoped, not PMD's noisy default `quickstart.xml`: unused code, empty catch
+      blocks, duplicated literals, oversized parameter lists and high complexity, the exact
+      categories this session hand-fixed from Sonar's backlog. General style rules are left out
+      because they overlap with what Sonar (S1192, S3776, ...) already reports on every push.
+
+      Its own profile so it does not sit in every `mvn verify`. Run it deliberately:
+
+          mvn -P pmd verify
+    -->
+    <profile>
+      <id>pmd</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <version>3.28.0</version>
+            <!-- 3.28.0 ships PMD 7.17.0, which StackOverflows on this codebase's generic bounds
+                 (pmd/pmd#5721, fixed in #6553). Pinning newer pmd-core/pmd-java here is the
+                 documented way to upgrade PMD without waiting on the plugin release. -->
+            <dependencies>
+              <dependency>
+                <groupId>net.sourceforge.pmd</groupId>
+                <artifactId>pmd-core</artifactId>
+                <version>7.24.0</version>
+              </dependency>
+              <dependency>
+                <groupId>net.sourceforge.pmd</groupId>
+                <artifactId>pmd-java</artifactId>
+                <version>7.24.0</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <rulesets>
+                <ruleset>${project.basedir}/../config/pmd-ruleset.xml</ruleset>
+              </rulesets>
+              <printFailingErrors>true</printFailingErrors>
+              <linkXRef>false</linkXRef>
+            </configuration>
+            <executions>
+              <execution>
+                <id>pmd-check</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>

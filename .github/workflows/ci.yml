@@ -30,6 +30,14 @@ jobs:
       - name: Run tests
         run: mvn -B verify
 
+      # Non-blocking while the pre-PMD backlog (mostly duplicated literals) gets burned down
+      # deliberately -- same "clean as you code" policy as the Sonar quality gate and the
+      # frontend ESLint step. Flip to blocking once the backlog in config/pmd-ruleset.xml is
+      # clear. Own profile so it doesn't slow the `mvn -B verify` above.
+      - name: Lint (PMD, report only)
+        run: mvn -B -P pmd org.apache.maven.plugins:maven-pmd-plugin:3.28.0:check
+        continue-on-error: true
+
   # The four extracted services were never built here. Their first compilation happened on the VPS,
   # during the deploy, so a broken one surfaced as a failed production deploy rather than a failed
   # pull request -- and their tests, seventy-nine of them, ran nowhere at all. That is the same
@@ -85,3 +93,10 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      # Non-blocking while the pre-ESLint backlog (mostly nested ternaries and unlabelled
+      # form fields) gets burned down deliberately -- same "clean as you code" policy as the
+      # Sonar quality gate. Flip to blocking once the backlog in eslint.config.js is clear.
+      - name: Lint (report only)
+        run: npm run lint
+        continue-on-error: true
