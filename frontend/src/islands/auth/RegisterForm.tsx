@@ -8,6 +8,11 @@ interface Props {
   redirect?: string;
 }
 
+/** Long enough to read a short line, short enough that waiting for it isn't sluggish. */
+const WELCOME_DWELL_MS = 1600;
+/** The merge message runs two lines and carries more to read. */
+const MERGED_DWELL_MS = 2500;
+
 export default function RegisterForm({ locale, redirect }: Props) {
   const [email, setEmail]       = useState('');
   const [fullName, setFullName] = useState('');
@@ -16,11 +21,34 @@ export default function RegisterForm({ locale, redirect }: Props) {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [marketing, setMarketing] = useState(false);
-  const [merged, setMerged]     = useState(false);
+  const [success, setSuccess]   = useState<{ name: string; merged: boolean } | null>(null);
   const { setAuth }              = useAuthStore();
   const googleBtnRef             = useRef<HTMLDivElement>(null);
 
   const es = locale === 'es';
+
+  /** Both entry points end here, same treatment as LoginForm's finishAuth. */
+  function finishAuth(data: {
+    accessToken: string; userId: string; email: string; role: string; fullName?: string;
+    avatarUrl?: string; permissions?: string[]; permissionCodes?: string[];
+    vigencyStart?: string; vigencyEnd?: string; accountMerged?: boolean;
+  }) {
+    setAuth(data.accessToken, {
+      id: data.userId,
+      email: data.email,
+      role: data.role,
+      fullName: data.fullName,
+      avatarUrl: data.avatarUrl,
+      permissions: data.permissions ?? [],
+      permissionCodes: data.permissionCodes ?? [],
+      vigencyStart: data.vigencyStart,
+      vigencyEnd: data.vigencyEnd,
+    });
+    const dest = redirect ?? `/${locale}/account`;
+    const name = data.fullName?.trim().split(' ')[0] || data.email.split('@')[0];
+    setSuccess({ name, merged: !!data.accountMerged });
+    setTimeout(() => { window.location.href = dest; }, data.accountMerged ? MERGED_DWELL_MS : WELCOME_DWELL_MS);
+  }
 
   useEffect(() => {
     const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
@@ -36,24 +64,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
           setError('');
           try {
             const data = await googleLogin(response.credential);
-            setAuth(data.accessToken, {
-              id: data.userId,
-              email: data.email,
-              role: data.role,
-              fullName: data.fullName,
-              avatarUrl: data.avatarUrl,
-              permissions: data.permissions ?? [],
-              permissionCodes: data.permissionCodes ?? [],
-              vigencyStart: data.vigencyStart,
-              vigencyEnd: data.vigencyEnd,
-            });
-            const dest = redirect ?? `/${locale}/account`;
-            if (data.accountMerged) {
-              setMerged(true);
-              setTimeout(() => { window.location.href = dest; }, 2500);
-            } else {
-              window.location.href = dest;
-            }
+            finishAuth(data);
           } catch {
             setError(es ? 'No se pudo registrar con Google.' : 'Could not register with Google.');
           } finally {
@@ -105,18 +116,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
           // Nothing to tell her: she is registered, and she can turn it on later from her account.
         }
       }
-      setAuth(data.accessToken, {
-        id: data.userId,
-        email: data.email,
-        role: data.role,
-        fullName: data.fullName,
-        avatarUrl: data.avatarUrl,
-        permissions: data.permissions ?? [],
-        permissionCodes: data.permissionCodes ?? [],
-        vigencyStart: data.vigencyStart,
-        vigencyEnd: data.vigencyEnd,
-      });
-      window.location.href = redirect ?? `/${locale}/account`;
+      finishAuth(data);
     } catch {
       setError(
         es
@@ -128,18 +128,22 @@ export default function RegisterForm({ locale, redirect }: Props) {
     }
   }
 
-  if (merged) {
+  if (success) {
     return (
       <div className="flex flex-col items-center gap-5 py-10 text-center">
         <CheckCircle2 size={44} className="text-pe-rose-ink" />
         <div>
           <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
-            {es ? '¡Cuentas unificadas!' : 'Accounts linked!'}
+            {success.merged
+              ? (es ? '¡Cuentas unificadas!' : 'Accounts linked!')
+              : (es ? `Bienvenido/a, ${success.name}` : `Welcome, ${success.name}`)}
           </p>
           <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5">
-            {es
-              ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
-              : 'Your existing account has been linked with Google. Redirecting…'}
+            {success.merged
+              ? (es
+                  ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
+                  : 'Your existing account has been linked with Google. Redirecting…')
+              : (es ? 'Has ingresado correctamente.' : 'You are signed in.')}
           </p>
         </div>
       </div>

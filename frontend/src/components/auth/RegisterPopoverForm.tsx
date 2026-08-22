@@ -1,16 +1,20 @@
 import { useState, useEffect, useRef } from "react";
-import { registerUser, loginUser, googleLogin, acceptMarketingConsent } from "@/lib/api";
+import { CheckCircle2 } from "lucide-react";
+import { registerUser, loginUser, googleLogin, acceptMarketingConsent, type AuthTokenResponse } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
 
 type Tab = "register" | "login";
 
 interface Props {
-  onSuccess: () => void;
   initialTab?: Tab;
   locale: "es" | "en";
 }
 
-export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale }: Props) {
+/** How long the welcome message stays up before the reload it promises. Long enough to read
+ * a four-word line, short enough that waiting for it doesn't feel like the app is stuck. */
+const WELCOME_DWELL_MS = 1600;
+
+export function RegisterPopoverForm({ initialTab = "register", locale }: Props) {
   const es = locale === "es";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [fullName, setFullName] = useState("");
@@ -20,9 +24,43 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
   const [marketing, setMarketing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
   const setAuth = useAuthStore(s => s.setAuth);
+
+  /**
+   * Shared by the password form and the Google callback: both end the same way, and used to
+   * diverge only in whether the visitor ever saw proof it worked. The header changing state is
+   * not proof by itself — that is what sent the owner looking for this in the first place.
+   *
+   * <p>Writing to the auth store is deliberately deferred to the end of the dwell, not done up
+   * front: AccountMenu reads the same store, and the instant `user` stops being null it stops
+   * rendering the branch that holds this very popover — unmounting the welcome message before
+   * anyone could read it. Waiting keeps the store, and AccountMenu's render, untouched for the
+   * whole dwell.
+   */
+  function finishAuth(data: AuthTokenResponse) {
+    setWelcomeName(data.fullName?.trim().split(" ")[0] || data.email.split("@")[0]);
+    window.setTimeout(() => {
+      setAuth(data.accessToken, {
+        id: data.userId,
+        email: data.email,
+        role: data.role,
+        fullName: data.fullName,
+        avatarUrl: data.avatarUrl,
+        permissions: data.permissions ?? [],
+        permissionCodes: data.permissionCodes ?? [],
+        vigencyStart: data.vigencyStart,
+        vigencyEnd: data.vigencyEnd,
+      });
+      // A full reload, not just closing the popover: the page underneath was rendered
+      // server-side as anonymous and stays that way until the next request. Reloading also
+      // re-enters middleware.ts, which is what sends an already-authenticated visit to
+      // /auth/login somewhere else now.
+      window.location.reload();
+    }, WELCOME_DWELL_MS);
+  }
 
   useEffect(() => {
     setTab(initialTab);
@@ -43,18 +81,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
           setError(null);
           try {
             const data = await googleLogin(response.credential);
-            setAuth(data.accessToken, {
-              id: data.userId,
-              email: data.email,
-              role: data.role,
-              fullName: data.fullName,
-              avatarUrl: data.avatarUrl,
-              permissions: data.permissions ?? [],
-              permissionCodes: data.permissionCodes ?? [],
-              vigencyStart: data.vigencyStart,
-              vigencyEnd: data.vigencyEnd,
-            });
-            onSuccess();
+            finishAuth(data);
           } catch {
             setError(es ? "No se pudo iniciar sesion con Google." : "Google sign-in failed.");
           } finally {
@@ -81,7 +108,7 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
       script?.addEventListener("load", initGoogle);
       return () => script?.removeEventListener("load", initGoogle);
     }
-  }, [es, onSuccess, setAuth]);
+  }, [es, setAuth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,24 +130,27 @@ export function RegisterPopoverForm({ onSuccess, initialTab = "register", locale
           // Nothing to tell her: she can turn it on later from her account.
         }
       }
-      setAuth(data.accessToken, {
-        id: data.userId,
-        email: data.email,
-        role: data.role,
-        fullName: data.fullName,
-        avatarUrl: data.avatarUrl,
-        permissions: data.permissions ?? [],
-        permissionCodes: data.permissionCodes ?? [],
-        vigencyStart: data.vigencyStart,
-        vigencyEnd: data.vigencyEnd,
-      });
-      onSuccess();
+      finishAuth(data);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (es ? "Error al procesar" : "Failed to process request");
       setError(msg);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (welcomeName) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <CheckCircle2 size={38} className="text-[#B76E79]" strokeWidth={1.75} />
+        <p className="font-display text-lg text-[var(--pe-foreground)]">
+          {es ? `Bienvenido/a, ${welcomeName}` : `Welcome, ${welcomeName}`}
+        </p>
+        <p className="text-[0.72rem] text-[var(--pe-muted)]">
+          {es ? 'Has ingresado correctamente.' : 'You are signed in.'}
+        </p>
+      </div>
+    );
   }
 
   return (
