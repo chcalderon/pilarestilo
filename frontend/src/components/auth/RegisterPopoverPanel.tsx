@@ -109,7 +109,7 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
           <X size={16} />
         </button>
       )}
-      <RegisterPopoverForm onSuccess={onClose} initialTab={initialTab} locale={locale} />
+      <RegisterPopoverForm initialTab={initialTab} locale={locale} />
     </div>
   );
 
