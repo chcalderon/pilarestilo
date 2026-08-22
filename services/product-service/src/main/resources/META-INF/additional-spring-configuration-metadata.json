@@ -1,0 +1,41 @@
+{
+  "groups": [
+    {
+      "name": "app",
+      "type": "java.lang.Object",
+      "description": "Leaves are injected with @Value rather than @ConfigurationProperties, so they carry no generated metadata; this file declares the namespace so IDEs stop reporting it as an unknown property."
+    },
+    {
+      "name": "app.datasource",
+      "type": "java.lang.Object",
+      "description": "Optional read replica for product reads."
+    },
+    {
+      "name": "app.datasource.read-replica"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.datasource.read-replica.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "app.datasource.read-replica.url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.datasource.read-replica.username",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.datasource.read-replica.password",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.datasource.read-replica.driver-class-name",
+      "type": "java.lang.String",
+      "defaultValue": "org.postgresql.Driver"
+    }
+  ]
+}
