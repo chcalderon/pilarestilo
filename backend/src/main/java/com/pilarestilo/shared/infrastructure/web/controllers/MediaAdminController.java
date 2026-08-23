@@ -267,56 +267,69 @@ public class MediaAdminController {
             return;
         }
         try (var stream = Files.walk(folder)) {
-            stream.filter(Files::isRegularFile).forEach(file -> {
-                String name = file.getFileName().toString().toLowerCase();
-                String ext = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : "";
-                if (!RESIZE_EXTENSIONS.contains(ext)) {
-                    skipped.incrementAndGet();
-                    return;
-                }
-                try {
-                    byte[] original = Files.readAllBytes(file);
-                    BufferedImage source = ImageIO.read(new ByteArrayInputStream(original));
-                    if (source == null) {
-                        failed.incrementAndGet();
-                        return;
-                    }
-                    int width = source.getWidth();
-                    int height = source.getHeight();
-                    int longSide = Math.max(width, height);
-                    processed.incrementAndGet();
-                    if (longSide <= targetLongSidePx) {
-                        skipped.incrementAndGet();
-                        return;
-                    }
-                    double scale = (double) targetLongSidePx / (double) longSide;
-                    int targetWidth = Math.max(1, (int) Math.round(width * scale));
-                    int targetHeight = Math.max(1, (int) Math.round(height * scale));
-                    int imageType = "png".equals(ext) ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
-                    BufferedImage scaled = new BufferedImage(targetWidth, targetHeight, imageType);
-                    Graphics2D graphics = scaled.createGraphics();
-                    try {
-                        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        graphics.drawImage(source, 0, 0, targetWidth, targetHeight, null);
-                    } finally {
-                        graphics.dispose();
-                    }
-                    String format = "png".equals(ext) ? "png" : "jpeg";
-                    ByteArrayOutputStream output = new ByteArrayOutputStream();
-                    boolean written = ImageIO.write(scaled, format, output);
-                    if (!written) {
-                        failed.incrementAndGet();
-                        return;
-                    }
-                    Files.write(file, output.toByteArray(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-                    resized.incrementAndGet();
-                } catch (IOException _) {
-                    failed.incrementAndGet();
-                }
-            });
+            stream.filter(Files::isRegularFile)
+                    .forEach(file -> resizeFileIfNeeded(file, targetLongSidePx, processed, resized, skipped, failed));
         }
+    }
+
+    @SuppressWarnings("java:S107")
+    private void resizeFileIfNeeded(
+            Path file,
+            int targetLongSidePx,
+            AtomicInteger processed,
+            AtomicInteger resized,
+            AtomicInteger skipped,
+            AtomicInteger failed) {
+        String name = file.getFileName().toString().toLowerCase();
+        String ext = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : "";
+        if (!RESIZE_EXTENSIONS.contains(ext)) {
+            skipped.incrementAndGet();
+            return;
+        }
+        try {
+            BufferedImage source = ImageIO.read(new ByteArrayInputStream(Files.readAllBytes(file)));
+            if (source == null) {
+                failed.incrementAndGet();
+                return;
+            }
+            processed.incrementAndGet();
+            int longSide = Math.max(source.getWidth(), source.getHeight());
+            if (longSide <= targetLongSidePx) {
+                skipped.incrementAndGet();
+                return;
+            }
+            byte[] resizedBytes = scaleDown(source, longSide, targetLongSidePx, ext);
+            if (resizedBytes == null) {
+                failed.incrementAndGet();
+                return;
+            }
+            Files.write(file, resizedBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            resized.incrementAndGet();
+        } catch (IOException _) {
+            failed.incrementAndGet();
+        }
+    }
+
+    /** Null return means the encoder refused the scaled image; the caller counts that as failed. */
+    private byte[] scaleDown(BufferedImage source, int longSide, int targetLongSidePx, String ext) throws IOException {
+        double scale = (double) targetLongSidePx / (double) longSide;
+        int targetWidth = Math.max(1, (int) Math.round(source.getWidth() * scale));
+        int targetHeight = Math.max(1, (int) Math.round(source.getHeight() * scale));
+        int imageType = "png".equals(ext) ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
+        BufferedImage scaled = new BufferedImage(targetWidth, targetHeight, imageType);
+        Graphics2D graphics = scaled.createGraphics();
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            graphics.drawImage(source, 0, 0, targetWidth, targetHeight, null);
+        } finally {
+            graphics.dispose();
+        }
+        String format = "png".equals(ext) ? "png" : "jpeg";
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        boolean written = ImageIO.write(scaled, format, output);
+        return written ? output.toByteArray() : null;
     }
 
     private HeroModelsResponse currentHeroModels() {

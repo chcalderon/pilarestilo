@@ -15,6 +15,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class OptimizeCategoryImagesUseCase {
@@ -42,70 +44,83 @@ public class OptimizeCategoryImagesUseCase {
             return new Result(0, 0, 0, 0, 0, List.of());
         }
 
-        int processed = 0, renamed = 0, skipped = 0, failed = 0;
-        long bytesSaved = 0L;
-        List<String> errors = new ArrayList<>();
-
+        Counters counters = new Counters();
         try (var stream = Files.list(categoriesDir)) {
-            List<Path> files = stream.filter(Files::isRegularFile).toList();
-
-            for (Path file : files) {
-                String filename = file.getFileName().toString();
-                String ext = filename.contains(".")
-                        ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
-                        : "";
-
-                if (SKIP_EXTENSIONS.contains(ext)) {
-                    skipped++;
-                    continue;
-                }
-
-                try {
-                    byte[] original = Files.readAllBytes(file);
-
-                    if (ext.equals("jpg") || ext.equals("jpeg")) {
-                        byte[] optimized = imageOptimizer.reencodeJpeg(original);
-                        if (optimized.length < original.length) {
-                            bytesSaved += (original.length - optimized.length);
-                            Files.write(file, optimized);
-                        }
-                        processed++;
-
-                    } else if (ext.equals("png")) {
-                        byte[] jpegBytes = imageOptimizer.reencodeJpeg(original);
-                        String newFilename = filename.substring(0, filename.lastIndexOf('.')) + ".jpg";
-                        Path newFile = categoriesDir.resolve(newFilename);
-
-                        Files.write(newFile, jpegBytes);
-                        Files.delete(file);
-                        bytesSaved += Math.max(0, original.length - jpegBytes.length);
-
-                        String oldUrl = "/api/media/categories/" + filename;
-                        String newUrl = "/api/media/categories/" + newFilename;
-
-                        int updated = updateCategoryImageUrl(oldUrl, newUrl);
-                        if (updated > 0) {
-                            log.info("Renamed {} -> {} (updated {} category records)", filename, newFilename, updated);
-                        } else {
-                            log.warn("Renamed file {} -> {} but no category referenced it", filename, newFilename);
-                        }
-                        processed++;
-                        renamed++;
-                    } else {
-                        skipped++;
-                    }
-
-                } catch (IOException e) {
-                    failed++;
-                    errors.add(filename + ": " + e.getMessage());
-                    log.warn("Failed to optimize {}: {}", filename, e.getMessage());
-                }
+            for (Path file : stream.filter(Files::isRegularFile).toList()) {
+                processFile(file, categoriesDir, counters);
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not list categories media directory", e);
         }
 
-        return new Result(processed, renamed, skipped, failed, bytesSaved, errors);
+        return new Result(counters.processed.get(), counters.renamed.get(), counters.skipped.get(),
+                counters.failed.get(), counters.bytesSaved.get(), counters.errors);
+    }
+
+    /** Mutable per-run tally, threaded through the per-file processing that {@link #execute()} loops over. */
+    private static final class Counters {
+        final AtomicInteger processed = new AtomicInteger();
+        final AtomicInteger renamed = new AtomicInteger();
+        final AtomicInteger skipped = new AtomicInteger();
+        final AtomicInteger failed = new AtomicInteger();
+        final AtomicLong bytesSaved = new AtomicLong();
+        final List<String> errors = new ArrayList<>();
+    }
+
+    private void processFile(Path file, Path categoriesDir, Counters counters) {
+        String filename = file.getFileName().toString();
+        String ext = filename.contains(".")
+                ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+                : "";
+
+        if (SKIP_EXTENSIONS.contains(ext)) {
+            counters.skipped.incrementAndGet();
+            return;
+        }
+
+        try {
+            byte[] original = Files.readAllBytes(file);
+            switch (ext) {
+                case "jpg", "jpeg" -> reencodeInPlace(file, original, counters);
+                case "png" -> convertPngToJpeg(file, filename, categoriesDir, original, counters);
+                default -> counters.skipped.incrementAndGet();
+            }
+        } catch (IOException e) {
+            counters.failed.incrementAndGet();
+            counters.errors.add(filename + ": " + e.getMessage());
+            log.warn("Failed to optimize {}: {}", filename, e.getMessage());
+        }
+    }
+
+    private void reencodeInPlace(Path file, byte[] original, Counters counters) throws IOException {
+        byte[] optimized = imageOptimizer.reencodeJpeg(original);
+        if (optimized.length < original.length) {
+            counters.bytesSaved.addAndGet((long) original.length - optimized.length);
+            Files.write(file, optimized);
+        }
+        counters.processed.incrementAndGet();
+    }
+
+    private void convertPngToJpeg(Path file, String filename, Path categoriesDir, byte[] original, Counters counters)
+            throws IOException {
+        byte[] jpegBytes = imageOptimizer.reencodeJpeg(original);
+        String newFilename = filename.substring(0, filename.lastIndexOf('.')) + ".jpg";
+        Path newFile = categoriesDir.resolve(newFilename);
+
+        Files.write(newFile, jpegBytes);
+        Files.delete(file);
+        counters.bytesSaved.addAndGet(Math.max(0, original.length - jpegBytes.length));
+
+        String oldUrl = "/api/media/categories/" + filename;
+        String newUrl = "/api/media/categories/" + newFilename;
+        int updated = updateCategoryImageUrl(oldUrl, newUrl);
+        if (updated > 0) {
+            log.info("Renamed {} -> {} (updated {} category records)", filename, newFilename, updated);
+        } else {
+            log.warn("Renamed file {} -> {} but no category referenced it", filename, newFilename);
+        }
+        counters.processed.incrementAndGet();
+        counters.renamed.incrementAndGet();
     }
 
     private int updateCategoryImageUrl(String oldUrl, String newUrl) {

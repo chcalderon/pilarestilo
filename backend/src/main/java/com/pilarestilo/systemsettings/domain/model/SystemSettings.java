@@ -632,24 +632,28 @@ public class SystemSettings {
             throw new DomainException("At least one payment method must be enabled");
         }
         if (paymentMethodBankTransferEnabled) {
-            if (bankTransferAccountHolder == null || bankTransferAccountHolder.isBlank()) {
-                throw new DomainException("Bank transfer account holder cannot be blank when bank transfer is enabled");
-            }
-            if (bankTransferContactEmail == null || bankTransferContactEmail.isBlank()) {
-                throw new DomainException("Bank transfer contact email cannot be blank when bank transfer is enabled");
-            }
-            if (bankTransferAccountNumber == null || bankTransferAccountNumber.isBlank()) {
-                throw new DomainException("Bank transfer account number cannot be blank when bank transfer is enabled");
-            }
-            if (bankTransferBankName == null || bankTransferBankName.isBlank()) {
-                throw new DomainException("Bank transfer bank name cannot be blank when bank transfer is enabled");
-            }
-            if (bankTransferAccountType == null || bankTransferAccountType.isBlank()) {
-                throw new DomainException("Bank transfer account type cannot be blank when bank transfer is enabled");
-            }
+            validateBankTransferFields();
         }
         if (paymentMethodGatewayEnabled && (paymentGatewayProviders == null || paymentGatewayProviders.isEmpty())) {
             throw new DomainException("At least one payment gateway provider must be enabled");
+        }
+    }
+
+    private void validateBankTransferFields() {
+        if (bankTransferAccountHolder == null || bankTransferAccountHolder.isBlank()) {
+            throw new DomainException("Bank transfer account holder cannot be blank when bank transfer is enabled");
+        }
+        if (bankTransferContactEmail == null || bankTransferContactEmail.isBlank()) {
+            throw new DomainException("Bank transfer contact email cannot be blank when bank transfer is enabled");
+        }
+        if (bankTransferAccountNumber == null || bankTransferAccountNumber.isBlank()) {
+            throw new DomainException("Bank transfer account number cannot be blank when bank transfer is enabled");
+        }
+        if (bankTransferBankName == null || bankTransferBankName.isBlank()) {
+            throw new DomainException("Bank transfer bank name cannot be blank when bank transfer is enabled");
+        }
+        if (bankTransferAccountType == null || bankTransferAccountType.isBlank()) {
+            throw new DomainException("Bank transfer account type cannot be blank when bank transfer is enabled");
         }
     }
 

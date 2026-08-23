@@ -184,11 +184,10 @@ public class Order {
      *                {@link TaxBreakdown#DEFAULT_RATE}.
      */
     @SuppressWarnings("java:S107")
-    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
-                                PaymentMethod paymentMethod, String shippingZoneCode,
-                                String shippingCourierId, String shippingCourierName,
-                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
-                                String notes, SalesChannel salesChannel, BigDecimal taxRate) {
+    private static void validateForCreation(UUID customerId, List<OrderItem> items, PaymentMethod paymentMethod,
+                                             String shippingZoneCode, String shippingCourierId,
+                                             String shippingCourierName, String shippingPaymentMode,
+                                             UUID shippingAddressId, String shippingAddressReference) {
         if (customerId == null) {
             throw new DomainException("Customer ID cannot be null");
         }
@@ -216,6 +215,16 @@ public class Order {
         if (shippingAddressReference == null || shippingAddressReference.isBlank()) {
             throw new DomainException("Shipping address reference cannot be empty");
         }
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel, BigDecimal taxRate) {
+        validateForCreation(customerId, items, paymentMethod, shippingZoneCode, shippingCourierId,
+                shippingCourierName, shippingPaymentMode, shippingAddressId, shippingAddressReference);
 
         Money subtotal = items.stream()
                 .map(item -> item.getUnitPrice().multiply(item.getQuantity()))

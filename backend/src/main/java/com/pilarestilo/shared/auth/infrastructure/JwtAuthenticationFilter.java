@@ -44,58 +44,78 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractToken(request);
-
         if (token != null && jwtTokenProvider.isValid(token)) {
-            Claims claims = jwtTokenProvider.parseToken(token);
-            UUID userId = UUID.fromString(claims.getSubject());
-            var user = userRepository.findById(userId).orElse(null);
-            if (user == null || !user.isActive()) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-            String email = claims.get("email", String.class);
-            UserRole role = UserRole.valueOf(claims.get("role", String.class));
-            @SuppressWarnings("unchecked")
-            List<String> permissions = claims.get("permissions", List.class);
-            if (permissions == null) permissions = List.of();
-            @SuppressWarnings("unchecked")
-            List<String> permissionCodesClaim = claims.get("permissionCodes", List.class);
-            LinkedHashSet<String> permissionCodes = new LinkedHashSet<>();
-            if (permissionCodesClaim != null) {
-                permissionCodes.addAll(permissionCodesClaim);
-            }
-            boolean usedLegacyFallback = false;
-            if (permissionCodes.isEmpty()) {
-                usedLegacyFallback = true;
-                permissionCodes.addAll(legacyViewPermissionMapper.toPermissionCodes(permissions));
-            }
-            AuthenticatedUser authenticatedUser = new AuthenticatedUser(
-                    userId, email, role, permissions, List.copyOf(permissionCodes));
-            if (usedLegacyFallback && log.isDebugEnabled()) {
-                log.debug(
-                        "[RBAC] legacy permission fallback path={} userId={} role={} legacyViews={} permissionCodes={}",
-                        request.getRequestURI(),
-                        userId,
-                        role.name(),
-                        permissions.size(),
-                        permissionCodes.size()
-                );
-            }
-            if (log.isTraceEnabled()) {
-                log.trace(
-                        "[RBAC] authorities resolved path={} userId={} authorities={}",
-                        request.getRequestURI(),
-                        userId,
-                        authenticatedUser.toAuthorities()
-                );
-            }
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    authenticatedUser, null, authenticatedUser.toAuthorities());
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            authenticate(jwtTokenProvider.parseToken(token), request);
+        }
+        filterChain.doFilter(request, response);
+    }
+
+    /** No-op when the token names a user that no longer exists or was blocked since it was issued. */
+    private void authenticate(Claims claims, HttpServletRequest request) {
+        UUID userId = UUID.fromString(claims.getSubject());
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null || !user.isActive()) {
+            return;
         }
 
-        filterChain.doFilter(request, response);
+        String email = claims.get("email", String.class);
+        UserRole role = UserRole.valueOf(claims.get("role", String.class));
+        @SuppressWarnings("unchecked")
+        List<String> permissions = claims.get("permissions", List.class);
+        if (permissions == null) permissions = List.of();
+
+        PermissionResolution resolution = resolvePermissionCodes(claims, permissions);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+                userId, email, role, permissions, resolution.codes());
+        logResolution(request, userId, role, permissions, resolution, authenticatedUser);
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                authenticatedUser, null, authenticatedUser.toAuthorities());
+        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    private record PermissionResolution(List<String> codes, boolean usedLegacyFallback) {}
+
+    /**
+     * A token minted before permission codes existed carries only the legacy view keys; this maps
+     * those forward so an old token stays valid until it naturally expires.
+     */
+    private PermissionResolution resolvePermissionCodes(Claims claims, List<String> permissions) {
+        @SuppressWarnings("unchecked")
+        List<String> permissionCodesClaim = claims.get("permissionCodes", List.class);
+        LinkedHashSet<String> permissionCodes = new LinkedHashSet<>();
+        if (permissionCodesClaim != null) {
+            permissionCodes.addAll(permissionCodesClaim);
+        }
+        if (!permissionCodes.isEmpty()) {
+            return new PermissionResolution(List.copyOf(permissionCodes), false);
+        }
+        permissionCodes.addAll(legacyViewPermissionMapper.toPermissionCodes(permissions));
+        return new PermissionResolution(List.copyOf(permissionCodes), true);
+    }
+
+    private void logResolution(HttpServletRequest request, UUID userId, UserRole role,
+                               List<String> permissions, PermissionResolution resolution,
+                               AuthenticatedUser authenticatedUser) {
+        if (resolution.usedLegacyFallback() && log.isDebugEnabled()) {
+            log.debug(
+                    "[RBAC] legacy permission fallback path={} userId={} role={} legacyViews={} permissionCodes={}",
+                    request.getRequestURI(),
+                    userId,
+                    role.name(),
+                    permissions.size(),
+                    resolution.codes().size()
+            );
+        }
+        if (log.isTraceEnabled()) {
+            log.trace(
+                    "[RBAC] authorities resolved path={} userId={} authorities={}",
+                    request.getRequestURI(),
+                    userId,
+                    authenticatedUser.toAuthorities()
+            );
+        }
     }
 
     private String extractToken(HttpServletRequest request) {

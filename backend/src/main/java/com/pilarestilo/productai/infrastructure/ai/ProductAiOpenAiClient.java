@@ -70,20 +70,7 @@ public class ProductAiOpenAiClient {
             throw new DomainException("No se recibio imagen para inferencia IA");
         }
 
-        String prompt = buildUserPrompt(sourceFilename, brandHint);
-        String encoded = Base64.getEncoder().encodeToString(imageBytes);
-        String imageDataUrl = "data:image/jpeg;base64," + encoded;
-
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", inferModel);
-        payload.put("input", List.of(Map.of(
-                "role", "user",
-                "content", List.of(
-                        Map.of("type", "input_text", "text", prompt),
-                        Map.of("type", "input_image", "image_url", imageDataUrl, "detail", "high")
-                )
-        )));
-        payload.put("text", Map.of("format", Map.of("type", "text")));
+        Map<String, Object> payload = buildInferencePayload(imageBytes, sourceFilename, brandHint);
 
         try {
             JsonNode responseNode = restClient.post()
@@ -103,39 +90,7 @@ public class ProductAiOpenAiClient {
                 throw new DomainException("OpenAI no devolvio texto util para inferencia");
             }
 
-            JsonNode parsed = parseLenientJson(rawText);
-            ParsedFields fields;
-            if (parsed != null) {
-                fields = new ParsedFields(
-                        parsed.path("title").asString(""),
-                        parsed.path("description").asString(""),
-                        parsed.path("imagePrompt").asString("")
-                );
-            } else {
-                fields = extractFieldsFromRawText(rawText);
-            }
-
-            String title = normalizeTitle(fields.title());
-            String description = normalizeDescription(fields.description());
-            String imagePrompt = normalizePrompt(fields.imagePrompt());
-            if (title.isBlank()) {
-                title = fallbackTitle(sourceFilename, brandHint);
-            }
-            if (description.isBlank()) {
-                description = "Prenda de boutique en excelente estado, lista para publicar.";
-            }
-            if (imagePrompt.isBlank()) {
-                imagePrompt = defaultImagePrompt(sourceFilename, brandHint);
-            }
-
-            return new InferenceResult(
-                    title,
-                    description,
-                    imagePrompt,
-                    rawText,
-                    "openai",
-                    parsed == null ? "openai-non-json" : null
-            );
+            return buildInferenceResult(rawText, sourceFilename, brandHint);
         } catch (RestClientResponseException ex) {
             String apiMessage = extractApiErrorMessage(ex);
             throw new DomainException("OpenAI inferencia fallo (" + ex.getStatusCode().value() + "): " + apiMessage);
@@ -144,6 +99,56 @@ public class ProductAiOpenAiClient {
         } catch (Exception ex) {
             throw new DomainException("OpenAI inferencia fallo: " + ex.getMessage());
         }
+    }
+
+    private Map<String, Object> buildInferencePayload(byte[] imageBytes, String sourceFilename, String brandHint) {
+        String prompt = buildUserPrompt(sourceFilename, brandHint);
+        String encoded = Base64.getEncoder().encodeToString(imageBytes);
+        String imageDataUrl = "data:image/jpeg;base64," + encoded;
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("model", inferModel);
+        payload.put("input", List.of(Map.of(
+                "role", "user",
+                "content", List.of(
+                        Map.of("type", "input_text", "text", prompt),
+                        Map.of("type", "input_image", "image_url", imageDataUrl, "detail", "high")
+                )
+        )));
+        payload.put("text", Map.of("format", Map.of("type", "text")));
+        return payload;
+    }
+
+    private InferenceResult buildInferenceResult(String rawText, String sourceFilename, String brandHint) {
+        JsonNode parsed = parseLenientJson(rawText);
+        ParsedFields fields = parsed != null
+                ? new ParsedFields(
+                        parsed.path("title").asString(""),
+                        parsed.path("description").asString(""),
+                        parsed.path("imagePrompt").asString(""))
+                : extractFieldsFromRawText(rawText);
+
+        String title = normalizeTitle(fields.title());
+        String description = normalizeDescription(fields.description());
+        String imagePrompt = normalizePrompt(fields.imagePrompt());
+        if (title.isBlank()) {
+            title = fallbackTitle(sourceFilename, brandHint);
+        }
+        if (description.isBlank()) {
+            description = "Prenda de boutique en excelente estado, lista para publicar.";
+        }
+        if (imagePrompt.isBlank()) {
+            imagePrompt = defaultImagePrompt(sourceFilename, brandHint);
+        }
+
+        return new InferenceResult(
+                title,
+                description,
+                imagePrompt,
+                rawText,
+                "openai",
+                parsed == null ? "openai-non-json" : null
+        );
     }
 
     public byte[] transformImage(byte[] imageBytes, String sourceFilename, String prompt) {
@@ -214,30 +219,32 @@ public class ProductAiOpenAiClient {
             return direct.trim();
         }
 
-        StringBuilder builder = new StringBuilder();
         JsonNode outputArray = responseNode.path("output");
         if (!outputArray.isArray()) {
             return "";
         }
+        StringBuilder builder = new StringBuilder();
         for (JsonNode outputItem : outputArray) {
-            JsonNode contentArray = outputItem.path("content");
-            if (!contentArray.isArray()) {
-                continue;
-            }
-            for (JsonNode content : contentArray) {
-                String type = content.path("type").asString("");
-                if ("output_text".equals(type) || "text".equals(type)) {
-                    String text = content.path("text").asString("");
-                    if (!text.isBlank()) {
-                        if (builder.length() > 0) {
-                            builder.append('\n');
-                        }
-                        builder.append(text.trim());
-                    }
-                }
-            }
+            appendTextContent(builder, outputItem.path("content"));
         }
         return builder.toString().trim();
+    }
+
+    private void appendTextContent(StringBuilder builder, JsonNode contentArray) {
+        if (!contentArray.isArray()) {
+            return;
+        }
+        for (JsonNode content : contentArray) {
+            String type = content.path("type").asString("");
+            String text = content.path("text").asString("");
+            boolean isTextContent = "output_text".equals(type) || "text".equals(type);
+            if (isTextContent && !text.isBlank()) {
+                if (builder.length() > 0) {
+                    builder.append('\n');
+                }
+                builder.append(text.trim());
+            }
+        }
     }
 
     private String buildUserPrompt(String sourceFilename, String brandHint) {
