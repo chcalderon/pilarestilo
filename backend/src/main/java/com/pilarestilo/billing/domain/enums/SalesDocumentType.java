@@ -4,8 +4,8 @@ package com.pilarestilo.billing.domain.enums;
  * The kind of tax document backing a sale.
  *
  * <p>{@code BOLETA} is DTE 39 and does not require the buyer's RUT. {@code FACTURA} is DTE 33 and
- * does, along with the buyer's razon social and giro; the table carries the columns but no screen
- * asks for them yet.
+ * does, along with the buyer's razon social and giro — enforced in {@code SalesDocument.issue} and
+ * asked for in the admin panel once this type is picked.
  *
  * <p>{@code NOTA_CREDITO} is DTE 61, and it is a type rather than a status for a reason. Voiding is
  * a status flip, which is honest only while the document has not reached the SII. A boleta for a

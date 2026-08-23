@@ -16,6 +16,8 @@ public record SalesDocumentDto(
         BigDecimal totalAmount,
         String currency,
         String receiverRut,
+        String receiverBusinessName,
+        String receiverBusinessActivity,
         String receiverName,
         String receiverEmail,
         /** True when a file was uploaded. The file itself is served by an authenticated endpoint. */

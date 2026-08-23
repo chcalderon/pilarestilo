@@ -96,6 +96,8 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
         entity.setTotalAmount(document.getTotalAmount().amount());
         entity.setCurrency(document.getTotalAmount().currency());
         entity.setReceiverRut(document.getReceiverRut());
+        entity.setReceiverBusinessName(document.getReceiverBusinessName());
+        entity.setReceiverBusinessActivity(document.getReceiverBusinessActivity());
         entity.setReceiverName(document.getReceiverName());
         entity.setReceiverEmail(document.getReceiverEmail());
         entity.setFileUrl(document.getFileUrl());
@@ -123,6 +125,8 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
                 entity.getTaxRate(),
                 Money.of(entity.getTotalAmount(), currency),
                 entity.getReceiverRut(),
+                entity.getReceiverBusinessName(),
+                entity.getReceiverBusinessActivity(),
                 entity.getReceiverName(),
                 entity.getReceiverEmail(),
                 entity.getFileUrl(),

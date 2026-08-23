@@ -1,0 +1,79 @@
+name: CodeQL
+
+# Nothing security-related ran on push or PR before this: security-scan.sh (Find Security Bugs,
+# Semgrep, OSV-Scanner) and sonar-scan.sh are both run by hand, locally. CodeQL is the first
+# automated security scan on every push and PR -- results land in the repo's Security tab, same
+# report-only spirit as the PMD/ESLint steps in ci.yml, not a blocking gate.
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    # Query packs get new rules over time; this catches a vulnerability pattern discovered after
+    # the code that has it last changed.
+    - cron: "17 3 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            language: java-kotlin
+            working-directory: backend
+          - name: order-service
+            language: java-kotlin
+            working-directory: services/order-service
+          - name: inventory-service
+            language: java-kotlin
+            working-directory: services/inventory-service
+          - name: product-service
+            language: java-kotlin
+            working-directory: services/product-service
+          - name: payment-service
+            language: java-kotlin
+            working-directory: services/payment-service
+          - name: frontend
+            language: javascript-typescript
+            working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: ${{ matrix.working-directory }}/pom.xml
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+          # Each Java project is built and analyzed on its own; a single autobuild only ever
+          # finds one of the five independent Maven projects in this monorepo. Only the build
+          # command below is traced, so each Java job only ever captures its own service.
+          build-mode: ${{ matrix.language == 'java-kotlin' && 'manual' || 'none' }}
+
+      - name: Build (Java only)
+        if: matrix.language == 'java-kotlin'
+        working-directory: ${{ matrix.working-directory }}
+        run: mvn -B -DskipTests -Dmaven.test.skip=true clean package
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          # Disambiguates the five java-kotlin runs from each other in the Security tab -- without
+          # it, each service's results would overwrite the previous one under the same language.
+          category: "/service:${{ matrix.name }}"
