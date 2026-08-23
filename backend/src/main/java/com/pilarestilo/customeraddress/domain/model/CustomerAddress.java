@@ -28,6 +28,8 @@ public class CustomerAddress {
     private CustomerAddress() {
     }
 
+    // One parameter per column an address actually carries.
+    @SuppressWarnings("java:S107")
     public static CustomerAddress create(
             UUID customerId,
             String label,
@@ -69,6 +71,7 @@ public class CustomerAddress {
         return address;
     }
 
+    @SuppressWarnings("java:S107")
     public static CustomerAddress reconstruct(
             UUID id,
             UUID customerId,
@@ -113,6 +116,7 @@ public class CustomerAddress {
         return address;
     }
 
+    @SuppressWarnings("java:S107")
     public void update(
             String label,
             String recipientName,

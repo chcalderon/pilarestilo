@@ -51,6 +51,7 @@ public class Category {
         return c;
     }
 
+    @SuppressWarnings("java:S107")
     public void update(String slug, String nameEs, String nameEn,
                        UUID parentId, int sortOrder, boolean active, boolean featured, String imageUrl) {
         validate(slug, nameEs, nameEn);

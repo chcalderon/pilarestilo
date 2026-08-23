@@ -27,6 +27,8 @@ public class InventoryMovement {
     /**
      * Factory method for recording a new movement (sets id and createdAt).
      */
+    // One parameter per column a movement actually carries.
+    @SuppressWarnings("java:S107")
     public static InventoryMovement record(UUID productId,
                                            String variantColor,
                                            String variantSize,
@@ -54,6 +56,7 @@ public class InventoryMovement {
     /**
      * Reconstruction factory for rebuilding from persistence.
      */
+    @SuppressWarnings("java:S107")
     public static InventoryMovement reconstruct(UUID id,
                                                 UUID productId,
                                                 String variantColor,

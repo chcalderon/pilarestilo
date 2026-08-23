@@ -32,6 +32,8 @@ public class CreateDiscountUseCase {
         this.eventPublisher = eventPublisher;
     }
 
+    // One parameter per field the discount form actually submits.
+    @SuppressWarnings("java:S107")
     @Transactional
     public DiscountDto execute(String code, String type, BigDecimal value,
                                 BigDecimal minOrderAmount, LocalDate validFrom,

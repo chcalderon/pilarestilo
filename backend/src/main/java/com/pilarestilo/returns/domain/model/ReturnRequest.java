@@ -199,6 +199,8 @@ public class ReturnRequest {
         }
     }
 
+    // One parameter per column a return actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static ReturnRequest reconstruct(
             UUID id, UUID orderId, ReturnKind kind, ReturnStatus status, String reason,
             UUID requestedBy, Instant requestedAt, Instant deadlineAt, Instant resolvedAt,

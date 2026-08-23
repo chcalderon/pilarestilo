@@ -54,6 +54,9 @@ public class PaymentController {
     private final ObjectProvider<MercadoPagoPaymentGatewayAdapter> mercadoPagoGatewayProvider;
     private final GetOrderUseCase getOrderUseCase;
 
+    // One dependency per use case this controller wires -- exactly what a hexagonal web adapter
+    // is for, not a design smell to fix by folding use cases together.
+    @SuppressWarnings("java:S107")
     public PaymentController(RegisterPaymentUseCase registerPaymentUseCase,
                               SubmitPaymentProofUseCase submitPaymentProofUseCase,
                               ReviewPaymentUseCase reviewPaymentUseCase,

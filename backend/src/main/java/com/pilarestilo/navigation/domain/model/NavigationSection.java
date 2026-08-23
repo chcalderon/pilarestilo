@@ -26,6 +26,8 @@ public class NavigationSection {
 
     private NavigationSection() {}
 
+    // One parameter per column a navigation section actually carries.
+    @SuppressWarnings("java:S107")
     public static NavigationSection create(UUID rootCategoryId, NavigationLayout layout, int columnCount,
                                            String bannerImageUrl, String bannerTitle, String bannerSubtitle,
                                            String bannerLink, boolean active, int sortOrder) {
@@ -48,6 +50,7 @@ public class NavigationSection {
         return s;
     }
 
+    @SuppressWarnings("java:S107")
     public static NavigationSection reconstruct(UUID id, UUID rootCategoryId, NavigationLayout layout,
                                                 int columnCount, String bannerImageUrl, String bannerTitle,
                                                 String bannerSubtitle, String bannerLink, boolean active,
@@ -68,6 +71,7 @@ public class NavigationSection {
         return s;
     }
 
+    @SuppressWarnings("java:S107")
     public void update(UUID rootCategoryId, NavigationLayout layout, int columnCount,
                        String bannerImageUrl, String bannerTitle, String bannerSubtitle,
                        String bannerLink, boolean active, int sortOrder) {

@@ -43,6 +43,8 @@ public interface ProductRepository {
     /** Puts confirmed units back on the shelf when a paid sale is undone. */
     int atomicReturnVariantStock(UUID productId, String color, String size, int qty);
 
+    // One parameter per filter the catalog search actually exposes.
+    @SuppressWarnings("java:S107")
     Page<Product> search(String term,
                          Boolean active,
                          Boolean inStock,

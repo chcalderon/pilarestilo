@@ -15,6 +15,7 @@ import java.util.UUID;
 public class InAppNotificationSender implements InAppNotificationPort {
 
     private static final Logger log = LoggerFactory.getLogger(InAppNotificationSender.class);
+    private static final String METADATA_ORDER_ID = "orderId";
     private final InAppNotificationRepository repository;
 
     public InAppNotificationSender(InAppNotificationRepository repository) {
@@ -34,7 +35,7 @@ public class InAppNotificationSender implements InAppNotificationPort {
         save(userId, NotificationType.ORDER_CONFIRMED,
             "Pedido confirmado",
             "Tu pedido fue creado correctamente. Te notificaremos cuando avance.",
-            Map.of("orderId", orderId.toString()));
+            Map.of(METADATA_ORDER_ID, orderId.toString()));
     }
 
     @Override
@@ -50,7 +51,7 @@ public class InAppNotificationSender implements InAppNotificationPort {
         save(userId, NotificationType.ORDER_PREPARING,
             "Pedido en preparacion",
             "Tu pedido esta en preparacion. Te avisaremos cuando sea despachado.",
-            Map.of("orderId", orderId.toString()));
+            Map.of(METADATA_ORDER_ID, orderId.toString()));
     }
 
     @Override
@@ -58,7 +59,7 @@ public class InAppNotificationSender implements InAppNotificationPort {
         save(userId, NotificationType.ORDER_SHIPPED,
             "Pedido enviado",
             "Tu pedido ya fue enviado. Pronto llegara a destino.",
-            Map.of("orderId", orderId.toString()));
+            Map.of(METADATA_ORDER_ID, orderId.toString()));
     }
 
     @Override
@@ -66,7 +67,7 @@ public class InAppNotificationSender implements InAppNotificationPort {
         save(userId, NotificationType.ORDER_DELIVERED,
             "Pedido entregado",
             "Tu pedido quedo como entregado. Si aun no lo recibiste, avisanos.",
-            Map.of("orderId", orderId.toString()));
+            Map.of(METADATA_ORDER_ID, orderId.toString()));
     }
 
     @Override

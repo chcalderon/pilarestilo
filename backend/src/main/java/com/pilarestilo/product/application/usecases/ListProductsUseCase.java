@@ -21,6 +21,8 @@ public class ListProductsUseCase {
         this.productRepository = productRepository;
     }
 
+    // One parameter per filter the catalog listing actually exposes.
+    @SuppressWarnings("java:S107")
     @Transactional(readOnly = true)
     public Page<ProductDto> execute(String condition, String brand,
                                      BigDecimal minPrice, BigDecimal maxPrice,

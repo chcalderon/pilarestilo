@@ -32,6 +32,9 @@ public class WishlistController {
     private final GetSharedWishlistUseCase getSharedWishlistUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
 
+    // One dependency per use case this controller wires -- exactly what a hexagonal web adapter
+    // is for, not a design smell to fix by folding use cases together.
+    @SuppressWarnings("java:S107")
     public WishlistController(GetWishlistUseCase getWishlistUseCase,
                                AddToWishlistUseCase addToWishlistUseCase,
                                RemoveFromWishlistUseCase removeFromWishlistUseCase,

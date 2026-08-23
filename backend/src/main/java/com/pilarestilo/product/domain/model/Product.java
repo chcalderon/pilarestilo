@@ -61,6 +61,8 @@ public class Product {
         return create(name, description, price, imageUrl, condition, brand, stock, null);
     }
 
+    // One parameter per column a product actually carries.
+    @SuppressWarnings("java:S107")
     public static Product create(String name, String description, Money price,
                                   String imageUrl, ProductCondition condition,
                                   String brand, int stock, Money listPrice) {
@@ -97,11 +99,13 @@ public class Product {
         return product;
     }
 
+    @SuppressWarnings("java:S107")
     public void update(String name, String description, Money price, String imageUrl,
                        ProductCondition condition, String brand, int stock, boolean active) {
         update(name, description, price, imageUrl, condition, brand, stock, active, null);
     }
 
+    @SuppressWarnings("java:S107")
     public void update(String name, String description, Money price, String imageUrl,
                        ProductCondition condition, String brand, int stock, boolean active, Money listPrice) {
         if (name == null || name.isBlank()) {

@@ -31,6 +31,8 @@ public class CustomerAddressBookService {
         return repository.findByCustomerIdOrderByUpdatedAtDesc(customerId);
     }
 
+    // One parameter per field the address form actually submits.
+    @SuppressWarnings("java:S107")
     @Transactional
     public CustomerAddress create(
             UUID customerId,
@@ -81,6 +83,7 @@ public class CustomerAddressBookService {
         return repository.save(address);
     }
 
+    @SuppressWarnings("java:S107")
     @Transactional
     public CustomerAddress update(
             UUID customerId,
