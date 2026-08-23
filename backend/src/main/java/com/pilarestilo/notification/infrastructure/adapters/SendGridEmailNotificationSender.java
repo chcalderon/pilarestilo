@@ -124,6 +124,10 @@ public class SendGridEmailNotificationSender implements NotificationSender {
         }
     }
 
+    // fromEmail is guaranteed non-null past the looksLikeEmail check below: EmailFormat.looksLikeEmail
+    // treats null as false, so a null value would already have returned. Sonar's null analysis
+    // doesn't carry that guarantee across the call into a different class.
+    @SuppressWarnings("java:S2259")
     private EffectiveConfig resolveConfig() {
         var settings = systemSettingsRepository.get();
         String decryptedApiKey = decryptSecret(settings.getSendgridApiKeyEncrypted(), "SendGrid API key");
@@ -137,11 +141,11 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             log.warn("[EMAIL:SENDGRID] disabled: missing API key.");
             return null;
         }
-        if (!looksLikeEmail(fromEmail)) {
+        if (!EmailFormat.looksLikeEmail(fromEmail)) {
             log.warn("[EMAIL:SENDGRID] disabled: invalid sender email.");
             return null;
         }
-        if (fallbackTo != null && !looksLikeEmail(fallbackTo)) {
+        if (fallbackTo != null && !EmailFormat.looksLikeEmail(fallbackTo)) {
             fallbackTo = null;
         }
 
@@ -155,13 +159,13 @@ public class SendGridEmailNotificationSender implements NotificationSender {
     }
 
     private String resolveToEmail(NotificationRecipient recipient, String fallbackTo) {
-        if (looksLikeEmail(recipient.email())) {
+        if (EmailFormat.looksLikeEmail(recipient.email())) {
             return recipient.email().trim();
         }
-        if (looksLikeEmail(recipient.phone())) {
+        if (EmailFormat.looksLikeEmail(recipient.phone())) {
             return recipient.phone().trim();
         }
-        if (looksLikeEmail(fallbackTo)) {
+        if (EmailFormat.looksLikeEmail(fallbackTo)) {
             return fallbackTo.trim();
         }
         return null;
@@ -181,13 +185,6 @@ public class SendGridEmailNotificationSender implements NotificationSender {
             log.warn("[EMAIL:SENDGRID] could not decrypt {}: {}", label, ex.getMessage());
             return null;
         }
-    }
-
-    private boolean looksLikeEmail(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        return value.trim().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     }
 
     private String firstNonBlank(String first, String second) {

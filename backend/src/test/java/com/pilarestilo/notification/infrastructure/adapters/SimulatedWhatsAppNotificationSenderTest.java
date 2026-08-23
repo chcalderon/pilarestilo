@@ -74,8 +74,9 @@ class SimulatedWhatsAppNotificationSenderTest {
         sender.send(message(), whatsappCustomer());
 
         String line = loggedLine();
-        assertThat(line).contains("to=+56999999999");
-        assertThat(line).doesNotContain("to=" + CUSTOMER_PHONE);
+        assertThat(line)
+                .contains("to=+56999999999")
+                .doesNotContain("to=" + CUSTOMER_PHONE);
     }
 
     @Test
@@ -108,8 +109,9 @@ class SimulatedWhatsAppNotificationSenderTest {
         sender.send(message(), NotificationRecipient.of(CUSTOMER_PHONE, "c@example.com", "EMAIL"));
 
         String line = loggedLine();
-        assertThat(line).contains("skipped");
-        assertThat(line).doesNotContain("to=");
+        assertThat(line)
+                .contains("skipped")
+                .doesNotContain("to=");
     }
 
     @Test

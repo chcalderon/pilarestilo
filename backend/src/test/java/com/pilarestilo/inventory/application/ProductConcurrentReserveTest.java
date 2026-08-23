@@ -112,8 +112,9 @@ class ProductConcurrentReserveTest {
 
         assertThat(finished).as("All threads should finish within the timeout").isTrue();
         assertThat(successes.get()).as("Exactly one thread should succeed").isEqualTo(1);
-        assertThat(exceptions).as("Remaining threads should throw DomainException").hasSize(threads - 1);
         assertThat(exceptions)
+                .as("Remaining threads should throw DomainException")
+                .hasSize(threads - 1)
                 .allSatisfy(ex -> assertThat(ex).isInstanceOf(DomainException.class));
     }
 

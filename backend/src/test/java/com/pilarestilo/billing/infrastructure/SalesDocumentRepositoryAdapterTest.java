@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -116,7 +117,7 @@ class SalesDocumentRepositoryAdapterTest {
     @Test
     void the_live_document_query_leaves_credit_notes_out() {
         when(jpaRepository.findByOrderIdAndStatusNotAndDocumentTypeNot(
-                eq(orderId), eq("VOIDED"), eq("NOTA_CREDITO"))).thenReturn(Optional.empty());
+                orderId, "VOIDED", "NOTA_CREDITO")).thenReturn(Optional.empty());
 
         assertTrue(adapter.findLiveByOrderId(orderId).isEmpty());
 
@@ -134,7 +135,7 @@ class SalesDocumentRepositoryAdapterTest {
         adapter.save(note);
         adapter.save(reissuedBoleta);
         ArgumentCaptor<SalesDocumentEntity> captor = ArgumentCaptor.forClass(SalesDocumentEntity.class);
-        verify(jpaRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        verify(jpaRepository, times(2)).save(captor.capture());
         List<SalesDocumentEntity> rows = captor.getAllValues();
 
         when(jpaRepository.findByReplacesDocumentIdAndStatusNot(any(), eq("VOIDED"))).thenReturn(rows);

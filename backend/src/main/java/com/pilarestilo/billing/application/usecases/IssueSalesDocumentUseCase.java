@@ -46,6 +46,12 @@ public class IssueSalesDocumentUseCase {
         this.eventPublisher = eventPublisher;
     }
 
+    // The call to issue() below runs via 'this', bypassing the proxy that would normally start
+    // its own @Transactional -- harmless here, because this method's own @Transactional is what
+    // callers go through, and by the time this line runs that transaction is already active.
+    // S107: one parameter per column a boleta/factura actually carries; a DTO wrapper here would
+    // just move the same fields one level out, not reduce them.
+    @SuppressWarnings({"java:S6809", "java:S107"})
     @Transactional
     public SalesDocumentDto execute(UUID orderId,
                                     SalesDocumentType type,
@@ -63,6 +69,7 @@ public class IssueSalesDocumentUseCase {
      * @param replacesDocumentId the document this one corrects, already voided by the caller. Only
      *                           {@link ReissueSalesDocumentUseCase} passes it.
      */
+    @SuppressWarnings("java:S107")
     @Transactional
     public SalesDocumentDto issue(UUID orderId,
                                   SalesDocumentType type,

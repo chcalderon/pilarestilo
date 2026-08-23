@@ -313,8 +313,9 @@ class CreateOrderUseCaseTest {
 
         // validatePaymentMethodEnabled is the FIRST call — throws before isWriteEnabled()
         when(systemSettingsRepository.get()).thenReturn(settings);
+        var command = basicTransferCommand();
 
-        assertThatThrownBy(() -> useCase.execute(basicTransferCommand()))
+        assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("TRANSFER");
     }
@@ -330,8 +331,9 @@ class CreateOrderUseCaseTest {
         when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
                 .thenReturn(defaultAddress());
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+        var command = basicTransferCommand();
 
-        assertThatThrownBy(() -> useCase.execute(basicTransferCommand()))
+        assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("Product not found");
     }
@@ -460,8 +462,9 @@ class CreateOrderUseCaseTest {
         stubRemoteWriteWithProduct();
         when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
                 .thenThrow(new DomainException("Codigo ya utilizado"));
+        var command = commandWithCode("SAVE10");
 
-        assertThrows(DomainException.class, () -> useCase.execute(commandWithCode("SAVE10")));
+        assertThrows(DomainException.class, () -> useCase.execute(command));
 
         verify(orderRemoteCommandClient, never()).create(any(), any());
         verify(discountRedemptionService, never()).reserveWithoutOrder(any(), any());
@@ -476,8 +479,9 @@ class CreateOrderUseCaseTest {
                 .thenReturn(evaluation);
         when(discountRedemptionService.reserveWithoutOrder(evaluation, CUSTOMER_ID))
                 .thenThrow(new DomainException("Discount usage limit reached"));
+        var command = commandWithCode("SAVE10");
 
-        assertThrows(DomainException.class, () -> useCase.execute(commandWithCode("SAVE10")));
+        assertThrows(DomainException.class, () -> useCase.execute(command));
 
         verify(orderRemoteCommandClient, never()).create(any(), any());
     }

@@ -16,8 +16,9 @@ class EmailLayoutTest {
                 .paragraph("Blazer <b>Negro</b> & Crema")
                 .build();
 
-        assertThat(html).contains("Blazer &lt;b&gt;Negro&lt;/b&gt; &amp; Crema");
-        assertThat(html).doesNotContain("<b>Negro</b>");
+        assertThat(html)
+                .contains("Blazer &lt;b&gt;Negro&lt;/b&gt; &amp; Crema")
+                .doesNotContain("<b>Negro</b>");
     }
 
     @Test
@@ -29,10 +30,11 @@ class EmailLayoutTest {
                 .note("5 > 3")
                 .build();
 
-        assertThat(html).doesNotContain("<script>");
-        assertThat(html).doesNotContain("<i>Estado</i>");
-        assertThat(html).contains("Ana &amp; Co");
-        assertThat(html).contains("5 &gt; 3");
+        assertThat(html)
+                .doesNotContain("<script>")
+                .doesNotContain("<i>Estado</i>")
+                .contains("Ana &amp; Co")
+                .contains("5 &gt; 3");
     }
 
     @Test
@@ -40,13 +42,14 @@ class EmailLayoutTest {
     void usesTheMarkupEmailClientsAgreeOn() {
         String html = EmailLayout.titled("Pedido").paragraph("Hola").build();
 
-        assertThat(html).contains("role=\"presentation\"");
-        assertThat(html).contains("style=");
-        // A <style> block would be stripped by Gmail in several contexts, taking the design with it.
-        assertThat(html).doesNotContain("<style");
-        // A web font would be blocked by most clients; the families carry real fallbacks instead.
-        assertThat(html).doesNotContain("@import");
-        assertThat(html).doesNotContain("fonts.googleapis.com");
+        assertThat(html)
+                .contains("role=\"presentation\"")
+                .contains("style=")
+                // A <style> block would be stripped by Gmail in several contexts, taking the design with it.
+                .doesNotContain("<style")
+                // A web font would be blocked by most clients; the families carry real fallbacks instead.
+                .doesNotContain("@import")
+                .doesNotContain("fonts.googleapis.com");
     }
 
     @Test
@@ -54,8 +57,9 @@ class EmailLayoutTest {
     void referencesTheLogoByContentId() {
         String html = EmailLayout.titled("Pedido").build();
 
-        assertThat(html).contains("src=\"cid:" + EmailLayout.LOGO_CONTENT_ID + "\"");
-        assertThat(html).doesNotContain("src=\"http");
+        assertThat(html)
+                .contains("src=\"cid:" + EmailLayout.LOGO_CONTENT_ID + "\"")
+                .doesNotContain("src=\"http");
     }
 
     @Test
@@ -63,9 +67,11 @@ class EmailLayoutTest {
     void logoCarriesTheShopNameAsAltText() {
         String html = EmailLayout.titled("Pedido").build();
 
-        assertThat(html).contains("alt=\"Pilar Estilo\"");
-        // Dimensions on the tag, so the layout does not jump when the image arrives.
-        assertThat(html).contains("width=\"220\"").contains("height=\"74\"");
+        assertThat(html)
+                .contains("alt=\"Pilar Estilo\"")
+                // Dimensions on the tag, so the layout does not jump when the image arrives.
+                .contains("width=\"220\"")
+                .contains("height=\"74\"");
     }
 
     @Test
@@ -73,8 +79,9 @@ class EmailLayoutTest {
     void declaresColorSchemes() {
         String html = EmailLayout.titled("Pedido").build();
 
-        assertThat(html).contains("name=\"color-scheme\"");
-        assertThat(html).contains("name=\"supported-color-schemes\"");
+        assertThat(html)
+                .contains("name=\"color-scheme\"")
+                .contains("name=\"supported-color-schemes\"");
     }
 
     @Test

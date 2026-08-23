@@ -121,8 +121,10 @@ class IssueSalesDocumentUseCaseTest {
 
     @Test
     void a_factura_without_a_razon_social_is_refused() {
+        UUID orderId = order.getId();
+
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                order.getId(), SalesDocumentType.FACTURA, "500",
+                orderId, SalesDocumentType.FACTURA, "500",
                 "76.123.456-7", null, "Venta de ropa", null, actor));
 
         assertTrue(ex.getMessage().contains("razon social"));

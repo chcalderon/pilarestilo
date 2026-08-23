@@ -34,7 +34,9 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -121,7 +123,7 @@ class PaymentNotificationDispatcherTest {
      */
     @Test
     void rejected_notifiesWhenTheAutoCancelJobDidIt() {
-        Payment payment = org.mockito.Mockito.mock(Payment.class);
+        Payment payment = mock(Payment.class);
         when(payment.getRejectionReason()).thenReturn("Sin comprobante");
         when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
@@ -157,7 +159,7 @@ class PaymentNotificationDispatcherTest {
     // -----------------------------------------------------------------------------------------
 
     private Payment submittedPayment() {
-        Payment payment = org.mockito.Mockito.mock(Payment.class);
+        Payment payment = mock(Payment.class);
         lenient().when(payment.getOrderId()).thenReturn(orderId);
         lenient().when(payment.getId()).thenReturn(paymentId);
         lenient().when(payment.getProofReference()).thenReturn("comprobante.pdf");
@@ -195,7 +197,7 @@ class PaymentNotificationDispatcherTest {
 
         dispatcher.onPaymentSubmitted(new PaymentSubmitted(paymentId, "comprobante.pdf", Instant.now()));
 
-        verify(notificationSender, org.mockito.Mockito.times(2)).send(
+        verify(notificationSender, times(2)).send(
                 argThat(m -> NotificationMessage.PAYMENT_PROOF_SUBMITTED.equals(m.templateKey())),
                 any());
     }

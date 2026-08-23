@@ -131,21 +131,24 @@ class ReturnRequestTest {
     @Test
     void a_refund_needs_an_amount_a_method_and_a_reference() {
         ReturnRequest request = approvedRetracto();
+        Money zero = Money.zero();
+        Money amount = Money.of(new BigDecimal("100"));
 
-        assertThrows(DomainException.class, () -> request.registerRefund(
-                Money.zero(), RefundMethod.TRANSFERENCIA, "OP-1", null));
-        assertThrows(DomainException.class, () -> request.registerRefund(
-                Money.of(new BigDecimal("100")), null, "OP-1", null));
-        assertThrows(DomainException.class, () -> request.registerRefund(
-                Money.of(new BigDecimal("100")), RefundMethod.TRANSFERENCIA, "  ", null));
+        assertThrows(DomainException.class,
+                () -> request.registerRefund(zero, RefundMethod.TRANSFERENCIA, "OP-1", null));
+        assertThrows(DomainException.class,
+                () -> request.registerRefund(amount, null, "OP-1", null));
+        assertThrows(DomainException.class,
+                () -> request.registerRefund(amount, RefundMethod.TRANSFERENCIA, "  ", null));
     }
 
     @Test
     void a_return_that_was_never_approved_cannot_be_refunded() {
         ReturnRequest request = retracto();
+        Money amount = Money.of(new BigDecimal("100"));
 
-        assertThrows(DomainException.class, () -> request.registerRefund(
-                Money.of(new BigDecimal("100")), RefundMethod.TRANSFERENCIA, "OP-1", null));
+        assertThrows(DomainException.class,
+                () -> request.registerRefund(amount, RefundMethod.TRANSFERENCIA, "OP-1", null));
     }
 
     /**
@@ -173,9 +176,10 @@ class ReturnRequestTest {
     void bank_details_cannot_be_attached_to_a_closed_return() {
         ReturnRequest request = devolucion();
         request.reject("Fuera de plazo");
+        RefundAccount account = RefundAccount.of(
+                "Ana", "1-9", "Banco", "Corriente", "cifrado", "1234");
 
-        assertThrows(DomainException.class, () -> request.attachRefundAccount(RefundAccount.of(
-                "Ana", "1-9", "Banco", "Corriente", "cifrado", "1234")));
+        assertThrows(DomainException.class, () -> request.attachRefundAccount(account));
     }
 
     @Test
