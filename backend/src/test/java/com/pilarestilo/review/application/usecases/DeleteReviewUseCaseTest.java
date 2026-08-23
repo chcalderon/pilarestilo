@@ -66,7 +66,9 @@ class DeleteReviewUseCaseTest {
     @Test
     @DisplayName("a signed-in stranger cannot delete a review that is not theirs")
     void strangerCannotDelete() {
-        assertThatThrownBy(() -> useCase.execute(review.getId(), stranger, false))
+        UUID reviewId = review.getId();
+
+        assertThatThrownBy(() -> useCase.execute(reviewId, stranger, false))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("author or a moderator");
 

@@ -29,13 +29,17 @@ class MoneyTest {
 
     @Test
     void throws_on_negative_amount() {
-        assertThrows(DomainException.class, () -> Money.of(BigDecimal.valueOf(-1)));
+        BigDecimal negative = BigDecimal.valueOf(-1);
+
+        assertThrows(DomainException.class, () -> Money.of(negative));
     }
 
     @Test
     void throws_on_subtract_resulting_in_negative() {
-        assertThrows(DomainException.class,
-                () -> Money.of(BigDecimal.valueOf(50)).subtract(Money.of(BigDecimal.valueOf(100))));
+        Money fifty = Money.of(BigDecimal.valueOf(50));
+        Money oneHundred = Money.of(BigDecimal.valueOf(100));
+
+        assertThrows(DomainException.class, () -> fifty.subtract(oneHundred));
     }
 
     @Test

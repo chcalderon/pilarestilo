@@ -45,19 +45,22 @@ class SalesDocumentFileStorageTest {
 
     @Test
     void refuses_a_format_that_is_not_a_document() {
-        DomainException ex = assertThrows(DomainException.class,
-                () -> storage.store(new MockMultipartFile("file", "malware.exe",
-                        "application/octet-stream", new byte[]{1, 2, 3})));
+        MockMultipartFile malware = new MockMultipartFile(
+                "file", "malware.exe", "application/octet-stream", new byte[]{1, 2, 3});
+
+        DomainException ex = assertThrows(DomainException.class, () -> storage.store(malware));
 
         assertTrue(ex.getMessage().contains("exe"));
     }
 
     @Test
     void refuses_a_file_with_no_extension_and_an_empty_one() {
-        assertThrows(DomainException.class, () -> storage.store(
-                new MockMultipartFile("file", "sinextension", "application/pdf", new byte[]{1})));
-        assertThrows(DomainException.class, () -> storage.store(
-                new MockMultipartFile("file", "vacio.pdf", "application/pdf", new byte[0])));
+        MockMultipartFile noExtension = new MockMultipartFile(
+                "file", "sinextension", "application/pdf", new byte[]{1});
+        MockMultipartFile empty = new MockMultipartFile("file", "vacio.pdf", "application/pdf", new byte[0]);
+
+        assertThrows(DomainException.class, () -> storage.store(noExtension));
+        assertThrows(DomainException.class, () -> storage.store(empty));
     }
 
     /** Path traversal cannot reach outside the root, and a name nothing stored is not a file. */

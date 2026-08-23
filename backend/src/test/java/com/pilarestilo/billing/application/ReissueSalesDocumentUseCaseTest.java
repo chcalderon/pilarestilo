@@ -96,10 +96,11 @@ class ReissueSalesDocumentUseCaseTest {
     /** Without a reason the void is unaccountable, so nothing at all happens. */
     @Test
     void refuses_to_reissue_without_a_reason() {
-        when(salesDocumentRepository.findById(previous.getId())).thenReturn(Optional.of(previous));
+        UUID previousId = previous.getId();
+        when(salesDocumentRepository.findById(previousId)).thenReturn(Optional.of(previous));
 
         assertThrows(DomainException.class, () -> useCase.execute(
-                previous.getId(), "  ", SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
+                previousId, "  ", SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
 
         assertEquals(SalesDocumentStatus.ISSUED, previous.getStatus());
         verify(salesDocumentRepository, never()).save(any());

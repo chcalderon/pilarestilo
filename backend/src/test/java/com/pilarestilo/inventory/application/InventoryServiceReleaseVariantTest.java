@@ -81,8 +81,9 @@ class InventoryServiceReleaseVariantTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.atomicReleaseVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
-        assertThrows(DomainException.class, () -> inventoryService.release(productId, 2, "Verde", "XL", StockMovementOrigin.unknown()));
+        assertThrows(DomainException.class, () -> inventoryService.release(productId, 2, "Verde", "XL", origin));
     }
 
     @Test

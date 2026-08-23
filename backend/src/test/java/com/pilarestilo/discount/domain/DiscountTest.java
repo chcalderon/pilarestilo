@@ -100,7 +100,8 @@ class DiscountTest {
                 LocalDate.now().minusDays(1),
                 5
         );
-        assertThrows(DomainException.class, () -> d.validate(Money.of(BigDecimal.valueOf(10000))));
+        Money subtotal = Money.of(BigDecimal.valueOf(10000));
+        assertThrows(DomainException.class, () -> d.validate(subtotal));
     }
 
     @Test
@@ -122,15 +123,16 @@ class DiscountTest {
                 LocalDate.now().plusDays(30),
                 10
         );
-        assertThrows(DomainException.class,
-                () -> d.validate(Money.of(BigDecimal.valueOf(30000))));
+        Money subtotal = Money.of(BigDecimal.valueOf(30000));
+        assertThrows(DomainException.class, () -> d.validate(subtotal));
     }
 
     @Test
     void throws_when_inactive() {
         Discount d = buildPercentageDiscount(5);
         d.deactivate();
-        assertThrows(DomainException.class,
-                () -> d.validate(Money.of(BigDecimal.valueOf(10000))));
+        Money subtotal = Money.of(BigDecimal.valueOf(10000));
+
+        assertThrows(DomainException.class, () -> d.validate(subtotal));
     }
 }

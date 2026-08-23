@@ -83,9 +83,10 @@ class InventoryServiceConfirmTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.atomicConfirmVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
         assertThrows(DomainException.class, () ->
-                inventoryService.confirm(productId, 3, "Rojo", "M", StockMovementOrigin.unknown())
+                inventoryService.confirm(productId, 3, "Rojo", "M", origin)
         );
     }
 
@@ -133,9 +134,10 @@ class InventoryServiceConfirmTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.atomicConfirmVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
         assertThrows(DomainException.class, () ->
-                inventoryService.posSale(productId, 1, "Rojo", "M", StockMovementOrigin.unknown())
+                inventoryService.posSale(productId, 1, "Rojo", "M", origin)
         );
     }
 }

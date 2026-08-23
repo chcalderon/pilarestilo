@@ -135,10 +135,11 @@ class IssueSalesDocumentUseCaseTest {
     @Test
     void refuses_an_order_that_is_not_paid_yet() {
         Order pending = pendingOrder();
-        when(orderRepository.findById(pending.getId())).thenReturn(Optional.of(pending));
+        UUID pendingId = pending.getId();
+        when(orderRepository.findById(pendingId)).thenReturn(Optional.of(pending));
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                pending.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
+                pendingId, SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("paid sale"));
         verify(salesDocumentRepository, never()).save(any());
@@ -146,11 +147,12 @@ class IssueSalesDocumentUseCaseTest {
 
     @Test
     void refuses_a_second_live_document_for_the_same_order() {
-        when(salesDocumentRepository.findLiveByOrderId(order.getId()))
+        UUID orderId = order.getId();
+        when(salesDocumentRepository.findLiveByOrderId(orderId))
                 .thenReturn(Optional.of(existingDocument()));
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1043", null, null, null, null, actor));
+                orderId, SalesDocumentType.BOLETA, "1043", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("void it before issuing another"));
         verify(salesDocumentRepository, never()).save(any());
@@ -160,9 +162,10 @@ class IssueSalesDocumentUseCaseTest {
     void refuses_a_folio_that_is_already_registered() {
         when(salesDocumentRepository.existsByTypeAndFolio(SalesDocumentType.BOLETA, "1042"))
                 .thenReturn(true);
+        UUID orderId = order.getId();
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
+                orderId, SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("already registered"));
         verify(salesDocumentRepository, never()).save(any());

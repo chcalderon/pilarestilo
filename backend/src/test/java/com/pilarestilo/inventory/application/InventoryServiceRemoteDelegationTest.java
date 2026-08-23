@@ -101,8 +101,9 @@ class InventoryServiceRemoteDelegationTest {
     @DisplayName("a product the service does not know becomes a not-found, not a generic failure")
     void translatesNotFound() {
         expect("/api/inventory/commands/reserve").andRespond(withStatus(HttpStatus.NOT_FOUND));
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", origin))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("Product not found");
     }
@@ -111,8 +112,9 @@ class InventoryServiceRemoteDelegationTest {
     @DisplayName("a refusal is an error here, never a quiet success that leaves stock unreserved")
     void refusalBecomesAnError() {
         expect("/api/inventory/commands/reserve").andRespond(withStatus(HttpStatus.CONFLICT));
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", origin))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("rejected reserve");
     }
@@ -122,8 +124,9 @@ class InventoryServiceRemoteDelegationTest {
     void unreachableServiceBecomesAnError() {
         expect("/api/inventory/commands/reserve")
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
-        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", StockMovementOrigin.unknown()))
+        assertThatThrownBy(() -> service.reserve(productId, 1, "Negro", "M", origin))
                 .isInstanceOf(DomainException.class);
     }
 

@@ -66,16 +66,20 @@ class PaymentProofStorageTest {
 
     @Test
     void refuses_a_format_that_is_not_a_receipt() {
-        assertThrows(DomainException.class, () -> storage.store(
-                new MockMultipartFile("file", "comprobante.exe", "application/octet-stream", "x".getBytes())));
-        assertThrows(DomainException.class, () -> storage.store(
-                new MockMultipartFile("file", "sinextension", "image/jpeg", "x".getBytes())));
+        MockMultipartFile exe = new MockMultipartFile(
+                "file", "comprobante.exe", "application/octet-stream", "x".getBytes());
+        MockMultipartFile noExtension = new MockMultipartFile(
+                "file", "sinextension", "image/jpeg", "x".getBytes());
+
+        assertThrows(DomainException.class, () -> storage.store(exe));
+        assertThrows(DomainException.class, () -> storage.store(noExtension));
     }
 
     @Test
     void refuses_an_empty_file() {
-        assertThrows(DomainException.class, () -> storage.store(
-                new MockMultipartFile("file", "comprobante.jpg", "image/jpeg", new byte[0])));
+        MockMultipartFile empty = new MockMultipartFile("file", "comprobante.jpg", "image/jpeg", new byte[0]);
+
+        assertThrows(DomainException.class, () -> storage.store(empty));
     }
 
     /** A buyer may still paste a link to her bank instead of a file; that is not ours to serve. */

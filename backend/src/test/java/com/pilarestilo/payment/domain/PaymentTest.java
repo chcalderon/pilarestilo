@@ -47,7 +47,9 @@ class PaymentTest {
     void cannot_approve_from_SUBMITTED_without_review() {
         Payment p = newPendingPayment();
         p.submitProof("ref-001");
-        assertThrows(DomainException.class, () -> p.approve(UUID.randomUUID()));
+        UUID reviewerId = UUID.randomUUID();
+
+        assertThrows(DomainException.class, () -> p.approve(reviewerId));
     }
 
     @Test

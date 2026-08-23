@@ -38,7 +38,9 @@ class DispatchTest {
     void cannot_claim_already_claimed_dispatch() {
         Dispatch d = Dispatch.create(UUID.randomUUID());
         d.claim(UUID.randomUUID());
-        assertThrows(DomainException.class, () -> d.claim(UUID.randomUUID()));
+        UUID anotherDispatcher = UUID.randomUUID();
+
+        assertThrows(DomainException.class, () -> d.claim(anotherDispatcher));
     }
 
     @Test
