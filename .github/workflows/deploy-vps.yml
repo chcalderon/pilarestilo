@@ -6,6 +6,13 @@ on:
       - CI
     types:
       - completed
+    # Without this, a CI run completing on ANY branch -- a Dependabot PR against develop, a feature
+    # branch -- still queues into deploy-vps-production and cancels a real deploy in progress via
+    # cancel-in-progress, even though the job's own `if` below would have skipped it anyway. The
+    # cancellation happens before that `if` is ever evaluated. Filtering here stops it from being
+    # queued at all.
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       branch:
