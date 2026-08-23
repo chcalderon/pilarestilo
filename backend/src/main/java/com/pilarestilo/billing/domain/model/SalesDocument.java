@@ -38,6 +38,8 @@ public class SalesDocument {
     private BigDecimal taxRate;
     private Money totalAmount;
     private String receiverRut;
+    private String receiverBusinessName;
+    private String receiverBusinessActivity;
     private String receiverName;
     private String receiverEmail;
     private String fileUrl;
@@ -58,6 +60,8 @@ public class SalesDocument {
             String folio,
             TaxBreakdown amounts,
             String receiverRut,
+            String receiverBusinessName,
+            String receiverBusinessActivity,
             String receiverName,
             String receiverEmail,
             String fileUrl,
@@ -80,8 +84,16 @@ public class SalesDocument {
             throw new DomainException("Sales document requires the user who issued it");
         }
         // A factura names its receiver; a boleta does not have to.
-        if (type == SalesDocumentType.FACTURA && (receiverRut == null || receiverRut.isBlank())) {
-            throw new DomainException("A factura requires the receiver RUT");
+        if (type == SalesDocumentType.FACTURA) {
+            if (receiverRut == null || receiverRut.isBlank()) {
+                throw new DomainException("A factura requires the receiver RUT");
+            }
+            if (receiverBusinessName == null || receiverBusinessName.isBlank()) {
+                throw new DomainException("A factura requires the receiver's razon social");
+            }
+            if (receiverBusinessActivity == null || receiverBusinessActivity.isBlank()) {
+                throw new DomainException("A factura requires the receiver's giro");
+            }
         }
 
         SalesDocument document = new SalesDocument();
@@ -95,6 +107,8 @@ public class SalesDocument {
         document.taxRate = amounts.rate();
         document.totalAmount = amounts.total();
         document.receiverRut = trimToNull(receiverRut);
+        document.receiverBusinessName = trimToNull(receiverBusinessName);
+        document.receiverBusinessActivity = trimToNull(receiverBusinessActivity);
         document.receiverName = trimToNull(receiverName);
         document.receiverEmail = trimToNull(receiverEmail);
         document.fileUrl = trimToNull(fileUrl);
@@ -137,6 +151,8 @@ public class SalesDocument {
                 folio,
                 amounts,
                 references.getReceiverRut(),
+                references.getReceiverBusinessName(),
+                references.getReceiverBusinessActivity(),
                 references.getReceiverName(),
                 references.getReceiverEmail(),
                 fileUrl,
@@ -210,6 +226,8 @@ public class SalesDocument {
             BigDecimal taxRate,
             Money totalAmount,
             String receiverRut,
+            String receiverBusinessName,
+            String receiverBusinessActivity,
             String receiverName,
             String receiverEmail,
             String fileUrl,
@@ -233,6 +251,8 @@ public class SalesDocument {
         document.taxRate = taxRate;
         document.totalAmount = totalAmount;
         document.receiverRut = receiverRut;
+        document.receiverBusinessName = receiverBusinessName;
+        document.receiverBusinessActivity = receiverBusinessActivity;
         document.receiverName = receiverName;
         document.receiverEmail = receiverEmail;
         document.fileUrl = fileUrl;
@@ -265,6 +285,8 @@ public class SalesDocument {
     public BigDecimal getTaxRate() { return taxRate; }
     public Money getTotalAmount() { return totalAmount; }
     public String getReceiverRut() { return receiverRut; }
+    public String getReceiverBusinessName() { return receiverBusinessName; }
+    public String getReceiverBusinessActivity() { return receiverBusinessActivity; }
     public String getReceiverName() { return receiverName; }
     public String getReceiverEmail() { return receiverEmail; }
     public String getFileUrl() { return fileUrl; }

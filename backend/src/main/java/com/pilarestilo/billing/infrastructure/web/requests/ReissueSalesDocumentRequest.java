@@ -8,5 +8,7 @@ public record ReissueSalesDocumentRequest(
         @Size(max = 20) String documentType,
         @NotBlank @Size(max = 40) String folio,
         @Size(max = 20) String receiverRut,
+        @Size(max = 160) String receiverBusinessName,
+        @Size(max = 160) String receiverBusinessActivity,
         @Size(max = 500) String fileUrl
 ) {}

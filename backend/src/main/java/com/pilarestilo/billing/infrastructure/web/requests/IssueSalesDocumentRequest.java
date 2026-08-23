@@ -13,6 +13,10 @@ public record IssueSalesDocumentRequest(
         @NotBlank @Size(max = 40) String folio,
         /** Optional for a boleta by law; validated only in shape, and stored only when sent. */
         @Size(max = 20) String receiverRut,
+        /** Razon social. Required only once documentType is FACTURA, enforced by the domain. */
+        @Size(max = 160) String receiverBusinessName,
+        /** Giro. Required only once documentType is FACTURA, enforced by the domain. */
+        @Size(max = 160) String receiverBusinessActivity,
         /** Path returned by the document upload endpoint. */
         @Size(max = 500) String fileUrl
 ) {}

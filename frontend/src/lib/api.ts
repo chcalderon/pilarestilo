@@ -1453,6 +1453,8 @@ export interface SalesDocumentDto {
   totalAmount: number;
   currency: string;
   receiverRut: string | null;
+  receiverBusinessName: string | null;
+  receiverBusinessActivity: string | null;
   receiverName: string | null;
   receiverEmail: string | null;
   /** The file is never linked directly: /api/media/** is public, so it streams from an authed route. */
@@ -1515,7 +1517,15 @@ export async function getSalesDocumentsByOrder(orderId: string, token: string): 
 }
 
 export async function issueSalesDocument(
-  payload: { orderId: string; documentType?: string; folio: string; receiverRut?: string | null; fileUrl?: string | null },
+  payload: {
+    orderId: string;
+    documentType?: string;
+    folio: string;
+    receiverRut?: string | null;
+    receiverBusinessName?: string | null;
+    receiverBusinessActivity?: string | null;
+    fileUrl?: string | null;
+  },
   token: string,
 ): Promise<SalesDocumentDto> {
   return apiFetch<SalesDocumentDto>('/admin/sales-documents', {
@@ -1539,7 +1549,15 @@ export async function voidSalesDocument(
 
 export async function reissueSalesDocument(
   documentId: string,
-  payload: { voidReason: string; documentType?: string; folio: string; receiverRut?: string | null; fileUrl?: string | null },
+  payload: {
+    voidReason: string;
+    documentType?: string;
+    folio: string;
+    receiverRut?: string | null;
+    receiverBusinessName?: string | null;
+    receiverBusinessActivity?: string | null;
+    fileUrl?: string | null;
+  },
   token: string,
 ): Promise<SalesDocumentDto> {
   return apiFetch<SalesDocumentDto>(`/admin/sales-documents/${encodeURIComponent(documentId)}/reissue`, {

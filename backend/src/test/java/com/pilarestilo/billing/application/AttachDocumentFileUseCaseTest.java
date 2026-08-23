@@ -56,6 +56,8 @@ class AttachDocumentFileUseCaseTest {
                 "153",
                 TaxBreakdown.fromGross(Money.of(BigDecimal.valueOf(79000), "CLP"), BigDecimal.valueOf(19)),
                 null,
+                null,
+                null,
                 "Ana Perez",
                 "ana@correo.cl",
                 fileUrl,

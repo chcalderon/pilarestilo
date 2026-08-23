@@ -243,7 +243,10 @@ export default function SaleDetailDrawer({
   const [busy, setBusy] = useState(false);
 
   const [folio, setFolio] = useState('');
+  const [documentType, setDocumentType] = useState<'BOLETA' | 'FACTURA'>('BOLETA');
   const [receiverRut, setReceiverRut] = useState('');
+  const [receiverBusinessName, setReceiverBusinessName] = useState('');
+  const [receiverBusinessActivity, setReceiverBusinessActivity] = useState('');
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   /** Shown at the control itself: the drawer is long, and the banner at the top can be scrolled away. */
@@ -325,9 +328,14 @@ export default function SaleDetailDrawer({
       setFeedback({ tone: 'error', text: 'El folio es obligatorio.' });
       return;
     }
+    if (documentType === 'FACTURA' && (!receiverRut.trim() || !receiverBusinessName.trim() || !receiverBusinessActivity.trim())) {
+      setFeedback({ tone: 'error', text: 'Una factura requiere RUT, razón social y giro del receptor.' });
+      return;
+    }
     setBusy(true);
     setFeedback(null);
     try {
+      const documentName = documentType === 'FACTURA' ? 'Factura' : 'Boleta';
       if (mode === 'reissue' && live) {
         if (!voidReason.trim()) {
           setFeedback({ tone: 'error', text: 'Indica por qué se anula la boleta anterior.' });
@@ -336,22 +344,31 @@ export default function SaleDetailDrawer({
         }
         await reissueSalesDocument(live.id, {
           voidReason: voidReason.trim(),
+          documentType,
           folio: folio.trim(),
           receiverRut: receiverRut.trim() || null,
+          receiverBusinessName: receiverBusinessName.trim() || null,
+          receiverBusinessActivity: receiverBusinessActivity.trim() || null,
           fileUrl,
         }, token);
-        setFeedback({ tone: 'success', text: 'Boleta anulada y reemitida.' });
+        setFeedback({ tone: 'success', text: `${documentName} anulada y reemitida.` });
       } else {
         await issueSalesDocument({
           orderId: sale.orderId,
+          documentType,
           folio: folio.trim(),
           receiverRut: receiverRut.trim() || null,
+          receiverBusinessName: receiverBusinessName.trim() || null,
+          receiverBusinessActivity: receiverBusinessActivity.trim() || null,
           fileUrl,
         }, token);
-        setFeedback({ tone: 'success', text: 'Boleta registrada.' });
+        setFeedback({ tone: 'success', text: `${documentName} registrada.` });
       }
       setFolio('');
+      setDocumentType('BOLETA');
       setReceiverRut('');
+      setReceiverBusinessName('');
+      setReceiverBusinessActivity('');
       setFileUrl(null);
       setFileName(null);
       setFileError(null);
@@ -565,12 +582,15 @@ export default function SaleDetailDrawer({
           <Section label="Boleta">
             {live ? (
               <div className="space-y-3">
+                <Row label="Tipo" value={<strong>{live.documentType === 'FACTURA' ? 'Factura' : 'Boleta'}</strong>} />
                 <Row label="Folio" value={<strong>{live.folio}</strong>} />
                 <Row label="Emitida" value={new Date(live.issuedAt).toLocaleString('es-CL')} />
                 <Row label="Neto" value={money.format(live.netAmount)} />
                 <Row label={`IVA (${live.taxRate}%)`} value={money.format(live.taxAmount)} />
                 <Row label="Total" value={money.format(live.totalAmount)} />
                 {live.receiverRut && <Row label="RUT receptor" value={live.receiverRut} />}
+                {live.receiverBusinessName && <Row label="Razón social" value={live.receiverBusinessName} />}
+                {live.receiverBusinessActivity && <Row label="Giro" value={live.receiverBusinessActivity} />}
                 {/* Snapshot taken when the boleta was issued: it is who the document names, even if
                     the account has changed or been anonymised since. */}
                 {live.receiverName && <Row label="A nombre de" value={live.receiverName} />}
@@ -709,6 +729,17 @@ export default function SaleDetailDrawer({
             {canIssue && (!live || mode === 'reissue') && (
               <div className="space-y-3 pt-3 border-t border-[var(--pe-border)]">
                 <label className="block space-y-1">
+                  <span className={labelCls}>Tipo de documento</span>
+                  <select
+                    className={inputCls}
+                    value={documentType}
+                    onChange={(e) => setDocumentType(e.target.value as 'BOLETA' | 'FACTURA')}
+                  >
+                    <option value="BOLETA">Boleta</option>
+                    <option value="FACTURA">Factura</option>
+                  </select>
+                </label>
+                <label className="block space-y-1">
                   <span className={labelCls}>Folio *</span>
                   <input
                     className={inputCls}
@@ -719,17 +750,43 @@ export default function SaleDetailDrawer({
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className={labelCls}>RUT receptor (opcional)</span>
+                  <span className={labelCls}>
+                    RUT receptor {documentType === 'FACTURA' ? '*' : '(opcional)'}
+                  </span>
                   <input
                     className={inputCls}
                     value={receiverRut}
                     onChange={(e) => setReceiverRut(e.target.value)}
                     placeholder="12.345.678-9"
                   />
-                  <span className="block text-[0.68rem] opacity-50">
-                    La boleta no lo exige. Se guarda solo si lo escribes.
-                  </span>
+                  {documentType === 'BOLETA' && (
+                    <span className="block text-[0.68rem] opacity-50">
+                      La boleta no lo exige. Se guarda solo si lo escribes.
+                    </span>
+                  )}
                 </label>
+                {documentType === 'FACTURA' && (
+                  <>
+                    <label className="block space-y-1">
+                      <span className={labelCls}>Razón social *</span>
+                      <input
+                        className={inputCls}
+                        value={receiverBusinessName}
+                        onChange={(e) => setReceiverBusinessName(e.target.value)}
+                        placeholder="Comercial Ana Perez Ltda."
+                      />
+                    </label>
+                    <label className="block space-y-1">
+                      <span className={labelCls}>Giro *</span>
+                      <input
+                        className={inputCls}
+                        value={receiverBusinessActivity}
+                        onChange={(e) => setReceiverBusinessActivity(e.target.value)}
+                        placeholder="Venta de ropa"
+                      />
+                    </label>
+                  </>
+                )}
                 <div className="space-y-1">
                   <span className={labelCls}>Archivo (opcional)</span>
                   <label className={`${btnSecondary} cursor-pointer w-fit`}>
@@ -752,7 +809,9 @@ export default function SaleDetailDrawer({
                   )}
                 </div>
                 <button type="button" className={btnPrimary} disabled={busy} onClick={handleIssue}>
-                  {mode === 'reissue' ? 'Anular y registrar la nueva' : 'Registrar boleta'}
+                  {mode === 'reissue'
+                    ? 'Anular y registrar la nueva'
+                    : documentType === 'FACTURA' ? 'Registrar factura' : 'Registrar boleta'}
                 </button>
               </div>
             )}

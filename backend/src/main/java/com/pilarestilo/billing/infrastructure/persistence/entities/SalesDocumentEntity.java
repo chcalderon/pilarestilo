@@ -53,6 +53,12 @@ public class SalesDocumentEntity {
     @Column(name = "receiver_rut", length = 20)
     private String receiverRut;
 
+    @Column(name = "receiver_business_name", length = 160)
+    private String receiverBusinessName;
+
+    @Column(name = "receiver_business_activity", length = 160)
+    private String receiverBusinessActivity;
+
     @Column(name = "receiver_name", length = 160)
     private String receiverName;
 
@@ -115,6 +121,10 @@ public class SalesDocumentEntity {
     public void setCurrency(String currency) { this.currency = currency; }
     public String getReceiverRut() { return receiverRut; }
     public void setReceiverRut(String receiverRut) { this.receiverRut = receiverRut; }
+    public String getReceiverBusinessName() { return receiverBusinessName; }
+    public void setReceiverBusinessName(String receiverBusinessName) { this.receiverBusinessName = receiverBusinessName; }
+    public String getReceiverBusinessActivity() { return receiverBusinessActivity; }
+    public void setReceiverBusinessActivity(String receiverBusinessActivity) { this.receiverBusinessActivity = receiverBusinessActivity; }
     public String getReceiverName() { return receiverName; }
     public void setReceiverName(String receiverName) { this.receiverName = receiverName; }
     public String getReceiverEmail() { return receiverEmail; }

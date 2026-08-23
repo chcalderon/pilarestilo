@@ -20,6 +20,8 @@ public final class SalesDocumentMapper {
                 document.getTotalAmount().amount(),
                 document.getTotalAmount().currency(),
                 document.getReceiverRut(),
+                document.getReceiverBusinessName(),
+                document.getReceiverBusinessActivity(),
                 document.getReceiverName(),
                 document.getReceiverEmail(),
                 // The url never leaves the backend: /api/media/** is permitAll, so a link would make

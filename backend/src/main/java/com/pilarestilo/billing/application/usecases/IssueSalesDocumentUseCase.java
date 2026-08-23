@@ -51,9 +51,12 @@ public class IssueSalesDocumentUseCase {
                                     SalesDocumentType type,
                                     String folio,
                                     String receiverRut,
+                                    String receiverBusinessName,
+                                    String receiverBusinessActivity,
                                     String fileUrl,
                                     UUID issuedBy) {
-        return issue(orderId, type, folio, receiverRut, fileUrl, issuedBy, null);
+        return issue(orderId, type, folio, receiverRut, receiverBusinessName, receiverBusinessActivity,
+                fileUrl, issuedBy, null);
     }
 
     /**
@@ -65,6 +68,8 @@ public class IssueSalesDocumentUseCase {
                                   SalesDocumentType type,
                                   String folio,
                                   String receiverRut,
+                                  String receiverBusinessName,
+                                  String receiverBusinessActivity,
                                   String fileUrl,
                                   UUID issuedBy,
                                   UUID replacesDocumentId) {
@@ -94,6 +99,8 @@ public class IssueSalesDocumentUseCase {
                 // cannot disagree with the sale it declares.
                 TaxBreakdown.fromGross(order.getTotalAmount(), order.getTaxRate()),
                 receiverRut,
+                receiverBusinessName,
+                receiverBusinessActivity,
                 buyer.map(User::getFullName).orElse(null),
                 buyer.map(User::getEmail).orElse(null),
                 fileUrl,

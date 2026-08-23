@@ -55,6 +55,8 @@ public class SalesDocumentController {
                 parseType(request.documentType()),
                 request.folio(),
                 request.receiverRut(),
+                request.receiverBusinessName(),
+                request.receiverBusinessActivity(),
                 request.fileUrl(),
                 actorId(currentUser));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -98,6 +100,8 @@ public class SalesDocumentController {
                 parseType(request.documentType()),
                 request.folio(),
                 request.receiverRut(),
+                request.receiverBusinessName(),
+                request.receiverBusinessActivity(),
                 request.fileUrl(),
                 actorId(currentUser));
     }

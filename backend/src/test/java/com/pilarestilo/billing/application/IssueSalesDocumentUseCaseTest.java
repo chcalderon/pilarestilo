@@ -76,7 +76,7 @@ class IssueSalesDocumentUseCaseTest {
     @Test
     void registers_the_document_with_the_amounts_of_the_order() {
         SalesDocumentDto dto = useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, actor);
+                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor);
 
         assertEquals("1042", dto.folio());
         assertEquals(0, dto.totalAmount().compareTo(new BigDecimal("45990")));
@@ -94,7 +94,7 @@ class IssueSalesDocumentUseCaseTest {
         when(userRepository.findById(customerId)).thenReturn(Optional.of(buyer));
 
         SalesDocumentDto dto = useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, actor);
+                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor);
 
         assertEquals("Ana Perez", dto.receiverName());
         assertEquals("ana@correo.cl", dto.receiverEmail());
@@ -103,9 +103,30 @@ class IssueSalesDocumentUseCaseTest {
     @Test
     void the_receiver_rut_stays_absent_when_it_is_not_given() {
         SalesDocumentDto dto = useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, actor);
+                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor);
 
         assertNull(dto.receiverRut());
+    }
+
+    @Test
+    void registers_a_factura_with_the_receivers_business_identity() {
+        SalesDocumentDto dto = useCase.execute(
+                order.getId(), SalesDocumentType.FACTURA, "500",
+                "76.123.456-7", "Comercial Ana Perez Ltda.", "Venta de ropa", null, actor);
+
+        assertEquals("76.123.456-7", dto.receiverRut());
+        assertEquals("Comercial Ana Perez Ltda.", dto.receiverBusinessName());
+        assertEquals("Venta de ropa", dto.receiverBusinessActivity());
+    }
+
+    @Test
+    void a_factura_without_a_razon_social_is_refused() {
+        DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
+                order.getId(), SalesDocumentType.FACTURA, "500",
+                "76.123.456-7", null, "Venta de ropa", null, actor));
+
+        assertTrue(ex.getMessage().contains("razon social"));
+        verify(salesDocumentRepository, never()).save(any());
     }
 
     /** A document declares money already collected. Anything earlier has no sale to declare. */
@@ -115,7 +136,7 @@ class IssueSalesDocumentUseCaseTest {
         when(orderRepository.findById(pending.getId())).thenReturn(Optional.of(pending));
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                pending.getId(), SalesDocumentType.BOLETA, "1042", null, null, actor));
+                pending.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("paid sale"));
         verify(salesDocumentRepository, never()).save(any());
@@ -127,7 +148,7 @@ class IssueSalesDocumentUseCaseTest {
                 .thenReturn(Optional.of(existingDocument()));
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1043", null, null, actor));
+                order.getId(), SalesDocumentType.BOLETA, "1043", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("void it before issuing another"));
         verify(salesDocumentRepository, never()).save(any());
@@ -139,7 +160,7 @@ class IssueSalesDocumentUseCaseTest {
                 .thenReturn(true);
 
         DomainException ex = assertThrows(DomainException.class, () -> useCase.execute(
-                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, actor));
+                order.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
 
         assertTrue(ex.getMessage().contains("already registered"));
         verify(salesDocumentRepository, never()).save(any());
@@ -151,13 +172,13 @@ class IssueSalesDocumentUseCaseTest {
         when(orderRepository.findById(unknown)).thenReturn(Optional.empty());
 
         assertThrows(DomainException.class, () -> useCase.execute(
-                unknown, SalesDocumentType.BOLETA, "1042", null, null, actor));
+                unknown, SalesDocumentType.BOLETA, "1042", null, null, null, null, actor));
     }
 
     private SalesDocument existingDocument() {
         return SalesDocument.issue(order.getId(), SalesDocumentType.BOLETA, "1041",
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
-                null, null, null, null, actor, null);
+                null, null, null, null, null, null, actor, null);
     }
 
     private Order paidOrder() {
