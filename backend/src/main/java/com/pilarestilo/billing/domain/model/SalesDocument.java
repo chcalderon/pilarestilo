@@ -54,6 +54,8 @@ public class SalesDocument {
 
     private SalesDocument() {}
 
+    // One parameter per column a boleta/factura actually carries.
+    @SuppressWarnings("java:S107")
     public static SalesDocument issue(
             UUID orderId,
             SalesDocumentType type,
@@ -220,6 +222,8 @@ public class SalesDocument {
         this.fileUrl = trimmed;
     }
 
+    // One parameter per column a boleta/factura actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static SalesDocument reconstruct(
             UUID id,
             UUID orderId,

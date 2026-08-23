@@ -33,7 +33,8 @@ public class CreateProductUseCase {
 
     // Delegates via 'this' to the fuller overload below, bypassing its own @Transactional proxy --
     // harmless, since this overload's own @Transactional is already active by the time it does.
-    @SuppressWarnings("java:S6809")
+    // One parameter per field the product form actually submits.
+    @SuppressWarnings({"java:S6809", "java:S107"})
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,
@@ -46,7 +47,7 @@ public class CreateProductUseCase {
         );
     }
 
-    @SuppressWarnings("java:S6809")
+    @SuppressWarnings({"java:S6809", "java:S107"})
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,
@@ -62,6 +63,7 @@ public class CreateProductUseCase {
      * @param variantType which attribute pair the variants use, or null to leave it derived from
      *                    the categories — see Product.variantType.
      */
+    @SuppressWarnings("java:S107")
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,

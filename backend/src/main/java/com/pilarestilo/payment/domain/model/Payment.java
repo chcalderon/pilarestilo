@@ -57,6 +57,8 @@ public class Payment {
      * Reconstructs a Payment from persistence without triggering business-rule validation.
      * Only for use by repository adapters.
      */
+    // One parameter per column a payment actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static Payment reconstruct(UUID id, UUID orderId, PaymentMethod method,
                                        PaymentStatus status, String proofReference,
                                        String transferAccountHolderName,

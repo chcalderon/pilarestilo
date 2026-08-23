@@ -36,6 +36,8 @@ public class CashMovement {
         return m;
     }
 
+    // One parameter per column a movement actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static CashMovement reconstruct(UUID id, UUID cashRegisterId, CashMovementType type,
                                             CashMovementCategory category,
                                             BigDecimal amount, String description, UUID orderId,

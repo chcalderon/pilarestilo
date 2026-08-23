@@ -19,6 +19,8 @@ public class SearchProductsUseCase {
         this.productRepository = productRepository;
     }
 
+    // One parameter per filter the catalog search actually exposes.
+    @SuppressWarnings("java:S107")
     @Transactional(readOnly = true)
     public Page<ProductDto> execute(String term,
                                     Boolean active,

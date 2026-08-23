@@ -58,6 +58,9 @@ public class Order {
      * Reconstructs an Order from persistence without triggering business-rule validation.
      * Only for use by repository adapters.
      */
+    // One parameter per column an order actually has; these overloads exist so older callers don't
+    // need to pass columns added later, not to be split further.
+    @SuppressWarnings("java:S107")
     public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
                                      Money subtotal, Money discountAmount, Money totalAmount,
                                      PaymentMethod paymentMethod, String shippingZoneCode,
@@ -71,6 +74,7 @@ public class Order {
                 SalesChannel.ECOMMERCE, status, createdAt, updatedAt, null);
     }
 
+    @SuppressWarnings("java:S107")
     public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
                                      Money subtotal, Money discountAmount, Money totalAmount,
                                      PaymentMethod paymentMethod, String shippingZoneCode,
@@ -91,6 +95,7 @@ public class Order {
      *                the columns and what V76 backfilled them with, so a stored pair and a derived
      *                pair cannot disagree. Null means a row from before the column existed.
      */
+    @SuppressWarnings("java:S107")
     public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
                                      Money subtotal, Money discountAmount, Money totalAmount,
                                      PaymentMethod paymentMethod, String shippingZoneCode,
@@ -149,6 +154,9 @@ public class Order {
         this.discountCode = discountCode;
     }
 
+    // One parameter per column an order actually has; these overloads exist so older callers don't
+    // need to pass columns added later, not to be split further.
+    @SuppressWarnings("java:S107")
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
                                 PaymentMethod paymentMethod, String shippingZoneCode,
                                 String shippingCourierId, String shippingCourierName,
@@ -159,6 +167,7 @@ public class Order {
                 shippingAddressReference, notes, null);
     }
 
+    @SuppressWarnings("java:S107")
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
                                 PaymentMethod paymentMethod, String shippingZoneCode,
                                 String shippingCourierId, String shippingCourierName,
@@ -174,6 +183,7 @@ public class Order {
      *                the order so a later change to it cannot restate this sale. Null falls back to
      *                {@link TaxBreakdown#DEFAULT_RATE}.
      */
+    @SuppressWarnings("java:S107")
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
                                 PaymentMethod paymentMethod, String shippingZoneCode,
                                 String shippingCourierId, String shippingCourierName,

@@ -21,6 +21,8 @@ public class CreateCategoryUseCase {
         this.categoryRepository = categoryRepository;
     }
 
+    // One parameter per field the category form actually submits.
+    @SuppressWarnings("java:S107")
     @Transactional
     @CacheEvict(cacheNames = {CacheNames.CATEGORY_LIST, CacheNames.CATEGORY_TREE}, allEntries = true)
     public CategoryDto execute(String slug, String nameEs, String nameEn,

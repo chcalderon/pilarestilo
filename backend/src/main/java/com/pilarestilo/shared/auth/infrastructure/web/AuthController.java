@@ -30,6 +30,9 @@ public class AuthController {
     private final GoogleLoginUseCase googleLoginUseCase;
     private final UploadMyAvatarUseCase uploadMyAvatarUseCase;
 
+    // One dependency per use case this controller wires -- exactly what a hexagonal web adapter
+    // is for, not a design smell to fix by folding use cases together.
+    @SuppressWarnings("java:S107")
     public AuthController(RegisterUseCase registerUseCase,
                           LoginUseCase loginUseCase,
                           RefreshTokenUseCase refreshTokenUseCase,

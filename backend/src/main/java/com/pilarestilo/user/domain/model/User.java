@@ -71,6 +71,8 @@ public class User {
         return reconstruct(id, email, fullName, null, null, role, active, passwordHash, createdAt);
     }
 
+    // One parameter per column a user actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static User reconstruct(
             UUID id,
             String email,
@@ -84,6 +86,7 @@ public class User {
         return reconstruct(id, email, fullName, phone, null, role, active, passwordHash, createdAt);
     }
 
+    @SuppressWarnings("java:S107")
     public static User reconstruct(
             UUID id,
             String email,

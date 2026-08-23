@@ -36,6 +36,8 @@ public class CashRegister {
         return cr;
     }
 
+    // One parameter per column a cash register actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static CashRegister reconstruct(UUID id, UUID sellerId, LocalDateTime openedAt,
                                             LocalDateTime closedAt, BigDecimal openingBalance,
                                             BigDecimal closingBalance, BigDecimal expectedBalance,

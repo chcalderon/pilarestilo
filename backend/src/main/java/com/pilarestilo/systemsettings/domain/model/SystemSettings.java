@@ -156,6 +156,9 @@ public class SystemSettings {
         return settings;
     }
 
+    // One parameter per column the settings singleton actually carries; rehydration follows the
+    // schema, and a builder would just move the same fields one level out, not reduce them.
+    @SuppressWarnings("java:S107")
     public static SystemSettings reconstruct(
             short id,
             String whatsappNumber,
@@ -297,6 +300,7 @@ public class SystemSettings {
         return settings;
     }
 
+    @SuppressWarnings("java:S107")
     public void update(
             String whatsappNumber,
             String instagramUrl,

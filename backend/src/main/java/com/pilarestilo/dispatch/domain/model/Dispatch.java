@@ -50,6 +50,8 @@ public class Dispatch {
         return d;
     }
 
+    // One parameter per column a dispatch actually carries; rehydration follows the schema.
+    @SuppressWarnings("java:S107")
     public static Dispatch reconstruct(UUID id, UUID orderId, UUID dispatcherId,
                                         DispatchStatus status, String carrier, String trackingCode,
                                         LocalDate scheduledDate, LocalDateTime dispatchedAt,
