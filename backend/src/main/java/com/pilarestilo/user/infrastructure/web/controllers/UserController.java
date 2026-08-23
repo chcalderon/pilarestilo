@@ -97,25 +97,36 @@ public class UserController {
                           @RequestBody UpdateUserRequest request,
                           @AuthenticationPrincipal AuthenticatedUser currentUser,
                           Authentication authentication) {
-        boolean isLegacyAdmin = currentUser != null && currentUser.role() == UserRole.ADMIN;
-        if (request.role() != null && !isLegacyAdmin) {
-            if (log.isWarnEnabled()) {
-                log.warn("[RBAC] denied role mutation userId={} actor={} requiredPermission={}",
-                        id,
-                        currentUser == null ? "anonymous" : currentUser.email(),
-                        PermissionRegistry.USERS_ASSIGN_ROLE.code());
-            }
-            throw new AccessDeniedException("Role changes require admin legacy access");
-        }
-        if (currentUser != null && currentUser.id().equals(id)) {
-            if (request.active() != null && !request.active()) {
-                throw new DomainException("You cannot block your own account");
-            }
-            if (request.role() != null && !"ADMIN".equalsIgnoreCase(request.role())) {
-                throw new DomainException("You cannot remove your own admin role");
-            }
-        }
+        assertRoleChangeAllowed(id, request, currentUser);
+        assertNotSelfDemoting(id, request, currentUser);
         return updateUserUseCase.execute(id, request.fullName(), request.role(), request.active());
+    }
+
+    private void assertRoleChangeAllowed(UUID id, UpdateUserRequest request, AuthenticatedUser currentUser) {
+        boolean isLegacyAdmin = currentUser != null && currentUser.role() == UserRole.ADMIN;
+        if (request.role() == null || isLegacyAdmin) {
+            return;
+        }
+        if (log.isWarnEnabled()) {
+            log.warn("[RBAC] denied role mutation userId={} actor={} requiredPermission={}",
+                    id,
+                    currentUser == null ? "anonymous" : currentUser.email(),
+                    PermissionRegistry.USERS_ASSIGN_ROLE.code());
+        }
+        throw new AccessDeniedException("Role changes require admin legacy access");
+    }
+
+    /** An admin editing their own account cannot lock themselves out. */
+    private void assertNotSelfDemoting(UUID id, UpdateUserRequest request, AuthenticatedUser currentUser) {
+        if (currentUser == null || !currentUser.id().equals(id)) {
+            return;
+        }
+        if (request.active() != null && !request.active()) {
+            throw new DomainException("You cannot block your own account");
+        }
+        if (request.role() != null && !"ADMIN".equalsIgnoreCase(request.role())) {
+            throw new DomainException("You cannot remove your own admin role");
+        }
     }
 
     @DeleteMapping("/{id}")

@@ -122,25 +122,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         String pattern = trimmedTerm.isEmpty() ? null : "%" + trimmedTerm.toLowerCase() + "%";
         Specification<ProductEntity> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            if (pattern != null) {
-                Join<Object, Object> textCats = root.join(CATEGORIES_ATTR, JoinType.LEFT);
-                var namePred = cb.like(cb.lower(root.get("name")), pattern);
-                var brandPred = cb.like(cb.lower(root.get("brand")), pattern);
-                var descPred = cb.like(cb.lower(root.get("description")), pattern);
-                var catEsPred = cb.like(cb.lower(textCats.get("nameEs")), pattern);
-                var catEnPred = cb.like(cb.lower(textCats.get("nameEn")), pattern);
-                var catSlugPred = cb.like(cb.lower(textCats.get("slug")), pattern);
-                predicates.add(cb.or(namePred, brandPred, descPred, catEsPred, catEnPred, catSlugPred));
-            }
-            if (active != null) {
-                predicates.add(cb.equal(root.get("active"), active));
-            }
-            if (Boolean.TRUE.equals(inStock)) {
-                predicates.add(buildInStockPredicate(root, query, cb));
-            }
-            if (condition != null && !condition.isBlank()) {
-                predicates.add(cb.equal(root.get("condition"), ProductCondition.valueOf(condition)));
-            }
+            appendSearchPredicates(predicates, root, query, cb, new SearchCriteria(pattern, active, inStock, condition));
             if (categorySlug != null && !categorySlug.isBlank()) {
                 Join<Object, Object> filterCats = root.join(CATEGORIES_ATTR, JoinType.INNER);
                 predicates.add(cb.equal(filterCats.get("slug"), categorySlug));
@@ -152,27 +134,45 @@ public class ProductRepositoryAdapter implements ProductRepository {
         return jpaRepository.findAll(spec, pageable).map(this::toDomain);
     }
 
+    private record SearchCriteria(String pattern, Boolean active, Boolean inStock, String condition) {}
+
+    private void appendSearchPredicates(List<Predicate> predicates,
+                                        jakarta.persistence.criteria.Root<ProductEntity> root,
+                                        jakarta.persistence.criteria.CriteriaQuery<?> query,
+                                        jakarta.persistence.criteria.CriteriaBuilder cb,
+                                        SearchCriteria criteria) {
+        if (criteria.pattern() != null) {
+            predicates.add(buildSearchTermPredicate(root, cb, criteria.pattern()));
+        }
+        if (criteria.active() != null) {
+            predicates.add(cb.equal(root.get("active"), criteria.active()));
+        }
+        if (Boolean.TRUE.equals(criteria.inStock())) {
+            predicates.add(buildInStockPredicate(root, query, cb));
+        }
+        if (criteria.condition() != null && !criteria.condition().isBlank()) {
+            predicates.add(cb.equal(root.get("condition"), ProductCondition.valueOf(criteria.condition())));
+        }
+    }
+
+    private Predicate buildSearchTermPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,
+                                               jakarta.persistence.criteria.CriteriaBuilder cb,
+                                               String pattern) {
+        Join<Object, Object> textCats = root.join(CATEGORIES_ATTR, JoinType.LEFT);
+        return cb.or(
+                cb.like(cb.lower(root.get("name")), pattern),
+                cb.like(cb.lower(root.get("brand")), pattern),
+                cb.like(cb.lower(root.get("description")), pattern),
+                cb.like(cb.lower(textCats.get("nameEs")), pattern),
+                cb.like(cb.lower(textCats.get("nameEn")), pattern),
+                cb.like(cb.lower(textCats.get("slug")), pattern)
+        );
+    }
+
     private Specification<ProductEntity> buildSpecification(ProductFilter filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-
-            if (filter.condition() != null) {
-                predicates.add(cb.equal(root.get("condition"),
-                        ProductCondition.valueOf(filter.condition())));
-            }
-            if (filter.brand() != null) {
-                predicates.add(cb.like(cb.lower(root.get("brand")),
-                        "%" + filter.brand().toLowerCase() + "%"));
-            }
-            if (filter.minPrice() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("priceAmount"), filter.minPrice()));
-            }
-            if (filter.maxPrice() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("priceAmount"), filter.maxPrice()));
-            }
-            if (filter.active() != null) {
-                predicates.add(cb.equal(root.get("active"), filter.active()));
-            }
+            appendPriceAndAttributePredicates(predicates, root, cb, filter);
             if (Boolean.TRUE.equals(filter.inStock())) {
                 predicates.add(buildInStockPredicate(root, query, cb));
             }
@@ -185,6 +185,29 @@ public class ProductRepositoryAdapter implements ProductRepository {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    private void appendPriceAndAttributePredicates(List<Predicate> predicates,
+                                                    jakarta.persistence.criteria.Root<ProductEntity> root,
+                                                    jakarta.persistence.criteria.CriteriaBuilder cb,
+                                                    ProductFilter filter) {
+        if (filter.condition() != null) {
+            predicates.add(cb.equal(root.get("condition"),
+                    ProductCondition.valueOf(filter.condition())));
+        }
+        if (filter.brand() != null) {
+            predicates.add(cb.like(cb.lower(root.get("brand")),
+                    "%" + filter.brand().toLowerCase() + "%"));
+        }
+        if (filter.minPrice() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("priceAmount"), filter.minPrice()));
+        }
+        if (filter.maxPrice() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("priceAmount"), filter.maxPrice()));
+        }
+        if (filter.active() != null) {
+            predicates.add(cb.equal(root.get("active"), filter.active()));
+        }
     }
 
     private Predicate buildInStockPredicate(jakarta.persistence.criteria.Root<ProductEntity> root,

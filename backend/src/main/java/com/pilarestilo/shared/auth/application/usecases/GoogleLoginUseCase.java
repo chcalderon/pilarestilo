@@ -23,14 +23,13 @@ import java.net.http.HttpResponse;
 @Service
 public class GoogleLoginUseCase {
 
-    private static final String TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo?id_token=";
-
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
     private final String googleClientId;
     private final MediaStorageService mediaStorageService;
     private final RolePermissionResolutionService rolePermissionResolutionService;
+    private final String tokenInfoUrl;
 
     public GoogleLoginUseCase(
             UserRepository userRepository,
@@ -38,7 +37,8 @@ public class GoogleLoginUseCase {
             ObjectMapper objectMapper,
             @Value("${app.google.client-id}") String googleClientId,
             MediaStorageService mediaStorageService,
-            RolePermissionResolutionService rolePermissionResolutionService
+            RolePermissionResolutionService rolePermissionResolutionService,
+            @Value("${app.google.tokeninfo-url:https://oauth2.googleapis.com/tokeninfo?id_token=}") String tokenInfoUrl
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -46,55 +46,20 @@ public class GoogleLoginUseCase {
         this.googleClientId = googleClientId;
         this.mediaStorageService = mediaStorageService;
         this.rolePermissionResolutionService = rolePermissionResolutionService;
+        this.tokenInfoUrl = tokenInfoUrl;
     }
 
     public AuthTokenDto execute(String idToken) {
         JsonNode claims = verifyIdToken(idToken);
+        validateClaims(claims);
 
         String email = claims.path("email").asString();
-        String emailVerified = claims.path("email_verified").asString();
-        String aud = claims.path("aud").asString();
-
-        if (!"true".equalsIgnoreCase(emailVerified)) {
-            throw new DomainException("Google account email is not verified");
-        }
-        if (!aud.equals(googleClientId)) {
-            throw new DomainException("Google token audience mismatch");
-        }
-
-        String fullName = claims.path("name").asString(null);
-        if (fullName == null || fullName.isBlank()) {
-            fullName = email.split("@")[0];
-        }
+        String fullName = resolveFullName(claims, email);
         String pictureUrl = claims.path("picture").asString(null);
 
-        String finalFullName = fullName;
-        String finalPictureUrl = pictureUrl;
-
-        boolean[] isNewUser = {false};
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
-            isNewUser[0] = true;
-            User newUser = User.create(email, finalFullName, UserRole.CUSTOMER, null);
-            User saved = userRepository.save(newUser);
-            if (finalPictureUrl != null && !finalPictureUrl.isBlank()) {
-                String avatarUrl = downloadAndSaveAvatar(finalPictureUrl, saved.getId().toString());
-                if (avatarUrl != null) {
-                    saved.updateAvatarUrl(avatarUrl);
-                    return userRepository.save(saved);
-                }
-            }
-            return saved;
-        });
-
-        boolean accountMerged = !isNewUser[0] && user.getPasswordHash() != null;
-
-        if (!user.isAvatarManuallySet() && finalPictureUrl != null && !finalPictureUrl.isBlank()) {
-            String avatarUrl = downloadAndSaveAvatar(finalPictureUrl, user.getId().toString());
-            if (avatarUrl != null) {
-                user.updateAvatarUrl(avatarUrl);
-                user = userRepository.save(user);
-            }
-        }
+        UserLookupResult lookup = findOrCreateUser(email, fullName, pictureUrl);
+        User user = refreshAvatarIfNeeded(lookup.user(), pictureUrl);
+        boolean accountMerged = !lookup.isNewUser() && user.getPasswordHash() != null;
 
         if (!user.isActive()) {
             throw new DomainException("This account is blocked");
@@ -121,6 +86,57 @@ public class GoogleLoginUseCase {
                 resolvedPermissions.permissionCodes());
     }
 
+    private void validateClaims(JsonNode claims) {
+        String emailVerified = claims.path("email_verified").asString();
+        String aud = claims.path("aud").asString();
+        if (!"true".equalsIgnoreCase(emailVerified)) {
+            throw new DomainException("Google account email is not verified");
+        }
+        if (!aud.equals(googleClientId)) {
+            throw new DomainException("Google token audience mismatch");
+        }
+    }
+
+    private String resolveFullName(JsonNode claims, String email) {
+        String fullName = claims.path("name").asString(null);
+        if (fullName == null || fullName.isBlank()) {
+            return email.split("@")[0];
+        }
+        return fullName;
+    }
+
+    private record UserLookupResult(User user, boolean isNewUser) {}
+
+    private UserLookupResult findOrCreateUser(String email, String fullName, String pictureUrl) {
+        var existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) {
+            return new UserLookupResult(existing.get(), false);
+        }
+
+        User newUser = User.create(email, fullName, UserRole.CUSTOMER, null);
+        User saved = userRepository.save(newUser);
+        if (pictureUrl != null && !pictureUrl.isBlank()) {
+            String avatarUrl = downloadAndSaveAvatar(pictureUrl, saved.getId().toString());
+            if (avatarUrl != null) {
+                saved.updateAvatarUrl(avatarUrl);
+                saved = userRepository.save(saved);
+            }
+        }
+        return new UserLookupResult(saved, true);
+    }
+
+    private User refreshAvatarIfNeeded(User user, String pictureUrl) {
+        if (user.isAvatarManuallySet() || pictureUrl == null || pictureUrl.isBlank()) {
+            return user;
+        }
+        String avatarUrl = downloadAndSaveAvatar(pictureUrl, user.getId().toString());
+        if (avatarUrl == null) {
+            return user;
+        }
+        user.updateAvatarUrl(avatarUrl);
+        return userRepository.save(user);
+    }
+
     private String downloadAndSaveAvatar(String pictureUrl, String userId) {
         // Closed on the way out: HttpClient holds a selector thread and a connection pool, and one
         // was leaked per Google sign-in.
@@ -143,7 +159,7 @@ public class GoogleLoginUseCase {
     private JsonNode verifyIdToken(String idToken) {
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(TOKENINFO_URL + idToken))
+                    .uri(URI.create(tokenInfoUrl + idToken))
                     .GET()
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

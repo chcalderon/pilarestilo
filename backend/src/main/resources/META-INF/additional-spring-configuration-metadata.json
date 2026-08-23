@@ -210,6 +210,12 @@
       "type": "java.lang.String"
     },
     {
+      "name": "app.google.tokeninfo-url",
+      "type": "java.lang.String",
+      "description": "Google's OAuth2 tokeninfo endpoint, prefix before the id_token query value. Overridable so tests can point it at a local stand-in.",
+      "defaultValue": "https://oauth2.googleapis.com/tokeninfo?id_token="
+    },
+    {
       "name": "app.inventory.remote.base-url",
       "type": "java.lang.String",
       "defaultValue": "http://inventory-service:8082"
