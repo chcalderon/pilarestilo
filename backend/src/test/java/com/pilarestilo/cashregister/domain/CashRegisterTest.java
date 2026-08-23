@@ -50,16 +50,21 @@ class CashRegisterTest {
     void cannot_add_movement_to_closed_register() {
         CashRegister cr = buildOpen();
         cr.close(new BigDecimal("50000"), null);
+        BigDecimal amount = new BigDecimal("1000");
+        UUID actorId = UUID.randomUUID();
+
         assertThrows(DomainException.class,
                 () -> cr.addMovement(CashMovementType.IN, CashMovementCategory.ADJUSTMENT,
-                        new BigDecimal("1000"), "X", null, UUID.randomUUID()));
+                        amount, "X", null, actorId));
     }
 
     @Test
     void cannot_close_already_closed_register() {
         CashRegister cr = buildOpen();
         cr.close(new BigDecimal("50000"), null);
-        assertThrows(DomainException.class, () -> cr.close(new BigDecimal("50000"), null));
+        BigDecimal closingBalance = new BigDecimal("50000");
+
+        assertThrows(DomainException.class, () -> cr.close(closingBalance, null));
     }
 
     @Test
@@ -84,6 +89,8 @@ class CashRegisterTest {
     @Test
     void closeCashRegister_rejectsNegativeDeclaredBalance() {
         CashRegister cr = buildOpen();
-        assertThrows(DomainException.class, () -> cr.close(new BigDecimal("-1"), null));
+        BigDecimal negative = new BigDecimal("-1");
+
+        assertThrows(DomainException.class, () -> cr.close(negative, null));
     }
 }

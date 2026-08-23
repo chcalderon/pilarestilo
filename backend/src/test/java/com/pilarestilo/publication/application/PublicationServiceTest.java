@@ -182,8 +182,9 @@ class PublicationServiceTest {
         PublicationEntity entity = approvedPublication(publicationId, null);
         entity.setStatus(PublicationStatus.DRAFT);
         when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        UUID actorId = UUID.randomUUID();
 
-        assertThrows(DomainException.class, () -> service.dispatch(publicationId, UUID.randomUUID()));
+        assertThrows(DomainException.class, () -> service.dispatch(publicationId, actorId));
     }
 
     @Test

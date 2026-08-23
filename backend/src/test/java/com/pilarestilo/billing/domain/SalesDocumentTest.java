@@ -99,11 +99,13 @@ class SalesDocumentTest {
 
     @Test
     void requires_a_folio_and_an_issuer() {
+        TaxBreakdown amounts = amounts();
+
         assertThrows(DomainException.class, () -> SalesDocument.issue(
-                ORDER_ID, SalesDocumentType.BOLETA, "  ", amounts(),
+                ORDER_ID, SalesDocumentType.BOLETA, "  ", amounts,
                 null, null, null, null, null, null, ACTOR, null));
         assertThrows(DomainException.class, () -> SalesDocument.issue(
-                ORDER_ID, SalesDocumentType.BOLETA, "1042", amounts(),
+                ORDER_ID, SalesDocumentType.BOLETA, "1042", amounts,
                 null, null, null, null, null, null, null, null));
     }
 

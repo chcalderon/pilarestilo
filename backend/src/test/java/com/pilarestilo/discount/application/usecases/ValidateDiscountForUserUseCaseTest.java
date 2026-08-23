@@ -50,8 +50,9 @@ class ValidateDiscountForUserUseCaseTest {
         UUID other = UUID.randomUUID();
         when(redemptionService.evaluate(eq("CODE"), any(Money.class), eq(other)))
                 .thenThrow(new DomainException("Este código no está disponible para tu cuenta"));
+        BigDecimal subtotal = BigDecimal.valueOf(1000);
 
         assertThrows(DomainException.class,
-                () -> useCase.execute("CODE", BigDecimal.valueOf(1000), other));
+                () -> useCase.execute("CODE", subtotal, other));
     }
 }

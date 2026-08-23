@@ -101,8 +101,10 @@ class ResolveItemDispositionUseCaseTest {
 
     @Test
     void discarding_without_a_reason_moves_nothing_at_all() {
+        UUID requestId = request.getId();
+
         assertThrows(DomainException.class,
-                () -> useCase.execute(request.getId(), ItemDisposition.DISCARDED, "  ", RESOLVER));
+                () -> useCase.execute(requestId, ItemDisposition.DISCARDED, "  ", RESOLVER));
 
         verifyNoInteractions(inventoryService);
         verify(returnRequestRepository, never()).save(any());
@@ -113,10 +115,11 @@ class ResolveItemDispositionUseCaseTest {
         ReturnRequest notReceived = ReturnRequest.open(
                 order.getId(), ReturnKind.DEVOLUCION, "No le quedo", null);
         notReceived.approve();
-        when(returnRequestRepository.findById(notReceived.getId())).thenReturn(Optional.of(notReceived));
+        UUID notReceivedId = notReceived.getId();
+        when(returnRequestRepository.findById(notReceivedId)).thenReturn(Optional.of(notReceived));
 
         assertThrows(DomainException.class,
-                () -> useCase.execute(notReceived.getId(), ItemDisposition.RESTOCKED, null, RESOLVER));
+                () -> useCase.execute(notReceivedId, ItemDisposition.RESTOCKED, null, RESOLVER));
 
         verifyNoInteractions(inventoryService);
     }

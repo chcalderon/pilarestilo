@@ -45,7 +45,9 @@ class OrderTest {
 
     @Test
     void cannot_transition_CREATED_to_PAID_directly() {
-        assertThrows(DomainException.class, () -> buildTestOrder().markAsPaid());
+        Order o = buildTestOrder();
+
+        assertThrows(DomainException.class, o::markAsPaid);
     }
 
     @Test
@@ -102,8 +104,10 @@ class OrderTest {
 
     @Test
     void cannot_create_order_without_items() {
-        assertThrows(DomainException.class,
-                () -> createOrder(List.of(), Money.zero()));
+        List<OrderItem> noItems = List.of();
+        Money noDiscount = Money.zero();
+
+        assertThrows(DomainException.class, () -> createOrder(noItems, noDiscount));
     }
 
     @Test

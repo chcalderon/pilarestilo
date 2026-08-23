@@ -123,10 +123,11 @@ class ProductConcurrentReserveTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.atomicReserveVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
         org.junit.jupiter.api.Assertions.assertThrows(
                 DomainException.class,
-                () -> inventoryService.reserve(productId, 5, "Azul", "XL", StockMovementOrigin.unknown())
+                () -> inventoryService.reserve(productId, 5, "Azul", "XL", origin)
         );
     }
 }

@@ -93,17 +93,19 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
                 TRANSFER_BANK,
                 TRANSFER_TYPE
         );
-        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        UUID paymentId = payment.getId();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
 
-        assertThrows(DomainException.class, () -> useCase.execute(payment.getId(), "APPROVED"));
+        assertThrows(DomainException.class, () -> useCase.execute(paymentId, "APPROVED"));
     }
 
     @Test
     void unknown_gateway_status_throws() {
         Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
-        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        UUID paymentId = payment.getId();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
 
-        assertThrows(DomainException.class, () -> useCase.execute(payment.getId(), "WHATEVER_STATUS"));
+        assertThrows(DomainException.class, () -> useCase.execute(paymentId, "WHATEVER_STATUS"));
     }
 
     @Test

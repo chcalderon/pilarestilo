@@ -78,19 +78,25 @@ class TaxBreakdownTest {
 
     @Test
     void rejects_a_null_rate() {
-        assertThrows(DomainException.class, () -> TaxBreakdown.fromGross(clp("1000"), null));
+        Money total = clp("1000");
+
+        assertThrows(DomainException.class, () -> TaxBreakdown.fromGross(total, null));
     }
 
     @Test
     void rejects_a_negative_rate() {
-        assertThrows(DomainException.class,
-                () -> TaxBreakdown.fromGross(clp("1000"), new BigDecimal("-1")));
+        Money total = clp("1000");
+        BigDecimal rate = new BigDecimal("-1");
+
+        assertThrows(DomainException.class, () -> TaxBreakdown.fromGross(total, rate));
     }
 
     @Test
     void rejects_a_rate_above_one_hundred_percent() {
-        assertThrows(DomainException.class,
-                () -> TaxBreakdown.fromGross(clp("1000"), new BigDecimal("1000")));
+        Money total = clp("1000");
+        BigDecimal rate = new BigDecimal("1000");
+
+        assertThrows(DomainException.class, () -> TaxBreakdown.fromGross(total, rate));
     }
 
     private static Money clp(String amount) {

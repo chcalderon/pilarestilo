@@ -62,9 +62,10 @@ class InventoryServiceReserveVariantTest {
         UUID productId = UUID.randomUUID();
         when(productRepository.atomicReserveVariantStock(any(UUID.class), anyString(), anyString(), anyInt()))
                 .thenReturn(0);
+        StockMovementOrigin origin = StockMovementOrigin.unknown();
 
         assertThrows(DomainException.class, () ->
-                inventoryService.reserve(productId, 2, "Rojo", "M", StockMovementOrigin.unknown())
+                inventoryService.reserve(productId, 2, "Rojo", "M", origin)
         );
     }
 
