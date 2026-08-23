@@ -98,7 +98,7 @@ public class CreateProductUseCase {
         if (raw == null || raw.isBlank()) return null;
         try {
             return CategoryType.valueOf(raw.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unknown variant type: " + raw);
         }
     }
@@ -106,7 +106,7 @@ public class CreateProductUseCase {
     private ProductVariant toVariant(ProductVariantInput input) {
         try {
             return new ProductVariant(input.color(), input.size(), input.stock());
-        } catch (DomainException ex) {
+        } catch (DomainException _) {
             throw new DomainException("Invalid product variant size: " + input.size());
         }
     }

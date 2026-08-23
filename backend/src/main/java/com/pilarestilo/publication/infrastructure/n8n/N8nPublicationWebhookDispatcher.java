@@ -76,7 +76,7 @@ public class N8nPublicationWebhookDispatcher implements PublicationWebhookDispat
     private String toJson(Object payload) {
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JacksonException ex) {
+        } catch (JacksonException _) {
             throw new DomainException("Could not serialize publication webhook payload");
         }
     }
@@ -89,7 +89,7 @@ public class N8nPublicationWebhookDispatcher implements PublicationWebhookDispat
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             return HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not sign publication webhook payload");
         }
     }
@@ -98,7 +98,7 @@ public class N8nPublicationWebhookDispatcher implements PublicationWebhookDispat
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(body.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not hash publication webhook payload");
         }
     }

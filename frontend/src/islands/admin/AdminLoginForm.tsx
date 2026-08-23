@@ -5,9 +5,9 @@ import { useAuthStore } from '../../lib/authStore';
 import { isAdminPanelRole } from '../../lib/roles';
 
 interface Props {
-  redirect?: string;
+  readonly redirect?: string;
   /** Set when the middleware bounced us here because the backend was unreachable, not on a 401. */
-  backendUnavailable?: boolean;
+  readonly backendUnavailable?: boolean;
 }
 
 const BACKEND_UNAVAILABLE_MESSAGE =

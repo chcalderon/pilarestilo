@@ -43,7 +43,7 @@ public class UploadMyAvatarUseCase {
             user.markAvatarAsManual();
             userRepository.save(user);
             return avatarUrl;
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new DomainException("Failed to save avatar");
         }
     }

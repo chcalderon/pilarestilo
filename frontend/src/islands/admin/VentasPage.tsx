@@ -34,7 +34,7 @@ const STATUS_FILTERS: Array<{ value: string; label: string }> = [
  * Colour never carries the meaning on its own: each chip says what it is in words too, which is
  * what keeps it readable for a colour-blind seller and in a screen reader.
  */
-function DocumentChip({ sale }: { sale: SaleSummaryDto }) {
+function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
   const documentable = ['PAID', 'PREPARING_ORDER', 'SHIPPED', 'DELIVERED'].includes(sale.orderStatus);
   if (sale.documentFolio) {
     return (

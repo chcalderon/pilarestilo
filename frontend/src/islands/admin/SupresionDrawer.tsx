@@ -8,11 +8,11 @@ import {
 import Overlay from './Overlay';
 
 interface Props {
-  request: DeletionRequestDto;
-  token: string;
-  canResolve: boolean;
-  onClose: () => void;
-  onResolved: (updated: DeletionRequestDto) => void;
+  readonly request: DeletionRequestDto;
+  readonly token: string;
+  readonly canResolve: boolean;
+  readonly onClose: () => void;
+  readonly onResolved: (updated: DeletionRequestDto) => void;
 }
 
 const inputCls =
@@ -26,7 +26,7 @@ const btnSecondary =
 const btnDanger =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <p className={labelCls}>{label}</p>

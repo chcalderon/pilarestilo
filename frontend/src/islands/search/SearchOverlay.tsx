@@ -4,7 +4,7 @@ import { searchProducts, getCategories } from '../../lib/api';
 import type { ProductDto, CategoryDto } from '../../lib/api';
 
 interface Props {
-  locale?: string;
+  readonly locale?: string;
 }
 
 export default function SearchOverlay({ locale = 'es' }: Props) {
@@ -114,6 +114,7 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
             />
           </form>
           <button
+            type="button"
             onClick={() => setOpen(false)}
             className="text-[#F8F4EF]/60 hover:text-[#F8F4EF] transition-colors"
           >
@@ -133,7 +134,7 @@ export default function SearchOverlay({ locale = 'es' }: Props) {
             <div className="text-center mt-16">
               <p className="text-[#F8F4EF]/40 font-['Cormorant_Garamond',serif] text-xl">
                 {locale === 'es' ? 'Sin resultados para' : 'No results for'}{' '}
-                <span className="text-[#B76E79]">"{query}"</span>
+                <span className="text-[#B76E79]">&quot;{query}&quot;</span>
               </p>
             </div>
           )}

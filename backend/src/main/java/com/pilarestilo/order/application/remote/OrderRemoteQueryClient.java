@@ -53,7 +53,7 @@ public class OrderRemoteQueryClient {
                 return Optional.empty();
             }
             throw new DomainException("Could not fetch order from order-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not fetch order from order-service");
         }
     }
@@ -71,7 +71,7 @@ public class OrderRemoteQueryClient {
             return new PageImpl<>(content, pageable, response.totalElements());
         } catch (RestClientResponseException ex) {
             throw new DomainException("Could not list orders from order-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not list orders from order-service");
         }
     }

@@ -129,7 +129,7 @@ public class ReturnController {
         }
         try {
             return ReturnKind.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unknown return kind: " + raw);
         }
     }
@@ -137,7 +137,7 @@ public class ReturnController {
     private ItemDisposition parseDisposition(String raw) {
         try {
             return ItemDisposition.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unknown disposition: " + raw);
         }
     }
@@ -145,7 +145,7 @@ public class ReturnController {
     private RefundMethod parseMethod(String raw) {
         try {
             return RefundMethod.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unknown refund method: " + raw);
         }
     }

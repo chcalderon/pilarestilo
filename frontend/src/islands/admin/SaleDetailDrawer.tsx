@@ -55,9 +55,9 @@ function DocumentViewer({
   label,
   onClose,
 }: {
-  source: { kind: 'blob'; blob: Blob } | { kind: 'external'; url: string };
-  label: string;
-  onClose: () => void;
+  readonly source: { kind: 'blob'; blob: Blob } | { kind: 'external'; url: string };
+  readonly label: string;
+  readonly onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [broken, setBroken] = useState(false);
@@ -129,25 +129,31 @@ function DocumentViewer({
         </div>
       </div>
       <div className="relative z-[1] flex-1 min-h-0 px-4 pb-4 flex items-center justify-center">
-        {broken ? (
+        {(() => {
+        if (broken) {
           /*
            * A receipt on somebody else's host can be gone, moved, or behind a login, and a broken
            * image icon tells whoever is checking the sale nothing about which of those happened.
            */
-          <p className="max-w-md text-center text-[0.9rem] leading-relaxed text-[var(--pe-on-dark)]">
-            No se pudo cargar el archivo desde {source.kind === 'external' ? new URL(url).host : 'la tienda'}.
-            El enlace quedó guardado con el pago, pero el archivo no responde.
-          </p>
-        ) : isPdf ? (
-          <iframe src={url} title={label} className="w-full h-full bg-white" />
-        ) : (
+          return (
+            <p className="max-w-md text-center text-[0.9rem] leading-relaxed text-[var(--pe-on-dark)]">
+              No se pudo cargar el archivo desde {source.kind === 'external' ? new URL(url).host : 'la tienda'}.
+              El enlace quedó guardado con el pago, pero el archivo no responde.
+            </p>
+          );
+        }
+        if (isPdf) {
+          return <iframe src={url} title={label} className="w-full h-full bg-white" />;
+        }
+        return (
           <img
             src={url}
             alt={label}
             onError={() => setBroken(true)}
             className="max-w-full max-h-full object-contain"
           />
-        )}
+        );
+        })()}
       </div>
     </div>
   );
@@ -167,7 +173,7 @@ const btnSecondary =
 const btnDanger =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <section className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-surface-soft)] p-4 space-y-3">
       <p className={labelCls}>{label}</p>
@@ -176,7 +182,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-sm">
       <span className="opacity-60">{label}</span>
@@ -186,7 +192,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /** Copy-to-clipboard on the two fields the shop retypes most: the buyer email and the reference. */
-function CopyField({ label, value }: { label: string; value: string | null | undefined }) {
+function CopyField({ label, value }: { readonly label: string; readonly value: string | null | undefined }) {
   const [copied, setCopied] = useState(false);
   if (!value) return <Row label={label} value={<span className="opacity-40">Sin dato</span>} />;
   return (
@@ -210,14 +216,14 @@ function CopyField({ label, value }: { label: string; value: string | null | und
 }
 
 interface Props {
-  sale: SaleSummaryDto;
-  token: string;
-  canIssue: boolean;
-  canVoid: boolean;
+  readonly sale: SaleSummaryDto;
+  readonly token: string;
+  readonly canIssue: boolean;
+  readonly canVoid: boolean;
   /** Undoing a sale that took money is heavier than correcting a folio; only ADMIN holds it. */
-  canCancelSale: boolean;
-  onClose: () => void;
-  onChanged: () => void;
+  readonly canCancelSale: boolean;
+  readonly onClose: () => void;
+  readonly onChanged: () => void;
 }
 
 export default function SaleDetailDrawer({

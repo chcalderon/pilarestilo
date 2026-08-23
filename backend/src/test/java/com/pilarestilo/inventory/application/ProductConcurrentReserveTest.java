@@ -98,7 +98,7 @@ class ProductConcurrentReserveTest {
                     successes.incrementAndGet();
                 } catch (DomainException ex) {
                     exceptions.add(ex);
-                } catch (InterruptedException ie) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                 } finally {
                     doneLatch.countDown();

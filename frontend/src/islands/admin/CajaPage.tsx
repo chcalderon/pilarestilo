@@ -65,7 +65,7 @@ const CATEGORY_CHIP_CLASS: Record<CashMovementCategory, string> = {
   ADJUSTMENT: 'bg-pe-beige text-pe-charcoal dark:bg-pe-black/60 dark:text-pe-beige',
 };
 
-function CategoryChip({ category }: { category: CashMovementCategory }) {
+function CategoryChip({ category }: { readonly category: CashMovementCategory }) {
   return (
     <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded-sm ${CATEGORY_CHIP_CLASS[category] ?? 'bg-pe-beige text-pe-charcoal'}`}>
       {CATEGORY_LABELS[category] ?? category}
@@ -80,9 +80,9 @@ function BalanceTile({
   value,
   className = '',
 }: {
-  label: string;
-  value: string | React.ReactNode;
-  className?: string;
+  readonly label: string;
+  readonly value: string | React.ReactNode;
+  readonly className?: string;
 }) {
   return (
     <div className={`flex-1 min-w-0 px-5 py-4 ${className}`}>
@@ -95,12 +95,12 @@ function BalanceTile({
 // ─── Side Drawer ─────────────────────────────────────────────────────────────
 
 interface DrawerProps {
-  open: boolean;
-  category: DrawerCategory;
-  onClose: () => void;
-  onSubmit: (type: CashMovementType, category: CashMovementCategory, amount: number, description: string) => Promise<void>;
-  busy: boolean;
-  error: string;
+  readonly open: boolean;
+  readonly category: DrawerCategory;
+  readonly onClose: () => void;
+  readonly onSubmit: (type: CashMovementType, category: CashMovementCategory, amount: number, description: string) => Promise<void>;
+  readonly busy: boolean;
+  readonly error: string;
 }
 
 const DRAWER_TITLES: Record<DrawerCategory, string> = {
@@ -136,7 +136,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const n = parseFloat(amount);
+    const n = Number.parseFloat(amount);
     if (!Number.isFinite(n) || n <= 0 || !description.trim()) return;
     await onSubmit(resolvedType, resolvedCategory, n, description.trim());
   }
@@ -162,6 +162,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
             {DRAWER_TITLES[category]}
           </p>
           <button
+            type="button"
             onClick={onClose}
             className="text-pe-muted dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
             aria-label="Cerrar"
@@ -364,7 +365,7 @@ export default function CajaPage() {
 
   async function openCaja() {
     if (!token) return;
-    const n = parseFloat(openBalance);
+    const n = Number.parseFloat(openBalance);
     if (!Number.isFinite(n) || n < 0) return;
     setOperationBusy(true);
     setOperationError('');
@@ -383,7 +384,7 @@ export default function CajaPage() {
 
   async function closeCaja() {
     if (!token || !declaredBalance) return;
-    const declared = parseFloat(declaredBalance);
+    const declared = Number.parseFloat(declaredBalance);
     if (!Number.isFinite(declared) || declared < 0) return;
     setOperationBusy(true);
     setOperationError('');
@@ -447,19 +448,21 @@ export default function CajaPage() {
     [caja?.movements]
   );
 
-  const declaredNum = parseFloat(declaredBalance);
+  const declaredNum = Number.parseFloat(declaredBalance);
   const difference = Number.isFinite(declaredNum) && caja
     ? declaredNum - caja.expectedBalance
     : null;
 
-  const differenceColor =
-    difference === null
-      ? ''
-      : difference < 0
-        ? 'text-[#B76E79]'
-        : difference > 0
-          ? 'text-[#6B7A5E]'
-          : 'text-pe-charcoal dark:text-pe-beige';
+  let differenceColor = '';
+  if (difference !== null) {
+    if (difference < 0) {
+      differenceColor = 'text-[#B76E79]';
+    } else if (difference > 0) {
+      differenceColor = 'text-[#6B7A5E]';
+    } else {
+      differenceColor = 'text-pe-charcoal dark:text-pe-beige';
+    }
+  }
 
   // ─── Render: Open form / No caja ──────────────────────────────────────────
 
@@ -484,8 +487,9 @@ export default function CajaPage() {
           </div>
           {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
           <button
+            type="button"
             onClick={openCaja}
-            disabled={operationBusy || !Number.isFinite(parseFloat(openBalance)) || parseFloat(openBalance) < 0}
+            disabled={operationBusy || !Number.isFinite(Number.parseFloat(openBalance)) || Number.parseFloat(openBalance) < 0}
             className="w-full bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors disabled:opacity-50"
           >
             {operationBusy ? 'Abriendo...' : 'Abrir caja'}
@@ -521,6 +525,7 @@ export default function CajaPage() {
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setOperationView('open_form')}
           className="bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors"
         >
@@ -550,6 +555,7 @@ export default function CajaPage() {
             </span>
           </div>
           <button
+            type="button"
             onClick={() => setShowPosSales((v) => !v)}
             className={`text-[10px] tracking-widest uppercase px-3 py-1.5 border transition-colors ${
               showPosSales
@@ -597,18 +603,21 @@ export default function CajaPage() {
         {/* Secondary CTAs + primary close */}
         <div className="flex flex-wrap gap-3 items-center">
           <button
+            type="button"
             onClick={() => openDrawer('EXPENSE')}
             className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
             Registrar gasto
           </button>
           <button
+            type="button"
             onClick={() => openDrawer('WITHDRAWAL')}
             className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
             Retiro
           </button>
           <button
+            type="button"
             onClick={() => openDrawer('ADJUSTMENT')}
             className="border border-[#8E4F58] text-[#8E4F58] dark:border-pe-rose dark:text-pe-rose-ink px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-[#8E4F58] hover:text-white dark:hover:bg-pe-rose dark:hover:text-white transition-colors"
           >
@@ -619,14 +628,16 @@ export default function CajaPage() {
             {closingMode ? (
               <>
                 <button
+                  type="button"
                   onClick={() => { setClosingMode(false); setDeclaredBalance(''); setCloseNotes(''); }}
                   className="text-xs tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 hover:text-pe-charcoal dark:hover:text-pe-beige transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
+                  type="button"
                   onClick={closeCaja}
-                  disabled={operationBusy || !declaredBalance || parseFloat(declaredBalance) < 0}
+                  disabled={operationBusy || !declaredBalance || Number.parseFloat(declaredBalance) < 0}
                   className="bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-6 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors disabled:opacity-50"
                 >
                   {operationBusy ? 'Cerrando...' : 'Cerrar caja'}
@@ -634,6 +645,7 @@ export default function CajaPage() {
               </>
             ) : (
               <button
+                type="button"
                 onClick={() => setClosingMode(true)}
                 className="border border-[#1A1A1A] dark:border-pe-beige text-[#1A1A1A] dark:text-pe-beige px-6 py-2 text-xs tracking-widest uppercase hover:bg-[#1A1A1A] dark:hover:bg-pe-beige hover:text-[#F8F4EF] dark:hover:text-pe-black transition-colors"
               >
@@ -747,6 +759,7 @@ export default function CajaPage() {
               />
             ) : (
               <button
+                type="button"
                 onClick={() => void loadHistory(0)}
                 className="w-full bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors"
               >
@@ -757,6 +770,7 @@ export default function CajaPage() {
           {adminScope && (
             <div className="md:col-span-4 flex justify-end">
               <button
+                type="button"
                 onClick={() => void loadHistory(0)}
                 className="bg-[#1A1A1A] dark:bg-pe-beige text-[#F8F4EF] dark:text-pe-black px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] dark:hover:bg-[#B76E79] dark:hover:text-[#F8F4EF] transition-colors"
               >
@@ -814,6 +828,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2 text-pe-charcoal dark:text-pe-beige">{register.movements.length}</td>
                   <td className="px-3 py-2">
                     <button
+                      type="button"
                       onClick={() => setSelectedRegister(register)}
                       className="text-xs tracking-widest uppercase text-pe-rose-ink dark:text-pe-rose-ink hover:underline"
                     >
@@ -832,6 +847,7 @@ export default function CajaPage() {
           </p>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => void loadHistory(Math.max(0, historyPageNumber - 1))}
               disabled={historyPageNumber === 0 || historyLoading}
               className="border border-[#EDE3D8] dark:border-white/20 px-3 py-1.5 text-xs tracking-widest uppercase text-pe-charcoal dark:text-pe-beige disabled:opacity-40 hover:border-[#B76E79] transition-colors"
@@ -839,6 +855,7 @@ export default function CajaPage() {
               Anterior
             </button>
             <button
+              type="button"
               onClick={() => void loadHistory(historyPageNumber + 1)}
               disabled={historyLoading || !historyPage || historyPageNumber + 1 >= historyPage.totalPages}
               className="border border-[#EDE3D8] dark:border-white/20 px-3 py-1.5 text-xs tracking-widest uppercase text-pe-charcoal dark:text-pe-beige disabled:opacity-40 hover:border-[#B76E79] transition-colors"
@@ -921,6 +938,7 @@ export default function CajaPage() {
           <nav className="flex gap-2">
             {(['operacion', 'registros'] as const).map((t) => (
               <button
+                type="button"
                 key={t}
                 onClick={() => setTabAndUrl(t)}
                 className={`px-4 py-2 text-xs tracking-widest uppercase border-b-2 transition-colors ${
@@ -954,7 +972,7 @@ export default function CajaPage() {
 
 // ─── Movement table row (reused in both open caja and history detail) ─────────
 
-function MovementRow({ movement }: { movement: CashMovementDto }) {
+function MovementRow({ movement }: { readonly movement: CashMovementDto }) {
   const ts = movement.createdAt ?? movement.recordedAt;
   const isIn = movement.type === 'IN';
   return (

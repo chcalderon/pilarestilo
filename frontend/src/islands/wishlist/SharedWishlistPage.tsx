@@ -4,8 +4,8 @@ import { getProduct, getSharedWishlist, type ProductDto } from '../../lib/api';
 import { useCartStore } from '../../lib/cartStore';
 
 interface Props {
-  locale?: string;
-  shareToken: string;
+  readonly locale?: string;
+  readonly shareToken: string;
 }
 
 export default function SharedWishlistPage({ locale = 'es', shareToken }: Props) {
@@ -105,6 +105,7 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
           </a>
 
           <button
+            type="button"
             onClick={() => {
               addToCart({
                 id: p.id,

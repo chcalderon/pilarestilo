@@ -583,7 +583,9 @@ const categoryTiles = collectFeatured(categoryTree);
           if (root.releasePointerCapture) {
             try {
               root.releasePointerCapture(event.pointerId);
-            } catch {}
+            } catch {
+              // Capture can already be gone (pointer cancelled elsewhere) -- nothing to do about it.
+            }
           }
 
           var pressElapsed = Date.now() - pointerDownAt;

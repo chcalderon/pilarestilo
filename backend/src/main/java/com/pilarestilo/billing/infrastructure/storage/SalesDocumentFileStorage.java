@@ -62,7 +62,7 @@ public class SalesDocumentFileStorage {
         try (InputStream data = file.getInputStream()) {
             Files.createDirectories(root);
             Files.copy(data, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new DomainException("Could not store the document file");
         }
         return filename;
@@ -112,7 +112,7 @@ public class SalesDocumentFileStorage {
                 Files.deleteIfExists(file);
                 removed++;
             }
-        } catch (IOException e) {
+        } catch (IOException _) {
             // A sweep that cannot read the directory is not worth failing a scheduled run over.
             return removed;
         }

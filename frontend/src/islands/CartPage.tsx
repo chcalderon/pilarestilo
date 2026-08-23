@@ -9,7 +9,7 @@ import StockBadge, { stockImageClass } from './cart/StockBadge';
 import type { Locale } from '../i18n/index';
 
 interface Props {
-  locale: Locale;
+  readonly locale: Locale;
 }
 
 const labels = {
@@ -271,11 +271,11 @@ export default function CartPage({ locale }: Props) {
                             * replacement that was never needed.
                             */}
                           <p className="font-sans text-xs text-[#732731]">
-                            {conflict.type === 'SOLD_OUT'
-                              ? l.stockAdjusted
-                              : conflict.type === 'NEEDS_VARIANT'
-                                ? l.needsVariantHint
-                                : `${l.availableStockPrefix}: ${conflict.availableQty}`}
+                            {(() => {
+                              if (conflict.type === 'SOLD_OUT') return l.stockAdjusted;
+                              if (conflict.type === 'NEEDS_VARIANT') return l.needsVariantHint;
+                              return `${l.availableStockPrefix}: ${conflict.availableQty}`;
+                            })()}
                           </p>
                           <div className="mt-2 flex items-center gap-2">
                             <button

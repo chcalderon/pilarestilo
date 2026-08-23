@@ -132,13 +132,24 @@ export default function RolesPermisosView() {
       {error && <p className="text-red-500 text-sm">{error}</p>}
       {saved && <p className="text-pe-positive text-sm">Permisos guardados. Los cambios aplican en el próximo inicio de sesión.</p>}
 
-      <button
-        onClick={save}
-        disabled={saving || !canManage}
-        className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
-      >
-        {!canManage ? 'Solo lectura' : saving ? 'Guardando...' : 'Guardar cambios'}
-      </button>
+      {(() => {
+        let saveLabel = 'Guardar cambios';
+        if (!canManage) {
+          saveLabel = 'Solo lectura';
+        } else if (saving) {
+          saveLabel = 'Guardando...';
+        }
+        return (
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !canManage}
+            className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
+          >
+            {saveLabel}
+          </button>
+        );
+      })()}
     </div>
   );
 }

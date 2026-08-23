@@ -22,6 +22,8 @@ import java.util.UUID;
 @Service
 public class InventoryService {
 
+    private static final String PRODUCT_NOT_FOUND_PREFIX = "Product not found: ";
+
     private final ProductRepository productRepository;
     private final DomainEventPublisher eventPublisher;
     private final InventoryMovementRepository inventoryMovementRepository;
@@ -143,7 +145,7 @@ public class InventoryService {
             return;
         }
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+                .orElseThrow(() -> new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId));
         product.decrementStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
@@ -163,7 +165,7 @@ public class InventoryService {
         }
         // Legacy path: aggregate stock for products without variants
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+                .orElseThrow(() -> new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId));
         product.decrementStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
@@ -182,7 +184,7 @@ public class InventoryService {
             return;
         }
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+                .orElseThrow(() -> new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId));
         product.releaseStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
@@ -204,7 +206,7 @@ public class InventoryService {
         // No second decrement here — confirm is a no-op for the legacy path until products are
         // migrated to the on_hand/reserved model. Guard ensures the product exists before recording.
         productRepository.findById(productId)
-                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+                .orElseThrow(() -> new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId));
         recordMovement(productId, null, null, InventoryMovementType.CONFIRM, -qty, origin);
     }
 
@@ -223,7 +225,7 @@ public class InventoryService {
         // units back is the same single operation release performs. Reused rather than duplicated —
         // a second method adding to the same field is a second thing to keep correct.
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new DomainException("Product not found: " + productId));
+                .orElseThrow(() -> new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId));
         product.releaseStock(qty);
         productRepository.save(product);
         eventPublisher.publish(new StockUpdated(productId, product.getStock(), Instant.now()));
@@ -259,12 +261,12 @@ public class InventoryService {
                     .toBodilessEntity();
         } catch (RestClientResponseException ex) {
             if (ex.getStatusCode().value() == 404) {
-                throw new DomainException("Product not found: " + productId);
+                throw new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId);
             }
             throw new DomainException(
                     "Inventory service rejected " + operation + " for product: " + productId + " (status " + ex.getStatusCode().value() + ")"
             );
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not " + operation + " stock via inventory-service");
         }
     }

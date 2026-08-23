@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import type { NavigationSectionDto, NavigationChildDto } from '../../lib/api';
 
 interface Props {
-  sections: NavigationSectionDto[];
-  locale: string;
+  readonly sections: NavigationSectionDto[];
+  readonly locale: string;
 }
 
 type NavLevel =
@@ -100,6 +100,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
             <div className="flex items-center justify-between px-5 py-4 border-b border-pe-white/8">
               {canGoBack ? (
                 <button
+                  type="button"
                   onClick={goBack}
                   className="flex items-center gap-2 text-pe-on-dark-muted hover:text-pe-white transition-colors text-[0.7rem] tracking-widest uppercase"
                   aria-label={locale === 'es' ? 'Volver' : 'Back'}
@@ -113,6 +114,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
                 </span>
               )}
               <button
+                type="button"
                 ref={closeButtonRef}
                 onClick={close}
                 className="text-pe-on-dark-muted hover:text-pe-white transition-colors p-1"
@@ -139,6 +141,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
                       <li key={section.rootCategorySlug}>
                         {section.children.length > 0 ? (
                           <button
+                            type="button"
                             onClick={() => pushSection(section)}
                             className="w-full flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left"
                             aria-expanded="false"
@@ -170,6 +173,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
                       <li key={child.slug}>
                         {child.children.length > 0 ? (
                           <button
+                            type="button"
                             onClick={() => pushChild(current.section, child)}
                             className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left"
                           >

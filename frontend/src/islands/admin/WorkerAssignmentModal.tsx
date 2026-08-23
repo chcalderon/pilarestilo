@@ -5,11 +5,11 @@ import { useAuthStore } from '../../lib/authStore';
 const WORKER_ROLES = ['SUPERVISOR', 'ADMINISTRACION', 'DESPACHADOR', 'SELLER'];
 
 interface Props {
-  userId: string;
-  userFullName: string;
-  currentRole: string;
-  onClose: () => void;
-  onSaved: () => void;
+  readonly userId: string;
+  readonly userFullName: string;
+  readonly currentRole: string;
+  readonly onClose: () => void;
+  readonly onSaved: () => void;
 }
 
 export default function WorkerAssignmentModal({ userId, userFullName, currentRole, onClose, onSaved }: Props) {
@@ -52,7 +52,7 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
       <div className="bg-white w-full max-w-md mx-4 p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-xl text-pe-black">Asignar rol trabajador</h2>
-          <button onClick={onClose} className="text-pe-muted hover:text-pe-black"><X size={20} /></button>
+          <button type="button" onClick={onClose} className="text-pe-muted hover:text-pe-black"><X size={20} /></button>
         </div>
         <p className="text-pe-muted text-sm mb-5">{userFullName}</p>
         <div className="space-y-4">
@@ -76,12 +76,12 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
         </div>
         {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
         <div className="flex gap-3 mt-6">
-          <button onClick={assign} disabled={saving}
+          <button type="button" onClick={assign} disabled={saving}
             className="flex-1 bg-[#1A1A1A] text-[#F8F4EF] py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50">
             {saving ? 'Guardando...' : 'Asignar rol'}
           </button>
           {WORKER_ROLES.includes(currentRole) && (
-            <button onClick={revoke} disabled={saving}
+            <button type="button" onClick={revoke} disabled={saving}
               className="px-4 border border-red-300 text-red-500 text-xs tracking-widest uppercase hover:bg-red-50 transition-colors disabled:opacity-50">
               Revocar
             </button>

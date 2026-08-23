@@ -61,7 +61,7 @@ public class OrderRemoteCommandClient {
                 throw new DomainException(detail);
             }
             throw new DomainException("Could not create order in order-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not create order in order-service");
         }
     }
@@ -82,7 +82,7 @@ public class OrderRemoteCommandClient {
                 throw new DomainException(detail);
             }
             throw new DomainException("Could not update order status in order-service (status " + ex.getStatusCode().value() + ")");
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not update order status in order-service");
         }
     }
@@ -99,7 +99,7 @@ public class OrderRemoteCommandClient {
                     return node.asString();
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return null;
         }
         return null;

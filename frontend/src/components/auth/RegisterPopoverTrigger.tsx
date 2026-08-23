@@ -4,12 +4,12 @@ import { RegisterPopoverPanel } from "./RegisterPopoverPanel";
 import type { ReactNode } from "react";
 
 interface Props {
-  locale: "es" | "en";
-  initialTab?: "register" | "login";
-  variant?: "icon" | "text";
-  label?: string;
-  className?: string;
-  icon?: ReactNode;
+  readonly locale: "es" | "en";
+  readonly initialTab?: "register" | "login";
+  readonly variant?: "icon" | "text";
+  readonly label?: string;
+  readonly className?: string;
+  readonly icon?: ReactNode;
 }
 
 export function RegisterPopoverTrigger({
@@ -36,6 +36,7 @@ export function RegisterPopoverTrigger({
     <>
       {variant === "text" ? (
         <button
+          type="button"
           ref={buttonRef}
           onClick={handleOpen}
           className={className}
@@ -47,6 +48,7 @@ export function RegisterPopoverTrigger({
         </button>
       ) : (
         <button
+          type="button"
           ref={buttonRef}
           onClick={handleOpen}
           className="text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200 inline-flex items-center"

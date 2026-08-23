@@ -25,21 +25,21 @@ export interface BulkAction {
 }
 
 export interface DataTableProps<T> {
-  columns: Column<T>[];
-  data: T[];
-  keyField: keyof T;
-  loading?: boolean;
-  emptyMessage?: string;
-  page?: number;
-  pageSize?: number;
-  total?: number;
-  onPageChange?: (page: number) => void;
-  sortKey?: string;
-  sortDir?: 'asc' | 'desc';
-  onSort?: (key: string) => void;
-  selectable?: boolean;
-  bulkActions?: BulkAction[];
-  onRowClick?: (row: T) => void;
+  readonly columns: Column<T>[];
+  readonly data: T[];
+  readonly keyField: keyof T;
+  readonly loading?: boolean;
+  readonly emptyMessage?: string;
+  readonly page?: number;
+  readonly pageSize?: number;
+  readonly total?: number;
+  readonly onPageChange?: (page: number) => void;
+  readonly sortKey?: string;
+  readonly sortDir?: 'asc' | 'desc';
+  readonly onSort?: (key: string) => void;
+  readonly selectable?: boolean;
+  readonly bulkActions?: BulkAction[];
+  readonly onRowClick?: (row: T) => void;
 }
 
 export default function DataTable<T>({
@@ -89,12 +89,16 @@ export default function DataTable<T>({
   function toggleRow(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
 
-  function SortIcon({ colKey }: { colKey: string }) {
+  function SortIcon({ colKey }: { readonly colKey: string }) {
     if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-muted" />;
     return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose-ink" /> : <ChevronDown size={12} className="text-pe-rose-ink" />;
   }
@@ -113,6 +117,7 @@ export default function DataTable<T>({
           <div className="flex flex-wrap gap-2">
             {bulkActions.map((action, i) => (
               <button
+                type="button"
                 key={i}
                 onClick={() => {
                   action.action(Array.from(selected));
@@ -131,6 +136,7 @@ export default function DataTable<T>({
             ))}
           </div>
           <button
+            type="button"
             onClick={() => setSelected(new Set())}
             className="ml-auto inline-flex items-center gap-1 font-sans text-[0.72rem] text-pe-muted hover:text-pe-charcoal transition-colors"
           >
@@ -327,6 +333,7 @@ export default function DataTable<T>({
           </p>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => onPageChange?.(page - 1)}
               disabled={page === 0}
               className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
@@ -338,6 +345,7 @@ export default function DataTable<T>({
               {page + 1} / {totalPages}
             </span>
             <button
+              type="button"
               onClick={() => onPageChange?.(page + 1)}
               disabled={page + 1 >= totalPages}
               className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"

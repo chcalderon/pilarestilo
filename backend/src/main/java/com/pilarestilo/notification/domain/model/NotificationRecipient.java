@@ -77,7 +77,7 @@ public record NotificationRecipient(
     private static NotificationChannelPreference normalizePreference(String rawPreference) {
         try {
             return NotificationChannelPreference.fromRaw(rawPreference);
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException _) {
             return NotificationChannelPreference.AUTO;
         }
     }

@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -137,6 +138,6 @@ class IssueWelcomeDiscountUseCaseTest {
         Optional<WelcomeDiscountDto> result = useCase.issueFor(userId, true);
 
         assertTrue(result.isPresent());
-        verify(discountRepository, org.mockito.Mockito.times(2)).findByCode(anyString());
+        verify(discountRepository, times(2)).findByCode(anyString());
     }
 }

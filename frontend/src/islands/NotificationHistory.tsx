@@ -14,7 +14,7 @@ function dispatchUpdated() {
 }
 
 interface Props {
-  locale: 'es' | 'en';
+  readonly locale: 'es' | 'en';
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -111,6 +111,7 @@ export default function NotificationHistory({ locale }: Props) {
         </h2>
         {!allRead && (
           <button
+            type="button"
             onClick={handleMarkAll}
             disabled={marking}
             className="font-sans text-xs text-pe-rose-ink hover:text-pe-rose-ink transition-colors disabled:opacity-50"
@@ -201,6 +202,7 @@ export default function NotificationHistory({ locale }: Props) {
       {page && page.totalPages > 1 && (
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1.5rem' }}>
           <button
+            type="button"
             disabled={currentPage === 0}
             onClick={() => {
               void load(currentPage - 1);
@@ -213,6 +215,7 @@ export default function NotificationHistory({ locale }: Props) {
             {currentPage + 1} / {page.totalPages}
           </span>
           <button
+            type="button"
             disabled={currentPage >= page.totalPages - 1}
             onClick={() => {
               void load(currentPage + 1);

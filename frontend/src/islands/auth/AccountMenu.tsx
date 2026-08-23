@@ -6,7 +6,7 @@ import { getAuthMe, isAuthRejection } from '../../lib/api';
 import { RegisterPopoverTrigger } from '@/components/auth/RegisterPopoverTrigger';
 
 interface Props {
-  locale: 'es' | 'en';
+  readonly locale: 'es' | 'en';
 }
 
 export default function AccountMenu({ locale }: Props) {
@@ -90,6 +90,7 @@ export default function AccountMenu({ locale }: Props) {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-2 font-sans text-[0.68rem] uppercase tracking-[0.22em] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] transition-colors duration-200"
         aria-expanded={open}
@@ -138,6 +139,7 @@ export default function AccountMenu({ locale }: Props) {
             </a>
           )}
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 font-sans text-[0.78rem] text-[var(--pe-nav-muted)] hover:text-[var(--pe-nav-hover)] hover:bg-[var(--pe-dropdown-hover)] transition-colors duration-200 border-t border-[var(--pe-dropdown-border)]"
           >

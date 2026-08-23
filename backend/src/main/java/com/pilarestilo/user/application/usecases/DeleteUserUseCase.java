@@ -25,7 +25,7 @@ public class DeleteUserUseCase {
         }
         try {
             userRepository.deleteById(userId);
-        } catch (DataIntegrityViolationException ex) {
+        } catch (DataIntegrityViolationException _) {
             throw new DomainException("User cannot be deleted because it has related records");
         }
     }

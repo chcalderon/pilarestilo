@@ -4,8 +4,8 @@ import { registerUser, googleLogin } from '../../lib/api';
 import { useAuthStore } from '../../lib/authStore';
 
 interface Props {
-  locale: 'es' | 'en';
-  redirect?: string;
+  readonly locale: 'es' | 'en';
+  readonly redirect?: string;
 }
 
 /** Long enough to read a short line, short enough that waiting for it isn't sluggish. */
@@ -116,25 +116,43 @@ export default function RegisterForm({ locale, redirect }: Props) {
   }
 
   if (success) {
+    let successTitle: string;
+    let successSubtitle: string;
+    if (success.merged) {
+      successTitle = es ? '¡Cuentas unificadas!' : 'Accounts linked!';
+      successSubtitle = es
+        ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
+        : 'Your existing account has been linked with Google. Redirecting…';
+    } else {
+      successTitle = es ? `Bienvenido/a, ${success.name}` : `Welcome, ${success.name}`;
+      successSubtitle = es ? 'Has ingresado correctamente.' : 'You are signed in.';
+    }
     return (
       <div className="flex flex-col items-center gap-5 py-10 text-center">
         <CheckCircle2 size={44} className="text-pe-rose-ink" />
         <div>
           <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
-            {success.merged
-              ? (es ? '¡Cuentas unificadas!' : 'Accounts linked!')
-              : (es ? `Bienvenido/a, ${success.name}` : `Welcome, ${success.name}`)}
+            {successTitle}
           </p>
           <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5">
-            {success.merged
-              ? (es
-                  ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
-                  : 'Your existing account has been linked with Google. Redirecting…')
-              : (es ? 'Has ingresado correctamente.' : 'You are signed in.')}
+            {successSubtitle}
           </p>
         </div>
       </div>
     );
+  }
+
+  let togglePasswordLabel: string;
+  if (showPass) {
+    togglePasswordLabel = es ? 'Ocultar' : 'Hide';
+  } else {
+    togglePasswordLabel = es ? 'Mostrar' : 'Show';
+  }
+  let submitLabel: string;
+  if (loading) {
+    submitLabel = es ? 'Creando cuenta…' : 'Creating account…';
+  } else {
+    submitLabel = es ? 'Crear cuenta' : 'Create account';
   }
 
   return (
@@ -193,7 +211,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
             type="button"
             onClick={() => setShowPass(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-pe-muted hover:text-pe-rose-ink transition-colors"
-            aria-label={showPass ? (es ? 'Ocultar' : 'Hide') : (es ? 'Mostrar' : 'Show')}
+            aria-label={togglePasswordLabel}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -250,7 +268,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
         className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-action-action-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
-        {loading ? (es ? 'Creando cuenta…' : 'Creating account…') : (es ? 'Crear cuenta' : 'Create account')}
+        {submitLabel}
       </button>
 
       {/* Google Sign-In */}

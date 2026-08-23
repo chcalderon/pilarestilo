@@ -40,7 +40,7 @@ import {
 } from '../../lib/api';
 
 interface Props {
-  locale: 'es' | 'en';
+  readonly locale: 'es' | 'en';
 }
 
 type Tab = 'profile' | 'reviews' | 'orders' | 'addresses' | 'notifications';
@@ -1058,6 +1058,7 @@ export default function AccountPage({ locale }: Props) {
           </span>
         </div>
           <button
+            type="button"
             onClick={handleLogout}
             className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200"
           >
@@ -1070,6 +1071,7 @@ export default function AccountPage({ locale }: Props) {
         <nav className="flex gap-0 border-b border-pe-black/10 mb-8">
           {tabs.map((t) => (
             <button
+              type="button"
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-5 py-3 font-sans text-[0.72rem] tracking-[0.18em] uppercase transition-colors duration-200 border-b-2 -mb-px ${
@@ -1192,6 +1194,7 @@ export default function AccountPage({ locale }: Props) {
               </p>
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => {
                     void handleSaveProfile();
                   }}
@@ -1258,6 +1261,7 @@ export default function AccountPage({ locale }: Props) {
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => {
                     void handleChangePassword();
                   }}
@@ -1331,6 +1335,7 @@ export default function AccountPage({ locale }: Props) {
                         ))}
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleDeleteReview(review.id)}
                         className="text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 p-0.5"
                         aria-label={es ? 'Eliminar resena' : 'Delete review'}
@@ -1792,6 +1797,7 @@ export default function AccountPage({ locale }: Props) {
                                 </label>
 
                                 <button
+                                  type="button"
                                   onClick={() => {
                                     void handleSubmitProof(order.id);
                                   }}
@@ -1844,6 +1850,7 @@ export default function AccountPage({ locale }: Props) {
                           {canSimulate && (
                             <div className="flex flex-wrap gap-2">
                               <button
+                                type="button"
                                 onClick={() => {
                                   void handleStartGatewayCheckout(order.id);
                                 }}
@@ -1855,6 +1862,7 @@ export default function AccountPage({ locale }: Props) {
                                   : (es ? 'Ir a pagar' : 'Pay now')}
                               </button>
                               <button
+                                type="button"
                                 onClick={() => {
                                   void handleSimulateGateway(order.id, 'APPROVED');
                                 }}
@@ -1864,6 +1872,7 @@ export default function AccountPage({ locale }: Props) {
                                 {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular aprobado' : 'Simulate approve')}
                               </button>
                               <button
+                                type="button"
                                 onClick={() => {
                                   void handleSimulateGateway(order.id, 'FAILED');
                                 }}
@@ -1895,6 +1904,7 @@ export default function AccountPage({ locale }: Props) {
                         )}
                         {order.status === 'SHIPPED' && (
                           <button
+                            type="button"
                             onClick={() => {
                               void handleConfirmDelivery(order.id);
                             }}

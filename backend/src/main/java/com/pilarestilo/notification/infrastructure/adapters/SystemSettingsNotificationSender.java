@@ -117,7 +117,7 @@ public class SystemSettingsNotificationSender implements NotificationSender {
     private NotificationProvider parseProvider(String rawValue, NotificationProvider fallback) {
         try {
             return NotificationProvider.fromRaw(rawValue);
-        } catch (Exception ex) {
+        } catch (Exception _) {
             return fallback;
         }
     }

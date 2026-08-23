@@ -3,10 +3,10 @@ import { X } from 'lucide-react';
 import Overlay from './Overlay';
 
 interface Props {
-  ok: boolean;
-  title: string;
-  detail?: string | null;
-  onClose: () => void;
+  readonly ok: boolean;
+  readonly title: string;
+  readonly detail?: string | null;
+  readonly onClose: () => void;
 }
 
 /**

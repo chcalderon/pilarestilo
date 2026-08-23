@@ -12,8 +12,8 @@ import {
 import { useCartStore } from '../../lib/cartStore';
 
 interface Props {
-  locale?: string;
-  token?: string;
+  readonly locale?: string;
+  readonly token?: string;
 }
 
 export default function WishlistPage({ locale = 'es', token }: Props) {
@@ -212,6 +212,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
         {products.map((p) => (
           <div key={p.id} className="pe-wishlist-card group relative">
             <button
+              type="button"
               onClick={() => void remove(p.id, token)}
               className="pe-wishlist-remove absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center transition-colors"
               aria-label="Quitar de favoritos"
@@ -236,6 +237,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
             </a>
 
             <button
+              type="button"
               onClick={() => {
                 addToCart({
                   id: p.id,

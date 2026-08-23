@@ -28,8 +28,8 @@ export function useToast() {
 }
 
 interface Props {
-  toasts: ToastItem[];
-  dismiss: (id: number) => void;
+  readonly toasts: ToastItem[];
+  readonly dismiss: (id: number) => void;
 }
 
 export function Toaster({ toasts, dismiss }: Props) {
@@ -51,6 +51,7 @@ export function Toaster({ toasts, dismiss }: Props) {
             : <CheckCircle size={15} className="shrink-0 mt-0.5 text-pe-positive" />}
           <span className="font-sans text-[0.72rem] flex-1 leading-snug">{t.message}</span>
           <button
+            type="button"
             onClick={() => dismiss(t.id)}
             className="shrink-0 text-current opacity-40 hover:opacity-70 transition-opacity mt-0.5"
           >

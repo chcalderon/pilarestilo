@@ -71,7 +71,7 @@ public class OrderController {
         if (request.salesChannel() != null && !request.salesChannel().isBlank()) {
             try {
                 salesChannel = SalesChannel.valueOf(request.salesChannel().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 throw new org.springframework.web.server.ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Invalid salesChannel: " + request.salesChannel());
             }

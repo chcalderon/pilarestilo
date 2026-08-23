@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 @Service
 public class MediaStorageService {
 
+    private static final String IMAGE_MIME_PREFIX = "image/";
+
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp", "gif", "avif");
     private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
 
@@ -46,7 +48,7 @@ public class MediaStorageService {
             ImageOptimizerService.OptimizedImage optimized = optimizeByFolder(raw, file.getContentType(), folder);
             String baseName = sanitizeBaseName(extractBaseName(file.getOriginalFilename()));
             String filename = buildFilename(baseName, optimized.extension());
-            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, IMAGE_MIME_PREFIX + optimized.extension());
         } catch (IOException e) {
             throw new RuntimeException("Could not process uploaded file", e);
         }
@@ -57,7 +59,7 @@ public class MediaStorageService {
             ImageOptimizerService.OptimizedImage optimized = optimizeByFolder(raw, contentType, folder);
             String baseName = sanitizeBaseName(extractBaseName(baseFilename));
             String filename = buildFilename(baseName, optimized.extension());
-            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, IMAGE_MIME_PREFIX + optimized.extension());
         } catch (IOException e) {
             throw new RuntimeException("Could not process raw bytes", e);
         }
@@ -68,7 +70,7 @@ public class MediaStorageService {
             byte[] raw = file.getBytes();
             ImageOptimizerService.OptimizedImage optimized = imageOptimizer.optimize(raw, file.getContentType());
             String filename = filenameBase + "." + optimized.extension();
-            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, "image/" + optimized.extension());
+            return activeAdapter().store(new ByteArrayInputStream(optimized.data()), folder, filename, IMAGE_MIME_PREFIX + optimized.extension());
         } catch (IOException e) {
             throw new RuntimeException("Could not process uploaded file", e);
         }

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="PilarEstilo"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    Scoped to the categories of debt this session found and hand-fixed via Sonar: unused code,
+    empty catch blocks, duplicated literals, oversized parameter lists and high complexity. Not
+    PMD's full default set -- that duplicates a lot of what Sonar already reports on every push,
+    and two tools raising the same smell is noise nobody reads. This one runs where Sonar can't:
+    live in the IDE while writing, before anything is even committed.
+  </description>
+
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+    <properties>
+      <!-- This codebase's convention (see LocalFileStorageAdapter.delete, KafkaDomainEventPublisher
+           .resolveEventKey, etc.) is a swallowed exception with a one-line comment explaining why
+           it's safe to ignore: that IS the documented, reviewed pattern, not the bug this rule
+           exists to catch. An empty block with no comment at all still fires. -->
+      <property name="allowCommentedBlocks" value="true"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <properties>
+      <!-- Sonar's S1192 fires at 3 occurrences; matching that here instead of PMD's default of 4
+           keeps the two tools agreeing on what counts as duplication. -->
+      <property name="maxDuplicateLiterals" value="2"/>
+      <property name="skipAnnotations" value="true"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/ExcessiveParameterList">
+    <properties>
+      <!-- PMD's default of 10 lets the multi-field constructors this codebase already has
+           (SystemSettings.update/reconstruct, etc.) through untouched; raising it further would
+           stop catching anything. -->
+      <property name="minimum" value="10"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="classReportLevel" value="80"/>
+      <property name="methodReportLevel" value="12"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NPathComplexity"/>
+
+</ruleset>

@@ -32,8 +32,9 @@ class WelcomeDiscountSettingsTest {
 
     @Test
     void of_rejects_a_percentage_over_100() {
+        BigDecimal overOneHundred = BigDecimal.valueOf(150);
         assertThrows(DomainException.class, () -> WelcomeDiscountSettings.of(
-                true, "PERCENTAGE", BigDecimal.valueOf(150), BigDecimal.ZERO, true));
+                true, "PERCENTAGE", overOneHundred, BigDecimal.ZERO, true));
     }
 
     @Test
@@ -44,8 +45,9 @@ class WelcomeDiscountSettingsTest {
 
     @Test
     void of_rejects_a_negative_minimum_order_amount() {
+        BigDecimal negativeMinOrder = BigDecimal.valueOf(-1);
         assertThrows(DomainException.class, () -> WelcomeDiscountSettings.of(
-                true, "PERCENTAGE", BigDecimal.TEN, BigDecimal.valueOf(-1), true));
+                true, "PERCENTAGE", BigDecimal.TEN, negativeMinOrder, true));
     }
 
     @Test

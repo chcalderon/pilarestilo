@@ -131,11 +131,11 @@ public class GoogleLoginUseCase {
 
             String url = mediaStorageService.storeRaw(response.body(), "users", userId + ".jpg", "image/jpeg");
             return url + "?v=" + System.currentTimeMillis();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             // The flag is the only way the caller upstream learns the thread was asked to stop.
             Thread.currentThread().interrupt();
             return null;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return null;
         }
     }
@@ -153,10 +153,10 @@ public class GoogleLoginUseCase {
             return objectMapper.readTree(response.body());
         } catch (DomainException e) {
             throw e;
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             throw new DomainException("Failed to verify Google token");
-        } catch (Exception e) {
+        } catch (Exception _) {
             throw new DomainException("Failed to verify Google token");
         }
     }

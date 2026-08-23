@@ -51,7 +51,7 @@ public class ListDispatchHistoryUseCase {
             OrderDto order = getOrderUseCase.execute(dispatch.getOrderId());
             orderCreatedAt = order.createdAt();
             orderReference = order.publicReference();
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             // Keep null when order cannot be resolved.
         }
 
@@ -61,9 +61,9 @@ public class ListDispatchHistoryUseCase {
             if (payment.reviewedBy() != null) {
                 soldBy = resolveSellerLabel(payment.reviewedBy());
             }
-        } catch (NoSuchElementException ignored) {
+        } catch (NoSuchElementException _) {
             // Keep default value.
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             // Keep default value.
         }
 

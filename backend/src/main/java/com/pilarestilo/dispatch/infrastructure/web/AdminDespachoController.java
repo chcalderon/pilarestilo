@@ -73,7 +73,7 @@ public class AdminDespachoController {
                     order.shippingCourierName(),
                     order.shippingAddressReference()
             );
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return Dispatch.create(orderId);
         }
     }

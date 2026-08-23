@@ -14,15 +14,15 @@ import {
 import type { Locale } from '../../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  token: string | null;
-  zones: ShippingZoneConfig[];
-  couriers: CourierConfig[];
-  zoneCode: string;
-  courierId: string;
-  addressId: string;
-  onChange: (value: { zoneCode?: string; courierId?: string; addressId?: string }) => void;
-  onContinue: () => void;
+  readonly locale: Locale;
+  readonly token: string | null;
+  readonly zones: ShippingZoneConfig[];
+  readonly couriers: CourierConfig[];
+  readonly zoneCode: string;
+  readonly courierId: string;
+  readonly addressId: string;
+  readonly onChange: (value: { zoneCode?: string; courierId?: string; addressId?: string }) => void;
+  readonly onContinue: () => void;
 }
 
 const copy = {
@@ -274,13 +274,16 @@ export default function ShippingStep({
           {l.addresses}
         </legend>
 
-        {book.loading ? (
+        {(() => {
+        if (book.loading) { return (
           <div className="flex items-center gap-2 py-4">
             <Loader2 size={16} className="animate-spin text-pe-muted" />
           </div>
-        ) : book.addresses.length === 0 ? (
+        ); }
+        if (book.addresses.length === 0) { return (
           <p className="font-sans text-sm text-pe-muted py-2">{l.noAddresses}</p>
-        ) : (
+        ); }
+        return (
           <div className="space-y-2">
             {book.addresses.map((address) => {
               const isSelected = address.id === addressId;
@@ -339,7 +342,8 @@ export default function ShippingStep({
               );
             })}
           </div>
-        )}
+        );
+        })()}
 
         {/*
           * With no addresses saved, adding one is not a secondary option — it is the only way

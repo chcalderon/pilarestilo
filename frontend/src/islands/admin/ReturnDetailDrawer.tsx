@@ -33,7 +33,7 @@ const btnSecondary =
 const btnDanger =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <section className="rounded-md border border-[var(--pe-border)] bg-[var(--pe-surface-soft)] p-4 space-y-3">
       <p className={labelCls}>{label}</p>
@@ -42,7 +42,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value }: { readonly label: string; readonly value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-sm">
       <span className="opacity-60">{label}</span>
@@ -52,12 +52,12 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 interface Props {
-  request: ReturnRequestDto;
-  token: string;
-  canManage: boolean;
-  canRefund: boolean;
-  onClose: () => void;
-  onChanged: (updated: ReturnRequestDto) => void;
+  readonly request: ReturnRequestDto;
+  readonly token: string;
+  readonly canManage: boolean;
+  readonly canRefund: boolean;
+  readonly onClose: () => void;
+  readonly onChanged: (updated: ReturnRequestDto) => void;
 }
 
 export default function ReturnDetailDrawer({
@@ -453,9 +453,11 @@ export default function ReturnDetailDrawer({
                 <Row label="Folio" value={issuedNote.folio} />
                 <Row
                   label="Referencia"
-                  value={issuedNote.referenceCode === 1
-                    ? `Anula la ${liveSale ? liveSale.documentType.toLowerCase() : 'boleta'} ${liveSale?.folio ?? ''}`
-                    : `Corrige el monto de la ${liveSale ? liveSale.documentType.toLowerCase() : 'boleta'} ${liveSale?.folio ?? ''}`}
+                  value={(() => {
+                    const documentLabel = liveSale ? liveSale.documentType.toLowerCase() : 'boleta';
+                    const action = issuedNote.referenceCode === 1 ? 'Anula la' : 'Corrige el monto de la';
+                    return `${action} ${documentLabel} ${liveSale?.folio ?? ''}`;
+                  })()}
                 />
                 <Row label="Monto" value={money.format(issuedNote.totalAmount)} />
                 <Row label="Neto / IVA" value={`${money.format(issuedNote.netAmount)} · ${money.format(issuedNote.taxAmount)}`} />
@@ -502,7 +504,10 @@ export default function ReturnDetailDrawer({
                 </p>
                 <label className={`${btnSecondary} cursor-pointer`}>
                   <Upload size={13} />
-                  {uploading ? 'Subiendo…' : creditNote.fileUrl ? 'Archivo listo' : 'Adjuntar archivo'}
+                  {(() => {
+                    if (uploading) return 'Subiendo…';
+                    return creditNote.fileUrl ? 'Archivo listo' : 'Adjuntar archivo';
+                  })()}
                   <input type="file" className="hidden" accept="application/pdf,image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];

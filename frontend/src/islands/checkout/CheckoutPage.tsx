@@ -27,7 +27,7 @@ import ReviewStep from './steps/ReviewStep';
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  locale: Locale;
+  readonly locale: Locale;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -222,11 +222,12 @@ export default function CheckoutPage({ locale }: Props) {
   const selectedCourierName =
     config.couriers.find((c) => c.id === shippingCourierId)?.name ?? '';
   const selectedZone = config.zones.find((z) => z.code === shippingZoneCode);
-  const selectedZoneName = selectedZone
-    ? locale === 'es'
-      ? selectedZone.titleEs
-      : selectedZone.titleEn
-    : '';
+  let selectedZoneName = '';
+  let selectedZoneEta = '';
+  if (selectedZone) {
+    selectedZoneName = locale === 'es' ? selectedZone.titleEs : selectedZone.titleEn;
+    selectedZoneEta = locale === 'es' ? selectedZone.etaEs : selectedZone.etaEn;
+  }
 
   /** The review step needs the chosen address by value; the shipping step loads the list. */
   useEffect(() => {
@@ -417,9 +418,7 @@ export default function CheckoutPage({ locale }: Props) {
                   method={paymentMethod}
                   courierName={selectedCourierName}
                   zoneName={selectedZoneName}
-                  shippingEta={
-                    selectedZone ? (locale === 'es' ? selectedZone.etaEs : selectedZone.etaEn) : ''
-                  }
+                  shippingEta={selectedZoneEta}
                   total={totals.total}
                   currency={currency}
                   submitting={submitting}

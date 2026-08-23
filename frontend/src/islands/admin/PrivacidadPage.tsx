@@ -22,15 +22,19 @@ const STATUS_LABELS: Record<DeletionRequestDto['status'], string> = {
   REFUSED: 'Rechazada',
 };
 
-function Waiting({ days, open }: { days: number; open: boolean }) {
+function Waiting({ days, open }: { readonly days: number; readonly open: boolean }) {
   if (!open) return <span className="text-[0.72rem] opacity-40">—</span>;
   const late = days > ANSWER_DAYS;
   const soon = days >= WARN_DAYS;
+  let waitingColor = 'opacity-70';
+  if (late) {
+    waitingColor = 'text-red-600 font-medium';
+  } else if (soon) {
+    waitingColor = 'text-amber-700';
+  }
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[0.72rem] tabular-nums ${
-        late ? 'text-red-600 font-medium' : soon ? 'text-amber-700' : 'opacity-70'
-      }`}
+      className={`inline-flex items-center gap-1 text-[0.72rem] tabular-nums ${waitingColor}`}
     >
       {(late || soon) && <AlertTriangle size={12} aria-hidden="true" />}
       {late ? `${days} días: fuera de plazo` : `${days} de ${ANSWER_DAYS} días`}

@@ -16,11 +16,13 @@ public record AuthTokenDto(
         List<String> permissions,
         List<String> permissionCodes
 ) {
+    private static final String TOKEN_TYPE = "Bearer";
+
     public static AuthTokenDto of(String accessToken, String refreshToken,
                                    UUID userId, String email, String role,
                                    String fullName, String avatarUrl,
                                    List<String> permissions) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+        return new AuthTokenDto(accessToken, refreshToken, TOKEN_TYPE,
                 userId, email, role, fullName, avatarUrl, false, permissions, List.of());
     }
 
@@ -28,7 +30,7 @@ public record AuthTokenDto(
                                   UUID userId, String email, String role,
                                   String fullName, String avatarUrl,
                                   List<String> permissions, List<String> permissionCodes) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+        return new AuthTokenDto(accessToken, refreshToken, TOKEN_TYPE,
                 userId, email, role, fullName, avatarUrl, false, permissions, permissionCodes);
     }
 
@@ -36,7 +38,7 @@ public record AuthTokenDto(
                                         UUID userId, String email, String role,
                                         String fullName, String avatarUrl,
                                         boolean accountMerged, List<String> permissions) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+        return new AuthTokenDto(accessToken, refreshToken, TOKEN_TYPE,
                 userId, email, role, fullName, avatarUrl, accountMerged, permissions, List.of());
     }
 
@@ -46,7 +48,7 @@ public record AuthTokenDto(
                                         boolean accountMerged,
                                         List<String> permissions,
                                         List<String> permissionCodes) {
-        return new AuthTokenDto(accessToken, refreshToken, "Bearer",
+        return new AuthTokenDto(accessToken, refreshToken, TOKEN_TYPE,
                 userId, email, role, fullName, avatarUrl, accountMerged, permissions, permissionCodes);
     }
 }

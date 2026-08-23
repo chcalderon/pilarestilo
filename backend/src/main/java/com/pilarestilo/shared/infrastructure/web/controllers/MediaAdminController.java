@@ -46,6 +46,8 @@ import java.awt.RenderingHints;
 @RequestMapping("/api/admin/media")
 public class MediaAdminController {
 
+    private static final String MEDIA_API_PREFIX = "/api/media/";
+
     private static final Set<String> JPEG_EXTENSIONS = Set.of("jpg", "jpeg");
     private static final Set<String> SKIP_FOLDERS = Set.of("products", "categories");
     private static final Set<String> SOURCE_IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp", "gif", "avif");
@@ -140,7 +142,7 @@ public class MediaAdminController {
             byte[] normalizedPng = toPng(file.getBytes());
             HeroModelResponse saved = saveHeroModel(normalizedSlot, normalizedPng);
             return ResponseEntity.ok(saved);
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo leer la imagen enviada");
         }
     }
@@ -219,7 +221,7 @@ public class MediaAdminController {
                         Files.write(file, optimized);
                     }
                     processed.incrementAndGet();
-                } catch (IOException e) {
+                } catch (IOException _) {
                     failed.incrementAndGet();
                 }
             });
@@ -310,7 +312,7 @@ public class MediaAdminController {
                     }
                     Files.write(file, output.toByteArray(), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
                     resized.incrementAndGet();
-                } catch (IOException e) {
+                } catch (IOException _) {
                     failed.incrementAndGet();
                 }
             });
@@ -340,7 +342,7 @@ public class MediaAdminController {
             Files.write(target, pngBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
             long updatedAt = Files.getLastModifiedTime(target).toMillis();
             return new HeroModelResponse(slot, heroSlotUrl(slot), updatedAt);
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo guardar la imagen del hero");
         }
     }
@@ -358,8 +360,8 @@ public class MediaAdminController {
     }
 
     private ImageSource loadSourceImage(String imageUrl) {
-        if (imageUrl.startsWith("/api/media/")) {
-            Path relative = Paths.get(imageUrl.substring("/api/media/".length())).normalize();
+        if (imageUrl.startsWith(MEDIA_API_PREFIX)) {
+            Path relative = Paths.get(imageUrl.substring(MEDIA_API_PREFIX.length())).normalize();
             Path file = mediaRoot.resolve(relative).normalize();
             if (!file.startsWith(mediaRoot)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ruta de imagen invalida");
@@ -370,7 +372,7 @@ public class MediaAdminController {
             ensureAllowedImagePath(file.getFileName().toString());
             try {
                 return new ImageSource(Files.readAllBytes(file));
-            } catch (IOException e) {
+            } catch (IOException _) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo leer la imagen origen");
             }
         }
@@ -378,7 +380,7 @@ public class MediaAdminController {
         URI sourceUri;
         try {
             sourceUri = URI.create(imageUrl);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL de imagen invalida");
         }
         if (!"http".equalsIgnoreCase(sourceUri.getScheme()) && !"https".equalsIgnoreCase(sourceUri.getScheme())) {
@@ -398,10 +400,10 @@ public class MediaAdminController {
                         "No se pudo descargar imagen origen (status " + response.statusCode() + ")");
             }
             return new ImageSource(response.body());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al descargar imagen origen");
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error al descargar imagen origen");
         }
     }
@@ -418,7 +420,7 @@ public class MediaAdminController {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo convertir la imagen a PNG");
             }
             return out.toByteArray();
-        } catch (IOException e) {
+        } catch (IOException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo procesar la imagen");
         }
     }
@@ -433,7 +435,7 @@ public class MediaAdminController {
                 return 0L;
             }
             return Files.getLastModifiedTime(file).toMillis();
-        } catch (IOException e) {
+        } catch (IOException _) {
             return 0L;
         }
     }
@@ -454,7 +456,7 @@ public class MediaAdminController {
     }
 
     private String heroSlotUrl(String slot) {
-        return "/api/media/" + HERO_MODELS_FOLDER + "/" + heroSlotFilename(slot);
+        return MEDIA_API_PREFIX + HERO_MODELS_FOLDER + "/" + heroSlotFilename(slot);
     }
 
     private void ensureAllowedImagePath(String pathOrFilename) {

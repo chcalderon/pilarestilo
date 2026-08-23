@@ -4,17 +4,17 @@ import StockUnavailableModal from './cart/StockUnavailableModal';
 import type { Locale } from '../i18n/index';
 
 interface Props {
-  productId: string;
-  name: string;
-  brand: string;
-  price: { amount: number; currency: string };
-  imageUrl: string;
-  condition: 'NEW' | 'USED';
-  stock: number;
-  locale: Locale;
-  variantColor?: string;
-  variantSize?: string;
-  variantLabel?: string;
+  readonly productId: string;
+  readonly name: string;
+  readonly brand: string;
+  readonly price: { amount: number; currency: string };
+  readonly imageUrl: string;
+  readonly condition: 'NEW' | 'USED';
+  readonly stock: number;
+  readonly locale: Locale;
+  readonly variantColor?: string;
+  readonly variantSize?: string;
+  readonly variantLabel?: string;
 }
 
 interface StockModalState {
@@ -97,31 +97,36 @@ export default function AddToCartButton({
     setTimeout(() => setAdded(false), 1800);
   }
 
+  let buttonStateClass: string;
+  let buttonLabel: string;
+  if (outOfStock) {
+    buttonStateClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
+    buttonLabel = labels.outOfStock;
+  } else if (verifying) {
+    buttonStateClass = 'bg-pe-gold/50 text-pe-on-light cursor-wait';
+    buttonLabel = labels.verifying;
+  } else if (added) {
+    buttonStateClass = 'bg-pe-gold/80 text-pe-on-light';
+    buttonLabel = labels.added;
+  } else {
+    buttonStateClass = 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95';
+    buttonLabel = labels.addToCart;
+  }
+
   return (
     <>
       <button
+        type="button"
         onClick={handleClick}
         disabled={outOfStock || verifying}
         aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
         className={[
           'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
           'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
-          outOfStock
-            ? 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed'
-            : verifying
-            ? 'bg-pe-gold/50 text-pe-on-light cursor-wait'
-            : added
-            ? 'bg-pe-gold/80 text-pe-on-light'
-            : 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95',
+          buttonStateClass,
         ].join(' ')}
       >
-        {outOfStock
-          ? labels.outOfStock
-          : verifying
-          ? labels.verifying
-          : added
-          ? labels.added
-          : labels.addToCart}
+        {buttonLabel}
       </button>
 
       {stockModal && (

@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public class User {
 
+    private static final String WHATSAPP_PREFIX = "whatsapp:";
+
     private UUID id;
     private String email;
     private String fullName;
@@ -189,8 +191,8 @@ public class User {
             return null;
         }
         String candidate = rawPhone.trim();
-        if (candidate.regionMatches(true, 0, "whatsapp:", 0, "whatsapp:".length())) {
-            candidate = candidate.substring("whatsapp:".length()).trim();
+        if (candidate.regionMatches(true, 0, WHATSAPP_PREFIX, 0, WHATSAPP_PREFIX.length())) {
+            candidate = candidate.substring(WHATSAPP_PREFIX.length()).trim();
         }
         String digits = candidate.replaceAll("\\D", "");
         if (digits.length() < 8 || digits.length() > 15) {
@@ -202,7 +204,7 @@ public class User {
     private static NotificationChannelPreference normalizeNotificationChannelPreference(String rawPreference) {
         try {
             return NotificationChannelPreference.fromRaw(rawPreference);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Unsupported notification channel preference: " + rawPreference);
         }
     }

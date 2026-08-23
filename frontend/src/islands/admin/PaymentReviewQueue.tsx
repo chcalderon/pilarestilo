@@ -255,6 +255,7 @@ export default function PaymentReviewQueue() {
           return (
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   void handleSimulate(id, 'simulate-approve');
@@ -265,6 +266,7 @@ export default function PaymentReviewQueue() {
                 {isActing && acting?.action === 'simulate-approve' ? '...' : <><Check size={11} /> Sim aprobar</>}
               </button>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   void handleSimulate(id, 'simulate-reject');
@@ -281,6 +283,7 @@ export default function PaymentReviewQueue() {
         return (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 void handleAction(id, 'approve');
@@ -291,6 +294,7 @@ export default function PaymentReviewQueue() {
               {isActing && acting?.action === 'approve' ? '...' : <><Check size={11} /> Aprobar</>}
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 void handleAction(id, 'reject');
@@ -360,7 +364,14 @@ export default function PaymentReviewQueue() {
   ];
 
   const visibleData = useMemo(() => {
-    const source = activeTab === 'queue' ? queuePayments : activeTab === 'approved' ? approvedPayments : rejectedPayments;
+    let source: PaymentDto[];
+    if (activeTab === 'queue') {
+      source = queuePayments;
+    } else if (activeTab === 'approved') {
+      source = approvedPayments;
+    } else {
+      source = rejectedPayments;
+    }
     const term = searchTerm.trim().toLowerCase();
 
     const filtered = term
@@ -388,6 +399,23 @@ export default function PaymentReviewQueue() {
   }, [activeTab, queuePayments, approvedPayments, rejectedPayments, searchTerm, dateSort]);
 
   const canClearFilters = searchTerm.trim().length > 0 || dateSort !== 'desc';
+
+  let searchPlaceholder: string;
+  let activeColumns: typeof queueColumns;
+  let emptyMessage: string;
+  if (activeTab === 'queue') {
+    searchPlaceholder = 'Buscar por orden, estado, metodo...';
+    activeColumns = queueColumns;
+    emptyMessage = 'No hay pagos por revisar.';
+  } else if (activeTab === 'approved') {
+    searchPlaceholder = 'Buscar pago aprobado...';
+    activeColumns = approvedColumns;
+    emptyMessage = 'No hay pagos aprobados.';
+  } else {
+    searchPlaceholder = 'Buscar pago rechazado...';
+    activeColumns = rejectedColumns;
+    emptyMessage = 'No hay pagos rechazados.';
+  }
 
   return (
     <div>
@@ -430,7 +458,7 @@ export default function PaymentReviewQueue() {
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={activeTab === 'queue' ? 'Buscar por orden, estado, metodo...' : activeTab === 'approved' ? 'Buscar pago aprobado...' : 'Buscar pago rechazado...'}
+            placeholder={searchPlaceholder}
             className="w-full sm:w-[260px] bg-pe-white border border-pe-black/15 px-3 py-1.5 font-sans text-[0.75rem] text-pe-charcoal placeholder:text-pe-muted focus:outline-hidden focus:border-pe-rose/45"
             aria-label="Buscar pagos"
           />
@@ -458,6 +486,7 @@ export default function PaymentReviewQueue() {
           </button>
 
           <button
+            type="button"
             onClick={() => {
               void load();
             }}
@@ -500,11 +529,11 @@ export default function PaymentReviewQueue() {
       </p>
 
       <DataTable
-        columns={activeTab === 'queue' ? queueColumns : activeTab === 'approved' ? approvedColumns : rejectedColumns}
+        columns={activeColumns}
         data={visibleData}
         keyField="id"
         loading={loading}
-        emptyMessage={activeTab === 'queue' ? 'No hay pagos por revisar.' : activeTab === 'approved' ? 'No hay pagos aprobados.' : 'No hay pagos rechazados.'}
+        emptyMessage={emptyMessage}
       />
     </div>
   );

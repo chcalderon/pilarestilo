@@ -42,7 +42,7 @@ public class DiscountRedemptionRepositoryAdapter implements DiscountRedemptionRe
         }
         try {
             return usageRepository.save(new DiscountCodeUsageEntity(discountId, userId, orderId)).getId();
-        } catch (DataIntegrityViolationException e) {
+        } catch (DataIntegrityViolationException _) {
             // uq_dcu_active: the user already holds a live redemption for this code.
             // uq_dcu_order: this order already reserved one.
             // Both mean the claim above was not ours to keep; the surrounding transaction rolls

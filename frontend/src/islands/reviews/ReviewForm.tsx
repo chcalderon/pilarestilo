@@ -3,11 +3,11 @@ import { Star } from 'lucide-react';
 import { createReview, getProductReviews } from '../../lib/api';
 
 interface Props {
-  productId: string;
-  token?: string;
-  userId?: string;
-  locale?: string;
-  onSubmitted?: () => void;
+  readonly productId: string;
+  readonly token?: string;
+  readonly userId?: string;
+  readonly locale?: string;
+  readonly onSubmitted?: () => void;
 }
 
 export default function ReviewForm({ productId, token, userId, locale = 'es', onSubmitted }: Props) {
@@ -64,12 +64,16 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
   }
 
   if (success) {
+    let successTitle: string;
+    if (replacing) {
+      successTitle = locale === 'es' ? '¡Gracias! Actualizamos tu reseña.' : 'Thanks! Your review was updated.';
+    } else {
+      successTitle = locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!';
+    }
     return (
       <div className="py-6 border-t border-[#EDE3D8]">
         <p className="text-[#B76E79] font-['Cormorant_Garamond',serif] text-lg">
-          {replacing
-            ? (locale === 'es' ? '¡Gracias! Actualizamos tu reseña.' : 'Thanks! Your review was updated.')
-            : (locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!')}
+          {successTitle}
         </p>
         <p className="text-[#3A3A3A]/50 text-sm mt-1">
           {locale === 'es' ? 'Será visible una vez aprobada.' : 'It will be visible once approved.'}
@@ -88,7 +92,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
       await createReview(productId, token, { rating, title: title.trim() || undefined, comment: comment.trim() });
       setSuccess(true);
       onSubmitted?.();
-    } catch (err: unknown) {
+    } catch {
       // No duplicate branch here: a second review now replaces the first rather than being
       // refused, so the only failure left is the request itself.
       setError(locale === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error submitting. Try again.');
@@ -99,12 +103,26 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
 
   const display = hovered || rating;
 
+  let formTitle: string;
+  if (replacing) {
+    formTitle = locale === 'es' ? 'Actualizar tu reseña' : 'Update your review';
+  } else {
+    formTitle = locale === 'es' ? 'Escribir una reseña' : 'Write a review';
+  }
+
+  let submitLabel: string;
+  if (submitting) {
+    submitLabel = locale === 'es' ? 'Enviando...' : 'Submitting...';
+  } else if (replacing) {
+    submitLabel = locale === 'es' ? 'Reemplazar reseña' : 'Replace review';
+  } else {
+    submitLabel = locale === 'es' ? 'Publicar reseña' : 'Submit review';
+  }
+
   return (
     <form onSubmit={handleSubmit} className="py-6 border-t border-[#EDE3D8] space-y-5">
       <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A]">
-        {replacing
-          ? (locale === 'es' ? 'Actualizar tu reseña' : 'Update your review')
-          : (locale === 'es' ? 'Escribir una reseña' : 'Write a review')}
+        {formTitle}
       </h3>
 
       {/* Star rating */}
@@ -168,11 +186,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
         disabled={submitting}
         className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
       >
-        {submitting
-          ? (locale === 'es' ? 'Enviando...' : 'Submitting...')
-          : replacing
-            ? (locale === 'es' ? 'Reemplazar reseña' : 'Replace review')
-            : (locale === 'es' ? 'Publicar reseña' : 'Submit review')}
+        {submitLabel}
       </button>
     </form>
   );

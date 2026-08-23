@@ -3,11 +3,11 @@ import { CHECKOUT_STEPS, stepIndex, type CheckoutStep } from '../../lib/checkout
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  locale: Locale;
-  current: CheckoutStep;
+  readonly locale: Locale;
+  readonly current: CheckoutStep;
   /** How far the customer actually got. Steps beyond it are not reachable yet. */
-  furthest: CheckoutStep;
-  onSelect: (step: CheckoutStep) => void;
+  readonly furthest: CheckoutStep;
+  readonly onSelect: (step: CheckoutStep) => void;
 }
 
 const STEP_LABELS: Record<CheckoutStep, { es: string; en: string }> = {
@@ -30,6 +30,24 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
           const reachable = idx <= furthestIdx;
           const label = STEP_LABELS[step][locale === 'es' ? 'es' : 'en'];
 
+          let buttonBorderClass: string;
+          if (isCurrent) {
+            buttonBorderClass = 'border-pe-black text-pe-black';
+          } else if (isDone || reachable) {
+            buttonBorderClass = 'border-pe-charcoal/25 text-pe-charcoal hover:text-pe-black hover:border-pe-charcoal/50 cursor-pointer';
+          } else {
+            buttonBorderClass = 'border-pe-charcoal/15 text-pe-muted cursor-not-allowed';
+          }
+
+          let circleClass: string;
+          if (isDone) {
+            circleClass = 'bg-pe-black text-pe-white';
+          } else if (isCurrent) {
+            circleClass = 'border border-pe-black text-pe-black';
+          } else {
+            circleClass = 'border border-pe-charcoal/30 text-pe-muted';
+          }
+
           return (
             <li key={step} className="flex-1">
               <button
@@ -45,24 +63,12 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
                 className={`w-full min-h-11 flex items-center justify-center gap-2 px-2 sm:px-4 py-3
                   border-b-2 transition-colors duration-200
                   focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
-                  ${
-                    isCurrent
-                      ? 'border-pe-black text-pe-black'
-                      : isDone || reachable
-                        ? 'border-pe-charcoal/25 text-pe-charcoal hover:text-pe-black hover:border-pe-charcoal/50 cursor-pointer'
-                        : 'border-pe-charcoal/15 text-pe-muted cursor-not-allowed'
-                  }`}
+                  ${buttonBorderClass}`}
               >
                 <span
                   aria-hidden="true"
                   className={`shrink-0 w-6 h-6 flex items-center justify-center text-[0.7rem] font-sans
-                    ${
-                      isDone
-                        ? 'bg-pe-black text-pe-white'
-                        : isCurrent
-                          ? 'border border-pe-black text-pe-black'
-                          : 'border border-pe-charcoal/30 text-pe-muted'
-                    }`}
+                    ${circleClass}`}
                 >
                   {isDone ? <Check size={13} strokeWidth={2.5} /> : idx + 1}
                 </span>

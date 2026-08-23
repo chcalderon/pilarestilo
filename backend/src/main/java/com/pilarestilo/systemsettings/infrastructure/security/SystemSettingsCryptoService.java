@@ -44,7 +44,7 @@ public class SystemSettingsCryptoService {
             System.arraycopy(iv, 0, packed, 0, iv.length);
             System.arraycopy(cipherText, 0, packed, iv.length, cipherText.length);
             return Base64.getEncoder().encodeToString(packed);
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not encrypt secret");
         }
     }
@@ -70,7 +70,7 @@ public class SystemSettingsCryptoService {
             return new String(plain, StandardCharsets.UTF_8);
         } catch (DomainException ex) {
             throw ex;
-        } catch (Exception ex) {
+        } catch (Exception _) {
             throw new DomainException("Could not decrypt secret");
         }
     }

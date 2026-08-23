@@ -3,11 +3,11 @@ import type { CartItem } from '../../lib/cartStore';
 import type { Locale } from '../../i18n/index';
 
 interface Props {
-  item: CartItem;
-  locale: Locale;
-  onRemove: () => void;
-  onNavigate: () => void;
-  cartHref: string;
+  readonly item: CartItem;
+  readonly locale: Locale;
+  readonly onRemove: () => void;
+  readonly onNavigate: () => void;
+  readonly cartHref: string;
 }
 
 export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHref }: Props) {

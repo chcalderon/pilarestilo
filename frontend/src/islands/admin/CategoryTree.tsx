@@ -69,12 +69,12 @@ function slugify(text: string): string {
 // ─── FormRow ─────────────────────────────────────────────────────────────────
 
 interface FormRowProps {
-  form: EditForm;
-  setForm: React.Dispatch<React.SetStateAction<EditForm>>;
-  saving: boolean;
-  onSubmit: () => void;
-  onCancel: () => void;
-  token: string | null;
+  readonly form: EditForm;
+  readonly setForm: React.Dispatch<React.SetStateAction<EditForm>>;
+  readonly saving: boolean;
+  readonly onSubmit: () => void;
+  readonly onCancel: () => void;
+  readonly token: string | null;
 }
 
 function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowProps) {
@@ -154,12 +154,12 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
           <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />
           Visible en menu
         </label>
-        <button onClick={onSubmit} disabled={saving}
+        <button type="button" onClick={onSubmit} disabled={saving}
           className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50">
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar
         </button>
-        <button onClick={onCancel}
+        <button type="button" onClick={onCancel}
           className="flex items-center gap-1 border border-pe-black/12 font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:border-pe-charcoal transition-colors text-pe-muted">
           <X size={12} /> Cancelar
         </button>
@@ -171,30 +171,28 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
 // ─── CategoryRow ──────────────────────────────────────────────────────────────
 
 interface DragHandleProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   listeners?: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   attributes?: Record<string, any>;
 }
 
 interface CategoryRowProps {
-  node: CategoryTreeNode;
-  depth: number;
-  editing: string | null;
-  creating: string | null;
-  expanded: Set<string>;
-  form: EditForm;
-  setForm: React.Dispatch<React.SetStateAction<EditForm>>;
-  saving: boolean;
-  token: string | null;
-  dragHandle?: DragHandleProps;
-  setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setEditing: (id: string | null) => void;
-  setCreating: (id: string | null) => void;
-  onSaveEdit: (id: string) => void;
-  onDelete: (id: string, name: string) => void;
-  onCreate: (parentId: string | null) => void;
-  onReorder: (items: { id: string; sortOrder: number }[]) => void;
+  readonly node: CategoryTreeNode;
+  readonly depth: number;
+  readonly editing: string | null;
+  readonly creating: string | null;
+  readonly expanded: Set<string>;
+  readonly form: EditForm;
+  readonly setForm: React.Dispatch<React.SetStateAction<EditForm>>;
+  readonly saving: boolean;
+  readonly token: string | null;
+  readonly dragHandle?: DragHandleProps;
+  readonly setExpanded: React.Dispatch<React.SetStateAction<Set<string>>>;
+  readonly setEditing: (id: string | null) => void;
+  readonly setCreating: (id: string | null) => void;
+  readonly onSaveEdit: (id: string) => void;
+  readonly onDelete: (id: string, name: string) => void;
+  readonly onCreate: (parentId: string | null) => void;
+  readonly onReorder: (items: { id: string; sortOrder: number }[]) => void;
 }
 
 function CategoryRow({
@@ -222,6 +220,7 @@ function CategoryRow({
       >
         {/* Drag handle */}
         <button
+          type="button"
           {...dragHandle?.listeners}
           {...dragHandle?.attributes}
           className="p-0.5 text-pe-muted hover:text-pe-muted transition-colors cursor-grab active:cursor-grabbing touch-none shrink-0"
@@ -232,9 +231,14 @@ function CategoryRow({
         </button>
 
         <button
+          type="button"
           onClick={() => setExpanded(prev => {
             const next = new Set(prev);
-            next.has(node.id) ? next.delete(node.id) : next.add(node.id);
+            if (next.has(node.id)) {
+              next.delete(node.id);
+            } else {
+              next.add(node.id);
+            }
             return next;
           })}
           className={['p-0.5 text-pe-muted hover:text-pe-charcoal transition-colors', hasChildren ? '' : 'invisible'].join(' ')}
@@ -276,6 +280,7 @@ function CategoryRow({
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           {depth < 3 && (
             <button
+              type="button"
               onClick={() => { setCreating(node.id); setForm({ ...EMPTY_FORM }); setEditing(null); }}
               className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
               title="Agregar subcategoría"
@@ -284,6 +289,7 @@ function CategoryRow({
             </button>
           )}
           <button
+            type="button"
             onClick={() => { setEditing(node.id); setForm(fromDto(node)); setCreating(null); }}
             className="p-1 text-pe-muted hover:text-pe-rose-ink transition-colors"
             title="Editar"
@@ -291,6 +297,7 @@ function CategoryRow({
             <Edit3 size={13} />
           </button>
           <button
+            type="button"
             onClick={() => onDelete(node.id, node.nameEs)}
             className="p-1 text-pe-muted hover:text-red-500 transition-colors"
             title="Eliminar"
@@ -503,6 +510,7 @@ export default function CategoryTree() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-sans text-[0.72rem] text-pe-muted">{tree.length} categorías raíz</p>
         <button
+          type="button"
           onClick={() => { setCreating('__root__'); setForm({ ...EMPTY_FORM }); setEditing(null); }}
           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
         >
