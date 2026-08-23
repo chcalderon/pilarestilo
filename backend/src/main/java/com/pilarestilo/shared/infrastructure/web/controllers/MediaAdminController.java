@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -490,5 +491,22 @@ public class MediaAdminController {
     public record HeroModelResponse(String slot, String url, long updatedAt) {}
     public record HeroModelsResponse(HeroModelResponse left, HeroModelResponse right) {}
     public record AssignHeroModelRequest(UUID productId, String imageUrl) {}
-    private record ImageSource(byte[] bytes) {}
+    private record ImageSource(byte[] bytes) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ImageSource(byte[] otherBytes))) return false;
+            return Arrays.equals(bytes, otherBytes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(bytes);
+        }
+
+        @Override
+        public String toString() {
+            return "ImageSource[bytes.length=" + bytes.length + "]";
+        }
+    }
 }

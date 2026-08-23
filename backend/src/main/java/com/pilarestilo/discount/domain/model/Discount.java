@@ -7,9 +7,13 @@ import com.pilarestilo.shared.domain.DomainException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 public class Discount {
+
+    /** Validity is checked against the shop's own calendar day, not whatever zone the server runs in. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private UUID id;
     private String code;
@@ -68,7 +72,7 @@ public class Discount {
         if (!active) {
             throw new DomainException("Discount not active");
         }
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(STORE_ZONE);
         if (today.isBefore(validFrom) || today.isAfter(validUntil)) {
             throw new DomainException("Discount expired or not yet valid");
         }

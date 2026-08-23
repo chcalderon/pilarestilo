@@ -119,6 +119,6 @@ class SimulatedWhatsAppNotificationSenderTest {
         sender.send(message(), whatsappCustomer());
 
         List<String> lines = appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
-        assertThat(lines).allSatisfy(l -> assertThat(l).doesNotContain("to=" + CUSTOMER_PHONE));
+        assertThat(lines).isNotEmpty().allSatisfy(l -> assertThat(l).doesNotContain("to=" + CUSTOMER_PHONE));
     }
 }

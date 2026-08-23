@@ -12,6 +12,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -22,7 +24,24 @@ public class ImageOptimizerService {
     private static final float JPEG_QUALITY = 0.90f;
     private static final Set<String> PASSTHROUGH_TYPES = Set.of("image/gif", "image/webp", "image/avif");
 
-    public record OptimizedImage(byte[] data, String extension) {}
+    public record OptimizedImage(byte[] data, String extension) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof OptimizedImage(byte[] otherData, String otherExtension))) return false;
+            return Arrays.equals(data, otherData) && Objects.equals(extension, otherExtension);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Arrays.hashCode(data), extension);
+        }
+
+        @Override
+        public String toString() {
+            return "OptimizedImage[data.length=" + data.length + ", extension=" + extension + "]";
+        }
+    }
 
     /**
      * Converts an uploaded image to an optimized JPEG, preserving aspect ratio.

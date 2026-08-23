@@ -9,12 +9,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Component
 public class DiscountRepositoryAdapter implements DiscountRepository {
+
+    /** Active/expired is decided by the shop's own calendar day, not the server's zone. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private final DiscountJpaRepository jpaRepository;
 
@@ -44,7 +48,7 @@ public class DiscountRepositoryAdapter implements DiscountRepository {
 
     @Override
     public List<Discount> findAllByStatus(String status) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(STORE_ZONE);
         return switch (status) {
             case "active"  -> jpaRepository.findActiveDiscounts(today).stream().map(this::toDomain).toList();
             case "expired" -> jpaRepository.findExpiredDiscounts(today).stream().map(this::toDomain).toList();
