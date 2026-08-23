@@ -35,6 +35,8 @@ public class ReissueSalesDocumentUseCase {
                                     SalesDocumentType type,
                                     String folio,
                                     String receiverRut,
+                                    String receiverBusinessName,
+                                    String receiverBusinessActivity,
                                     String fileUrl,
                                     UUID actorId) {
         SalesDocument previous = salesDocumentRepository.findById(documentId)
@@ -44,6 +46,7 @@ public class ReissueSalesDocumentUseCase {
         salesDocumentRepository.save(previous);
 
         return issueSalesDocumentUseCase.issue(
-                previous.getOrderId(), type, folio, receiverRut, fileUrl, actorId, previous.getId());
+                previous.getOrderId(), type, folio, receiverRut, receiverBusinessName, receiverBusinessActivity,
+                fileUrl, actorId, previous.getId());
     }
 }

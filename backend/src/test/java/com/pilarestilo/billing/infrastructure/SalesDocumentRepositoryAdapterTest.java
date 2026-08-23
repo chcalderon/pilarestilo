@@ -51,7 +51,15 @@ class SalesDocumentRepositoryAdapterTest {
         return SalesDocument.issue(
                 orderId, SalesDocumentType.BOLETA, "1042",
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
-                "11.111.111-1", "Ana Perez", "ana@correo.cl", "boleta.pdf", actor, null);
+                "11.111.111-1", null, null, "Ana Perez", "ana@correo.cl", "boleta.pdf", actor, null);
+    }
+
+    private SalesDocument factura() {
+        return SalesDocument.issue(
+                orderId, SalesDocumentType.FACTURA, "500",
+                TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
+                "76.123.456-7", "Comercial Ana Perez Ltda.", "Venta de ropa",
+                "Ana Perez", "ana@correo.cl", "factura.pdf", actor, null);
     }
 
     @Test
@@ -74,6 +82,17 @@ class SalesDocumentRepositoryAdapterTest {
         assertEquals("11.111.111-1", saved.getReceiverRut());
         assertEquals("boleta.pdf", saved.getFileUrl());
         assertEquals(actor, saved.getIssuedBy());
+    }
+
+    @Test
+    void a_facturas_razon_social_and_giro_survive_the_round_trip() {
+        SalesDocument original = factura();
+        when(jpaRepository.save(any())).thenAnswer(call -> call.getArgument(0));
+
+        SalesDocument saved = adapter.save(original);
+
+        assertEquals("Comercial Ana Perez Ltda.", saved.getReceiverBusinessName());
+        assertEquals("Venta de ropa", saved.getReceiverBusinessActivity());
     }
 
     @Test

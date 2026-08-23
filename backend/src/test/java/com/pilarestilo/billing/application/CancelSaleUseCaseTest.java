@@ -53,7 +53,7 @@ class CancelSaleUseCaseTest {
         useCase = new CancelSaleUseCase(salesDocumentRepository, updateOrderStatusUseCase);
         live = SalesDocument.issue(orderId, SalesDocumentType.BOLETA, "1042",
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
-                null, null, null, null, actor, null);
+                null, null, null, null, null, null, actor, null);
     }
 
     @Test

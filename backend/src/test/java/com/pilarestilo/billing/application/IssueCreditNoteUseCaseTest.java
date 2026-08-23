@@ -62,7 +62,7 @@ class IssueCreditNoteUseCaseTest {
                 SalesDocumentType.BOLETA,
                 "1042",
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
-                null, "Ana Perez", "ana@correo.cl", null, actor, null);
+                null, null, null, "Ana Perez", "ana@correo.cl", null, actor, null);
 
         when(salesDocumentRepository.findLiveByOrderId(orderId)).thenReturn(Optional.of(boleta));
         when(salesDocumentRepository.findLiveCreditNotesFor(boleta.getId())).thenReturn(List.of());

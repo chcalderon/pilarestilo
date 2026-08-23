@@ -94,6 +94,6 @@ class SalesDocumentGateAdapterTest {
     private SalesDocument document() {
         return SalesDocument.issue(orderId, SalesDocumentType.BOLETA, "1042",
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("45990")), new BigDecimal("19.00")),
-                null, null, null, null, UUID.randomUUID(), null);
+                null, null, null, null, null, null, UUID.randomUUID(), null);
     }
 }

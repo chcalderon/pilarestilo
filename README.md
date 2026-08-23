@@ -8,11 +8,17 @@ Luxury online boutique for curated new and second-hand branded clothing.
 
 | Layer | Tech |
 |---|---|
-| Frontend | Astro 4 + React islands + Tailwind CSS |
-| Backend | Java 25 + Spring Boot 3.5 + Hexagonal Architecture |
-| Database | PostgreSQL 16 |
+| Frontend | Astro 7 (SSR) + React islands + Tailwind CSS |
+| Backend | Java 25 + Spring Boot 4.1 + Hexagonal Architecture (21 domain modules) |
+| Database | PostgreSQL 16 (Flyway migrations) |
+| Messaging | Kafka (optional, domain events) |
+| Cache | Redis (optional, hot-read cache) |
 | Reverse Proxy | Caddy (auto-TLS) |
 | Container | Docker Compose |
+
+The backend is a monolith by default. Four read paths (`product`, `inventory`, `order`,
+`payment`) can be extracted into standalone microservices behind Caddy via the `microservices`
+compose profile — see [Architecture](docs/architecture.md).
 
 ## Quick Start (local)
 
@@ -62,75 +68,19 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env --profile obser
 docker compose -f infra/docker-compose.yml --env-file infra/.env --profile tracing up -d
 ```
 
-## Latest updates (April–May 2026)
+## Current state
 
-- **Navigation redesign (5 fases)**: new mega menu desktop (full-width editorial tray, hover intent, motion stagger), mobile push-navigation overlay (Zara-style full-screen, breadcrumb back, bottom bar), `NavigationSection` CMS-level config (layout/banner/sort per root category), admin manager at `/admin/navegacion`. `motion` npm package installed for transitions. Backend: `GET /api/navigation/tree?locale=es` (public) + `GET /api/navigation/sections` + `POST/PATCH/DELETE /api/admin/navigation/sections`.
-- **Category navigation metadata**: `categories` extended with `menu_visible` (separate from catalog visibility), `category_type` enum (GENERIC/CLOTHING/SHOES/JEWELRY/ACCESSORY/COLLECTION/SEASON), `hero_image_url` for editorial banners. DB migrations V58–V61.
-- **Inventory Evolution (7 fases)**: reserved-stock model (`stock_on_hand` + `stock_reserved` on `product_variants`); `paymentApproved → confirm()` decrements both fields; `createOrder → reserve()` increments `stock_reserved` only; `inventory_movements` audit table. DB migrations V54–V57.
-- **Modern RBAC**: `permissions` table + `role_permission_grants` with code-based permission catalog (dashboard, products, categories, navigation, orders, payments, users, etc.). DB migrations V62–V64.
-- **Social commerce foundation**: `publications` table for multi-platform content lifecycle (INSTAGRAM/FACEBOOK, approval workflow, idempotency key). DB migration V65.
-- Java 17 → 25 migration complete; backend test suite passes with 192 tests.
-- Admin user management redesigned with `UserEditDrawer` slide-out panel replacing modal dialogs; refined palette throughout the UX.
-- Admin credit section now visible for all user types (previously hidden for non-`CUSTOMER` roles).
-- Server-side image optimization on upload: all images stored via `POST /api/media/upload` are auto-resized and JPEG-compressed before persisting (`ImageOptimizerService`).
-- Storefront product detail now shows subcategory pills (ancestry breadcrumb chain) and a product header image from the first media asset.
-- Admin category tree now supports up to 4 levels of subcategories (previously limited to 3).
-- Landing carousel now uses CSS `transform`-only transitions with touch-swipe support, dark-mode dot indicators, and 4-second autoplay advancing by computed index (not scroll position).
-- Landing page category carousel now renders featured category nodes at any tree depth (not limited to root-level featured categories).
-- Product AI: `ProductAiOpenAiClient` now uses separate model configs for text inference (`APP_PRODUCT_AI_OPENAI_INFER_MODEL`, default `gpt-4.1-mini`) and image generation (`APP_PRODUCT_AI_OPENAI_IMAGE_MODEL`, default `gpt-image-1`); Ollama stack removed from Docker Compose and pipeline.
-- Product cards now support dual pricing (`listPrice` struck-through + discounted sale price) across home, category, listing, wishlist, and search contexts.
-- Product AI single-image infer now pre-fills brand/condition/price defaults from admin system settings.
-- Existing catalog rows are backfilled with default `listPrice` values via DB migration so discount visuals render immediately in storefront cards.
-- Logged-in customers can now leave quick star-only ratings directly from product cards (no comment required in quick flow).
-- Admin product management now supports `Grilla` and `Cards` modes with responsive/mobile improvements.
-- Admin product grid now includes `Fecha ingreso`, with asc/desc sorting and date-range filtering (`desde`/`hasta`) via calendar inputs.
-- Admin product form now enforces cleaner interaction UX: `Activo` toggles only from checkbox click, unsaved changes use a styled confirmation modal (instead of browser alert), and AI tools are grouped under `Utilitarios IA`.
-- Admin product variants now support composite sizes from multi-select per row (for example `M` + `L` => `M-L`), including `XXL`/`XXXL` and direct camera capture workflow (`Tomar foto`) for mobile/desktop.
-- Storefront mobile header now keeps action icons clear of the logo through a dedicated small-screen layout.
-- Storefront category navigation is now a mobile slider with `<` / `>` controls and smooth step scrolling.
-- Spanish storefront and wishlist UI copy was normalized to UTF-8 (accent/mojibake fixes).
-- Product images now resolve through backend media routes (`/api/media/**`) backed by persisted Docker storage in `infra/storage/media`.
-- Customer account now shows an order tracking timeline with visual status progression for each order.
-- Wishlist now supports shareable public links generated from customer favorites (`/[locale]/wishlist/shared/{token}`).
-- Catalog now supports full product variants (`color + talla + stock`) with dedicated admin UX and storefront variant picker on product detail.
-- P5 started: optional Kafka-backed domain events are now available (`APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`) with retry/DLQ and saga orchestration for order/payment/inventory consistency.
-- P6 step 1 completed: extracted `services/product-service` now provides read-only compatible product endpoints (`GET /api/products*`) in optional `microservices` profile.
-- Caddy now routes `GET/HEAD /api/products*` to `product-service` when `microservices` profile is enabled; remaining API routes stay on backend.
-- P6 step 2 completed: extracted `services/inventory-service` now provides read-only inventory endpoints (`GET /api/inventory*`) and Caddy routes those reads to the service in `microservices` profile.
-- P6 step 3 completed: backend inventory writes (`reserve/release/confirm`) can now be delegated to `inventory-service` through `APP_INVENTORY_REMOTE_ENABLED=true`.
-- P6 step 4 completed: extracted `services/order-service` now provides order query endpoints, and backend can delegate order reads through `APP_ORDER_REMOTE_ENABLED=true`.
-- P6 step 5 completed: extracted `services/payment-service` now provides payment query endpoints, and backend can delegate payment reads through `APP_PAYMENT_REMOTE_ENABLED=true`.
-- Caddy now routes `GET/HEAD /api/payments*` traffic directly to `payment-service` with JWT auth offloaded there.
-- P6 step 6 completed: extracted `services/order-service` now supports order command endpoints, and backend can delegate order create/status updates through `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
-- Caddy now routes `GET/HEAD /api/orders*` to `order-service` (with backend fallback), while `POST/PATCH /api/orders*` stays on `backend` as auth/orchestration entrypoint.
-- Gateway guardrails now include API body-size/method policies at Caddy plus per-IP rate limits for sensitive public POST endpoints in backend (`login/register/payment webhooks`).
-- P7 baseline observability is available through optional `observability` profile (`prometheus` + `grafana`) with preprovisioned dashboard.
-- P7 tracing baseline is now available through optional `tracing` profile (`otel-collector` + `tempo`) and Grafana Tempo datasource provisioning.
-- Customer account now supports bank-transfer proof submission (image upload or manual URL) directly from `My orders`.
-- Admin payment queue now includes `PENDING` rows for visibility and keeps review actions only for reviewable statuses.
-- Payment module now exposes gateway-ready endpoints for checkout session creation and webhook ingestion (`/api/payments/{id}/gateway/checkout`, `/api/payments/webhooks/gateway`), currently backed by stub adapter.
-- Payment gateway provider is now configurable by env (`PAYMENT_GATEWAY_PROVIDER=STUB|MERCADO_PAGO`) with simulation fallback kept in UI/admin flows.
-- Checkout now allows selecting `Transferencia` or `Pasarela (simulada)` so payment flows can be tested before production gateway onboarding.
-- Account area now includes profile self-service (`nombre`) and password change actions.
-- Admin now includes user management (`/admin/users`) for customers/workers, including role, status, password reset, deletion, and credit assignment.
-- Admin products now include category filtering alongside condition/brand filters.
-- Admin users now load with server-side pagination per tab plus status filter (`todos`, `habilitados`, `bloqueados`).
-- Cart dark mode readability was improved in summary/actions text.
-- Navbar logo scroll behavior was stabilized to prevent compact/full logo flicker loops on slight scroll.
-- Storefront now includes a floating WhatsApp CTA button (configurable phone/message per locale via env).
-- Admin now includes `Configuracion del sistema` (`/admin/settings`) to manage storefront channels and runtime notification provider selection (`LOG`, WhatsApp simulated/Twilio, SendGrid, SMTP).
-- Admin `Configuracion del sistema` now includes checkout payment-method toggles (`Transferencia` / `Pasarela`) and gateway provider selection (currently `Mercado Pago`) with guardrails that always keep at least one option enabled.
-- Admin `Configuracion del sistema` now includes editable bank-transfer details (titular/correo/cuenta/tipo), shown in checkout when `Transferencia` is selected.
-- Bank-transfer payments now persist a transfer-data snapshot per payment record, so account/admin history remains auditable even if transfer settings change later.
-- Admin payment settings now include Mercado Pago connection fields (API base URL, back URLs, notification URL, access token, webhook token) with encrypted secret storage.
-- Bank transfer account type is now selected from common Chilean account types for cleaner checkout/admin consistency.
-- Storefront WhatsApp button + footer social links now consume backend system settings (`/api/system-settings/public`).
-- Storefront contact page (`/{locale}/contact`) now consumes public admin settings for WhatsApp, support email, and social links.
-- Customer profile now supports WhatsApp phone capture (`/api/auth/me/profile`) and notifications prioritize that phone as destination contact.
-- Backend notifications now support runtime provider switching from admin settings without restart, with env variables kept as fallback.
-- Twilio auth token, SendGrid API key, and SMTP password are now encrypted at rest in `system_settings`.
-- Footer informational section now links to dedicated storefront pages: `Sobre Pilar Estilo`, `Cómo vendemos`, `Envíos y devoluciones`, and `Contacto`.
-- Added new localized storefront routes: `/{locale}/about`, `/{locale}/how-we-sell`, `/{locale}/shipping-returns`, and `/{locale}/contact`.
+The storefront (`/es`, `/en`) and full admin panel (`/admin`) are live; the business itself has
+been selling daily through social media and the admin panel is used for real inventory, users and
+stock. The online checkout has not launched to customers yet, so order/payment data in a fresh
+environment is disposable test data until launch day.
+
+Backend domain modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`,
+`review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`,
+`cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`,
+`customeraddress`, `billing`, `returns` — plus `shared` (auth, RBAC, Kafka, common domain).
+Database is at Flyway migration V86; see [Architecture](docs/architecture.md) for the module
+layout and conventions, and `git log` for recent history (`CHANGELOG.md` predates most of it).
 
 ## Documentation
 

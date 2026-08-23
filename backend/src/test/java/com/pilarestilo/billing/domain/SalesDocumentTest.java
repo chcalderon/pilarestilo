@@ -43,18 +43,49 @@ class SalesDocumentTest {
     void a_factura_does_need_the_receiver_rut() {
         DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
                 ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
-                null, "Ana Perez", "ana@correo.cl", null, ACTOR, null));
+                null, "Comercial Ana Perez Ltda.", "Venta de ropa", "Ana Perez", "ana@correo.cl", null, ACTOR, null));
 
         assertTrue(ex.getMessage().contains("factura"));
+    }
+
+    @Test
+    void a_factura_does_need_the_receiver_business_name() {
+        DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                "76.123.456-7", null, "Venta de ropa", "Ana Perez", "ana@correo.cl", null, ACTOR, null));
+
+        assertTrue(ex.getMessage().contains("razon social"));
+    }
+
+    @Test
+    void a_factura_does_need_the_receiver_business_activity() {
+        DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                "76.123.456-7", "Comercial Ana Perez Ltda.", null, "Ana Perez", "ana@correo.cl", null, ACTOR, null));
+
+        assertTrue(ex.getMessage().contains("giro"));
+    }
+
+    @Test
+    void a_factura_with_full_receiver_data_is_issued() {
+        SalesDocument document = SalesDocument.issue(
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                "76.123.456-7", "Comercial Ana Perez Ltda.", "Venta de ropa", "Ana Perez", "ana@correo.cl", null, ACTOR, null);
+
+        assertEquals("76.123.456-7", document.getReceiverRut());
+        assertEquals("Comercial Ana Perez Ltda.", document.getReceiverBusinessName());
+        assertEquals("Venta de ropa", document.getReceiverBusinessActivity());
     }
 
     @Test
     void blank_fields_are_stored_as_absent_rather_than_as_empty_strings() {
         SalesDocument document = SalesDocument.issue(
                 ORDER_ID, SalesDocumentType.BOLETA, "1042", amounts(),
-                "   ", "  ", "  ", "  ", ACTOR, null);
+                "   ", "  ", "  ", "  ", "  ", "  ", ACTOR, null);
 
         assertNull(document.getReceiverRut());
+        assertNull(document.getReceiverBusinessName());
+        assertNull(document.getReceiverBusinessActivity());
         assertNull(document.getReceiverName());
         assertNull(document.getReceiverEmail());
         assertNull(document.getFileUrl());
@@ -64,10 +95,10 @@ class SalesDocumentTest {
     void requires_a_folio_and_an_issuer() {
         assertThrows(DomainException.class, () -> SalesDocument.issue(
                 ORDER_ID, SalesDocumentType.BOLETA, "  ", amounts(),
-                null, null, null, null, ACTOR, null));
+                null, null, null, null, null, null, ACTOR, null));
         assertThrows(DomainException.class, () -> SalesDocument.issue(
                 ORDER_ID, SalesDocumentType.BOLETA, "1042", amounts(),
-                null, null, null, null, null, null));
+                null, null, null, null, null, null, null, null));
     }
 
     @Test
@@ -101,7 +132,7 @@ class SalesDocumentTest {
 
     private SalesDocument boleta(String folio) {
         return SalesDocument.issue(ORDER_ID, SalesDocumentType.BOLETA, folio, amounts(),
-                null, "Ana Perez", "ana@correo.cl", null, ACTOR, null);
+                null, null, null, "Ana Perez", "ana@correo.cl", null, ACTOR, null);
     }
 
     private TaxBreakdown amounts() {
