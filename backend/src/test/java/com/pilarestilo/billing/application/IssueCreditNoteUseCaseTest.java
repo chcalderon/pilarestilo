@@ -101,9 +101,10 @@ class IssueCreditNoteUseCaseTest {
     @Test
     void a_sale_with_no_live_document_has_nothing_to_credit() {
         when(salesDocumentRepository.findLiveByOrderId(orderId)).thenReturn(Optional.empty());
+        BigDecimal amount = new BigDecimal("45990");
 
-        DomainException error = assertThrows(DomainException.class, () -> useCase.execute(
-                orderId, "90", new BigDecimal("45990"), null, null, actor));
+        DomainException error = assertThrows(DomainException.class,
+                () -> useCase.execute(orderId, "90", amount, null, null, actor));
 
         assertTrue(error.getMessage().contains("nothing to undo"));
     }
@@ -116,9 +117,10 @@ class IssueCreditNoteUseCaseTest {
                 TaxBreakdown.fromGross(Money.of(new BigDecimal("40000")), new BigDecimal("19.00")),
                 SalesDocument.REFERENCE_CORRECTS_AMOUNT, boleta, null, actor);
         when(salesDocumentRepository.findLiveCreditNotesFor(boleta.getId())).thenReturn(List.of(first));
+        BigDecimal amount = new BigDecimal("10000");
 
-        DomainException error = assertThrows(DomainException.class, () -> useCase.execute(
-                orderId, "91", new BigDecimal("10000"), null, null, actor));
+        DomainException error = assertThrows(DomainException.class,
+                () -> useCase.execute(orderId, "91", amount, null, null, actor));
 
         assertTrue(error.getMessage().contains("left to credit"));
         verify(salesDocumentRepository, never()).save(any());
@@ -128,9 +130,9 @@ class IssueCreditNoteUseCaseTest {
     void a_folio_is_never_registered_twice() {
         when(salesDocumentRepository.existsByTypeAndFolio(SalesDocumentType.NOTA_CREDITO, "87"))
                 .thenReturn(true);
+        BigDecimal amount = new BigDecimal("45990");
 
-        assertThrows(DomainException.class, () -> useCase.execute(
-                orderId, "87", new BigDecimal("45990"), null, null, actor));
+        assertThrows(DomainException.class, () -> useCase.execute(orderId, "87", amount, null, null, actor));
     }
 
     @Test
@@ -149,9 +151,11 @@ class IssueCreditNoteUseCaseTest {
     void a_return_from_another_sale_is_refused() {
         ReturnRequest other = ReturnRequest.open(UUID.randomUUID(), ReturnKind.DEVOLUCION, "otra", null);
         when(returnRequestRepository.findById(other.getId())).thenReturn(Optional.of(other));
+        BigDecimal amount = new BigDecimal("45990");
+        UUID otherReturnId = other.getId();
 
-        DomainException error = assertThrows(DomainException.class, () -> useCase.execute(
-                orderId, "93", new BigDecimal("45990"), null, other.getId(), actor));
+        DomainException error = assertThrows(DomainException.class,
+                () -> useCase.execute(orderId, "93", amount, null, otherReturnId, actor));
 
         assertTrue(error.getMessage().contains("different sale"));
     }

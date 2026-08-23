@@ -15,6 +15,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,12 +69,12 @@ class RefreshProductRatingUseCaseTest {
         useCase.execute(productId);
 
         // Twice the event, still a count of one: nothing accumulates.
-        verify(productRepository, org.mockito.Mockito.times(2))
+        verify(productRepository, times(2))
                 .updateRatingSummary(eq(productId), any(BigDecimal.class), eq(1));
-        verify(productRepository, org.mockito.Mockito.never())
+        verify(productRepository, never())
                 .updateRatingSummary(eq(productId), any(BigDecimal.class), eq(2));
-        verify(reviewRepository, org.mockito.Mockito.times(2)).computeSummary(productId);
-        verify(productRepository, org.mockito.Mockito.times(2))
+        verify(reviewRepository, times(2)).computeSummary(productId);
+        verify(productRepository, times(2))
                 .updateRatingSummary(any(UUID.class), any(BigDecimal.class), anyInt());
     }
 }

@@ -56,6 +56,9 @@ public class ProcessPaymentGatewayWebhookUseCase {
         }
     }
 
+    // Calls execute() via 'this', bypassing its own @Transactional proxy -- harmless, since this
+    // method's own @Transactional is already active by the time it does.
+    @SuppressWarnings("java:S6809")
     @Transactional
     public void executeByOrderId(UUID orderId, String gatewayStatus) {
         var payment = paymentRepository.findByOrderId(orderId)

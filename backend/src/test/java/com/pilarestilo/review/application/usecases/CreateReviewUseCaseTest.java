@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,7 +67,7 @@ class CreateReviewUseCaseTest {
         ReviewDto replacement = useCase.execute(productId, userId, 3, "Se destiñe", "A la segunda lavada");
 
         ArgumentCaptor<Review> written = ArgumentCaptor.forClass(Review.class);
-        verify(reviewRepository, org.mockito.Mockito.times(2)).save(written.capture());
+        verify(reviewRepository, times(2)).save(written.capture());
 
         List<Review> rows = written.getAllValues();
         assertThat(rows.getFirst().getSupersededAt())
@@ -86,7 +87,7 @@ class CreateReviewUseCaseTest {
 
         useCase.execute(productId, userId, 4, null, null);
 
-        verify(reviewRepository, org.mockito.Mockito.times(1)).save(any(Review.class));
+        verify(reviewRepository, times(1)).save(any(Review.class));
         verify(reviewRepository, never()).findById(any());
     }
 }

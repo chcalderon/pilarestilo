@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +28,9 @@ public class IssueWelcomeDiscountUseCase {
 
     /** Fixed on purpose: the owner asked for 30 days flat, not a configurable value. */
     static final int VALIDITY_DAYS = 30;
+
+    /** The coupon's calendar days are the shop's own, not whatever zone the server happens to run in. */
+    static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private static final String CODE_PREFIX = "BIENVENIDA-";
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -53,13 +57,14 @@ public class IssueWelcomeDiscountUseCase {
             return Optional.empty();
         }
 
-        LocalDate validUntil = LocalDate.now().plusDays(VALIDITY_DAYS);
+        LocalDate today = LocalDate.now(STORE_ZONE);
+        LocalDate validUntil = today.plusDays(VALIDITY_DAYS);
         Discount discount = Discount.create(
                 nextAvailableCode(),
                 DiscountType.valueOf(settings.type()),
                 settings.value(),
                 Money.of(settings.minOrderAmount()),
-                LocalDate.now(),
+                today,
                 validUntil,
                 1);
         discount.setAssignedUserId(userId);

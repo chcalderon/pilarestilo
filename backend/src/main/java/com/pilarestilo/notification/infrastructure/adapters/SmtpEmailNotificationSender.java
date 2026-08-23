@@ -208,7 +208,7 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             log.warn("[EMAIL:SMTP] disabled: missing/invalid SMTP port (EMAIL_SMTP_PORT or smtpPort in admin settings).");
             return null;
         }
-        if (!looksLikeEmail(fromEmail)) {
+        if (!EmailFormat.looksLikeEmail(fromEmail)) {
             log.warn("[EMAIL:SMTP] disabled: invalid sender email (EMAIL_SMTP_FROM_EMAIL or smtpFromEmail in admin settings).");
             return null;
         }
@@ -216,7 +216,7 @@ public class SmtpEmailNotificationSender implements NotificationSender {
             log.warn("[EMAIL:SMTP] disabled: SMTP auth enabled but username/password are not configured.");
             return null;
         }
-        if (fallbackTo != null && !looksLikeEmail(fallbackTo)) {
+        if (fallbackTo != null && !EmailFormat.looksLikeEmail(fallbackTo)) {
             fallbackTo = null;
         }
 
@@ -235,13 +235,13 @@ public class SmtpEmailNotificationSender implements NotificationSender {
     }
 
     private String resolveToEmail(NotificationRecipient recipient, String fallbackTo) {
-        if (looksLikeEmail(recipient.email())) {
+        if (EmailFormat.looksLikeEmail(recipient.email())) {
             return recipient.email().trim();
         }
-        if (looksLikeEmail(recipient.phone())) {
+        if (EmailFormat.looksLikeEmail(recipient.phone())) {
             return recipient.phone().trim();
         }
-        if (looksLikeEmail(fallbackTo)) {
+        if (EmailFormat.looksLikeEmail(fallbackTo)) {
             return fallbackTo.trim();
         }
         return null;
@@ -281,12 +281,6 @@ public class SmtpEmailNotificationSender implements NotificationSender {
         return Boolean.parseBoolean(rawValue.trim());
     }
 
-    private boolean looksLikeEmail(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        return value.trim().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-    }
 
     private String firstNonBlank(String first, String second) {
         if (first != null && !first.isBlank()) {

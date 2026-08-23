@@ -85,15 +85,7 @@ public class SalesDocument {
         }
         // A factura names its receiver; a boleta does not have to.
         if (type == SalesDocumentType.FACTURA) {
-            if (receiverRut == null || receiverRut.isBlank()) {
-                throw new DomainException("A factura requires the receiver RUT");
-            }
-            if (receiverBusinessName == null || receiverBusinessName.isBlank()) {
-                throw new DomainException("A factura requires the receiver's razon social");
-            }
-            if (receiverBusinessActivity == null || receiverBusinessActivity.isBlank()) {
-                throw new DomainException("A factura requires the receiver's giro");
-            }
+            validateFacturaReceiver(receiverRut, receiverBusinessName, receiverBusinessActivity);
         }
 
         SalesDocument document = new SalesDocument();
@@ -117,6 +109,19 @@ public class SalesDocument {
         document.issuedBy = issuedBy;
         document.createdAt = document.issuedAt;
         return document;
+    }
+
+    private static void validateFacturaReceiver(
+            String receiverRut, String receiverBusinessName, String receiverBusinessActivity) {
+        if (receiverRut == null || receiverRut.isBlank()) {
+            throw new DomainException("A factura requires the receiver RUT");
+        }
+        if (receiverBusinessName == null || receiverBusinessName.isBlank()) {
+            throw new DomainException("A factura requires the receiver's razon social");
+        }
+        if (receiverBusinessActivity == null || receiverBusinessActivity.isBlank()) {
+            throw new DomainException("A factura requires the receiver's giro");
+        }
     }
 
     /**

@@ -41,8 +41,10 @@ class SalesDocumentTest {
 
     @Test
     void a_factura_does_need_the_receiver_rut() {
+        TaxBreakdown amounts = amounts();
+
         DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
-                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts,
                 null, "Comercial Ana Perez Ltda.", "Venta de ropa", "Ana Perez", "ana@correo.cl", null, ACTOR, null));
 
         assertTrue(ex.getMessage().contains("factura"));
@@ -50,8 +52,10 @@ class SalesDocumentTest {
 
     @Test
     void a_factura_does_need_the_receiver_business_name() {
+        TaxBreakdown amounts = amounts();
+
         DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
-                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts,
                 "76.123.456-7", null, "Venta de ropa", "Ana Perez", "ana@correo.cl", null, ACTOR, null));
 
         assertTrue(ex.getMessage().contains("razon social"));
@@ -59,8 +63,10 @@ class SalesDocumentTest {
 
     @Test
     void a_factura_does_need_the_receiver_business_activity() {
+        TaxBreakdown amounts = amounts();
+
         DomainException ex = assertThrows(DomainException.class, () -> SalesDocument.issue(
-                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts(),
+                ORDER_ID, SalesDocumentType.FACTURA, "500", amounts,
                 "76.123.456-7", "Comercial Ana Perez Ltda.", null, "Ana Perez", "ana@correo.cl", null, ACTOR, null));
 
         assertTrue(ex.getMessage().contains("giro"));

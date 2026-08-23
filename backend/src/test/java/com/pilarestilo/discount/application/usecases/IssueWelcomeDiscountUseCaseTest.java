@@ -114,7 +114,7 @@ class IssueWelcomeDiscountUseCaseTest {
         WelcomeDiscountDto dto = result.get();
         assertTrue(dto.code().startsWith("BIENVENIDA-"));
         assertEquals(0, BigDecimal.TEN.compareTo(dto.value()));
-        assertEquals(LocalDate.now().plusDays(30), dto.validUntil());
+        assertEquals(LocalDate.now(IssueWelcomeDiscountUseCase.STORE_ZONE).plusDays(30), dto.validUntil());
 
         ArgumentCaptor<Discount> captor = ArgumentCaptor.forClass(Discount.class);
         verify(discountRepository).save(captor.capture());

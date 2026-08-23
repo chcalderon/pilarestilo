@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -39,13 +38,12 @@ class SystemSettingsNotificationSenderRoutingTest {
 
     @Mock SystemSettingsRepository systemSettingsRepository;
     @Mock SystemSettings settings;
-
-    private final LogNotificationSender log = mock(LogNotificationSender.class);
-    private final SimulatedWhatsAppNotificationSender simulated = mock(SimulatedWhatsAppNotificationSender.class);
-    private final TwilioWhatsAppNotificationSender twilio = mock(TwilioWhatsAppNotificationSender.class);
-    private final SendGridEmailNotificationSender sendgrid = mock(SendGridEmailNotificationSender.class);
-    private final SmtpEmailNotificationSender smtp = mock(SmtpEmailNotificationSender.class);
-    private final N8nWebhookNotificationSender n8n = mock(N8nWebhookNotificationSender.class);
+    @Mock LogNotificationSender log;
+    @Mock SimulatedWhatsAppNotificationSender simulated;
+    @Mock TwilioWhatsAppNotificationSender twilio;
+    @Mock SendGridEmailNotificationSender sendgrid;
+    @Mock SmtpEmailNotificationSender smtp;
+    @Mock N8nWebhookNotificationSender n8n;
 
     private SystemSettingsNotificationSender routerFor(NotificationProvider... providers) {
         lenient().when(settings.getNotificationProviders())

@@ -580,6 +580,10 @@ public class ProductAiService {
         return Character.toUpperCase(candidate.charAt(0)) + candidate.substring(1);
     }
 
+    // The trim-leading/trailing-slashes regex below is anchored and single-purpose; the possessive
+    // quantifier Sonar suggests for it doesn't actually clear the finding (verified) and trips a
+    // second one about grouping. Input is an admin-provided batch label, not adversarial-length text.
+    @SuppressWarnings({"java:S8786", "java:S5850"})
     private String sanitizeFolderSegment(String segment) {
         String normalized = segment.toLowerCase(Locale.ROOT).replace("\\", "/");
         normalized = normalized.replaceAll("[^a-z0-9/_-]", "-");

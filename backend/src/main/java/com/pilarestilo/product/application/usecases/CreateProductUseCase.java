@@ -31,6 +31,9 @@ public class CreateProductUseCase {
         this.eventPublisher = eventPublisher;
     }
 
+    // Delegates via 'this' to the fuller overload below, bypassing its own @Transactional proxy --
+    // harmless, since this overload's own @Transactional is already active by the time it does.
+    @SuppressWarnings("java:S6809")
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,
@@ -43,6 +46,7 @@ public class CreateProductUseCase {
         );
     }
 
+    @SuppressWarnings("java:S6809")
     @Transactional
     public ProductDto execute(String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,

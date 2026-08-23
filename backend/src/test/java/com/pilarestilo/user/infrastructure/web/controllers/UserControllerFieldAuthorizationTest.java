@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,12 +40,12 @@ class UserControllerFieldAuthorizationTest {
                 List.of("users.read", "users.update")
         );
 
-        AccessDeniedException ex = assertThrows(AccessDeniedException.class, () -> controller.update(
-                UUID.randomUUID(),
-                new UpdateUserRequest("Nuevo nombre", "SELLER", true),
-                actor,
-                new UsernamePasswordAuthenticationToken(actor, null, actor.toAuthorities())
-        ));
+        UUID targetUserId = UUID.randomUUID();
+        UpdateUserRequest request = new UpdateUserRequest("Nuevo nombre", "SELLER", true);
+        var authentication = new UsernamePasswordAuthenticationToken(actor, null, actor.toAuthorities());
+
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> controller.update(targetUserId, request, actor, authentication));
 
         assertEquals("Role changes require admin legacy access", ex.getMessage());
     }
@@ -72,7 +71,7 @@ class UserControllerFieldAuthorizationTest {
                 true,
                 Instant.now()
         );
-        when(updateUserUseCase.execute(eq(targetUserId), eq("Nuevo nombre"), eq(null), eq(true))).thenReturn(expected);
+        when(updateUserUseCase.execute(targetUserId, "Nuevo nombre", null, true)).thenReturn(expected);
 
         UserDto result = controller.update(
                 targetUserId,
@@ -98,12 +97,11 @@ class UserControllerFieldAuthorizationTest {
                 List.of("users.read", "users.update", "users.assign_role")
         );
 
-        DomainException ex = assertThrows(DomainException.class, () -> controller.update(
-                actorId,
-                new UpdateUserRequest("Admin", null, false),
-                actor,
-                new UsernamePasswordAuthenticationToken(actor, null, actor.toAuthorities())
-        ));
+        UpdateUserRequest request = new UpdateUserRequest("Admin", null, false);
+        var authentication = new UsernamePasswordAuthenticationToken(actor, null, actor.toAuthorities());
+
+        DomainException ex = assertThrows(DomainException.class,
+                () -> controller.update(actorId, request, actor, authentication));
 
         assertEquals("You cannot block your own account", ex.getMessage());
     }

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,11 +54,11 @@ class ListCashRegistersUseCaseTest {
         );
 
         when(cashRegisterRepository.findHistory(
-                eq(CashRegisterStatus.CLOSED),
-                eq(sellerId),
-                eq(expectedFrom),
-                eq(expectedTo),
-                eq(pageable)
+                CashRegisterStatus.CLOSED,
+                sellerId,
+                expectedFrom,
+                expectedTo,
+                pageable
         )).thenReturn(new PageImpl<>(List.of(register), pageable, 1));
 
         var result = useCase.execute(pageable, CashRegisterStatus.CLOSED, sellerId, from, to);
@@ -67,11 +66,11 @@ class ListCashRegistersUseCaseTest {
         assertEquals(1, result.getTotalElements());
         assertEquals(register.getId(), result.getContent().get(0).id());
         verify(cashRegisterRepository).findHistory(
-                eq(CashRegisterStatus.CLOSED),
-                eq(sellerId),
-                eq(expectedFrom),
-                eq(expectedTo),
-                eq(pageable)
+                CashRegisterStatus.CLOSED,
+                sellerId,
+                expectedFrom,
+                expectedTo,
+                pageable
         );
     }
 }

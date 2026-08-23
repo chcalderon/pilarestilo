@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +45,7 @@ class ListInventoryMovementsUseCaseTest {
                 null, null, null, null, now
         );
 
-        when(inventoryMovementRepository.findByProductId(eq(productId), eq(pageable)))
+        when(inventoryMovementRepository.findByProductId(productId, pageable))
                 .thenReturn(new PageImpl<>(List.of(movement), pageable, 1));
 
         Page<InventoryMovementDto> result = useCase.execute(productId, pageable);
@@ -61,7 +60,7 @@ class ListInventoryMovementsUseCaseTest {
         assertEquals(3, dto.quantity());
         assertEquals(now, dto.createdAt());
 
-        verify(inventoryMovementRepository).findByProductId(eq(productId), eq(pageable));
+        verify(inventoryMovementRepository).findByProductId(productId, pageable);
     }
 
     @Test
@@ -69,12 +68,12 @@ class ListInventoryMovementsUseCaseTest {
         UUID productId = UUID.randomUUID();
         Pageable pageable = PageRequest.of(1, 5);
 
-        when(inventoryMovementRepository.findByProductId(eq(productId), eq(pageable)))
+        when(inventoryMovementRepository.findByProductId(productId, pageable))
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         Page<InventoryMovementDto> result = useCase.execute(productId, pageable);
 
         assertEquals(0, result.getTotalElements());
-        verify(inventoryMovementRepository).findByProductId(eq(productId), eq(pageable));
+        verify(inventoryMovementRepository).findByProductId(productId, pageable);
     }
 }

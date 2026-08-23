@@ -29,6 +29,9 @@ public class ReissueSalesDocumentUseCase {
         this.issueSalesDocumentUseCase = issueSalesDocumentUseCase;
     }
 
+    // One parameter per column a boleta/factura actually carries; a DTO wrapper here would just
+    // move the same fields one level out, not reduce them.
+    @SuppressWarnings("java:S107")
     @Transactional
     public SalesDocumentDto execute(UUID documentId,
                                     String voidReason,

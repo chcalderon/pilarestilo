@@ -138,6 +138,11 @@ public class MediaStorageService {
         return idx <= 0 ? clean : clean.substring(0, idx);
     }
 
+    // The trim-leading/trailing-dashes regex below is anchored and single-purpose; the possessive
+    // quantifier Sonar suggests for it doesn't actually clear the finding (verified) and trips a
+    // second one about grouping. Input is a filename already capped at upload size, not
+    // adversarial-length text.
+    @SuppressWarnings({"java:S8786", "java:S5850"})
     private String sanitizeBaseName(String baseName) {
         String normalized = Normalizer.normalize(baseName, Normalizer.Form.NFD)
             .replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT);
