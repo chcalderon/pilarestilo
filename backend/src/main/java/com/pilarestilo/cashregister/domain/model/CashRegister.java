@@ -6,12 +6,17 @@ import com.pilarestilo.cashregister.domain.enums.CashRegisterStatus;
 import com.pilarestilo.shared.domain.DomainException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 public class CashRegister {
+
+    /** Open/close timestamps are the shop's own, not whatever zone the server happens to run in. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
+
     private UUID id;
     private UUID sellerId;
     private LocalDateTime openedAt;
@@ -30,7 +35,7 @@ public class CashRegister {
         CashRegister cr = new CashRegister();
         cr.id = UUID.randomUUID();
         cr.sellerId = sellerId;
-        cr.openedAt = LocalDateTime.now();
+        cr.openedAt = LocalDateTime.now(STORE_ZONE);
         cr.openingBalance = openingBalance;
         cr.status = CashRegisterStatus.OPEN;
         return cr;
@@ -74,7 +79,7 @@ public class CashRegister {
         this.closingBalance = declaredAmount;
         this.expectedBalance = expected;
         this.difference = declaredAmount.subtract(expected);
-        this.closedAt = LocalDateTime.now();
+        this.closedAt = LocalDateTime.now(STORE_ZONE);
         this.notes = notes;
         this.status = CashRegisterStatus.CLOSED;
     }

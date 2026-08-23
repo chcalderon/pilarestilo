@@ -4,9 +4,14 @@ import com.pilarestilo.cashregister.domain.enums.CashMovementCategory;
 import com.pilarestilo.cashregister.domain.enums.CashMovementType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 public class CashMovement {
+
+    /** Cash movement timestamps are the shop's own, not whatever zone the server happens to run in. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
+
     private UUID id;
     private UUID cashRegisterId;
     private CashMovementType type;
@@ -31,7 +36,7 @@ public class CashMovement {
         m.amount = amount;
         m.description = description;
         m.orderId = orderId;
-        m.recordedAt = LocalDateTime.now();
+        m.recordedAt = LocalDateTime.now(STORE_ZONE);
         m.recordedBy = recordedBy;
         return m;
     }

@@ -15,11 +15,15 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
 public class ListDispatchHistoryUseCase {
+
+    /** The default "this month" range is the shop's own calendar, not whatever zone the server runs in. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private final DispatchRepository dispatchRepository;
     private final GetOrderUseCase getOrderUseCase;
@@ -37,7 +41,7 @@ public class ListDispatchHistoryUseCase {
     }
 
     public Page<DispatchHistoryRowDto> execute(Pageable pageable, LocalDate from, LocalDate to) {
-        LocalDate resolvedFrom = from != null ? from : YearMonth.now().atDay(1);
+        LocalDate resolvedFrom = from != null ? from : YearMonth.now(STORE_ZONE).atDay(1);
         LocalDate resolvedToInclusive = to != null ? to : resolvedFrom.plusMonths(1).minusDays(1);
 
         return dispatchRepository.findHistory(resolvedFrom, resolvedToInclusive, pageable)

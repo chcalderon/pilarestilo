@@ -12,10 +12,14 @@ import io.jsonwebtoken.Claims;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Service
 public class RefreshTokenUseCase {
+
+    /** Worker vigency is checked against the shop's own calendar day, not the server's zone. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
@@ -46,7 +50,7 @@ public class RefreshTokenUseCase {
 
         UserRole role = user.getRole();
         if (role != UserRole.ADMIN && role != UserRole.CUSTOMER) {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(STORE_ZONE);
             if (user.getWorkerVigencyEnd() != null && today.isAfter(user.getWorkerVigencyEnd())) {
                 throw new DomainException("Worker vigency has expired");
             }

@@ -4,9 +4,14 @@ import com.pilarestilo.dispatch.domain.enums.DispatchStatus;
 import com.pilarestilo.shared.domain.DomainException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 public class Dispatch {
+
+    /** Dispatch timestamps are the shop's own, not whatever zone the server happens to run in. */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
+
     private UUID id;
     private UUID orderId;
     private UUID dispatcherId;
@@ -46,7 +51,7 @@ public class Dispatch {
         d.orderShippingCourierId = orderShippingCourierId;
         d.orderShippingCourierName = orderShippingCourierName;
         d.orderShippingAddressReference = orderShippingAddressReference;
-        d.createdAt = LocalDateTime.now();
+        d.createdAt = LocalDateTime.now(STORE_ZONE);
         return d;
     }
 
@@ -112,7 +117,7 @@ public class Dispatch {
         this.trackingCode = trackingCode;
         this.scheduledDate = scheduledDate;
         this.notes = notes;
-        this.dispatchedAt = LocalDateTime.now();
+        this.dispatchedAt = LocalDateTime.now(STORE_ZONE);
         if (isCarrierOverride(overrideConfiguredCarrier, overrideSelectedCarrier)) {
             this.carrierOverrideConfigured = overrideConfiguredCarrier;
             this.carrierOverrideSelected = overrideSelectedCarrier;
@@ -131,7 +136,7 @@ public class Dispatch {
         if (status != DispatchStatus.DISPATCHED) {
             throw new DomainException("Only DISPATCHED dispatches can be marked delivered");
         }
-        this.deliveredAt = LocalDateTime.now();
+        this.deliveredAt = LocalDateTime.now(STORE_ZONE);
         this.status = DispatchStatus.DELIVERED;
     }
 
