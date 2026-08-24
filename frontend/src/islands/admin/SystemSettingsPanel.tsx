@@ -44,7 +44,7 @@ type FeedbackState = {
   text: string;
 };
 
-type FormState = {
+export type FormState = {
   whatsappNumber: string;
   instagramUrl: string;
   facebookUrl: string;
@@ -330,7 +330,7 @@ function parseSettingsTab(rawValue: string | null): SettingsSubmenuTab {
   return 'store';
 }
 
-function buildFormFromSettings(settings: SystemSettingsDto): FormState {
+export function buildFormFromSettings(settings: SystemSettingsDto): FormState {
   return {
     whatsappNumber: settings.whatsappNumber ?? '',
     instagramUrl: settings.instagramUrl ?? '',
@@ -422,6 +422,140 @@ function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     welcomeDiscountMinOrderAmount: settings.welcomeDiscountMinOrderAmount ?? 0,
     welcomeDiscountRequiresMarketing: settings.welcomeDiscountRequiresMarketing ?? true,
   };
+}
+
+export type SettingsValidationFlags = {
+  hasProviderRequiringSmtp: boolean;
+  hasProviderRequiringSendgrid: boolean;
+  hasProviderRequiringTwilio: boolean;
+  hasProviderN8n: boolean;
+  hasS3CompatibleStorage: boolean;
+  hasMercadoPagoSelected: boolean;
+  isBancoEstadoSelected: boolean;
+};
+
+export type ParsedSettingsNumbers = {
+  smtpPort: number | undefined;
+  aiInferBasePrice: number | undefined;
+  aiInferListMultiplier: number | undefined;
+};
+
+function validateRequiredFields(form: FormState): string | null {
+  if (!form.whatsappNumber.trim()) return 'El numero de WhatsApp de la tienda es obligatorio.';
+  if (form.notificationProviders.length === 0) return 'Deja al menos un canal de notificaciones activo.';
+  if (!form.mediaStorageProvider) return 'Debes seleccionar un proveedor de almacenamiento de imagenes.';
+  if (!form.paymentMethodBankTransferEnabled && !form.paymentMethodGatewayEnabled) {
+    return 'Debes mantener al menos un medio de pago habilitado.';
+  }
+  return null;
+}
+
+function validateBankTransferFields(form: FormState, isBancoEstadoSelected: boolean): string | null {
+  if (!form.paymentMethodBankTransferEnabled) return null;
+  if (!form.bankTransferAccountHolder.trim()) return 'Para transferencia debes indicar nombre del titular.';
+  if (!form.bankTransferContactEmail.trim()) return 'Para transferencia debes indicar correo de contacto.';
+  if (!form.bankTransferAccountNumber.trim()) return 'Para transferencia debes indicar numero de cuenta.';
+  if (!form.bankTransferBankName.trim()) return 'Para transferencia debes indicar banco.';
+  if (!form.bankTransferAccountType.trim()) return 'Para transferencia debes indicar tipo de cuenta.';
+  if (!isBancoEstadoSelected && form.bankTransferAccountType.trim() === 'Cuenta RUT') {
+    return 'Cuenta RUT solo esta disponible para BancoEstado.';
+  }
+  return null;
+}
+
+function validateGatewayFields(form: FormState, hasMercadoPagoSelected: boolean): string | null {
+  if (!form.paymentMethodGatewayEnabled) return null;
+  if (form.paymentGatewayProviders.length === 0) {
+    return 'Si habilitas pasarela de pago, debes seleccionar al menos un proveedor.';
+  }
+  if (hasMercadoPagoSelected && !form.paymentGatewayMpApiBaseUrl.trim()) {
+    return 'Para Mercado Pago debes indicar API base URL.';
+  }
+  return null;
+}
+
+function validateTwilioFields(form: FormState, required: boolean): string | null {
+  if (!required) return null;
+  if (!form.whatsappTwilioAccountSid.trim()) return 'Para Twilio debes indicar Account SID.';
+  if (!form.whatsappTwilioFrom.trim()) return 'Para Twilio debes indicar el numero de origen (From).';
+  return null;
+}
+
+function validateNumericRanges(numbers: ParsedSettingsNumbers): string | null {
+  const { smtpPort, aiInferBasePrice, aiInferListMultiplier } = numbers;
+  if (smtpPort !== undefined && (!Number.isFinite(smtpPort) || smtpPort <= 0 || smtpPort > 65535)) {
+    return 'El puerto SMTP debe estar entre 1 y 65535.';
+  }
+  if (aiInferBasePrice !== undefined && (!Number.isFinite(aiInferBasePrice) || aiInferBasePrice < 1000)) {
+    return 'El precio base sugerido IA debe ser mayor o igual a 1000.';
+  }
+  if (
+    aiInferListMultiplier !== undefined &&
+    (!Number.isFinite(aiInferListMultiplier) || aiInferListMultiplier < 1 || aiInferListMultiplier > 5)
+  ) {
+    return 'El multiplicador de precio lista IA debe estar entre 1.00 y 5.00.';
+  }
+  return null;
+}
+
+function validateSmtpFields(form: FormState, required: boolean, smtpPort: number | undefined): string | null {
+  if (!required) return null;
+  if (!form.smtpHost.trim()) return 'Para SMTP debes indicar host.';
+  if (smtpPort === undefined) return 'Para SMTP debes indicar puerto.';
+  if (!form.smtpFromEmail.trim()) return 'Para SMTP debes indicar correo remitente.';
+  return null;
+}
+
+function validateN8nFields(form: FormState, required: boolean): string | null {
+  if (!required) return null;
+  const webhookUrl = form.n8nWebhookUrl.trim();
+  if (webhookUrl && !/^https?:\/\//i.test(webhookUrl)) {
+    return 'La URL de webhook n8n debe iniciar con http:// o https://.';
+  }
+  if (!form.n8nTokenHeaderName.trim()) return 'Para n8n debes indicar nombre de header para el token.';
+  return null;
+}
+
+/** Every guard `handleSave` used to run inline before building the update payload, in order. */
+export function validateSettingsForm(
+  form: FormState,
+  flags: SettingsValidationFlags,
+  numbers: ParsedSettingsNumbers,
+): string | null {
+  const requiredFieldsError = validateRequiredFields(form);
+  if (requiredFieldsError) return requiredFieldsError;
+
+  const bankTransferError = validateBankTransferFields(form, flags.isBancoEstadoSelected);
+  if (bankTransferError) return bankTransferError;
+
+  const gatewayError = validateGatewayFields(form, flags.hasMercadoPagoSelected);
+  if (gatewayError) return gatewayError;
+
+  if (flags.hasS3CompatibleStorage && !form.mediaS3Bucket.trim()) {
+    return 'Para almacenamiento S3-compatible debes indicar bucket.';
+  }
+
+  const twilioError = validateTwilioFields(form, flags.hasProviderRequiringTwilio);
+  if (twilioError) return twilioError;
+
+  if (flags.hasProviderRequiringSendgrid && !form.sendgridFromEmail.trim()) {
+    return 'Para SendGrid debes indicar correo remitente.';
+  }
+
+  const numericError = validateNumericRanges(numbers);
+  if (numericError) return numericError;
+
+  if (!form.productAiInferDefaultBrand.trim()) {
+    return 'La marca por defecto para inferencia IA no puede quedar vacia.';
+  }
+
+  const smtpError = validateSmtpFields(form, flags.hasProviderRequiringSmtp, numbers.smtpPort);
+  if (smtpError) return smtpError;
+
+  const n8nError = validateN8nFields(form, flags.hasProviderN8n);
+  if (n8nError) return n8nError;
+
+  return null;
 }
 
 function formatTimestamp(value?: string) {
@@ -870,134 +1004,24 @@ export default function SystemSettingsPanel() {
     if (!effectiveToken || saving) return;
 
     const whatsappTrimmed = form.whatsappNumber.trim();
-    if (!whatsappTrimmed) {
-      setFeedback({ tone: 'error', text: 'El numero de WhatsApp de la tienda es obligatorio.' });
-      return;
-    }
-
-    if (form.notificationProviders.length === 0) {
-      setFeedback({ tone: 'error', text: 'Deja al menos un canal de notificaciones activo.' });
-      return;
-    }
-
-    if (!form.mediaStorageProvider) {
-      setFeedback({ tone: 'error', text: 'Debes seleccionar un proveedor de almacenamiento de imagenes.' });
-      return;
-    }
-
-    if (!form.paymentMethodBankTransferEnabled && !form.paymentMethodGatewayEnabled) {
-      setFeedback({ tone: 'error', text: 'Debes mantener al menos un medio de pago habilitado.' });
-      return;
-    }
-
-    if (form.paymentMethodBankTransferEnabled) {
-      if (!form.bankTransferAccountHolder.trim()) {
-        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar nombre del titular.' });
-        return;
-      }
-      if (!form.bankTransferContactEmail.trim()) {
-        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar correo de contacto.' });
-        return;
-      }
-      if (!form.bankTransferAccountNumber.trim()) {
-        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar numero de cuenta.' });
-        return;
-      }
-      if (!form.bankTransferBankName.trim()) {
-        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar banco.' });
-        return;
-      }
-      if (!form.bankTransferAccountType.trim()) {
-        setFeedback({ tone: 'error', text: 'Para transferencia debes indicar tipo de cuenta.' });
-        return;
-      }
-      if (!isBancoEstadoSelected && form.bankTransferAccountType.trim() === 'Cuenta RUT') {
-        setFeedback({ tone: 'error', text: 'Cuenta RUT solo esta disponible para BancoEstado.' });
-        return;
-      }
-    }
-
-    if (form.paymentMethodGatewayEnabled && form.paymentGatewayProviders.length === 0) {
-      setFeedback({ tone: 'error', text: 'Si habilitas pasarela de pago, debes seleccionar al menos un proveedor.' });
-      return;
-    }
-    if (form.paymentMethodGatewayEnabled && hasMercadoPagoSelected && !form.paymentGatewayMpApiBaseUrl.trim()) {
-      setFeedback({ tone: 'error', text: 'Para Mercado Pago debes indicar API base URL.' });
-      return;
-    }
-
-    if (hasS3CompatibleStorage && !form.mediaS3Bucket.trim()) {
-      setFeedback({ tone: 'error', text: 'Para almacenamiento S3-compatible debes indicar bucket.' });
-      return;
-    }
-
-    if (hasProviderRequiringTwilio) {
-      if (!form.whatsappTwilioAccountSid.trim()) {
-        setFeedback({ tone: 'error', text: 'Para Twilio debes indicar Account SID.' });
-        return;
-      }
-      if (!form.whatsappTwilioFrom.trim()) {
-        setFeedback({ tone: 'error', text: 'Para Twilio debes indicar el numero de origen (From).' });
-        return;
-      }
-    }
-
-    if (hasProviderRequiringSendgrid && !form.sendgridFromEmail.trim()) {
-      setFeedback({ tone: 'error', text: 'Para SendGrid debes indicar correo remitente.' });
-      return;
-    }
-
     const portTrimmed = form.smtpPort.trim();
     const smtpPort = portTrimmed ? Number(portTrimmed) : undefined;
     const aiInferBasePriceTrimmed = form.productAiInferBasePrice.trim();
     const aiInferBasePrice = aiInferBasePriceTrimmed ? Number(aiInferBasePriceTrimmed) : undefined;
     const aiInferListMultiplierTrimmed = form.productAiInferListPriceMultiplier.trim();
     const aiInferListMultiplier = aiInferListMultiplierTrimmed ? Number(aiInferListMultiplierTrimmed) : undefined;
-    if (smtpPort !== undefined && (!Number.isFinite(smtpPort) || smtpPort <= 0 || smtpPort > 65535)) {
-      setFeedback({ tone: 'error', text: 'El puerto SMTP debe estar entre 1 y 65535.' });
-      return;
-    }
-    if (aiInferBasePrice !== undefined && (!Number.isFinite(aiInferBasePrice) || aiInferBasePrice < 1000)) {
-      setFeedback({ tone: 'error', text: 'El precio base sugerido IA debe ser mayor o igual a 1000.' });
-      return;
-    }
-    if (
-      aiInferListMultiplier !== undefined &&
-      (!Number.isFinite(aiInferListMultiplier) || aiInferListMultiplier < 1 || aiInferListMultiplier > 5)
-    ) {
-      setFeedback({ tone: 'error', text: 'El multiplicador de precio lista IA debe estar entre 1.00 y 5.00.' });
-      return;
-    }
-    if (!form.productAiInferDefaultBrand.trim()) {
-      setFeedback({ tone: 'error', text: 'La marca por defecto para inferencia IA no puede quedar vacia.' });
-      return;
-    }
 
-    if (hasProviderRequiringSmtp) {
-      if (!form.smtpHost.trim()) {
-        setFeedback({ tone: 'error', text: 'Para SMTP debes indicar host.' });
-        return;
-      }
-      if (smtpPort === undefined) {
-        setFeedback({ tone: 'error', text: 'Para SMTP debes indicar puerto.' });
-        return;
-      }
-      if (!form.smtpFromEmail.trim()) {
-        setFeedback({ tone: 'error', text: 'Para SMTP debes indicar correo remitente.' });
-        return;
-      }
-    }
-
-    if (hasProviderN8n) {
-      const webhookUrl = form.n8nWebhookUrl.trim();
-      if (webhookUrl && !/^https?:\/\//i.test(webhookUrl)) {
-        setFeedback({ tone: 'error', text: 'La URL de webhook n8n debe iniciar con http:// o https://.' });
-        return;
-      }
-      if (!form.n8nTokenHeaderName.trim()) {
-        setFeedback({ tone: 'error', text: 'Para n8n debes indicar nombre de header para el token.' });
-        return;
-      }
+    const validationError = validateSettingsForm(
+      form,
+      {
+        hasProviderRequiringSmtp, hasProviderRequiringSendgrid, hasProviderRequiringTwilio, hasProviderN8n,
+        hasS3CompatibleStorage, hasMercadoPagoSelected, isBancoEstadoSelected,
+      },
+      { smtpPort, aiInferBasePrice, aiInferListMultiplier },
+    );
+    if (validationError) {
+      setFeedback({ tone: 'error', text: validationError });
+      return;
     }
 
     const payload: UpdateSystemSettingsRequest = {
