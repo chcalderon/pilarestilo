@@ -134,8 +134,8 @@ export function useStockCheck(items: CartItem[]) {
     .map((item) => item.id)
     // Ordered so the same cart always produces the same key. Default sort compares strings by
     // UTF-16 code unit, not by locale: a dependency that changed with the browser's language
-    // would refire the check for no reason.
-    .sort()
+    // would refire the check for no reason. localeCompare here would reintroduce exactly that.
+    .sort() // NOSONAR: typescript:S2871 -- locale-independent order is the point, see above.
     .join('|');
   useEffect(() => {
     void check();

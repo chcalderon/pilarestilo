@@ -20,6 +20,9 @@ import {
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
 import Overlay from './Overlay';
 
+type DrawerMode = 'idle' | 'void' | 'reissue';
+type IssuedDocumentType = 'BOLETA' | 'FACTURA';
+
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
 const CANCELLABLE: string[] = [
   'PENDING_PAYMENT',
@@ -166,6 +169,13 @@ function DocumentViewer({
 function isExternalProof(reference: string): boolean {
   return reference.startsWith('http://') || reference.startsWith('https://');
 }
+
+function issueButtonLabel(mode: DrawerMode, documentType: IssuedDocumentType): string {
+  if (mode === 'reissue') {
+    return 'Anular y registrar la nueva';
+  }
+  return documentType === 'FACTURA' ? 'Registrar factura' : 'Registrar boleta';
+}
 const btnPrimary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-[var(--pe-ink)] text-[var(--pe-surface)] hover:opacity-80 disabled:opacity-40 transition-opacity';
 const btnSecondary =
@@ -215,6 +225,256 @@ function CopyField({ label, value }: { readonly label: string; readonly value: s
   );
 }
 
+function PaymentProofLink({
+  proofReference,
+  onOpenExternal,
+  onOpenStored,
+}: {
+  readonly proofReference: string;
+  readonly onOpenExternal: () => void;
+  readonly onOpenStored: () => void;
+}) {
+  /*
+   * A receipt that lives somewhere else is opened where it lives. Routing it through our
+   * authenticated endpoint answered 400 and the drawer showed a broken link on a sale that had a
+   * perfectly good proof: the endpoint serves the shop's own files, and an absolute URL was never
+   * one of them.
+   */
+  return isExternalProof(proofReference) ? (
+    <button
+      type="button"
+      onClick={onOpenExternal}
+      className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
+    >
+      <ExternalLink size={12} /> Ver comprobante
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={onOpenStored}
+      className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
+    >
+      <ExternalLink size={12} /> Ver comprobante
+    </button>
+  );
+}
+
+function VoidedDocumentsHistory({ history }: { readonly history: SalesDocumentDto[] }) {
+  return (
+    <Section label="Documentos anulados">
+      <ul className="divide-y divide-[var(--pe-border)]">
+        {history.map((doc) => (
+          <li key={doc.id} className="py-2 text-[0.78rem]">
+            <div className="flex items-baseline justify-between gap-3">
+              <span>
+                Folio {doc.folio}
+                <span className="opacity-50"> · anulada</span>
+              </span>
+              <span className="opacity-50 tabular-nums">
+                {doc.voidedAt ? new Date(doc.voidedAt).toLocaleDateString('es-CL') : ''}
+              </span>
+            </div>
+            {doc.voidReason && <p className="opacity-60 mt-0.5">{doc.voidReason}</p>}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+interface VoidControlsProps {
+  readonly mode: DrawerMode;
+  readonly voidReason: string;
+  readonly onVoidReasonChange: (value: string) => void;
+  readonly canCancelSale: boolean;
+  readonly alsoCancelSale: boolean;
+  readonly onAlsoCancelSaleChange: (value: boolean) => void;
+  readonly busy: boolean;
+  readonly onVoid: () => void;
+  readonly onCancel: () => void;
+}
+
+function VoidControls({
+  mode,
+  voidReason,
+  onVoidReasonChange,
+  canCancelSale,
+  alsoCancelSale,
+  onAlsoCancelSaleChange,
+  busy,
+  onVoid,
+  onCancel,
+}: VoidControlsProps) {
+  return (
+    <div className="space-y-2 pt-2 border-t border-[var(--pe-border)]">
+      <label className="block space-y-1">
+        <span className={labelCls}>Motivo de la anulación</span>
+        <input
+          className={inputCls}
+          value={voidReason}
+          onChange={(e) => onVoidReasonChange(e.target.value)}
+          placeholder="Folio equivocado, monto incorrecto…"
+        />
+      </label>
+      {mode === 'void' && (
+        <>
+          {canCancelSale && (
+            <label className="flex items-start gap-2 pt-1">
+              <input
+                type="checkbox"
+                checked={alsoCancelSale}
+                onChange={(e) => onAlsoCancelSaleChange(e.target.checked)}
+                className="h-4 w-4 mt-0.5 accent-[var(--pe-ink)]"
+              />
+              <span className="text-[0.78rem]">
+                Cerrar también la venta como anulada
+                <span className="block text-[0.7rem] opacity-60">
+                  Devuelve las unidades al stock y libera el código de descuento. Sin esto,
+                  solo se anula la boleta y la venta sigue vigente.
+                </span>
+              </span>
+            </label>
+          )}
+          <div className="flex gap-2">
+            <button type="button" className={btnDanger} disabled={busy} onClick={onVoid}>
+              {alsoCancelSale ? 'Anular la venta completa' : 'Confirmar anulación'}
+            </button>
+            <button type="button" className={btnSecondary} onClick={onCancel}>
+              Cancelar
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+interface IssueDocumentFormProps {
+  readonly mode: DrawerMode;
+  readonly documentType: IssuedDocumentType;
+  readonly onDocumentTypeChange: (value: IssuedDocumentType) => void;
+  readonly folio: string;
+  readonly onFolioChange: (value: string) => void;
+  readonly receiverRut: string;
+  readonly onReceiverRutChange: (value: string) => void;
+  readonly receiverBusinessName: string;
+  readonly onReceiverBusinessNameChange: (value: string) => void;
+  readonly receiverBusinessActivity: string;
+  readonly onReceiverBusinessActivityChange: (value: string) => void;
+  readonly fileName: string | null;
+  readonly fileError: string | null;
+  readonly onFileSelected: (file: File) => void;
+  readonly busy: boolean;
+  readonly onIssue: () => void;
+}
+
+function IssueDocumentForm({
+  mode,
+  documentType,
+  onDocumentTypeChange,
+  folio,
+  onFolioChange,
+  receiverRut,
+  onReceiverRutChange,
+  receiverBusinessName,
+  onReceiverBusinessNameChange,
+  receiverBusinessActivity,
+  onReceiverBusinessActivityChange,
+  fileName,
+  fileError,
+  onFileSelected,
+  busy,
+  onIssue,
+}: IssueDocumentFormProps) {
+  return (
+    <div className="space-y-3 pt-3 border-t border-[var(--pe-border)]">
+      <label className="block space-y-1">
+        <span className={labelCls}>Tipo de documento</span>
+        <select
+          className={inputCls}
+          value={documentType}
+          onChange={(e) => onDocumentTypeChange(e.target.value as IssuedDocumentType)}
+        >
+          <option value="BOLETA">Boleta</option>
+          <option value="FACTURA">Factura</option>
+        </select>
+      </label>
+      <label className="block space-y-1">
+        <span className={labelCls}>Folio *</span>
+        <input
+          className={inputCls}
+          value={folio}
+          onChange={(e) => onFolioChange(e.target.value)}
+          placeholder="1042"
+          inputMode="numeric"
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className={labelCls}>
+          RUT receptor {documentType === 'FACTURA' ? '*' : '(opcional)'}
+        </span>
+        <input
+          className={inputCls}
+          value={receiverRut}
+          onChange={(e) => onReceiverRutChange(e.target.value)}
+          placeholder="12.345.678-9"
+        />
+        {documentType === 'BOLETA' && (
+          <span className="block text-[0.68rem] opacity-50">
+            La boleta no lo exige. Se guarda solo si lo escribes.
+          </span>
+        )}
+      </label>
+      {documentType === 'FACTURA' && (
+        <>
+          <label className="block space-y-1">
+            <span className={labelCls}>Razón social *</span>
+            <input
+              className={inputCls}
+              value={receiverBusinessName}
+              onChange={(e) => onReceiverBusinessNameChange(e.target.value)}
+              placeholder="Comercial Ana Perez Ltda."
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className={labelCls}>Giro *</span>
+            <input
+              className={inputCls}
+              value={receiverBusinessActivity}
+              onChange={(e) => onReceiverBusinessActivityChange(e.target.value)}
+              placeholder="Venta de ropa"
+            />
+          </label>
+        </>
+      )}
+      <div className="space-y-1">
+        <span className={labelCls}>Archivo (opcional)</span>
+        <label className={`${btnSecondary} cursor-pointer w-fit`}>
+          <Upload size={13} /> {fileName ? 'Cambiar archivo' : 'Subir PDF o imagen'}
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onFileSelected(file);
+            }}
+          />
+        </label>
+        {fileName && <p className="text-[0.7rem] opacity-60">{fileName}</p>}
+        {fileError && (
+          <p role="alert" className="text-[0.7rem] text-red-500">
+            {fileError} La boleta se puede registrar igual, pero quedará sin imagen.
+          </p>
+        )}
+      </div>
+      <button type="button" className={btnPrimary} disabled={busy} onClick={onIssue}>
+        {issueButtonLabel(mode, documentType)}
+      </button>
+    </div>
+  );
+}
+
 interface Props {
   readonly sale: SaleSummaryDto;
   readonly token: string;
@@ -243,7 +503,7 @@ export default function SaleDetailDrawer({
   const [busy, setBusy] = useState(false);
 
   const [folio, setFolio] = useState('');
-  const [documentType, setDocumentType] = useState<'BOLETA' | 'FACTURA'>('BOLETA');
+  const [documentType, setDocumentType] = useState<IssuedDocumentType>('BOLETA');
   const [receiverRut, setReceiverRut] = useState('');
   const [receiverBusinessName, setReceiverBusinessName] = useState('');
   const [receiverBusinessActivity, setReceiverBusinessActivity] = useState('');
@@ -256,7 +516,7 @@ export default function SaleDetailDrawer({
     { source: { kind: 'blob'; blob: Blob } | { kind: 'external'; url: string }; label: string } | null
   >(null);
   const [voidReason, setVoidReason] = useState('');
-  const [mode, setMode] = useState<'idle' | 'void' | 'reissue'>('idle');
+  const [mode, setMode] = useState<DrawerMode>('idle');
   /** Voiding a boleta and undoing the sale are different acts, so the second one is opt-in. */
   const [alsoCancelSale, setAlsoCancelSale] = useState(false);
 
@@ -548,34 +808,16 @@ export default function SaleDetailDrawer({
             <Row label="Método" value={sale.paymentMethod ?? '—'} />
             <Row label="Estado" value={sale.paymentStatus ?? '—'} />
             {payment?.proofReference && (
-              isExternalProof(payment.proofReference) ? (
-                /*
-                 * A receipt that lives somewhere else is opened where it lives. Routing it through
-                 * our authenticated endpoint answered 400 and the drawer showed a broken link on a
-                 * sale that had a perfectly good proof: the endpoint serves the shop's own files,
-                 * and an absolute URL was never one of them.
-                 */
-                <button
-                  type="button"
-                  onClick={() =>
-                    setViewing({
-                      source: { kind: 'external', url: payment.proofReference as string },
-                      label: 'Comprobante (alojado fuera de la tienda)',
-                    })
-                  }
-                  className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
-                >
-                  <ExternalLink size={12} /> Ver comprobante
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void openProof(payment.id)}
-                  className="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--pe-ink)] underline underline-offset-2 hover:opacity-70"
-                >
-                  <ExternalLink size={12} /> Ver comprobante
-                </button>
-              )
+              <PaymentProofLink
+                proofReference={payment.proofReference}
+                onOpenExternal={() =>
+                  setViewing({
+                    source: { kind: 'external', url: payment.proofReference as string },
+                    label: 'Comprobante (alojado fuera de la tienda)',
+                  })
+                }
+                onOpenStored={() => void openProof(payment.id)}
+              />
             )}
           </Section>
 
@@ -677,166 +919,45 @@ export default function SaleDetailDrawer({
             )}
 
             {(mode === 'void' || mode === 'reissue') && (
-              <div className="space-y-2 pt-2 border-t border-[var(--pe-border)]">
-                <label className="block space-y-1">
-                  <span className={labelCls}>Motivo de la anulación</span>
-                  <input
-                    className={inputCls}
-                    value={voidReason}
-                    onChange={(e) => setVoidReason(e.target.value)}
-                    placeholder="Folio equivocado, monto incorrecto…"
-                  />
-                </label>
-                {mode === 'void' && (
-                  <>
-                    {canCancelSale && (
-                      <label className="flex items-start gap-2 pt-1">
-                        <input
-                          type="checkbox"
-                          checked={alsoCancelSale}
-                          onChange={(e) => setAlsoCancelSale(e.target.checked)}
-                          className="h-4 w-4 mt-0.5 accent-[var(--pe-ink)]"
-                        />
-                        <span className="text-[0.78rem]">
-                          Cerrar también la venta como anulada
-                          <span className="block text-[0.7rem] opacity-60">
-                            Devuelve las unidades al stock y libera el código de descuento. Sin esto,
-                            solo se anula la boleta y la venta sigue vigente.
-                          </span>
-                        </span>
-                      </label>
-                    )}
-                    <div className="flex gap-2">
-                      <button type="button" className={btnDanger} disabled={busy} onClick={handleVoid}>
-                        {alsoCancelSale ? 'Anular la venta completa' : 'Confirmar anulación'}
-                      </button>
-                      <button
-                        type="button"
-                        className={btnSecondary}
-                        onClick={() => {
-                          setMode('idle');
-                          setAlsoCancelSale(false);
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <VoidControls
+                mode={mode}
+                voidReason={voidReason}
+                onVoidReasonChange={setVoidReason}
+                canCancelSale={canCancelSale}
+                alsoCancelSale={alsoCancelSale}
+                onAlsoCancelSaleChange={setAlsoCancelSale}
+                busy={busy}
+                onVoid={handleVoid}
+                onCancel={() => {
+                  setMode('idle');
+                  setAlsoCancelSale(false);
+                }}
+              />
             )}
 
             {canIssue && (!live || mode === 'reissue') && (
-              <div className="space-y-3 pt-3 border-t border-[var(--pe-border)]">
-                <label className="block space-y-1">
-                  <span className={labelCls}>Tipo de documento</span>
-                  <select
-                    className={inputCls}
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value as 'BOLETA' | 'FACTURA')}
-                  >
-                    <option value="BOLETA">Boleta</option>
-                    <option value="FACTURA">Factura</option>
-                  </select>
-                </label>
-                <label className="block space-y-1">
-                  <span className={labelCls}>Folio *</span>
-                  <input
-                    className={inputCls}
-                    value={folio}
-                    onChange={(e) => setFolio(e.target.value)}
-                    placeholder="1042"
-                    inputMode="numeric"
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className={labelCls}>
-                    RUT receptor {documentType === 'FACTURA' ? '*' : '(opcional)'}
-                  </span>
-                  <input
-                    className={inputCls}
-                    value={receiverRut}
-                    onChange={(e) => setReceiverRut(e.target.value)}
-                    placeholder="12.345.678-9"
-                  />
-                  {documentType === 'BOLETA' && (
-                    <span className="block text-[0.68rem] opacity-50">
-                      La boleta no lo exige. Se guarda solo si lo escribes.
-                    </span>
-                  )}
-                </label>
-                {documentType === 'FACTURA' && (
-                  <>
-                    <label className="block space-y-1">
-                      <span className={labelCls}>Razón social *</span>
-                      <input
-                        className={inputCls}
-                        value={receiverBusinessName}
-                        onChange={(e) => setReceiverBusinessName(e.target.value)}
-                        placeholder="Comercial Ana Perez Ltda."
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      <span className={labelCls}>Giro *</span>
-                      <input
-                        className={inputCls}
-                        value={receiverBusinessActivity}
-                        onChange={(e) => setReceiverBusinessActivity(e.target.value)}
-                        placeholder="Venta de ropa"
-                      />
-                    </label>
-                  </>
-                )}
-                <div className="space-y-1">
-                  <span className={labelCls}>Archivo (opcional)</span>
-                  <label className={`${btnSecondary} cursor-pointer w-fit`}>
-                    <Upload size={13} /> {fileName ? 'Cambiar archivo' : 'Subir PDF o imagen'}
-                    <input
-                      type="file"
-                      accept=".pdf,image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpload(file);
-                      }}
-                    />
-                  </label>
-                  {fileName && <p className="text-[0.7rem] opacity-60">{fileName}</p>}
-                  {fileError && (
-                    <p role="alert" className="text-[0.7rem] text-red-500">
-                      {fileError} La boleta se puede registrar igual, pero quedará sin imagen.
-                    </p>
-                  )}
-                </div>
-                <button type="button" className={btnPrimary} disabled={busy} onClick={handleIssue}>
-                  {mode === 'reissue'
-                    ? 'Anular y registrar la nueva'
-                    : documentType === 'FACTURA' ? 'Registrar factura' : 'Registrar boleta'}
-                </button>
-              </div>
+              <IssueDocumentForm
+                mode={mode}
+                documentType={documentType}
+                onDocumentTypeChange={setDocumentType}
+                folio={folio}
+                onFolioChange={setFolio}
+                receiverRut={receiverRut}
+                onReceiverRutChange={setReceiverRut}
+                receiverBusinessName={receiverBusinessName}
+                onReceiverBusinessNameChange={setReceiverBusinessName}
+                receiverBusinessActivity={receiverBusinessActivity}
+                onReceiverBusinessActivityChange={setReceiverBusinessActivity}
+                fileName={fileName}
+                fileError={fileError}
+                onFileSelected={handleUpload}
+                busy={busy}
+                onIssue={handleIssue}
+              />
             )}
           </Section>
 
-          {history.length > 0 && (
-            <Section label="Documentos anulados">
-              <ul className="divide-y divide-[var(--pe-border)]">
-                {history.map((doc) => (
-                  <li key={doc.id} className="py-2 text-[0.78rem]">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span>
-                        Folio {doc.folio}
-                        <span className="opacity-50"> · anulada</span>
-                      </span>
-                      <span className="opacity-50 tabular-nums">
-                        {doc.voidedAt ? new Date(doc.voidedAt).toLocaleDateString('es-CL') : ''}
-                      </span>
-                    </div>
-                    {doc.voidReason && <p className="opacity-60 mt-0.5">{doc.voidReason}</p>}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
+          {history.length > 0 && <VoidedDocumentsHistory history={history} />}
             </div>
           </div>
         </div>
