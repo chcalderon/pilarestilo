@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,11 +36,15 @@ class DeleteDiscountUseCaseTest {
     @Mock DiscountRepository discountRepository;
     @InjectMocks DeleteDiscountUseCase useCase;
 
+    // Discount.validate() checks "today" against America/Santiago; anchoring the fixture to the
+    // system default zone drifted a calendar day from that near UTC midnight.
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
+
     private final UUID discountId = UUID.randomUUID();
 
     private Discount activeDiscount() {
         Discount d = Discount.create("SAVE10", DiscountType.PERCENTAGE, BigDecimal.TEN,
-                Money.zero(), LocalDate.now().minusDays(1), LocalDate.now().plusDays(30), 5);
+                Money.zero(), LocalDate.now(STORE_ZONE).minusDays(1), LocalDate.now(STORE_ZONE).plusDays(30), 5);
         d.setId(discountId);
         return d;
     }

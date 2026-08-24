@@ -8,10 +8,19 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiscountTest {
+
+    /**
+     * Discount.validate() checks "today" against America/Santiago, not the JVM's default zone.
+     * Fixtures built from the system default drift a calendar day from that near UTC midnight --
+     * exactly the multi-hour window this repo's CI runs in -- so every relative date here has to
+     * be anchored to the same zone the domain uses.
+     */
+    private static final ZoneId STORE_ZONE = ZoneId.of("America/Santiago");
 
     private Discount buildPercentageDiscount(int maxUses) {
         return Discount.create(
@@ -19,8 +28,8 @@ class DiscountTest {
                 DiscountType.PERCENTAGE,
                 BigDecimal.valueOf(10),
                 Money.zero(),
-                LocalDate.now().minusDays(1),
-                LocalDate.now().plusDays(30),
+                LocalDate.now(STORE_ZONE).minusDays(1),
+                LocalDate.now(STORE_ZONE).plusDays(30),
                 maxUses
         );
     }
@@ -31,8 +40,8 @@ class DiscountTest {
                 DiscountType.FIXED,
                 BigDecimal.valueOf(5000),
                 Money.zero(),
-                LocalDate.now().minusDays(1),
-                LocalDate.now().plusDays(30),
+                LocalDate.now(STORE_ZONE).minusDays(1),
+                LocalDate.now(STORE_ZONE).plusDays(30),
                 10
         );
     }
@@ -96,8 +105,8 @@ class DiscountTest {
                 DiscountType.PERCENTAGE,
                 BigDecimal.valueOf(10),
                 Money.zero(),
-                LocalDate.now().minusDays(30),
-                LocalDate.now().minusDays(1),
+                LocalDate.now(STORE_ZONE).minusDays(30),
+                LocalDate.now(STORE_ZONE).minusDays(1),
                 5
         );
         Money subtotal = Money.of(BigDecimal.valueOf(10000));
@@ -119,8 +128,8 @@ class DiscountTest {
                 DiscountType.PERCENTAGE,
                 BigDecimal.valueOf(10),
                 Money.of(BigDecimal.valueOf(50000)),
-                LocalDate.now().minusDays(1),
-                LocalDate.now().plusDays(30),
+                LocalDate.now(STORE_ZONE).minusDays(1),
+                LocalDate.now(STORE_ZONE).plusDays(30),
                 10
         );
         Money subtotal = Money.of(BigDecimal.valueOf(30000));
