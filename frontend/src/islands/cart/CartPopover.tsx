@@ -34,6 +34,72 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+function panelMotion(reducedMotion: boolean) {
+  return {
+    popoverInitial: reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 },
+    popoverAnimate: { opacity: 1, y: 0, scale: 1 },
+    popoverExit: reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.97 },
+    popoverDuration: reducedMotion ? 0.12 : 0.22,
+    sheetInitial: reducedMotion ? { opacity: 0 } : { y: '100%' },
+    sheetAnimate: reducedMotion ? { opacity: 1 } : { y: 0 },
+    sheetExit: reducedMotion ? { opacity: 0 } : { y: '100%' },
+    sheetDuration: reducedMotion ? 0.12 : 0.28,
+    backdropDuration: reducedMotion ? 0.12 : 0.18,
+  };
+}
+
+interface PanelHeaderProps {
+  readonly locale: Locale;
+  readonly onClose: () => void;
+  readonly iconSize: number;
+  readonly autoFocusClose?: boolean;
+}
+
+function PanelHeader({ locale, onClose, iconSize, autoFocusClose }: PanelHeaderProps) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-b border-pe-charcoal/10 flex-shrink-0">
+      <h2 className="font-display text-pe-black text-base font-semibold tracking-wide">
+        {locale === 'es' ? 'Tu carrito' : 'Your cart'}
+      </h2>
+      <button
+        type="button"
+        autoFocus={autoFocusClose}
+        onClick={onClose}
+        aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
+        className="text-pe-muted hover:text-pe-charcoal transition-colors p-1"
+      >
+        <X size={iconSize} />
+      </button>
+    </div>
+  );
+}
+
+interface PanelFooterProps {
+  readonly locale: Locale;
+  readonly subtotal: number;
+  readonly viewCartHref: string;
+  readonly onClose: () => void;
+  readonly padded?: boolean;
+}
+
+function PanelFooter({ locale, subtotal, viewCartHref, onClose, padded }: PanelFooterProps) {
+  return (
+    <div className={`border-t border-pe-charcoal/10 px-4 ${padded ? 'py-4' : 'py-3'} flex-shrink-0`}>
+      <div className="flex justify-between items-center mb-3">
+        <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">Subtotal</span>
+        <span className="font-sans text-sm font-medium text-pe-black">{priceFormat(subtotal, 'CLP', locale)}</span>
+      </div>
+      <a
+        href={viewCartHref}
+        onClick={onClose}
+        className={`block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 ${padded ? 'py-3' : 'py-2.5'} bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200`}
+      >
+        {locale === 'es' ? 'Ver carrito' : 'View cart'}
+      </a>
+    </div>
+  );
+}
+
 function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean) {
   useEffect(() => {
     if (!active) return;
@@ -162,16 +228,10 @@ export default function CartPopover({ locale }: Props) {
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  // Animation variants — strip motion when prefers-reduced-motion
-  const popoverInitial = reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 };
-  const popoverAnimate = { opacity: 1, y: 0, scale: 1 };
-  const popoverExit = reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.97 };
-  const popoverDuration = reducedMotion ? 0.12 : 0.22;
-
-  const sheetInitial = reducedMotion ? { opacity: 0 } : { y: '100%' };
-  const sheetAnimate = reducedMotion ? { opacity: 1 } : { y: 0 };
-  const sheetExit = reducedMotion ? { opacity: 0 } : { y: '100%' };
-  const sheetDuration = reducedMotion ? 0.12 : 0.28;
+  const {
+    popoverInitial, popoverAnimate, popoverExit, popoverDuration,
+    sheetInitial, sheetAnimate, sheetExit, sheetDuration, backdropDuration,
+  } = panelMotion(reducedMotion);
 
   const hiddenCount = Math.max(0, items.length - VISIBLE_LIMIT);
 
@@ -241,7 +301,7 @@ export default function CartPopover({ locale }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0.12 : 0.18 }}
+              transition={{ duration: backdropDuration }}
               className="fixed inset-0 z-[120] bg-pe-black/45 backdrop-blur-xs"
               onClick={closePopover}
               aria-hidden="true"
@@ -265,43 +325,14 @@ export default function CartPopover({ locale }: Props) {
                   <div className="w-10 h-1 bg-pe-cream" aria-hidden="true" />
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-3 border-b border-pe-charcoal/10 flex-shrink-0">
-                  <h2 className="font-display text-pe-black text-base font-semibold tracking-wide">
-                    {locale === 'es' ? 'Tu carrito' : 'Your cart'}
-                  </h2>
-                  <button
-                    type="button"
-                    autoFocus
-                    onClick={closePopover}
-                    aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
-                    className="text-pe-muted hover:text-pe-charcoal transition-colors p-1"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
+                <PanelHeader locale={locale} onClose={closePopover} iconSize={18} autoFocusClose />
 
                 <div className="flex-1 overflow-y-auto">
                   {renderItems(closePopover)}
                 </div>
 
                 {items.length > 0 && (
-                  <div className="border-t border-pe-charcoal/10 px-4 py-4 flex-shrink-0">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">
-                        Subtotal
-                      </span>
-                      <span className="font-sans text-sm font-medium text-pe-black">
-                        {priceFormat(subtotal, 'CLP', locale)}
-                      </span>
-                    </div>
-                    <a
-                      href={viewCartHref}
-                      onClick={closePopover}
-                      className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200"
-                    >
-                      {locale === 'es' ? 'Ver carrito' : 'View cart'}
-                    </a>
-                  </div>
+                  <PanelFooter locale={locale} subtotal={subtotal} viewCartHref={viewCartHref} onClose={closePopover} padded />
                 )}
               </motion.div>
             </motion.div>
@@ -336,42 +367,14 @@ export default function CartPopover({ locale }: Props) {
               className="absolute right-0 top-full mt-2 z-[100] bg-pe-beige shadow-editorial flex flex-col"
               style={{ width: 340, maxHeight: 'calc(100vh - 8rem)' }}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-pe-charcoal/10 flex-shrink-0">
-                <h2 className="font-display text-pe-black text-base font-semibold tracking-wide">
-                  {locale === 'es' ? 'Tu carrito' : 'Your cart'}
-                </h2>
-                <button
-                  type="button"
-                  onClick={closePopover}
-                  aria-label={locale === 'es' ? 'Cerrar carrito' : 'Close cart'}
-                  className="text-pe-muted hover:text-pe-charcoal transition-colors"
-                >
-                  <X size={15} />
-                </button>
-              </div>
+              <PanelHeader locale={locale} onClose={closePopover} iconSize={15} />
 
               <div className="flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
                 {renderItems(closePopover)}
               </div>
 
               {items.length > 0 && (
-                <div className="border-t border-pe-charcoal/10 px-4 py-3 flex-shrink-0">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">
-                      Subtotal
-                    </span>
-                    <span className="font-sans text-sm font-medium text-pe-black">
-                      {priceFormat(subtotal, 'CLP', locale)}
-                    </span>
-                  </div>
-                  <a
-                    href={viewCartHref}
-                    onClick={closePopover}
-                    className="block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 py-2.5 bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200"
-                  >
-                    {locale === 'es' ? 'Ver carrito' : 'View cart'}
-                  </a>
-                </div>
+                <PanelFooter locale={locale} subtotal={subtotal} viewCartHref={viewCartHref} onClose={closePopover} />
               )}
             </motion.div>
           )}

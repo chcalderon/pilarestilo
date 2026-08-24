@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type RefObject } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { NavigationSectionDto, NavigationChildDto } from '../../lib/api';
 
@@ -12,17 +12,110 @@ type NavLevel =
   | { type: 'section'; section: NavigationSectionDto }
   | { type: 'child'; section: NavigationSectionDto; child: NavigationChildDto };
 
-export default function MobileNavOverlay({ sections, locale }: Props) {
-  const [open, setOpen] = useState(false);
-  const [stack, setStack] = useState<NavLevel[]>([{ type: 'root' }]);
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+const itemClass = 'flex items-center justify-between px-5 py-4 font-sans text-[0.7rem] tracking-[0.2em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const sectionButtonClass = 'w-full flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left';
+const sectionLinkClass = 'flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const childButtonClass = 'w-full flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left';
+const childLinkClass = 'flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const grandchildLinkClass = 'flex items-center px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const viewAllClass = 'flex items-center gap-2 px-5 py-3.5 border-b border-pe-white/5 font-sans text-[0.63rem] tracking-[0.18em] uppercase text-pe-rose-soft/80 hover:text-pe-rose-soft transition-colors';
 
-  const close = useCallback(() => {
-    setOpen(false);
-    setStack([{ type: 'root' }]);
-  }, []);
+interface RootLevelProps {
+  readonly sections: NavigationSectionDto[];
+  readonly locale: string;
+  readonly onClose: () => void;
+  readonly onSelectSection: (section: NavigationSectionDto) => void;
+}
 
-  // Listen for open/close events from hamburger button in Navbar
+function RootLevelNav({ sections, locale, onClose, onSelectSection }: RootLevelProps) {
+  return (
+    <nav aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
+      <ul role="list" className="divide-y divide-pe-white/5">
+        <li>
+          <a href={`/${locale}/products`} onClick={onClose} className={itemClass}>
+            {locale === 'es' ? 'Todo' : 'All'}
+          </a>
+        </li>
+        {sections.map((section) => (
+          <li key={section.rootCategorySlug}>
+            {section.children.length > 0 ? (
+              <button type="button" onClick={() => onSelectSection(section)} className={sectionButtonClass} aria-expanded="false">
+                <span>{section.rootCategoryName}</span>
+                <span className="text-pe-on-dark-muted text-sm" aria-hidden="true">›</span>
+              </button>
+            ) : (
+              <a href={`/${locale}/categories/${section.rootCategorySlug}`} onClick={onClose} className={sectionLinkClass}>
+                {section.rootCategoryName}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+interface SectionLevelProps {
+  readonly section: NavigationSectionDto;
+  readonly locale: string;
+  readonly onClose: () => void;
+  readonly onSelectChild: (section: NavigationSectionDto, child: NavigationChildDto) => void;
+}
+
+function SectionLevelNav({ section, locale, onClose, onSelectChild }: SectionLevelProps) {
+  return (
+    <nav aria-label={section.rootCategoryName}>
+      <a href={`/${locale}/categories/${section.rootCategorySlug}`} onClick={onClose} className={viewAllClass}>
+        {locale === 'es' ? `Ver todo en ${section.rootCategoryName}` : `View all in ${section.rootCategoryName}`}
+      </a>
+      <ul role="list" className="divide-y divide-pe-white/5">
+        {section.children.map((child) => (
+          <li key={child.slug}>
+            {child.children.length > 0 ? (
+              <button type="button" onClick={() => onSelectChild(section, child)} className={childButtonClass}>
+                <span>{child.name}</span>
+                <span className="text-pe-on-dark-muted text-xs" aria-hidden="true">›</span>
+              </button>
+            ) : (
+              <a href={`/${locale}/categories/${child.slug}`} onClick={onClose} className={childLinkClass}>
+                {child.name}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+interface ChildLevelProps {
+  readonly child: NavigationChildDto;
+  readonly locale: string;
+  readonly onClose: () => void;
+}
+
+function ChildLevelNav({ child, locale, onClose }: ChildLevelProps) {
+  return (
+    <nav aria-label={child.name}>
+      <a href={`/${locale}/categories/${child.slug}`} onClick={onClose} className={viewAllClass}>
+        {locale === 'es' ? `Ver todo en ${child.name}` : `View all in ${child.name}`}
+      </a>
+      <ul role="list" className="divide-y divide-pe-white/5">
+        {child.children.map((gc) => (
+          <li key={gc.slug}>
+            <a href={`/${locale}/categories/${gc.slug}`} onClick={onClose} className={grandchildLinkClass}>
+              {gc.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** The hamburger button in Navbar lives outside this component's subtree, so open/close travel
+ * as window events rather than props. */
+function useOpenCloseEvents(setOpen: (open: boolean) => void, close: () => void) {
   useEffect(() => {
     const handleOpen = () => setOpen(true);
     const handleClose = () => close();
@@ -32,17 +125,19 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
       window.removeEventListener('mobile-nav:open', handleOpen);
       window.removeEventListener('mobile-nav:close', handleClose);
     };
-  }, [close]);
+  }, [setOpen, close]);
+}
 
-  // Esc closes
+function useEscapeToClose(open: boolean, close: () => void) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close]);
+}
 
-  // Prevent body scroll when open
+function useLockBodyScrollAndFocus(open: boolean, closeButtonRef: RefObject<HTMLButtonElement | null>) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     document.documentElement.setAttribute('data-mobile-nav-open', open ? 'true' : 'false');
@@ -53,7 +148,22 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
       document.body.style.overflow = '';
       document.documentElement.setAttribute('data-mobile-nav-open', 'false');
     };
-  }, [open]);
+  }, [open, closeButtonRef]);
+}
+
+export default function MobileNavOverlay({ sections, locale }: Props) {
+  const [open, setOpen] = useState(false);
+  const [stack, setStack] = useState<NavLevel[]>([{ type: 'root' }]);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setStack([{ type: 'root' }]);
+  }, []);
+
+  useOpenCloseEvents(setOpen, close);
+  useEscapeToClose(open, close);
+  useLockBodyScrollAndFocus(open, closeButtonRef);
 
   const current = stack[stack.length - 1];
   const canGoBack = stack.length > 1;
@@ -129,86 +239,13 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
             {/* Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {current.type === 'root' && (
-                <nav aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
-                  <ul role="list" className="divide-y divide-pe-white/5">
-                    <li>
-                      <a href={`/${locale}/products`} onClick={close}
-                         className="flex items-center justify-between px-5 py-4 font-sans text-[0.7rem] tracking-[0.2em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors">
-                        {locale === 'es' ? 'Todo' : 'All'}
-                      </a>
-                    </li>
-                    {sections.map((section) => (
-                      <li key={section.rootCategorySlug}>
-                        {section.children.length > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => pushSection(section)}
-                            className="w-full flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left"
-                            aria-expanded="false"
-                          >
-                            <span>{section.rootCategoryName}</span>
-                            <span className="text-pe-on-dark-muted text-sm" aria-hidden="true">›</span>
-                          </button>
-                        ) : (
-                          <a href={`/${locale}/categories/${section.rootCategorySlug}`} onClick={close}
-                             className="flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors">
-                            {section.rootCategoryName}
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
+                <RootLevelNav sections={sections} locale={locale} onClose={close} onSelectSection={pushSection} />
               )}
-
               {current.type === 'section' && (
-                <nav aria-label={current.section.rootCategoryName}>
-                  {/* Root category link */}
-                  <a href={`/${locale}/categories/${current.section.rootCategorySlug}`} onClick={close}
-                     className="flex items-center gap-2 px-5 py-3.5 border-b border-pe-white/5 font-sans text-[0.63rem] tracking-[0.18em] uppercase text-pe-rose-soft/80 hover:text-pe-rose-soft transition-colors">
-                    {locale === 'es' ? `Ver todo en ${current.section.rootCategoryName}` : `View all in ${current.section.rootCategoryName}`}
-                  </a>
-                  <ul role="list" className="divide-y divide-pe-white/5">
-                    {current.section.children.map((child) => (
-                      <li key={child.slug}>
-                        {child.children.length > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => pushChild(current.section, child)}
-                            className="w-full flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left"
-                          >
-                            <span>{child.name}</span>
-                            <span className="text-pe-on-dark-muted text-xs" aria-hidden="true">›</span>
-                          </button>
-                        ) : (
-                          <a href={`/${locale}/categories/${child.slug}`} onClick={close}
-                             className="flex items-center px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors">
-                            {child.name}
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
+                <SectionLevelNav section={current.section} locale={locale} onClose={close} onSelectChild={pushChild} />
               )}
-
               {current.type === 'child' && (
-                <nav aria-label={current.child.name}>
-                  <a href={`/${locale}/categories/${current.child.slug}`} onClick={close}
-                     className="flex items-center gap-2 px-5 py-3.5 border-b border-pe-white/5 font-sans text-[0.63rem] tracking-[0.18em] uppercase text-pe-rose-soft/80 hover:text-pe-rose-soft transition-colors">
-                    {locale === 'es' ? `Ver todo en ${current.child.name}` : `View all in ${current.child.name}`}
-                  </a>
-                  <ul role="list" className="divide-y divide-pe-white/5">
-                    {current.child.children.map((gc) => (
-                      <li key={gc.slug}>
-                        <a href={`/${locale}/categories/${gc.slug}`} onClick={close}
-                           className="flex items-center px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors">
-                          {gc.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
+                <ChildLevelNav child={current.child} locale={locale} onClose={close} />
               )}
             </div>
 

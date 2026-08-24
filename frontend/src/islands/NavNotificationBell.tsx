@@ -27,6 +27,121 @@ function relativeTime(iso: string, es: boolean): string {
   return es ? `hace ${Math.floor(diff / 86400)}d` : `${Math.floor(diff / 86400)}d ago`;
 }
 
+function bellLabelFor(unreadCount: number, es: boolean): string {
+  if (unreadCount > 0) return es ? `${unreadCount} notificaciones sin leer` : `${unreadCount} unread notifications`;
+  return es ? 'Notificaciones' : 'Notifications';
+}
+
+function themeFor(dark: boolean) {
+  return {
+    bg: dark ? '#1c1c1c' : '#ffffff',
+    border: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)',
+    shadow: dark
+      ? '0 12px 48px rgba(0,0,0,0.70), 0 2px 10px rgba(0,0,0,0.50)'
+      : '0 12px 48px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.09)',
+    divider: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
+    label: dark ? '#777' : '#aaa',
+    text: dark ? '#d6d6d6' : '#333',
+    subtext: dark ? '#888' : '#999',
+    hoverBg: dark ? 'rgba(183,110,121,0.10)' : 'rgba(183,110,121,0.06)',
+    closeClr: dark ? '#555' : '#bbb',
+    closeHov: dark ? '#999' : '#666',
+    linkClr: '#B76E79',
+    linkHov: dark ? '#d4929d' : '#8B4A55',
+    unreadDot: '#B76E79',
+    unreadBg: dark ? 'rgba(183,110,121,0.08)' : 'rgba(183,110,121,0.04)',
+  };
+}
+
+type Theme = ReturnType<typeof themeFor>;
+
+interface ConfigAlert { readonly id: string; readonly message: string; readonly href: string; }
+
+interface NotificationDropdownProps {
+  readonly dropRef: React.RefObject<HTMLDivElement>;
+  readonly pos: { top: number; right: number };
+  readonly t: Theme;
+  readonly es: boolean;
+  readonly locale: 'es' | 'en';
+  readonly unreadRecent: InAppNotificationDto[];
+  readonly configAlerts: ConfigAlert[];
+  readonly onNotifClick: (n: InAppNotificationDto) => void;
+  readonly onClose: () => void;
+}
+
+function NotificationDropdown({ dropRef, pos, t, es, locale, unreadRecent, configAlerts, onNotifClick, onClose }: NotificationDropdownProps) {
+  return (
+    <div
+      ref={dropRef}
+      style={{ position: 'fixed', top: pos.top, right: pos.right, width: '320px', backgroundColor: t.bg, border: `1px solid ${t.border}`, boxShadow: t.shadow, zIndex: 9999 }}
+    >
+      <div style={{ borderBottom: `1px solid ${t.divider}`, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: 'var(--font-sans, sans-serif)', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: t.label }}>
+          {es ? 'Notificaciones' : 'Notifications'}
+        </span>
+        <button type="button" onClick={onClose} style={{ color: t.closeClr, background: 'none', border: 'none', cursor: 'pointer', padding: '2px', lineHeight: 0 }}
+          onMouseEnter={e => (e.currentTarget.style.color = t.closeHov)} onMouseLeave={e => (e.currentTarget.style.color = t.closeClr)}>
+          <X size={13} />
+        </button>
+      </div>
+
+      {unreadRecent.length > 0 && (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '280px', overflowY: 'auto' }}>
+          {unreadRecent.map(n => (
+            <li key={n.id} style={{ borderBottom: `1px solid ${t.divider}`, backgroundColor: t.unreadBg }}>
+              <button type="button" onClick={() => onNotifClick(n)}
+                style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', transition: 'background-color 150ms' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = t.hoverBg)}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: t.unreadDot }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.4', color: t.text, fontWeight: 500 }}>
+                    {n.title}
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.66rem', color: t.subtext, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {n.body}
+                  </p>
+                  <p style={{ margin: '3px 0 0', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.60rem', color: t.subtext }}>
+                    {relativeTime(n.createdAt, es)}
+                  </p>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {configAlerts.length > 0 && (
+        <>
+          {unreadRecent.length > 0 && <div style={{ height: '1px', backgroundColor: t.divider, margin: '0 16px' }} />}
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {configAlerts.map(a => (
+              <li key={a.id} style={{ borderBottom: `1px solid ${t.divider}` }}>
+                <a href={a.href} onClick={onClose}
+                  style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', transition: 'background-color 150ms' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = t.hoverBg)}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                  <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#e6a817' }} />
+                  <span style={{ fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.5', color: t.text }}>{a.message}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <div style={{ padding: '10px 16px', borderTop: `1px solid ${t.divider}` }}>
+        <a href={`/${locale}/account#notifications`} onClick={onClose}
+          style={{ fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.62rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: t.linkClr, textDecoration: 'none' }}
+          onMouseEnter={e => (e.currentTarget.style.color = t.linkHov)}
+          onMouseLeave={e => (e.currentTarget.style.color = t.linkClr)}>
+          {es ? 'Ver historial →' : 'View history →'}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function NavNotificationBell({ locale }: Props) {
   const { user, token } = useAuthStore();
   const effectiveToken = useMemo(() => token ?? readAuthTokenCookie(), [token]);
@@ -122,22 +237,7 @@ export default function NavNotificationBell({ locale }: Props) {
   if (!user) return null;
 
   const dark = theme === 'dark';
-  const bg = dark ? '#1c1c1c' : '#ffffff';
-  const border = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)';
-  const shadow = dark
-    ? '0 12px 48px rgba(0,0,0,0.70), 0 2px 10px rgba(0,0,0,0.50)'
-    : '0 12px 48px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.09)';
-  const divider = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
-  const label = dark ? '#777' : '#aaa';
-  const text = dark ? '#d6d6d6' : '#333';
-  const subtext = dark ? '#888' : '#999';
-  const hoverBg = dark ? 'rgba(183,110,121,0.10)' : 'rgba(183,110,121,0.06)';
-  const closeClr = dark ? '#555' : '#bbb';
-  const closeHov = dark ? '#999' : '#666';
-  const linkClr = '#B76E79';
-  const linkHov = dark ? '#d4929d' : '#8B4A55';
-  const unreadDot = '#B76E79';
-  const unreadBg = dark ? 'rgba(183,110,121,0.08)' : 'rgba(183,110,121,0.04)';
+  const t = themeFor(dark);
   const unreadRecent = recent.filter((n) => !n.read);
 
   const handleNotifClick = async (n: InAppNotificationDto) => {
@@ -152,82 +252,20 @@ export default function NavNotificationBell({ locale }: Props) {
   };
 
   const dropdown = (
-    <div
-      ref={dropRef}
-      style={{ position: 'fixed', top: dropdownPos.top, right: dropdownPos.right, width: '320px', backgroundColor: bg, border: `1px solid ${border}`, boxShadow: shadow, zIndex: 9999 }}
-    >
-      <div style={{ borderBottom: `1px solid ${divider}`, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: 'var(--font-sans, sans-serif)', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: label }}>
-          {es ? 'Notificaciones' : 'Notifications'}
-        </span>
-        <button type="button" onClick={() => setOpen(false)} style={{ color: closeClr, background: 'none', border: 'none', cursor: 'pointer', padding: '2px', lineHeight: 0 }}
-          onMouseEnter={e => (e.currentTarget.style.color = closeHov)} onMouseLeave={e => (e.currentTarget.style.color = closeClr)}>
-          <X size={13} />
-        </button>
-      </div>
-
-      {unreadRecent.length > 0 && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '280px', overflowY: 'auto' }}>
-          {unreadRecent.map(n => (
-            <li key={n.id} style={{ borderBottom: `1px solid ${divider}`, backgroundColor: unreadBg }}>
-              <button type="button" onClick={() => handleNotifClick(n)}
-                style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', transition: 'background-color 150ms' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: unreadDot }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.4', color: text, fontWeight: 500 }}>
-                    {n.title}
-                  </p>
-                  <p style={{ margin: '2px 0 0', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.66rem', color: subtext, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {n.body}
-                  </p>
-                  <p style={{ margin: '3px 0 0', fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.60rem', color: subtext }}>
-                    {relativeTime(n.createdAt, es)}
-                  </p>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {configAlerts.length > 0 && (
-        <>
-          {unreadRecent.length > 0 && <div style={{ height: '1px', backgroundColor: divider, margin: '0 16px' }} />}
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {configAlerts.map(a => (
-              <li key={a.id} style={{ borderBottom: `1px solid ${divider}` }}>
-                <a href={a.href} onClick={() => setOpen(false)}
-                  style={{ display: 'flex', gap: '12px', padding: '12px 16px', textDecoration: 'none', backgroundColor: 'transparent', transition: 'background-color 150ms' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                  <span style={{ marginTop: '5px', flexShrink: 0, width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#e6a817' }} />
-                  <span style={{ fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.74rem', lineHeight: '1.5', color: text }}>{a.message}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
-      <div style={{ padding: '10px 16px', borderTop: `1px solid ${divider}` }}>
-        <a href={`/${locale}/account#notifications`} onClick={() => setOpen(false)}
-          style={{ fontFamily: 'var(--font-sans,sans-serif)', fontSize: '0.62rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: linkClr, textDecoration: 'none' }}
-          onMouseEnter={e => (e.currentTarget.style.color = linkHov)}
-          onMouseLeave={e => (e.currentTarget.style.color = linkClr)}>
-          {es ? 'Ver historial →' : 'View history →'}
-        </a>
-      </div>
-    </div>
+    <NotificationDropdown
+      dropRef={dropRef}
+      pos={dropdownPos}
+      t={t}
+      es={es}
+      locale={locale}
+      unreadRecent={unreadRecent}
+      configAlerts={configAlerts}
+      onNotifClick={handleNotifClick}
+      onClose={() => setOpen(false)}
+    />
   );
 
-  let bellLabel: string;
-  if (unreadCount > 0) {
-    bellLabel = es ? `${unreadCount} notificaciones sin leer` : `${unreadCount} unread notifications`;
-  } else {
-    bellLabel = es ? 'Notificaciones' : 'Notifications';
-  }
+  const bellLabel = bellLabelFor(unreadCount, es);
 
   return (
     <div style={{ position: 'relative' }}>
