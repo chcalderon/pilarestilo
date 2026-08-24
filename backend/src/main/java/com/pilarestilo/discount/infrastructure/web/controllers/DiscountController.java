@@ -13,7 +13,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -66,8 +65,7 @@ public class DiscountController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     public Object list(@RequestParam(required = false) String status, Pageable pageable) {
         if (status != null) {
-            List<DiscountDto> filtered = listDiscountsUseCase.executeByStatus(status);
-            return filtered;
+            return listDiscountsUseCase.executeByStatus(status);
         }
         return listDiscountsUseCase.execute(pageable);
     }

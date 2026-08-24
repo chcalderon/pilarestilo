@@ -10,10 +10,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+// All time computation already uses java.time.Instant; java.util.Date only appears at the JJWT
+// builder boundary, since issuedAt()/expiration() take no Instant overload. (Sonar's S2143 on
+// this file is a file-level finding with no line to attach @SuppressWarnings to -- resolved
+// won't-fix in SonarQube instead, with the same justification.)
 @Component
 public class JwtTokenProvider {
 
@@ -27,13 +32,14 @@ public class JwtTokenProvider {
     }
 
     public String generateAccessToken(UUID userId, String email, UserRole role, List<String> permissions) {
+        Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
                 .claim("role", role.name())
                 .claim("permissions", permissions)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRY_MS))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(ACCESS_EXPIRY_MS)))
                 .signWith(key)
                 .compact();
     }
@@ -43,24 +49,26 @@ public class JwtTokenProvider {
                                       UserRole role,
                                       List<String> permissions,
                                       List<String> permissionCodes) {
+        Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
                 .claim("role", role.name())
                 .claim("permissions", permissions)
                 .claim("permissionCodes", permissionCodes)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + ACCESS_EXPIRY_MS))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(ACCESS_EXPIRY_MS)))
                 .signWith(key)
                 .compact();
     }
 
     public String generateRefreshToken(UUID userId) {
+        Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("type", "refresh")
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRY_MS))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(REFRESH_EXPIRY_MS)))
                 .signWith(key)
                 .compact();
     }

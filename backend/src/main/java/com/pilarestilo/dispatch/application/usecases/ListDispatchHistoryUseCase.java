@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -65,8 +64,6 @@ public class ListDispatchHistoryUseCase {
             if (payment.reviewedBy() != null) {
                 soldBy = resolveSellerLabel(payment.reviewedBy());
             }
-        } catch (NoSuchElementException _) {
-            // Keep default value.
         } catch (Exception _) {
             // Keep default value.
         }

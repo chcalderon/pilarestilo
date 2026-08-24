@@ -74,7 +74,8 @@ public class KafkaDomainEventsConfiguration {
 
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
-                (record, ex) -> new TopicPartition(domainEventTopics.deadLetterTopicFor(record.topic()), record.partition())
+                (consumerRecord, ex) -> new TopicPartition(
+                        domainEventTopics.deadLetterTopicFor(consumerRecord.topic()), consumerRecord.partition())
         );
 
         long retryAttempts = Math.max(1, domainEventsProperties.getRetryMaxAttempts());

@@ -111,7 +111,7 @@ public class LocationCatalogService {
         if (term.length() < 2) {
             return List.of();
         }
-        int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 60));
+        int safeLimit = limit == null ? 20 : Math.clamp(limit, 1, 60);
         PageRequest page = PageRequest.of(0, safeLimit);
 
         List<GeoCommuneEntity> rows;

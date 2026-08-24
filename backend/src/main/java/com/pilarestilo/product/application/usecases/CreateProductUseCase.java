@@ -74,11 +74,13 @@ public class CreateProductUseCase {
         Money price = Money.of(priceAmount, priceCurrency == null || priceCurrency.isBlank()
                 ? Money.DEFAULT_CURRENCY
                 : priceCurrency);
-        Money listPrice = listPriceAmount == null
-                ? null
-                : Money.of(listPriceAmount, listPriceCurrency == null || listPriceCurrency.isBlank()
-                ? price.currency()
-                : listPriceCurrency);
+        Money listPrice = null;
+        if (listPriceAmount != null) {
+            String resolvedListCurrency = listPriceCurrency == null || listPriceCurrency.isBlank()
+                    ? price.currency()
+                    : listPriceCurrency;
+            listPrice = Money.of(listPriceAmount, resolvedListCurrency);
+        }
         ProductCondition productCondition = ProductCondition.valueOf(condition);
 
         Product product = Product.create(name, description, price, imageUrl, productCondition, brand, stock, listPrice);

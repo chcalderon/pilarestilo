@@ -185,21 +185,21 @@ public final class EmailLayout {
                     + "Este mensaje se envió automáticamente desde Pilar Estilo. "
                     + "Si tienes dudas, respóndelo y te contestamos.</p></td></tr>";
         }
-    }
 
-    /**
-     * Escapes the five characters that break HTML. Product names, customer notes and bank account
-     * holders all reach these templates, and an ampersand in a name should not be able to alter the
-     * markup around it.
-     */
-    private static String escape(String value) {
-        if (value == null) {
-            return "";
+        /**
+         * Escapes the five characters that break HTML. Product names, customer notes and bank
+         * account holders all reach these templates, and an ampersand in a name should not be
+         * able to alter the markup around it.
+         */
+        private static String escape(String value) {
+            if (value == null) {
+                return "";
+            }
+            return value.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#39;");
         }
-        return value.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
     }
 }

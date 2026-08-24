@@ -117,7 +117,9 @@ public class OrderNotificationDispatcher {
             case PREPARING_ORDER -> inAppNotificationPort.notifyOrderPreparing(userId, event.orderId());
             case SHIPPED -> inAppNotificationPort.notifyOrderShipped(userId, event.orderId());
             case DELIVERED -> inAppNotificationPort.notifyOrderDelivered(userId, event.orderId());
-            default -> { }
+            default -> {
+                // Every other status carries no in-app notification.
+            }
         }
     }
 

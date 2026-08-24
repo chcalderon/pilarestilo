@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -118,7 +119,7 @@ class SalesDocumentTest {
         assertEquals(SalesDocumentStatus.VOIDED, document.getStatus());
         assertEquals("Folio equivocado", document.getVoidReason());
         assertEquals(ACTOR, document.getVoidedBy());
-        assertTrue(document.getVoidedAt() != null);
+        assertNotNull(document.getVoidedAt());
     }
 
     /** A void nobody can account for a year later is the reason the reason is mandatory. */

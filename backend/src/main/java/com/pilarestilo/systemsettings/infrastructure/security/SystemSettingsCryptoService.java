@@ -2,7 +2,7 @@ package com.pilarestilo.systemsettings.infrastructure.security;
 
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -12,7 +12,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-@Component
+@Service
 public class SystemSettingsCryptoService {
 
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";

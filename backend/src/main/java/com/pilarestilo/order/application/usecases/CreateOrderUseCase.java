@@ -303,15 +303,7 @@ public class CreateOrderUseCase {
             }
             java.util.LinkedHashSet<String> zoneCodes = new java.util.LinkedHashSet<>();
             for (JsonNode node : root) {
-                if (node == null || !node.isObject()) {
-                    continue;
-                }
-                boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
-                String code = node.path("code").asString("").trim();
-                if (!active || code.isBlank()) {
-                    continue;
-                }
-                zoneCodes.add(code.toUpperCase(Locale.ROOT));
+                addActiveZoneCode(zoneCodes, node);
             }
             if (zoneCodes.isEmpty()) {
                 throw new DomainException("No active shipping zones configured");
@@ -322,6 +314,18 @@ public class CreateOrderUseCase {
         } catch (Exception _) {
             throw new DomainException("Could not parse shipping zones configuration");
         }
+    }
+
+    private static void addActiveZoneCode(java.util.LinkedHashSet<String> zoneCodes, JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return;
+        }
+        boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
+        String code = node.path("code").asString("").trim();
+        if (!active || code.isBlank()) {
+            return;
+        }
+        zoneCodes.add(code.toUpperCase(Locale.ROOT));
     }
 
     private Map<String, String> parseActiveCourierMap(String shippingCouriersJson) {
@@ -335,16 +339,7 @@ public class CreateOrderUseCase {
             }
             Map<String, String> couriers = new LinkedHashMap<>();
             for (JsonNode node : root) {
-                if (node == null || !node.isObject()) {
-                    continue;
-                }
-                boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
-                String id = node.path("id").asString("").trim();
-                String name = node.path("name").asString("").trim();
-                if (!active || id.isBlank() || name.isBlank()) {
-                    continue;
-                }
-                couriers.put(id, name);
+                addActiveCourier(couriers, node);
             }
             if (couriers.isEmpty()) {
                 throw new DomainException("No active shipping couriers configured");
@@ -355,6 +350,19 @@ public class CreateOrderUseCase {
         } catch (Exception _) {
             throw new DomainException("Could not parse shipping couriers configuration");
         }
+    }
+
+    private static void addActiveCourier(Map<String, String> couriers, JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return;
+        }
+        boolean active = !node.has(ACTIVE_FIELD) || node.path(ACTIVE_FIELD).asBoolean(true);
+        String id = node.path("id").asString("").trim();
+        String name = node.path("name").asString("").trim();
+        if (!active || id.isBlank() || name.isBlank()) {
+            return;
+        }
+        couriers.put(id, name);
     }
 
     private String normalizeRequired(String value, String label) {

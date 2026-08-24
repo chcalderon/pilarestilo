@@ -67,6 +67,10 @@ public class CashRegisterRepositoryAdapter implements CashRegisterRepository {
         return jpaRepository.findAll(spec, pageable).map(this::toDomain);
     }
 
+    // Same query as findHistoryForSeller: sellerId is just another optional filter here, but the
+    // two port methods exist separately so each caller's intent (seller self-service vs admin
+    // list) stays clear at the call site.
+    @SuppressWarnings("java:S4144")
     @Override
     public Page<CashRegister> findHistory(CashRegisterStatus status,
                                           UUID sellerId,

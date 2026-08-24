@@ -51,6 +51,8 @@ public class SendGridEmailNotificationSender implements NotificationSender {
         this.envFallbackTo = normalize(fallbackTo, "");
     }
 
+    // preferredEmailThenPhone() is a trivial null/blank check, not worth an isWarnEnabled() guard.
+    @SuppressWarnings("java:S2629")
     private void send(
             String template,
             UUID referenceId,

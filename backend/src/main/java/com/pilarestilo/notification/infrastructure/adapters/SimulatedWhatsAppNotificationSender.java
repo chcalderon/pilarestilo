@@ -65,6 +65,8 @@ public class SimulatedWhatsAppNotificationSender implements NotificationSender {
      * {@code recipient.phone()} and ignored the configured number and sender alias, which
      * defeated it — the settings existed and nothing read them.
      */
+    // preferredPhoneThenEmail() is a trivial null/blank check, not worth an isInfoEnabled() guard.
+    @SuppressWarnings("java:S2629")
     @Override
     public void send(NotificationMessage message, NotificationRecipient recipient) {
         if (!recipient.allowsWhatsApp()) {

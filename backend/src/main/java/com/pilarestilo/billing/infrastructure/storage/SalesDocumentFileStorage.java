@@ -103,14 +103,10 @@ public class SalesDocumentFileStorage {
         try (Stream<Path> files = Files.list(root)) {
             for (Path file : files.filter(Files::isRegularFile).toList()) {
                 String name = file.getFileName().toString();
-                if (claimed.contains(name)) {
-                    continue;
+                if (!claimed.contains(name) && !Files.getLastModifiedTime(file).toInstant().isAfter(cutoff)) {
+                    Files.deleteIfExists(file);
+                    removed++;
                 }
-                if (Files.getLastModifiedTime(file).toInstant().isAfter(cutoff)) {
-                    continue;
-                }
-                Files.deleteIfExists(file);
-                removed++;
             }
         } catch (IOException _) {
             // A sweep that cannot read the directory is not worth failing a scheduled run over.

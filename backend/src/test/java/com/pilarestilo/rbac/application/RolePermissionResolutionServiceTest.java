@@ -90,6 +90,7 @@ class RolePermissionResolutionServiceTest {
 
         @Override
         public void replaceAll(List<RolePermission> permissions) {
+            // Not exercised by this test's scenarios; the fake only needs to satisfy the interface.
         }
     }
 

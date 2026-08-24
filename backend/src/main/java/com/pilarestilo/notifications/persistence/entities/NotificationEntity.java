@@ -40,7 +40,9 @@ public class NotificationEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public NotificationEntity() {}
+    public NotificationEntity() {
+        // Required by JPA to instantiate the entity via reflection.
+    }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }

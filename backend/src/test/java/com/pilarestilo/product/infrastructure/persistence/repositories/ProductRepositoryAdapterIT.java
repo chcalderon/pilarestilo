@@ -98,6 +98,25 @@ class ProductRepositoryAdapterIT {
         return productRepository.save(product);
     }
 
+    // ---- update path (Hibernate merge, not the insert path every other test above exercises) ----
+
+    @Test
+    void updatingAnAlreadyPersistedProductsVariantsDoesNotThrow() {
+        Product product = save("ZT-VarianteUpdate", "ZT-VarianteBrand", ProductCondition.NEW,
+                BigDecimal.TEN, 1, true, Instant.now(), null);
+        product.setVariants(List.of(new com.pilarestilo.product.domain.model.ProductVariant("Negro", "M", 5, 0)));
+        productRepository.save(product);
+
+        Product reloaded = productRepository.findById(product.getId()).orElseThrow();
+        product = reloaded;
+        product.setVariants(List.of(new com.pilarestilo.product.domain.model.ProductVariant("Negro", "M", 3, 1)));
+        Product updated = productRepository.save(product);
+
+        assertThat(updated.getVariants()).hasSize(1);
+        assertThat(updated.getVariants().get(0).getStockOnHand()).isEqualTo(3);
+        assertThat(updated.getVariants().get(0).getStockReserved()).isEqualTo(1);
+    }
+
     // ---- search() ----
 
     @Test

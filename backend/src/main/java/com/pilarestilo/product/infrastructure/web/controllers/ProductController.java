@@ -138,6 +138,9 @@ public class ProductController {
         return searchProductsUseCase.execute(q, active, inStock, condition, category, createdFrom, createdTo, ordered(pageable));
     }
 
+    // null is load-bearing here: UpdateProductUseCase treats it as "leave variants untouched"
+    // and an omitted field on a partial update must not be read as "clear all variants".
+    @SuppressWarnings("java:S1168")
     private static List<ProductVariantInput> toVariantInputs(List<ProductVariantRequest> requests) {
         if (requests == null) {
             return null;

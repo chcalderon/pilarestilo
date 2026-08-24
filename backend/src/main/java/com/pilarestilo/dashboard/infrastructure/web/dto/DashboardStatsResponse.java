@@ -39,42 +39,45 @@ public record DashboardStatsResponse(
     public record ExpiringWorker(String userId, String fullName, LocalDate vigencyEnd) {}
 
     public static DashboardStatsResponse from(DashboardStats stats) {
-        if (stats instanceof DashboardStats.AdminStats a) {
-            return new DashboardStatsResponse(
+        return switch (stats) {
+            case DashboardStats.AdminStats(
+                    DashboardStats.SalesTotal dailySales, DashboardStats.SalesTotal weeklySales,
+                    int openCashRegisters, int pendingDispatches, int inProgressDispatches,
+                    int paymentsAwaitingReview, List<DashboardStats.TopProduct> topProducts,
+                    List<DashboardStats.DailyRevenue> dailyRevenueSeries) -> new DashboardStatsResponse(
                     "ADMIN",
-                    new SalesTotal(a.dailySales().amount(), a.dailySales().orderCount()),
-                    new SalesTotal(a.weeklySales().amount(), a.weeklySales().orderCount()),
-                    a.openCashRegisters(), a.pendingDispatches(), a.inProgressDispatches(),
-                    a.paymentsAwaitingReview(),
-                    a.topProducts().stream().map(p -> new TopProduct(p.productId(), p.name(), p.unitsSold())).toList(),
-                    a.dailyRevenueSeries().stream().map(d -> new DailyRevenue(d.date(), d.amount())).toList(),
+                    new SalesTotal(dailySales.amount(), dailySales.orderCount()),
+                    new SalesTotal(weeklySales.amount(), weeklySales.orderCount()),
+                    openCashRegisters, pendingDispatches, inProgressDispatches,
+                    paymentsAwaitingReview,
+                    topProducts.stream().map(p -> new TopProduct(p.productId(), p.name(), p.unitsSold())).toList(),
+                    dailyRevenueSeries.stream().map(d -> new DailyRevenue(d.date(), d.amount())).toList(),
                     null, null, null, null, null, null
             );
-        } else if (stats instanceof DashboardStats.SellerStats s) {
-            return new DashboardStatsResponse(
+            case DashboardStats.SellerStats(
+                    DashboardStats.CajaSnapshot currentCaja, DashboardStats.LastSale lastSale) -> new DashboardStatsResponse(
                     "SELLER", null, null, null, null, null, null, null, null,
-                    s.currentCaja() == null ? null : new CajaSnapshot(
-                            s.currentCaja().status(), s.currentCaja().openedAt(),
-                            s.currentCaja().expectedBalance(), s.currentCaja().saleCount(), s.currentCaja().saleTotal()),
-                    s.lastSale() == null ? null : new LastSale(s.lastSale().amount(), s.lastSale().recordedAt()),
+                    currentCaja == null ? null : new CajaSnapshot(
+                            currentCaja.status(), currentCaja.openedAt(),
+                            currentCaja.expectedBalance(), currentCaja.saleCount(), currentCaja.saleTotal()),
+                    lastSale == null ? null : new LastSale(lastSale.amount(), lastSale.recordedAt()),
                     null, null, null, null
             );
-        } else if (stats instanceof DashboardStats.DespachadorStats d) {
-            return new DashboardStatsResponse(
+            case DashboardStats.DespachadorStats(
+                    int pendingDispatches, int myDispatchedToday, int myInProgress) -> new DashboardStatsResponse(
                     "DESPACHADOR", null, null, null,
-                    d.pendingDispatches(), null, null, null, null, null, null,
-                    d.myDispatchedToday(), d.myInProgress(), null, null
+                    pendingDispatches, null, null, null, null, null, null,
+                    myDispatchedToday, myInProgress, null, null
             );
-        } else if (stats instanceof DashboardStats.AdministracionStats adm) {
-            return new DashboardStatsResponse(
+            case DashboardStats.AdministracionStats(
+                    int activeWorkers, int paymentsAwaitingReview,
+                    List<DashboardStats.ExpiringWorker> expiringWorkers) -> new DashboardStatsResponse(
                     "ADMINISTRACION", null, null, null, null, null,
-                    adm.paymentsAwaitingReview(),
+                    paymentsAwaitingReview,
                     null, null, null, null, null, null,
-                    adm.activeWorkers(),
-                    adm.expiringWorkers().stream().map(w -> new ExpiringWorker(w.userId(), w.fullName(), w.vigencyEnd())).toList()
+                    activeWorkers,
+                    expiringWorkers.stream().map(w -> new ExpiringWorker(w.userId(), w.fullName(), w.vigencyEnd())).toList()
             );
-        } else {
-            throw new IllegalArgumentException("Unknown DashboardStats type: " + stats.getClass());
-        }
+        };
     }
 }

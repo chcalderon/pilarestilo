@@ -51,5 +51,6 @@ public class InventoryController {
     @GetMapping("/_health")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void healthPing() {
+        // Reaching this handler at all is the check; there is nothing to compute or return.
     }
 }

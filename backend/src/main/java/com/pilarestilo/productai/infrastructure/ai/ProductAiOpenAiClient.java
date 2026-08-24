@@ -54,7 +54,7 @@ public class ProductAiOpenAiClient {
         }
         this.imageModel = resolvedImageModel;
 
-        int safeTimeoutMs = (int) Math.max(10_000L, Math.min(timeoutMs, Integer.MAX_VALUE));
+        int safeTimeoutMs = (int) Math.clamp(timeoutMs, 10_000L, Integer.MAX_VALUE);
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(safeTimeoutMs);
         requestFactory.setReadTimeout(safeTimeoutMs);
@@ -239,7 +239,7 @@ public class ProductAiOpenAiClient {
             String text = content.path("text").asString("");
             boolean isTextContent = "output_text".equals(type) || "text".equals(type);
             if (isTextContent && !text.isBlank()) {
-                if (builder.length() > 0) {
+                if (!builder.isEmpty()) {
                     builder.append('\n');
                 }
                 builder.append(text.trim());
@@ -341,7 +341,9 @@ public class ProductAiOpenAiClient {
         if (title.isBlank() && description.isBlank() && imagePrompt.isBlank()) {
             return ParsedFields.empty();
         }
-        log.warn("product_ai_openai_non_json_rescued preview={}", preview(text));
+        if (log.isWarnEnabled()) {
+            log.warn("product_ai_openai_non_json_rescued preview={}", preview(text));
+        }
         return new ParsedFields(title, description, imagePrompt);
     }
 
@@ -427,7 +429,7 @@ public class ProductAiOpenAiClient {
             return "sin detalle";
         }
         String body = ex.getResponseBodyAsString();
-        if (body == null || body.isBlank()) {
+        if (body.isBlank()) {
             return "sin detalle";
         }
         try {
