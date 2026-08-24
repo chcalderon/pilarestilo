@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { registerUser, loginUser, googleLogin, type AuthTokenResponse } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
@@ -13,6 +13,134 @@ interface Props {
 /** How long the welcome message stays up before the reload it promises. Long enough to read
  * a four-word line, short enough that waiting for it doesn't feel like the app is stuck. */
 const WELCOME_DWELL_MS = 1600;
+
+interface GoogleSignInOptions {
+  readonly clientId: string | undefined;
+  readonly buttonRef: React.RefObject<HTMLDivElement | null>;
+  readonly onCredential: (credential: string) => Promise<void>;
+}
+
+/**
+ * Wires up Google Identity Services against the container div. The script tag is rendered
+ * elsewhere (see the astro layout) and may finish loading before or after this effect runs, so
+ * both orders have to be handled: call in immediately if `window.google` is already there,
+ * otherwise wait for the script's own `load` event.
+ */
+function useGoogleSignIn({ clientId, buttonRef, onCredential }: GoogleSignInOptions) {
+  useEffect(() => {
+    if (!clientId) return;
+
+    function initGoogle() {
+      const g = (window as any).google;
+      if (!g?.accounts?.id) return;
+      g.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response: { credential: string }) => onCredential(response.credential),
+      });
+      if (buttonRef.current) {
+        g.accounts.id.renderButton(buttonRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          width: buttonRef.current.offsetWidth || 280,
+          logo_alignment: "left",
+        });
+      }
+    }
+
+    if ((window as any).google?.accounts?.id) {
+      initGoogle();
+      return undefined;
+    }
+    const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    script?.addEventListener("load", initGoogle);
+    return () => script?.removeEventListener("load", initGoogle);
+  }, [clientId, buttonRef, onCredential]);
+}
+
+function togglePasswordLabelFor(showPassword: boolean, es: boolean): string {
+  if (showPassword) return es ? "Ocultar contrasena" : "Hide password";
+  return es ? "Mostrar contrasena" : "Show password";
+}
+
+function ProcessingLabel({ es }: { readonly es: boolean }) {
+  return (
+    <span className="flex items-center justify-center gap-2">
+      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+      {es ? "Procesando" : "Processing"}
+    </span>
+  );
+}
+
+function submitLabelFor(loading: boolean, tab: Tab, es: boolean): React.ReactNode {
+  if (loading) return <ProcessingLabel es={es} />;
+  if (tab === "register") return es ? "Crear cuenta" : "Create account";
+  return es ? "Iniciar sesion" : "Log in";
+}
+
+function PasswordVisibilityIcon({ showPassword }: { readonly showPassword: boolean }) {
+  if (showPassword) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    );
+  }
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function TabSwitcher({ tab, es, onSelect }: { readonly tab: Tab; readonly es: boolean; readonly onSelect: (tab: Tab) => void }) {
+  return (
+    <div className="flex border-b border-[var(--pe-border)]">
+      <button
+        type="button"
+        onClick={() => onSelect("register")}
+        className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "register" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
+      >
+        {es ? "Registrarse" : "Register"}
+      </button>
+      <button
+        type="button"
+        onClick={() => onSelect("login")}
+        className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "login" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
+      >
+        {es ? "Iniciar sesion" : "Log in"}
+      </button>
+    </div>
+  );
+}
+
+function TabSwitchFooter({ tab, locale, es }: { readonly tab: Tab; readonly locale: "es" | "en"; readonly es: boolean }) {
+  if (tab === "login") {
+    return (
+      <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
+        <span>{es ? "¿No tienes cuenta?" : "Don't have an account?"}</span>{" "}
+        <a href={`/${locale}/auth/register`} className="underline hover:text-[var(--pe-foreground)]">
+          {es ? "Registrarse" : "Register"}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
+      <span>{es ? "¿Ya tienes cuenta?" : "Already have an account?"}</span>{" "}
+      <a href={`/${locale}/auth/login`} className="underline hover:text-[var(--pe-foreground)]">
+        {es ? "Iniciar sesion" : "Log in"}
+      </a>
+    </div>
+  );
+}
 
 export function RegisterPopoverForm({ initialTab = "register", locale }: Props) {
   const es = locale === "es";
@@ -67,48 +195,25 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
     setError(null);
   }, [initialTab]);
 
-  useEffect(() => {
-    const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
-    if (!clientId) return;
-
-    function initGoogle() {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      g.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: { credential: string }) => {
-          setLoading(true);
-          setError(null);
-          try {
-            const data = await googleLogin(response.credential);
-            finishAuth(data);
-          } catch {
-            setError(es ? "No se pudo iniciar sesion con Google." : "Google sign-in failed.");
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
-      if (googleBtnRef.current) {
-        g.accounts.id.renderButton(googleBtnRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          width: googleBtnRef.current.offsetWidth || 280,
-          logo_alignment: "left",
-        });
-      }
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await googleLogin(credential);
+      finishAuth(data);
+    } catch {
+      setError(es ? "No se pudo iniciar sesion con Google." : "Google sign-in failed.");
+    } finally {
+      setLoading(false);
     }
-
-    if ((window as any).google?.accounts?.id) {
-      initGoogle();
-    } else {
-      const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
-      script?.addEventListener("load", initGoogle);
-      return () => script?.removeEventListener("load", initGoogle);
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [es, setAuth]);
+
+  useGoogleSignIn({
+    clientId: (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined,
+    buttonRef: googleBtnRef,
+    onCredential: handleGoogleCredential,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -143,48 +248,17 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
     );
   }
 
-  let togglePasswordLabel: string;
-  if (showPassword) {
-    togglePasswordLabel = es ? "Ocultar contrasena" : "Hide password";
-  } else {
-    togglePasswordLabel = es ? "Mostrar contrasena" : "Show password";
-  }
+  const togglePasswordLabel = togglePasswordLabelFor(showPassword, es);
+  const submitLabel = submitLabelFor(loading, tab, es);
 
-  let submitLabel: React.ReactNode;
-  if (loading) {
-    submitLabel = (
-      <span className="flex items-center justify-center gap-2">
-        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-        </svg>
-        {es ? "Procesando" : "Processing"}
-      </span>
-    );
-  } else if (tab === "register") {
-    submitLabel = es ? "Crear cuenta" : "Create account";
-  } else {
-    submitLabel = es ? "Iniciar sesion" : "Log in";
+  function selectTab(next: Tab) {
+    setTab(next);
+    setError(null);
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex border-b border-[var(--pe-border)]">
-        <button
-          type="button"
-          onClick={() => { setTab("register"); setError(null); }}
-          className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "register" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
-        >
-          {es ? "Registrarse" : "Register"}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setTab("login"); setError(null); }}
-          className={`flex-1 py-2 text-xs tracking-widest uppercase transition-colors ${tab === "login" ? "border-b-2 border-[var(--pe-foreground)] text-[var(--pe-foreground)]" : "text-[var(--pe-muted)]"}`}
-        >
-          {es ? "Iniciar sesion" : "Log in"}
-        </button>
-      </div>
+      <TabSwitcher tab={tab} es={es} onSelect={selectTab} />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         {tab === "register" && (
@@ -243,18 +317,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--pe-muted)] hover:text-[var(--pe-foreground)]"
               aria-label={togglePasswordLabel}
             >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              )}
+              <PasswordVisibilityIcon showPassword={showPassword} />
             </button>
           </div>
         </div>
@@ -310,23 +373,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         </a>.
       </p>
 
-      <div className="pt-1 text-center text-[0.68rem] text-[var(--pe-muted)]">
-        {tab === "login" ? (
-          <>
-            <span>{es ? "¿No tienes cuenta?" : "Don't have an account?"}</span>{" "}
-            <a href={`/${locale}/auth/register`} className="underline hover:text-[var(--pe-foreground)]">
-              {es ? "Registrarse" : "Register"}
-            </a>
-          </>
-        ) : (
-          <>
-            <span>{es ? "¿Ya tienes cuenta?" : "Already have an account?"}</span>{" "}
-            <a href={`/${locale}/auth/login`} className="underline hover:text-[var(--pe-foreground)]">
-              {es ? "Iniciar sesion" : "Log in"}
-            </a>
-          </>
-        )}
-      </div>
+      <TabSwitchFooter tab={tab} locale={locale} es={es} />
     </div>
   );
 }
