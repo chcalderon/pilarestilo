@@ -10,6 +10,76 @@ interface Props {
   readonly onSubmitted?: () => void;
 }
 
+function LoginPrompt({ locale, loginHref }: { readonly locale: string; readonly loginHref: string }) {
+  const label = locale === 'es' ? 'Inicia sesión' : 'Sign in';
+  const suffix = locale === 'es' ? 'para escribir una reseña.' : 'to write a review.';
+  return (
+    <div className="py-6 border-t border-[#EDE3D8]">
+      <p className="text-[#3A3A3A]/60 text-sm">
+        <a href={loginHref} className="text-[#B76E79] hover:underline">{label}</a>{' '}{suffix}
+      </p>
+    </div>
+  );
+}
+
+function successTitleFor(locale: string, replacing: boolean): string {
+  if (replacing) return locale === 'es' ? '¡Gracias! Actualizamos tu reseña.' : 'Thanks! Your review was updated.';
+  return locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!';
+}
+
+function SuccessMessage({ locale, replacing }: { readonly locale: string; readonly replacing: boolean }) {
+  return (
+    <div className="py-6 border-t border-[#EDE3D8]">
+      <p className="text-[#B76E79] font-['Cormorant_Garamond',serif] text-lg">
+        {successTitleFor(locale, replacing)}
+      </p>
+      <p className="text-[#3A3A3A]/50 text-sm mt-1">
+        {locale === 'es' ? 'Será visible una vez aprobada.' : 'It will be visible once approved.'}
+      </p>
+    </div>
+  );
+}
+
+function formTitleFor(locale: string, replacing: boolean): string {
+  if (replacing) return locale === 'es' ? 'Actualizar tu reseña' : 'Update your review';
+  return locale === 'es' ? 'Escribir una reseña' : 'Write a review';
+}
+
+function submitLabelFor(locale: string, submitting: boolean, replacing: boolean): string {
+  if (submitting) return locale === 'es' ? 'Enviando...' : 'Submitting...';
+  if (replacing) return locale === 'es' ? 'Reemplazar reseña' : 'Replace review';
+  return locale === 'es' ? 'Publicar reseña' : 'Submit review';
+}
+
+interface StarRatingProps {
+  readonly display: number;
+  readonly onRate: (i: number) => void;
+  readonly onHover: (i: number) => void;
+}
+
+function StarRating({ display, onRate, onHover }: StarRatingProps) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(i => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onRate(i)}
+          onMouseEnter={() => onHover(i)}
+          onMouseLeave={() => onHover(0)}
+          className="p-1"
+        >
+          <Star
+            size={20}
+            strokeWidth={1.25}
+            className={`transition-colors ${i <= display ? 'fill-[#B76E79] stroke-[#B76E79]' : 'stroke-[#3A3A3A]/30 fill-none'}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ReviewForm({ productId, token, userId, locale = 'es', onSubmitted }: Props) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
@@ -40,46 +110,11 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
   const loginHref = `/${locale}/auth/login?redirect=${encodeURIComponent(redirectPath)}`;
 
   if (!token) {
-    return (
-      <div className="py-6 border-t border-[#EDE3D8]">
-        <p className="text-[#3A3A3A]/60 text-sm">
-          {locale === 'es' ? (
-            <>
-              <a href={loginHref} className="text-[#B76E79] hover:underline">
-                Inicia sesión
-              </a>
-              {' '}para escribir una reseña.
-            </>
-          ) : (
-            <>
-              <a href={loginHref} className="text-[#B76E79] hover:underline">
-                Sign in
-              </a>
-              {' '}to write a review.
-            </>
-          )}
-        </p>
-      </div>
-    );
+    return <LoginPrompt locale={locale} loginHref={loginHref} />;
   }
 
   if (success) {
-    let successTitle: string;
-    if (replacing) {
-      successTitle = locale === 'es' ? '¡Gracias! Actualizamos tu reseña.' : 'Thanks! Your review was updated.';
-    } else {
-      successTitle = locale === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!';
-    }
-    return (
-      <div className="py-6 border-t border-[#EDE3D8]">
-        <p className="text-[#B76E79] font-['Cormorant_Garamond',serif] text-lg">
-          {successTitle}
-        </p>
-        <p className="text-[#3A3A3A]/50 text-sm mt-1">
-          {locale === 'es' ? 'Será visible una vez aprobada.' : 'It will be visible once approved.'}
-        </p>
-      </div>
-    );
+    return <SuccessMessage locale={locale} replacing={replacing} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,22 +137,8 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
   };
 
   const display = hovered || rating;
-
-  let formTitle: string;
-  if (replacing) {
-    formTitle = locale === 'es' ? 'Actualizar tu reseña' : 'Update your review';
-  } else {
-    formTitle = locale === 'es' ? 'Escribir una reseña' : 'Write a review';
-  }
-
-  let submitLabel: string;
-  if (submitting) {
-    submitLabel = locale === 'es' ? 'Enviando...' : 'Submitting...';
-  } else if (replacing) {
-    submitLabel = locale === 'es' ? 'Reemplazar reseña' : 'Replace review';
-  } else {
-    submitLabel = locale === 'es' ? 'Publicar reseña' : 'Submit review';
-  }
+  const formTitle = formTitleFor(locale, replacing);
+  const submitLabel = submitLabelFor(locale, submitting, replacing);
 
   return (
     <form onSubmit={handleSubmit} className="py-6 border-t border-[#EDE3D8] space-y-5">
@@ -130,24 +151,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
         <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
           {locale === 'es' ? 'Puntuación' : 'Rating'}
         </p>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map(i => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setRating(i)}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(0)}
-              className="p-1"
-            >
-              <Star
-                size={20}
-                strokeWidth={1.25}
-                className={`transition-colors ${i <= display ? 'fill-[#B76E79] stroke-[#B76E79]' : 'stroke-[#3A3A3A]/30 fill-none'}`}
-              />
-            </button>
-          ))}
-        </div>
+        <StarRating display={display} onRate={setRating} onHover={setHovered} />
       </div>
 
       {/* Title */}
