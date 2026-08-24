@@ -53,6 +53,8 @@ public class N8nWebhookNotificationSender implements NotificationSender {
      * @param data     the composed facts; forwarded verbatim so an n8n workflow can reword the
      *                 message, or use a new field, without a backend deploy
      */
+    // preferredEmailThenPhone() is a trivial null/blank check, not worth an isInfoEnabled() guard.
+    @SuppressWarnings("java:S2629")
     private void sendWebhook(String eventType, UUID referenceId, NotificationRecipient recipient,
                              String subject, String bodyText, Map<String, Object> data) {
         EffectiveConfig config = resolveConfig();

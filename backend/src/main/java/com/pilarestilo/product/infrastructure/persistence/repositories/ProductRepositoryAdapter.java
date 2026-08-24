@@ -263,11 +263,16 @@ public class ProductRepositoryAdapter implements ProductRepository {
         entity.setUpdatedAt(product.getUpdatedAt());
         entity.setShippingOriginZone(product.getShippingOriginZone());
 
+        // Hibernate's merge path clears and repopulates @ElementCollection lists in place
+        // (CollectionType.replaceElements), so these must stay mutable -- .toList() here throws
+        // UnsupportedOperationException on the next save of an already-persisted product.
+        @SuppressWarnings("java:S6204")
         List<ProductSizeStockEmbeddable> sizeEmbeddables = product.getSizeStocks().stream()
                 .map(s -> new ProductSizeStockEmbeddable(s.getSize(), s.getStock()))
                 .collect(Collectors.toList());
         entity.setSizeStocks(sizeEmbeddables);
 
+        @SuppressWarnings("java:S6204")
         List<ProductVariantEmbeddable> variantEmbeddables = product.getVariants().stream()
                 .map(v -> new ProductVariantEmbeddable(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockReserved()))
                 .collect(Collectors.toList());
@@ -306,7 +311,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         }
         List<ProductVariant> variants = (entity.getVariants() == null ? List.<ProductVariantEmbeddable>of() : entity.getVariants()).stream()
                 .map(v -> new ProductVariant(v.getColor(), v.getSize(), v.getStockOnHand(), v.getStockReserved()))
-                .collect(Collectors.toList());
+                .toList();
         /*
          * setVariants runs syncStocksFromVariants, which derives sizeStocks and stock from these
          * rows — so reading product_size_stocks first was work that got overwritten a line later.
@@ -317,7 +322,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
         if (variants.isEmpty()) {
             product.setSizeStocks(entity.getSizeStocks().stream()
                     .map(sizeStock -> new ProductSizeStock(sizeStock.getSize(), sizeStock.getStock()))
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         // Map categories from entity
@@ -328,12 +333,12 @@ public class ProductRepositoryAdapter implements ProductRepository {
             List<String> slugs = entity.getCategories().stream()
                     .map(CategoryEntity::getSlug)
                     .sorted()
-                    .collect(Collectors.toList());
+                    .toList();
             List<String> categoryTypes = entity.getCategories().stream()
                     .map(category -> category.getCategoryType() != null ? category.getCategoryType().name() : "GENERIC")
                     .distinct()
                     .sorted()
-                    .collect(Collectors.toList());
+                    .toList();
             product.setCategoryIds(ids);
             product.setCategorySlugs(slugs);
             product.setCategoryTypes(categoryTypes);

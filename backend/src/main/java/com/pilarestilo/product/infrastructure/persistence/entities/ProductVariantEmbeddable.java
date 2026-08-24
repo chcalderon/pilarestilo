@@ -39,9 +39,6 @@ public class ProductVariantEmbeddable {
     public int getStockOnHand() { return stockOnHand; }
     public int getStockReserved() { return stockReserved; }
 
-    /** Alias for {@link #getStockOnHand()} for backward compatibility. */
-    public int getStock() { return stockOnHand; }
-
     public void setColor(String color) { this.color = color; }
     public void setSize(String size) { this.size = size; }
     public void setStockOnHand(int stockOnHand) { this.stockOnHand = stockOnHand; }

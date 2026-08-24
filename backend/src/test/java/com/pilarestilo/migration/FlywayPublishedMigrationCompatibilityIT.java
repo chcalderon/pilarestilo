@@ -58,7 +58,7 @@ class FlywayPublishedMigrationCompatibilityIT {
     @Test
     void current_migrations_upgrade_a_database_that_already_applied_the_original_v61() throws Exception {
         Path baselineMigrationDir = Files.createDirectory(tempDir.resolve("baseline-migrations"));
-        Path currentMigrationDir = resolveClasspathDirectory("db/migration");
+        Path currentMigrationDir = resolveClasspathResource("db/migration");
 
         copyPublishedMigrationsThroughV60(currentMigrationDir, baselineMigrationDir);
 
@@ -79,7 +79,7 @@ class FlywayPublishedMigrationCompatibilityIT {
     @Test
     void current_migrations_repair_runtime_alignment_prerequisites_before_v61() throws Exception {
         Path baselineMigrationDir = Files.createDirectory(tempDir.resolve("repair-baseline-migrations"));
-        Path currentMigrationDir = resolveClasspathDirectory("db/migration");
+        Path currentMigrationDir = resolveClasspathResource("db/migration");
 
         copyPublishedMigrationsThroughV60(currentMigrationDir, baselineMigrationDir);
         migrate("filesystem:" + baselineMigrationDir.toAbsolutePath());
@@ -115,7 +115,7 @@ class FlywayPublishedMigrationCompatibilityIT {
     }
 
     private void copyLegacyV61(Path targetDir) throws IOException, URISyntaxException {
-        Path legacyV61 = resolveClasspathFile("db/migration-legacy/V61__retail_runtime_alignment.sql");
+        Path legacyV61 = resolveClasspathResource("db/migration-legacy/V61__retail_runtime_alignment.sql");
         Files.copy(legacyV61, targetDir.resolve("V61__retail_runtime_alignment.sql"));
     }
 
@@ -311,15 +311,7 @@ class FlywayPublishedMigrationCompatibilityIT {
         }
     }
 
-    private static Path resolveClasspathDirectory(String location) throws URISyntaxException {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(location);
-        if (url == null) {
-            throw new IllegalArgumentException("Classpath resource not found: " + location);
-        }
-        return Path.of(url.toURI());
-    }
-
-    private static Path resolveClasspathFile(String location) throws URISyntaxException {
+    private static Path resolveClasspathResource(String location) throws URISyntaxException {
         URL url = Thread.currentThread().getContextClassLoader().getResource(location);
         if (url == null) {
             throw new IllegalArgumentException("Classpath resource not found: " + location);

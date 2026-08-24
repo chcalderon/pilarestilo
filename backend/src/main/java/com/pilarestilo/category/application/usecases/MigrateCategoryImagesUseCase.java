@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class MigrateCategoryImagesUseCase {
@@ -36,53 +37,64 @@ public class MigrateCategoryImagesUseCase {
     @Transactional
     public Result execute() {
         List<Category> categories = categoryRepository.findAll();
-        int migrated = 0, failed = 0;
+        AtomicInteger migrated = new AtomicInteger();
+        AtomicInteger failed = new AtomicInteger();
         List<MigrationError> errors = new ArrayList<>();
 
         for (Category cat : categories) {
-            String imageUrl = cat.getImageUrl();
-            if (imageUrl == null || imageUrl.startsWith("/api/media/")) continue;
-
-            try {
-                var request = HttpRequest.newBuilder()
-                    .uri(URI.create(imageUrl))
-                    .timeout(Duration.ofSeconds(10))
-                    .GET().build();
-                var response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-                String contentType = response.headers().firstValue("content-type").orElse("image/jpeg");
-                String baseFilename = "category-" + cat.getId();
-
-                String storedUrl = mediaStorageService.storeOptimizedBytes(
-                    response.body(), contentType, "categories", baseFilename);
-
-                cat.update(
-                    cat.getSlug(),
-                    cat.getNameEs(),
-                    cat.getNameEn(),
-                    cat.getParentId(),
-                    cat.getSortOrder(),
-                    cat.isActive(),
-                    cat.isFeatured(),
-                    storedUrl
-                );
-                categoryRepository.save(cat);
-                migrated++;
-                log.info("Migrated category {} image: {} → {}", cat.getId(), imageUrl, storedUrl);
-
-            } catch (InterruptedException _) {
+            if (migrateOne(cat, migrated, failed, errors)) {
                 // Migrating hundreds of images is exactly the loop somebody stops halfway.
-                Thread.currentThread().interrupt();
-                failed++;
-                errors.add(new MigrationError(cat.getId(), imageUrl, "interrupted"));
                 break;
-            } catch (Exception e) {
-                failed++;
-                errors.add(new MigrationError(cat.getId(), imageUrl, e.getMessage()));
-                log.warn("Failed to migrate category {} image {}: {}", cat.getId(), imageUrl, e.getMessage());
             }
         }
-        return new Result(migrated, failed, errors);
+        return new Result(migrated.get(), failed.get(), errors);
+    }
+
+    /** @return true if the calling thread was interrupted and the caller should stop the loop. */
+    private boolean migrateOne(Category cat, AtomicInteger migrated, AtomicInteger failed, List<MigrationError> errors) {
+        String imageUrl = cat.getImageUrl();
+        if (imageUrl == null || imageUrl.startsWith("/api/media/")) {
+            return false;
+        }
+
+        try {
+            var request = HttpRequest.newBuilder()
+                .uri(URI.create(imageUrl))
+                .timeout(Duration.ofSeconds(10))
+                .GET().build();
+            var response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+            String contentType = response.headers().firstValue("content-type").orElse("image/jpeg");
+            String baseFilename = "category-" + cat.getId();
+
+            String storedUrl = mediaStorageService.storeOptimizedBytes(
+                response.body(), contentType, "categories", baseFilename);
+
+            cat.update(
+                cat.getSlug(),
+                cat.getNameEs(),
+                cat.getNameEn(),
+                cat.getParentId(),
+                cat.getSortOrder(),
+                cat.isActive(),
+                cat.isFeatured(),
+                storedUrl
+            );
+            categoryRepository.save(cat);
+            migrated.incrementAndGet();
+            log.info("Migrated category {} image: {} → {}", cat.getId(), imageUrl, storedUrl);
+            return false;
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            failed.incrementAndGet();
+            errors.add(new MigrationError(cat.getId(), imageUrl, "interrupted"));
+            return true;
+        } catch (Exception e) {
+            failed.incrementAndGet();
+            errors.add(new MigrationError(cat.getId(), imageUrl, e.getMessage()));
+            log.warn("Failed to migrate category {} image {}: {}", cat.getId(), imageUrl, e.getMessage());
+            return false;
+        }
     }
 
     public record MigrationError(UUID categoryId, String originalUrl, String reason) {}

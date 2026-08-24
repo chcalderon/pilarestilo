@@ -50,5 +50,6 @@ public class ProductVariant {
      * Callers that used getStock() before Fase 4 continue to compile;
      * note that this no longer reflects "available" — use {@link #available()} for that.
      */
+    @SuppressWarnings("java:S4144")
     public int getStock() { return stockOnHand; }
 }

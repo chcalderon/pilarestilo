@@ -341,7 +341,9 @@ public class ProductAiOpenAiClient {
         if (title.isBlank() && description.isBlank() && imagePrompt.isBlank()) {
             return ParsedFields.empty();
         }
-        log.warn("product_ai_openai_non_json_rescued preview={}", preview(text));
+        if (log.isWarnEnabled()) {
+            log.warn("product_ai_openai_non_json_rescued preview={}", preview(text));
+        }
         return new ParsedFields(title, description, imagePrompt);
     }
 
