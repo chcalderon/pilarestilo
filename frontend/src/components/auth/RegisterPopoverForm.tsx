@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { registerUser, loginUser, googleLogin, type AuthTokenResponse } from "@/lib/api";
 import { useAuthStore } from "@/lib/authStore";
+import { useGoogleSignIn } from "@/lib/useGoogleSignIn";
 
 type Tab = "register" | "login";
 
@@ -13,51 +14,6 @@ interface Props {
 /** How long the welcome message stays up before the reload it promises. Long enough to read
  * a four-word line, short enough that waiting for it doesn't feel like the app is stuck. */
 const WELCOME_DWELL_MS = 1600;
-
-interface GoogleSignInOptions {
-  readonly clientId: string | undefined;
-  readonly buttonRef: React.RefObject<HTMLDivElement | null>;
-  readonly onCredential: (credential: string) => Promise<void>;
-}
-
-/**
- * Wires up Google Identity Services against the container div. The script tag is rendered
- * elsewhere (see the astro layout) and may finish loading before or after this effect runs, so
- * both orders have to be handled: call in immediately if `window.google` is already there,
- * otherwise wait for the script's own `load` event.
- */
-function useGoogleSignIn({ clientId, buttonRef, onCredential }: GoogleSignInOptions) {
-  useEffect(() => {
-    if (!clientId) return;
-
-    function initGoogle() {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      g.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response: { credential: string }) => onCredential(response.credential),
-      });
-      if (buttonRef.current) {
-        g.accounts.id.renderButton(buttonRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          width: buttonRef.current.offsetWidth || 280,
-          logo_alignment: "left",
-        });
-      }
-    }
-
-    if ((window as any).google?.accounts?.id) {
-      initGoogle();
-      return undefined;
-    }
-    const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
-    script?.addEventListener("load", initGoogle);
-    return () => script?.removeEventListener("load", initGoogle);
-  }, [clientId, buttonRef, onCredential]);
-}
 
 function togglePasswordLabelFor(showPassword: boolean, es: boolean): string {
   if (showPassword) return es ? "Ocultar contrasena" : "Hide password";

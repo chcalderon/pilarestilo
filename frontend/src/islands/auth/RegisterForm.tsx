@@ -1,97 +1,49 @@
-import { useState, useEffect, useRef } from 'react';
-import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import { registerUser, googleLogin } from '../../lib/api';
-import { useAuthStore } from '../../lib/authStore';
+import { useGoogleSignIn } from '../../lib/useGoogleSignIn';
+import { useAuthRedirect } from '../../lib/useAuthRedirect';
+import { AuthSuccessScreen } from '../../components/auth/AuthSuccessScreen';
 
 interface Props {
   readonly locale: 'es' | 'en';
   readonly redirect?: string;
 }
 
-/** Long enough to read a short line, short enough that waiting for it isn't sluggish. */
-const WELCOME_DWELL_MS = 1600;
-/** The merge message runs two lines and carries more to read. */
-const MERGED_DWELL_MS = 2500;
-
 export default function RegisterForm({ locale, redirect }: Props) {
-  const [email, setEmail]       = useState('');
-  const [fullName, setFullName] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [email, setEmail]         = useState('');
+  const [fullName, setFullName]   = useState('');
+  const [password, setPassword]   = useState('');
+  const [showPass, setShowPass]   = useState(false);
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
   const [marketing, setMarketing] = useState(false);
-  const [success, setSuccess]   = useState<{ name: string; merged: boolean } | null>(null);
-  const { setAuth }              = useAuthStore();
-  const googleBtnRef             = useRef<HTMLDivElement>(null);
+  const googleBtnRef              = useRef<HTMLDivElement>(null);
 
   const es = locale === 'es';
 
-  /** Both entry points end here, same treatment as LoginForm's finishAuth. */
-  function finishAuth(data: {
-    accessToken: string; userId: string; email: string; role: string; fullName?: string;
-    avatarUrl?: string; permissions?: string[]; permissionCodes?: string[];
-    vigencyStart?: string; vigencyEnd?: string; accountMerged?: boolean;
-  }) {
-    setAuth(data.accessToken, {
-      id: data.userId,
-      email: data.email,
-      role: data.role,
-      fullName: data.fullName,
-      avatarUrl: data.avatarUrl,
-      permissions: data.permissions ?? [],
-      permissionCodes: data.permissionCodes ?? [],
-      vigencyStart: data.vigencyStart,
-      vigencyEnd: data.vigencyEnd,
-    });
-    const dest = redirect ?? `/${locale}/account`;
-    const name = data.fullName?.trim().split(' ')[0] || data.email.split('@')[0];
-    setSuccess({ name, merged: !!data.accountMerged });
-    setTimeout(() => { window.location.href = dest; }, data.accountMerged ? MERGED_DWELL_MS : WELCOME_DWELL_MS);
+  const { success, finishAuth } = useAuthRedirect(() => redirect ?? `/${locale}/account`);
+
+  async function handleGoogleCredential(credential: string) {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await googleLogin(credential);
+      finishAuth(data);
+    } catch {
+      setError(es ? 'No se pudo registrar con Google.' : 'Could not register with Google.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => {
-    const clientId = (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined;
-    if (!clientId) return;
-
-    function initGoogle() {
-      const g = (window as any).google;
-      if (!g?.accounts?.id) return;
-      g.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: { credential: string }) => {
-          setLoading(true);
-          setError('');
-          try {
-            const data = await googleLogin(response.credential);
-            finishAuth(data);
-          } catch {
-            setError(es ? 'No se pudo registrar con Google.' : 'Could not register with Google.');
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
-      if (googleBtnRef.current) {
-        g.accounts.id.renderButton(googleBtnRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'signup_with',
-          width: googleBtnRef.current.offsetWidth || 320,
-          logo_alignment: 'left',
-        });
-      }
-    }
-
-    if ((window as any).google?.accounts?.id) {
-      initGoogle();
-    } else {
-      const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
-      script?.addEventListener('load', initGoogle);
-      return () => script?.removeEventListener('load', initGoogle);
-    }
-  }, []);
+  useGoogleSignIn({
+    clientId: (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined,
+    buttonRef: googleBtnRef,
+    onCredential: handleGoogleCredential,
+    buttonText: 'signup_with',
+    buttonWidth: 320,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,30 +68,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
   }
 
   if (success) {
-    let successTitle: string;
-    let successSubtitle: string;
-    if (success.merged) {
-      successTitle = es ? '¡Cuentas unificadas!' : 'Accounts linked!';
-      successSubtitle = es
-        ? 'Tu cuenta existente ha sido vinculada con Google. Redirigiendo…'
-        : 'Your existing account has been linked with Google. Redirecting…';
-    } else {
-      successTitle = es ? `Bienvenido/a, ${success.name}` : `Welcome, ${success.name}`;
-      successSubtitle = es ? 'Has ingresado correctamente.' : 'You are signed in.';
-    }
-    return (
-      <div className="flex flex-col items-center gap-5 py-10 text-center">
-        <CheckCircle2 size={44} className="text-pe-rose-ink" />
-        <div>
-          <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
-            {successTitle}
-          </p>
-          <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5">
-            {successSubtitle}
-          </p>
-        </div>
-      </div>
-    );
+    return <AuthSuccessScreen success={success} es={es} />;
   }
 
   let togglePasswordLabel: string;
