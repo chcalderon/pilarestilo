@@ -72,158 +72,160 @@ function hasHybridRouteAccess(
   return { allowed: legacyAllows, usedLegacyFallback: legacyAllows };
 }
 
+function isTokenExpired(payload: Record<string, unknown> | null): boolean {
+  return !!payload && typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp'];
+}
+
+function logHybridAccessCheck(
+  pathname: string,
+  role: string,
+  requirement: HybridRouteRequirement,
+  permissionCodes: string[],
+  legacyPermissions: string[],
+  access: { allowed: boolean; usedLegacyFallback: boolean },
+): void {
+  if (!RBAC_DEBUG_ENABLED) return;
+  if (permissionCodes.length === 0 && legacyPermissions.length > 0) {
+    console.info(
+      '[RBAC] middleware legacy fallback route=%s role=%s permission=%s legacy=%s',
+      pathname, role, requirement.permissionCode, requirement.legacyViewKey ?? 'none',
+    );
+  }
+  if (access.allowed) {
+    console.info(
+      '[RBAC] middleware hybrid route=%s role=%s permission=%s authorities=%s fallback=%s',
+      pathname, role, requirement.permissionCode, permissionCodes.length, access.usedLegacyFallback,
+    );
+  } else {
+    console.warn(
+      '[RBAC] middleware deny route=%s role=%s permission=%s permissionCodes=%s legacyPermissions=%s',
+      pathname, role, requirement.permissionCode, permissionCodes.length, legacyPermissions.length,
+    );
+  }
+}
+
+/**
+ * The whole /admin gate: token presence, panel-role check, expiry, then server-side
+ * confirmation against the backend (rejecting stale/invalid signatures a local decode can't
+ * catch), and finally the hybrid RBAC permission-or-legacy-view-key check for routes that need
+ * one. Returns a redirect Response to short-circuit the request, or null to let it continue.
+ */
+async function handleAdminGate(context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], pathname: string): Promise<Response | null> {
+  if (!pathname.startsWith('/admin') || pathname.startsWith('/admin/login')) return null;
+
+  const token = context.cookies.get('pe_token')?.value;
+  if (!token) {
+    return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+  }
+
+  /** The token itself is bad — drop it so the stale copy stops being retried. */
+  const rejectToken = () => {
+    context.cookies.delete('pe_token', { path: '/' });
+    return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+  };
+
+  const payload = decodeJwtPayload(token);
+  if (!payload || !isAdminPanelRole(payload['role'])) {
+    return rejectToken();
+  }
+  if (isTokenExpired(payload)) {
+    return rejectToken();
+  }
+
+  /**
+   * The backend could not answer. That says nothing about the token, so keep the cookie —
+   * otherwise a transient outage logs every staff member out and they cannot get back in
+   * until it recovers.
+   */
+  const backendUnavailable = () =>
+    context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}&reason=backend_unavailable`);
+
+  // Server-side validation against backend to reject stale/invalid signatures.
+  // Same internal Docker address as in lib/api.ts: SSR to backend, never a browser.
+  const apiBase = import.meta.env.INTERNAL_API_BASE_URL ?? 'http://backend:8080/api'; // NOSONAR
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    // Network-level failure: backend down, DNS, or a bad INTERNAL_API_BASE_URL.
+    return backendUnavailable();
+  }
+  if (!res.ok) {
+    return rejectToken();
+  }
+
+  let me: { role?: unknown; permissions?: unknown; permissionCodes?: unknown } | null;
+  try {
+    me = await res.json();
+  } catch {
+    // 200 with an unreadable body is a backend fault, not a bad credential.
+    return backendUnavailable();
+  }
+  if (!me || !isAdminPanelRole(me.role)) {
+    return rejectToken();
+  }
+
+  const hybridRequirement = resolveHybridRequirement(pathname);
+  if (!hybridRequirement) return null;
+
+  const role = String(me.role ?? payload['role'] ?? '');
+  const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
+  const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
+  const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);
+  logHybridAccessCheck(pathname, role, hybridRequirement, permissionCodes, legacyPermissions, access);
+
+  return access.allowed ? null : context.redirect('/admin/');
+}
+
+/**
+ * Deliberately a local check, unlike the admin gate above: it never calls the backend.
+ * Checkout is not privileged — the order endpoint authorizes the request itself — so the only
+ * job here is to avoid rendering a flow the customer cannot finish. Asking the backend would
+ * mean a blip bounces a paying customer to the login screen.
+ */
+function handleCheckoutGate(context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], pathname: string): Response | null {
+  const checkoutLocale = resolveCheckoutLocale(pathname);
+  if (!checkoutLocale) return null;
+
+  const token = context.cookies.get('pe_token')?.value;
+  const payload = token ? decodeJwtPayload(token) : null;
+  if (payload && !isTokenExpired(payload)) return null;
+
+  if (token) {
+    context.cookies.delete('pe_token', { path: '/' });
+  }
+  const target = `${pathname}${context.url.search}`;
+  return context.redirect(`/${checkoutLocale}/auth/login?redirect=${encodeURIComponent(target)}`);
+}
+
+/** Already signed in: the login/register form has nothing to offer, so send them where they
+ * were headed instead of showing it. */
+function handleAuthPageGate(context: Parameters<Parameters<typeof defineMiddleware>[0]>[0], pathname: string): Response | null {
+  const authLocale = resolveAuthLocale(pathname);
+  if (!authLocale) return null;
+
+  const token = context.cookies.get('pe_token')?.value;
+  const payload = token ? decodeJwtPayload(token) : null;
+  if (!payload || isTokenExpired(payload)) return null;
+
+  if (isAdminPanelRole(payload['role'])) {
+    return context.redirect('/admin/dashboard');
+  }
+  const target = safeRedirectPath(context.url.searchParams.get('redirect'), `/${authLocale}/account`);
+  return context.redirect(target);
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const token = context.cookies.get('pe_token')?.value;
+  const adminResponse = await handleAdminGate(context, pathname);
+  if (adminResponse) return adminResponse;
 
-    if (!token) {
-      return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
-    }
+  const checkoutResponse = handleCheckoutGate(context, pathname);
+  if (checkoutResponse) return checkoutResponse;
 
-    /** The token itself is bad — drop it so the stale copy stops being retried. */
-    const rejectToken = () => {
-      context.cookies.delete('pe_token', { path: '/' });
-      return context.redirect(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
-    };
-
-    const payload = decodeJwtPayload(token);
-    if (!payload || !isAdminPanelRole(payload['role'])) {
-      return rejectToken();
-    }
-
-    if (typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp']) {
-      return rejectToken();
-    }
-
-    /**
-     * The backend could not answer. That says nothing about the token, so keep the cookie —
-     * otherwise a transient outage logs every staff member out and they cannot get back in
-     * until it recovers.
-     */
-    const backendUnavailable = () =>
-      context.redirect(
-        `/admin/login?redirect=${encodeURIComponent(pathname)}&reason=backend_unavailable`,
-      );
-
-    // Server-side validation against backend to reject stale/invalid signatures.
-    // Same internal Docker address as in lib/api.ts: SSR to backend, never a browser.
-    const apiBase = import.meta.env.INTERNAL_API_BASE_URL ?? 'http://backend:8080/api'; // NOSONAR
-    let res: Response;
-    try {
-      res = await fetch(`${apiBase}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch {
-      // Network-level failure: backend down, DNS, or a bad INTERNAL_API_BASE_URL.
-      return backendUnavailable();
-    }
-
-    if (!res.ok) {
-      return rejectToken();
-    }
-
-    let me: { role?: unknown; permissions?: unknown; permissionCodes?: unknown } | null;
-    try {
-      me = await res.json();
-    } catch {
-      // 200 with an unreadable body is a backend fault, not a bad credential.
-      return backendUnavailable();
-    }
-
-    if (!me || !isAdminPanelRole(me.role)) {
-      return rejectToken();
-    }
-
-    const hybridRequirement = resolveHybridRequirement(pathname);
-    if (hybridRequirement) {
-      const role = String(me.role ?? payload['role'] ?? '');
-      const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
-      const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
-      const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);
-
-      if (RBAC_DEBUG_ENABLED) {
-        if (permissionCodes.length === 0 && legacyPermissions.length > 0) {
-          console.info(
-            '[RBAC] middleware legacy fallback route=%s role=%s permission=%s legacy=%s',
-            pathname,
-            role,
-            hybridRequirement.permissionCode,
-            hybridRequirement.legacyViewKey ?? 'none',
-          );
-        }
-        if (access.allowed) {
-          console.info(
-            '[RBAC] middleware hybrid route=%s role=%s permission=%s authorities=%s fallback=%s',
-            pathname,
-            role,
-            hybridRequirement.permissionCode,
-            permissionCodes.length,
-            access.usedLegacyFallback,
-          );
-        }
-      }
-
-      if (!access.allowed) {
-        if (RBAC_DEBUG_ENABLED) {
-          console.warn(
-            '[RBAC] middleware deny route=%s role=%s permission=%s permissionCodes=%s legacyPermissions=%s',
-            pathname,
-            role,
-            hybridRequirement.permissionCode,
-            permissionCodes.length,
-            legacyPermissions.length,
-          );
-        }
-        return context.redirect('/admin/');
-      }
-    }
-  }
-
-  const checkoutLocale = resolveCheckoutLocale(pathname);
-  if (checkoutLocale) {
-    const token = context.cookies.get('pe_token')?.value;
-    const payload = token ? decodeJwtPayload(token) : null;
-    const expired =
-      !!payload && typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp'];
-
-    /**
-     * Deliberately a local check, unlike the admin gate above: it never calls the backend.
-     * Checkout is not privileged — the order endpoint authorizes the request itself — so the
-     * only job here is to avoid rendering a flow the customer cannot finish. Asking the
-     * backend would mean a blip bounces a paying customer to the login screen.
-     */
-    if (!payload || expired) {
-      if (token) {
-        context.cookies.delete('pe_token', { path: '/' });
-      }
-      const target = `${pathname}${context.url.search}`;
-      return context.redirect(
-        `/${checkoutLocale}/auth/login?redirect=${encodeURIComponent(target)}`,
-      );
-    }
-  }
-
-  const authLocale = resolveAuthLocale(pathname);
-  if (authLocale) {
-    const token = context.cookies.get('pe_token')?.value;
-    const payload = token ? decodeJwtPayload(token) : null;
-    const expired =
-      !!payload && typeof payload['exp'] === 'number' && Date.now() / 1000 > payload['exp'];
-
-    // Already signed in: the form has nothing to offer, so send them where they were headed.
-    if (payload && !expired) {
-      if (isAdminPanelRole(payload['role'])) {
-        return context.redirect('/admin/dashboard');
-      }
-      const target = safeRedirectPath(
-        context.url.searchParams.get('redirect'),
-        `/${authLocale}/account`,
-      );
-      return context.redirect(target);
-    }
-  }
+  const authPageResponse = handleAuthPageGate(context, pathname);
+  if (authPageResponse) return authPageResponse;
 
   return next();
 });

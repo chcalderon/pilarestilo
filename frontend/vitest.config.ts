@@ -3,9 +3,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    // Vitest does not read astro.config.mjs, so the `@/*` alias is declared here too.
     alias: {
+      // Vitest does not read astro.config.mjs, so the `@/*` alias is declared here too.
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Virtual module from Astro's Vite plugin, which Vitest never loads. See the stub file.
+      'astro:middleware': fileURLToPath(new URL('./src/testing/astroMiddlewareStub.ts', import.meta.url)),
     },
   },
   test: {
