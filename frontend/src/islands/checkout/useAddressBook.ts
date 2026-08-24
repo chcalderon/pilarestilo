@@ -58,6 +58,40 @@ export function draftFromAddress(address: CustomerAddressDto): AddressDraft {
   };
 }
 
+type FieldCheck = (draft: AddressDraft, es: boolean) => string | undefined;
+
+const FIELD_CHECKS: ReadonlyArray<readonly [keyof AddressDraft, FieldCheck]> = [
+  ['label', (d, es) => {
+    if (d.label.trim()) return undefined;
+    return es ? 'Ingresa un alias, por ejemplo "Casa".' : 'Enter a label, e.g. "Home".';
+  }],
+  ['recipientName', (d, es) => {
+    if (d.recipientName.trim()) return undefined;
+    return es ? 'Ingresa quién recibe.' : 'Enter who receives the parcel.';
+  }],
+  ['phone', (d, es) => {
+    const digits = d.phone.replace(/\D/g, '');
+    if (digits.length >= 8 && digits.length <= 15) return undefined;
+    return es ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must have between 8 and 15 digits.';
+  }],
+  ['line1', (d, es) => {
+    if (d.line1.trim()) return undefined;
+    return es ? 'Ingresa calle y número.' : 'Enter street and number.';
+  }],
+  ['regionId', (d, es) => {
+    if (d.regionId) return undefined;
+    return es ? 'Selecciona una región.' : 'Select a region.';
+  }],
+  ['cityId', (d, es) => {
+    if (d.cityId) return undefined;
+    return es ? 'Selecciona una ciudad.' : 'Select a city.';
+  }],
+  ['comunaId', (d, es) => {
+    if (d.comunaId) return undefined;
+    return es ? 'Selecciona una comuna.' : 'Select a comuna.';
+  }],
+];
+
 /**
  * Returns one message per invalid field rather than the first failure. The form shows them
  * all at once under their own inputs, so a customer fixes the address in one pass instead of
@@ -66,26 +100,10 @@ export function draftFromAddress(address: CustomerAddressDto): AddressDraft {
 export function validateDraft(draft: AddressDraft, locale: Locale): AddressErrors {
   const es = locale === 'es';
   const errors: AddressErrors = {};
-
-  if (!draft.label.trim()) {
-    errors.label = es ? 'Ingresa un alias, por ejemplo "Casa".' : 'Enter a label, e.g. "Home".';
+  for (const [field, check] of FIELD_CHECKS) {
+    const message = check(draft, es);
+    if (message) errors[field] = message;
   }
-  if (!draft.recipientName.trim()) {
-    errors.recipientName = es ? 'Ingresa quién recibe.' : 'Enter who receives the parcel.';
-  }
-  const digits = draft.phone.replace(/\D/g, '');
-  if (digits.length < 8 || digits.length > 15) {
-    errors.phone = es
-      ? 'El teléfono debe tener entre 8 y 15 dígitos.'
-      : 'Phone must have between 8 and 15 digits.';
-  }
-  if (!draft.line1.trim()) {
-    errors.line1 = es ? 'Ingresa calle y número.' : 'Enter street and number.';
-  }
-  if (!draft.regionId) errors.regionId = es ? 'Selecciona una región.' : 'Select a region.';
-  if (!draft.cityId) errors.cityId = es ? 'Selecciona una ciudad.' : 'Select a city.';
-  if (!draft.comunaId) errors.comunaId = es ? 'Selecciona una comuna.' : 'Select a comuna.';
-
   return errors;
 }
 
