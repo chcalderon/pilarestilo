@@ -237,7 +237,7 @@ public class InventoryService {
                                  InventoryMovementType type, int quantity,
                                  StockMovementOrigin origin) {
         StockMovementOrigin cause = origin == null ? StockMovementOrigin.unknown() : origin;
-        inventoryMovementRepository.save(InventoryMovement.record(
+        inventoryMovementRepository.save(InventoryMovement.create(
                 productId, variantColor, variantSize, type, quantity,
                 cause.referenceType(), cause.referenceId(), cause.recordedBy(), null
         ));

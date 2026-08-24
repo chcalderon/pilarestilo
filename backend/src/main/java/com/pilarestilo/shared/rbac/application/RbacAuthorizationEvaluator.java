@@ -31,7 +31,9 @@ public class RbacAuthorizationEvaluator {
     }
 
     private boolean hasAuthority(Authentication authentication, String authority) {
-        if (authentication == null || authentication.getAuthorities() == null) {
+        // Spring never hands back null authorities (see principalSummary below), so only
+        // authentication itself needs the null check.
+        if (authentication == null) {
             return false;
         }
         return authentication.getAuthorities().stream()

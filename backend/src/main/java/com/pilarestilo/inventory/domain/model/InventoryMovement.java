@@ -29,7 +29,7 @@ public class InventoryMovement {
      */
     // One parameter per column a movement actually carries.
     @SuppressWarnings("java:S107")
-    public static InventoryMovement record(UUID productId,
+    public static InventoryMovement create(UUID productId,
                                            String variantColor,
                                            String variantSize,
                                            InventoryMovementType type,

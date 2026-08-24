@@ -2,6 +2,8 @@ package com.pilarestilo.rbac.infrastructure;
 
 import com.pilarestilo.support.NotificationsTestDatabase;
 import com.pilarestilo.shared.rbac.domain.PermissionRegistry;
+import com.pilarestilo.shared.rbac.domain.model.PermissionDefinition;
+import com.pilarestilo.shared.rbac.infrastructure.persistence.entities.PermissionEntity;
 import com.pilarestilo.shared.rbac.infrastructure.persistence.repositories.PermissionJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +42,10 @@ class PermissionCatalogSeedIT {
     @Test
     void database_catalog_matches_registry_codes() {
         Set<String> expected = PermissionRegistry.all().stream()
-                .map(definition -> definition.code())
+                .map(PermissionDefinition::code)
                 .collect(Collectors.toSet());
         Set<String> actual = permissionJpaRepository.findAll().stream()
-                .map(entity -> entity.getCode())
+                .map(PermissionEntity::getCode)
                 .collect(Collectors.toSet());
 
         assertEquals(expected, actual);

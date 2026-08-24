@@ -285,6 +285,13 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     private Product toDomain(ProductEntity entity) {
+        Money listPrice = null;
+        if (entity.getListPriceAmount() != null) {
+            String resolvedListCurrency = entity.getListPriceCurrency() == null || entity.getListPriceCurrency().isBlank()
+                    ? entity.getPriceCurrency()
+                    : entity.getListPriceCurrency();
+            listPrice = new Money(entity.getListPriceAmount(), resolvedListCurrency);
+        }
         Product product = Product.create(
                 entity.getName(),
                 entity.getDescription(),
@@ -293,12 +300,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 entity.getCondition(),
                 entity.getBrand(),
                 entity.getStock(),
-                entity.getListPriceAmount() != null
-                        ? new Money(entity.getListPriceAmount(),
-                        entity.getListPriceCurrency() == null || entity.getListPriceCurrency().isBlank()
-                                ? entity.getPriceCurrency()
-                                : entity.getListPriceCurrency())
-                        : null
+                listPrice
         );
         product.setId(entity.getId());
         product.setActive(entity.isActive());

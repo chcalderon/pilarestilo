@@ -158,6 +158,7 @@ public class UpdateOrderStatusUseCase {
                     }
                 }
             }
+            // Every other target status carries no reservation/discount side effects to undo.
             default -> { }
         }
     }

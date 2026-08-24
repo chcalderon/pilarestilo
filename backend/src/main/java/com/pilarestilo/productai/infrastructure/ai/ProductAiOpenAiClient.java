@@ -54,7 +54,7 @@ public class ProductAiOpenAiClient {
         }
         this.imageModel = resolvedImageModel;
 
-        int safeTimeoutMs = (int) Math.max(10_000L, Math.min(timeoutMs, Integer.MAX_VALUE));
+        int safeTimeoutMs = (int) Math.clamp(timeoutMs, 10_000L, Integer.MAX_VALUE);
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(safeTimeoutMs);
         requestFactory.setReadTimeout(safeTimeoutMs);
@@ -429,7 +429,7 @@ public class ProductAiOpenAiClient {
             return "sin detalle";
         }
         String body = ex.getResponseBodyAsString();
-        if (body == null || body.isBlank()) {
+        if (body.isBlank()) {
             return "sin detalle";
         }
         try {
