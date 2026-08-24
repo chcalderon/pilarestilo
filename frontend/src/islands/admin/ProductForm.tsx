@@ -313,6 +313,116 @@ function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema
   }));
 }
 
+function validateBasicFields(form: typeof EMPTY_FORM): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!form.name.trim()) e.name = 'Nombre requerido';
+  if (!form.brand.trim()) e.brand = 'Marca requerida';
+  if (!form.description.trim()) e.description = 'Descripcion requerida';
+  if (!form.amount || Number.isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
+  if (form.listAmount.trim()) {
+    if (Number.isNaN(Number(form.listAmount)) || Number(form.listAmount) <= 0) {
+      e.listAmount = 'Precio lista valido requerido';
+    } else if (!Number.isNaN(Number(form.amount)) && Number(form.listAmount) <= Number(form.amount)) {
+      e.listAmount = 'El precio lista debe ser mayor al precio oferta';
+    }
+  }
+  return e;
+}
+
+function variantRowAttributeError(row: VariantRow, schema: VariantSchema, rowIndex: number): string | undefined {
+  for (const attribute of schema.attributes) {
+    const values = getAttributeValues(row.attributes, attribute);
+    const normalizedValues = normalizeAttributeValues(attribute, values);
+    if (attribute.required && normalizedValues.length === 0) {
+      return `${attribute.label} requerido en fila ${rowIndex + 1}`;
+    }
+    if (normalizedValues.length > 0 && values.join('|') !== normalizedValues.join('|')) {
+      return `${attribute.label} invalido en fila ${rowIndex + 1}`;
+    }
+  }
+  return undefined;
+}
+
+function variantRowStockError(row: VariantRow, rowIndex: number): string | undefined {
+  if (!row.stock || Number.isNaN(Number(row.stock)) || Number(row.stock) < 0) {
+    return `Stock valido requerido en fila ${rowIndex + 1}`;
+  }
+  return undefined;
+}
+
+/**
+ * One message for the whole variant table rather than per-row, matching how the rest of the
+ * form reports errors -- the table is short enough that "fila N" pinpoints it well enough.
+ */
+function validateVariantRows(
+  rows: VariantRow[],
+  schema: VariantSchema,
+  primaryAttribute: CategoryAttributeDefinition,
+  secondaryAttribute: CategoryAttributeDefinition,
+): string | undefined {
+  if (rows.length === 0) return 'Debes agregar al menos una combinacion';
+
+  const seen = new Set<string>();
+  for (let idx = 0; idx < rows.length; idx += 1) {
+    const row = rows[idx];
+    const attributeError = variantRowAttributeError(row, schema, idx);
+    if (attributeError) return attributeError;
+
+    const stockError = variantRowStockError(row, idx);
+    if (stockError) return stockError;
+
+    const normalizedVariant = selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), schema);
+    const key = `${normalizedVariant.color.trim().toLowerCase()}::${normalizedVariant.size}`;
+    if (seen.has(key)) {
+      return `No se permiten combinaciones duplicadas (${primaryAttribute.label.toLowerCase()} + ${secondaryAttribute.label.toLowerCase()})`;
+    }
+    seen.add(key);
+  }
+  return undefined;
+}
+
+/**
+ * A category left over from a previous variant type. The tree greys these out, but a selection
+ * made before the type changed stays operable so it can be untangled -- which means it can also
+ * reach save. Refused here rather than silently stored: a shoe filed under "Vestidos" is wrong in
+ * the catalogue long after anyone remembers why.
+ */
+function validateCategoryCompatibility(
+  categories: CategoryDto[],
+  selectedCatIds: string[],
+  allowedCatIds: Set<string>,
+): string | undefined {
+  const incompatible = categories
+    .filter((category) => selectedCatIds.includes(category.id))
+    .filter((category) => !allowedCatIds.has(category.id));
+  if (incompatible.length === 0) return undefined;
+  return `Quita ${incompatible.map((c) => c.nameEs).join(', ')}: no aplica${
+    incompatible.length > 1 ? 'n' : ''
+  } al tipo de variante elegido.`;
+}
+
+export interface ValidateProductFormArgs {
+  readonly form: typeof EMPTY_FORM;
+  readonly variantRows: VariantRow[];
+  readonly variantSchema: VariantSchema;
+  readonly categories: CategoryDto[];
+  readonly selectedCatIds: string[];
+  readonly allowedCatIds: Set<string>;
+  readonly primaryAttribute: CategoryAttributeDefinition;
+  readonly secondaryAttribute: CategoryAttributeDefinition;
+}
+
+export function validateProductForm(args: ValidateProductFormArgs): Record<string, string> {
+  const errors = validateBasicFields(args.form);
+
+  const combinationsError = validateVariantRows(args.variantRows, args.variantSchema, args.primaryAttribute, args.secondaryAttribute);
+  if (combinationsError) errors.combinations = combinationsError;
+
+  const categoriesError = validateCategoryCompatibility(args.categories, args.selectedCatIds, args.allowedCatIds);
+  if (categoriesError) errors.categories = categoriesError;
+
+  return errors;
+}
 
 export default function ProductForm({ product, onSave, onSaveFailed, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -631,65 +741,9 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const variantTotalStock = variantRows.reduce((sum, row) => sum + parseSafeStock(row.stock), 0);
 
   function validate(): boolean {
-    const e: Record<string, string> = {};
-    if (!form.name.trim()) e.name = 'Nombre requerido';
-    if (!form.brand.trim()) e.brand = 'Marca requerida';
-    if (!form.description.trim()) e.description = 'Descripcion requerida';
-    if (!form.amount || Number.isNaN(Number(form.amount)) || Number(form.amount) <= 0) e.amount = 'Precio valido requerido';
-    if (form.listAmount.trim()) {
-      if (Number.isNaN(Number(form.listAmount)) || Number(form.listAmount) <= 0) {
-        e.listAmount = 'Precio lista valido requerido';
-      } else if (!Number.isNaN(Number(form.amount)) && Number(form.listAmount) <= Number(form.amount)) {
-        e.listAmount = 'El precio lista debe ser mayor al precio oferta';
-      }
-    }
-    if (variantRows.length === 0) {
-      e.combinations = 'Debes agregar al menos una combinacion';
-    } else {
-      const seen = new Set<string>();
-      for (let idx = 0; idx < variantRows.length; idx += 1) {
-        const row = variantRows[idx];
-        for (const attribute of variantSchema.attributes) {
-          const values = getAttributeValues(row.attributes, attribute);
-          const normalizedValues = normalizeAttributeValues(attribute, values);
-          if (attribute.required && normalizedValues.length === 0) {
-            e.combinations = `${attribute.label} requerido en fila ${idx + 1}`;
-            break;
-          }
-          if (normalizedValues.length > 0 && values.join('|') !== normalizedValues.join('|')) {
-            e.combinations = `${attribute.label} invalido en fila ${idx + 1}`;
-            break;
-          }
-        }
-        if (e.combinations) break;
-        if (!row.stock || Number.isNaN(Number(row.stock)) || Number(row.stock) < 0) {
-          e.combinations = `Stock valido requerido en fila ${idx + 1}`;
-          break;
-        }
-        const normalizedVariant = selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), variantSchema);
-        const key = `${normalizedVariant.color.trim().toLowerCase()}::${normalizedVariant.size}`;
-        if (seen.has(key)) {
-          e.combinations = `No se permiten combinaciones duplicadas (${primaryAttribute.label.toLowerCase()} + ${secondaryAttribute.label.toLowerCase()})`;
-          break;
-        }
-        seen.add(key);
-      }
-    }
-    /*
-     * A category left over from a previous variant type. The tree greys these out, but a
-     * selection made before the type changed stays operable so it can be untangled — which means
-     * it can also reach save. Refused here rather than silently stored: a shoe filed under
-     * "Vestidos" is wrong in the catalogue long after anyone remembers why.
-     */
-    const incompatible = categories
-      .filter((category) => selectedCatIds.includes(category.id))
-      .filter((category) => !allowedCatIds.has(category.id));
-    if (incompatible.length > 0) {
-      e.categories = `Quita ${incompatible.map((c) => c.nameEs).join(', ')}: no aplica${
-        incompatible.length > 1 ? 'n' : ''
-      } al tipo de variante elegido.`;
-    }
-
+    const e = validateProductForm({
+      form, variantRows, variantSchema, categories, selectedCatIds, allowedCatIds, primaryAttribute, secondaryAttribute,
+    });
     setErrors(e);
     return Object.keys(e).length === 0;
   }
