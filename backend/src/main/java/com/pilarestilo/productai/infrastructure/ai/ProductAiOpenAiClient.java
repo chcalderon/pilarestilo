@@ -239,7 +239,7 @@ public class ProductAiOpenAiClient {
             String text = content.path("text").asString("");
             boolean isTextContent = "output_text".equals(type) || "text".equals(type);
             if (isTextContent && !text.isBlank()) {
-                if (builder.length() > 0) {
+                if (!builder.isEmpty()) {
                     builder.append('\n');
                 }
                 builder.append(text.trim());

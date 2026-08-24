@@ -182,7 +182,7 @@ public class PublicationService {
 
     @Transactional
     public PublicationDto dispatch(UUID id, UUID actorUserId) {
-        return dispatchInternal(id, actorUserId, PublicationAttemptTriggerType.MANUAL, false);
+        return dispatchInternal(id, PublicationAttemptTriggerType.MANUAL, false);
     }
 
     @Transactional
@@ -193,7 +193,7 @@ public class PublicationService {
         }
         entity.setRetryCount(entity.getRetryCount() + 1);
         publicationRepository.save(entity);
-        return dispatchInternal(id, actorUserId, PublicationAttemptTriggerType.RETRY, true);
+        return dispatchInternal(id, PublicationAttemptTriggerType.RETRY, true);
     }
 
     @Transactional
@@ -238,7 +238,7 @@ public class PublicationService {
         );
     }
 
-    private PublicationDto dispatchInternal(UUID id, UUID actorUserId, PublicationAttemptTriggerType triggerType, boolean isRetry) {
+    private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType, boolean isRetry) {
         PublicationEntity entity = findById(id);
         if (!(entity.getStatus() == PublicationStatus.APPROVED || entity.getStatus() == PublicationStatus.SCHEDULED)) {
             throw new DomainException("Publication cannot be dispatched from status " + entity.getStatus());

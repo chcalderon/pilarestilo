@@ -2,6 +2,7 @@ package com.pilarestilo.billing.domain;
 
 import com.pilarestilo.order.domain.enums.OrderStatus;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -16,11 +17,11 @@ import java.util.Set;
  */
 public final class DocumentableSale {
 
-    public static final Set<OrderStatus> STATUSES = new LinkedHashSet<>(Set.of(
+    public static final Set<OrderStatus> STATUSES = Collections.unmodifiableSet(new LinkedHashSet<>(Set.of(
             OrderStatus.PAID,
             OrderStatus.PREPARING_ORDER,
             OrderStatus.SHIPPED,
-            OrderStatus.DELIVERED));
+            OrderStatus.DELIVERED)));
 
     private DocumentableSale() {}
 

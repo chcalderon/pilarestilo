@@ -25,7 +25,7 @@ public class SecurityConfig {
 
     @Bean
     @SuppressWarnings("java:S4502")
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
                 .authorizeHttpRequests(auth -> auth
                         // When a controller throws, the container re-dispatches to /error, and that
