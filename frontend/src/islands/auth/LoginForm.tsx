@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Eye, EyeOff, LogIn, Loader2, AlertCircle } from 'lucide-react';
 import { loginUser, googleLogin } from '../../lib/api';
 import { useGoogleSignIn } from '../../lib/useGoogleSignIn';
 import { useAuthRedirect } from '../../lib/useAuthRedirect';
+import { useAuthAction } from '../../lib/useAuthAction';
 import { isAdminPanelRole } from '../../lib/roles';
 import { AuthSuccessScreen } from '../../components/auth/AuthSuccessScreen';
 
@@ -11,12 +12,20 @@ interface Props {
   readonly redirect?: string;
 }
 
+function togglePasswordLabelFor(showPass: boolean, es: boolean): string {
+  if (showPass) return es ? 'Ocultar contraseña' : 'Hide password';
+  return es ? 'Mostrar contraseña' : 'Show password';
+}
+
+function submitLabelFor(loading: boolean, es: boolean): string {
+  if (loading) return es ? 'Ingresando…' : 'Signing in…';
+  return es ? 'Iniciar sesión' : 'Sign in';
+}
+
 export default function LoginForm({ locale, redirect }: Props) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
   const googleBtnRef            = useRef<HTMLDivElement>(null);
 
   const es = locale === 'es';
@@ -24,57 +33,29 @@ export default function LoginForm({ locale, redirect }: Props) {
   const { success, finishAuth } = useAuthRedirect(
     (data) => (isAdminPanelRole(data.role) ? '/admin/dashboard' : (redirect ?? `/${locale}/`))
   );
-
-  async function handleGoogleCredential(credential: string) {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await googleLogin(credential);
-      finishAuth(data);
-    } catch {
-      setError(es ? 'No se pudo iniciar sesión con Google.' : 'Could not sign in with Google.');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { loading, error, run } = useAuthAction(finishAuth);
 
   useGoogleSignIn({
     clientId: (import.meta as any).env?.PUBLIC_GOOGLE_CLIENT_ID as string | undefined,
     buttonRef: googleBtnRef,
-    onCredential: handleGoogleCredential,
+    onCredential: (credential) => run(
+      () => googleLogin(credential),
+      es ? 'No se pudo iniciar sesión con Google.' : 'Could not sign in with Google.'
+    ),
     buttonWidth: 320,
   });
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const data = await loginUser(email, password);
-      finishAuth(data);
-    } catch {
-      setError(es ? 'Email o contraseña incorrectos.' : 'Invalid email or password.');
-    } finally {
-      setLoading(false);
-    }
+    void run(() => loginUser(email, password), es ? 'Email o contraseña incorrectos.' : 'Invalid email or password.');
   }
 
   if (success) {
     return <AuthSuccessScreen success={success} es={es} />;
   }
 
-  let togglePasswordLabel: string;
-  if (showPass) {
-    togglePasswordLabel = es ? 'Ocultar contraseña' : 'Hide password';
-  } else {
-    togglePasswordLabel = es ? 'Mostrar contraseña' : 'Show password';
-  }
-  let submitLabel: string;
-  if (loading) {
-    submitLabel = es ? 'Ingresando…' : 'Signing in…';
-  } else {
-    submitLabel = es ? 'Iniciar sesión' : 'Sign in';
-  }
+  const togglePasswordLabel = togglePasswordLabelFor(showPass, es);
+  const submitLabel = submitLabelFor(loading, es);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
