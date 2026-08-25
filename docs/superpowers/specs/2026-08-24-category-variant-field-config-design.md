@@ -77,13 +77,33 @@ shown as a UI hint.
    `variant_field_config JSONB NULL`, shaped:
    ```json
    {
-     "primary":   { "label": "Color", "inputType": "FREE_TEXT" },
+     "primary":   { "label": "Color", "inputType": "FREE_TEXT",
+                    "allowMultiple": false, "allowCustom": true },
      "secondary": { "label": "Talla", "inputType": "OPTIONS",
-                    "options": ["XS","S","M","L","XL","XXL","XXXL","UNICO"] }
+                    "options": ["XS","S","M","L","XL","XXL","XXXL","UNICO"],
+                    "allowMultiple": true, "allowCustom": true }
    }
    ```
    or, for a numeric range: `"inputType": "RANGE", "min": 34, "max": 43`.
    Each of the two fields configures its input type independently.
+
+   **Addendum (found reading `variantSchema.ts` in full at plan-writing time, not
+   caught by the earlier design pass):** today's CLOTHING "Talla" field is not a
+   single-value picker — the admin can combine several values into *one* variant
+   row (e.g. a single row good for "S-M-L", stored as one hyphen-joined string in
+   the `size` column) and can type a value outside the fixed list alongside picking
+   from it. The owner asked to **keep this capability**, not simplify it away. So
+   each field config carries two more flags: `allowMultiple` (the admin may select/
+   combine several values into one row, joined with `-`) and `allowCustom`
+   (a value outside `options`/outside the `min`-`max` range is still accepted).
+   Both are meaningful only for `OPTIONS`/`RANGE`; a `FREE_TEXT` field is always
+   effectively "custom", and `allowMultiple` on a `FREE_TEXT` field lets several
+   free values be combined the same way ACCESSORY's generic pair already does today
+   (`variantAndDetail`'s `defaultValues`/composite joining). One simplification
+   *is* made deliberately: today's special case that "UNICO" cannot combine with a
+   concrete size is CLOTHING-specific apparel idiom, not a generic rule — it is
+   **not** preserved; multi-value validation is a plain duplicate-token check,
+   nothing more.
 3. **Shape vs. grouping split**, formalizing what the priority array already
    did implicitly: only categories with `defines_variant_fields = true`
    ("shape" categories — Zapatos, Vestidos, Aros, Carteras...) carry field
@@ -136,8 +156,18 @@ turn *loading* that product into a runtime error. So:
   aggregate itself.
 - New value object `category/domain/valueobjects/CategoryVariantFieldConfig`
   (validating record, mirroring `Brand.java`'s style): nested `FieldConfig`
-  record (`label`, `inputType`, `options`, `min`, `max`), `InputType` enum
-  (`FREE_TEXT`, `OPTIONS`, `RANGE`), static `genericFallback()`.
+  record (`label`, `inputType`, `options`, `min`, `max`, `allowMultiple`,
+  `allowCustom`), `InputType` enum (`FREE_TEXT`, `OPTIONS`, `RANGE`), static
+  `genericFallback()` (both fields `FREE_TEXT`, `allowMultiple = true`,
+  `allowCustom = true` — matches today's ACCESSORY/GENERIC/COLLECTION/SEASON
+  behavior).
+- The validator splits a submitted value on `-` only when `allowMultiple` is
+  true for that field (never for a single-value field, so a naturally
+  hyphenated free-text value like a color name is never mis-split); each
+  resulting token is checked against `OPTIONS`/`RANGE` unless `allowCustom`
+  lets it through; `allowMultiple` also rejects a duplicate token within the
+  same value, same as today's dedup check — with no "UNICO can't combine"
+  special case, per the addendum above.
 - JSONB persistence follows the existing pattern used by
   `NotificationEntity`/`PublicationSnapshotEntity`: `@JdbcTypeCode
   (SqlTypes.JSON)` on a `Map<String, Object>` field, with manual Map ↔
@@ -176,8 +206,11 @@ either field).
   `<select>` is replaced by a toggle ("esta categoría define campos de
   variante") plus, when on, two independent field editors — label text
   input, input-type radio (texto libre / lista de opciones / rango
-  numérico), and the matching conditional editor (comma-separated options
-  list, or min/max number inputs).
+  numérico), the matching conditional editor (comma-separated options list,
+  or min/max number inputs), and two checkboxes (`allowMultiple`
+  "permitir combinar varios valores en una variante", `allowCustom`
+  "permitir un valor fuera de la lista") — both default-checked to match
+  today's behavior for a category migrated from CLOTHING/SHOES.
 - `frontend/src/islands/admin/ProductForm.tsx`: variant-row rendering,
   validation, and the category-picker restriction logic move from
   enum-derived schema lookup to config-derived schema, sourced from the
