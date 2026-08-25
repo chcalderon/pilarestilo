@@ -4,7 +4,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -26,6 +29,13 @@ public class CategoryEntity {
     @Column(name = "category_type", nullable = false, length = 32)
     private String categoryType;
 
+    @Column(name = "defines_variant_fields", nullable = false)
+    private boolean definesVariantFields;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "variant_field_config", columnDefinition = "jsonb")
+    private Map<String, Object> variantFieldConfig;
+
     public UUID getId() {
         return id;
     }
@@ -44,5 +54,13 @@ public class CategoryEntity {
 
     public String getCategoryType() {
         return categoryType;
+    }
+
+    public boolean isDefinesVariantFields() {
+        return definesVariantFields;
+    }
+
+    public Map<String, Object> getVariantFieldConfig() {
+        return variantFieldConfig;
     }
 }

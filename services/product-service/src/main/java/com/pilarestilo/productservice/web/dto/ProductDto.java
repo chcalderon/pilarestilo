@@ -25,11 +25,13 @@ public record ProductDto(
         String shippingOriginZone,
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,
-        List<String> categoryTypes,
-        /** Null when unstated; the storefront then derives it from categoryTypes. */
-        String variantType,
+        ProductVariantFieldConfigDto variantFieldConfig,
         List<VariantDto> variants
 ) {
     public record SizeStockDto(String size, int stock) {}
     public record VariantDto(String color, String size, int stock, int stockOnHand, int stockReserved, int stockAvailable) {}
+    public record ProductVariantFieldConfigDto(FieldDto primary, FieldDto secondary) {
+        public record FieldDto(String label, String inputType, List<String> options,
+                                Integer min, Integer max, boolean allowMultiple, boolean allowCustom) {}
+    }
 }
