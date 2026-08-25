@@ -80,8 +80,7 @@ export interface ProductDto {
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
   categoryTypes?: CategoryType[];
-  /** Stated by the admin; null means the storefront derives it from categoryTypes. */
-  variantType?: CategoryType | null;
+  variantFieldConfig?: CategoryVariantFieldConfigDto | null;
   variants?: ProductVariantDto[];
 }
 
@@ -609,8 +608,6 @@ export interface CreateProductRequest {
   stock: number;
   active: boolean;
   categoryIds?: string[];
-  /** Omit to leave it derived from the categories. */
-  variantType?: CategoryType;
   variants?: ProductVariantDto[];
 }
 
@@ -2191,6 +2188,23 @@ export type CategoryType =
   | 'COLLECTION'
   | 'SEASON';
 
+export type VariantFieldInputType = 'FREE_TEXT' | 'OPTIONS' | 'RANGE';
+
+export interface CategoryVariantFieldDto {
+  label: string;
+  inputType: VariantFieldInputType;
+  options: string[];
+  min: number | null;
+  max: number | null;
+  allowMultiple: boolean;
+  allowCustom: boolean;
+}
+
+export interface CategoryVariantFieldConfigDto {
+  primary: CategoryVariantFieldDto;
+  secondary: CategoryVariantFieldDto;
+}
+
 export interface CategoryDto {
   id: string;
   slug: string;
@@ -2204,6 +2218,8 @@ export interface CategoryDto {
   menuVisible: boolean;
   categoryType: CategoryType;
   heroImageUrl?: string;
+  definesVariantFields: boolean;
+  variantFieldConfig: CategoryVariantFieldConfigDto | null;
 }
 
 export interface CategoryTreeNode extends CategoryDto {
@@ -2249,6 +2265,9 @@ export interface CreateCategoryRequest {
   menuVisible?: boolean;
   categoryType?: CategoryType;
   heroImageUrl?: string;
+  definesVariantFields?: boolean;
+  primary?: CategoryVariantFieldDto;
+  secondary?: CategoryVariantFieldDto;
 }
 
 // ─── Category API ─────────────────────────────────────────────────────────────

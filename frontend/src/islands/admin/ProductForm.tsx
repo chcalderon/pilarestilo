@@ -11,7 +11,6 @@ import {
   type ProductDto,
   type CreateProductRequest,
   type CategoryDto,
-  type CategoryType,
   type ProductVariantDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
@@ -21,13 +20,11 @@ import {
   getAttributeValues,
   getPrimaryAttribute,
   getSecondaryAttribute,
-  getVariantSchema,
-  allowedCategoryIds,
+  buildVariantSchema,
+  resolveVariantFieldConfig,
+  allowedCategoryIdsFor,
   legacyVariantToSelections,
-  listSelectableVariantSchemas,
-  isSelectableVariantType,
   normalizeAttributeValues,
-  resolvePreferredCategoryType,
   selectionsToLegacyVariant,
   type CategoryAttributeDefinition,
   type VariantAttributeSelections,
@@ -86,7 +83,7 @@ function CategoryTreeItem({
   expanded,
   onToggleExpand,
   allowedIds,
-  variantType,
+  lockedHint,
 }: {
   readonly node: CatNode;
   readonly depth: number;
@@ -94,9 +91,10 @@ function CategoryTreeItem({
   readonly onToggle: (id: string) => void;
   readonly expanded: Set<string>;
   readonly onToggleExpand: (id: string) => void;
-  /** Ids selectable for the current variant type; see allowedCategoryIds. */
+  /** Ids selectable for the current shape category; see allowedCategoryIdsFor. */
   readonly allowedIds: Set<string>;
-  readonly variantType: CategoryType;
+  /** The resolved schema's title, used only for the locked-tooltip text. */
+  readonly lockedHint: string;
 }) {
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
@@ -152,7 +150,7 @@ function CategoryTreeItem({
           className={`flex items-center gap-2 flex-1 min-w-0 ${
             locked ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'
           }`}
-          title={locked ? `No aplica a variantes de tipo ${variantType.toLowerCase()}` : undefined}
+          title={locked ? `No aplica a ${lockedHint}` : undefined}
         >
           <input
             type="checkbox"
@@ -191,7 +189,7 @@ function CategoryTreeItem({
               key={child.id}
               node={child}
               allowedIds={allowedIds}
-              variantType={variantType}
+              lockedHint={lockedHint}
               depth={depth + 1}
               selected={selected}
               onToggle={onToggle}
@@ -225,8 +223,6 @@ const EMPTY_FORM = {
   brand: '',
   stock: '1',
   active: true,
-  /** '' means "inherit from the categories", which is how every product behaved before V69. */
-  variantType: '' as CategoryType | '',
 };
 
 type VariantRow = {
@@ -456,31 +452,25 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const [heroAssigningSlot, setHeroAssigningSlot] = useState<'left' | 'right' | null>(null);
   const [heroAssignFeedback, setHeroAssignFeedback] = useState('');
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
-  const resolvedCategoryType = useMemo(
-    () => resolvePreferredCategoryType({
-      categoryTypes: selectedCatIds.length === 0 ? product?.categoryTypes : undefined,
-      categoryIds: selectedCatIds,
-      categories,
-    }),
-    [product?.categoryTypes, selectedCatIds, categories],
+  const resolvedConfig = useMemo(
+    () => resolveVariantFieldConfig({ categoryIds: selectedCatIds, categories }),
+    [selectedCatIds, categories],
   );
-  /*
-   * A stated type wins over the one the categories imply. Leaving it on "inherit" keeps the old
-   * behaviour, where moving a product to another category relabelled its variants — fine when
-   * that is what the admin wants, surprising when it is not, which is why it is now a choice.
-   */
-  const effectiveVariantType = form.variantType || resolvedCategoryType;
   /*
    * Computed once for the whole tree rather than per node: the rule walks descendants, so asking
    * each node in isolation would rewalk the same branches on every render.
    */
+  const resolvedShapeCategoryId = useMemo(() => {
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    return selectedCatIds.find((id) => byId.get(id)?.definesVariantFields) ?? null;
+  }, [selectedCatIds, categories]);
   const allowedCatIds = useMemo(
-    () => allowedCategoryIds(categories, effectiveVariantType),
-    [categories, effectiveVariantType]
+    () => allowedCategoryIdsFor(categories, resolvedShapeCategoryId),
+    [categories, resolvedShapeCategoryId]
   );
   const variantSchema = useMemo(
-    () => getVariantSchema(effectiveVariantType),
-    [effectiveVariantType]
+    () => buildVariantSchema(resolvedConfig, resolvedShapeCategoryId ?? 'GENERIC'),
+    [resolvedConfig, resolvedShapeCategoryId]
   );
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
@@ -595,8 +585,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
-        /* Blank keeps it inherited, which is what a product saved before V69 has. */
-        variantType: (product.variantType ?? '') as CategoryType | '',
       };
       const nextRows = toVariantRows(reconciledRows, currentSchemaRef.current);
       setForm(nextForm);
@@ -663,8 +651,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
-        /* Blank keeps it inherited, which is what a product saved before V69 has. */
-        variantType: (product.variantType ?? '') as CategoryType | '',
       };
       const fixedIds = withAncestors(ids, categories);
       setSelectedCatIds(fixedIds);
@@ -831,7 +817,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         stock: variantTotalStock,
         active: form.active,
         categoryIds: selectedCatIds,
-        variantType: form.variantType || undefined,
         variants: normalizedVariants,
       };
 
@@ -1150,44 +1135,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
           </div>
 
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
-            <div>
-              <label htmlFor="product-variant-type" className={labelClass}>
-                Tipo de variante
-              </label>
-              <select
-                id="product-variant-type"
-                value={form.variantType}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, variantType: e.target.value as CategoryType | '' }))
-                }
-                className={inputClass}
-              >
-                <option value="">
-                  Según la categoría — {getVariantSchema(resolvedCategoryType).noun}
-                  {' ('}
-                  {getVariantSchema(resolvedCategoryType).attributes[0].label}
-                  {' / '}
-                  {getVariantSchema(resolvedCategoryType).attributes[1].label})
-                </option>
-                {listSelectableVariantSchemas().map((schema) => (
-                  <option key={schema.key} value={schema.key}>
-                    {schema.noun} ({schema.attributes[0].label} / {schema.attributes[1].label})
-                  </option>
-                ))}
-                {/* A product saved before the picker narrowed keeps its stored type visible.
-                    Dropping it silently would show the wrong option as selected. */}
-                {form.variantType && !isSelectableVariantType(form.variantType) && (
-                  <option value={form.variantType}>
-                    {getVariantSchema(form.variantType).noun} (en desuso)
-                  </option>
-                )}
-              </select>
-              <p className="font-sans text-[0.68rem] text-pe-muted dark:text-[#E8DCC8]/50 mt-1">
-                Define los dos campos de cada variante y qué categorías puede tener el producto. Si
-                lo dejas en «según la categoría», cambia solo cuando cambies la categoría.
-              </p>
-            </div>
-
             <div className="flex items-center justify-between">
               <p className={labelClass + ' mb-0'}>{variantSchema.title}</p>
               <button
@@ -1433,7 +1380,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                     key={root.id}
                     node={root}
                     allowedIds={allowedCatIds}
-                    variantType={effectiveVariantType}
+                    lockedHint={variantSchema.title}
                     depth={0}
                     selected={selectedCatIds}
                     onToggle={toggleCategory}

@@ -1,4 +1,4 @@
-import type { CategoryDto, CategoryType, ProductDto, ProductVariantDto } from './api';
+import type { CategoryDto, CategoryVariantFieldConfigDto, CategoryVariantFieldDto, ProductVariantDto } from './api';
 
 export interface VariantAttributeOption {
   value: string;
@@ -22,7 +22,7 @@ export interface CategoryAttributeDefinition {
 }
 
 export interface VariantSchema {
-  key: CategoryType;
+  key: string;
   /** What the product is, in the words the shop uses. The picker lists this, not the enum. */
   noun: string;
   title: string;
@@ -32,173 +32,9 @@ export interface VariantSchema {
 export type VariantAttributeSelections = Record<string, string[]>;
 export type VariantAttributeRecord = Record<string, string>;
 
-const APPAREL_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'UNICO'];
-const SHOE_NUMBER_OPTIONS = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43'];
-
 function optionList(values: string[]): VariantAttributeOption[] {
   return values.map((value, index) => ({ value, label: value, position: index }));
 }
-
-/**
- * The pair used by everything that is not a garment, a shoe or a piece of jewellery: a free primary
- * value and a free detail. Four category types share it — they differ only in the examples they
- * suggest, and writing them out four times is what made the picker look like it had duplicates.
- */
-function variantAndDetail(
-  key: CategoryType,
-  noun: string,
-  codes: [string, string],
-  placeholders: [string, string],
-  detailDefaults?: string[],
-): VariantSchema {
-  return {
-    key,
-    noun,
-    title: 'Variante + detalle + stock',
-    attributes: [
-      {
-        code: codes[0],
-        label: 'Variante',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: placeholders[0],
-        legacyField: 'color',
-      },
-      {
-        code: codes[1],
-        label: 'Detalle',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: placeholders[1],
-        legacyField: 'size',
-        ...(detailDefaults ? { defaultValues: detailDefaults } : {}),
-      },
-    ],
-  };
-}
-
-const SCHEMAS: Record<CategoryType, VariantSchema> = {
-  GENERIC: variantAndDetail(
-    'GENERIC', 'Otro', ['primary', 'secondary'],
-    ['Ej: Negro, Dorado, Cuero', 'Ej: Unico, Mini, Trenzado'], ['UNICO'],
-  ),
-  CLOTHING: {
-    key: 'CLOTHING',
-    noun: 'Prenda',
-    title: 'Color + talla + stock',
-    attributes: [
-      {
-        code: 'color',
-        label: 'Color',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Negro',
-        legacyField: 'color',
-      },
-      {
-        code: 'size',
-        label: 'Talla',
-        type: 'choice',
-        options: optionList(APPAREL_SIZE_OPTIONS),
-        required: true,
-        position: 1,
-        allowMultiple: true,
-        allowCustom: true,
-        placeholder: 'Otra talla',
-        legacyField: 'size',
-        defaultValues: ['UNICO'],
-        summaryJoiner: '-',
-      },
-    ],
-  },
-  SHOES: {
-    key: 'SHOES',
-    noun: 'Zapato',
-    title: 'Color + numero + stock',
-    attributes: [
-      {
-        code: 'color',
-        label: 'Color',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Blanco',
-        legacyField: 'color',
-      },
-      {
-        code: 'number',
-        label: 'Numero',
-        type: 'choice',
-        options: optionList(SHOE_NUMBER_OPTIONS),
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: 'Ej: 38',
-        legacyField: 'size',
-      },
-    ],
-  },
-  JEWELRY: {
-    key: 'JEWELRY',
-    noun: 'Bisuteria',
-    title: 'Material + diseno + stock',
-    attributes: [
-      {
-        code: 'material',
-        label: 'Material',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 0,
-        allowCustom: true,
-        placeholder: 'Ej: Plata 925',
-        legacyField: 'color',
-      },
-      {
-        code: 'design',
-        label: 'Diseno',
-        type: 'text',
-        options: [],
-        required: true,
-        position: 1,
-        allowCustom: true,
-        placeholder: 'Ej: Eslabon clasico',
-        legacyField: 'size',
-      },
-    ],
-  },
-  ACCESSORY: variantAndDetail(
-    'ACCESSORY', 'Accesorio', ['variant', 'detail'],
-    ['Ej: Negro, Cuero, Gold', 'Ej: Unico, Mini, Trenzado'], ['UNICO'],
-  ),
-  COLLECTION: variantAndDetail(
-    'COLLECTION', 'Coleccion', ['variant', 'detail'], ['Ej: Look 01', 'Ej: Editorial'],
-  ),
-  SEASON: variantAndDetail(
-    'SEASON', 'Temporada', ['variant', 'detail'], ['Ej: Invierno', 'Ej: Capsula 01'],
-  ),
-};
-
-const CATEGORY_TYPE_PRIORITY: CategoryType[] = [
-  'SHOES',
-  'JEWELRY',
-  'CLOTHING',
-  'ACCESSORY',
-  'COLLECTION',
-  'SEASON',
-  'GENERIC',
-];
 
 function normalizeToken(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
@@ -224,11 +60,6 @@ function sortAttributeValues(attribute: CategoryAttributeDefinition, values: str
     }
     return left.localeCompare(right, 'es', { sensitivity: 'base', numeric: true });
   });
-}
-
-export function getVariantSchema(categoryType?: CategoryType | null): VariantSchema {
-  if (!categoryType) return SCHEMAS.GENERIC;
-  return SCHEMAS[categoryType] ?? SCHEMAS.GENERIC;
 }
 
 export function getPrimaryAttribute(schema: VariantSchema): CategoryAttributeDefinition {
@@ -359,117 +190,93 @@ export function summarizeVariantAttributeValues(
   return normalized.join(attribute.summaryJoiner ?? ' / ');
 }
 
-function pickCategoryType(categoryTypes: CategoryType[] | undefined): CategoryType | null {
-  if (!Array.isArray(categoryTypes) || categoryTypes.length === 0) return null;
-  const normalized = Array.from(
-    new Set(
-      categoryTypes.filter((type): type is CategoryType => Boolean(type)),
-    ),
-  );
-  if (normalized.length === 0) return null;
+const GENERIC_FALLBACK: CategoryVariantFieldConfigDto = {
+  primary: { label: 'Variante', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
+  secondary: { label: 'Detalle', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
+};
 
-  return (
-    CATEGORY_TYPE_PRIORITY.find((candidate) => normalized.includes(candidate))
-    ?? normalized[0]
-    ?? null
-  );
+function optionsFor(field: CategoryVariantFieldDto): VariantAttributeOption[] {
+  if (field.inputType === 'OPTIONS') {
+    return optionList(field.options);
+  }
+  if (field.inputType === 'RANGE' && field.min != null && field.max != null) {
+    const min = field.min;
+    const max = field.max;
+    return optionList(Array.from({ length: max - min + 1 }, (_, i) => String(min + i)));
+  }
+  return [];
 }
 
-function buildCategoryDepthMap(categories: CategoryDto[]): Map<string, number> {
-  const byId = new Map(categories.map((category) => [category.id, category]));
-  const depthMap = new Map<string, number>();
-  const depthOf = (id: string): number => {
-    const cached = depthMap.get(id);
-    if (cached != null) return cached;
-    const current = byId.get(id);
-    if (!current || !current.parentId) {
-      depthMap.set(id, 0);
-      return 0;
-    }
-    const depth = depthOf(current.parentId) + 1;
-    depthMap.set(id, depth);
-    return depth;
+function fieldToAttribute(
+  field: CategoryVariantFieldDto,
+  code: string,
+  legacyField: 'color' | 'size',
+): CategoryAttributeDefinition {
+  const options = optionsFor(field);
+  return {
+    code,
+    label: field.label,
+    type: field.inputType === 'FREE_TEXT' ? 'text' : 'choice',
+    options,
+    required: true,
+    position: code === 'primary' ? 0 : 1,
+    allowMultiple: field.allowMultiple,
+    allowCustom: field.allowCustom || field.inputType === 'FREE_TEXT',
+    legacyField,
+    summaryJoiner: field.allowMultiple ? '-' : undefined,
   };
-  for (const category of categories) {
-    depthOf(category.id);
-  }
-  return depthMap;
 }
 
-export function resolvePreferredCategoryType(params: {
-  categoryTypes?: CategoryType[];
-  categoryIds?: string[];
-  categories?: CategoryDto[];
-}): CategoryType {
-  const directType = pickCategoryType(params.categoryTypes);
-  if (directType) return directType;
-
-  if (!params.categoryIds?.length || !params.categories?.length) {
-    return 'GENERIC';
+/** Builds the two-attribute schema a category's (or the generic fallback's) config describes. */
+export function buildVariantSchema(config: CategoryVariantFieldConfigDto | null, key = 'GENERIC'): VariantSchema {
+  const resolved = config ?? GENERIC_FALLBACK;
+  const secondaryAttribute = fieldToAttribute(resolved.secondary, 'secondary', 'size');
+  if (!config) {
+    // A product with no shape category is exactly the case the old GENERIC/ACCESSORY/
+    // COLLECTION/SEASON schemas covered, and all of them pre-filled the detail field with
+    // "UNICO" -- preserved here so an admin creating a variant for an unclassified product
+    // sees the same starting point as before this rewrite.
+    secondaryAttribute.defaultValues = ['UNICO'];
   }
-
-  const depthMap = buildCategoryDepthMap(params.categories);
-  const selected = params.categories
-    .filter((category) => params.categoryIds?.includes(category.id))
-    .sort((left, right) => {
-      const depthDiff = (depthMap.get(right.id) ?? 0) - (depthMap.get(left.id) ?? 0);
-      if (depthDiff !== 0) return depthDiff;
-      return left.sortOrder - right.sortOrder;
-    });
-
-  const selectedTypes = selected
-    .map((category) => category.categoryType)
-    .filter((type): type is CategoryType => Boolean(type) && type !== 'GENERIC');
-
-  return pickCategoryType(selectedTypes) ?? selected[0]?.categoryType ?? 'GENERIC';
+  return {
+    key,
+    noun: 'Variante',
+    title: `${resolved.primary.label} + ${resolved.secondary.label} + stock`,
+    attributes: [
+      fieldToAttribute(resolved.primary, 'primary', 'color'),
+      secondaryAttribute,
+    ],
+  };
 }
 
-/**
- * The attribute pair a product's variants use.
- *
- * <p>An explicit `variantType` wins. Without one the type is inferred from the categories, which
- * is what every product did before an admin could state it — and why moving a product between
- * categories used to relabel its variants without anyone asking.
- */
-export function getProductVariantSchema(
-  product?: Pick<ProductDto, 'categoryTypes' | 'variantType'> | null
-): VariantSchema {
-  const stated = product?.variantType;
-  if (stated && stated in SCHEMAS) {
-    return SCHEMAS[stated as CategoryType];
-  }
-  return getVariantSchema(pickCategoryType(product?.categoryTypes));
+/** The one shape category (definesVariantFields) among the given ids, or null. */
+function findShapeCategory(categoryIds: string[], categories: CategoryDto[]): CategoryDto | null {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return categoryIds
+    .map((id) => byId.get(id))
+    .find((c): c is CategoryDto => Boolean(c?.definesVariantFields)) ?? null;
+}
+
+/** Resolves the variant field config a set of selected category ids implies. */
+export function resolveVariantFieldConfig(params: {
+  categoryIds: string[];
+  categories: CategoryDto[];
+}): CategoryVariantFieldConfigDto {
+  const shape = findShapeCategory(params.categoryIds, params.categories);
+  return shape?.variantFieldConfig ?? GENERIC_FALLBACK;
 }
 
 /**
- * Category types that describe how a product is grouped rather than what shape it is.
- *
- * <p>A department ("Mujer"), a collection and a season are all cross-cutting: a dress belongs to
- * "Mujer" and to "Verano" as naturally as it belongs to "Vestidos". Only the shape types —
- * clothing, shoes, jewellery, accessories — say what a product *is*, and a product is only ever
- * one of those, which is what makes them mutually exclusive.
+ * The categories selectable alongside the currently-resolved shape category: any grouping
+ * category, any shape category while none is picked yet (nothing to conflict with), the
+ * one shape category already picked, or a category with a qualifying descendant -- same
+ * tree-walk the old enum-driven `allowedCategoryIds` used, adapted from "matches this
+ * CategoryType" to "is this specific shape category (or a grouping)". Locking every shape
+ * category until one is already selected would make the first one unpickable -- there used
+ * to be a per-product override picker to bootstrap that choice; now the tree itself must
+ * allow it.
  */
-const GROUPING_TYPES: ReadonlySet<CategoryType> = new Set(['GENERIC', 'COLLECTION', 'SEASON']);
-
-/** The shapes a product can be, which is exactly what the variant picker may offer. */
-const SELECTABLE_VARIANT_TYPES: CategoryType[] = ['CLOTHING', 'SHOES', 'JEWELRY', 'ACCESSORY'];
-
-/**
- * The categories selectable for a product whose variants use `variantType`.
- *
- * <p>Three ways in. A grouping category always qualifies. A shape category qualifies when it
- * matches. And a category qualifies when one of its descendants does — because the taxonomy nests
- * shapes inside each other: "Aros" is JEWELRY under "Accesorios", which is ACCESSORY. Selecting
- * the child forces the parent, so a rule that judged each category alone would have the form add
- * a category and then refuse to save it. Two products in this catalogue sit exactly there.
- *
- * <p>A category with no type stated counts as grouping: refusing it would lock an admin out of a
- * category nobody has classified yet.
- */
-export function allowedCategoryIds(
-  categories: CategoryDto[],
-  variantType: CategoryType
-): Set<string> {
+export function allowedCategoryIdsFor(categories: CategoryDto[], selectedShapeCategoryId: string | null): Set<string> {
   const allowed = new Set<string>();
   const childrenOf = new Map<string, CategoryDto[]>();
   for (const category of categories) {
@@ -479,13 +286,11 @@ export function allowedCategoryIds(
     else childrenOf.set(key, [category]);
   }
 
-  /** Qualifies on its own account, ignoring the tree. */
   const qualifiesAlone = (category: CategoryDto): boolean =>
-    !category.categoryType
-    || GROUPING_TYPES.has(category.categoryType)
-    || category.categoryType === variantType;
+    !category.definesVariantFields
+    || selectedShapeCategoryId === null
+    || category.id === selectedShapeCategoryId;
 
-  /* Depth-first: a branch is allowed when it holds anything allowed, so parents ride along. */
   const visit = (category: CategoryDto): boolean => {
     let anyDescendantAllowed = false;
     for (const child of childrenOf.get(category.id) ?? []) {
@@ -497,60 +302,8 @@ export function allowedCategoryIds(
   };
 
   for (const root of childrenOf.get('') ?? []) visit(root);
-
-  /* Orphans — a parentId pointing at a category not in this list — are judged on their own. */
   for (const category of categories) {
     if (!allowed.has(category.id) && qualifiesAlone(category)) allowed.add(category.id);
   }
-
   return allowed;
 }
-
-/**
- * The variant shapes an admin can choose, in the order the picker lists them.
- *
- * <p>Deliberately not every {@link CategoryType}. A collection, a season and an unclassified
- * category are ways of *grouping* products, not shapes a product has — the same distinction
- * {@link GROUPING_TYPES} already draws for categories. Offering them here listed four options that
- * all read "Variante / Detalle", which is how the picker came to look like it had duplicates. They
- * remain as schemas because a product whose only category is a collection still has to render
- * something.
- */
-export function listSelectableVariantSchemas(): VariantSchema[] {
-  return SELECTABLE_VARIANT_TYPES.map((type) => SCHEMAS[type]);
-}
-
-/**
- * How a category is grouped, for the ones that shape nothing.
- *
- * <p>A category may legitimately be a collection or a season — that is what those types are for —
- * so the category form offers all seven. The product form does not: see
- * {@link listSelectableVariantSchemas}.
- */
-export const GROUPING_VARIANT_TYPES: CategoryType[] = ['GENERIC', 'COLLECTION', 'SEASON'];
-
-/** The shape types, in picker order. Same list the product form offers. */
-export const SHAPE_VARIANT_TYPES: CategoryType[] = SELECTABLE_VARIANT_TYPES;
-
-/**
- * What this type is called, and what it does to a variant: "Prenda — Color / Talla".
- *
- * <p>The category form and the product form used to name the same enum differently, one showing
- * CLOTHING and the other "Color / Talla", which is what made the association between them
- * invisible.
- */
-export function describeVariantType(type: CategoryType): string {
-  return `${getVariantSchema(type).noun} — ${variantFieldsOf(type)}`;
-}
-
-/** The two fields a variant of this type carries: "Color / Talla". */
-export function variantFieldsOf(type: CategoryType): string {
-  const schema = getVariantSchema(type);
-  return `${schema.attributes[0].label} / ${schema.attributes[1].label}`;
-}
-
-/** True when a stored `variantType` is one the picker still offers. */
-export function isSelectableVariantType(type: CategoryType): boolean {
-  return SELECTABLE_VARIANT_TYPES.includes(type);
-}
-

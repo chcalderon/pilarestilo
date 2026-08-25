@@ -2,6 +2,7 @@ package com.pilarestilo.category.domain.ports;
 
 import com.pilarestilo.category.domain.model.Category;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,8 @@ public interface CategoryRepository {
     Optional<Category> findBySlug(String slug);
 
     List<Category> findAll();
+
+    List<Category> findAllByIds(Collection<UUID> ids);
 
     List<Category> findChildren(UUID parentId);
 

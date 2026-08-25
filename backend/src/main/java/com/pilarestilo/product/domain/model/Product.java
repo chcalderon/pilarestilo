@@ -1,6 +1,6 @@
 package com.pilarestilo.product.domain.model;
 
-import com.pilarestilo.category.domain.enums.CategoryType;
+import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.enums.ShippingOriginZone;
 import com.pilarestilo.product.domain.valueobjects.Brand;
@@ -38,20 +38,17 @@ public class Product {
     private java.math.BigDecimal avgRating = java.math.BigDecimal.ZERO;
     private int reviewCount = 0;
     private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
-    /**
-     * Which attribute pair this product's variants use — Color/Talla, Color/Número,
-     * Material/Diseño and so on.
-     *
-     * <p>Null means "work it out from the categories", which is what every product did before an
-     * admin could say. Kept nullable rather than defaulted so the two cases stay distinguishable:
-     * a stated GENERIC and an unstated one mean different things the moment the categories change.
-     */
-    private CategoryType variantType;
     private List<ProductSizeStock> sizeStocks = new ArrayList<>();
     private List<ProductVariant> variants = new ArrayList<>();
     private Set<UUID> categoryIds = new HashSet<>();
     private List<String> categorySlugs = new ArrayList<>();
     private List<String> categoryTypes = new ArrayList<>();
+    /**
+     * The winning shape category's field config (or the generic fallback), resolved on every
+     * read by the repository adapter -- see CategoryVariantFieldValidator for the write-time
+     * validation this same config drives.
+     */
+    private CategoryVariantFieldConfig variantFieldConfig;
 
     private Product() {}
 
@@ -191,8 +188,6 @@ public class Product {
 
     public ShippingOriginZone getShippingOriginZone() { return shippingOriginZone; }
 
-    public CategoryType getVariantType() { return variantType; }
-    public void setVariantType(CategoryType variantType) { this.variantType = variantType; }
     public void setShippingOriginZone(ShippingOriginZone shippingOriginZone) {
         this.shippingOriginZone = shippingOriginZone;
     }
@@ -215,6 +210,11 @@ public class Product {
     public List<String> getCategoryTypes() { return categoryTypes; }
     public void setCategoryTypes(List<String> categoryTypes) {
         this.categoryTypes = categoryTypes != null ? categoryTypes : new ArrayList<>();
+    }
+
+    public CategoryVariantFieldConfig getVariantFieldConfig() { return variantFieldConfig; }
+    public void setVariantFieldConfig(CategoryVariantFieldConfig variantFieldConfig) {
+        this.variantFieldConfig = variantFieldConfig;
     }
 
     public List<ProductVariant> getVariants() { return variants; }

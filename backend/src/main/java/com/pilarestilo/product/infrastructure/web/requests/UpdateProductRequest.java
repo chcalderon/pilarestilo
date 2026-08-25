@@ -43,8 +43,5 @@ public record UpdateProductRequest(
 
         Set<UUID> categoryIds,
 
-        /** Null or blank leaves it derived from the categories, as it was before V69. */
-        String variantType,
-
         List<@Valid ProductVariantRequest> variants
 ) {}

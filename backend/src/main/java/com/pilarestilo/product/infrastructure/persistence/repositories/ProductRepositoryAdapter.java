@@ -1,5 +1,8 @@
 package com.pilarestilo.product.infrastructure.persistence.repositories;
 
+import com.pilarestilo.category.domain.model.Category;
+import com.pilarestilo.category.domain.model.ShapeCategoryResolver;
+import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
 import com.pilarestilo.category.infrastructure.persistence.repositories.CategoryJpaRepository;
 import com.pilarestilo.product.domain.enums.ProductCondition;
@@ -26,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -344,8 +348,46 @@ public class ProductRepositoryAdapter implements ProductRepository {
             product.setCategoryIds(ids);
             product.setCategorySlugs(slugs);
             product.setCategoryTypes(categoryTypes);
+
+            List<Category> categoriesForResolution = entity.getCategories().stream()
+                    .map(ProductRepositoryAdapter::toDomainCategoryForResolution)
+                    .toList();
+            CategoryVariantFieldConfig resolved = ShapeCategoryResolver.resolveOne(categoriesForResolution)
+                    .map(Category::getVariantFieldConfig)
+                    .orElseGet(CategoryVariantFieldConfig::genericFallback);
+            product.setVariantFieldConfig(resolved);
         }
 
         return product;
+    }
+
+    private static Category toDomainCategoryForResolution(CategoryEntity e) {
+        Category c = Category.create(e.getSlug(), e.getNameEs(), e.getNameEn(),
+                e.getParentId(), e.getSortOrder(), e.getImageUrl());
+        c.updateVariantFieldConfig(e.isDefinesVariantFields(), fromRawConfig(e.getVariantFieldConfig()));
+        return c;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static CategoryVariantFieldConfig fromRawConfig(Map<String, Object> raw) {
+        if (raw == null) return null;
+        return new CategoryVariantFieldConfig(
+                fromRawField((Map<String, Object>) raw.get("primary")),
+                fromRawField((Map<String, Object>) raw.get("secondary")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static CategoryVariantFieldConfig.FieldConfig fromRawField(Map<String, Object> raw) {
+        List<String> options = raw.get("options") == null
+                ? List.of()
+                : ((List<Object>) raw.get("options")).stream().map(String::valueOf).toList();
+        return new CategoryVariantFieldConfig.FieldConfig(
+                (String) raw.get("label"),
+                CategoryVariantFieldConfig.InputType.valueOf((String) raw.get("inputType")),
+                options,
+                raw.get("min") == null ? null : ((Number) raw.get("min")).intValue(),
+                raw.get("max") == null ? null : ((Number) raw.get("max")).intValue(),
+                Boolean.TRUE.equals(raw.get("allowMultiple")),
+                Boolean.TRUE.equals(raw.get("allowCustom")));
     }
 }

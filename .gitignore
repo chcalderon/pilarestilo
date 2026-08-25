@@ -54,3 +54,7 @@ playwright-report/
 # scheduled/cron tasks. Rewritten (sessionId/pid/timestamp) every time a session acquires it,
 # which made it show up as a dirty file in nearly every commit despite belonging to no one's work.
 .claude/scheduled_tasks.lock
+
+# Scratch workspace for superpowers:subagent-driven-development (ledgers, task briefs,
+# implementer reports, review packages) -- per-plan, disposable once the branch merges.
+.superpowers/

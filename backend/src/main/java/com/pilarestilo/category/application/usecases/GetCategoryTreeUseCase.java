@@ -1,5 +1,6 @@
 package com.pilarestilo.category.application.usecases;
 
+import com.pilarestilo.category.application.dto.CategoryDto;
 import com.pilarestilo.category.application.dto.CategoryTreeNode;
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
@@ -50,6 +51,8 @@ public class GetCategoryTreeUseCase {
                 c.isMenuVisible(),
                 c.getCategoryType() != null ? c.getCategoryType().name() : "GENERIC",
                 c.getHeroImageUrl(),
+                c.isDefinesVariantFields(),
+                CategoryDto.CategoryVariantFieldConfigDto.from(c.getVariantFieldConfig()),
                 children
         );
     }

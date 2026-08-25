@@ -10,7 +10,7 @@ import DeliveryEstimate from '../../../components/DeliveryEstimate.astro';
 import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
 import { getProduct } from '../../../lib/api';
 import { summarizeProductVariantSecondaryValues } from '../../../lib/productVariants';
-import { getProductVariantSchema, getSecondaryAttribute } from '../../../lib/variantSchema';
+import { buildVariantSchema, getSecondaryAttribute } from '../../../lib/variantSchema';
 
 const { locale, id } = Astro.params as { locale: Locale; id: string };
 
@@ -54,7 +54,7 @@ const conditionLabel =
     : t('product.condition.used', locale);
 
 const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | 'REGIONES';
-const variantSchema = getProductVariantSchema(product);
+const variantSchema = buildVariantSchema(product.variantFieldConfig ?? null);
 const secondaryAttribute = getSecondaryAttribute(variantSchema);
 const sizesSummary = summarizeProductVariantSecondaryValues(product);
 ---
@@ -176,7 +176,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
               imageUrl={product.imageUrl}
               condition={product.condition}
               stock={product.stock}
-              categoryTypes={product.categoryTypes}
+              variantFieldConfig={product.variantFieldConfig}
               variants={product.variants}
               locale={locale}
             />

@@ -10,48 +10,43 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   getCategoryTree, createCategory, updateCategory, deleteCategory, reorderCategories,
-  type CategoryTreeNode, type CategoryDto,
+  type CategoryTreeNode, type CategoryDto, type CategoryVariantFieldDto, type VariantFieldInputType,
 } from '../../lib/api';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import ImageDropzone from './ImageDropzone';
-import {
-  describeVariantType,
-  getVariantSchema,
-  variantFieldsOf,
-  GROUPING_VARIANT_TYPES,
-  SHAPE_VARIANT_TYPES,
-} from '../../lib/variantSchema';
 import { useToast, Toaster } from './Toast';
 
 type EditForm = {
   slug: string; nameEs: string; nameEn: string;
   parentId: string; sortOrder: string; imageUrl: string; active: boolean; featured: boolean;
-  menuVisible: boolean; categoryType: CategoryDto['categoryType']; heroImageUrl: string;
+  menuVisible: boolean; heroImageUrl: string;
+  /** No UI control any more -- carried through unchanged so saving doesn't reset it. */
+  categoryType: CategoryDto['categoryType'];
+  definesVariantFields: boolean;
+  primary: CategoryVariantFieldDto;
+  secondary: CategoryVariantFieldDto;
+};
+
+const EMPTY_FIELD: CategoryVariantFieldDto = {
+  label: '', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true,
 };
 
 const EMPTY_FORM: EditForm = {
   slug: '', nameEs: '', nameEn: '', parentId: '', sortOrder: '0', imageUrl: '', active: true, featured: false,
-  menuVisible: true, categoryType: 'GENERIC', heroImageUrl: '',
+  menuVisible: true, heroImageUrl: '', categoryType: 'GENERIC',
+  definesVariantFields: false, primary: EMPTY_FIELD, secondary: EMPTY_FIELD,
 };
-
-/**
- * The two kinds of answer this field takes, kept apart because they are different questions.
- *
- * <p>A shape says what the products in this category *are*, and decides the two fields their
- * variants carry. A grouping says how they are gathered — a collection, a season — and leaves the
- * variant shape to be inherited or stated on the product.
- */
-const CATEGORY_TYPE_GROUPS: Array<{ label: string; types: CategoryDto['categoryType'][] }> = [
-  { label: 'Forma del producto', types: SHAPE_VARIANT_TYPES },
-  { label: 'Agrupación', types: GROUPING_VARIANT_TYPES },
-];
 
 function fromDto(dto: CategoryDto): EditForm {
   return {
     slug: dto.slug, nameEs: dto.nameEs, nameEn: dto.nameEn,
     parentId: dto.parentId ?? '', sortOrder: String(dto.sortOrder),
     imageUrl: dto.imageUrl ?? '', active: dto.active, featured: dto.featured,
-    menuVisible: dto.menuVisible, categoryType: dto.categoryType, heroImageUrl: dto.heroImageUrl ?? '',
+    menuVisible: dto.menuVisible, heroImageUrl: dto.heroImageUrl ?? '',
+    categoryType: dto.categoryType,
+    definesVariantFields: dto.definesVariantFields,
+    primary: dto.variantFieldConfig?.primary ?? EMPTY_FIELD,
+    secondary: dto.variantFieldConfig?.secondary ?? EMPTY_FIELD,
   };
 }
 
@@ -64,6 +59,53 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-+|-+$)/g, '');
+}
+
+// ─── VariantFieldEditor ────────────────────────────────────────────────────────
+
+function VariantFieldEditor({
+  fieldNumber, field, onChange,
+}: { readonly fieldNumber: 1 | 2; readonly field: CategoryVariantFieldDto; readonly onChange: (next: CategoryVariantFieldDto) => void }) {
+  return (
+    <div className="flex flex-col gap-1 border border-pe-black/10 p-2">
+      <label className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted">
+        Etiqueta campo {fieldNumber}
+      </label>
+      <input className={INPUT_CLASS} value={field.label}
+        onChange={(e) => onChange({ ...field, label: e.target.value })} placeholder={fieldNumber === 1 ? 'Color' : 'Talla'} />
+      <select className={INPUT_CLASS} value={field.inputType}
+        onChange={(e) => onChange({ ...field, inputType: e.target.value as VariantFieldInputType })}>
+        <option value="FREE_TEXT">Texto libre</option>
+        <option value="OPTIONS">Lista de opciones</option>
+        <option value="RANGE">Rango numérico</option>
+      </select>
+      {field.inputType === 'OPTIONS' && (
+        <input className={INPUT_CLASS} value={field.options.join(', ')}
+          onChange={(e) => onChange({ ...field, options: e.target.value.split(',').map((v) => v.trim()).filter(Boolean) })}
+          placeholder="XS, S, M, L, XL" />
+      )}
+      {field.inputType === 'RANGE' && (
+        <div className="flex gap-2">
+          <input type="number" className={INPUT_CLASS} value={field.min ?? ''}
+            onChange={(e) => onChange({ ...field, min: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Min" />
+          <input type="number" className={INPUT_CLASS} value={field.max ?? ''}
+            onChange={(e) => onChange({ ...field, max: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Max" />
+        </div>
+      )}
+      <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
+        <input type="checkbox" checked={field.allowMultiple}
+          onChange={(e) => onChange({ ...field, allowMultiple: e.target.checked })} />
+        <span>Permitir combinar varios valores en una variante</span>
+      </label>
+      {field.inputType !== 'FREE_TEXT' && (
+        <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
+          <input type="checkbox" checked={field.allowCustom}
+            onChange={(e) => onChange({ ...field, allowCustom: e.target.checked })} />
+          <span>Permitir un valor fuera de la lista</span>
+        </label>
+      )}
+    </div>
+  );
 }
 
 // ─── FormRow ─────────────────────────────────────────────────────────────────
@@ -103,28 +145,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Tipo de producto</label>
-          <select
-            className={INPUT_CLASS}
-            value={form.categoryType}
-            onChange={e => setForm(f => ({ ...f, categoryType: e.target.value as CategoryDto['categoryType'] }))}
-          >
-            {CATEGORY_TYPE_GROUPS.map((group) => (
-              <optgroup key={group.label} label={group.label}>
-                {group.types.map((value) => (
-                  <option key={value} value={value}>{getVariantSchema(value).noun}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          {/* The consequence, next to the cause: this field is why a product asks for talla and
-              not número, and nothing else in this form says so. */}
-          <p className="font-sans text-[0.6rem] text-pe-muted leading-snug">
-            Sus productos usarán {variantFieldsOf(form.categoryType)}.
-          </p>
-        </div>
-        <div className="sm:col-span-2 flex flex-col gap-0.5">
+        <div className="sm:col-span-3 flex flex-col gap-0.5">
           <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Hero imagen</label>
           <input
             className={INPUT_CLASS}
@@ -133,6 +154,19 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
             placeholder="https://..."
           />
         </div>
+      </div>
+      <div className="sm:col-span-3 flex flex-col gap-2">
+        <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
+          <input type="checkbox" checked={form.definesVariantFields}
+            onChange={(e) => setForm((f) => ({ ...f, definesVariantFields: e.target.checked }))} />
+          <span>Esta categoría define campos de variante</span>
+        </label>
+        {form.definesVariantFields && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <VariantFieldEditor fieldNumber={1} field={form.primary} onChange={(next) => setForm((f) => ({ ...f, primary: next }))} />
+            <VariantFieldEditor fieldNumber={2} field={form.secondary} onChange={(next) => setForm((f) => ({ ...f, secondary: next }))} />
+          </div>
+        )}
       </div>
       <ImageDropzone
         label="Imagen"
@@ -270,12 +304,14 @@ function CategoryRow({
             <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" />
           </span>
         )}
-        <span
-          className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-muted bg-pe-cream px-1.5 py-0.5"
-          title={describeVariantType(node.categoryType)}
-        >
-          {getVariantSchema(node.categoryType).noun}
-        </span>
+        {node.definesVariantFields && node.variantFieldConfig && (
+          <span
+            className="font-sans text-[0.58rem] uppercase tracking-[0.12em] text-pe-muted bg-pe-cream px-1.5 py-0.5"
+            title={`${node.variantFieldConfig.primary.label} / ${node.variantFieldConfig.secondary.label}`}
+          >
+            {node.variantFieldConfig.primary.label} / {node.variantFieldConfig.secondary.label}
+          </span>
+        )}
 
         <div className="ml-auto flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           {depth < 3 && (
@@ -447,6 +483,9 @@ export default function CategoryTree() {
         parentId: form.parentId || undefined, sortOrder: Number(form.sortOrder),
         imageUrl: form.imageUrl || undefined, active: form.active, featured: form.featured,
         menuVisible: form.menuVisible, categoryType: form.categoryType, heroImageUrl: form.heroImageUrl || undefined,
+        definesVariantFields: form.definesVariantFields,
+        primary: form.definesVariantFields ? form.primary : undefined,
+        secondary: form.definesVariantFields ? form.secondary : undefined,
       }, effectiveToken);
       setEditing(null);
       show('success', 'Categoría actualizada.');
@@ -471,6 +510,9 @@ export default function CategoryTree() {
         menuVisible: form.menuVisible,
         categoryType: form.categoryType,
         heroImageUrl: form.heroImageUrl || undefined,
+        definesVariantFields: form.definesVariantFields,
+        primary: form.definesVariantFields ? form.primary : undefined,
+        secondary: form.definesVariantFields ? form.secondary : undefined,
       }, effectiveToken);
       setCreating(null);
       setForm({ ...EMPTY_FORM });
