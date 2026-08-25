@@ -195,16 +195,24 @@ const GENERIC_FALLBACK: CategoryVariantFieldConfigDto = {
   secondary: { label: 'Detalle', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
 };
 
+function optionsFor(field: CategoryVariantFieldDto): VariantAttributeOption[] {
+  if (field.inputType === 'OPTIONS') {
+    return optionList(field.options);
+  }
+  if (field.inputType === 'RANGE' && field.min != null && field.max != null) {
+    const min = field.min;
+    const max = field.max;
+    return optionList(Array.from({ length: max - min + 1 }, (_, i) => String(min + i)));
+  }
+  return [];
+}
+
 function fieldToAttribute(
   field: CategoryVariantFieldDto,
   code: string,
   legacyField: 'color' | 'size',
 ): CategoryAttributeDefinition {
-  const options = field.inputType === 'OPTIONS'
-    ? optionList(field.options)
-    : field.inputType === 'RANGE' && field.min != null && field.max != null
-      ? optionList(Array.from({ length: field.max - field.min + 1 }, (_, i) => String(field.min! + i)))
-      : [];
+  const options = optionsFor(field);
   return {
     code,
     label: field.label,
@@ -244,10 +252,9 @@ export function buildVariantSchema(config: CategoryVariantFieldConfigDto | null,
 /** The one shape category (definesVariantFields) among the given ids, or null. */
 function findShapeCategory(categoryIds: string[], categories: CategoryDto[]): CategoryDto | null {
   const byId = new Map(categories.map((c) => [c.id, c]));
-  const shapeCategories = categoryIds
+  return categoryIds
     .map((id) => byId.get(id))
-    .filter((c): c is CategoryDto => Boolean(c) && c!.definesVariantFields);
-  return shapeCategories[0] ?? null;
+    .find((c): c is CategoryDto => c != null && c.definesVariantFields) ?? null;
 }
 
 /** Resolves the variant field config a set of selected category ids implies. */

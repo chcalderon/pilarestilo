@@ -95,13 +95,13 @@ function VariantFieldEditor({
       <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
         <input type="checkbox" checked={field.allowMultiple}
           onChange={(e) => onChange({ ...field, allowMultiple: e.target.checked })} />
-        Permitir combinar varios valores en una variante
+        <span>Permitir combinar varios valores en una variante</span>
       </label>
       {field.inputType !== 'FREE_TEXT' && (
         <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
           <input type="checkbox" checked={field.allowCustom}
             onChange={(e) => onChange({ ...field, allowCustom: e.target.checked })} />
-          Permitir un valor fuera de la lista
+          <span>Permitir un valor fuera de la lista</span>
         </label>
       )}
     </div>
@@ -159,7 +159,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
           <input type="checkbox" checked={form.definesVariantFields}
             onChange={(e) => setForm((f) => ({ ...f, definesVariantFields: e.target.checked }))} />
-          Esta categoría define campos de variante
+          <span>Esta categoría define campos de variante</span>
         </label>
         {form.definesVariantFields && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
