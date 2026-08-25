@@ -260,11 +260,14 @@ export function resolveVariantFieldConfig(params: {
 }
 
 /**
- * The categories selectable alongside the currently-resolved shape category: any
- * grouping category, the current shape category itself, or a category with a
- * qualifying descendant -- same tree-walk the old enum-driven `allowedCategoryIds` used,
- * adapted from "matches this CategoryType" to "is this specific shape category (or a
- * grouping)".
+ * The categories selectable alongside the currently-resolved shape category: any grouping
+ * category, any shape category while none is picked yet (nothing to conflict with), the
+ * one shape category already picked, or a category with a qualifying descendant -- same
+ * tree-walk the old enum-driven `allowedCategoryIds` used, adapted from "matches this
+ * CategoryType" to "is this specific shape category (or a grouping)". Locking every shape
+ * category until one is already selected would make the first one unpickable -- there used
+ * to be a per-product override picker to bootstrap that choice; now the tree itself must
+ * allow it.
  */
 export function allowedCategoryIdsFor(categories: CategoryDto[], selectedShapeCategoryId: string | null): Set<string> {
   const allowed = new Set<string>();
@@ -277,7 +280,9 @@ export function allowedCategoryIdsFor(categories: CategoryDto[], selectedShapeCa
   }
 
   const qualifiesAlone = (category: CategoryDto): boolean =>
-    !category.definesVariantFields || category.id === selectedShapeCategoryId;
+    !category.definesVariantFields
+    || selectedShapeCategoryId === null
+    || category.id === selectedShapeCategoryId;
 
   const visit = (category: CategoryDto): boolean => {
     let anyDescendantAllowed = false;

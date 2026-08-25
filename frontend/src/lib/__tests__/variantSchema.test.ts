@@ -9,8 +9,9 @@ import {
   toVariantAttributeRecord,
   summarizeVariantAttributeValues,
   buildVariantSchema,
+  allowedCategoryIdsFor,
 } from '../variantSchema';
-import type { CategoryVariantFieldConfigDto } from '../api';
+import type { CategoryDto, CategoryVariantFieldConfigDto } from '../api';
 
 /**
  * Characterization tests written before rewriting this module from a fixed
@@ -87,5 +88,43 @@ describe('variantSchema: multi-value composition (must survive the config-driven
       schema,
     );
     expect(record[getPrimaryAttribute(schema).code]).toBe('Azul-Marino');
+  });
+});
+
+describe('allowedCategoryIdsFor', () => {
+  function shapeCategory(id: string): CategoryDto {
+    return {
+      id, slug: id, nameEs: id, nameEn: id, parentId: null, sortOrder: 0,
+      active: true, featured: false, menuVisible: true, categoryType: 'GENERIC',
+      definesVariantFields: true, variantFieldConfig: null,
+    } as CategoryDto;
+  }
+
+  function groupingCategory(id: string): CategoryDto {
+    return {
+      id, slug: id, nameEs: id, nameEn: id, parentId: null, sortOrder: 0,
+      active: true, featured: false, menuVisible: true, categoryType: 'GENERIC',
+      definesVariantFields: false, variantFieldConfig: null,
+    } as CategoryDto;
+  }
+
+  it('allows every shape category while none has been picked yet -- otherwise the first one could never be picked', () => {
+    const categories = [shapeCategory('zapatos'), shapeCategory('aros')];
+    const allowed = allowedCategoryIdsFor(categories, null);
+    expect(allowed.has('zapatos')).toBe(true);
+    expect(allowed.has('aros')).toBe(true);
+  });
+
+  it('locks every other shape category once one is picked', () => {
+    const categories = [shapeCategory('zapatos'), shapeCategory('aros')];
+    const allowed = allowedCategoryIdsFor(categories, 'zapatos');
+    expect(allowed.has('zapatos')).toBe(true);
+    expect(allowed.has('aros')).toBe(false);
+  });
+
+  it('always allows a grouping category, regardless of what shape is picked', () => {
+    const categories = [shapeCategory('zapatos'), groupingCategory('mujer')];
+    const allowed = allowedCategoryIdsFor(categories, 'zapatos');
+    expect(allowed.has('mujer')).toBe(true);
   });
 });

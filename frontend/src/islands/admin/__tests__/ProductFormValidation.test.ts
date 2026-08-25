@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateProductForm, type ValidateProductFormArgs } from '../ProductForm';
 import {
-  getVariantSchema,
+  buildVariantSchema,
   getPrimaryAttribute,
   getSecondaryAttribute,
   createEmptyVariantSelections,
@@ -15,7 +15,7 @@ import type { CategoryDto } from '@/lib/api';
  * this is a plain unit test rather than a characterization test with mocks.
  */
 
-const schema = getVariantSchema();
+const schema = buildVariantSchema(null);
 const primaryAttribute = getPrimaryAttribute(schema);
 const secondaryAttribute = getSecondaryAttribute(schema);
 
@@ -31,7 +31,6 @@ function baseForm() {
     brand: 'PilarEstilo',
     stock: '1',
     active: true,
-    variantType: '' as const,
   };
 }
 
@@ -58,6 +57,8 @@ function category(overrides: Partial<CategoryDto> = {}): CategoryDto {
     featured: false,
     menuVisible: true,
     categoryType: 'GENERIC',
+    definesVariantFields: false,
+    variantFieldConfig: null,
     ...overrides,
   };
 }
