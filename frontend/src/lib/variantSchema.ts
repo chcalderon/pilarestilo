@@ -254,7 +254,7 @@ function findShapeCategory(categoryIds: string[], categories: CategoryDto[]): Ca
   const byId = new Map(categories.map((c) => [c.id, c]));
   return categoryIds
     .map((id) => byId.get(id))
-    .find((c): c is CategoryDto => c != null && c.definesVariantFields) ?? null;
+    .find((c): c is CategoryDto => Boolean(c?.definesVariantFields)) ?? null;
 }
 
 /** Resolves the variant field config a set of selected category ids implies. */
