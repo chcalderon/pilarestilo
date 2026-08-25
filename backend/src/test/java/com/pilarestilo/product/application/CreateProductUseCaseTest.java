@@ -82,70 +82,48 @@ class CreateProductUseCaseTest {
     }
 
     @Test
-    void supports_composite_sizes_and_normalizes_to_uppercase_hyphen() {
+    void stores_sizes_exactly_as_submitted_after_trimming() {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ProductDto dto = useCase.execute(
-                "Abrigo", "desc",
-                BigDecimal.valueOf(120000),
-                "CLP",
-                null,
-                null,
-                "http://img",
-                "NEW",
-                "Pilar",
-                0,
-                true,
-                null,
+                "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
+                "http://img", "NEW", "Pilar", 0, true, null,
                 List.of(
                         new ProductVariantInput("Camel", "xl", 1),
                         new ProductVariantInput("Camel", "l-xl", 2),
-                        new ProductVariantInput("Camel", "xxl", 1),
-                        new ProductVariantInput("Negro", "S-M-L", 3)
+                        new ProductVariantInput("Negro", "  s-m-l  ", 3)
                 )
         );
 
-        assertEquals(7, dto.stock());
-        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("XL")));
-        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("L-XL")));
-        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("XXL")));
-        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("S-M-L")));
-        assertTrue(dto.sizeStocks().stream().anyMatch(s -> s.size().equals("L-XL") && s.stock() == 2));
+        assertEquals(6, dto.stock());
+        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("xl")));
+        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("l-xl")));
+        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("s-m-l")));
     }
 
     @Test
-    void rejects_invalid_size_token_x() {
-        assertThrows(Exception.class, () -> useCase.execute(
-                "Abrigo", "desc",
-                BigDecimal.valueOf(120000),
-                "CLP",
-                null,
-                null,
-                "http://img",
-                "NEW",
-                "Pilar",
-                0,
-                true,
-                null,
+    void accepts_a_single_letter_size_structural_check_only_now() {
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProductDto dto = useCase.execute(
+                "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
+                "http://img", "NEW", "Pilar", 0, true, null,
                 List.of(new ProductVariantInput("Camel", "X", 1))
-        ));
+        );
+
+        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("X")));
     }
 
     @Test
-    void rejects_invalid_composite_format_with_double_dash() {
-        assertThrows(Exception.class, () -> useCase.execute(
-                "Abrigo", "desc",
-                BigDecimal.valueOf(120000),
-                "CLP",
-                null,
-                null,
-                "http://img",
-                "NEW",
-                "Pilar",
-                0,
-                true,
-                null,
+    void accepts_a_double_hyphen_structural_check_only_now() {
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProductDto dto = useCase.execute(
+                "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
+                "http://img", "NEW", "Pilar", 0, true, null,
                 List.of(new ProductVariantInput("Camel", "L--XL", 1))
-        ));
+        );
+
+        assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("L--XL")));
     }
 }
