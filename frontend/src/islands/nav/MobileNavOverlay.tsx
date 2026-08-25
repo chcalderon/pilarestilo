@@ -151,6 +151,74 @@ function useLockBodyScrollAndFocus(open: boolean, closeButtonRef: RefObject<HTML
   }, [open, closeButtonRef]);
 }
 
+interface MobileNavHeaderProps {
+  readonly locale: string;
+  readonly canGoBack: boolean;
+  readonly onBack: () => void;
+  readonly onClose: () => void;
+  readonly closeButtonRef: RefObject<HTMLButtonElement>;
+}
+
+function MobileNavHeader({ locale, canGoBack, onBack, onClose, closeButtonRef }: MobileNavHeaderProps) {
+  return (
+    <div className="flex items-center justify-between px-5 py-4 border-b border-pe-white/8">
+      {canGoBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 text-pe-on-dark-muted hover:text-pe-white transition-colors text-[0.7rem] tracking-widest uppercase"
+          aria-label={locale === 'es' ? 'Volver' : 'Back'}
+        >
+          <span aria-hidden="true">←</span>
+          {locale === 'es' ? 'Volver' : 'Back'}
+        </button>
+      ) : (
+        <span className="font-display text-pe-cream text-lg">
+          {locale === 'es' ? 'Menú' : 'Menu'}
+        </span>
+      )}
+      <button
+        type="button"
+        ref={closeButtonRef}
+        onClick={onClose}
+        className="text-pe-on-dark-muted hover:text-pe-white transition-colors p-1"
+        aria-label={locale === 'es' ? 'Cerrar menú' : 'Close menu'}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+interface MobileNavQuickLinksProps {
+  readonly locale: string;
+  readonly onClose: () => void;
+}
+
+function MobileNavQuickLinks({ locale, onClose }: MobileNavQuickLinksProps) {
+  return (
+    <div className="border-t border-pe-white/8 px-5 py-3.5 flex items-center justify-around">
+      <a href={`/${locale}/products`} onClick={onClose}
+         className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Buscar' : 'Search'}</span>
+      </a>
+      <a href={`/${locale}/wishlist`} onClick={onClose}
+         className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Favoritos' : 'Wishlist'}</span>
+      </a>
+      <a href={`/${locale}/cart`} onClick={onClose}
+         className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Carro' : 'Cart'}</span>
+      </a>
+    </div>
+  );
+}
+
 export default function MobileNavOverlay({ sections, locale }: Props) {
   const [open, setOpen] = useState(false);
   const [stack, setStack] = useState<NavLevel[]>([{ type: 'root' }]);
@@ -207,34 +275,13 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
             aria-label={locale === 'es' ? 'Menú de navegación' : 'Navigation menu'}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-pe-white/8">
-              {canGoBack ? (
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="flex items-center gap-2 text-pe-on-dark-muted hover:text-pe-white transition-colors text-[0.7rem] tracking-widest uppercase"
-                  aria-label={locale === 'es' ? 'Volver' : 'Back'}
-                >
-                  <span aria-hidden="true">←</span>
-                  {locale === 'es' ? 'Volver' : 'Back'}
-                </button>
-              ) : (
-                <span className="font-display text-pe-cream text-lg">
-                  {locale === 'es' ? 'Menú' : 'Menu'}
-                </span>
-              )}
-              <button
-                type="button"
-                ref={closeButtonRef}
-                onClick={close}
-                className="text-pe-on-dark-muted hover:text-pe-white transition-colors p-1"
-                aria-label={locale === 'es' ? 'Cerrar menú' : 'Close menu'}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+            <MobileNavHeader
+              locale={locale}
+              canGoBack={canGoBack}
+              onBack={goBack}
+              onClose={close}
+              closeButtonRef={closeButtonRef}
+            />
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
@@ -250,23 +297,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
             </div>
 
             {/* Bottom bar inside overlay — persistent links */}
-            <div className="border-t border-pe-white/8 px-5 py-3.5 flex items-center justify-around">
-              <a href={`/${locale}/products`} onClick={close}
-                 className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Buscar' : 'Search'}</span>
-              </a>
-              <a href={`/${locale}/wishlist`} onClick={close}
-                 className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Favoritos' : 'Wishlist'}</span>
-              </a>
-              <a href={`/${locale}/cart`} onClick={close}
-                 className="flex flex-col items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                <span className="font-sans text-[0.55rem] tracking-widest uppercase">{locale === 'es' ? 'Carro' : 'Cart'}</span>
-              </a>
-            </div>
+            <MobileNavQuickLinks locale={locale} onClose={close} />
           </motion.div>
         </>
       )}

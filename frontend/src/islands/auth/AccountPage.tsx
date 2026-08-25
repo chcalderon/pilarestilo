@@ -1741,6 +1741,111 @@ function AddressesTab({
   );
 }
 
+interface OrdersTabProps {
+  readonly es: boolean;
+  readonly locale: string;
+  readonly gatewayReturnFeedback: ProofFeedback | null;
+  readonly loadingOrders: boolean;
+  readonly orders: OrderDto[];
+  readonly paymentsByOrder: Record<string, PaymentDto>;
+  readonly loadingPayments: boolean;
+  readonly proofSubmittingByOrder: Record<string, boolean>;
+  readonly proofFeedbackByOrder: Record<string, ProofFeedback | undefined>;
+  readonly gatewayCheckoutLoadingByOrder: Record<string, boolean>;
+  readonly gatewaySimulatingByOrder: Record<string, boolean>;
+  readonly deliveryConfirmingByOrder: Record<string, boolean>;
+  readonly gatewayFeedbackByOrder: Record<string, ProofFeedback | undefined>;
+  readonly proofFilesByOrder: Record<string, File | null>;
+  readonly myReturns: ReturnRequestDto[];
+  readonly effectiveToken: string | null;
+  readonly onSelectProofFile: (orderId: string, file: File | null) => void;
+  readonly onOpenOwnProof: (orderId: string) => void;
+  readonly onSubmitProof: (orderId: string) => void;
+  readonly onStartGatewayCheckout: (orderId: string) => void;
+  readonly onSimulateGateway: (orderId: string, simulation: 'APPROVED' | 'FAILED') => void;
+  readonly onConfirmDelivery: (orderId: string) => void;
+  readonly onReturnRequested: (created: ReturnRequestDto) => void;
+}
+
+function GatewayReturnFeedbackBanner({ feedback }: { readonly feedback: ProofFeedback }) {
+  return (
+    <div
+      className={[
+        'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
+        feedback.type === 'success'
+          ? 'border-green-200 bg-green-50 text-green-800'
+          : 'border-red-200 bg-red-50 text-red-700',
+      ].join(' ')}
+    >
+      {feedback.text}
+    </div>
+  );
+}
+
+function EmptyOrdersState({ es, locale }: { readonly es: boolean; readonly locale: string }) {
+  return (
+    <div className="text-center py-20">
+      <ShoppingBag size={32} className="text-pe-muted mx-auto mb-3" />
+      <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no tienes pedidos' : 'No orders yet'}</p>
+      <a
+        href={`/${locale}/products`}
+        className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
+      >
+        {es ? 'Explorar productos' : 'Browse products'}
+      </a>
+    </div>
+  );
+}
+
+function OrdersTab({
+  es, locale, gatewayReturnFeedback, loadingOrders, orders, paymentsByOrder, loadingPayments,
+  proofSubmittingByOrder, proofFeedbackByOrder, gatewayCheckoutLoadingByOrder, gatewaySimulatingByOrder,
+  deliveryConfirmingByOrder, gatewayFeedbackByOrder, proofFilesByOrder, myReturns, effectiveToken,
+  onSelectProofFile, onOpenOwnProof, onSubmitProof, onStartGatewayCheckout, onSimulateGateway,
+  onConfirmDelivery, onReturnRequested,
+}: OrdersTabProps) {
+  return (
+    <div className="max-w-3xl">
+      {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
+      {loadingOrders ? (
+        <div className="flex justify-center py-16">
+          <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
+        </div>
+      ) : orders.length === 0 ? (
+        <EmptyOrdersState es={es} locale={locale} />
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {orders.map((order) => (
+            <OrderListItem
+              key={order.id}
+              order={order}
+              es={es}
+              payment={paymentsByOrder[order.id]}
+              loadingPayments={loadingPayments}
+              isSubmittingProof={proofSubmittingByOrder[order.id] === true}
+              proofFeedback={proofFeedbackByOrder[order.id]}
+              isStartingGatewayCheckout={gatewayCheckoutLoadingByOrder[order.id] === true}
+              isSimulatingGateway={gatewaySimulatingByOrder[order.id] === true}
+              isConfirmingDelivery={deliveryConfirmingByOrder[order.id] === true}
+              gatewayFeedback={gatewayFeedbackByOrder[order.id]}
+              selectedFile={proofFilesByOrder[order.id]}
+              existingReturn={myReturns.find((r) => r.orderId === order.id) ?? null}
+              effectiveToken={effectiveToken}
+              onSelectProofFile={(file) => onSelectProofFile(order.id, file)}
+              onOpenOwnProof={() => onOpenOwnProof(order.id)}
+              onSubmitProof={() => onSubmitProof(order.id)}
+              onStartGatewayCheckout={() => onStartGatewayCheckout(order.id)}
+              onSimulateGateway={(simulation) => onSimulateGateway(order.id, simulation)}
+              onConfirmDelivery={() => onConfirmDelivery(order.id)}
+              onReturnRequested={onReturnRequested}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function AccountPage({ locale }: Props) {
   const { user, token, clearAuth } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
@@ -2383,7 +2488,7 @@ export default function AccountPage({ locale }: Props) {
           <h1 className="font-display text-pe-black text-3xl font-light">{displayName}</h1>
           <p className="font-sans text-[0.78rem] text-pe-muted mt-1">{user.email}</p>
           <span className="inline-block mt-1.5 font-sans text-[0.65rem] tracking-wider uppercase bg-pe-rose/12 text-pe-rose-ink px-2 py-0.5">
-            {user.role === 'ADMIN' ? 'Admin' : user.role === 'SELLER' ? (es ? 'Vendedor/a' : 'Seller') : (es ? 'Cliente' : 'Customer')}
+            {roleLabel(user.role, es)}
           </span>
         </div>
           <button
@@ -2489,64 +2594,31 @@ export default function AccountPage({ locale }: Props) {
         {tab === 'notifications' && <NotificationHistory locale={locale} />}
 
         {tab === 'orders' && (
-          <div className="max-w-3xl">
-            {gatewayReturnFeedback && (
-              <div
-                className={[
-                  'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
-                  gatewayReturnFeedback.type === 'success'
-                    ? 'border-green-200 bg-green-50 text-green-800'
-                    : 'border-red-200 bg-red-50 text-red-700',
-                ].join(' ')}
-              >
-                {gatewayReturnFeedback.text}
-              </div>
-            )}
-            {loadingOrders ? (
-              <div className="flex justify-center py-16">
-                <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-20">
-                <ShoppingBag size={32} className="text-pe-muted mx-auto mb-3" />
-                <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no tienes pedidos' : 'No orders yet'}</p>
-                <a
-                  href={`/${locale}/products`}
-                  className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
-                >
-                  {es ? 'Explorar productos' : 'Browse products'}
-                </a>
-              </div>
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {orders.map((order) => (
-                  <OrderListItem
-                    key={order.id}
-                    order={order}
-                    es={es}
-                    payment={paymentsByOrder[order.id]}
-                    loadingPayments={loadingPayments}
-                    isSubmittingProof={proofSubmittingByOrder[order.id] === true}
-                    proofFeedback={proofFeedbackByOrder[order.id]}
-                    isStartingGatewayCheckout={gatewayCheckoutLoadingByOrder[order.id] === true}
-                    isSimulatingGateway={gatewaySimulatingByOrder[order.id] === true}
-                    isConfirmingDelivery={deliveryConfirmingByOrder[order.id] === true}
-                    gatewayFeedback={gatewayFeedbackByOrder[order.id]}
-                    selectedFile={proofFilesByOrder[order.id]}
-                    existingReturn={myReturns.find((r) => r.orderId === order.id) ?? null}
-                    effectiveToken={effectiveToken}
-                    onSelectProofFile={(file) => setProofFilesByOrder((prev) => ({ ...prev, [order.id]: file }))}
-                    onOpenOwnProof={() => void openOwnProof(order.id, paymentsByOrder[order.id]?.id ?? '')}
-                    onSubmitProof={() => void handleSubmitProof(order.id)}
-                    onStartGatewayCheckout={() => void handleStartGatewayCheckout(order.id)}
-                    onSimulateGateway={(simulation) => void handleSimulateGateway(order.id, simulation)}
-                    onConfirmDelivery={() => void handleConfirmDelivery(order.id)}
-                    onReturnRequested={(created) => setMyReturns((current) => [created, ...current])}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
+          <OrdersTab
+            es={es}
+            locale={locale}
+            gatewayReturnFeedback={gatewayReturnFeedback}
+            loadingOrders={loadingOrders}
+            orders={orders}
+            paymentsByOrder={paymentsByOrder}
+            loadingPayments={loadingPayments}
+            proofSubmittingByOrder={proofSubmittingByOrder}
+            proofFeedbackByOrder={proofFeedbackByOrder}
+            gatewayCheckoutLoadingByOrder={gatewayCheckoutLoadingByOrder}
+            gatewaySimulatingByOrder={gatewaySimulatingByOrder}
+            deliveryConfirmingByOrder={deliveryConfirmingByOrder}
+            gatewayFeedbackByOrder={gatewayFeedbackByOrder}
+            proofFilesByOrder={proofFilesByOrder}
+            myReturns={myReturns}
+            effectiveToken={effectiveToken}
+            onSelectProofFile={(orderId, file) => setProofFilesByOrder((prev) => ({ ...prev, [orderId]: file }))}
+            onOpenOwnProof={(orderId) => void openOwnProof(orderId, paymentsByOrder[orderId]?.id ?? '')}
+            onSubmitProof={(orderId) => void handleSubmitProof(orderId)}
+            onStartGatewayCheckout={(orderId) => void handleStartGatewayCheckout(orderId)}
+            onSimulateGateway={(orderId, simulation) => void handleSimulateGateway(orderId, simulation)}
+            onConfirmDelivery={(orderId) => void handleConfirmDelivery(orderId)}
+            onReturnRequested={(created) => setMyReturns((current) => [created, ...current])}
+          />
         )}
       </div>
     </div>
