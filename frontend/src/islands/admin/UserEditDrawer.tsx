@@ -71,6 +71,413 @@ function flashOk(setter: (v: boolean) => void) {
   setTimeout(() => setter(false), 2000);
 }
 
+interface BasicInfoSectionProps {
+  readonly email: string;
+  readonly fullName: string;
+  readonly onFullNameChange: (value: string) => void;
+  readonly originalFullName: string;
+  readonly canEditBasics: boolean;
+  readonly nameSaving: boolean;
+  readonly nameError: string;
+  readonly nameOk: boolean;
+  readonly onSave: () => void;
+}
+
+function BasicInfoSection({
+  email, fullName, onFullNameChange, originalFullName, canEditBasics, nameSaving, nameError, nameOk, onSave,
+}: BasicInfoSectionProps) {
+  return (
+    <SectionCard label="Información básica">
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Nombre completo</span>
+        <input
+          type="text"
+          value={fullName}
+          onChange={(e) => onFullNameChange(e.target.value)}
+          disabled={!canEditBasics || nameSaving}
+          className={inputCls}
+          placeholder="Nombre del usuario"
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Correo electrónico</span>
+        <input
+          type="email"
+          value={email}
+          readOnly
+          className={`${inputCls} opacity-50 cursor-not-allowed`}
+        />
+      </label>
+      {nameError && <p className="text-[0.7rem] text-red-500">{nameError}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canEditBasics || nameSaving || fullName.trim() === originalFullName || !fullName.trim()}
+          className={btnPrimary}
+        >
+          {nameSaving ? 'Guardando...' : 'Guardar nombre'}
+        </button>
+        <OkBadge show={nameOk} />
+      </div>
+    </SectionCard>
+  );
+}
+
+interface StatusSectionProps {
+  readonly active: boolean;
+  readonly canEditBasics: boolean;
+  readonly statusSaving: boolean;
+  readonly statusError: string;
+  readonly statusOk: boolean;
+  readonly onToggle: () => void;
+}
+
+function StatusSection({ active, canEditBasics, statusSaving, statusError, statusOk, onToggle }: StatusSectionProps) {
+  return (
+    <SectionCard label="Estado de cuenta">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm">
+            {active ? 'Cuenta activa' : 'Cuenta bloqueada'}
+          </p>
+          <p className="text-[0.7rem] opacity-50 mt-0.5">
+            Bloquear impide el acceso a la cuenta
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={!canEditBasics || statusSaving}
+          aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
+          className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-hidden disabled:opacity-40 ${
+            active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
+          }`}
+        >
+          <span
+            className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ${
+              active ? 'translate-x-[20px]' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+      {statusError && <p className="text-[0.7rem] text-red-500">{statusError}</p>}
+      {statusOk && (
+        <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
+          <Check size={12} /> Estado actualizado
+        </span>
+      )}
+    </SectionCard>
+  );
+}
+
+interface PasswordSectionProps {
+  readonly isSelf: boolean;
+  readonly pwOpen: boolean;
+  readonly onTogglePwOpen: () => void;
+  readonly newPw: string;
+  readonly onNewPwChange: (value: string) => void;
+  readonly confirmPw: string;
+  readonly onConfirmPwChange: (value: string) => void;
+  readonly showPw: boolean;
+  readonly onToggleShowPw: () => void;
+  readonly pwSaving: boolean;
+  readonly pwError: string;
+  readonly pwOk: boolean;
+  readonly onSave: () => void;
+}
+
+function PasswordSection({
+  isSelf, pwOpen, onTogglePwOpen, newPw, onNewPwChange, confirmPw, onConfirmPwChange, showPw, onToggleShowPw,
+  pwSaving, pwError, pwOk, onSave,
+}: PasswordSectionProps) {
+  return (
+    <SectionCard label="Contraseña">
+      <button
+        type="button"
+        onClick={onTogglePwOpen}
+        disabled={isSelf}
+        className="flex items-center justify-between w-full text-sm disabled:opacity-40"
+      >
+        <span>Restablecer contraseña</span>
+        {pwOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+      {pwOpen && (
+        <div className="space-y-3 pt-1">
+          <label className="flex flex-col gap-1.5">
+            <span className={labelCls}>Nueva contraseña</span>
+            <div className="relative">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={newPw}
+                onChange={(e) => onNewPwChange(e.target.value)}
+                className={inputCls}
+                placeholder="Mínimo 8 caracteres"
+              />
+              <button
+                type="button"
+                onClick={onToggleShowPw}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-80"
+              >
+                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={labelCls}>Confirmar contraseña</span>
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={confirmPw}
+              onChange={(e) => onConfirmPwChange(e.target.value)}
+              className={inputCls}
+              placeholder="Repite la contraseña"
+            />
+          </label>
+          {pwError && <p className="text-[0.7rem] text-red-500">{pwError}</p>}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={pwSaving}
+              className={btnPrimary}
+            >
+              {pwSaving ? 'Actualizando...' : 'Actualizar contraseña'}
+            </button>
+            <OkBadge show={pwOk} />
+          </div>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+interface CreditSectionProps {
+  readonly creditBalance: number | null;
+  readonly moneyFormat: (n: number) => string;
+  readonly creditAmount: string;
+  readonly onCreditAmountChange: (value: string) => void;
+  readonly creditReason: string;
+  readonly onCreditReasonChange: (value: string) => void;
+  readonly creditSaving: boolean;
+  readonly creditError: string;
+  readonly creditOk: boolean;
+  readonly onSave: () => void;
+}
+
+function CreditSection({
+  creditBalance, moneyFormat, creditAmount, onCreditAmountChange, creditReason, onCreditReasonChange,
+  creditSaving, creditError, creditOk, onSave,
+}: CreditSectionProps) {
+  return (
+    <SectionCard label="Crédito">
+      <div className="flex items-center justify-between">
+        <span className="text-[0.7rem] opacity-50">
+          Saldo actual
+        </span>
+        <span className="font-display">
+          {creditBalance !== null ? moneyFormat(creditBalance) : '—'}
+        </span>
+      </div>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Monto a otorgar (CLP)</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={creditAmount}
+          onChange={(e) => onCreditAmountChange(e.target.value)}
+          className={inputCls}
+          placeholder="50000"
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Motivo</span>
+        <input
+          type="text"
+          value={creditReason}
+          onChange={(e) => onCreditReasonChange(e.target.value)}
+          className={inputCls}
+        />
+      </label>
+      {creditError && <p className="text-[0.7rem] text-red-500">{creditError}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={creditSaving}
+          className={btnPrimary}
+        >
+          {creditSaving ? 'Otorgando...' : 'Otorgar crédito'}
+        </button>
+        <OkBadge show={creditOk} />
+      </div>
+    </SectionCard>
+  );
+}
+
+interface WorkerRoleSectionProps {
+  readonly workerRole: WorkerRole;
+  readonly onWorkerRoleChange: (role: WorkerRole) => void;
+  readonly vigencyStart: string;
+  readonly onVigencyStartChange: (value: string) => void;
+  readonly vigencyEnd: string;
+  readonly onVigencyEndChange: (value: string) => void;
+  readonly isSelf: boolean;
+  readonly roleSaving: boolean;
+  readonly roleError: string;
+  readonly roleOk: boolean;
+  readonly onAssign: () => void;
+  readonly onRevoke: () => void;
+}
+
+function WorkerRoleSection({
+  workerRole, onWorkerRoleChange, vigencyStart, onVigencyStartChange, vigencyEnd, onVigencyEndChange,
+  isSelf, roleSaving, roleError, roleOk, onAssign, onRevoke,
+}: WorkerRoleSectionProps) {
+  return (
+    <SectionCard label="Rol laboral">
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Rol</span>
+        <div className="relative">
+          <select
+            value={workerRole}
+            onChange={(e) => onWorkerRoleChange(e.target.value as WorkerRole)}
+            disabled={isSelf || roleSaving}
+            className={`${inputCls} appearance-none pr-8 cursor-pointer`}
+          >
+            {WORKER_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40"
+          />
+        </div>
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Inicio vigencia</span>
+        <input
+          type="date"
+          value={vigencyStart}
+          onChange={(e) => onVigencyStartChange(e.target.value)}
+          disabled={isSelf || roleSaving}
+          className={inputCls}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={labelCls}>Fin vigencia (opcional)</span>
+        <input
+          type="date"
+          value={vigencyEnd}
+          onChange={(e) => onVigencyEndChange(e.target.value)}
+          disabled={isSelf || roleSaving}
+          className={inputCls}
+        />
+      </label>
+      {roleError && <p className="text-[0.7rem] text-red-500">{roleError}</p>}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={onAssign}
+          disabled={isSelf || roleSaving}
+          className={btnPrimary}
+        >
+          {roleSaving ? 'Guardando...' : 'Asignar rol'}
+        </button>
+        <button
+          type="button"
+          onClick={onRevoke}
+          disabled={isSelf || roleSaving}
+          className={btnDanger}
+        >
+          Revocar
+        </button>
+        <OkBadge show={roleOk} />
+      </div>
+    </SectionCard>
+  );
+}
+
+function roleChangeLabel(isCustomer: boolean, roleChangeSaving: boolean): string {
+  if (roleChangeSaving) return 'Cambiando...';
+  return isCustomer ? 'Pasar a trabajador' : 'Pasar a cliente';
+}
+
+interface DangerZoneProps {
+  readonly isCustomer: boolean;
+  readonly isSelf: boolean;
+  readonly roleChangeSaving: boolean;
+  readonly roleChangeError: string;
+  readonly onChangeRole: () => void;
+  readonly deleteConfirm: boolean;
+  readonly onRequestDelete: () => void;
+  readonly onCancelDelete: () => void;
+  readonly deleteSaving: boolean;
+  readonly deleteError: string;
+  readonly onConfirmDelete: () => void;
+}
+
+function DangerZone({
+  isCustomer, isSelf, roleChangeSaving, roleChangeError, onChangeRole, deleteConfirm, onRequestDelete,
+  onCancelDelete, deleteSaving, deleteError, onConfirmDelete,
+}: DangerZoneProps) {
+  return (
+    <div className="border-t border-[var(--pe-border)] pt-4 space-y-3">
+      <p className="text-[10px] tracking-widest uppercase opacity-40">
+        Zona de riesgo
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onChangeRole}
+          disabled={isSelf || roleChangeSaving}
+          className={btnSecondary}
+        >
+          {roleChangeLabel(isCustomer, roleChangeSaving)}
+        </button>
+
+        {!deleteConfirm ? (
+          <button
+            type="button"
+            onClick={onRequestDelete}
+            disabled={isSelf}
+            className={btnDanger}
+          >
+            Eliminar usuario
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[0.7rem] text-red-500">¿Confirmar eliminación?</span>
+            <button
+              type="button"
+              onClick={onConfirmDelete}
+              disabled={deleteSaving}
+              className={btnDanger}
+            >
+              {deleteSaving ? 'Eliminando...' : 'Sí, eliminar'}
+            </button>
+            <button
+              type="button"
+              onClick={onCancelDelete}
+              className={btnSecondary}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
+      {roleChangeError && (
+        <p className="text-[0.7rem] text-red-500">{roleChangeError}</p>
+      )}
+      {deleteError && (
+        <p className="text-[0.7rem] text-red-500">{deleteError}</p>
+      )}
+    </div>
+  );
+}
+
 export default function UserEditDrawer({
   user,
   token,
@@ -378,327 +785,93 @@ export default function UserEditDrawer({
             </p>
           )}
 
-          {/* Información básica */}
-          <SectionCard label="Información básica">
-            <label className="flex flex-col gap-1.5">
-              <span className={labelCls}>Nombre completo</span>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  setNameError('');
-                }}
-                disabled={!canEditBasics || nameSaving}
-                className={inputCls}
-                placeholder="Nombre del usuario"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={labelCls}>Correo electrónico</span>
-              <input
-                type="email"
-                value={user.email}
-                readOnly
-                className={`${inputCls} opacity-50 cursor-not-allowed`}
-              />
-            </label>
-            {nameError && <p className="text-[0.7rem] text-red-500">{nameError}</p>}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={saveName}
-                disabled={!canEditBasics || nameSaving || fullName.trim() === user.fullName || !fullName.trim()}
-                className={btnPrimary}
-              >
-                {nameSaving ? 'Guardando...' : 'Guardar nombre'}
-              </button>
-              <OkBadge show={nameOk} />
-            </div>
-          </SectionCard>
+          <BasicInfoSection
+            email={user.email}
+            fullName={fullName}
+            onFullNameChange={(value) => { setFullName(value); setNameError(''); }}
+            originalFullName={user.fullName}
+            canEditBasics={canEditBasics}
+            nameSaving={nameSaving}
+            nameError={nameError}
+            nameOk={nameOk}
+            onSave={saveName}
+          />
 
-          {/* Estado */}
-          <SectionCard label="Estado de cuenta">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm">
-                  {active ? 'Cuenta activa' : 'Cuenta bloqueada'}
-                </p>
-                <p className="text-[0.7rem] opacity-50 mt-0.5">
-                  Bloquear impide el acceso a la cuenta
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (canEditBasics && !statusSaving) void saveStatus(!active);
-                }}
-                disabled={!canEditBasics || statusSaving}
-                aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
-                className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-hidden disabled:opacity-40 ${
-                  active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
-                }`}
-              >
-                <span
-                  className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                    active ? 'translate-x-[20px]' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-            {statusError && <p className="text-[0.7rem] text-red-500">{statusError}</p>}
-            {statusOk && (
-              <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
-                <Check size={12} /> Estado actualizado
-              </span>
-            )}
-          </SectionCard>
+          <StatusSection
+            active={active}
+            canEditBasics={canEditBasics}
+            statusSaving={statusSaving}
+            statusError={statusError}
+            statusOk={statusOk}
+            onToggle={() => {
+              if (canEditBasics && !statusSaving) void saveStatus(!active);
+            }}
+          />
 
-          {/* Contraseña */}
           {isLegacyAdmin && (
-          <SectionCard label="Contraseña">
-            <button
-              type="button"
-              onClick={() => setPwOpen((v) => !v)}
-              disabled={isSelf}
-              className="flex items-center justify-between w-full text-sm disabled:opacity-40"
-            >
-              <span>Restablecer contraseña</span>
-              {pwOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {pwOpen && (
-              <div className="space-y-3 pt-1">
-                <label className="flex flex-col gap-1.5">
-                  <span className={labelCls}>Nueva contraseña</span>
-                  <div className="relative">
-                    <input
-                      type={showPw ? 'text' : 'password'}
-                      value={newPw}
-                      onChange={(e) => {
-                        setNewPw(e.target.value);
-                        setPwError('');
-                      }}
-                      className={inputCls}
-                      placeholder="Mínimo 8 caracteres"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((v) => !v)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-80"
-                    >
-                      {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className={labelCls}>Confirmar contraseña</span>
-                  <input
-                    type={showPw ? 'text' : 'password'}
-                    value={confirmPw}
-                    onChange={(e) => {
-                      setConfirmPw(e.target.value);
-                      setPwError('');
-                    }}
-                    className={inputCls}
-                    placeholder="Repite la contraseña"
-                  />
-                </label>
-                {pwError && <p className="text-[0.7rem] text-red-500">{pwError}</p>}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={savePassword}
-                    disabled={pwSaving}
-                    className={btnPrimary}
-                  >
-                    {pwSaving ? 'Actualizando...' : 'Actualizar contraseña'}
-                  </button>
-                  <OkBadge show={pwOk} />
-                </div>
-              </div>
-            )}
-          </SectionCard>
+            <PasswordSection
+              isSelf={isSelf}
+              pwOpen={pwOpen}
+              onTogglePwOpen={() => setPwOpen((v) => !v)}
+              newPw={newPw}
+              onNewPwChange={(value) => { setNewPw(value); setPwError(''); }}
+              confirmPw={confirmPw}
+              onConfirmPwChange={(value) => { setConfirmPw(value); setPwError(''); }}
+              showPw={showPw}
+              onToggleShowPw={() => setShowPw((v) => !v)}
+              pwSaving={pwSaving}
+              pwError={pwError}
+              pwOk={pwOk}
+              onSave={savePassword}
+            />
           )}
 
-          {/* Crédito */}
           {isLegacyAdmin && (
-          <SectionCard label="Crédito">
-            <div className="flex items-center justify-between">
-              <span className="text-[0.7rem] opacity-50">
-                Saldo actual
-              </span>
-              <span className="font-display">
-                {creditBalance !== null ? moneyFormat(creditBalance) : '—'}
-              </span>
-            </div>
-            <label className="flex flex-col gap-1.5">
-              <span className={labelCls}>Monto a otorgar (CLP)</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={creditAmount}
-                onChange={(e) => {
-                  setCreditAmount(e.target.value);
-                  setCreditError('');
-                }}
-                className={inputCls}
-                placeholder="50000"
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={labelCls}>Motivo</span>
-              <input
-                type="text"
-                value={creditReason}
-                onChange={(e) => setCreditReason(e.target.value)}
-                className={inputCls}
-              />
-            </label>
-            {creditError && <p className="text-[0.7rem] text-red-500">{creditError}</p>}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={saveCredit}
-                disabled={creditSaving}
-                className={btnPrimary}
-              >
-                {creditSaving ? 'Otorgando...' : 'Otorgar crédito'}
-              </button>
-              <OkBadge show={creditOk} />
-            </div>
-          </SectionCard>
+            <CreditSection
+              creditBalance={creditBalance}
+              moneyFormat={moneyFormat}
+              creditAmount={creditAmount}
+              onCreditAmountChange={(value) => { setCreditAmount(value); setCreditError(''); }}
+              creditReason={creditReason}
+              onCreditReasonChange={setCreditReason}
+              creditSaving={creditSaving}
+              creditError={creditError}
+              creditOk={creditOk}
+              onSave={saveCredit}
+            />
           )}
 
-          {/* Rol laboral — trabajadores only */}
           {isLegacyAdmin && !isCustomer && (
-            <SectionCard label="Rol laboral">
-              <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Rol</span>
-                <div className="relative">
-                  <select
-                    value={workerRole}
-                    onChange={(e) => setWorkerRole(e.target.value as WorkerRole)}
-                    disabled={isSelf || roleSaving}
-                    className={`${inputCls} appearance-none pr-8 cursor-pointer`}
-                  >
-                    {WORKER_ROLES.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 opacity-40"
-                  />
-                </div>
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Inicio vigencia</span>
-                <input
-                  type="date"
-                  value={vigencyStart}
-                  onChange={(e) => setVigencyStart(e.target.value)}
-                  disabled={isSelf || roleSaving}
-                  className={inputCls}
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className={labelCls}>Fin vigencia (opcional)</span>
-                <input
-                  type="date"
-                  value={vigencyEnd}
-                  onChange={(e) => setVigencyEnd(e.target.value)}
-                  disabled={isSelf || roleSaving}
-                  className={inputCls}
-                />
-              </label>
-              {roleError && <p className="text-[0.7rem] text-red-500">{roleError}</p>}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={assignRole}
-                  disabled={isSelf || roleSaving}
-                  className={btnPrimary}
-                >
-                  {roleSaving ? 'Guardando...' : 'Asignar rol'}
-                </button>
-                <button
-                  type="button"
-                  onClick={revokeRole}
-                  disabled={isSelf || roleSaving}
-                  className={btnDanger}
-                >
-                  Revocar
-                </button>
-                <OkBadge show={roleOk} />
-              </div>
-            </SectionCard>
+            <WorkerRoleSection
+              workerRole={workerRole}
+              onWorkerRoleChange={setWorkerRole}
+              vigencyStart={vigencyStart}
+              onVigencyStartChange={setVigencyStart}
+              vigencyEnd={vigencyEnd}
+              onVigencyEndChange={setVigencyEnd}
+              isSelf={isSelf}
+              roleSaving={roleSaving}
+              roleError={roleError}
+              roleOk={roleOk}
+              onAssign={assignRole}
+              onRevoke={revokeRole}
+            />
           )}
 
-          {/* Footer — zona de riesgo */}
           {isLegacyAdmin && (
-          <div className="border-t border-[var(--pe-border)] pt-4 space-y-3">
-            <p className="text-[10px] tracking-widest uppercase opacity-40">
-              Zona de riesgo
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(() => {
-                let roleChangeLabel = 'Pasar a cliente';
-                if (roleChangeSaving) {
-                  roleChangeLabel = 'Cambiando...';
-                } else if (isCustomer) {
-                  roleChangeLabel = 'Pasar a trabajador';
-                }
-                return (
-                  <button
-                    type="button"
-                    onClick={changeRole}
-                    disabled={isSelf || roleChangeSaving}
-                    className={btnSecondary}
-                  >
-                    {roleChangeLabel}
-                  </button>
-                );
-              })()}
-
-              {!deleteConfirm ? (
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirm(true)}
-                  disabled={isSelf}
-                  className={btnDanger}
-                >
-                  Eliminar usuario
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[0.7rem] text-red-500">¿Confirmar eliminación?</span>
-                  <button
-                    type="button"
-                    onClick={handleDeleteUser}
-                    disabled={deleteSaving}
-                    className={btnDanger}
-                  >
-                    {deleteSaving ? 'Eliminando...' : 'Sí, eliminar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteConfirm(false)}
-                    className={btnSecondary}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              )}
-            </div>
-            {roleChangeError && (
-              <p className="text-[0.7rem] text-red-500">{roleChangeError}</p>
-            )}
-            {deleteError && (
-              <p className="text-[0.7rem] text-red-500">{deleteError}</p>
-            )}
-          </div>
+            <DangerZone
+              isCustomer={isCustomer}
+              isSelf={isSelf}
+              roleChangeSaving={roleChangeSaving}
+              roleChangeError={roleChangeError}
+              onChangeRole={changeRole}
+              deleteConfirm={deleteConfirm}
+              onRequestDelete={() => setDeleteConfirm(true)}
+              onCancelDelete={() => setDeleteConfirm(false)}
+              deleteSaving={deleteSaving}
+              deleteError={deleteError}
+              onConfirmDelete={handleDeleteUser}
+            />
           )}
         </div>
       </div>
