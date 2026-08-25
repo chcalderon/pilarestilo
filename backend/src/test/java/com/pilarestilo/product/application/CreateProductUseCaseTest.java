@@ -33,6 +33,9 @@ class CreateProductUseCaseTest {
     @Mock
     DomainEventPublisher eventPublisher;
 
+    @Mock
+    CategoryVariantFieldValidator variantFieldValidator;
+
     @InjectMocks
     CreateProductUseCase useCase;
 

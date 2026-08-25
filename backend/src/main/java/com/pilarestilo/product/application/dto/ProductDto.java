@@ -23,8 +23,7 @@ public record ProductDto(
         BigDecimal avgRating,
         int reviewCount,
         String shippingOriginZone,
-        /** Null when the admin has not stated one; the storefront then derives it from the categories. */
-        String variantType,
+        ProductVariantFieldConfigDto variantFieldConfig,
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,
         List<String> categoryTypes,
@@ -32,4 +31,8 @@ public record ProductDto(
 ) {
     public record SizeStockDto(String size, int stock) {}
     public record VariantDto(String color, String size, int stock, int stockOnHand, int stockReserved, int stockAvailable) {}
+    public record ProductVariantFieldConfigDto(FieldDto primary, FieldDto secondary) {
+        public record FieldDto(String label, String inputType, List<String> options,
+                                Integer min, Integer max, boolean allowMultiple, boolean allowCustom) {}
+    }
 }

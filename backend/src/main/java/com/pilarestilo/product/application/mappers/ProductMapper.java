@@ -38,11 +38,23 @@ public class ProductMapper {
                 product.getAvgRating(),
                 product.getReviewCount(),
                 product.getShippingOriginZone().name(),
-                product.getVariantType() == null ? null : product.getVariantType().name(),
+                toConfigDto(product.getVariantFieldConfig()),
                 sizeStocks,
                 slugs,
                 categoryTypes,
                 variants
         );
+    }
+
+    private static ProductDto.ProductVariantFieldConfigDto toConfigDto(
+            com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig config) {
+        if (config == null) return null;
+        return new ProductDto.ProductVariantFieldConfigDto(toFieldDto(config.primary()), toFieldDto(config.secondary()));
+    }
+
+    private static ProductDto.ProductVariantFieldConfigDto.FieldDto toFieldDto(
+            com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig.FieldConfig field) {
+        return new ProductDto.ProductVariantFieldConfigDto.FieldDto(field.label(), field.inputType().name(),
+                field.options(), field.min(), field.max(), field.allowMultiple(), field.allowCustom());
     }
 }
