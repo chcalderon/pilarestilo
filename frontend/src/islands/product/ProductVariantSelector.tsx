@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCartStore } from '../../lib/cartStore';
 import type { Locale } from '../../i18n/index';
-import type { CategoryType, ProductVariantDto } from '../../lib/api';
+import type { CategoryVariantFieldConfigDto, ProductVariantDto } from '../../lib/api';
 import {
+  buildVariantSchema,
   getPrimaryAttribute,
-  getProductVariantSchema,
   getSecondaryAttribute,
   summarizeVariantAttributeValues,
   toVariantAttributeRecord,
@@ -19,7 +19,7 @@ interface Props {
   readonly condition: 'NEW' | 'USED';
   readonly stock: number;
   readonly locale: Locale;
-  readonly categoryTypes?: CategoryType[];
+  readonly variantFieldConfig?: CategoryVariantFieldConfigDto | null;
   readonly variants?: ProductVariantDto[];
 }
 
@@ -47,12 +47,12 @@ export default function ProductVariantSelector({
   condition,
   stock,
   locale,
-  categoryTypes,
+  variantFieldConfig,
   variants,
 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
-  const schema = useMemo(() => getProductVariantSchema({ categoryTypes }), [categoryTypes]);
+  const schema = useMemo(() => buildVariantSchema(variantFieldConfig ?? null), [variantFieldConfig]);
   const primaryAttribute = useMemo(() => getPrimaryAttribute(schema), [schema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(schema), [schema]);
 

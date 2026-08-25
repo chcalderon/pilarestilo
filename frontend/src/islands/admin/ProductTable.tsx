@@ -21,7 +21,7 @@ import {
   type CategoryDto,
 } from '../../lib/api';
 import { summarizeProductVariantSecondaryValues } from '../../lib/productVariants';
-import { getProductVariantSchema, getSecondaryAttribute } from '../../lib/variantSchema';
+import { buildVariantSchema, getSecondaryAttribute } from '../../lib/variantSchema';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column, type BulkAction } from './DataTable';
 import ProductForm from './ProductForm';
@@ -341,7 +341,7 @@ export default function ProductTable() {
   const fmtCreatedAt = (value: string) =>
     new Date(value).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const formatSizesSummary = (row: ProductDto) => summarizeProductVariantSecondaryValues(row);
-  const formatSecondaryAttributeLabel = (row: ProductDto) => getSecondaryAttribute(getProductVariantSchema(row)).label;
+  const formatSecondaryAttributeLabel = (row: ProductDto) => getSecondaryAttribute(buildVariantSchema(row.variantFieldConfig ?? null)).label;
 
   const actionButtonClass =
     'inline-flex items-center gap-1.5 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors';

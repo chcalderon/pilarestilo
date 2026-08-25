@@ -127,4 +127,42 @@ describe('allowedCategoryIdsFor', () => {
     const allowed = allowedCategoryIdsFor(categories, 'zapatos');
     expect(allowed.has('mujer')).toBe(true);
   });
+
+  /**
+   * A shape category with a shape-category descendant that matches the current pick. The form
+   * auto-selects ancestors, so judging each category alone would add the ancestor and then
+   * refuse to save it -- the same deadlock the old enum-driven allowedCategoryIds guarded against
+   * (nested "aros"/JEWELRY under "accesorios"/ACCESSORY in the real catalogue).
+   */
+  function nestedShapeTree(): CategoryDto[] {
+    return [
+      { ...shapeCategory('parent-shape'), id: 'parent-shape' },
+      { ...shapeCategory('child-shape'), id: 'child-shape', parentId: 'parent-shape' },
+      { ...shapeCategory('other-shape'), id: 'other-shape' },
+    ];
+  }
+
+  it('allows a shape-category ancestor whose descendant is the one picked', () => {
+    const allowed = allowedCategoryIdsFor(nestedShapeTree(), 'child-shape');
+    expect(allowed.has('child-shape')).toBe(true);
+    expect(allowed.has('parent-shape')).toBe(true);
+    expect(allowed.has('other-shape')).toBe(false);
+  });
+
+  it('does not allow a shape-category ancestor whose descendants all mismatch', () => {
+    const allowed = allowedCategoryIdsFor(nestedShapeTree(), 'other-shape');
+    expect(allowed.has('parent-shape')).toBe(false);
+    expect(allowed.has('child-shape')).toBe(false);
+    expect(allowed.has('other-shape')).toBe(true);
+  });
+
+  it('judges an orphan (parentId pointing outside the list) on its own account', () => {
+    const orphan = { ...shapeCategory('suelta'), parentId: 'no-existe' };
+    expect(allowedCategoryIdsFor([orphan], 'suelta').has('suelta')).toBe(true);
+    expect(allowedCategoryIdsFor([orphan], 'otra').has('suelta')).toBe(false);
+  });
+
+  it('handles an empty catalogue', () => {
+    expect(allowedCategoryIdsFor([], null).size).toBe(0);
+  });
 });

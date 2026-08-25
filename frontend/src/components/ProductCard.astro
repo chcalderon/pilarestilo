@@ -7,7 +7,7 @@ import QuickRateStars from '../islands/reviews/QuickRateStars';
 import WishlistButton from '../islands/wishlist/WishlistButton';
 import RatingStars from './RatingStars.astro';
 import { summarizeProductVariantSecondaryValues } from '../lib/productVariants';
-import { getProductVariantSchema, getSecondaryAttribute } from '../lib/variantSchema';
+import { buildVariantSchema, getSecondaryAttribute } from '../lib/variantSchema';
 
 export interface Props {
   product: ProductDto;
@@ -61,7 +61,7 @@ const conditionLabel =
     : t('product.condition.used', locale);
 
 const isNew = product.condition === 'NEW';
-const variantSchema = getProductVariantSchema(product);
+const variantSchema = buildVariantSchema(product.variantFieldConfig ?? null);
 const secondaryAttribute = getSecondaryAttribute(variantSchema);
 const sizesSummary = summarizeProductVariantSecondaryValues(product);
 ---
