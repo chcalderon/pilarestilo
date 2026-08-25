@@ -47,8 +47,9 @@ class CreateProductUseCaseVariantValidationTest {
 
         var outOfRangeVariant = List.of(new ProductVariantInput("Blanco", "50", 1));
         var shoesIdSet = Set.of(shoesId);
+        var price = BigDecimal.valueOf(50000);
         assertThrows(DomainException.class, () -> useCase.execute(
-                "Zapato", "desc", BigDecimal.valueOf(50000), "CLP", null, null,
+                "Zapato", "desc", price, "CLP", null, null,
                 "http://img", "NEW", "Marca", 0, true, shoesIdSet,
                 outOfRangeVariant
         ));
