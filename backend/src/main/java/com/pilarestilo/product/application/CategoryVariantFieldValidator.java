@@ -87,7 +87,7 @@ public class CategoryVariantFieldValidator {
     private static Integer parseIntOrNull(String token) {
         try {
             return Integer.valueOf(token);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             return null;
         }
     }

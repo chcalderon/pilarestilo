@@ -45,10 +45,11 @@ class CreateProductUseCaseVariantValidationTest {
         CategoryVariantFieldValidator validator = new CategoryVariantFieldValidator(categoryRepository);
         CreateProductUseCase useCase = new CreateProductUseCase(productRepository, eventPublisher, validator);
 
+        var outOfRangeVariant = List.of(new ProductVariantInput("Blanco", "50", 1));
         assertThrows(DomainException.class, () -> useCase.execute(
                 "Zapato", "desc", BigDecimal.valueOf(50000), "CLP", null, null,
                 "http://img", "NEW", "Marca", 0, true, Set.of(shoesId),
-                List.of(new ProductVariantInput("Blanco", "50", 1))
+                outOfRangeVariant
         ));
     }
 

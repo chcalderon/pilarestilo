@@ -60,8 +60,8 @@ class CategoryVariantFieldValidatorTest {
         var config = new CategoryVariantFieldConfig(freeText, freeText);
 
         assertDoesNotThrow(() -> validator.validate(config, List.of(new ProductVariantInput("Negro", "Cualquiera", 1))));
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Negro", "", 1))));
+        var blank = List.of(new ProductVariantInput("Negro", "", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, blank));
     }
 
     @Test
@@ -70,8 +70,8 @@ class CategoryVariantFieldValidatorTest {
         var config = new CategoryVariantFieldConfig(freeText, sizeOptions);
 
         assertDoesNotThrow(() -> validator.validate(config, List.of(new ProductVariantInput("Negro", "M", 1))));
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Negro", "XXL", 1))));
+        var outOfList = List.of(new ProductVariantInput("Negro", "XXL", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, outOfList));
     }
 
     @Test
@@ -80,8 +80,8 @@ class CategoryVariantFieldValidatorTest {
         var config = new CategoryVariantFieldConfig(freeText, sizeOptions);
 
         assertDoesNotThrow(() -> validator.validate(config, List.of(new ProductVariantInput("Negro", "S-M-L", 1))));
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Negro", "S-XXL", 1))));
+        var oneTokenOutOfList = List.of(new ProductVariantInput("Negro", "S-XXL", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, oneTokenOutOfList));
     }
 
     @Test
@@ -89,8 +89,8 @@ class CategoryVariantFieldValidatorTest {
         var validator = new CategoryVariantFieldValidator(categoryRepository);
         var config = new CategoryVariantFieldConfig(freeText, sizeOptions);
 
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Negro", "S-S", 1))));
+        var duplicateTokens = List.of(new ProductVariantInput("Negro", "S-S", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, duplicateTokens));
     }
 
     @Test
@@ -110,10 +110,10 @@ class CategoryVariantFieldValidatorTest {
         var config = new CategoryVariantFieldConfig(freeText, shoeRange);
 
         assertDoesNotThrow(() -> validator.validate(config, List.of(new ProductVariantInput("Blanco", "38", 1))));
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Blanco", "50", 1))));
-        assertThrows(DomainException.class,
-                () -> validator.validate(config, List.of(new ProductVariantInput("Blanco", "not-a-number", 1))));
+        var aboveRange = List.of(new ProductVariantInput("Blanco", "50", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, aboveRange));
+        var notANumber = List.of(new ProductVariantInput("Blanco", "not-a-number", 1));
+        assertThrows(DomainException.class, () -> validator.validate(config, notANumber));
     }
 
     @Test

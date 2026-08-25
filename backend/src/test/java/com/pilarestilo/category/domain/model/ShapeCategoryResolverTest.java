@@ -11,8 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ShapeCategoryResolverTest {
 
     private Category groupingCategory(String slug) {
-        Category c = Category.create(slug, slug, slug, null, 0, null);
-        return c;
+        return Category.create(slug, slug, slug, null, 0, null);
     }
 
     private Category shapeCategory(String slug) {
@@ -45,8 +44,9 @@ class ShapeCategoryResolverTest {
         Category zapatos = shapeCategory("zapatos");
         Category carteras = shapeCategory("carteras");
 
+        var bothShapes = List.of(zapatos, carteras);
         DomainException ex = assertThrows(DomainException.class,
-                () -> ShapeCategoryResolver.resolveOne(List.of(zapatos, carteras)));
+                () -> ShapeCategoryResolver.resolveOne(bothShapes));
 
         assertTrue(ex.getMessage().contains("zapatos"));
         assertTrue(ex.getMessage().contains("carteras"));

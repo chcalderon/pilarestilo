@@ -113,6 +113,11 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         return c;
     }
 
+    private static final String OPTIONS_KEY = "options";
+
+    // null is load-bearing: the CHECK constraint on categories requires variant_field_config
+    // IS NULL exactly when defines_variant_fields is FALSE, so an empty map here would violate it.
+    @SuppressWarnings("java:S1168")
     private static Map<String, Object> toRawConfig(CategoryVariantFieldConfig config) {
         if (config == null) return null;
         Map<String, Object> raw = new LinkedHashMap<>();
@@ -125,7 +130,7 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         Map<String, Object> raw = new LinkedHashMap<>();
         raw.put("label", field.label());
         raw.put("inputType", field.inputType().name());
-        raw.put("options", field.options());
+        raw.put(OPTIONS_KEY, field.options());
         raw.put("min", field.min());
         raw.put("max", field.max());
         raw.put("allowMultiple", field.allowMultiple());
@@ -143,9 +148,9 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
 
     @SuppressWarnings("unchecked")
     private static CategoryVariantFieldConfig.FieldConfig fromRawField(Map<String, Object> raw) {
-        List<String> options = raw.get("options") == null
+        List<String> options = raw.get(OPTIONS_KEY) == null
                 ? List.of()
-                : ((List<Object>) raw.get("options")).stream().map(String::valueOf).toList();
+                : ((List<Object>) raw.get(OPTIONS_KEY)).stream().map(String::valueOf).toList();
         return new CategoryVariantFieldConfig.FieldConfig(
                 (String) raw.get("label"),
                 CategoryVariantFieldConfig.InputType.valueOf((String) raw.get("inputType")),
