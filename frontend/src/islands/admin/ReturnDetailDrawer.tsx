@@ -51,6 +51,499 @@ function Row({ label, value }: { readonly label: string; readonly value: React.R
   );
 }
 
+type PrendaMode = 'idle' | 'reject' | 'discard';
+
+interface SolicitudSectionProps {
+  readonly request: ReturnRequestDto;
+  readonly closed: boolean;
+}
+
+function SolicitudSection({ request, closed }: SolicitudSectionProps) {
+  return (
+    <Section label="Solicitud">
+      <Row label="Motivo" value={request.reason ?? '—'} />
+      <Row label="La abrió" value={request.requestedBy ? 'La clienta' : 'La tienda'} />
+      <Row
+        label="Plazo para reembolsar"
+        value={
+          closed ? (
+            <span className="opacity-50">Cerrada</span>
+          ) : (
+            <span className={request.daysUntilDeadline <= 10 ? 'text-amber-700' : ''}>
+              {request.daysUntilDeadline} días ·{' '}
+              {new Date(request.deadlineAt).toLocaleDateString('es-CL')}
+            </span>
+          )
+        }
+      />
+      {request.resolutionNote && <Row label="Resolución" value={request.resolutionNote} />}
+    </Section>
+  );
+}
+
+interface VentaSectionProps {
+  readonly order: OrderDto;
+}
+
+function VentaSection({ order }: VentaSectionProps) {
+  return (
+    <Section label="Venta">
+      <ul className="divide-y divide-[var(--pe-border)]">
+        {order.items.map((item) => (
+          <li key={item.id} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+            <span>
+              {item.productName}
+              <span className="opacity-50"> ×{item.quantity}</span>
+            </span>
+            <span className="tabular-nums">{money.format(item.unitPrice.amount)}</span>
+          </li>
+        ))}
+      </ul>
+      <Row label="Total" value={<strong>{money.format(order.totalAmount.amount)}</strong>} />
+    </Section>
+  );
+}
+
+interface RejectFormProps {
+  readonly rejectNote: string;
+  readonly onRejectNoteChange: (value: string) => void;
+  readonly busy: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+}
+
+function RejectForm({ rejectNote, onRejectNoteChange, busy, onConfirm, onCancel }: RejectFormProps) {
+  return (
+    <div className="space-y-2">
+      <label className="block space-y-1">
+        <span className={labelCls}>Motivo del rechazo</span>
+        <input className={inputCls} value={rejectNote}
+          onChange={(e) => onRejectNoteChange(e.target.value)}
+          placeholder="Fuera de plazo, la prenda viene usada…" />
+      </label>
+      <div className="flex gap-2">
+        <button type="button" className={btnDanger} disabled={busy} onClick={onConfirm}>
+          Confirmar rechazo
+        </button>
+        <button type="button" className={btnSecondary} onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+function DiscardForm({ discardNote, onDiscardNoteChange, busy, onConfirm, onCancel }: {
+  readonly discardNote: string;
+  readonly onDiscardNoteChange: (value: string) => void;
+  readonly busy: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block space-y-1">
+        <span className={labelCls}>Por qué se descarta</span>
+        <input className={inputCls} value={discardNote}
+          onChange={(e) => onDiscardNoteChange(e.target.value)}
+          placeholder="Mancha irrecuperable, rotura…" />
+      </label>
+      <div className="flex gap-2">
+        <button type="button" className={btnDanger} disabled={busy} onClick={onConfirm}>
+          Confirmar
+        </button>
+        <button type="button" className={btnSecondary} onClick={onCancel}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+interface PrendaSectionProps {
+  readonly request: ReturnRequestDto;
+  readonly busy: boolean;
+  readonly mode: PrendaMode;
+  readonly onSetMode: (mode: PrendaMode) => void;
+  readonly rejectNote: string;
+  readonly onRejectNoteChange: (value: string) => void;
+  readonly discardNote: string;
+  readonly onDiscardNoteChange: (value: string) => void;
+  readonly onApprove: () => void;
+  readonly onReject: () => void;
+  readonly onReceive: () => void;
+  readonly onRestock: () => void;
+  readonly onDiscard: () => void;
+}
+
+function PrendaSection({
+  request, busy, mode, onSetMode, rejectNote, onRejectNoteChange, discardNote, onDiscardNoteChange,
+  onApprove, onReject, onReceive, onRestock, onDiscard,
+}: PrendaSectionProps) {
+  return (
+    <Section label="Prenda">
+      {request.status === 'REQUESTED' && (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={btnPrimary} disabled={busy} onClick={onApprove}>
+            <Check size={13} /> Aprobar
+          </button>
+          {request.kind === 'DEVOLUCION' && mode === 'idle' && (
+            <button type="button" className={btnDanger} onClick={() => onSetMode('reject')}>
+              <Ban size={13} /> Rechazar
+            </button>
+          )}
+        </div>
+      )}
+
+      {mode === 'reject' && (
+        <RejectForm
+          rejectNote={rejectNote}
+          onRejectNoteChange={onRejectNoteChange}
+          busy={busy}
+          onConfirm={onReject}
+          onCancel={() => onSetMode('idle')}
+        />
+      )}
+
+      {request.status === 'APPROVED' && (
+        <div className="space-y-2">
+          <p className="text-[0.75rem] opacity-70">
+            Al recibirla pasa a reacondicionamiento. <strong>No vuelve al stock todavía</strong>.
+          </p>
+          <button type="button" className={btnPrimary} disabled={busy} onClick={onReceive}>
+            <PackageCheck size={13} /> Registrar que llegó
+          </button>
+        </div>
+      )}
+
+      {request.itemDisposition === 'PENDING_RECONDITIONING' && (
+        <div className="space-y-2">
+          <p className="text-[0.75rem] opacity-70">
+            Terminado el reacondicionamiento, la prenda vuelve a la venta o se descarta.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={btnPrimary} disabled={busy} onClick={onRestock}>
+              <Recycle size={13} /> Volver a la venta
+            </button>
+            {mode === 'idle' && (
+              <button type="button" className={btnDanger} onClick={() => onSetMode('discard')}>
+                <Trash2 size={13} /> Descartar
+              </button>
+            )}
+          </div>
+          {mode === 'discard' && (
+            <DiscardForm
+              discardNote={discardNote}
+              onDiscardNoteChange={onDiscardNoteChange}
+              busy={busy}
+              onConfirm={onDiscard}
+              onCancel={() => onSetMode('idle')}
+            />
+          )}
+        </div>
+      )}
+
+      {request.itemDisposition === 'RESTOCKED' && <Row label="Prenda" value="De vuelta a la venta" />}
+      {request.itemDisposition === 'DISCARDED' && (
+        <Row label="Descartada" value={request.dispositionNote ?? '—'} />
+      )}
+    </Section>
+  );
+}
+
+interface RefundAccount {
+  readonly holder: string;
+  readonly rut: string;
+  readonly bankName: string;
+  readonly accountType: string;
+  readonly accountNumber: string;
+}
+
+interface RefundDraft {
+  readonly amount: string;
+  readonly method: string;
+  readonly reference: string;
+}
+
+function RefundAccountForm({ account, onAccountChange, busy, onSave }: {
+  readonly account: RefundAccount;
+  readonly onAccountChange: (account: RefundAccount) => void;
+  readonly busy: boolean;
+  readonly onSave: () => void;
+}) {
+  return (
+    <div className="space-y-2 pb-3 border-b border-[var(--pe-border)]">
+      <p className={labelCls}>Cuenta de destino (solo transferencia)</p>
+      <div className="grid grid-cols-2 gap-2">
+        <input className={inputCls} placeholder="Titular" value={account.holder}
+          onChange={(e) => onAccountChange({ ...account, holder: e.target.value })} />
+        <input className={inputCls} placeholder="RUT" value={account.rut}
+          onChange={(e) => onAccountChange({ ...account, rut: e.target.value })} />
+        <input className={inputCls} placeholder="Banco" value={account.bankName}
+          onChange={(e) => onAccountChange({ ...account, bankName: e.target.value })} />
+        <input className={inputCls} placeholder="Tipo de cuenta" value={account.accountType}
+          onChange={(e) => onAccountChange({ ...account, accountType: e.target.value })} />
+        <input className={`${inputCls} col-span-2`} placeholder="N° de cuenta"
+          value={account.accountNumber}
+          onChange={(e) => onAccountChange({ ...account, accountNumber: e.target.value })} />
+      </div>
+      <p className="text-[0.68rem] opacity-50">
+        Se guarda cifrada y se borra al cerrar el reembolso.
+      </p>
+      <button type="button" className={btnSecondary} disabled={busy} onClick={onSave}>
+        Guardar cuenta
+      </button>
+    </div>
+  );
+}
+
+function RefundForm({ request, account, onAccountChange, refund, onRefundChange, busy, onAttachAccount, onRegisterRefund }: {
+  readonly request: ReturnRequestDto;
+  readonly account: RefundAccount;
+  readonly onAccountChange: (account: RefundAccount) => void;
+  readonly refund: RefundDraft;
+  readonly onRefundChange: (refund: RefundDraft) => void;
+  readonly busy: boolean;
+  readonly onAttachAccount: () => void;
+  readonly onRegisterRefund: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[0.75rem] opacity-70">
+        El reembolso no espera a la prenda: la ley da 45 días para devolver el dinero.
+      </p>
+
+      {!request.refundAccountConfigured && (
+        <RefundAccountForm account={account} onAccountChange={onAccountChange} busy={busy} onSave={onAttachAccount} />
+      )}
+
+      {request.refundAccountConfigured && (
+        <Row
+          label="Cuenta"
+          value={`${request.refundBankName ?? ''} ····${request.refundAccountLast4 ?? ''}`}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <label className="space-y-1">
+          <span className={labelCls}>Monto</span>
+          <input className={inputCls} inputMode="numeric" value={refund.amount}
+            onChange={(e) => onRefundChange({ ...refund, amount: e.target.value })} />
+        </label>
+        <label className="space-y-1">
+          <span className={labelCls}>Método</span>
+          <select className={inputCls} value={refund.method}
+            onChange={(e) => onRefundChange({ ...refund, method: e.target.value })}>
+            <option value="TRANSFERENCIA">Transferencia</option>
+            <option value="TARJETA">Tarjeta</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </label>
+        <label className="space-y-1 col-span-2">
+          <span className={labelCls}>Referencia de la operación</span>
+          <input className={inputCls} value={refund.reference}
+            onChange={(e) => onRefundChange({ ...refund, reference: e.target.value })}
+            placeholder="N° de transferencia" />
+        </label>
+      </div>
+      <button type="button" className={btnPrimary} disabled={busy} onClick={onRegisterRefund}>
+        <Banknote size={13} /> Registrar reembolso
+      </button>
+    </div>
+  );
+}
+
+interface DineroSectionProps {
+  readonly request: ReturnRequestDto;
+  readonly closed: boolean;
+  readonly canRefund: boolean;
+  readonly busy: boolean;
+  readonly account: RefundAccount;
+  readonly onAccountChange: (account: RefundAccount) => void;
+  readonly refund: RefundDraft;
+  readonly onRefundChange: (refund: RefundDraft) => void;
+  readonly onAttachAccount: () => void;
+  readonly onRegisterRefund: () => void;
+}
+
+function refundedContent(request: ReturnRequestDto) {
+  return (
+    <>
+      <Row label="Monto" value={money.format(request.refundAmount ?? 0)} />
+      <Row label="Método" value={request.refundMethod ?? '—'} />
+      <Row label="Referencia" value={request.refundReference ?? '—'} />
+      {request.refundBankName && (
+        <Row
+          label="Cuenta"
+          value={`${request.refundBankName} ····${request.refundAccountLast4 ?? ''}`}
+        />
+      )}
+      <p className="text-[0.68rem] opacity-50">
+        El número de cuenta se borró al cerrar el reembolso. Queda la referencia de la operación.
+      </p>
+    </>
+  );
+}
+
+function DineroSection({
+  request, closed, canRefund, busy, account, onAccountChange, refund, onRefundChange, onAttachAccount, onRegisterRefund,
+}: DineroSectionProps) {
+  return (
+    <Section label="Dinero">
+      {request.status === 'REFUNDED' ? (
+        refundedContent(request)
+      ) : canRefund && !closed ? (
+        <RefundForm
+          request={request}
+          account={account}
+          onAccountChange={onAccountChange}
+          refund={refund}
+          onRefundChange={onRefundChange}
+          busy={busy}
+          onAttachAccount={onAttachAccount}
+          onRegisterRefund={onRegisterRefund}
+        />
+      ) : (
+        <p className="text-sm opacity-60">
+          {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
+        </p>
+      )}
+    </Section>
+  );
+}
+
+function creditNoteReferenceLabel(issuedNote: SalesDocumentDto, liveSale: SalesDocumentDto | null): string {
+  const documentLabel = liveSale ? liveSale.documentType.toLowerCase() : 'boleta';
+  const action = issuedNote.referenceCode === 1 ? 'Anula la' : 'Corrige el monto de la';
+  return `${action} ${documentLabel} ${liveSale?.folio ?? ''}`;
+}
+
+function IssuedCreditNote({ issuedNote, liveSale }: { readonly issuedNote: SalesDocumentDto; readonly liveSale: SalesDocumentDto | null }) {
+  return (
+    <>
+      <Row label="Folio" value={issuedNote.folio} />
+      <Row label="Referencia" value={creditNoteReferenceLabel(issuedNote, liveSale)} />
+      <Row label="Monto" value={money.format(issuedNote.totalAmount)} />
+      <Row label="Neto / IVA" value={`${money.format(issuedNote.netAmount)} · ${money.format(issuedNote.taxAmount)}`} />
+    </>
+  );
+}
+
+interface CreditNoteDraft {
+  readonly folio: string;
+  readonly amount: string;
+  readonly fileUrl: string | null;
+}
+
+function uploadButtonLabel(uploading: boolean, hasFile: boolean): string {
+  if (uploading) return 'Subiendo…';
+  return hasFile ? 'Archivo listo' : 'Adjuntar archivo';
+}
+
+function creditNoteAmountHint(creditNote: CreditNoteDraft, liveSale: SalesDocumentDto): string {
+  const documentLabel = liveSale.documentType.toLowerCase();
+  return Number(creditNote.amount) >= liveSale.totalAmount
+    ? `Anula la ${documentLabel} completa (referencia 1).`
+    : `Corrige el monto de la ${documentLabel} (referencia 3).`;
+}
+
+function CreditNoteForm({
+  liveSale, staleForCreditNote, creditNote, onCreditNoteChange, uploading, busy, onAttachFile, onRegister,
+}: {
+  readonly liveSale: SalesDocumentDto;
+  readonly staleForCreditNote: boolean;
+  readonly creditNote: CreditNoteDraft;
+  readonly onCreditNoteChange: (creditNote: CreditNoteDraft) => void;
+  readonly uploading: boolean;
+  readonly busy: boolean;
+  readonly onAttachFile: (file: File) => void;
+  readonly onRegister: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[0.75rem] opacity-70">
+        La boleta {liveSale.folio} ya fue declarada al SII, así que no se anula: se
+        contrapesa con una nota de crédito. Emítela en eBoleta o en el sitio del SII y
+        registra aquí el folio que te dieron.
+      </p>
+      {staleForCreditNote && (
+        <p className="text-[0.72rem] text-amber-600">
+          La boleta tiene más de seis meses. Pasado ese plazo el SII ya no permite rebajar
+          el débito fiscal; regístrala igual si la necesitas para tu contabilidad.
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <label className="space-y-1">
+          <span className={labelCls}>Folio</span>
+          <input className={inputCls} value={creditNote.folio}
+            onChange={(e) => onCreditNoteChange({ ...creditNote, folio: e.target.value })} />
+        </label>
+        <label className="space-y-1">
+          <span className={labelCls}>Monto acreditado</span>
+          <input className={inputCls} inputMode="numeric" value={creditNote.amount}
+            onChange={(e) => onCreditNoteChange({ ...creditNote, amount: e.target.value })} />
+        </label>
+      </div>
+      <p className="text-[0.68rem] opacity-50">{creditNoteAmountHint(creditNote, liveSale)}</p>
+      <label className={`${btnSecondary} cursor-pointer`}>
+        <Upload size={13} />
+        {uploadButtonLabel(uploading, Boolean(creditNote.fileUrl))}
+        <input type="file" className="hidden" accept="application/pdf,image/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onAttachFile(file);
+          }} />
+      </label>
+      <div>
+        <button type="button" className={btnPrimary} disabled={busy || !creditNote.folio} onClick={onRegister}>
+          <FileMinus size={13} /> Registrar nota de crédito
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface NotaCreditoSectionProps {
+  readonly request: ReturnRequestDto;
+  readonly canRefund: boolean;
+  readonly issuedNote: SalesDocumentDto | null;
+  readonly liveSale: SalesDocumentDto | null;
+  readonly staleForCreditNote: boolean;
+  readonly creditNote: CreditNoteDraft;
+  readonly onCreditNoteChange: (creditNote: CreditNoteDraft) => void;
+  readonly uploading: boolean;
+  readonly busy: boolean;
+  readonly onAttachFile: (file: File) => void;
+  readonly onRegister: () => void;
+}
+
+function notaCreditoBody({
+  request, canRefund, issuedNote, liveSale, staleForCreditNote, creditNote, onCreditNoteChange, uploading, busy, onAttachFile, onRegister,
+}: NotaCreditoSectionProps) {
+  if (issuedNote) return <IssuedCreditNote issuedNote={issuedNote} liveSale={liveSale} />;
+  if (request.status !== 'REFUNDED') {
+    return <p className="text-sm opacity-60">Se registra una vez devuelto el dinero.</p>;
+  }
+  if (!liveSale) {
+    return <p className="text-sm opacity-60">Esta venta no tiene boleta viva, así que no hay documento que anular.</p>;
+  }
+  if (!canRefund) {
+    return <p className="text-sm opacity-60">No tienes permiso para registrar documentos.</p>;
+  }
+  return (
+    <CreditNoteForm
+      liveSale={liveSale}
+      staleForCreditNote={staleForCreditNote}
+      creditNote={creditNote}
+      onCreditNoteChange={onCreditNoteChange}
+      uploading={uploading}
+      busy={busy}
+      onAttachFile={onAttachFile}
+      onRegister={onRegister}
+    />
+  );
+}
+
+function NotaCreditoSection(props: NotaCreditoSectionProps) {
+  return <Section label="Nota de crédito">{notaCreditoBody(props)}</Section>;
+}
+
 interface Props {
   readonly request: ReturnRequestDto;
   readonly token: string;
@@ -74,7 +567,7 @@ export default function ReturnDetailDrawer({
 
   const [rejectNote, setRejectNote] = useState('');
   const [discardNote, setDiscardNote] = useState('');
-  const [mode, setMode] = useState<'idle' | 'reject' | 'discard'>('idle');
+  const [mode, setMode] = useState<PrendaMode>('idle');
 
   const [account, setAccount] = useState({
     holder: '', rut: '', bankName: '', accountType: 'Cuenta Corriente', accountNumber: '',
@@ -222,307 +715,65 @@ export default function ReturnDetailDrawer({
             </p>
           )}
 
-          <Section label="Solicitud">
-            <Row label="Motivo" value={request.reason ?? '—'} />
-            <Row label="La abrió" value={request.requestedBy ? 'La clienta' : 'La tienda'} />
-            <Row
-              label="Plazo para reembolsar"
-              value={
-                closed ? (
-                  <span className="opacity-50">Cerrada</span>
-                ) : (
-                  <span className={request.daysUntilDeadline <= 10 ? 'text-amber-700' : ''}>
-                    {request.daysUntilDeadline} días ·{' '}
-                    {new Date(request.deadlineAt).toLocaleDateString('es-CL')}
-                  </span>
-                )
-              }
-            />
-            {request.resolutionNote && <Row label="Resolución" value={request.resolutionNote} />}
-          </Section>
+          <SolicitudSection request={request} closed={closed} />
 
-          {order && (
-            <Section label="Venta">
-              <ul className="divide-y divide-[var(--pe-border)]">
-                {order.items.map((item) => (
-                  <li key={item.id} className="flex items-baseline justify-between gap-3 py-2 text-sm">
-                    <span>
-                      {item.productName}
-                      <span className="opacity-50"> ×{item.quantity}</span>
-                    </span>
-                    <span className="tabular-nums">{money.format(item.unitPrice.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-              <Row label="Total" value={<strong>{money.format(order.totalAmount.amount)}</strong>} />
-            </Section>
-          )}
+          {order && <VentaSection order={order} />}
 
           {canManage && !closed && (
-            <Section label="Prenda">
-              {request.status === 'REQUESTED' && (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" className={btnPrimary} disabled={busy}
-                    onClick={() => run(() => approveReturn(request.id, token), 'Devolución aprobada.')}>
-                    <Check size={13} /> Aprobar
-                  </button>
-                  {request.kind === 'DEVOLUCION' && mode === 'idle' && (
-                    <button type="button" className={btnDanger} onClick={() => setMode('reject')}>
-                      <Ban size={13} /> Rechazar
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {mode === 'reject' && (
-                <div className="space-y-2">
-                  <label className="block space-y-1">
-                    <span className={labelCls}>Motivo del rechazo</span>
-                    <input className={inputCls} value={rejectNote}
-                      onChange={(e) => setRejectNote(e.target.value)}
-                      placeholder="Fuera de plazo, la prenda viene usada…" />
-                  </label>
-                  <div className="flex gap-2">
-                    <button type="button" className={btnDanger} disabled={busy}
-                      onClick={() => run(() => rejectReturn(request.id, rejectNote, token), 'Devolución rechazada.')}>
-                      Confirmar rechazo
-                    </button>
-                    <button type="button" className={btnSecondary} onClick={() => setMode('idle')}>Cancelar</button>
-                  </div>
-                </div>
-              )}
-
-              {request.status === 'APPROVED' && (
-                <div className="space-y-2">
-                  <p className="text-[0.75rem] opacity-70">
-                    Al recibirla pasa a reacondicionamiento. <strong>No vuelve al stock todavía</strong>.
-                  </p>
-                  <button type="button" className={btnPrimary} disabled={busy}
-                    onClick={() => run(() => receiveReturn(request.id, token), 'Prenda recibida, en reacondicionamiento.')}>
-                    <PackageCheck size={13} /> Registrar que llegó
-                  </button>
-                </div>
-              )}
-
-              {request.itemDisposition === 'PENDING_RECONDITIONING' && (
-                <div className="space-y-2">
-                  <p className="text-[0.75rem] opacity-70">
-                    Terminado el reacondicionamiento, la prenda vuelve a la venta o se descarta.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" className={btnPrimary} disabled={busy}
-                      onClick={() => run(
-                        () => resolveDisposition(request.id, 'RESTOCKED', null, token),
-                        'De vuelta a la venta: el stock subió.')}>
-                      <Recycle size={13} /> Volver a la venta
-                    </button>
-                    {mode === 'idle' && (
-                      <button type="button" className={btnDanger} onClick={() => setMode('discard')}>
-                        <Trash2 size={13} /> Descartar
-                      </button>
-                    )}
-                  </div>
-                  {mode === 'discard' && (
-                    <div className="space-y-2">
-                      <label className="block space-y-1">
-                        <span className={labelCls}>Por qué se descarta</span>
-                        <input className={inputCls} value={discardNote}
-                          onChange={(e) => setDiscardNote(e.target.value)}
-                          placeholder="Mancha irrecuperable, rotura…" />
-                      </label>
-                      <div className="flex gap-2">
-                        <button type="button" className={btnDanger} disabled={busy}
-                          onClick={() => run(
-                            () => resolveDisposition(request.id, 'DISCARDED', discardNote, token),
-                            'Prenda descartada. El stock no cambió.')}>
-                          Confirmar
-                        </button>
-                        <button type="button" className={btnSecondary} onClick={() => setMode('idle')}>Cancelar</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {request.itemDisposition === 'RESTOCKED' && <Row label="Prenda" value="De vuelta a la venta" />}
-              {request.itemDisposition === 'DISCARDED' && (
-                <Row label="Descartada" value={request.dispositionNote ?? '—'} />
-              )}
-            </Section>
+            <PrendaSection
+              request={request}
+              busy={busy}
+              mode={mode}
+              onSetMode={setMode}
+              rejectNote={rejectNote}
+              onRejectNoteChange={setRejectNote}
+              discardNote={discardNote}
+              onDiscardNoteChange={setDiscardNote}
+              onApprove={() => run(() => approveReturn(request.id, token), 'Devolución aprobada.')}
+              onReject={() => run(() => rejectReturn(request.id, rejectNote, token), 'Devolución rechazada.')}
+              onReceive={() => run(() => receiveReturn(request.id, token), 'Prenda recibida, en reacondicionamiento.')}
+              onRestock={() => run(
+                () => resolveDisposition(request.id, 'RESTOCKED', null, token),
+                'De vuelta a la venta: el stock subió.')}
+              onDiscard={() => run(
+                () => resolveDisposition(request.id, 'DISCARDED', discardNote, token),
+                'Prenda descartada. El stock no cambió.')}
+            />
           )}
 
-          <Section label="Dinero">
-            {request.status === 'REFUNDED' ? (
-              <>
-                <Row label="Monto" value={money.format(request.refundAmount ?? 0)} />
-                <Row label="Método" value={request.refundMethod ?? '—'} />
-                <Row label="Referencia" value={request.refundReference ?? '—'} />
-                {request.refundBankName && (
-                  <Row
-                    label="Cuenta"
-                    value={`${request.refundBankName} ····${request.refundAccountLast4 ?? ''}`}
-                  />
-                )}
-                <p className="text-[0.68rem] opacity-50">
-                  El número de cuenta se borró al cerrar el reembolso. Queda la referencia de la operación.
-                </p>
-              </>
-            ) : canRefund && !closed ? (
-              <div className="space-y-3">
-                <p className="text-[0.75rem] opacity-70">
-                  El reembolso no espera a la prenda: la ley da 45 días para devolver el dinero.
-                </p>
+          <DineroSection
+            request={request}
+            closed={closed}
+            canRefund={canRefund}
+            busy={busy}
+            account={account}
+            onAccountChange={setAccount}
+            refund={refund}
+            onRefundChange={setRefund}
+            onAttachAccount={() => run(() => attachRefundAccount(request.id, account, token), 'Cuenta guardada.')}
+            onRegisterRefund={() => run(
+              () => registerRefund(request.id, {
+                amount: Number(refund.amount),
+                currency: 'CLP',
+                method: refund.method,
+                reference: refund.reference,
+              }, token),
+              'Reembolso registrado. La devolución queda cerrada.')}
+          />
 
-                {!request.refundAccountConfigured && (
-                  <div className="space-y-2 pb-3 border-b border-[var(--pe-border)]">
-                    <p className={labelCls}>Cuenta de destino (solo transferencia)</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input className={inputCls} placeholder="Titular" value={account.holder}
-                        onChange={(e) => setAccount({ ...account, holder: e.target.value })} />
-                      <input className={inputCls} placeholder="RUT" value={account.rut}
-                        onChange={(e) => setAccount({ ...account, rut: e.target.value })} />
-                      <input className={inputCls} placeholder="Banco" value={account.bankName}
-                        onChange={(e) => setAccount({ ...account, bankName: e.target.value })} />
-                      <input className={inputCls} placeholder="Tipo de cuenta" value={account.accountType}
-                        onChange={(e) => setAccount({ ...account, accountType: e.target.value })} />
-                      <input className={`${inputCls} col-span-2`} placeholder="N° de cuenta"
-                        value={account.accountNumber}
-                        onChange={(e) => setAccount({ ...account, accountNumber: e.target.value })} />
-                    </div>
-                    <p className="text-[0.68rem] opacity-50">
-                      Se guarda cifrada y se borra al cerrar el reembolso.
-                    </p>
-                    <button type="button" className={btnSecondary} disabled={busy}
-                      onClick={() => run(() => attachRefundAccount(request.id, account, token), 'Cuenta guardada.')}>
-                      Guardar cuenta
-                    </button>
-                  </div>
-                )}
-
-                {request.refundAccountConfigured && (
-                  <Row
-                    label="Cuenta"
-                    value={`${request.refundBankName ?? ''} ····${request.refundAccountLast4 ?? ''}`}
-                  />
-                )}
-
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1">
-                    <span className={labelCls}>Monto</span>
-                    <input className={inputCls} inputMode="numeric" value={refund.amount}
-                      onChange={(e) => setRefund({ ...refund, amount: e.target.value })} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={labelCls}>Método</span>
-                    <select className={inputCls} value={refund.method}
-                      onChange={(e) => setRefund({ ...refund, method: e.target.value })}>
-                      <option value="TRANSFERENCIA">Transferencia</option>
-                      <option value="TARJETA">Tarjeta</option>
-                      <option value="OTRO">Otro</option>
-                    </select>
-                  </label>
-                  <label className="space-y-1 col-span-2">
-                    <span className={labelCls}>Referencia de la operación</span>
-                    <input className={inputCls} value={refund.reference}
-                      onChange={(e) => setRefund({ ...refund, reference: e.target.value })}
-                      placeholder="N° de transferencia" />
-                  </label>
-                </div>
-                <button type="button" className={btnPrimary} disabled={busy}
-                  onClick={() => run(
-                    () => registerRefund(request.id, {
-                      amount: Number(refund.amount),
-                      currency: 'CLP',
-                      method: refund.method,
-                      reference: refund.reference,
-                    }, token),
-                    'Reembolso registrado. La devolución queda cerrada.')}>
-                  <Banknote size={13} /> Registrar reembolso
-                </button>
-              </div>
-            ) : (
-              <p className="text-sm opacity-60">
-                {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
-              </p>
-            )}
-          </Section>
-
-          <Section label="Nota de crédito">
-            {issuedNote ? (
-              <>
-                <Row label="Folio" value={issuedNote.folio} />
-                <Row
-                  label="Referencia"
-                  value={(() => {
-                    const documentLabel = liveSale ? liveSale.documentType.toLowerCase() : 'boleta';
-                    const action = issuedNote.referenceCode === 1 ? 'Anula la' : 'Corrige el monto de la';
-                    return `${action} ${documentLabel} ${liveSale?.folio ?? ''}`;
-                  })()}
-                />
-                <Row label="Monto" value={money.format(issuedNote.totalAmount)} />
-                <Row label="Neto / IVA" value={`${money.format(issuedNote.netAmount)} · ${money.format(issuedNote.taxAmount)}`} />
-              </>
-            ) : request.status !== 'REFUNDED' ? (
-              <p className="text-sm opacity-60">
-                Se registra una vez devuelto el dinero.
-              </p>
-            ) : !liveSale ? (
-              <p className="text-sm opacity-60">
-                Esta venta no tiene boleta viva, así que no hay documento que anular.
-              </p>
-            ) : !canRefund ? (
-              <p className="text-sm opacity-60">No tienes permiso para registrar documentos.</p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-[0.75rem] opacity-70">
-                  La boleta {liveSale.folio} ya fue declarada al SII, así que no se anula: se
-                  contrapesa con una nota de crédito. Emítela en eBoleta o en el sitio del SII y
-                  registra aquí el folio que te dieron.
-                </p>
-                {staleForCreditNote && (
-                  <p className="text-[0.72rem] text-amber-600">
-                    La boleta tiene más de seis meses. Pasado ese plazo el SII ya no permite rebajar
-                    el débito fiscal; regístrala igual si la necesitas para tu contabilidad.
-                  </p>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1">
-                    <span className={labelCls}>Folio</span>
-                    <input className={inputCls} value={creditNote.folio}
-                      onChange={(e) => setCreditNote({ ...creditNote, folio: e.target.value })} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={labelCls}>Monto acreditado</span>
-                    <input className={inputCls} inputMode="numeric" value={creditNote.amount}
-                      onChange={(e) => setCreditNote({ ...creditNote, amount: e.target.value })} />
-                  </label>
-                </div>
-                <p className="text-[0.68rem] opacity-50">
-                  {Number(creditNote.amount) >= liveSale.totalAmount
-                    ? `Anula la ${liveSale.documentType.toLowerCase()} completa (referencia 1).`
-                    : `Corrige el monto de la ${liveSale.documentType.toLowerCase()} (referencia 3).`}
-                </p>
-                <label className={`${btnSecondary} cursor-pointer`}>
-                  <Upload size={13} />
-                  {(() => {
-                    if (uploading) return 'Subiendo…';
-                    return creditNote.fileUrl ? 'Archivo listo' : 'Adjuntar archivo';
-                  })()}
-                  <input type="file" className="hidden" accept="application/pdf,image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void attachFile(file);
-                    }} />
-                </label>
-                <div>
-                  <button type="button" className={btnPrimary} disabled={busy || !creditNote.folio}
-                    onClick={() => void registerCreditNote()}>
-                    <FileMinus size={13} /> Registrar nota de crédito
-                  </button>
-                </div>
-              </div>
-            )}
-          </Section>
+          <NotaCreditoSection
+            request={request}
+            canRefund={canRefund}
+            issuedNote={issuedNote}
+            liveSale={liveSale}
+            staleForCreditNote={staleForCreditNote}
+            creditNote={creditNote}
+            onCreditNoteChange={setCreditNote}
+            uploading={uploading}
+            busy={busy}
+            onAttachFile={(file) => void attachFile(file)}
+            onRegister={() => void registerCreditNote()}
+          />
         </div>
       </aside>
     </Overlay>
