@@ -9,6 +9,7 @@ import com.pilarestilo.category.infrastructure.web.requests.UpdateCategoryReques
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -57,16 +58,19 @@ public class CategoryController {
         return getFeatured.execute();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryDto> create(@Valid @RequestBody CreateCategoryRequest req) {
         CategoryDto dto = createCategory.execute(
                 req.slug(), req.nameEs(), req.nameEn(),
                 req.parentId(), req.sortOrder(), req.imageUrl(),
-                req.active(), req.featured(), req.menuVisible(), req.categoryType(), req.heroImageUrl()
+                req.active(), req.featured(), req.menuVisible(), req.categoryType(), req.heroImageUrl(),
+                req.definesVariantFields(), req.primary(), req.secondary()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/reorder")
     public ResponseEntity<Void> reorder(@Valid @RequestBody ReorderCategoriesRequest req) {
         reorderCategories.execute(req.items().stream()
@@ -75,15 +79,18 @@ public class CategoryController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public CategoryDto update(@PathVariable UUID id, @Valid @RequestBody UpdateCategoryRequest req) {
         return updateCategory.execute(
                 id, req.slug(), req.nameEs(), req.nameEn(),
                 req.parentId(), req.sortOrder(), req.active(), req.featured(), req.imageUrl(),
-                req.menuVisible(), req.categoryType(), req.heroImageUrl()
+                req.menuVisible(), req.categoryType(), req.heroImageUrl(),
+                req.definesVariantFields(), req.primary(), req.secondary()
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         deleteCategory.execute(id);
