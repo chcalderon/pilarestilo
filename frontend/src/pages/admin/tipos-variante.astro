@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import VariantTemplateTable from '../../islands/admin/VariantTemplateTable';
+---
+
+<AdminLayout
+  title="Tipos de Variante"
+  breadcrumbs={[{ label: 'Tipos de Variante' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Tipos de Variante</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-muted mt-1">
+      Gestiona los tipos de variante que los productos pueden usar, independientes de la categoria.
+    </p>
+  </div>
+
+  <VariantTemplateTable client:load />
+</AdminLayout>
