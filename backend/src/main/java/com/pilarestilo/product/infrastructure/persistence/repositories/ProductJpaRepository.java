@@ -21,6 +21,8 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
 
     long countByCategoriesId(UUID categoryId);
 
+    long countByVariantTemplateId(UUID variantTemplateId);
+
     /**
      * Reserve stock by incrementing stock_reserved.
      * Succeeds only when available (on_hand - reserved) >= qty.
