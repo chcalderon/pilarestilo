@@ -80,7 +80,8 @@ export interface ProductDto {
   sizeStocks?: SizeStockDto[];
   categorySlugs?: string[];
   categoryTypes?: CategoryType[];
-  variantFieldConfig?: CategoryVariantFieldConfigDto | null;
+  variantTemplateId?: string | null;
+  variantFieldConfig?: VariantFieldConfigDto | null;
   variants?: ProductVariantDto[];
 }
 
@@ -608,6 +609,7 @@ export interface CreateProductRequest {
   stock: number;
   active: boolean;
   categoryIds?: string[];
+  variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
 }
 
@@ -622,6 +624,7 @@ export interface UpdateProductRequest {
   stock?: number;
   active?: boolean;
   categoryIds?: string[];
+  variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
 }
 
@@ -2190,7 +2193,7 @@ export type CategoryType =
 
 export type VariantFieldInputType = 'FREE_TEXT' | 'OPTIONS' | 'RANGE';
 
-export interface CategoryVariantFieldDto {
+export interface VariantFieldDto {
   label: string;
   inputType: VariantFieldInputType;
   options: string[];
@@ -2200,9 +2203,9 @@ export interface CategoryVariantFieldDto {
   allowCustom: boolean;
 }
 
-export interface CategoryVariantFieldConfigDto {
-  primary: CategoryVariantFieldDto;
-  secondary: CategoryVariantFieldDto;
+export interface VariantFieldConfigDto {
+  primary: VariantFieldDto;
+  secondary: VariantFieldDto;
 }
 
 export interface CategoryDto {
@@ -2218,8 +2221,6 @@ export interface CategoryDto {
   menuVisible: boolean;
   categoryType: CategoryType;
   heroImageUrl?: string;
-  definesVariantFields: boolean;
-  variantFieldConfig: CategoryVariantFieldConfigDto | null;
 }
 
 export interface CategoryTreeNode extends CategoryDto {
@@ -2265,9 +2266,6 @@ export interface CreateCategoryRequest {
   menuVisible?: boolean;
   categoryType?: CategoryType;
   heroImageUrl?: string;
-  definesVariantFields?: boolean;
-  primary?: CategoryVariantFieldDto;
-  secondary?: CategoryVariantFieldDto;
 }
 
 // ─── Category API ─────────────────────────────────────────────────────────────
@@ -2420,6 +2418,60 @@ export async function reorderCategories(
   await apiFetch<void>('/categories/reorder', {
     method: 'PATCH',
     body: JSON.stringify({ items }),
+    headers: authHeaders(token),
+  });
+}
+
+// ─── Variant Template API ──────────────────────────────────────────────────────
+
+export interface VariantTemplateDto {
+  id: string;
+  name: string;
+  config: VariantFieldConfigDto;
+}
+
+export interface CreateVariantTemplateRequest {
+  name: string;
+  primary: VariantFieldDto;
+  secondary: VariantFieldDto;
+}
+
+export async function getVariantTemplates(token: string): Promise<VariantTemplateDto[]> {
+  try {
+    return await apiFetch<VariantTemplateDto[]>('/variant-templates', {
+      headers: authHeaders(token),
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function createVariantTemplate(
+  data: CreateVariantTemplateRequest,
+  token: string
+): Promise<VariantTemplateDto> {
+  return apiFetch<VariantTemplateDto>('/variant-templates', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function updateVariantTemplate(
+  id: string,
+  data: CreateVariantTemplateRequest,
+  token: string
+): Promise<VariantTemplateDto> {
+  return apiFetch<VariantTemplateDto>(`/variant-templates/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: authHeaders(token),
+  });
+}
+
+export async function deleteVariantTemplate(id: string, token: string): Promise<void> {
+  await apiFetch<void>(`/variant-templates/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
     headers: authHeaders(token),
   });
 }
