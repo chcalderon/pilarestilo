@@ -2,12 +2,12 @@ package com.pilarestilo.productservice.web;
 
 import com.pilarestilo.productservice.persistence.CategoryEntity;
 import com.pilarestilo.productservice.persistence.ProductEntity;
+import com.pilarestilo.productservice.persistence.VariantTemplateEntity;
 import com.pilarestilo.productservice.web.dto.ProductDto;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 final class ProductMapper {
 
@@ -54,30 +54,16 @@ final class ProductMapper {
                 entity.getShippingOriginZone(),
                 sizeStocks,
                 categorySlugs,
-                resolveVariantFieldConfig(entity.getCategories()),
+                resolveVariantFieldConfig(entity.getVariantTemplate()),
                 variants
         );
     }
 
-    /**
-     * The same "at most one shape category" rule as the monolith's
-     * ShapeCategoryResolver, reimplemented here because this is a separate
-     * deployable sharing no code with it -- see product/domain/model/ShapeCategoryResolver.java
-     * in the monolith for the canonical version this must stay behaviorally
-     * identical to.
-     */
-    private static ProductDto.ProductVariantFieldConfigDto resolveVariantFieldConfig(java.util.Set<CategoryEntity> categories) {
-        List<CategoryEntity> shapeCategories = categories.stream().filter(CategoryEntity::isDefinesVariantFields).toList();
-        if (shapeCategories.isEmpty()) {
+    private static ProductDto.ProductVariantFieldConfigDto resolveVariantFieldConfig(VariantTemplateEntity template) {
+        if (template == null) {
             return genericFallback();
         }
-        // product-service only reads; it never creates/updates products, so an
-        // already-invalid 2+-shape-category product (which the monolith's write
-        // path now rejects going forward) is read here defensively rather than
-        // thrown on -- picking the first is a display-only tie-break for data
-        // that predates this feature, not a new rule.
-        Optional<CategoryEntity> resolved = shapeCategories.stream().findFirst();
-        return toConfigDto(resolved.map(CategoryEntity::getVariantFieldConfig).orElse(null));
+        return toConfigDto(template.getFieldConfig());
     }
 
     private static ProductDto.ProductVariantFieldConfigDto genericFallback() {

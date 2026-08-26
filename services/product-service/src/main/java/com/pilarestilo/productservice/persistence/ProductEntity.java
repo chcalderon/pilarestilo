@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
@@ -90,6 +91,10 @@ public class ProductEntity {
     )
     private Set<CategoryEntity> categories = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "variant_template_id")
+    private VariantTemplateEntity variantTemplate;
+
     public UUID getId() {
         return id;
     }
@@ -168,5 +173,9 @@ public class ProductEntity {
 
     public Set<CategoryEntity> getCategories() {
         return categories;
+    }
+
+    public VariantTemplateEntity getVariantTemplate() {
+        return variantTemplate;
     }
 }
