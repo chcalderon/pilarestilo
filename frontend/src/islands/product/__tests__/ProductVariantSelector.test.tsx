@@ -3,13 +3,13 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import ProductVariantSelector from '../ProductVariantSelector';
-import type { CategoryVariantFieldConfigDto } from '../../../lib/api';
+import type { VariantFieldConfigDto } from '../../../lib/api';
 
 /**
  * Characterization tests locking in the behavior the config-driven rewrite (Task 14) must
  * preserve: resolved field labels rendering, and selecting a variant enabling Add to cart.
  */
-const CLOTHING_CONFIG: CategoryVariantFieldConfigDto = {
+const CLOTHING_CONFIG: VariantFieldConfigDto = {
   primary: { label: 'Color', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: false, allowCustom: true },
   secondary: {
     label: 'Talla', inputType: 'OPTIONS',

@@ -23,6 +23,7 @@ import {
   Navigation,
   Receipt,
   Undo2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import { getPendingDocumentCount } from '../../lib/api';
@@ -39,6 +40,7 @@ const navItems: Array<{ href: string; icon: typeof LayoutDashboard; label: strin
   { href: '/admin/', icon: LayoutDashboard, label: 'Dashboard', viewKey: 'dashboard' },
   { href: '/admin/products', icon: Package, label: 'Productos', viewKey: 'productos' },
   { href: '/admin/categories', icon: Tag, label: 'Categorias', viewKey: 'productos' },
+  { href: '/admin/tipos-variante', icon: SlidersHorizontal, label: 'Tipos de Variante', viewKey: 'productos' },
   { href: '/admin/navegacion', icon: Navigation, label: 'Navegación', viewKey: 'productos' },
   { href: '/admin/reviews', icon: Star, label: 'Resenas', viewKey: 'productos' },
   { href: '/admin/ventas', icon: Receipt, label: 'Ventas', viewKey: 'caja' },
@@ -91,6 +93,9 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
       if (item.href === '/admin/ventas') return canSeeSales || permissions.includes('caja');
       if (item.href === '/admin/devoluciones') return canSeeReturns || permissions.includes('caja');
       if (item.href === '/admin/privacidad') return canSeePrivacy;
+      // VariantTemplateController requires ADMIN on every method (unlike categories), so a
+      // non-ADMIN user must never see a link that always 403s.
+      if (item.href === '/admin/tipos-variante') return false;
       return permissions.includes(item.viewKey);
     });
   const showSettings = canSeeSettings;

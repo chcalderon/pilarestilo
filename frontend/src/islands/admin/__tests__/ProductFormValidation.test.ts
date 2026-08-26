@@ -6,13 +6,12 @@ import {
   getSecondaryAttribute,
   createEmptyVariantSelections,
 } from '@/lib/variantSchema';
-import type { CategoryDto } from '@/lib/api';
 
 /**
  * Unit tests for validate()'s extracted pure form, written before splitting it into
- * validateBasicFields/validateVariantRows/validateCategoryCompatibility (S3776, complexity 38) --
- * it had none. A pure function taking everything as arguments needs no component rendering, so
- * this is a plain unit test rather than a characterization test with mocks.
+ * validateBasicFields/validateVariantRows (S3776, complexity 38) -- it had none. A pure function
+ * taking everything as arguments needs no component rendering, so this is a plain unit test rather
+ * than a characterization test with mocks.
  */
 
 const schema = buildVariantSchema(null);
@@ -45,32 +44,11 @@ function variantRow(primary = 'Negro', secondary = 'UNICO', stock = '5') {
   };
 }
 
-function category(overrides: Partial<CategoryDto> = {}): CategoryDto {
-  return {
-    id: 'c1',
-    slug: 'ropa',
-    nameEs: 'Ropa',
-    nameEn: 'Clothing',
-    parentId: null,
-    sortOrder: 0,
-    active: true,
-    featured: false,
-    menuVisible: true,
-    categoryType: 'GENERIC',
-    definesVariantFields: false,
-    variantFieldConfig: null,
-    ...overrides,
-  };
-}
-
 function baseArgs(overrides: Partial<ValidateProductFormArgs> = {}): ValidateProductFormArgs {
   return {
     form: baseForm(),
     variantRows: [variantRow()],
     variantSchema: schema,
-    categories: [],
-    selectedCatIds: [],
-    allowedCatIds: new Set(),
     primaryAttribute,
     secondaryAttribute,
     ...overrides,
@@ -131,25 +109,5 @@ describe('validateProductForm', () => {
       variantRows: [variantRow('Negro', 'UNICO'), variantRow('Rojo', 'UNICO')],
     }));
     expect(errors.combinations).toBeUndefined();
-  });
-
-  it('flags a selected category that is incompatible with the chosen variant type', () => {
-    const ropa = category({ id: 'c1', nameEs: 'Ropa' });
-    const errors = validateProductForm(baseArgs({
-      categories: [ropa],
-      selectedCatIds: ['c1'],
-      allowedCatIds: new Set(),
-    }));
-    expect(errors.categories).toMatch(/Ropa/);
-  });
-
-  it('does not flag a selected category that is compatible', () => {
-    const ropa = category({ id: 'c1', nameEs: 'Ropa' });
-    const errors = validateProductForm(baseArgs({
-      categories: [ropa],
-      selectedCatIds: ['c1'],
-      allowedCatIds: new Set(['c1']),
-    }));
-    expect(errors.categories).toBeUndefined();
   });
 });

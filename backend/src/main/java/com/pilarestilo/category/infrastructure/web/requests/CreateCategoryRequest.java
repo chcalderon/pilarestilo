@@ -1,6 +1,5 @@
 package com.pilarestilo.category.infrastructure.web.requests;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -18,8 +17,5 @@ public record CreateCategoryRequest(
         boolean featured,
         boolean menuVisible,
         @Pattern(regexp = "GENERIC|CLOTHING|SHOES|JEWELRY|ACCESSORY|COLLECTION|SEASON", message = "invalid categoryType") String categoryType,
-        String heroImageUrl,
-        boolean definesVariantFields,
-        @Valid CategoryVariantFieldRequest primary,
-        @Valid CategoryVariantFieldRequest secondary
+        String heroImageUrl
 ) {}

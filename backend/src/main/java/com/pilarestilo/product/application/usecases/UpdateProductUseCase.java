@@ -1,7 +1,6 @@
 package com.pilarestilo.product.application.usecases;
 
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
-import com.pilarestilo.product.application.CategoryVariantFieldValidator;
+import com.pilarestilo.product.application.VariantTemplateValidator;
 import com.pilarestilo.product.application.dto.ProductDto;
 import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.product.application.mappers.ProductMapper;
@@ -13,6 +12,7 @@ import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
+import com.pilarestilo.varianttemplate.domain.valueobjects.VariantFieldConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,13 +27,13 @@ public class UpdateProductUseCase {
 
     private final ProductRepository productRepository;
     private final DomainEventPublisher eventPublisher;
-    private final CategoryVariantFieldValidator variantFieldValidator;
+    private final VariantTemplateValidator variantTemplateValidator;
 
     public UpdateProductUseCase(ProductRepository productRepository, DomainEventPublisher eventPublisher,
-                                 CategoryVariantFieldValidator variantFieldValidator) {
+                                 VariantTemplateValidator variantTemplateValidator) {
         this.productRepository = productRepository;
         this.eventPublisher = eventPublisher;
-        this.variantFieldValidator = variantFieldValidator;
+        this.variantTemplateValidator = variantTemplateValidator;
     }
 
     // Delegates via 'this' to the fuller overload below, bypassing its own @Transactional proxy --
@@ -44,9 +44,9 @@ public class UpdateProductUseCase {
     public ProductDto execute(UUID id, String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
-                               boolean active, Set<UUID> categoryIds) {
+                               boolean active, Set<UUID> categoryIds, UUID variantTemplateId) {
         return execute(id, name, description, priceAmount, priceCurrency, listPriceAmount,
-                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, null);
+                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, variantTemplateId, null);
     }
 
     @SuppressWarnings("java:S107")
@@ -54,7 +54,7 @@ public class UpdateProductUseCase {
     public ProductDto execute(UUID id, String name, String description, BigDecimal priceAmount, String priceCurrency,
                                BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
-                               boolean active, Set<UUID> categoryIds,
+                               boolean active, Set<UUID> categoryIds, UUID variantTemplateId,
                                List<ProductVariantInput> variants) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product not found: " + id));
@@ -75,9 +75,10 @@ public class UpdateProductUseCase {
         if (categoryIds != null) {
             product.setCategoryIds(categoryIds);
         }
+        product.setVariantTemplateId(variantTemplateId);
         if (variants != null) {
-            CategoryVariantFieldConfig config = variantFieldValidator.resolveConfig(product.getCategoryIds());
-            variantFieldValidator.validate(config, variants);
+            VariantFieldConfig config = variantTemplateValidator.resolveConfig(variantTemplateId);
+            variantTemplateValidator.validate(config, variants);
             product.setVariants(variants.stream().map(this::toVariant).toList());
         }
         Product saved = productRepository.save(product);

@@ -1,4 +1,4 @@
-import type { CategoryDto, CategoryVariantFieldConfigDto, CategoryVariantFieldDto, ProductVariantDto } from './api';
+import type { VariantFieldConfigDto, VariantFieldDto, ProductVariantDto } from './api';
 
 export interface VariantAttributeOption {
   value: string;
@@ -190,12 +190,12 @@ export function summarizeVariantAttributeValues(
   return normalized.join(attribute.summaryJoiner ?? ' / ');
 }
 
-const GENERIC_FALLBACK: CategoryVariantFieldConfigDto = {
+const GENERIC_FALLBACK: VariantFieldConfigDto = {
   primary: { label: 'Variante', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
   secondary: { label: 'Detalle', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
 };
 
-function optionsFor(field: CategoryVariantFieldDto): VariantAttributeOption[] {
+function optionsFor(field: VariantFieldDto): VariantAttributeOption[] {
   if (field.inputType === 'OPTIONS') {
     return optionList(field.options);
   }
@@ -208,7 +208,7 @@ function optionsFor(field: CategoryVariantFieldDto): VariantAttributeOption[] {
 }
 
 function fieldToAttribute(
-  field: CategoryVariantFieldDto,
+  field: VariantFieldDto,
   code: string,
   legacyField: 'color' | 'size',
 ): CategoryAttributeDefinition {
@@ -227,15 +227,15 @@ function fieldToAttribute(
   };
 }
 
-/** Builds the two-attribute schema a category's (or the generic fallback's) config describes. */
-export function buildVariantSchema(config: CategoryVariantFieldConfigDto | null, key = 'GENERIC'): VariantSchema {
+/** Builds the two-attribute schema a variant template's (or the generic fallback's) config describes. */
+export function buildVariantSchema(config: VariantFieldConfigDto | null, key = 'GENERIC'): VariantSchema {
   const resolved = config ?? GENERIC_FALLBACK;
   const secondaryAttribute = fieldToAttribute(resolved.secondary, 'secondary', 'size');
   if (!config) {
-    // A product with no shape category is exactly the case the old GENERIC/ACCESSORY/
+    // A product with no variant template is exactly the case the old GENERIC/ACCESSORY/
     // COLLECTION/SEASON schemas covered, and all of them pre-filled the detail field with
-    // "UNICO" -- preserved here so an admin creating a variant for an unclassified product
-    // sees the same starting point as before this rewrite.
+    // "UNICO" -- preserved here so an admin creating a variant for an unassigned product sees the
+    // same starting point as before this rewrite.
     secondaryAttribute.defaultValues = ['UNICO'];
   }
   return {
@@ -247,63 +247,4 @@ export function buildVariantSchema(config: CategoryVariantFieldConfigDto | null,
       secondaryAttribute,
     ],
   };
-}
-
-/** The one shape category (definesVariantFields) among the given ids, or null. */
-function findShapeCategory(categoryIds: string[], categories: CategoryDto[]): CategoryDto | null {
-  const byId = new Map(categories.map((c) => [c.id, c]));
-  return categoryIds
-    .map((id) => byId.get(id))
-    .find((c): c is CategoryDto => Boolean(c?.definesVariantFields)) ?? null;
-}
-
-/** Resolves the variant field config a set of selected category ids implies. */
-export function resolveVariantFieldConfig(params: {
-  categoryIds: string[];
-  categories: CategoryDto[];
-}): CategoryVariantFieldConfigDto {
-  const shape = findShapeCategory(params.categoryIds, params.categories);
-  return shape?.variantFieldConfig ?? GENERIC_FALLBACK;
-}
-
-/**
- * The categories selectable alongside the currently-resolved shape category: any grouping
- * category, any shape category while none is picked yet (nothing to conflict with), the
- * one shape category already picked, or a category with a qualifying descendant -- same
- * tree-walk the old enum-driven `allowedCategoryIds` used, adapted from "matches this
- * CategoryType" to "is this specific shape category (or a grouping)". Locking every shape
- * category until one is already selected would make the first one unpickable -- there used
- * to be a per-product override picker to bootstrap that choice; now the tree itself must
- * allow it.
- */
-export function allowedCategoryIdsFor(categories: CategoryDto[], selectedShapeCategoryId: string | null): Set<string> {
-  const allowed = new Set<string>();
-  const childrenOf = new Map<string, CategoryDto[]>();
-  for (const category of categories) {
-    const key = category.parentId ?? '';
-    const list = childrenOf.get(key);
-    if (list) list.push(category);
-    else childrenOf.set(key, [category]);
-  }
-
-  const qualifiesAlone = (category: CategoryDto): boolean =>
-    !category.definesVariantFields
-    || selectedShapeCategoryId === null
-    || category.id === selectedShapeCategoryId;
-
-  const visit = (category: CategoryDto): boolean => {
-    let anyDescendantAllowed = false;
-    for (const child of childrenOf.get(category.id) ?? []) {
-      if (visit(child)) anyDescendantAllowed = true;
-    }
-    const ok = qualifiesAlone(category) || anyDescendantAllowed;
-    if (ok) allowed.add(category.id);
-    return ok;
-  };
-
-  for (const root of childrenOf.get('') ?? []) visit(root);
-  for (const category of categories) {
-    if (!allowed.has(category.id) && qualifiesAlone(category)) allowed.add(category.id);
-  }
-  return allowed;
 }

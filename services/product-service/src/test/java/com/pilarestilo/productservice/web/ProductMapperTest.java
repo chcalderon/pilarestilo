@@ -4,6 +4,7 @@ import com.pilarestilo.productservice.persistence.CategoryEntity;
 import com.pilarestilo.productservice.persistence.ProductEntity;
 import com.pilarestilo.productservice.persistence.ProductSizeStockEmbeddable;
 import com.pilarestilo.productservice.persistence.ProductVariantEmbeddable;
+import com.pilarestilo.productservice.persistence.VariantTemplateEntity;
 import com.pilarestilo.productservice.web.dto.ProductDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -56,14 +57,10 @@ class ProductMapperTest {
         ReflectionTestUtils.setField(catB, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(catB, "slug", "zapatos");
         ReflectionTestUtils.setField(catB, "categoryType", "SHOES");
-        ReflectionTestUtils.setField(catB, "definesVariantFields", false);
-        ReflectionTestUtils.setField(catB, "variantFieldConfig", null);
         CategoryEntity catA = new CategoryEntity();
         ReflectionTestUtils.setField(catA, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(catA, "slug", "accesorios");
         ReflectionTestUtils.setField(catA, "categoryType", "ACCESSORY");
-        ReflectionTestUtils.setField(catA, "definesVariantFields", false);
-        ReflectionTestUtils.setField(catA, "variantFieldConfig", null);
         ReflectionTestUtils.setField(entity, "categories", Set.of(catB, catA));
 
         ProductDto dto = ProductMapper.toDto(entity);
@@ -83,7 +80,7 @@ class ProductMapperTest {
     }
 
     @Test
-    void maps_variantFieldConfig_fromTheOneShapeCategoryAmongAssigned() {
+    void maps_variantFieldConfig_fromAssignedTemplate() {
         ProductEntity entity = new ProductEntity();
         ReflectionTestUtils.setField(entity, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(entity, "name", "Zapato");
@@ -107,21 +104,18 @@ class ProductMapperTest {
         ReflectionTestUtils.setField(mujer, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(mujer, "slug", "mujer");
         ReflectionTestUtils.setField(mujer, "categoryType", "GENERIC");
-        ReflectionTestUtils.setField(mujer, "definesVariantFields", false);
-        ReflectionTestUtils.setField(mujer, "variantFieldConfig", null);
+        ReflectionTestUtils.setField(entity, "categories", Set.of(mujer));
 
-        CategoryEntity zapatos = new CategoryEntity();
-        ReflectionTestUtils.setField(zapatos, "id", UUID.randomUUID());
-        ReflectionTestUtils.setField(zapatos, "slug", "zapatos");
-        ReflectionTestUtils.setField(zapatos, "categoryType", "SHOES");
-        ReflectionTestUtils.setField(zapatos, "definesVariantFields", true);
-        ReflectionTestUtils.setField(zapatos, "variantFieldConfig", Map.of(
+        VariantTemplateEntity zapatosTemplate = new VariantTemplateEntity();
+        ReflectionTestUtils.setField(zapatosTemplate, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(zapatosTemplate, "name", "Zapatos");
+        ReflectionTestUtils.setField(zapatosTemplate, "fieldConfig", Map.of(
                 "primary", Map.of("label", "Color", "inputType", "FREE_TEXT", "options", List.of(),
                         "allowMultiple", false, "allowCustom", true),
                 "secondary", Map.of("label", "Numero", "inputType", "RANGE", "options", List.of(),
                         "min", 34, "max", 43, "allowMultiple", true, "allowCustom", true)
         ));
-        ReflectionTestUtils.setField(entity, "categories", Set.of(mujer, zapatos));
+        ReflectionTestUtils.setField(entity, "variantTemplate", zapatosTemplate);
 
         ProductDto dto = ProductMapper.toDto(entity);
 
@@ -132,7 +126,7 @@ class ProductMapperTest {
     }
 
     @Test
-    void maps_variantFieldConfig_fallsBackToGenericWhenNoShapeCategory() {
+    void maps_variantFieldConfig_fallsBackToGenericWhenNoTemplateAssigned() {
         ProductEntity entity = new ProductEntity();
         ReflectionTestUtils.setField(entity, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(entity, "name", "Panuelo");
@@ -156,8 +150,6 @@ class ProductMapperTest {
         ReflectionTestUtils.setField(mujer, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(mujer, "slug", "mujer");
         ReflectionTestUtils.setField(mujer, "categoryType", "GENERIC");
-        ReflectionTestUtils.setField(mujer, "definesVariantFields", false);
-        ReflectionTestUtils.setField(mujer, "variantFieldConfig", null);
         ReflectionTestUtils.setField(entity, "categories", Set.of(mujer));
 
         ProductDto dto = ProductMapper.toDto(entity);

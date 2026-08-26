@@ -1,11 +1,11 @@
 package com.pilarestilo.product.domain.model;
 
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.enums.ShippingOriginZone;
 import com.pilarestilo.product.domain.valueobjects.Brand;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.varianttemplate.domain.valueobjects.VariantFieldConfig;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -43,12 +43,13 @@ public class Product {
     private Set<UUID> categoryIds = new HashSet<>();
     private List<String> categorySlugs = new ArrayList<>();
     private List<String> categoryTypes = new ArrayList<>();
+    private UUID variantTemplateId;
     /**
-     * The winning shape category's field config (or the generic fallback), resolved on every
-     * read by the repository adapter -- see CategoryVariantFieldValidator for the write-time
-     * validation this same config drives.
+     * The assigned template's field config (or the generic fallback), resolved on every read by
+     * the repository adapter -- see VariantTemplateValidator for the write-time validation this
+     * same config drives.
      */
-    private CategoryVariantFieldConfig variantFieldConfig;
+    private VariantFieldConfig variantFieldConfig;
 
     private Product() {}
 
@@ -212,8 +213,11 @@ public class Product {
         this.categoryTypes = categoryTypes != null ? categoryTypes : new ArrayList<>();
     }
 
-    public CategoryVariantFieldConfig getVariantFieldConfig() { return variantFieldConfig; }
-    public void setVariantFieldConfig(CategoryVariantFieldConfig variantFieldConfig) {
+    public UUID getVariantTemplateId() { return variantTemplateId; }
+    public void setVariantTemplateId(UUID variantTemplateId) { this.variantTemplateId = variantTemplateId; }
+
+    public VariantFieldConfig getVariantFieldConfig() { return variantFieldConfig; }
+    public void setVariantFieldConfig(VariantFieldConfig variantFieldConfig) {
         this.variantFieldConfig = variantFieldConfig;
     }
 

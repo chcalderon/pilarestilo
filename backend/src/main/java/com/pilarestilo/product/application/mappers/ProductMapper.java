@@ -2,6 +2,7 @@ package com.pilarestilo.product.application.mappers;
 
 import com.pilarestilo.product.application.dto.ProductDto;
 import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.varianttemplate.domain.valueobjects.VariantFieldConfig;
 
 import java.util.List;
 
@@ -38,6 +39,7 @@ public class ProductMapper {
                 product.getAvgRating(),
                 product.getReviewCount(),
                 product.getShippingOriginZone().name(),
+                product.getVariantTemplateId(),
                 toConfigDto(product.getVariantFieldConfig()),
                 sizeStocks,
                 slugs,
@@ -46,14 +48,12 @@ public class ProductMapper {
         );
     }
 
-    private static ProductDto.ProductVariantFieldConfigDto toConfigDto(
-            com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig config) {
+    private static ProductDto.ProductVariantFieldConfigDto toConfigDto(VariantFieldConfig config) {
         if (config == null) return null;
         return new ProductDto.ProductVariantFieldConfigDto(toFieldDto(config.primary()), toFieldDto(config.secondary()));
     }
 
-    private static ProductDto.ProductVariantFieldConfigDto.FieldDto toFieldDto(
-            com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig.FieldConfig field) {
+    private static ProductDto.ProductVariantFieldConfigDto.FieldDto toFieldDto(VariantFieldConfig.FieldConfig field) {
         return new ProductDto.ProductVariantFieldConfigDto.FieldDto(field.label(), field.inputType().name(),
                 field.options(), field.min(), field.max(), field.allowMultiple(), field.allowCustom());
     }

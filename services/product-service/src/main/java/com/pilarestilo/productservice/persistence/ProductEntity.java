@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
@@ -90,6 +91,16 @@ public class ProductEntity {
     )
     private Set<CategoryEntity> categories = new HashSet<>();
 
+    /*
+     * EAGER, matching categories above: ProductMapper.toDto runs in ProductController, after
+     * queryService's @Transactional method has already returned and closed the session, so any
+     * lazy relationship read there throws LazyInitializationException on a real request even
+     * though entity-only unit tests (no Spring context) never touch a session and can't catch it.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "variant_template_id")
+    private VariantTemplateEntity variantTemplate;
+
     public UUID getId() {
         return id;
     }
@@ -168,5 +179,9 @@ public class ProductEntity {
 
     public Set<CategoryEntity> getCategories() {
         return categories;
+    }
+
+    public VariantTemplateEntity getVariantTemplate() {
+        return variantTemplate;
     }
 }

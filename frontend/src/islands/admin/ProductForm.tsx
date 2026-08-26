@@ -5,6 +5,7 @@ import {
   createProduct,
   updateProduct,
   getCategories,
+  getVariantTemplates,
   getSystemSettings,
   inferSingleProductAi,
   transformSingleProductAiImage,
@@ -12,6 +13,7 @@ import {
   type CreateProductRequest,
   type CategoryDto,
   type ProductVariantDto,
+  type VariantTemplateDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
 import {
@@ -21,8 +23,6 @@ import {
   getPrimaryAttribute,
   getSecondaryAttribute,
   buildVariantSchema,
-  resolveVariantFieldConfig,
-  allowedCategoryIdsFor,
   legacyVariantToSelections,
   normalizeAttributeValues,
   selectionsToLegacyVariant,
@@ -82,8 +82,6 @@ function CategoryTreeItem({
   onToggle,
   expanded,
   onToggleExpand,
-  allowedIds,
-  lockedHint,
 }: {
   readonly node: CatNode;
   readonly depth: number;
@@ -91,22 +89,10 @@ function CategoryTreeItem({
   readonly onToggle: (id: string) => void;
   readonly expanded: Set<string>;
   readonly onToggleExpand: (id: string) => void;
-  /** Ids selectable for the current shape category; see allowedCategoryIdsFor. */
-  readonly allowedIds: Set<string>;
-  /** The resolved schema's title, used only for the locked-tooltip text. */
-  readonly lockedHint: string;
 }) {
   const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
   const isSelected = selected.includes(node.id);
-  /*
-   * Shown, not hidden. An admin who cannot find "Zapatos" assumes it is missing; one who sees it
-   * greyed out learns the rule — a product is one shape, and its variants follow from it.
-   * Already-selected categories stay operable so a product whose type is being changed can be
-   * untangled rather than stranded.
-   */
-  const compatible = allowedIds.has(node.id);
-  const locked = !compatible && !isSelected;
   const descendantsSelected = hasChildren ? collectSelectedDescendantCount(node, selected) : 0;
 
   // Visual hierarchy by depth — stronger contrast, clearer rhythm
@@ -146,17 +132,11 @@ function CategoryTreeItem({
           </span>
         )}
 
-        <label
-          className={`flex items-center gap-2 flex-1 min-w-0 ${
-            locked ? 'cursor-not-allowed opacity-45' : 'cursor-pointer'
-          }`}
-          title={locked ? `No aplica a ${lockedHint}` : undefined}
-        >
+        <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
           <input
             type="checkbox"
-            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79] disabled:cursor-not-allowed"
+            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
             checked={isSelected}
-            disabled={locked}
             onChange={() => onToggle(node.id)}
           />
           {hasChildren && (
@@ -167,11 +147,6 @@ function CategoryTreeItem({
           <span className={`font-sans leading-snug truncate group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors ${rowClass}`}>
             {node.nameEs}
           </span>
-          {!compatible && isSelected && (
-            <span className="shrink-0 font-sans text-[0.58rem] tracking-wider uppercase px-1 py-0.5 bg-[#8f2d3b]/10 text-[#8f2d3b]">
-              No aplica
-            </span>
-          )}
           {hasChildren && (
             <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45">
               {descendantsSelected > 0
@@ -188,8 +163,6 @@ function CategoryTreeItem({
             <CategoryTreeItem
               key={child.id}
               node={child}
-              allowedIds={allowedIds}
-              lockedHint={lockedHint}
               depth={depth + 1}
               selected={selected}
               onToggle={onToggle}
@@ -377,33 +350,10 @@ function validateVariantRows(
   return undefined;
 }
 
-/**
- * A category left over from a previous variant type. The tree greys these out, but a selection
- * made before the type changed stays operable so it can be untangled -- which means it can also
- * reach save. Refused here rather than silently stored: a shoe filed under "Vestidos" is wrong in
- * the catalogue long after anyone remembers why.
- */
-function validateCategoryCompatibility(
-  categories: CategoryDto[],
-  selectedCatIds: string[],
-  allowedCatIds: Set<string>,
-): string | undefined {
-  const incompatible = categories
-    .filter((category) => selectedCatIds.includes(category.id))
-    .filter((category) => !allowedCatIds.has(category.id));
-  if (incompatible.length === 0) return undefined;
-  return `Quita ${incompatible.map((c) => c.nameEs).join(', ')}: no aplica${
-    incompatible.length > 1 ? 'n' : ''
-  } al tipo de variante elegido.`;
-}
-
 export interface ValidateProductFormArgs {
   readonly form: typeof EMPTY_FORM;
   readonly variantRows: VariantRow[];
   readonly variantSchema: VariantSchema;
-  readonly categories: CategoryDto[];
-  readonly selectedCatIds: string[];
-  readonly allowedCatIds: Set<string>;
   readonly primaryAttribute: CategoryAttributeDefinition;
   readonly secondaryAttribute: CategoryAttributeDefinition;
 }
@@ -413,9 +363,6 @@ export function validateProductForm(args: ValidateProductFormArgs): Record<strin
 
   const combinationsError = validateVariantRows(args.variantRows, args.variantSchema, args.primaryAttribute, args.secondaryAttribute);
   if (combinationsError) errors.combinations = combinationsError;
-
-  const categoriesError = validateCategoryCompatibility(args.categories, args.selectedCatIds, args.allowedCatIds);
-  if (categoriesError) errors.categories = categoriesError;
 
   return errors;
 }
@@ -452,25 +399,15 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const [heroAssigningSlot, setHeroAssigningSlot] = useState<'left' | 'right' | null>(null);
   const [heroAssignFeedback, setHeroAssignFeedback] = useState('');
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
-  const resolvedConfig = useMemo(
-    () => resolveVariantFieldConfig({ categoryIds: selectedCatIds, categories }),
-    [selectedCatIds, categories],
-  );
-  /*
-   * Computed once for the whole tree rather than per node: the rule walks descendants, so asking
-   * each node in isolation would rewalk the same branches on every render.
-   */
-  const resolvedShapeCategoryId = useMemo(() => {
-    const byId = new Map(categories.map((c) => [c.id, c]));
-    return selectedCatIds.find((id) => byId.get(id)?.definesVariantFields) ?? null;
-  }, [selectedCatIds, categories]);
-  const allowedCatIds = useMemo(
-    () => allowedCategoryIdsFor(categories, resolvedShapeCategoryId),
-    [categories, resolvedShapeCategoryId]
+  const [variantTemplates, setVariantTemplates] = useState<VariantTemplateDto[]>([]);
+  const [selectedVariantTemplateId, setSelectedVariantTemplateId] = useState<string | null>(null);
+  const selectedTemplate = useMemo(
+    () => variantTemplates.find((t) => t.id === selectedVariantTemplateId) ?? null,
+    [variantTemplates, selectedVariantTemplateId],
   );
   const variantSchema = useMemo(
-    () => buildVariantSchema(resolvedConfig, resolvedShapeCategoryId ?? 'GENERIC'),
-    [resolvedConfig, resolvedShapeCategoryId]
+    () => buildVariantSchema(selectedTemplate?.config ?? null, selectedVariantTemplateId ?? 'GENERIC'),
+    [selectedTemplate, selectedVariantTemplateId]
   );
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
@@ -515,6 +452,11 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   function collapseAllCategories() {
     setExpandedCatIds(new Set());
   }
+
+  useEffect(() => {
+    if (!token) return;
+    getVariantTemplates(token).then(setVariantTemplates).catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -589,6 +531,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       const nextRows = toVariantRows(reconciledRows, currentSchemaRef.current);
       setForm(nextForm);
       setVariantRows(nextRows);
+      setSelectedVariantTemplateId(product.variantTemplateId ?? null);
       previousSchemaRef.current = currentSchemaRef.current;
       /*
        * The warning that the rows had been rewritten to match products.stock. Nothing rewrites
@@ -598,16 +541,17 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       setStockSyncHint('');
       // Categories are initialized by the separate categories useEffect.
       // Do not reset them here — doing so would undo interactive toggles when the schema changes.
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], currentSchemaRef.current));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], product.variantTemplateId ?? null, currentSchemaRef.current));
     } else {
       const nextForm = { ...EMPTY_FORM };
       const nextRows = [createVariantRow(currentSchemaRef.current, EMPTY_FORM.stock)];
       setForm(nextForm);
       setVariantRows(nextRows);
+      setSelectedVariantTemplateId(null);
       previousSchemaRef.current = currentSchemaRef.current;
       setStockSyncHint('');
       // Categories for new products are cleared by the dedicated product-change effect below.
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], currentSchemaRef.current));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], null, currentSchemaRef.current));
     }
     setErrors({});
     setApiError('');
@@ -656,7 +600,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       setSelectedCatIds(fixedIds);
       // Keep initialSnapshot with original ids so form is dirty when parents were auto-added,
       // forcing the user to save and persist the corrected category selection.
-      setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, variantSchema));
+      setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, product.variantTemplateId ?? null, variantSchema));
     }
   }, [categories, product, variantSchema]);  // variantSchema kept in deps for makeSnapshot freshness; catInitKeyRef guards re-init
 
@@ -728,7 +672,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
 
   function validate(): boolean {
     const e = validateProductForm({
-      form, variantRows, variantSchema, categories, selectedCatIds, allowedCatIds, primaryAttribute, secondaryAttribute,
+      form, variantRows, variantSchema, primaryAttribute, secondaryAttribute,
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -739,7 +683,13 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
     return left < right ? -1 : 1;
   }
 
-  function makeSnapshot(nextForm: typeof form, nextRows: VariantRow[], nextCatIds: string[], schema: VariantSchema): string {
+  function makeSnapshot(
+    nextForm: typeof form,
+    nextRows: VariantRow[],
+    nextCatIds: string[],
+    nextTemplateId: string | null,
+    schema: VariantSchema,
+  ): string {
     const variants = normalizeVariantRows(nextRows, schema)
       .map((variant) => ({
         color: variant.color.trim().toLowerCase(),
@@ -759,12 +709,13 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       condition: nextForm.condition,
       brand: nextForm.brand.trim(),
       active: nextForm.active,
+      variantTemplateId: nextTemplateId,
       categories: cats,
       variants,
     });
   }
 
-  const currentSnapshot = makeSnapshot(form, variantRows, selectedCatIds, variantSchema);
+  const currentSnapshot = makeSnapshot(form, variantRows, selectedCatIds, selectedVariantTemplateId, variantSchema);
   const isDirty = initialSnapshot.length > 0 && currentSnapshot !== initialSnapshot;
   function handleAttemptClose() {
     if (!isDirty) {
@@ -817,6 +768,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         stock: variantTotalStock,
         active: form.active,
         categoryIds: selectedCatIds,
+        variantTemplateId: selectedVariantTemplateId || undefined,
         variants: normalizedVariants,
       };
 
@@ -1134,6 +1086,23 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             </div>
           </div>
 
+          <div>
+            <label htmlFor="pf-variant-template" className={labelClass}>
+              Tipo de Variante
+            </label>
+            <select
+              id="pf-variant-template"
+              className={inputClass}
+              value={selectedVariantTemplateId ?? ''}
+              onChange={(e) => setSelectedVariantTemplateId(e.target.value || null)}
+            >
+              <option value="">Generico (Variante + Detalle)</option>
+              {variantTemplates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
             <div className="flex items-center justify-between">
               <p className={labelClass + ' mb-0'}>{variantSchema.title}</p>
@@ -1379,8 +1348,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   <CategoryTreeItem
                     key={root.id}
                     node={root}
-                    allowedIds={allowedCatIds}
-                    lockedHint={variantSchema.title}
                     depth={0}
                     selected={selectedCatIds}
                     onToggle={toggleCategory}
@@ -1389,10 +1356,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   />
                 ))}
               </div>
-              {errors.categories && <p className={errorClass}>{errors.categories}</p>}
               <p className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45 mt-1">
                 Al seleccionar una subcategoría, su categoría padre se marca automáticamente.
-                Las que no aplican al tipo de variante aparecen atenuadas.
               </p>
             </div>
           )}

@@ -1,10 +1,10 @@
-package com.pilarestilo.category.domain.valueobjects;
+package com.pilarestilo.varianttemplate.domain.valueobjects;
 
 import com.pilarestilo.shared.domain.DomainException;
 
 import java.util.List;
 
-public record CategoryVariantFieldConfig(FieldConfig primary, FieldConfig secondary) {
+public record VariantFieldConfig(FieldConfig primary, FieldConfig secondary) {
 
     public enum InputType { FREE_TEXT, OPTIONS, RANGE }
 
@@ -37,8 +37,8 @@ public record CategoryVariantFieldConfig(FieldConfig primary, FieldConfig second
         }
     }
 
-    public static CategoryVariantFieldConfig genericFallback() {
-        return new CategoryVariantFieldConfig(
+    public static VariantFieldConfig genericFallback() {
+        return new VariantFieldConfig(
                 new FieldConfig("Variante", InputType.FREE_TEXT, List.of(), null, null, true, true),
                 new FieldConfig("Detalle", InputType.FREE_TEXT, List.of(), null, null, true, true)
         );

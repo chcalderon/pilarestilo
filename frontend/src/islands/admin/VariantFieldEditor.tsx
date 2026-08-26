@@ -1,0 +1,48 @@
+import type { VariantFieldDto, VariantFieldInputType } from '../../lib/api';
+
+const INPUT_CLASS = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors';
+
+export default function VariantFieldEditor({
+  fieldNumber, field, onChange,
+}: { readonly fieldNumber: 1 | 2; readonly field: VariantFieldDto; readonly onChange: (next: VariantFieldDto) => void }) {
+  return (
+    <div className="flex flex-col gap-1 border border-pe-black/10 p-2">
+      <label className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted">
+        Etiqueta campo {fieldNumber}
+      </label>
+      <input className={INPUT_CLASS} value={field.label}
+        onChange={(e) => onChange({ ...field, label: e.target.value })} placeholder={fieldNumber === 1 ? 'Color' : 'Talla'} />
+      <select className={INPUT_CLASS} value={field.inputType}
+        onChange={(e) => onChange({ ...field, inputType: e.target.value as VariantFieldInputType })}>
+        <option value="FREE_TEXT">Texto libre</option>
+        <option value="OPTIONS">Lista de opciones</option>
+        <option value="RANGE">Rango numérico</option>
+      </select>
+      {field.inputType === 'OPTIONS' && (
+        <input className={INPUT_CLASS} value={field.options.join(', ')}
+          onChange={(e) => onChange({ ...field, options: e.target.value.split(',').map((v) => v.trim()).filter(Boolean) })}
+          placeholder="XS, S, M, L, XL" />
+      )}
+      {field.inputType === 'RANGE' && (
+        <div className="flex gap-2">
+          <input type="number" className={INPUT_CLASS} value={field.min ?? ''}
+            onChange={(e) => onChange({ ...field, min: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Min" />
+          <input type="number" className={INPUT_CLASS} value={field.max ?? ''}
+            onChange={(e) => onChange({ ...field, max: e.target.value === '' ? null : Number(e.target.value) })} placeholder="Max" />
+        </div>
+      )}
+      <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
+        <input type="checkbox" checked={field.allowMultiple}
+          onChange={(e) => onChange({ ...field, allowMultiple: e.target.checked })} />
+        <span>Permitir combinar varios valores en una variante</span>
+      </label>
+      {field.inputType !== 'FREE_TEXT' && (
+        <label className="inline-flex items-center gap-1.5 font-sans text-[0.68rem] text-pe-charcoal">
+          <input type="checkbox" checked={field.allowCustom}
+            onChange={(e) => onChange({ ...field, allowCustom: e.target.checked })} />
+          <span>Permitir un valor fuera de la lista</span>
+        </label>
+      )}
+    </div>
+  );
+}

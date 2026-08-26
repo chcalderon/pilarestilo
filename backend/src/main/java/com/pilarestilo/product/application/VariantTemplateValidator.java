@@ -1,11 +1,10 @@
 package com.pilarestilo.product.application;
 
-import com.pilarestilo.category.domain.model.Category;
-import com.pilarestilo.category.domain.model.ShapeCategoryResolver;
-import com.pilarestilo.category.domain.ports.CategoryRepository;
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.product.application.dto.ProductVariantInput;
 import com.pilarestilo.shared.domain.DomainException;
+import com.pilarestilo.varianttemplate.domain.model.VariantTemplate;
+import com.pilarestilo.varianttemplate.domain.ports.VariantTemplateRepository;
+import com.pilarestilo.varianttemplate.domain.valueobjects.VariantFieldConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -14,30 +13,28 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Resolves the one shape category (if any) among a product's assigned categories and
- * validates submitted variant values against its field config -- write time only. See
- * ProductSizeRules for why this must never run on read.
+ * Resolves a product's variant template (if any) and validates submitted variant values against
+ * its field config -- write time only. See ProductSizeRules for why this must never run on read.
  */
 @Component
-public class CategoryVariantFieldValidator {
+public class VariantTemplateValidator {
 
-    private final CategoryRepository categoryRepository;
+    private final VariantTemplateRepository variantTemplateRepository;
 
-    public CategoryVariantFieldValidator(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    public VariantTemplateValidator(VariantTemplateRepository variantTemplateRepository) {
+        this.variantTemplateRepository = variantTemplateRepository;
     }
 
-    public CategoryVariantFieldConfig resolveConfig(Set<UUID> categoryIds) {
-        if (categoryIds == null || categoryIds.isEmpty()) {
-            return CategoryVariantFieldConfig.genericFallback();
+    public VariantFieldConfig resolveConfig(UUID variantTemplateId) {
+        if (variantTemplateId == null) {
+            return VariantFieldConfig.genericFallback();
         }
-        List<Category> categories = categoryRepository.findAllByIds(categoryIds);
-        return ShapeCategoryResolver.resolveOne(categories)
-                .map(Category::getVariantFieldConfig)
-                .orElseGet(CategoryVariantFieldConfig::genericFallback);
+        return variantTemplateRepository.findById(variantTemplateId)
+                .map(VariantTemplate::getConfig)
+                .orElseThrow(() -> new DomainException("Variant template not found: " + variantTemplateId));
     }
 
-    public void validate(CategoryVariantFieldConfig config, List<ProductVariantInput> variants) {
+    public void validate(VariantFieldConfig config, List<ProductVariantInput> variants) {
         if (variants == null) return;
         for (ProductVariantInput variant : variants) {
             validateField(config.primary(), variant.color());
@@ -45,7 +42,7 @@ public class CategoryVariantFieldValidator {
         }
     }
 
-    private void validateField(CategoryVariantFieldConfig.FieldConfig field, String rawValue) {
+    private void validateField(VariantFieldConfig.FieldConfig field, String rawValue) {
         String value = rawValue == null ? "" : rawValue.trim();
         if (value.isBlank()) {
             throw new DomainException(field.label() + " cannot be blank");
@@ -64,7 +61,7 @@ public class CategoryVariantFieldValidator {
         }
     }
 
-    private void validateToken(CategoryVariantFieldConfig.FieldConfig field, String token) {
+    private void validateToken(VariantFieldConfig.FieldConfig field, String token) {
         switch (field.inputType()) {
             case FREE_TEXT -> { /* non-blank already checked above */ }
             case OPTIONS -> {

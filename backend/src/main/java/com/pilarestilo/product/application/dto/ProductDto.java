@@ -23,6 +23,7 @@ public record ProductDto(
         BigDecimal avgRating,
         int reviewCount,
         String shippingOriginZone,
+        UUID variantTemplateId,
         ProductVariantFieldConfigDto variantFieldConfig,
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,

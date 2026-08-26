@@ -43,5 +43,7 @@ public record UpdateProductRequest(
 
         Set<UUID> categoryIds,
 
+        UUID variantTemplateId,
+
         List<@Valid ProductVariantRequest> variants
 ) {}
