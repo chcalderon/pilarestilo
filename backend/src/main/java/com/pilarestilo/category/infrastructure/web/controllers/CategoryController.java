@@ -64,8 +64,7 @@ public class CategoryController {
         CategoryDto dto = createCategory.execute(
                 req.slug(), req.nameEs(), req.nameEn(),
                 req.parentId(), req.sortOrder(), req.imageUrl(),
-                req.active(), req.featured(), req.menuVisible(), req.categoryType(), req.heroImageUrl(),
-                req.definesVariantFields(), req.primary(), req.secondary()
+                req.active(), req.featured(), req.menuVisible(), req.categoryType(), req.heroImageUrl()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
@@ -85,8 +84,7 @@ public class CategoryController {
         return updateCategory.execute(
                 id, req.slug(), req.nameEs(), req.nameEn(),
                 req.parentId(), req.sortOrder(), req.active(), req.featured(), req.imageUrl(),
-                req.menuVisible(), req.categoryType(), req.heroImageUrl(),
-                req.definesVariantFields(), req.primary(), req.secondary()
+                req.menuVisible(), req.categoryType(), req.heroImageUrl()
         );
     }
 

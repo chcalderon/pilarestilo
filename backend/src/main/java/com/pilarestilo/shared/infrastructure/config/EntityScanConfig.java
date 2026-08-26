@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Configuration;
         "com.pilarestilo.shared",
         "com.pilarestilo.systemsettings",
         "com.pilarestilo.user",
+        "com.pilarestilo.varianttemplate",
         "com.pilarestilo.wishlist"
 })
 public class EntityScanConfig {

@@ -2,11 +2,8 @@ package com.pilarestilo.category.infrastructure.persistence.entities;
 
 import com.pilarestilo.category.domain.enums.CategoryType;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -53,13 +50,6 @@ public class CategoryEntity {
     @Column(name = "hero_image_url", length = 500)
     private String heroImageUrl;
 
-    @Column(name = "defines_variant_fields", nullable = false)
-    private boolean definesVariantFields = false;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "variant_field_config", columnDefinition = "jsonb")
-    private Map<String, Object> variantFieldConfig;
-
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getSlug() { return slug; }
@@ -86,8 +76,4 @@ public class CategoryEntity {
     public void setCategoryType(CategoryType categoryType) { this.categoryType = categoryType; }
     public String getHeroImageUrl() { return heroImageUrl; }
     public void setHeroImageUrl(String heroImageUrl) { this.heroImageUrl = heroImageUrl; }
-    public boolean isDefinesVariantFields() { return definesVariantFields; }
-    public void setDefinesVariantFields(boolean definesVariantFields) { this.definesVariantFields = definesVariantFields; }
-    public Map<String, Object> getVariantFieldConfig() { return variantFieldConfig; }
-    public void setVariantFieldConfig(Map<String, Object> variantFieldConfig) { this.variantFieldConfig = variantFieldConfig; }
 }

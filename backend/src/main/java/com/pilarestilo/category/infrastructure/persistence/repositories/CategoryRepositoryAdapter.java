@@ -2,16 +2,13 @@ package com.pilarestilo.category.infrastructure.persistence.repositories;
 
 import com.pilarestilo.category.domain.model.Category;
 import com.pilarestilo.category.domain.ports.CategoryRepository;
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
 import com.pilarestilo.product.infrastructure.persistence.repositories.ProductJpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -92,8 +89,6 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         e.setMenuVisible(c.isMenuVisible());
         e.setCategoryType(c.getCategoryType());
         e.setHeroImageUrl(c.getHeroImageUrl());
-        e.setDefinesVariantFields(c.isDefinesVariantFields());
-        e.setVariantFieldConfig(toRawConfig(c.getVariantFieldConfig()));
         return e;
     }
 
@@ -109,55 +104,6 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
         c.setMenuVisible(e.isMenuVisible());
         c.setCategoryType(e.getCategoryType());
         c.setHeroImageUrl(e.getHeroImageUrl());
-        c.updateVariantFieldConfig(e.isDefinesVariantFields(), fromRawConfig(e.getVariantFieldConfig()));
         return c;
-    }
-
-    private static final String OPTIONS_KEY = "options";
-
-    // null is load-bearing: the CHECK constraint on categories requires variant_field_config
-    // IS NULL exactly when defines_variant_fields is FALSE, so an empty map here would violate it.
-    @SuppressWarnings("java:S1168")
-    private static Map<String, Object> toRawConfig(CategoryVariantFieldConfig config) {
-        if (config == null) return null;
-        Map<String, Object> raw = new LinkedHashMap<>();
-        raw.put("primary", toRawField(config.primary()));
-        raw.put("secondary", toRawField(config.secondary()));
-        return raw;
-    }
-
-    private static Map<String, Object> toRawField(CategoryVariantFieldConfig.FieldConfig field) {
-        Map<String, Object> raw = new LinkedHashMap<>();
-        raw.put("label", field.label());
-        raw.put("inputType", field.inputType().name());
-        raw.put(OPTIONS_KEY, field.options());
-        raw.put("min", field.min());
-        raw.put("max", field.max());
-        raw.put("allowMultiple", field.allowMultiple());
-        raw.put("allowCustom", field.allowCustom());
-        return raw;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CategoryVariantFieldConfig fromRawConfig(Map<String, Object> raw) {
-        if (raw == null) return null;
-        return new CategoryVariantFieldConfig(
-                fromRawField((Map<String, Object>) raw.get("primary")),
-                fromRawField((Map<String, Object>) raw.get("secondary")));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static CategoryVariantFieldConfig.FieldConfig fromRawField(Map<String, Object> raw) {
-        List<String> options = raw.get(OPTIONS_KEY) == null
-                ? List.of()
-                : ((List<Object>) raw.get(OPTIONS_KEY)).stream().map(String::valueOf).toList();
-        return new CategoryVariantFieldConfig.FieldConfig(
-                (String) raw.get("label"),
-                CategoryVariantFieldConfig.InputType.valueOf((String) raw.get("inputType")),
-                options,
-                raw.get("min") == null ? null : ((Number) raw.get("min")).intValue(),
-                raw.get("max") == null ? null : ((Number) raw.get("max")).intValue(),
-                Boolean.TRUE.equals(raw.get("allowMultiple")),
-                Boolean.TRUE.equals(raw.get("allowCustom")));
     }
 }

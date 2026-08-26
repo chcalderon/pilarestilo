@@ -1,7 +1,6 @@
 package com.pilarestilo.category.domain.model;
 
 import com.pilarestilo.category.domain.enums.CategoryType;
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.shared.domain.DomainException;
 
 import java.time.Instant;
@@ -31,8 +30,6 @@ public class Category {
     private boolean menuVisible = true;
     private CategoryType categoryType = CategoryType.GENERIC;
     private String heroImageUrl;
-    private boolean definesVariantFields = false;
-    private CategoryVariantFieldConfig variantFieldConfig;
 
     private Category() {}
 
@@ -74,11 +71,6 @@ public class Category {
         this.heroImageUrl = heroImageUrl;
     }
 
-    public void updateVariantFieldConfig(boolean definesVariantFields, CategoryVariantFieldConfig variantFieldConfig) {
-        this.definesVariantFields = definesVariantFields;
-        this.variantFieldConfig = definesVariantFields ? variantFieldConfig : null;
-    }
-
     private static void validate(String slug, String nameEs, String nameEn) {
         if (slug == null || slug.isBlank() || !isValidSlug(slug.trim().toLowerCase())) {
             throw new DomainException("Category slug must be lowercase, hyphen-separated url-safe text");
@@ -100,8 +92,6 @@ public class Category {
     public boolean isMenuVisible() { return menuVisible; }
     public CategoryType getCategoryType() { return categoryType; }
     public String getHeroImageUrl() { return heroImageUrl; }
-    public boolean isDefinesVariantFields() { return definesVariantFields; }
-    public CategoryVariantFieldConfig getVariantFieldConfig() { return variantFieldConfig; }
 
     public void reorder(int sortOrder) { this.sortOrder = sortOrder; }
 
@@ -113,8 +103,6 @@ public class Category {
     public void setMenuVisible(boolean menuVisible) { this.menuVisible = menuVisible; }
     public void setCategoryType(CategoryType categoryType) { this.categoryType = categoryType; }
     public void setHeroImageUrl(String heroImageUrl) { this.heroImageUrl = heroImageUrl; }
-    public void setDefinesVariantFields(boolean definesVariantFields) { this.definesVariantFields = definesVariantFields; }
-    public void setVariantFieldConfig(CategoryVariantFieldConfig variantFieldConfig) { this.variantFieldConfig = variantFieldConfig; }
 
     /**
      * A slug is lowercase letters, digits and single hyphens between them.

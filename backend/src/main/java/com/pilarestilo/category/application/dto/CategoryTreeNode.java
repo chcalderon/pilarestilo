@@ -16,7 +16,5 @@ public record CategoryTreeNode(
         boolean menuVisible,
         String categoryType,
         String heroImageUrl,
-        boolean definesVariantFields,
-        CategoryDto.CategoryVariantFieldConfigDto variantFieldConfig,
         List<CategoryTreeNode> children
 ) {}
