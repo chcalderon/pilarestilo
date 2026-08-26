@@ -91,7 +91,13 @@ public class ProductEntity {
     )
     private Set<CategoryEntity> categories = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    /*
+     * EAGER, matching categories above: ProductMapper.toDto runs in ProductController, after
+     * queryService's @Transactional method has already returned and closed the session, so any
+     * lazy relationship read there throws LazyInitializationException on a real request even
+     * though entity-only unit tests (no Spring context) never touch a session and can't catch it.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "variant_template_id")
     private VariantTemplateEntity variantTemplate;
 
