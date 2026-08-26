@@ -1,8 +1,5 @@
 package com.pilarestilo.product.infrastructure.persistence.repositories;
 
-import com.pilarestilo.category.domain.model.Category;
-import com.pilarestilo.category.domain.model.ShapeCategoryResolver;
-import com.pilarestilo.category.domain.valueobjects.CategoryVariantFieldConfig;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
 import com.pilarestilo.category.infrastructure.persistence.repositories.CategoryJpaRepository;
 import com.pilarestilo.product.domain.enums.ProductCondition;
@@ -14,6 +11,9 @@ import com.pilarestilo.product.infrastructure.persistence.entities.ProductEntity
 import com.pilarestilo.product.infrastructure.persistence.entities.ProductSizeStockEmbeddable;
 import com.pilarestilo.product.infrastructure.persistence.entities.ProductVariantEmbeddable;
 import com.pilarestilo.shared.application.Money;
+import com.pilarestilo.varianttemplate.domain.valueobjects.VariantFieldConfig;
+import com.pilarestilo.varianttemplate.infrastructure.persistence.entities.VariantTemplateEntity;
+import com.pilarestilo.varianttemplate.infrastructure.persistence.repositories.VariantTemplateJpaRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -42,11 +42,14 @@ public class ProductRepositoryAdapter implements ProductRepository {
 
     private final ProductJpaRepository jpaRepository;
     private final CategoryJpaRepository categoryJpaRepository;
+    private final VariantTemplateJpaRepository variantTemplateJpaRepository;
 
     public ProductRepositoryAdapter(ProductJpaRepository jpaRepository,
-                                    CategoryJpaRepository categoryJpaRepository) {
+                                    CategoryJpaRepository categoryJpaRepository,
+                                    VariantTemplateJpaRepository variantTemplateJpaRepository) {
         this.jpaRepository = jpaRepository;
         this.categoryJpaRepository = categoryJpaRepository;
+        this.variantTemplateJpaRepository = variantTemplateJpaRepository;
     }
 
     @Override
@@ -286,6 +289,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 categoryJpaRepository.findAllById(product.getCategoryIds())
         );
         entity.setCategories(cats);
+
+        entity.setVariantTemplate(product.getVariantTemplateId() != null
+                ? variantTemplateJpaRepository.findById(product.getVariantTemplateId()).orElse(null)
+                : null);
     }
 
     private Product toDomain(ProductEntity entity) {
@@ -348,42 +355,34 @@ public class ProductRepositoryAdapter implements ProductRepository {
             product.setCategoryIds(ids);
             product.setCategorySlugs(slugs);
             product.setCategoryTypes(categoryTypes);
-
-            List<Category> categoriesForResolution = entity.getCategories().stream()
-                    .map(ProductRepositoryAdapter::toDomainCategoryForResolution)
-                    .toList();
-            CategoryVariantFieldConfig resolved = ShapeCategoryResolver.resolveOne(categoriesForResolution)
-                    .map(Category::getVariantFieldConfig)
-                    .orElseGet(CategoryVariantFieldConfig::genericFallback);
-            product.setVariantFieldConfig(resolved);
         }
+
+        VariantTemplateEntity template = entity.getVariantTemplate();
+        product.setVariantTemplateId(template != null ? template.getId() : null);
+        product.setVariantFieldConfig(template != null
+                ? fromRawConfig(template.getFieldConfig())
+                : VariantFieldConfig.genericFallback());
 
         return product;
     }
 
-    private static Category toDomainCategoryForResolution(CategoryEntity e) {
-        Category c = Category.create(e.getSlug(), e.getNameEs(), e.getNameEn(),
-                e.getParentId(), e.getSortOrder(), e.getImageUrl());
-        c.updateVariantFieldConfig(e.isDefinesVariantFields(), fromRawConfig(e.getVariantFieldConfig()));
-        return c;
-    }
+    private static final String OPTIONS_KEY = "options";
 
     @SuppressWarnings("unchecked")
-    private static CategoryVariantFieldConfig fromRawConfig(Map<String, Object> raw) {
-        if (raw == null) return null;
-        return new CategoryVariantFieldConfig(
+    private static VariantFieldConfig fromRawConfig(Map<String, Object> raw) {
+        return new VariantFieldConfig(
                 fromRawField((Map<String, Object>) raw.get("primary")),
                 fromRawField((Map<String, Object>) raw.get("secondary")));
     }
 
     @SuppressWarnings("unchecked")
-    private static CategoryVariantFieldConfig.FieldConfig fromRawField(Map<String, Object> raw) {
-        List<String> options = raw.get("options") == null
+    private static VariantFieldConfig.FieldConfig fromRawField(Map<String, Object> raw) {
+        List<String> options = raw.get(OPTIONS_KEY) == null
                 ? List.of()
-                : ((List<Object>) raw.get("options")).stream().map(String::valueOf).toList();
-        return new CategoryVariantFieldConfig.FieldConfig(
+                : ((List<Object>) raw.get(OPTIONS_KEY)).stream().map(String::valueOf).toList();
+        return new VariantFieldConfig.FieldConfig(
                 (String) raw.get("label"),
-                CategoryVariantFieldConfig.InputType.valueOf((String) raw.get("inputType")),
+                VariantFieldConfig.InputType.valueOf((String) raw.get("inputType")),
                 options,
                 raw.get("min") == null ? null : ((Number) raw.get("min")).intValue(),
                 raw.get("max") == null ? null : ((Number) raw.get("max")).intValue(),

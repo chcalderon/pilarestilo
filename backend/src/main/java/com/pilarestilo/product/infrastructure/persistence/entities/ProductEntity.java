@@ -3,6 +3,7 @@ package com.pilarestilo.product.infrastructure.persistence.entities;
 import com.pilarestilo.category.infrastructure.persistence.entities.CategoryEntity;
 import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.enums.ShippingOriginZone;
+import com.pilarestilo.varianttemplate.infrastructure.persistence.entities.VariantTemplateEntity;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +94,10 @@ public class ProductEntity {
     )
     private java.util.Set<CategoryEntity> categories = new java.util.HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "variant_template_id")
+    private VariantTemplateEntity variantTemplate;
+
     // Getters and setters
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }
@@ -159,4 +164,7 @@ public class ProductEntity {
 
     public java.util.Set<CategoryEntity> getCategories() { return categories; }
     public void setCategories(java.util.Set<CategoryEntity> categories) { this.categories = categories; }
+
+    public VariantTemplateEntity getVariantTemplate() { return variantTemplate; }
+    public void setVariantTemplate(VariantTemplateEntity variantTemplate) { this.variantTemplate = variantTemplate; }
 }

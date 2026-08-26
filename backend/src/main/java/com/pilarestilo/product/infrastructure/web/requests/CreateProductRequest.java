@@ -43,5 +43,7 @@ public record CreateProductRequest(
 
         Set<UUID> categoryIds,
 
+        UUID variantTemplateId,
+
         List<@Valid ProductVariantRequest> variants
 ) {}

@@ -34,7 +34,7 @@ class CreateProductUseCaseTest {
     DomainEventPublisher eventPublisher;
 
     @Mock
-    CategoryVariantFieldValidator variantFieldValidator;
+    VariantTemplateValidator variantTemplateValidator;
 
     @InjectMocks
     CreateProductUseCase useCase;
@@ -50,7 +50,7 @@ class CreateProductUseCaseTest {
                 BigDecimal.valueOf(360000),
                 "CLP",
                 "http://img.example.com/bolso.jpg",
-                "USED", "Louis Vuitton", 3, true, null
+                "USED", "Louis Vuitton", 3, true, null, null
         );
 
         assertNotNull(dto.id());
@@ -65,14 +65,14 @@ class CreateProductUseCaseTest {
     @Test
     void throws_when_price_is_zero() {
         assertThrows(Exception.class, () ->
-                useCase.execute("Bolso", "desc", BigDecimal.ZERO, "CLP", null, null, "http://img", "USED", "LV", 1, true, null)
+                useCase.execute("Bolso", "desc", BigDecimal.ZERO, "CLP", null, null, "http://img", "USED", "LV", 1, true, null, null)
         );
     }
 
     @Test
     void throws_when_name_is_blank() {
         assertThrows(Exception.class, () ->
-                useCase.execute("   ", "desc", BigDecimal.valueOf(100000), "CLP", null, null, "http://img", "USED", "LV", 1, true, null)
+                useCase.execute("   ", "desc", BigDecimal.valueOf(100000), "CLP", null, null, "http://img", "USED", "LV", 1, true, null, null)
         );
     }
 
@@ -80,7 +80,7 @@ class CreateProductUseCaseTest {
     void throws_when_list_price_is_not_greater_than_sale_price() {
         assertThrows(Exception.class, () ->
                 useCase.execute("Bolso", "desc", BigDecimal.valueOf(100000), "CLP",
-                        BigDecimal.valueOf(90000), "CLP", "http://img", "USED", "LV", 1, true, null)
+                        BigDecimal.valueOf(90000), "CLP", "http://img", "USED", "LV", 1, true, null, null)
         );
     }
 
@@ -90,7 +90,7 @@ class CreateProductUseCaseTest {
 
         ProductDto dto = useCase.execute(
                 "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
-                "http://img", "NEW", "Pilar", 0, true, null,
+                "http://img", "NEW", "Pilar", 0, true, null, null,
                 List.of(
                         new ProductVariantInput("Camel", "xl", 1),
                         new ProductVariantInput("Camel", "l-xl", 2),
@@ -110,7 +110,7 @@ class CreateProductUseCaseTest {
 
         ProductDto dto = useCase.execute(
                 "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
-                "http://img", "NEW", "Pilar", 0, true, null,
+                "http://img", "NEW", "Pilar", 0, true, null, null,
                 List.of(new ProductVariantInput("Camel", "X", 1))
         );
 
@@ -123,7 +123,7 @@ class CreateProductUseCaseTest {
 
         ProductDto dto = useCase.execute(
                 "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
-                "http://img", "NEW", "Pilar", 0, true, null,
+                "http://img", "NEW", "Pilar", 0, true, null, null,
                 List.of(new ProductVariantInput("Camel", "L--XL", 1))
         );
 
