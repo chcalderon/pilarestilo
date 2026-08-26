@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCartStore } from '../../lib/cartStore';
 import type { Locale } from '../../i18n/index';
-import type { CategoryVariantFieldConfigDto, ProductVariantDto } from '../../lib/api';
+import type { VariantFieldConfigDto, ProductVariantDto } from '../../lib/api';
 import {
   buildVariantSchema,
   getPrimaryAttribute,
@@ -19,7 +19,7 @@ interface Props {
   readonly condition: 'NEW' | 'USED';
   readonly stock: number;
   readonly locale: Locale;
-  readonly variantFieldConfig?: CategoryVariantFieldConfigDto | null;
+  readonly variantFieldConfig?: VariantFieldConfigDto | null;
   readonly variants?: ProductVariantDto[];
 }
 
