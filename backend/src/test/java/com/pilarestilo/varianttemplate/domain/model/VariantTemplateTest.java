@@ -22,7 +22,8 @@ class VariantTemplateTest {
 
     @Test
     void create_rejectsBlankName() {
-        assertThrows(DomainException.class, () -> VariantTemplate.create("  ", VariantFieldConfig.genericFallback()));
+        VariantFieldConfig config = VariantFieldConfig.genericFallback();
+        assertThrows(DomainException.class, () -> VariantTemplate.create("  ", config));
     }
 
     @Test

@@ -38,8 +38,8 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel }: FormRowProps) {
   return (
     <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-3">
       <div className="flex flex-col gap-0.5">
-        <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre *</label>
-        <input className={INPUT_CLASS} value={form.name}
+        <label htmlFor="vt-name" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre *</label>
+        <input id="vt-name" className={INPUT_CLASS} value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="ej: Zapatos" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
