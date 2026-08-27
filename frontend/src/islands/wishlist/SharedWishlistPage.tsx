@@ -3,6 +3,8 @@ import { ShoppingBag } from 'lucide-react';
 import { getProduct, getSharedWishlist, type ProductDto } from '../../lib/api';
 import { useCartStore } from '../../lib/cartStore';
 
+const SKELETON_TILES = ['sk-1', 'sk-2', 'sk-3', 'sk-4'];
+
 interface Props {
   readonly locale?: string;
   readonly shareToken: string;
@@ -52,8 +54,8 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
+        {SKELETON_TILES.map((key) => (
+          <div key={key} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
         ))}
       </div>
     );
