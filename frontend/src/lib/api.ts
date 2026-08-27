@@ -841,7 +841,7 @@ async function fetchJsonFromBase<T>(url: string, init?: RequestInit): Promise<T>
     : null;
   const headers = {
     'Content-Type': 'application/json',
-    ...(init?.headers ?? {}),
+    ...init?.headers,
   };
   try {
     const res = await fetch(url, {
@@ -2236,12 +2236,14 @@ export interface NavigationChildDto {
   children: NavigationChildDto[];
 }
 
+export type NavigationSectionLayout = 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+
 export interface NavigationSectionDto {
   rootCategoryId: string;
   rootCategorySlug: string;
   rootCategoryName: string;
   heroImageUrl?: string;
-  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  layout: NavigationSectionLayout;
   columnCount: number;
   bannerImageUrl?: string;
   bannerTitle?: string;
@@ -2299,7 +2301,7 @@ export async function getNavigationTree(locale: string = 'es'): Promise<Navigati
 export interface AdminNavigationSectionDto {
   id: string;
   rootCategoryId: string;
-  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  layout: NavigationSectionLayout;
   columnCount: number;
   bannerImageUrl?: string;
   bannerTitle?: string;
@@ -2313,7 +2315,7 @@ export interface AdminNavigationSectionDto {
 
 export interface UpsertNavigationSectionRequest {
   rootCategoryId: string;
-  layout: 'COLUMNS' | 'FEATURED_GRID' | 'EDITORIAL';
+  layout: NavigationSectionLayout;
   columnCount: number;
   bannerImageUrl?: string;
   bannerTitle?: string;
@@ -2777,7 +2779,7 @@ export async function uploadProductAiDraftImages(
   for (const file of files) {
     form.append('files', file);
   }
-  if (sourceFolder && sourceFolder.trim()) {
+  if (sourceFolder?.trim()) {
     form.append('sourceFolder', sourceFolder.trim());
   }
 
@@ -2825,7 +2827,7 @@ export async function inferSingleProductAi(
 ): Promise<ProductAiInferenceDto> {
   const form = new FormData();
   form.append('file', file);
-  if (brandHint && brandHint.trim()) {
+  if (brandHint?.trim()) {
     form.append('brandHint', brandHint.trim());
   }
   const res = await fetch(`${API_BASE}/admin/product-ai/infer-single`, {
@@ -2857,10 +2859,10 @@ export async function transformSingleProductAiImage(
   if (options?.provider) {
     form.append('provider', options.provider);
   }
-  if (options?.prompt && options.prompt.trim()) {
+  if (options?.prompt?.trim()) {
     form.append('prompt', options.prompt.trim());
   }
-  if (options?.brandHint && options.brandHint.trim()) {
+  if (options?.brandHint?.trim()) {
     form.append('brandHint', options.brandHint.trim());
   }
   const res = await fetch(`${API_BASE}/admin/product-ai/transform-single`, {
