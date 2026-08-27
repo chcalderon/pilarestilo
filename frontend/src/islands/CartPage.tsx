@@ -370,12 +370,9 @@ export default function CartPage({ locale }: Props) {
                 </div>
 
                 {conflictCount > 0 && (
-                  <p
-                    role="status"
-                    className="font-sans text-[0.72rem] text-[#8f2d3b] mb-3"
-                  >
+                  <output className="block font-sans text-[0.72rem] text-[#8f2d3b] mb-3">
                     {l.resolveStockFirst}
-                  </p>
+                  </output>
                 )}
 
                 {conflictCount > 0 ? (
