@@ -150,12 +150,18 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
         className={`fixed inset-0 bg-pe-black/30 z-40 cursor-default transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
-      {/* Drawer panel */}
-      <div
-        role="dialog"
+      {/*
+        Drawer panel. A native <dialog>, but used non-modally via the `open` attribute rather
+        than showModal(): the slide-in transform/opacity transition needs the element mounted and
+        visible (just off-screen) the whole time, and a modally-shown dialog is `display: none`
+        until shown, which would skip the transition entirely. The backdrop button above and the
+        Escape listener below do by hand what showModal() would otherwise give for free.
+      */}
+      <dialog
+        open={open}
         aria-modal="true"
         aria-label={DRAWER_TITLES[category]}
-        className={`fixed inset-y-0 right-0 w-80 bg-white dark:bg-[#1A1A1A] shadow-2xl z-50 flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 w-80 max-w-none max-h-none m-0 p-0 border-0 bg-white dark:bg-[#1A1A1A] shadow-2xl z-50 flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDE3D8] dark:border-white/10">
           <p className="text-[11px] tracking-widest uppercase text-pe-charcoal dark:text-pe-beige font-medium">
@@ -176,9 +182,9 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 px-5 py-6 overflow-y-auto">
           {category === 'ADJUSTMENT' && (
             <div>
-              <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
+              <span className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
                 Tipo de ajuste
-              </label>
+              </span>
               <div className="flex gap-2">
                 {(['IN', 'OUT'] as const).map((t) => (
                   <button
@@ -243,7 +249,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
             </button>
           </div>
         </form>
-      </div>
+      </dialog>
     </>
   );
 }
@@ -547,10 +553,8 @@ export default function CajaPage() {
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
             <span className="text-sm text-pe-muted dark:text-pe-beige/70">
-              Caja abierta
-              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
-              Sesión #{shortId(caja.id)}
-              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
+              Caja abierta<span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
+              Sesión #{shortId(caja.id)}<span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
               {formatTime(caja.openedAt)}h
             </span>
           </div>
@@ -716,8 +720,9 @@ export default function CajaPage() {
       <div className="space-y-5">
         <div className="border border-[#EDE3D8] dark:border-white/10 p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Estado</label>
+            <label htmlFor="caja-status-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Estado</label>
             <select
+              id="caja-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'OPEN' | 'CLOSED')}
               className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
@@ -728,8 +733,9 @@ export default function CajaPage() {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Desde</label>
+            <label htmlFor="caja-from-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Desde</label>
             <input
+              id="caja-from-filter"
               type="date"
               value={fromFilter}
               onChange={(e) => setFromFilter(e.target.value)}
@@ -737,8 +743,9 @@ export default function CajaPage() {
             />
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Hasta</label>
+            <label htmlFor="caja-to-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Hasta</label>
             <input
+              id="caja-to-filter"
               type="date"
               value={toFilter}
               onChange={(e) => setToFilter(e.target.value)}

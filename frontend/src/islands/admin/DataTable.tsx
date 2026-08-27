@@ -42,6 +42,19 @@ export interface DataTableProps<T> {
   readonly onRowClick?: (row: T) => void;
 }
 
+function formatCellValue(value: unknown): string {
+  if (value === null || value === undefined) return '-';
+  switch (typeof value) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+    case 'bigint':
+      return String(value);
+    default:
+      return JSON.stringify(value);
+  }
+}
+
 function rowKeyDownHandler<T>(onRowClick: (row: T) => void, row: T) {
   return (event: React.KeyboardEvent) => {
     if (event.target !== event.currentTarget) return;
@@ -66,10 +79,10 @@ function BulkActionBar({ count, actions, onRun, onCancel }: BulkActionBarProps) 
         {count} seleccionado{count > 1 ? 's' : ''}
       </span>
       <div className="flex flex-wrap gap-2">
-        {actions.map((action, i) => (
+        {actions.map((action) => (
           <button
             type="button"
-            key={i}
+            key={action.label}
             onClick={() => onRun(action)}
             className={[
               'flex items-center gap-1.5 font-sans text-[0.72rem] tracking-[0.08em] uppercase px-3 py-1.5 transition-colors duration-150',
@@ -150,16 +163,29 @@ interface ViewProps<T> {
 }
 
 function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, selected, getRowId, toggleRow, onRowClick }: ViewProps<T>) {
-  return (
-    <div className="bg-[var(--pe-surface-card)] border border-[var(--pe-border)] shadow-xs divide-y divide-[var(--pe-border)]">
-      {loading ? (
+  const wrapperClass = 'bg-[var(--pe-surface-card)] border border-[var(--pe-border)] shadow-xs divide-y divide-[var(--pe-border)]';
+
+  if (loading) {
+    return (
+      <div className={wrapperClass}>
         <div className="py-16 text-center">
           <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
         </div>
-      ) : data.length === 0 ? (
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className={wrapperClass}>
         <div className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">{emptyMessage}</div>
-      ) : (
-        data.map((row) => {
+      </div>
+    );
+  }
+
+  return (
+    <div className={wrapperClass}>
+      {data.map((row) => {
           const id = getRowId(row);
           const isSelected = selected.has(id);
 
@@ -186,7 +212,7 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
                       onClick={(e) => e.stopPropagation()}
                       className="accent-pe-rose cursor-pointer"
                       aria-label={`Seleccionar fila ${id}`}
-                    />
+                    />{' '}
                     Seleccionar
                   </label>
                 </div>
@@ -201,15 +227,14 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
                       </span>
                     ) : null}
                     <div className="font-sans text-[0.82rem] text-pe-charcoal">
-                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '-')}
+                      {col.render ? col.render(row) : formatCellValue((row as Record<string, unknown>)[col.key])}
                     </div>
                   </div>
                 ))}
               </div>
             </article>
           );
-        })
-      )}
+        })}
     </div>
   );
 }
@@ -221,6 +246,17 @@ interface DesktopTableProps<T> extends ViewProps<T> {
   readonly onSort?: (key: string) => void;
 }
 
+interface SortIconProps {
+  readonly colKey: string;
+  readonly sortKey?: string;
+  readonly sortDir?: 'asc' | 'desc';
+}
+
+function SortIcon({ colKey, sortKey, sortDir }: SortIconProps) {
+  if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-muted" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose-ink" /> : <ChevronDown size={12} className="text-pe-rose-ink" />;
+}
+
 function DesktopTable<T>({
   columns, data, loading, emptyMessage, selectable, selected, getRowId, toggleRow, toggleAll, onRowClick, sortKey, sortDir, onSort,
 }: DesktopTableProps<T>) {
@@ -228,9 +264,72 @@ function DesktopTable<T>({
     'font-sans text-[0.68rem] tracking-[0.1em] uppercase text-pe-muted px-3 py-2.5 text-left whitespace-nowrap border-b border-pe-black/8 bg-pe-cream/60';
   const tdBase = 'font-sans text-[0.82rem] px-3 py-2.5 border-b border-pe-black/5';
 
-  function SortIcon({ colKey }: { readonly colKey: string }) {
-    if (sortKey !== colKey) return <ChevronsUpDown size={12} className="text-pe-muted" />;
-    return sortDir === 'asc' ? <ChevronUp size={12} className="text-pe-rose-ink" /> : <ChevronDown size={12} className="text-pe-rose-ink" />;
+  let tbodyContent: React.ReactNode;
+  if (loading) {
+    tbodyContent = (
+      <tr>
+        <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16 text-center">
+          <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
+        </td>
+      </tr>
+    );
+  } else if (data.length === 0) {
+    tbodyContent = (
+      <tr>
+        <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">
+          {emptyMessage}
+        </td>
+      </tr>
+    );
+  } else {
+    tbodyContent = data.map((row) => {
+      const id = getRowId(row);
+      const isSelected = selected.has(id);
+      return (
+        <tr
+          key={id}
+          className={[
+            'transition-colors duration-100',
+            isSelected ? 'bg-pe-rose/4' : 'hover:bg-pe-cream/50',
+            onRowClick ? 'cursor-pointer' : '',
+          ].join(' ')}
+          /*
+           * A row that opens a drawer is the only way into most of these screens, so
+           * it cannot be mouse-only. tabIndex puts it in the tab order and Enter or
+           * Space opens it, which is what a button would have done.
+           */
+          tabIndex={onRowClick ? 0 : undefined}
+          onClick={onRowClick ? () => onRowClick(row) : undefined}
+          onKeyDown={onRowClick ? rowKeyDownHandler(onRowClick, row) : undefined}
+        >
+          {selectable && (
+            <td
+              className={tdBase}
+              onClick={(e) => {
+                e.stopPropagation();
+                if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                  return;
+                }
+                toggleRow(id);
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleRow(id)}
+                className="accent-pe-rose cursor-pointer"
+                aria-label={`Seleccionar fila ${id}`}
+              />
+            </td>
+          )}
+          {columns.map((col) => (
+            <td key={col.key} className={tdBase}>
+              {col.render ? col.render(row) : formatCellValue((row as Record<string, unknown>)[col.key])}
+            </td>
+          ))}
+        </tr>
+      );
+    });
   }
 
   return (
@@ -258,76 +357,13 @@ function DesktopTable<T>({
               >
                 <span className="inline-flex items-center gap-1">
                   {col.header}
-                  {col.sortable && onSort && <SortIcon colKey={col.key} />}
+                  {col.sortable && onSort && <SortIcon colKey={col.key} sortKey={sortKey} sortDir={sortDir} />}
                 </span>
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16 text-center">
-                <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            data.map((row) => {
-              const id = getRowId(row);
-              const isSelected = selected.has(id);
-              return (
-                <tr
-                  key={id}
-                  className={[
-                    'transition-colors duration-100',
-                    isSelected ? 'bg-pe-rose/4' : 'hover:bg-pe-cream/50',
-                    onRowClick ? 'cursor-pointer' : '',
-                  ].join(' ')}
-                  /*
-                   * A row that opens a drawer is the only way into most of these screens, so
-                   * it cannot be mouse-only. tabIndex puts it in the tab order and Enter or
-                   * Space opens it, which is what a button would have done.
-                   */
-                  tabIndex={onRowClick ? 0 : undefined}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  onKeyDown={onRowClick ? rowKeyDownHandler(onRowClick, row) : undefined}
-                >
-                  {selectable && (
-                    <td
-                      className={tdBase}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
-                          return;
-                        }
-                        toggleRow(id);
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleRow(id)}
-                        className="accent-pe-rose cursor-pointer"
-                        aria-label={`Seleccionar fila ${id}`}
-                      />
-                    </td>
-                  )}
-                  {columns.map((col) => (
-                    <td key={col.key} className={tdBase}>
-                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '-')}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })
-          )}
-        </tbody>
+        <tbody>{tbodyContent}</tbody>
       </table>
     </div>
   );

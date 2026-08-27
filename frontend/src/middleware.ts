@@ -55,6 +55,10 @@ function readStringArray(source: unknown): string[] {
   return Array.isArray(source) ? source.filter((item): item is string => typeof item === 'string') : [];
 }
 
+function readString(source: unknown): string {
+  return typeof source === 'string' ? source : '';
+}
+
 function hasHybridRouteAccess(
   role: string,
   permissionCodes: string[],
@@ -168,7 +172,7 @@ async function handleAdminGate(context: Parameters<Parameters<typeof defineMiddl
   const hybridRequirement = resolveHybridRequirement(pathname);
   if (!hybridRequirement) return null;
 
-  const role = String(me.role ?? payload['role'] ?? '');
+  const role = readString(me.role) || readString(payload['role']);
   const permissionCodes = readStringArray(me.permissionCodes ?? payload['permissionCodes']);
   const legacyPermissions = readStringArray(me.permissions ?? payload['permissions']);
   const access = hasHybridRouteAccess(role, permissionCodes, legacyPermissions, hybridRequirement);

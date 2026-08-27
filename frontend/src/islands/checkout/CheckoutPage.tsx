@@ -258,7 +258,7 @@ export default function CheckoutPage({ locale }: Props) {
     }
 
     const productIds = items.map((item) => resolveProductId(item));
-    if (productIds.some((id) => id === null)) {
+    if (productIds.includes(null)) {
       setSubmitError(l.legacyItem);
       return;
     }
@@ -340,6 +340,97 @@ export default function CheckoutPage({ locale }: Props) {
     );
   }
 
+  let mainContent: React.ReactNode;
+  if (config.loading) {
+    mainContent = (
+      <div className="bg-pe-white p-12 flex items-center justify-center gap-3">
+        <Loader2 size={18} className="animate-spin text-pe-muted" />
+        <span className="font-sans text-sm text-pe-charcoal">{l.loading}</span>
+      </div>
+    );
+  } else if (config.unavailable) {
+    mainContent = (
+      <div
+        role="alert"
+        className="bg-pe-white p-6 flex items-start gap-3 border-l-2 border-[#cb6070]"
+      >
+        <AlertTriangle size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" />
+        <p className="font-sans text-sm text-pe-charcoal">{l.unavailable}</p>
+      </div>
+    );
+  } else {
+    mainContent = (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {step === 'shipping' && (
+            <ShippingStep
+              locale={locale}
+              token={token}
+              zones={config.zones}
+              couriers={config.couriers}
+              zoneCode={shippingZoneCode}
+              courierId={shippingCourierId}
+              addressId={shippingAddressId}
+              onChange={setShipping}
+              onContinue={() => completeStep('shipping')}
+            />
+          )}
+
+          {step === 'payment' && (
+            <PaymentStep
+              locale={locale}
+              method={paymentMethod}
+              transferEnabled={config.bankTransferEnabled}
+              gatewayEnabled={config.gatewayEnabled}
+              gatewayLabel={config.gatewayLabel}
+              transfer={config.transfer}
+              transferWindowMinutes={config.transferWindowMinutes}
+              onSelect={setPaymentMethod}
+              onBack={() => setStep('shipping')}
+              onContinue={() => completeStep('payment')}
+            />
+          )}
+
+          {step === 'review' && (
+            <ReviewStep
+              locale={locale}
+              items={items}
+              address={selectedAddress}
+              method={paymentMethod}
+              courierName={selectedCourierName}
+              zoneName={selectedZoneName}
+              shippingEta={selectedZoneEta}
+              total={totals.total}
+              currency={currency}
+              submitting={submitting}
+              error={submitError}
+              stockIssues={stock.issues}
+              onRemoveItem={(lineId) => {
+                stock.clearIssue(lineId);
+                removeItem(lineId);
+              }}
+              onBack={() => setStep('payment')}
+              onFixShipping={() => setStep('shipping')}
+              onSubmit={placeOrder}
+            />
+          )}
+        </div>
+        <div className="lg:col-span-1">
+          <OrderSummary
+            locale={locale}
+            currency={currency}
+            totals={totals}
+            appliedDiscount={appliedDiscount}
+            applying={discountApplying}
+            error={discountError}
+            onApply={applyDiscount}
+            onRemove={removeDiscount}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-8 sm:py-12 bg-pe-beige min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -365,89 +456,7 @@ export default function CheckoutPage({ locale }: Props) {
           />
         </div>
 
-        {config.loading ? (
-          <div className="bg-pe-white p-12 flex items-center justify-center gap-3">
-            <Loader2 size={18} className="animate-spin text-pe-muted" />
-            <span className="font-sans text-sm text-pe-charcoal">{l.loading}</span>
-          </div>
-        ) : config.unavailable ? (
-          <div
-            role="alert"
-            className="bg-pe-white p-6 flex items-start gap-3 border-l-2 border-[#cb6070]"
-          >
-            <AlertTriangle size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" />
-            <p className="font-sans text-sm text-pe-charcoal">{l.unavailable}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              {step === 'shipping' && (
-                <ShippingStep
-                  locale={locale}
-                  token={token}
-                  zones={config.zones}
-                  couriers={config.couriers}
-                  zoneCode={shippingZoneCode}
-                  courierId={shippingCourierId}
-                  addressId={shippingAddressId}
-                  onChange={setShipping}
-                  onContinue={() => completeStep('shipping')}
-                />
-              )}
-
-              {step === 'payment' && (
-                <PaymentStep
-                  locale={locale}
-                  method={paymentMethod}
-                  transferEnabled={config.bankTransferEnabled}
-                  gatewayEnabled={config.gatewayEnabled}
-                  gatewayLabel={config.gatewayLabel}
-                  transfer={config.transfer}
-                  transferWindowMinutes={config.transferWindowMinutes}
-                  onSelect={setPaymentMethod}
-                  onBack={() => setStep('shipping')}
-                  onContinue={() => completeStep('payment')}
-                />
-              )}
-
-              {step === 'review' && (
-                <ReviewStep
-                  locale={locale}
-                  items={items}
-                  address={selectedAddress}
-                  method={paymentMethod}
-                  courierName={selectedCourierName}
-                  zoneName={selectedZoneName}
-                  shippingEta={selectedZoneEta}
-                  total={totals.total}
-                  currency={currency}
-                  submitting={submitting}
-                  error={submitError}
-                  stockIssues={stock.issues}
-                  onRemoveItem={(lineId) => {
-                    stock.clearIssue(lineId);
-                    removeItem(lineId);
-                  }}
-                  onBack={() => setStep('payment')}
-                  onFixShipping={() => setStep('shipping')}
-                  onSubmit={placeOrder}
-                />
-              )}
-            </div>
-            <div className="lg:col-span-1">
-              <OrderSummary
-                locale={locale}
-                currency={currency}
-                totals={totals}
-                appliedDiscount={appliedDiscount}
-                applying={discountApplying}
-                error={discountError}
-                onApply={applyDiscount}
-                onRemove={removeDiscount}
-              />
-            </div>
-          </div>
-        )}
+        {mainContent}
       </div>
     </div>
   );

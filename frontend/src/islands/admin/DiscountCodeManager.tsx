@@ -15,7 +15,7 @@ const INPUT_CLASS =
 const EMPTY_FORM: CreateDiscountCodeRequest = {
   code: '', type: 'PERCENTAGE', value: 10, minOrderAmount: 0,
   validFrom: new Date().toISOString().slice(0, 10),
-  validUntil: new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10),
+  validUntil: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
   maxUses: 1,
 };
 
@@ -182,9 +182,10 @@ export default function DiscountCodeManager() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {/* Code */}
             <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-1">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Código *</label>
+              <label htmlFor="dcm-code" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Código *</label>
               <div className="flex gap-1">
                 <input
+                  id="dcm-code"
                   className={INPUT_CLASS}
                   value={form.code}
                   onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
@@ -204,8 +205,9 @@ export default function DiscountCodeManager() {
 
             {/* Type */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Tipo *</label>
+              <label htmlFor="dcm-type" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Tipo *</label>
               <select
+                id="dcm-type"
                 className={INPUT_CLASS}
                 value={form.type}
                 onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
@@ -217,10 +219,11 @@ export default function DiscountCodeManager() {
 
             {/* Value */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+              <label htmlFor="dcm-value" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
                 Valor * {form.type === 'PERCENTAGE' ? '(%)' : '($)'}
               </label>
               <input
+                id="dcm-value"
                 type="number"
                 min="0.01"
                 max={form.type === 'PERCENTAGE' ? 100 : undefined}
@@ -233,8 +236,9 @@ export default function DiscountCodeManager() {
 
             {/* Min order amount */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Monto mínimo</label>
+              <label htmlFor="dcm-min-order" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Monto mínimo</label>
               <input
+                id="dcm-min-order"
                 type="number"
                 min="0"
                 className={INPUT_CLASS}
@@ -245,8 +249,9 @@ export default function DiscountCodeManager() {
 
             {/* Valid from */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido desde *</label>
+              <label htmlFor="dcm-valid-from" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido desde *</label>
               <input
+                id="dcm-valid-from"
                 type="date"
                 className={INPUT_CLASS}
                 value={form.validFrom}
@@ -256,8 +261,9 @@ export default function DiscountCodeManager() {
 
             {/* Valid until */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido hasta *</label>
+              <label htmlFor="dcm-valid-until" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Válido hasta *</label>
               <input
+                id="dcm-valid-until"
                 type="date"
                 className={INPUT_CLASS}
                 value={form.validUntil}
@@ -267,8 +273,9 @@ export default function DiscountCodeManager() {
 
             {/* Max uses */}
             <div className="flex flex-col gap-0.5">
-              <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Usos máximos</label>
+              <label htmlFor="dcm-max-uses" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Usos máximos</label>
               <input
+                id="dcm-max-uses"
                 type="number"
                 min="1"
                 className={INPUT_CLASS}
@@ -279,7 +286,7 @@ export default function DiscountCodeManager() {
 
             {/* User assignment */}
             <div style={{ position: 'relative' }}>
-              <label className="font-sans text-xs text-pe-muted uppercase tracking-wider block mb-1">
+              <label htmlFor="dcm-user-search" className="font-sans text-xs text-pe-muted uppercase tracking-wider block mb-1">
                 Asignar a usuario (opcional)
               </label>
               {selectedUser ? (
@@ -296,6 +303,7 @@ export default function DiscountCodeManager() {
                 </div>
               ) : (
                 <input
+                  id="dcm-user-search"
                   type="text"
                   value={userQuery}
                   onChange={e => setUserQuery(e.target.value)}

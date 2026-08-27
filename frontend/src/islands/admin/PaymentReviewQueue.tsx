@@ -13,6 +13,7 @@ import {
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import DataTable, { type Column } from './DataTable';
 import { openBlobInNewTab } from '../../lib/openBlob';
+import { decodeJwtPayload } from '../../lib/jwt';
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700',
@@ -49,21 +50,6 @@ export default function PaymentReviewQueue() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateSort, setDateSort] = useState<DateSortDirection>('desc');
   const [feedback, setFeedback] = useState<QueueFeedback>(null);
-
-  function readReviewerIdFromToken(jwt: string | null): string | null {
-    if (!jwt) return null;
-    try {
-      const payloadPart = jwt.split('.')[1];
-      if (!payloadPart) return null;
-      const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-      const json = atob(padded);
-      const payload = JSON.parse(json) as { sub?: string };
-      return payload.sub ?? null;
-    } catch {
-      return null;
-    }
-  }
 
   const load = useCallback(async () => {
     if (!effectiveToken) {
@@ -104,7 +90,7 @@ export default function PaymentReviewQueue() {
 
   async function handleAction(id: string, action: 'approve' | 'reject') {
     if (!effectiveToken) return;
-    const reviewerId = user?.id ?? readReviewerIdFromToken(effectiveToken);
+    const reviewerId = user?.id ?? (decodeJwtPayload(effectiveToken)?.sub as string | undefined) ?? null;
     if (!reviewerId) {
       setFeedback({ type: 'error', text: 'No se pudo identificar al administrador actual. Inicia sesion de nuevo.' });
       return;

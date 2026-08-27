@@ -124,9 +124,9 @@ export default function MegaMenuTray({ sections, locale }: Props) {
 
   const renderColumnsLayout = (section: NavigationSectionDto) => (
     <>
-      {getColumns(section).map((col, i) => (
-        <motion.div key={i} variants={itemMotion}>
-          <ul role="list" className="flex flex-col gap-1.5">
+      {getColumns(section).map((col) => (
+        <motion.div key={col[0]?.id} variants={itemMotion}>
+          <ul className="flex flex-col gap-1.5">
             {col.map((child) => (
               <li key={child.id}>
                 <a
@@ -197,7 +197,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
             <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-on-dark-muted">
               {locale === 'es' ? 'Explorar' : 'Explore'}
             </p>
-            <ul role="list" className="space-y-1.5">
+            <ul className="space-y-1.5">
               {remainingChildren.map((child) => (
                 <li key={child.id}>
                   <a
@@ -250,7 +250,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
           <p className="font-sans text-[0.62rem] uppercase tracking-[0.18em] text-pe-on-dark-muted">
             {locale === 'es' ? 'Selecciones' : 'Selections'}
           </p>
-          <ul role="list" className="space-y-2">
+          <ul className="space-y-2">
             {trailChildren.map((child) => (
               <li key={child.id}>
                 <a

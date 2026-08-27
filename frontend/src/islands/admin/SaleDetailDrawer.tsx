@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, FileText, Copy, Check, ExternalLink, Upload, Ban, RotateCcw } from 'lucide-react';
 import {
   getOrderById,
@@ -24,13 +24,13 @@ type DrawerMode = 'idle' | 'void' | 'reissue';
 type IssuedDocumentType = 'BOLETA' | 'FACTURA';
 
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
-const CANCELLABLE: string[] = [
+const CANCELLABLE: Set<string> = new Set([
   'PENDING_PAYMENT',
   'PAYMENT_UNDER_REVIEW',
   'PAID',
   'PREPARING_ORDER',
   'SHIPPED',
-];
+]);
 
 const money = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -168,6 +168,10 @@ function DocumentViewer({
  */
 function isExternalProof(reference: string): boolean {
   return reference.startsWith('http://') || reference.startsWith('https://');
+}
+
+function taxRateSuffix(taxRate: number | null | undefined): string {
+  return taxRate != null ? ` (${taxRate}%)` : '';
 }
 
 function issueButtonLabel(mode: DrawerMode, documentType: IssuedDocumentType): string {
@@ -327,7 +331,7 @@ function VoidControls({
                 className="h-4 w-4 mt-0.5 accent-[var(--pe-ink)]"
               />
               <span className="text-[0.78rem]">
-                Cerrar también la venta como anulada
+                Cerrar también la venta como anulada{' '}
                 <span className="block text-[0.7rem] opacity-60">
                   Devuelve las unidades al stock y libera el código de descuento. Sin esto,
                   solo se anula la boleta y la venta sigue vigente.
@@ -549,13 +553,16 @@ export default function SaleDetailDrawer({
     };
   }, [sale.orderId, token]);
 
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [onClose]);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  /*
+   * A ref callback, not a mount-effect: <Overlay> renders null on its first pass and only
+   * portals its children in once its own effect resolves the host element, so a plain
+   * `useEffect(() => ref.current?.showModal(), [])` would fire before the dialog node exists.
+   */
+  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    dialogRef.current = node;
+    if (node && !node.open) node.showModal();
+  }, []);
 
   async function reload() {
     setDocuments(await getSalesDocumentsByOrder(sale.orderId, token));
@@ -714,12 +721,17 @@ export default function SaleDetailDrawer({
 
   return (
     <Overlay>
-      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
-      <aside
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        ref={setDialogRef}
         aria-label={`Venta ${sale.publicReference ?? sale.orderId}`}
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[560px] lg:max-w-[1000px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto"
+        onCancel={(event) => {
+          event.preventDefault();
+          onClose();
+        }}
+        onClick={(event) => {
+          if (event.target === dialogRef.current) onClose();
+        }}
+        className="fixed inset-y-0 right-0 m-0 h-full w-full max-w-[560px] lg:max-w-[1000px] p-0 border-0 flex flex-col bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto backdrop:bg-black/30 backdrop:backdrop-blur-[2px]"
       >
         <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--pe-border)] sticky top-0 bg-[var(--pe-surface-card)] z-10">
           <div>
@@ -737,16 +749,15 @@ export default function SaleDetailDrawer({
 
         <div className="flex-1 p-5 space-y-4">
           {feedback && (
-            <p
-              role="status"
-              className={`text-[0.78rem] px-3 py-2 rounded-xs border ${
+            <output
+              className={`block text-[0.78rem] px-3 py-2 rounded-xs border ${
                 feedback.tone === 'success'
                   ? 'border-green-300/60 text-pe-positive'
                   : 'border-red-300/60 text-red-600'
               }`}
             >
               {feedback.text}
-            </p>
+            </output>
           )}
 
           {/*
@@ -791,7 +802,7 @@ export default function SaleDetailDrawer({
                 )}
                 <Row label="Neto" value={order.netAmount ? money.format(order.netAmount.amount) : '—'} />
                 <Row
-                  label={`IVA${order.taxRate != null ? ` (${order.taxRate}%)` : ''}`}
+                  label={`IVA${taxRateSuffix(order.taxRate)}`}
                   value={order.taxAmount ? money.format(order.taxAmount.amount) : '—'}
                 />
                 <div className="pt-2 border-t border-[var(--pe-border)]">
@@ -903,7 +914,7 @@ export default function SaleDetailDrawer({
                 </p>
                 {/* The pending-queue case: paid, undeclared, and being undone. There is no document
                     to void, but the sale still has to give its units back. */}
-                {canCancelSale && CANCELLABLE.includes(sale.orderStatus) && mode === 'idle' && (
+                {canCancelSale && CANCELLABLE.has(sale.orderStatus) && mode === 'idle' && (
                   <button
                     type="button"
                     className={btnDanger}
@@ -961,7 +972,7 @@ export default function SaleDetailDrawer({
             </div>
           </div>
         </div>
-      </aside>
+      </dialog>
 
       {viewing && (
         <DocumentViewer

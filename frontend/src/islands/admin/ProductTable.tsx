@@ -111,6 +111,51 @@ function parseSearchInput(input: string, categories: CategoryDto[]): ParsedQuery
   };
 }
 
+interface PaginationControlsProps {
+  readonly total: number;
+  readonly pageSize: number;
+  readonly page: number;
+  readonly totalPages: number;
+  readonly displayedFrom: number;
+  readonly displayedTo: number;
+  readonly onPageChange: (updater: (page: number) => number) => void;
+}
+
+function PaginationControls({ total, pageSize, page, totalPages, displayedFrom, displayedTo, onPageChange }: PaginationControlsProps) {
+  if (total <= pageSize) return null;
+
+  return (
+    <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="font-sans text-[0.72rem] text-pe-muted">
+        {displayedFrom}-{displayedTo} de {total}
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onPageChange((p) => Math.max(0, p - 1))}
+          disabled={page === 0}
+          className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          aria-label="Pagina anterior"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <span className="font-sans text-[0.78rem] text-pe-muted px-2">
+          {page + 1} / {totalPages}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange((p) => Math.min(totalPages - 1, p + 1))}
+          disabled={page + 1 >= totalPages}
+          className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          aria-label="Pagina siguiente"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function stockColorClass(stock: number, defaultClass: string) {
   if (stock === 0) return 'text-red-500';
   return stock <= 2 ? 'text-amber-600' : defaultClass;
@@ -334,7 +379,7 @@ export default function ProductTable() {
       maximumFractionDigits: 0,
     }).format(amount);
   const getDiscountPercent = (row: ProductDto) => {
-    if (!row.listPrice || row.listPrice.currency !== row.price.currency) return null;
+    if (row.listPrice?.currency !== row.price.currency) return null;
     if (row.listPrice.amount <= row.price.amount) return null;
     return Math.round((1 - row.price.amount / row.listPrice.amount) * 100);
   };
@@ -553,41 +598,6 @@ export default function ProductTable() {
   const displayedTo = Math.min((page + 1) * pageSize, total);
   const effectiveViewMode: ViewMode = isMobileViewport ? 'cards' : viewMode;
 
-  function PaginationControls() {
-    if (total <= pageSize) return null;
-
-    return (
-      <div className="flex flex-col gap-2 px-1 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="font-sans text-[0.72rem] text-pe-muted">
-          {displayedFrom}-{displayedTo} de {total}
-        </p>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-            aria-label="Pagina anterior"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="font-sans text-[0.78rem] text-pe-muted px-2">
-            {page + 1} / {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page + 1 >= totalPages}
-            className="p-1.5 text-pe-muted hover:text-pe-charcoal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-            aria-label="Pagina siguiente"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   function renderCardsView() {
     if (loading) {
       return (
@@ -706,7 +716,15 @@ export default function ProductTable() {
             </article>
           ))}
         </div>
-        <PaginationControls />
+        <PaginationControls
+          total={total}
+          pageSize={pageSize}
+          page={page}
+          totalPages={totalPages}
+          displayedFrom={displayedFrom}
+          displayedTo={displayedTo}
+          onPageChange={setPage}
+        />
       </>
     );
   }

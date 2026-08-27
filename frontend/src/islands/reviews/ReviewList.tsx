@@ -3,6 +3,8 @@ import { Star } from 'lucide-react';
 import { getProductReviews } from '../../lib/api';
 import type { ReviewDto } from '../../lib/api';
 
+const SKELETON_ROWS = ['sk-1', 'sk-2', 'sk-3'];
+
 interface Props {
   readonly productId: string;
   readonly locale?: string;
@@ -50,8 +52,8 @@ export default function ReviewList({ productId, locale = 'es', token, userId }: 
   if (loading) {
     return (
       <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="animate-pulse">
+        {SKELETON_ROWS.map((key) => (
+          <div key={key} className="animate-pulse">
             <div className="h-3 bg-[#EDE3D8] w-24 mb-2" />
             <div className="h-4 bg-[#EDE3D8] w-3/4 mb-1" />
             <div className="h-3 bg-[#EDE3D8] w-full" />

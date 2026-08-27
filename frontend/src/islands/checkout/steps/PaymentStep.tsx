@@ -150,6 +150,7 @@ export default function PaymentStep({
 
         {gatewayEnabled && (
           <label
+            aria-label={gatewayLabel ? `${l.gateway} · ${gatewayLabel}` : l.gateway}
             className={`flex items-start gap-3 p-4 border cursor-pointer transition-colors ${
               method === 'WEBPAY'
                 ? 'border-pe-black bg-pe-cream/40'

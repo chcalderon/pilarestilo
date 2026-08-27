@@ -140,7 +140,7 @@ interface CarrierOverrideAudit {
 function parseCarrierOverrideAudit(notes: string | null | undefined): CarrierOverrideAudit | null {
   const text = (notes ?? '').trim();
   if (!text) return null;
-  const match = text.match(/\[carrier-override\]\s+configured='([^']+)'\s+selected='([^']+)'\s+dispatcher='([^']+)'/i);
+  const match = /\[carrier-override\]\s+configured='([^']+)'\s+selected='([^']+)'\s+dispatcher='([^']+)'/i.exec(text);
   if (!match) return null;
   const [, configured, selected, dispatcher] = match;
   if (!configured || !selected || !dispatcher) return null;
@@ -548,7 +548,7 @@ export default function DespachosPage() {
         <section className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <label className="flex flex-col gap-1 text-xs text-pe-muted">
-              Desde
+              <span>Desde</span>
               <input
                 type="date"
                 value={fromDate}
@@ -557,7 +557,7 @@ export default function DespachosPage() {
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-pe-muted">
-              Hasta
+              <span>Hasta</span>
               <input
                 type="date"
                 value={toDate}

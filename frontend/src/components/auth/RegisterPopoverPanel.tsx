@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { RegisterPopoverForm } from "./RegisterPopoverForm";
 import { X } from "lucide-react";
@@ -16,58 +16,20 @@ interface Props {
 }
 
 export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Props) {
-  const panelRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
-  // Close on outside mousedown
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [onClose]);
-
-  // Close on Escape
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  // Focus first input on mount
-  useEffect(() => {
-    const firstInput = panelRef.current?.querySelector<HTMLElement>("input, select, textarea");
-    const firstFocusable = panelRef.current?.querySelector<HTMLElement>("button, [href], [tabindex]:not([tabindex=\"-1\"])");
-    (firstInput ?? firstFocusable)?.focus();
-  }, []);
-
-  // Focus trap
-  useEffect(() => {
-    function trapFocus(e: KeyboardEvent) {
-      if (e.key !== "Tab" || !panelRef.current) return;
-      const focusable = Array.from(
-        panelRef.current.querySelectorAll<HTMLElement>(
-          'input, button, [href], select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => !el.hasAttribute("disabled"));
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", trapFocus);
-    return () => document.removeEventListener("keydown", trapFocus);
+  /*
+   * showModal() replaces four hand-rolled effects at once: outside-mousedown-to-close becomes the
+   * standard "click landed on the dialog itself, not a descendant" backdrop check, Escape-to-close
+   * is the native cancel event, and the initial-focus + Tab focus trap are both free -- everything
+   * outside a modally-shown dialog goes inert, so Tab can't leave it and the browser focuses the
+   * first focusable element on its own. A ref callback rather than a mount-effect, so it still
+   * fires correctly if this is ever rendered somewhere the portal target isn't ready synchronously.
+   */
+  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    dialogRef.current = node;
+    if (node && !node.open) node.showModal();
   }, []);
 
   const desktopStyle: React.CSSProperties = {
@@ -75,7 +37,7 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
     top: anchor.bottom + 8,
     right: window.innerWidth - anchor.right,
     width: 320,
-    zIndex: 9999,
+    margin: 0,
   };
 
   const mobileStyle: React.CSSProperties = {
@@ -83,20 +45,26 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 9999,
+    margin: 0,
   };
 
   const panel = (
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={setDialogRef}
       aria-label={locale === "es" ? "Crear cuenta o iniciar sesion" : "Create account or log in"}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) onClose();
+      }}
       style={isMobile ? mobileStyle : desktopStyle}
       className={
-        isMobile
-          ? "relative bg-[var(--pe-surface)] border-t border-[var(--pe-border)] rounded-t-2xl p-6 pt-10 shadow-xl"
-          : "relative bg-[var(--pe-surface)] border border-[var(--pe-border)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        (isMobile
+          ? "bg-[var(--pe-surface)] border-t border-[var(--pe-border)] rounded-t-2xl p-6 pt-10 shadow-xl"
+          : "bg-[var(--pe-surface)] border border-[var(--pe-border)] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        ) + " max-w-none max-h-none backdrop:bg-transparent"
       }
     >
       {isMobile && (
@@ -110,7 +78,7 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
         </button>
       )}
       <RegisterPopoverForm initialTab={initialTab} locale={locale} />
-    </div>
+    </dialog>
   );
 
   return createPortal(panel, document.body);

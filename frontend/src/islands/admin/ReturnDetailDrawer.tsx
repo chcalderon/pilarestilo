@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Check, Ban, PackageCheck, Recycle, Trash2, Banknote, FileMinus, Upload } from 'lucide-react';
 import {
   approveReturn,
@@ -384,26 +384,33 @@ function refundedContent(request: ReturnRequestDto) {
 function DineroSection({
   request, closed, canRefund, busy, account, onAccountChange, refund, onRefundChange, onAttachAccount, onRegisterRefund,
 }: DineroSectionProps) {
+  let content: React.ReactNode;
+  if (request.status === 'REFUNDED') {
+    content = refundedContent(request);
+  } else if (canRefund && !closed) {
+    content = (
+      <RefundForm
+        request={request}
+        account={account}
+        onAccountChange={onAccountChange}
+        refund={refund}
+        onRefundChange={onRefundChange}
+        busy={busy}
+        onAttachAccount={onAttachAccount}
+        onRegisterRefund={onRegisterRefund}
+      />
+    );
+  } else {
+    content = (
+      <p className="text-sm opacity-60">
+        {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
+      </p>
+    );
+  }
+
   return (
     <Section label="Dinero">
-      {request.status === 'REFUNDED' ? (
-        refundedContent(request)
-      ) : canRefund && !closed ? (
-        <RefundForm
-          request={request}
-          account={account}
-          onAccountChange={onAccountChange}
-          refund={refund}
-          onRefundChange={onRefundChange}
-          busy={busy}
-          onAttachAccount={onAttachAccount}
-          onRegisterRefund={onRegisterRefund}
-        />
-      ) : (
-        <p className="text-sm opacity-60">
-          {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
-        </p>
-      )}
+      {content}
     </Section>
   );
 }
@@ -579,6 +586,17 @@ export default function ReturnDetailDrawer({
   const [uploading, setUploading] = useState(false);
 
   const closed = request.status === 'REFUNDED' || request.status === 'REJECTED';
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  /*
+   * A ref callback, not a mount-effect: <Overlay> renders null on its first pass and only
+   * portals its children in once its own effect resolves the host element, so the dialog node
+   * does not exist yet when a plain `useEffect(() => ref.current?.showModal(), [])` would fire.
+   * A callback ref runs the instant React actually attaches the node, whichever render that is.
+   */
+  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    dialogRef.current = node;
+    if (node && !node.open) node.showModal();
+  }, []);
 
   useEffect(() => {
     getOrderById(request.orderId, token).then(setOrder).catch(() => setOrder(null));
@@ -599,14 +617,6 @@ export default function ReturnDetailDrawer({
       setCreditNote((current) => ({ ...current, amount: String(request.refundAmount) }));
     }
   }, [request.refundAmount]);
-
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [onClose]);
 
   /** The document the sale still stands on; a credit note acts upon this one. */
   const liveSale = documents.find(
@@ -674,12 +684,17 @@ export default function ReturnDetailDrawer({
 
   return (
     <Overlay>
-      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
-      <aside
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        ref={setDialogRef}
         aria-label="Detalle de la devolución"
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[520px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto"
+        onCancel={(event) => {
+          event.preventDefault();
+          onClose();
+        }}
+        onClick={(event) => {
+          if (event.target === dialogRef.current) onClose();
+        }}
+        className="fixed inset-y-0 right-0 m-0 h-full w-full max-w-[520px] p-0 border-0 flex flex-col bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto backdrop:bg-black/30 backdrop:backdrop-blur-[2px]"
       >
         <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--pe-border)] sticky top-0 bg-[var(--pe-surface-card)] z-10">
           <div>
@@ -698,14 +713,13 @@ export default function ReturnDetailDrawer({
 
         <div className="flex-1 p-5 space-y-4">
           {feedback && (
-            <p
-              role="status"
-              className={`text-[0.78rem] px-3 py-2 rounded-xs border ${
+            <output
+              className={`block text-[0.78rem] px-3 py-2 rounded-xs border ${
                 feedback.tone === 'success' ? 'border-green-300/60 text-pe-positive' : 'border-red-300/60 text-red-600'
               }`}
             >
               {feedback.text}
-            </p>
+            </output>
           )}
 
           {request.kind === 'RETRACTO' && request.status === 'REQUESTED' && (
@@ -775,7 +789,7 @@ export default function ReturnDetailDrawer({
             onRegister={() => void registerCreditNote()}
           />
         </div>
-      </aside>
+      </dialog>
     </Overlay>
   );
 }

@@ -125,12 +125,6 @@ export default function ImageDropzone({
     e.currentTarget.value = '';
   };
 
-  const onCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) void upload(file);
-    e.currentTarget.value = '';
-  };
-
   const closeCamera = () => {
     setCameraOpen(false);
     setCameraError('');
@@ -330,7 +324,7 @@ export default function ImageDropzone({
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={onCameraChange}
+        onChange={onChange}
       />
 
       {cameraOpen && (

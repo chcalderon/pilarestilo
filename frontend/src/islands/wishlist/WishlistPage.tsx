@@ -11,6 +11,8 @@ import {
 } from '../../lib/api';
 import { useCartStore } from '../../lib/cartStore';
 
+const SKELETON_TILES = ['sk-1', 'sk-2', 'sk-3', 'sk-4'];
+
 interface Props {
   readonly locale?: string;
   readonly token?: string;
@@ -238,8 +240,8 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
       <div className="space-y-6">
         {sharePanel}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
+          {SKELETON_TILES.map((key) => (
+            <div key={key} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
           ))}
         </div>
       </div>

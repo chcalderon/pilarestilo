@@ -57,20 +57,20 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
         <p className="text-pe-muted text-sm mb-5">{userFullName}</p>
         <div className="space-y-4">
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Rol</label>
-            <select value={role} onChange={e => setRole(e.target.value)}
+            <label htmlFor="wam-role" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Rol</label>
+            <select id="wam-role" value={role} onChange={e => setRole(e.target.value)}
               className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]">
               {WORKER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Inicio vigencia</label>
-            <input type="date" value={vigencyStart} onChange={e => setVigencyStart(e.target.value)}
+            <label htmlFor="wam-vigency-start" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Inicio vigencia</label>
+            <input id="wam-vigency-start" type="date" value={vigencyStart} onChange={e => setVigencyStart(e.target.value)}
               className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Fin vigencia (opcional)</label>
-            <input type="date" value={vigencyEnd} onChange={e => setVigencyEnd(e.target.value)}
+            <label htmlFor="wam-vigency-end" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Fin vigencia (opcional)</label>
+            <input id="wam-vigency-end" type="date" value={vigencyEnd} onChange={e => setVigencyEnd(e.target.value)}
               className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
           </div>
         </div>

@@ -35,6 +35,7 @@ function baseForm() {
 
 function variantRow(primary = 'Negro', secondary = 'UNICO', stock = '5') {
   return {
+    id: crypto.randomUUID(),
     attributes: {
       ...createEmptyVariantSelections(schema),
       [primaryAttribute.code]: [primary],
@@ -85,6 +86,7 @@ describe('validateProductForm', () => {
 
   it('flags a required attribute missing on a specific row', () => {
     const rowMissingPrimary = {
+      id: crypto.randomUUID(),
       attributes: { ...createEmptyVariantSelections(schema), [secondaryAttribute.code]: ['UNICO'] },
       stock: '5',
     };

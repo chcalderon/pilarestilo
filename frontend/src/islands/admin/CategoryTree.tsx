@@ -47,7 +47,8 @@ function slugify(text: string): string {
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-+|-+$)/g, '');
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
 // ─── FormRow ─────────────────────────────────────────────────────────────────
@@ -66,30 +67,31 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
     <div className="bg-pe-cream/50 border border-pe-black/8 p-3 mt-2 flex flex-col gap-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Slug *</label>
-          <input className={INPUT_CLASS} value={form.slug}
+          <label htmlFor="ct-slug" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Slug *</label>
+          <input id="ct-slug" className={INPUT_CLASS} value={form.slug}
             onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))} placeholder="ej: zapatos" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre ES *</label>
-          <input className={INPUT_CLASS} value={form.nameEs}
+          <label htmlFor="ct-nameEs" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre ES *</label>
+          <input id="ct-nameEs" className={INPUT_CLASS} value={form.nameEs}
             onChange={e => setForm(f => ({ ...f, nameEs: e.target.value }))} placeholder="Zapatos" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre EN</label>
-          <input className={INPUT_CLASS} value={form.nameEn}
+          <label htmlFor="ct-nameEn" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Nombre EN</label>
+          <input id="ct-nameEn" className={INPUT_CLASS} value={form.nameEn}
             onChange={e => setForm(f => ({ ...f, nameEn: e.target.value }))} placeholder="Shoes" />
         </div>
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Orden</label>
-          <input type="number" min="0" className={INPUT_CLASS} value={form.sortOrder}
+          <label htmlFor="ct-sortOrder" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Orden</label>
+          <input id="ct-sortOrder" type="number" min="0" className={INPUT_CLASS} value={form.sortOrder}
             onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <div className="sm:col-span-3 flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Hero imagen</label>
+          <label htmlFor="ct-heroImageUrl" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">Hero imagen</label>
           <input
+            id="ct-heroImageUrl"
             className={INPUT_CLASS}
             value={form.heroImageUrl}
             onChange={e => setForm(f => ({ ...f, heroImageUrl: e.target.value }))}
@@ -106,7 +108,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
       />
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
-          <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />
+          <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="accent-pe-rose" />{' '}
           Activa
         </label>
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
@@ -114,7 +116,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
           <Star size={11} className="text-amber-500" /> Destacada en inicio
         </label>
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
-          <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />
+          <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />{' '}
           Visible en menu
         </label>
         <button type="button" onClick={onSubmit} disabled={saving}
@@ -362,8 +364,8 @@ export default function CategoryTree() {
     const overId = String(over.id);
 
     // Root level reorder
-    const rootIds = tree.map(n => n.id);
-    if (rootIds.includes(activeId) && rootIds.includes(overId)) {
+    const rootIds = new Set(tree.map(n => n.id));
+    if (rootIds.has(activeId) && rootIds.has(overId)) {
       const oldIdx = tree.findIndex(n => n.id === activeId);
       const newIdx = tree.findIndex(n => n.id === overId);
       const reordered = arrayMove(tree, oldIdx, newIdx);
@@ -375,8 +377,8 @@ export default function CategoryTree() {
     // Recursive search: find the parent whose direct children include both ids
     function reorderInTree(nodes: CategoryTreeNode[]): CategoryTreeNode[] | null {
       for (const node of nodes) {
-        const childIds = node.children.map(c => c.id);
-        if (childIds.includes(activeId) && childIds.includes(overId)) {
+        const childIds = new Set(node.children.map(c => c.id));
+        if (childIds.has(activeId) && childIds.has(overId)) {
           const oldIdx = node.children.findIndex(c => c.id === activeId);
           const newIdx = node.children.findIndex(c => c.id === overId);
           const reorderedChildren = arrayMove(node.children, oldIdx, newIdx);

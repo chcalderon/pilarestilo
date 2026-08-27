@@ -16,7 +16,7 @@ interface Props {
 
 function getTheme() {
   if (typeof document === 'undefined') return 'dark';
-  return document.documentElement.getAttribute('data-theme') ?? 'dark';
+  return document.documentElement.dataset.theme ?? 'dark';
 }
 
 function relativeTime(iso: string, es: boolean): string {

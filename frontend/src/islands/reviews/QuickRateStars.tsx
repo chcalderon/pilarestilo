@@ -96,12 +96,9 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
     /* Four seconds of acknowledgement, then the vote itself — which is the lasting fact. */
     if (justRated) {
       return (
-        <span
-          role="status"
-          className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-ink"
-        >
+        <output className="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-ink">
           {doneLabel}
-        </span>
+        </output>
       );
     }
     return (
@@ -147,7 +144,7 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
      * one broken control — the customer cannot tell which is the product's score and which is
      * their own vote.
      */
-    <div className="inline-flex items-center gap-1" role="group" aria-label={groupLabel}>
+    <fieldset className="inline-flex items-center gap-1 m-0 min-w-0 border-0 p-0" aria-label={groupLabel}>
       {[1, 2, 3, 4, 5].map((value) => (
         <button
           key={value}
@@ -171,6 +168,6 @@ export default function QuickRateStars({ productId, token, locale = 'es' }: Prop
           />
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

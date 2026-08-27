@@ -242,7 +242,7 @@ const CHILE_BANK_OPTIONS = [
   'Scotiabank Chile',
 ];
 
-const SETTINGS_SUBMENU_TAB_IDS: SettingsSubmenuTab[] = ['store', 'payments', 'media', 'notifications', 'shipping', 'tributarios'];
+const SETTINGS_SUBMENU_TAB_IDS: Set<SettingsSubmenuTab> = new Set(['store', 'payments', 'media', 'notifications', 'shipping', 'tributarios']);
 
 const DEFAULT_SHIPPING_ZONES: ShippingZoneConfig[] = [
   { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
@@ -300,7 +300,7 @@ function parseShippingCouriers(raw: string | null | undefined): CourierConfig[] 
 
 function slugifyCourierId(name: string): string {
   return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
 }
 
 function normalizeBankName(value: string) {
@@ -324,7 +324,7 @@ function isBancoEstado(bankName: string) {
 function parseSettingsTab(rawValue: string | null): SettingsSubmenuTab {
   if (!rawValue) return 'store';
   const normalized = rawValue.toLowerCase();
-  if (SETTINGS_SUBMENU_TAB_IDS.includes(normalized as SettingsSubmenuTab)) {
+  if (SETTINGS_SUBMENU_TAB_IDS.has(normalized as SettingsSubmenuTab)) {
     return normalized as SettingsSubmenuTab;
   }
   return 'store';
@@ -1318,7 +1318,7 @@ export default function SystemSettingsPanel() {
                 updateField('paymentMethodBankTransferEnabled', next);
               }}
               className="h-4 w-4 accent-pe-rose"
-            />
+            />{' '}
             Transferencia bancaria
           </label>
 
@@ -1332,7 +1332,7 @@ export default function SystemSettingsPanel() {
                 updateField('paymentMethodGatewayEnabled', next);
               }}
               className="h-4 w-4 accent-pe-rose"
-            />
+            />{' '}
             Pasarela de pago
           </label>
         </div>
@@ -1475,7 +1475,7 @@ export default function SystemSettingsPanel() {
                 const checked = form.paymentGatewayProviders.includes(option.value);
                 const isLastSelected = checked && form.paymentGatewayProviders.length === 1;
                 return (
-                  <label key={option.value} className="inline-flex items-start gap-2 font-sans text-[0.78rem] text-pe-charcoal">
+                  <label key={option.value} aria-label={option.label} className="inline-flex items-start gap-2 font-sans text-[0.78rem] text-pe-charcoal">
                     <input
                       type="checkbox"
                       checked={checked}
@@ -1587,7 +1587,7 @@ export default function SystemSettingsPanel() {
                       checked={form.clearPaymentGatewayMpAccessToken}
                       onChange={(e) => updateField('clearPaymentGatewayMpAccessToken', e.target.checked)}
                       className="h-4 w-4 accent-pe-rose"
-                    />
+                    />{' '}
                     Limpiar access token guardado
                   </label>
 
@@ -1597,7 +1597,7 @@ export default function SystemSettingsPanel() {
                       checked={form.clearPaymentGatewayMpWebhookToken}
                       onChange={(e) => updateField('clearPaymentGatewayMpWebhookToken', e.target.checked)}
                       className="h-4 w-4 accent-pe-rose"
-                    />
+                    />{' '}
                     Limpiar webhook token guardado
                   </label>
                 </div>
@@ -1921,7 +1921,7 @@ export default function SystemSettingsPanel() {
                 checked={form.mediaS3PathStyleEnabled}
                 onChange={(e) => updateField('mediaS3PathStyleEnabled', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Path style habilitado
             </label>
 
@@ -1931,7 +1931,7 @@ export default function SystemSettingsPanel() {
                 checked={form.clearMediaS3SecretKey}
                 onChange={(e) => updateField('clearMediaS3SecretKey', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Limpiar Secret Access Key guardado
             </label>
           </div>
@@ -2081,7 +2081,7 @@ export default function SystemSettingsPanel() {
               className="h-4 w-4 accent-pe-rose mt-0.5"
             />
             <span className="font-sans text-[0.78rem] text-pe-charcoal">
-              Exigir boleta antes de despachar
+              Exigir boleta antes de despachar{' '}
               <span className="block text-[0.68rem] text-pe-muted">
                 Una venta pagada sin boleta no se puede tomar ni despachar. Desactivarlo permite que
                 salga mercaderia sin documento.
@@ -2541,7 +2541,7 @@ export default function SystemSettingsPanel() {
                 checked={form.clearWhatsappTwilioAuthToken}
                 onChange={(e) => updateField('clearWhatsappTwilioAuthToken', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Limpiar Auth Token guardado
             </label>
           </div>
@@ -2629,7 +2629,7 @@ export default function SystemSettingsPanel() {
                 checked={form.clearSendgridApiKey}
                 onChange={(e) => updateField('clearSendgridApiKey', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Limpiar API key guardada
             </label>
           </div>
@@ -2718,7 +2718,7 @@ export default function SystemSettingsPanel() {
                 checked={form.smtpAuthEnabled}
                 onChange={(e) => updateField('smtpAuthEnabled', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               SMTP auth habilitado
             </label>
 
@@ -2728,7 +2728,7 @@ export default function SystemSettingsPanel() {
                 checked={form.smtpStarttlsEnabled}
                 onChange={(e) => updateField('smtpStarttlsEnabled', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               STARTTLS habilitado
             </label>
 
@@ -2738,7 +2738,7 @@ export default function SystemSettingsPanel() {
                 checked={form.clearSmtpPassword}
                 onChange={(e) => updateField('clearSmtpPassword', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Limpiar password SMTP guardada
             </label>
           </div>
@@ -2805,7 +2805,7 @@ export default function SystemSettingsPanel() {
                 checked={form.clearN8nApiKey}
                 onChange={(e) => updateField('clearN8nApiKey', e.target.checked)}
                 className="h-4 w-4 accent-pe-rose"
-              />
+              />{' '}
               Limpiar API key n8n guardada
             </label>
           </div>

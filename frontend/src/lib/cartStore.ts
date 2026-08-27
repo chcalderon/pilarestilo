@@ -198,7 +198,7 @@ export const useCartStore = create<CartState>()(
         const normalized = normalizePersistedItem({ ...item, quantity: 1 });
         if (!normalized) return;
         set((state) => {
-          const existing = state.items.find((i) => i.id === normalized.id);
+          const existing = state.items.some((i) => i.id === normalized.id);
           if (existing) {
             return {
               items: state.items.map((i) =>

@@ -16,7 +16,7 @@ const SPACE = 32;
  */
 function hasCharacterBrowsersRewrite(value: string): boolean {
   for (let i = 0; i < value.length; i += 1) {
-    const code = value.charCodeAt(i);
+    const code = value.codePointAt(i)!;
     if (code <= SPACE || code === BACKSLASH) return true;
   }
   return false;

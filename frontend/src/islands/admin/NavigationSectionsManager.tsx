@@ -110,10 +110,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
       {/* Row 1: category, layout, columns, sortOrder */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-root-category" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Categoría raíz *
           </label>
           <select
+            id="nsm-root-category"
             className={SELECT_CLASS}
             value={form.rootCategoryId}
             onChange={e => setForm(f => ({ ...f, rootCategoryId: e.target.value }))}
@@ -130,10 +131,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-layout" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Diseño
           </label>
           <select
+            id="nsm-layout"
             className={SELECT_CLASS}
             value={form.layout}
             onChange={e => setForm(f => ({ ...f, layout: e.target.value as LayoutOption }))}
@@ -147,10 +149,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-column-count" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Columnas (1–6)
           </label>
           <input
+            id="nsm-column-count"
             type="number"
             min="1"
             max="6"
@@ -161,10 +164,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-sort-order" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Orden
           </label>
           <input
+            id="nsm-sort-order"
             type="number"
             min="0"
             className={INPUT_CLASS}
@@ -203,10 +207,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-banner-title" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: título
           </label>
           <input
+            id="nsm-banner-title"
             type="text"
             className={INPUT_CLASS}
             value={form.bannerTitle}
@@ -216,10 +221,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-banner-subtitle" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: subtítulo
           </label>
           <input
+            id="nsm-banner-subtitle"
             type="text"
             className={INPUT_CLASS}
             value={form.bannerSubtitle}
@@ -229,10 +235,11 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <label className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
+          <label htmlFor="nsm-banner-link" className="font-sans text-[0.62rem] uppercase tracking-wider text-pe-muted">
             Banner: enlace
           </label>
           <input
+            id="nsm-banner-link"
             type="text"
             className={INPUT_CLASS}
             value={form.bannerLink}
@@ -250,7 +257,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
             checked={form.active}
             onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
             className="accent-pe-rose"
-          />
+          />{' '}
           Activa
         </label>
 
