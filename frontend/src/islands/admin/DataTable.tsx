@@ -44,8 +44,15 @@ export interface DataTableProps<T> {
 
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) return '-';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+  switch (typeof value) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+    case 'bigint':
+      return String(value);
+    default:
+      return JSON.stringify(value);
+  }
 }
 
 function rowKeyDownHandler<T>(onRowClick: (row: T) => void, row: T) {
