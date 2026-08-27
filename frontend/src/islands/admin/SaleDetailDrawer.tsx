@@ -24,13 +24,13 @@ type DrawerMode = 'idle' | 'void' | 'reissue';
 type IssuedDocumentType = 'BOLETA' | 'FACTURA';
 
 /** A delivered order cannot be cancelled, and a cancelled one is already done. */
-const CANCELLABLE: string[] = [
+const CANCELLABLE: Set<string> = new Set([
   'PENDING_PAYMENT',
   'PAYMENT_UNDER_REVIEW',
   'PAID',
   'PREPARING_ORDER',
   'SHIPPED',
-];
+]);
 
 const money = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -168,6 +168,10 @@ function DocumentViewer({
  */
 function isExternalProof(reference: string): boolean {
   return reference.startsWith('http://') || reference.startsWith('https://');
+}
+
+function taxRateSuffix(taxRate: number | null | undefined): string {
+  return taxRate != null ? ` (${taxRate}%)` : '';
 }
 
 function issueButtonLabel(mode: DrawerMode, documentType: IssuedDocumentType): string {
@@ -327,7 +331,7 @@ function VoidControls({
                 className="h-4 w-4 mt-0.5 accent-[var(--pe-ink)]"
               />
               <span className="text-[0.78rem]">
-                Cerrar también la venta como anulada
+                Cerrar también la venta como anulada{' '}
                 <span className="block text-[0.7rem] opacity-60">
                   Devuelve las unidades al stock y libera el código de descuento. Sin esto,
                   solo se anula la boleta y la venta sigue vigente.
@@ -791,7 +795,7 @@ export default function SaleDetailDrawer({
                 )}
                 <Row label="Neto" value={order.netAmount ? money.format(order.netAmount.amount) : '—'} />
                 <Row
-                  label={`IVA${order.taxRate != null ? ` (${order.taxRate}%)` : ''}`}
+                  label={`IVA${taxRateSuffix(order.taxRate)}`}
                   value={order.taxAmount ? money.format(order.taxAmount.amount) : '—'}
                 />
                 <div className="pt-2 border-t border-[var(--pe-border)]">
@@ -903,7 +907,7 @@ export default function SaleDetailDrawer({
                 </p>
                 {/* The pending-queue case: paid, undeclared, and being undone. There is no document
                     to void, but the sale still has to give its units back. */}
-                {canCancelSale && CANCELLABLE.includes(sale.orderStatus) && mode === 'idle' && (
+                {canCancelSale && CANCELLABLE.has(sale.orderStatus) && mode === 'idle' && (
                   <button
                     type="button"
                     className={btnDanger}
