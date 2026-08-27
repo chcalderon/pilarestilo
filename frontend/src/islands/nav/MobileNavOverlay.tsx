@@ -30,7 +30,7 @@ interface RootLevelProps {
 function RootLevelNav({ sections, locale, onClose, onSelectSection }: RootLevelProps) {
   return (
     <nav aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
-      <ul role="list" className="divide-y divide-pe-white/5">
+      <ul className="divide-y divide-pe-white/5">
         <li>
           <a href={`/${locale}/products`} onClick={onClose} className={itemClass}>
             {locale === 'es' ? 'Todo' : 'All'}
@@ -68,7 +68,7 @@ function SectionLevelNav({ section, locale, onClose, onSelectChild }: SectionLev
       <a href={`/${locale}/categories/${section.rootCategorySlug}`} onClick={onClose} className={viewAllClass}>
         {locale === 'es' ? `Ver todo en ${section.rootCategoryName}` : `View all in ${section.rootCategoryName}`}
       </a>
-      <ul role="list" className="divide-y divide-pe-white/5">
+      <ul className="divide-y divide-pe-white/5">
         {section.children.map((child) => (
           <li key={child.slug}>
             {child.children.length > 0 ? (
@@ -100,7 +100,7 @@ function ChildLevelNav({ child, locale, onClose }: ChildLevelProps) {
       <a href={`/${locale}/categories/${child.slug}`} onClick={onClose} className={viewAllClass}>
         {locale === 'es' ? `Ver todo en ${child.name}` : `View all in ${child.name}`}
       </a>
-      <ul role="list" className="divide-y divide-pe-white/5">
+      <ul className="divide-y divide-pe-white/5">
         {child.children.map((gc) => (
           <li key={gc.slug}>
             <a href={`/${locale}/categories/${gc.slug}`} onClick={onClose} className={grandchildLinkClass}>
@@ -140,13 +140,13 @@ function useEscapeToClose(open: boolean, close: () => void) {
 function useLockBodyScrollAndFocus(open: boolean, closeButtonRef: RefObject<HTMLButtonElement | null>) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    document.documentElement.setAttribute('data-mobile-nav-open', open ? 'true' : 'false');
+    document.documentElement.dataset.mobileNavOpen = open ? 'true' : 'false';
     if (open) {
       window.requestAnimationFrame(() => closeButtonRef.current?.focus());
     }
     return () => {
       document.body.style.overflow = '';
-      document.documentElement.setAttribute('data-mobile-nav-open', 'false');
+      document.documentElement.dataset.mobileNavOpen = 'false';
     };
   }, [open, closeButtonRef]);
 }
@@ -233,7 +233,7 @@ export default function MobileNavOverlay({ sections, locale }: Props) {
   useEscapeToClose(open, close);
   useLockBodyScrollAndFocus(open, closeButtonRef);
 
-  const current = stack[stack.length - 1];
+  const current = stack.at(-1)!;
   const canGoBack = stack.length > 1;
 
   const pushSection = (section: NavigationSectionDto) => {
