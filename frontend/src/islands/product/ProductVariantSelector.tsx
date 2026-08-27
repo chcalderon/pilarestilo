@@ -27,7 +27,8 @@ function slugify(input: string) {
   return input
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'variant';
+    .replace(/^-+/, '')
+    .replace(/-+$/, '') || 'variant';
 }
 
 const OPTION_SELECTED_CLASS = 'border-[#B76E79] bg-[#B76E79] text-white';

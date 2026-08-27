@@ -78,6 +78,6 @@ export const useAuthStore = create<AuthState>()(
 
 export function readAuthTokenCookie(): string | null {
   if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)pe_token=([^;]+)/);
+  const match = /(?:^|;\s*)pe_token=([^;]+)/.exec(document.cookie);
   return match ? decodeURIComponent(match[1]) : null;
 }
