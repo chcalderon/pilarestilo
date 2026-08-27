@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Loader2, Save, X, ChevronDown, ChevronRight, FolderOpen, Folder, Tag } from 'lucide-react';
 import {
   assignHeroModelFromProduct,
@@ -408,6 +408,16 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const [heroAssigningSlot, setHeroAssigningSlot] = useState<'left' | 'right' | null>(null);
   const [heroAssignFeedback, setHeroAssignFeedback] = useState('');
   const [unsavedConfirmOpen, setUnsavedConfirmOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  // A ref callback rather than a mount-effect: fires the instant the node is actually attached,
+  // regardless of which render that happens on. ProductForm itself is only ever rendered while
+  // the parent wants it open.
+  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    dialogRef.current = node;
+    if (node && !node.open) node.showModal();
+  }, []);
   const [variantTemplates, setVariantTemplates] = useState<VariantTemplateDto[]>([]);
   const [selectedVariantTemplateId, setSelectedVariantTemplateId] = useState<string | null>(null);
   const selectedTemplate = useMemo(
@@ -734,17 +744,12 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
     onCancel();
   }
 
-  useEffect(() => {
-    if (!unsavedConfirmOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setUnsavedConfirmOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [unsavedConfirmOpen]);
+  // Mounted only while open, so the ref callback fires exactly when it needs to.
+  const setConfirmDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    confirmDialogRef.current = node;
+    if (node && !node.open) node.showModal();
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
@@ -920,16 +925,17 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const categoryTree = buildCategoryTree(categories);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-      <div
-        className="absolute inset-0 bg-[#1A1A1A]/68 dark:bg-black/72"
-        onClick={handleAttemptClose}
-        aria-hidden="true"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]"
+    <>
+      <dialog
+        ref={setDialogRef}
+        onCancel={(event) => {
+          event.preventDefault();
+          handleAttemptClose();
+        }}
+        onClick={(event) => {
+          if (event.target === dialogRef.current) handleAttemptClose();
+        }}
+        className="m-auto max-w-xl max-h-[92vh] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] overflow-y-auto p-3 sm:p-5 border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl backdrop:bg-[#1A1A1A]/68 dark:backdrop:bg-black/72"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] dark:text-[#E8DCC8] text-xl font-light">
@@ -1392,41 +1398,44 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             </button>
           </div>
         </form>
-      </div>
+      </dialog>
       {unsavedConfirmOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/55"
-            onClick={() => setUnsavedConfirmOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="relative w-full max-w-sm border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5">
-            <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
+        <dialog
+          ref={setConfirmDialogRef}
+          onCancel={(event) => {
+            event.preventDefault();
+            setUnsavedConfirmOpen(false);
+          }}
+          onClick={(event) => {
+            if (event.target === confirmDialogRef.current) setUnsavedConfirmOpen(false);
+          }}
+          className="m-auto max-w-sm w-[calc(100%-2rem)] border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5 backdrop:bg-black/55"
+        >
+          <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
+            Salir sin guardar
+          </h3>
+          <p className="font-sans text-[0.82rem] text-pe-charcoal dark:text-[#D6C8B5]/75 leading-relaxed">
+            Tienes cambios sin guardar en este producto. Si sales ahora, los cambios se perderan.
+          </p>
+          <div className="mt-4 flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() => setUnsavedConfirmOpen(false)}
+              className="flex-1 inline-flex items-center justify-center border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
+            >
+              Seguir editando
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardAndClose}
+              className="flex-1 inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-600 dark:text-red-300 font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            >
               Salir sin guardar
-            </h3>
-            <p className="font-sans text-[0.82rem] text-pe-charcoal dark:text-[#D6C8B5]/75 leading-relaxed">
-              Tienes cambios sin guardar en este producto. Si sales ahora, los cambios se perderan.
-            </p>
-            <div className="mt-4 flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={() => setUnsavedConfirmOpen(false)}
-                className="flex-1 inline-flex items-center justify-center border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
-              >
-                Seguir editando
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscardAndClose}
-                className="flex-1 inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-600 dark:text-red-300 font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-              >
-                Salir sin guardar
-              </button>
-            </div>
+            </button>
           </div>
-        </div>
+        </dialog>
       )}
-    </div>
+    </>
   );
 }
 

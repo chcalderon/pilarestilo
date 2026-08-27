@@ -350,7 +350,13 @@ describe('SaleDetailDrawer', () => {
     const { onClose } = renderDrawer();
     await screen.findByText('Ana Perez');
 
-    await userEvent.keyboard('{Escape}');
+    /*
+     * A real <dialog> shown via showModal() turns Escape into a native `cancel` event on its
+     * own -- there is no keydown listener left in the component to catch. happy-dom's dialog
+     * polyfill sets the `open` attribute but does not wire that browser behavior up, so the
+     * event is dispatched directly here to stand in for it.
+     */
+    screen.getByRole('dialog').dispatchEvent(new Event('cancel', { cancelable: true }));
 
     expect(onClose).toHaveBeenCalled();
   });

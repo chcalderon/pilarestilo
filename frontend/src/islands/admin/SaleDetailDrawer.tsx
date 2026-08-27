@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, FileText, Copy, Check, ExternalLink, Upload, Ban, RotateCcw } from 'lucide-react';
 import {
   getOrderById,
@@ -553,13 +553,16 @@ export default function SaleDetailDrawer({
     };
   }, [sale.orderId, token]);
 
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [onClose]);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  /*
+   * A ref callback, not a mount-effect: <Overlay> renders null on its first pass and only
+   * portals its children in once its own effect resolves the host element, so a plain
+   * `useEffect(() => ref.current?.showModal(), [])` would fire before the dialog node exists.
+   */
+  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+    dialogRef.current = node;
+    if (node && !node.open) node.showModal();
+  }, []);
 
   async function reload() {
     setDocuments(await getSalesDocumentsByOrder(sale.orderId, token));
@@ -718,12 +721,17 @@ export default function SaleDetailDrawer({
 
   return (
     <Overlay>
-      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
-      <aside
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        ref={setDialogRef}
         aria-label={`Venta ${sale.publicReference ?? sale.orderId}`}
-        className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[560px] lg:max-w-[1000px] bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto"
+        onCancel={(event) => {
+          event.preventDefault();
+          onClose();
+        }}
+        onClick={(event) => {
+          if (event.target === dialogRef.current) onClose();
+        }}
+        className="fixed inset-y-0 right-0 m-0 h-full w-full max-w-[560px] lg:max-w-[1000px] p-0 border-0 flex flex-col bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto backdrop:bg-black/30 backdrop:backdrop-blur-[2px]"
       >
         <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-[var(--pe-border)] sticky top-0 bg-[var(--pe-surface-card)] z-10">
           <div>
@@ -964,7 +972,7 @@ export default function SaleDetailDrawer({
             </div>
           </div>
         </div>
-      </aside>
+      </dialog>
 
       {viewing && (
         <DocumentViewer

@@ -150,12 +150,18 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
         className={`fixed inset-0 bg-pe-black/30 z-40 cursor-default transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
-      {/* Drawer panel */}
-      <div
-        role="dialog"
+      {/*
+        Drawer panel. A native <dialog>, but used non-modally via the `open` attribute rather
+        than showModal(): the slide-in transform/opacity transition needs the element mounted and
+        visible (just off-screen) the whole time, and a modally-shown dialog is `display: none`
+        until shown, which would skip the transition entirely. The backdrop button above and the
+        Escape listener below do by hand what showModal() would otherwise give for free.
+      */}
+      <dialog
+        open={open}
         aria-modal="true"
         aria-label={DRAWER_TITLES[category]}
-        className={`fixed inset-y-0 right-0 w-80 bg-white dark:bg-[#1A1A1A] shadow-2xl z-50 flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 w-80 max-w-none max-h-none m-0 p-0 border-0 bg-white dark:bg-[#1A1A1A] shadow-2xl z-50 flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDE3D8] dark:border-white/10">
           <p className="text-[11px] tracking-widest uppercase text-pe-charcoal dark:text-pe-beige font-medium">
@@ -243,7 +249,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
             </button>
           </div>
         </form>
-      </div>
+      </dialog>
     </>
   );
 }
