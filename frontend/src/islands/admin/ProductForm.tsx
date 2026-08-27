@@ -199,6 +199,7 @@ const EMPTY_FORM = {
 };
 
 type VariantRow = {
+  id: string;
   attributes: VariantAttributeSelections;
   stock: string;
 };
@@ -250,6 +251,7 @@ function parseSafeStock(value: string | number): number {
 
 function toVariantRows(rows: FlatVariantRow[], schema: VariantSchema): VariantRow[] {
   return rows.map((row) => ({
+    id: crypto.randomUUID(),
     attributes: legacyVariantToSelections(
       {
         color: row.color,
@@ -267,6 +269,7 @@ function toVariantRows(rows: FlatVariantRow[], schema: VariantSchema): VariantRo
 
 function createVariantRow(schema: VariantSchema, stock = '0'): VariantRow {
   return {
+    id: crypto.randomUUID(),
     attributes: createEmptyVariantSelections(schema),
     stock,
   };
@@ -274,6 +277,7 @@ function createVariantRow(schema: VariantSchema, stock = '0'): VariantRow {
 
 function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema, toSchema: VariantSchema): VariantRow[] {
   return rows.map((row) => ({
+    id: row.id,
     attributes: legacyVariantToSelections(
       selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), fromSchema),
       toSchema,
@@ -365,6 +369,11 @@ export function validateProductForm(args: ValidateProductFormArgs): Record<strin
   if (combinationsError) errors.combinations = combinationsError;
 
   return errors;
+}
+
+function compareIds(left: string, right: string): number {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
 }
 
 export default function ProductForm({ product, onSave, onSaveFailed, onCancel, token }: Props) {
@@ -678,11 +687,6 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
     return Object.keys(e).length === 0;
   }
 
-  function compareIds(left: string, right: string): number {
-    if (left === right) return 0;
-    return left < right ? -1 : 1;
-  }
-
   function makeSnapshot(
     nextForm: typeof form,
     nextRows: VariantRow[],
@@ -916,19 +920,16 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const categoryTree = buildCategoryTree(categories);
 
   return (
-    <div
-      className="fixed inset-0 bg-[#1A1A1A]/68 dark:bg-black/72 z-50 flex items-center justify-center p-2 sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          handleAttemptClose();
-        }
-      }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div
-        className="bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]"
-        onMouseDown={(event) => event.stopPropagation()}
+        className="absolute inset-0 bg-[#1A1A1A]/68 dark:bg-black/72"
+        onClick={handleAttemptClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative bg-[#F8F4EF] dark:bg-[#181214] w-full max-w-xl max-h-[92vh] overflow-y-auto p-3 sm:p-5 shadow-2xl border border-pe-black/20 dark:border-[#3F2A2F]"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] dark:text-[#E8DCC8] text-xl font-light">
@@ -1027,9 +1028,9 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
               {errors.listAmount && <p className={errorClass}>{errors.listAmount}</p>}
             </div>
             <div className="col-span-2 sm:col-span-2 lg:col-span-1">
-              <label className={labelClass}>
+              <span className={labelClass}>
                 Condicion
-              </label>
+              </span>
               <div className="grid grid-cols-2 border border-pe-black/30 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1F1518]">
                 {[
                   { value: 'NEW' as const, label: 'Nuevo' },
@@ -1117,7 +1118,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
 
             <div className="space-y-2">
               {variantRows.map((row, index) => (
-                <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-black/10 dark:border-[#3F2A2F] p-2">
+                <div key={row.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-black/10 dark:border-[#3F2A2F] p-2">
                   <div className="sm:col-span-3 space-y-1">
                     <p className={labelClass + ' mb-0'}>{primaryAttribute.label}</p>
                     <input
@@ -1206,8 +1207,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
           </div>
 
           <div>
-            <label className={labelClass}>Imagen del producto</label>
             <ImageDropzone
+              label="Imagen del producto"
               folder="products"
               value={form.imageUrl.trim() || undefined}
               onUpload={url => {
@@ -1265,8 +1266,9 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 </button>
 
                 <div>
-                  <label className={labelClass + ' mb-1'}>Prompt transformacion (opcional)</label>
+                  <label htmlFor="pf-ai-transform-prompt" className={labelClass + ' mb-1'}>Prompt transformacion (opcional)</label>
                   <textarea
+                    id="pf-ai-transform-prompt"
                     className={inputClass + ' resize-none h-20'}
                     value={aiTransformPrompt}
                     onChange={(e) => setAiTransformPrompt(e.target.value)}
@@ -1392,18 +1394,13 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         </form>
       </div>
       {unsavedConfirmOpen && (
-        <div
-          className="fixed inset-0 z-[70] bg-black/55 flex items-center justify-center p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setUnsavedConfirmOpen(false);
-            }
-          }}
-        >
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div
-            className="w-full max-w-sm border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
+            className="absolute inset-0 bg-black/55"
+            onClick={() => setUnsavedConfirmOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative w-full max-w-sm border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5">
             <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
               Salir sin guardar
             </h3>
