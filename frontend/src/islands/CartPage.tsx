@@ -148,9 +148,10 @@ export default function CartPage({ locale }: Props) {
    * Unauthenticated customers are sent through login first and land back here. The gate also
    * exists server-side in middleware.ts; this only spares them a redirect round trip.
    */
+  const checkoutPath = `/${locale}/checkout`;
   const checkoutHref = hasSession
-    ? `/${locale}/checkout`
-    : `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/checkout`)}`;
+    ? checkoutPath
+    : `/${locale}/auth/login?redirect=${encodeURIComponent(checkoutPath)}`;
 
   if (items.length === 0) {
     return (

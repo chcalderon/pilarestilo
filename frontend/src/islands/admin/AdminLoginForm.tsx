@@ -59,10 +59,11 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="admin-login-email" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           Correo electrónico
         </label>
         <input
+          id="admin-login-email"
           type="email"
           required
           autoComplete="email"
@@ -74,11 +75,12 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="admin-login-password" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           Contraseña
         </label>
         <div className="relative">
           <input
+            id="admin-login-password"
             type={showPass ? 'text' : 'password'}
             required
             autoComplete="current-password"
