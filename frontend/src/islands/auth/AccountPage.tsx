@@ -43,6 +43,19 @@ interface Props {
   readonly locale: 'es' | 'en';
 }
 
+/** Picks one of two locale-paired labels by a boolean condition, without nesting ternaries. */
+function toggleLabel(
+  condition: boolean,
+  es: boolean,
+  trueEs: string,
+  trueEn: string,
+  falseEs: string,
+  falseEn: string,
+): string {
+  if (condition) return es ? trueEs : trueEn;
+  return es ? falseEs : falseEn;
+}
+
 type Tab = 'profile' | 'reviews' | 'orders' | 'addresses' | 'notifications';
 type ProofFeedback = { type: 'success' | 'error'; text: string };
 /**
@@ -365,21 +378,21 @@ function getOrderTimeline(status: OrderDto['status']) {
   }
 
   const currentIndex = ORDER_TIMELINE_FLOW.indexOf(status as TimelineStepStatus);
-  const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const normalizedIndex = Math.max(currentIndex, 0);
 
   return {
     cancelled: false,
     steps: ORDER_TIMELINE_FLOW.map((step, index) => ({
       step,
-      state: (
-        index < normalizedIndex
-          ? 'done'
-          : index === normalizedIndex
-            ? 'current'
-            : 'todo'
-      ) as TimelineState,
+      state: timelineStepState(index, normalizedIndex),
     })),
   };
+}
+
+function timelineStepState(index: number, currentIndex: number): TimelineState {
+  if (index < currentIndex) return 'done';
+  if (index === currentIndex) return 'current';
+  return 'todo';
 }
 
 function paymentMethodLabel(method: OrderDto['paymentMethod'], es: boolean) {
@@ -555,6 +568,11 @@ interface PaymentStatusBadgeProps {
   readonly es: boolean;
 }
 
+function noPaymentLabel(loadingPayments: boolean, es: boolean): string {
+  if (loadingPayments) return es ? 'Cargando...' : 'Loading...';
+  return es ? 'Sin pago asociado' : 'No linked payment';
+}
+
 function PaymentStatusBadge({ payment, loadingPayments, es }: PaymentStatusBadgeProps) {
   if (payment) {
     return (
@@ -565,7 +583,7 @@ function PaymentStatusBadge({ payment, loadingPayments, es }: PaymentStatusBadge
   }
   return (
     <span className="font-sans text-[0.62rem] tracking-wider uppercase text-pe-muted">
-      {loadingPayments ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Sin pago asociado' : 'No linked payment')}
+      {noPaymentLabel(loadingPayments, es)}
     </span>
   );
 }
@@ -640,7 +658,7 @@ function ProofUploadForm({ selectedFile, isSubmittingProof, es, onSelectProofFil
     <div className="flex flex-col gap-2">
       <div className="flex flex-col lg:flex-row lg:items-center gap-2">
         <label className="inline-flex items-center justify-center px-3 py-2 border border-pe-black/12 text-pe-muted hover:text-pe-charcoal hover:border-pe-black/20 transition-colors cursor-pointer font-sans text-[0.68rem] tracking-wider uppercase">
-          {selectedFile ? (es ? 'Cambiar imagen' : 'Change image') : (es ? 'Seleccionar imagen' : 'Select image')}
+          {toggleLabel(Boolean(selectedFile), es, 'Cambiar imagen', 'Change image', 'Seleccionar imagen', 'Select image')}
           <input
             type="file"
             accept="image/*"
@@ -658,7 +676,7 @@ function ProofUploadForm({ selectedFile, isSubmittingProof, es, onSelectProofFil
           disabled={isSubmittingProof}
           className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
         >
-          {isSubmittingProof ? (es ? 'Enviando...' : 'Submitting...') : (es ? 'Enviar comprobante' : 'Submit proof')}
+          {toggleLabel(isSubmittingProof, es, 'Enviando...', 'Submitting...', 'Enviar comprobante', 'Submit proof')}
         </button>
       </div>
 
@@ -741,9 +759,7 @@ function GatewaySimulationButtons({
         disabled={disabled}
         className="inline-flex items-center justify-center px-3 py-2 bg-pe-rose text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
       >
-        {isStartingGatewayCheckout
-          ? (es ? 'Abriendo...' : 'Opening...')
-          : (es ? 'Ir a pagar' : 'Pay now')}
+        {toggleLabel(isStartingGatewayCheckout, es, 'Abriendo...', 'Opening...', 'Ir a pagar', 'Pay now')}
       </button>
       <button
         type="button"
@@ -751,7 +767,7 @@ function GatewaySimulationButtons({
         disabled={disabled}
         className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-green-700 transition-colors disabled:opacity-60"
       >
-        {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular aprobado' : 'Simulate approve')}
+        {toggleLabel(isSimulatingGateway, es, 'Simulando...', 'Simulating...', 'Simular aprobado', 'Simulate approve')}
       </button>
       <button
         type="button"
@@ -759,7 +775,7 @@ function GatewaySimulationButtons({
         disabled={disabled}
         className="inline-flex items-center justify-center px-3 py-2 border border-red-300 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
       >
-        {isSimulatingGateway ? (es ? 'Simulando...' : 'Simulating...') : (es ? 'Simular rechazado' : 'Simulate reject')}
+        {toggleLabel(isSimulatingGateway, es, 'Simulando...', 'Simulating...', 'Simular rechazado', 'Simulate reject')}
       </button>
     </div>
   );
@@ -840,9 +856,7 @@ function OrderFooterActions({
           disabled={isConfirmingDelivery}
           className="inline-flex items-center justify-center px-3 py-2 bg-emerald-700 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-emerald-800 transition-colors disabled:opacity-60"
         >
-          {isConfirmingDelivery
-            ? (es ? 'Confirmando...' : 'Confirming...')
-            : (es ? 'Marcar como recibido' : 'Mark as received')}
+          {toggleLabel(isConfirmingDelivery, es, 'Confirmando...', 'Confirming...', 'Marcar como recibido', 'Mark as received')}
         </button>
       )}
       <span className="font-sans text-[0.72rem] text-pe-muted">
@@ -1057,9 +1071,7 @@ function AvatarUploadCard({
         </div>
         <div className="flex flex-col gap-2">
           <p className="font-sans text-[0.72rem] text-pe-muted">
-            {avatarDragging
-              ? (es ? 'Suelta la imagen aquí' : 'Drop the image here')
-              : (es ? 'Arrastra una foto aquí o' : 'Drag a photo here or')}
+            {toggleLabel(avatarDragging, es, 'Suelta la imagen aquí', 'Drop the image here', 'Arrastra una foto aquí o', 'Drag a photo here or')}
           </p>
           <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 border border-pe-black/15 font-sans text-[0.68rem] tracking-wider uppercase text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors duration-200">
             <Camera size={12} />
@@ -1178,7 +1190,7 @@ function ProfileDetailsCard({
           disabled={disabled}
           className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
         >
-          {profileSaving ? (es ? 'Guardando...' : 'Saving...') : (es ? 'Guardar perfil' : 'Save profile')}
+          {toggleLabel(profileSaving, es, 'Guardando...', 'Saving...', 'Guardar perfil', 'Save profile')}
         </button>
         {profileFeedback && (
           <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
@@ -1265,7 +1277,7 @@ function ChangePasswordCard({
           disabled={passwordSaving}
           className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-[#3A3A3A] transition-colors disabled:opacity-60"
         >
-          {passwordSaving ? (es ? 'Actualizando...' : 'Updating...') : (es ? 'Actualizar contraseña' : 'Update password')}
+          {toggleLabel(passwordSaving, es, 'Actualizando...', 'Updating...', 'Actualizar contraseña', 'Update password')}
         </button>
         {passwordFeedback && (
           <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
@@ -1425,7 +1437,7 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
                     review.approved ? 'bg-green-50 text-green-800' : 'bg-pe-cream text-pe-muted'
                   }`}
                 >
-                  {review.approved ? (es ? 'Aprobada' : 'Approved') : (es ? 'Pendiente' : 'Pending')}
+                  {toggleLabel(review.approved, es, 'Aprobada', 'Approved', 'Pendiente', 'Pending')}
                 </span>
                 <span className="font-sans text-[0.68rem] text-pe-muted">
                   {new Date(review.createdAt).toLocaleDateString(es ? 'es-CL' : 'en-US')}
@@ -1489,9 +1501,7 @@ function AddressCard({ address, es, addressDefaultingId, addressDeletingId, onEd
             disabled={addressDefaultingId === address.id}
             className="px-3 py-1.5 border border-pe-rose/30 text-pe-rose-ink font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose/10 transition-colors disabled:opacity-60"
           >
-            {addressDefaultingId === address.id
-              ? (es ? 'Guardando...' : 'Saving...')
-              : (es ? 'Marcar principal' : 'Set default')}
+            {toggleLabel(addressDefaultingId === address.id, es, 'Guardando...', 'Saving...', 'Marcar principal', 'Set default')}
           </button>
         )}
         <button
@@ -1500,9 +1510,7 @@ function AddressCard({ address, es, addressDefaultingId, addressDeletingId, onEd
           disabled={addressDeletingId === address.id}
           className="px-3 py-1.5 border border-red-200 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
         >
-          {addressDeletingId === address.id
-            ? (es ? 'Eliminando...' : 'Deleting...')
-            : (es ? 'Eliminar' : 'Delete')}
+          {toggleLabel(addressDeletingId === address.id, es, 'Eliminando...', 'Deleting...', 'Eliminar', 'Delete')}
         </button>
       </div>
     </li>
@@ -1534,7 +1542,7 @@ function AddressFormFields({
         onChange={(e) => onDraftChange((p) => ({ ...p, regionId: e.target.value, cityId: '', comunaId: '', region: '', city: '', comuna: '' }))}
         className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2 bg-white"
       >
-        <option value="">{loadingLocations ? (es ? 'Cargando ubicaciones...' : 'Loading locations...') : (es ? 'Selecciona region' : 'Select region')}</option>
+        <option value="">{toggleLabel(loadingLocations, es, 'Cargando ubicaciones...', 'Loading locations...', 'Selecciona region', 'Select region')}</option>
         {locationRegions.map((region) => (
           <option key={region.id} value={region.id}>{region.name}</option>
         ))}
@@ -1589,9 +1597,7 @@ function AddressModal({
       <div className="w-full max-w-xl bg-pe-white border border-pe-black/10 p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <p className="font-display text-pe-black text-xl">
-            {editingAddressId
-              ? (es ? 'Editar dirección' : 'Edit address')
-              : (es ? 'Nueva dirección' : 'New address')}
+            {toggleLabel(Boolean(editingAddressId), es, 'Editar dirección', 'Edit address', 'Nueva dirección', 'New address')}
           </p>
           <button
             type="button"
@@ -1627,7 +1633,7 @@ function AddressModal({
             disabled={addressSaving}
             className="px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
           >
-            {addressSaving ? (es ? 'Guardando...' : 'Saving...') : (es ? 'Guardar dirección' : 'Save address')}
+            {toggleLabel(addressSaving, es, 'Guardando...', 'Saving...', 'Guardar dirección', 'Save address')}
           </button>
           <button
             type="button"
@@ -2192,13 +2198,14 @@ export default function AccountPage({ locale }: Props) {
 
       if (isSameOrdersView) {
         const reference = session.gatewayReference?.trim() ?? '';
+        const referenceSuffix = reference ? ` (${reference})` : '';
         setGatewayFeedbackByOrder((prev) => ({
           ...prev,
           [orderId]: {
             type: 'success',
             text: es
-              ? `Checkout simulado iniciado${reference ? ` (${reference})` : ''}. Puedes usar Simular aprobado/rechazado para cerrar el flujo.`
-              : `Simulated checkout started${reference ? ` (${reference})` : ''}. Use Simulate approve/reject to complete the flow.`,
+              ? `Checkout simulado iniciado${referenceSuffix}. Puedes usar Simular aprobado/rechazado para cerrar el flujo.`
+              : `Simulated checkout started${referenceSuffix}. Use Simulate approve/reject to complete the flow.`,
           },
         }));
         return;
@@ -2299,7 +2306,7 @@ export default function AccountPage({ locale }: Props) {
     } catch (error) {
       setAddressFeedback({
         type: 'error',
-        text: error instanceof Error ? error.message : (es ? 'No se pudo eliminar la dirección.' : 'Could not delete address.'),
+        text: errorMessageOr(error, es ? 'No se pudo eliminar la dirección.' : 'Could not delete address.'),
       });
     } finally {
       setAddressDeletingId(null);
@@ -2316,7 +2323,7 @@ export default function AccountPage({ locale }: Props) {
     } catch (error) {
       setAddressFeedback({
         type: 'error',
-        text: error instanceof Error ? error.message : (es ? 'No se pudo actualizar principal.' : 'Could not set default address.'),
+        text: errorMessageOr(error, es ? 'No se pudo actualizar principal.' : 'Could not set default address.'),
       });
     } finally {
       setAddressDefaultingId(null);
@@ -2425,9 +2432,13 @@ export default function AccountPage({ locale }: Props) {
         ...prev,
         [orderId]: {
           type: 'error',
-          text: isTooLarge
-            ? (es ? 'La imagen supera el tamano maximo (10 MB). Intenta con una mas liviana.' : 'Image exceeds max size (10 MB). Please use a smaller file.')
-            : (es ? 'No pudimos enviar el comprobante. Intenta nuevamente.' : 'Could not submit proof. Try again.'),
+          text: toggleLabel(
+            isTooLarge, es,
+            'La imagen supera el tamano maximo (10 MB). Intenta con una mas liviana.',
+            'Image exceeds max size (10 MB). Please use a smaller file.',
+            'No pudimos enviar el comprobante. Intenta nuevamente.',
+            'Could not submit proof. Try again.',
+          ),
         },
       }));
     } finally {
@@ -2452,9 +2463,13 @@ export default function AccountPage({ locale }: Props) {
         ...prev,
         [orderId]: {
           type: 'success',
-          text: simulation === 'APPROVED'
-            ? (es ? 'Simulacion aplicada: pago aprobado.' : 'Simulation applied: payment approved.')
-            : (es ? 'Simulacion aplicada: pago rechazado.' : 'Simulation applied: payment rejected.'),
+          text: toggleLabel(
+            simulation === 'APPROVED', es,
+            'Simulacion aplicada: pago aprobado.',
+            'Simulation applied: payment approved.',
+            'Simulacion aplicada: pago rechazado.',
+            'Simulation applied: payment rejected.',
+          ),
         },
       }));
     } catch (error) {
