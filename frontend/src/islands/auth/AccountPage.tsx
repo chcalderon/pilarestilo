@@ -1389,13 +1389,19 @@ interface ReviewsTabProps {
 }
 
 function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: ReviewsTabProps) {
-  return (
-    <div className="max-w-2xl">
-      {loadingReviews ? (
+  if (loadingReviews) {
+    return (
+      <div className="max-w-2xl">
         <div className="flex justify-center py-16">
           <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
         </div>
-      ) : reviews.length === 0 ? (
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="max-w-2xl">
         <div className="text-center py-20">
           <Star size={32} className="text-pe-muted mx-auto mb-3" />
           <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no escribiste resenas' : 'No reviews yet'}</p>
@@ -1406,9 +1412,14 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
             {es ? 'Explorar productos' : 'Browse products'}
           </a>
         </div>
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {reviews.map((review) => (
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <ul className="flex flex-col gap-4">
+        {reviews.map((review) => (
             <li key={review.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-2">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-0.5">
@@ -1446,7 +1457,6 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
             </li>
           ))}
         </ul>
-      )}
     </div>
   );
 }
@@ -1678,6 +1688,42 @@ function AddressesTab({
   editingAddressId, addressDraft, onDraftChange, loadingLocations, locationRegions, cityOptions,
   comunaOptions, addressSaving, onSaveAddress, onCloseModal,
 }: AddressesTabProps) {
+  let addressListContent: React.ReactNode;
+  if (loadingAddresses) {
+    addressListContent = (
+      <div className="flex justify-center py-16">
+        <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
+      </div>
+    );
+  } else if (addresses.length === 0) {
+    addressListContent = (
+      <div className="bg-pe-white border border-pe-black/8 p-6">
+        <p className="font-sans text-sm text-pe-muted">
+          {es
+            ? 'Aún no tienes direcciones. Agrega una para usarla en el carrito.'
+            : 'You have no addresses yet. Add one to use it at checkout.'}
+        </p>
+      </div>
+    );
+  } else {
+    addressListContent = (
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {addresses.map((address) => (
+          <AddressCard
+            key={address.id}
+            address={address}
+            es={es}
+            addressDefaultingId={addressDefaultingId}
+            addressDeletingId={addressDeletingId}
+            onEdit={onEditAddress}
+            onSetDefault={onSetDefaultAddress}
+            onDelete={onDeleteAddress}
+          />
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div className="max-w-4xl flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -1699,34 +1745,7 @@ function AddressesTab({
         </p>
       )}
 
-      {loadingAddresses ? (
-        <div className="flex justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
-        </div>
-      ) : addresses.length === 0 ? (
-        <div className="bg-pe-white border border-pe-black/8 p-6">
-          <p className="font-sans text-sm text-pe-muted">
-            {es
-              ? 'Aún no tienes direcciones. Agrega una para usarla en el carrito.'
-              : 'You have no addresses yet. Add one to use it at checkout.'}
-          </p>
-        </div>
-      ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {addresses.map((address) => (
-            <AddressCard
-              key={address.id}
-              address={address}
-              es={es}
-              addressDefaultingId={addressDefaultingId}
-              addressDeletingId={addressDeletingId}
-              onEdit={onEditAddress}
-              onSetDefault={onSetDefaultAddress}
-              onDelete={onDeleteAddress}
-            />
-          ))}
-        </ul>
-      )}
+      {addressListContent}
 
       {addressModalOpen && (
         <AddressModal
@@ -1810,44 +1829,56 @@ function OrdersTab({
   onSelectProofFile, onOpenOwnProof, onSubmitProof, onStartGatewayCheckout, onSimulateGateway,
   onConfirmDelivery, onReturnRequested,
 }: OrdersTabProps) {
-  return (
-    <div className="max-w-3xl">
-      {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
-      {loadingOrders ? (
+  if (loadingOrders) {
+    return (
+      <div className="max-w-3xl">
+        {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
         <div className="flex justify-center py-16">
           <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
         </div>
-      ) : orders.length === 0 ? (
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="max-w-3xl">
+        {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
         <EmptyOrdersState es={es} locale={locale} />
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {orders.map((order) => (
-            <OrderListItem
-              key={order.id}
-              order={order}
-              es={es}
-              payment={paymentsByOrder[order.id]}
-              loadingPayments={loadingPayments}
-              isSubmittingProof={proofSubmittingByOrder[order.id] === true}
-              proofFeedback={proofFeedbackByOrder[order.id]}
-              isStartingGatewayCheckout={gatewayCheckoutLoadingByOrder[order.id] === true}
-              isSimulatingGateway={gatewaySimulatingByOrder[order.id] === true}
-              isConfirmingDelivery={deliveryConfirmingByOrder[order.id] === true}
-              gatewayFeedback={gatewayFeedbackByOrder[order.id]}
-              selectedFile={proofFilesByOrder[order.id]}
-              existingReturn={myReturns.find((r) => r.orderId === order.id) ?? null}
-              effectiveToken={effectiveToken}
-              onSelectProofFile={(file) => onSelectProofFile(order.id, file)}
-              onOpenOwnProof={() => onOpenOwnProof(order.id)}
-              onSubmitProof={() => onSubmitProof(order.id)}
-              onStartGatewayCheckout={() => onStartGatewayCheckout(order.id)}
-              onSimulateGateway={(simulation) => onSimulateGateway(order.id, simulation)}
-              onConfirmDelivery={() => onConfirmDelivery(order.id)}
-              onReturnRequested={onReturnRequested}
-            />
-          ))}
-        </ul>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl">
+      {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
+      <ul className="flex flex-col gap-4">
+        {orders.map((order) => (
+          <OrderListItem
+            key={order.id}
+            order={order}
+            es={es}
+            payment={paymentsByOrder[order.id]}
+            loadingPayments={loadingPayments}
+            isSubmittingProof={proofSubmittingByOrder[order.id] === true}
+            proofFeedback={proofFeedbackByOrder[order.id]}
+            isStartingGatewayCheckout={gatewayCheckoutLoadingByOrder[order.id] === true}
+            isSimulatingGateway={gatewaySimulatingByOrder[order.id] === true}
+            isConfirmingDelivery={deliveryConfirmingByOrder[order.id] === true}
+            gatewayFeedback={gatewayFeedbackByOrder[order.id]}
+            selectedFile={proofFilesByOrder[order.id]}
+            existingReturn={myReturns.find((r) => r.orderId === order.id) ?? null}
+            effectiveToken={effectiveToken}
+            onSelectProofFile={(file) => onSelectProofFile(order.id, file)}
+            onOpenOwnProof={() => onOpenOwnProof(order.id)}
+            onSubmitProof={() => onSubmitProof(order.id)}
+            onStartGatewayCheckout={() => onStartGatewayCheckout(order.id)}
+            onSimulateGateway={(simulation) => onSimulateGateway(order.id, simulation)}
+            onConfirmDelivery={() => onConfirmDelivery(order.id)}
+            onReturnRequested={onReturnRequested}
+          />
+        ))}
+      </ul>
     </div>
   );
 }
@@ -2350,9 +2381,7 @@ export default function AccountPage({ locale }: Props) {
         ...prev,
         [orderId]: {
           type: 'error',
-          text: error instanceof Error
-            ? error.message
-            : (es ? 'No se pudo confirmar la entrega.' : 'Could not confirm delivery.'),
+          text: errorMessageOr(error, es ? 'No se pudo confirmar la entrega.' : 'Could not confirm delivery.'),
         },
       }));
     } finally {
@@ -2373,9 +2402,7 @@ export default function AccountPage({ locale }: Props) {
         ...prev,
         [orderId]: {
           type: 'error',
-          text: error instanceof Error
-            ? error.message
-            : (es ? 'No se pudo abrir el comprobante.' : 'Could not open the receipt.'),
+          text: errorMessageOr(error, es ? 'No se pudo abrir el comprobante.' : 'Could not open the receipt.'),
         },
       }));
     }
