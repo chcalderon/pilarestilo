@@ -14,7 +14,7 @@ interface Props {
 const EASING = [0.22, 0.61, 0.36, 1] as const;
 const VISIBLE_LIMIT = 4;
 
-function priceFormat(amount: number, currency = 'CLP', locale: Locale) {
+function priceFormat(amount: number, locale: Locale, currency = 'CLP') {
   return new Intl.NumberFormat(locale === 'es' ? 'es-CL' : 'en-US', {
     style: 'currency',
     currency,
@@ -87,7 +87,7 @@ function PanelFooter({ locale, subtotal, viewCartHref, onClose, padded }: PanelF
     <div className={`border-t border-pe-charcoal/10 px-4 ${padded ? 'py-4' : 'py-3'} flex-shrink-0`}>
       <div className="flex justify-between items-center mb-3">
         <span className="font-sans text-xs tracking-widest uppercase text-pe-muted">Subtotal</span>
-        <span className="font-sans text-sm font-medium text-pe-black">{priceFormat(subtotal, 'CLP', locale)}</span>
+        <span className="font-sans text-sm font-medium text-pe-black">{priceFormat(subtotal, locale)}</span>
       </div>
       <a
         href={viewCartHref}
@@ -118,17 +118,15 @@ function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boole
       const items = getFocusables();
       if (items.length === 0) return;
       const first = items[0];
-      const last = items[items.length - 1];
+      const last = items.at(-1);
       if (e.shiftKey) {
         if (document.activeElement === first) {
           e.preventDefault();
           last?.focus();
         }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
+      } else if (document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
       }
     };
 
