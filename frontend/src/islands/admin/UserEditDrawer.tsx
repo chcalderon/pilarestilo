@@ -652,7 +652,7 @@ export default function UserEditDrawer({
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: workerRole, vigencyStart, vigencyEnd: vigencyEnd || null }),
       });
-      if (!r.ok) throw new Error();
+      if (!r.ok) throw new Error(`assign role failed with status ${r.status}`);
       onSaved();
       flashOk(setRoleOk);
     } catch {
@@ -671,7 +671,7 @@ export default function UserEditDrawer({
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) throw new Error();
+      if (!r.ok) throw new Error(`revoke role failed with status ${r.status}`);
       onSaved();
       flashOk(setRoleOk);
     } catch {
@@ -780,8 +780,7 @@ export default function UserEditDrawer({
               No puedes modificar tu propia cuenta desde aquí. Usa{' '}
               <a href="/es/account?tab=profile" className="underline">
                 Mi cuenta
-              </a>
-              .
+              </a>.
             </p>
           )}
 

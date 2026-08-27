@@ -384,26 +384,33 @@ function refundedContent(request: ReturnRequestDto) {
 function DineroSection({
   request, closed, canRefund, busy, account, onAccountChange, refund, onRefundChange, onAttachAccount, onRegisterRefund,
 }: DineroSectionProps) {
+  let content: React.ReactNode;
+  if (request.status === 'REFUNDED') {
+    content = refundedContent(request);
+  } else if (canRefund && !closed) {
+    content = (
+      <RefundForm
+        request={request}
+        account={account}
+        onAccountChange={onAccountChange}
+        refund={refund}
+        onRefundChange={onRefundChange}
+        busy={busy}
+        onAttachAccount={onAttachAccount}
+        onRegisterRefund={onRegisterRefund}
+      />
+    );
+  } else {
+    content = (
+      <p className="text-sm opacity-60">
+        {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
+      </p>
+    );
+  }
+
   return (
     <Section label="Dinero">
-      {request.status === 'REFUNDED' ? (
-        refundedContent(request)
-      ) : canRefund && !closed ? (
-        <RefundForm
-          request={request}
-          account={account}
-          onAccountChange={onAccountChange}
-          refund={refund}
-          onRefundChange={onRefundChange}
-          busy={busy}
-          onAttachAccount={onAttachAccount}
-          onRegisterRefund={onRegisterRefund}
-        />
-      ) : (
-        <p className="text-sm opacity-60">
-          {closed ? 'Devolución cerrada sin reembolso.' : 'No tienes permiso para registrar reembolsos.'}
-        </p>
-      )}
+      {content}
     </Section>
   );
 }
