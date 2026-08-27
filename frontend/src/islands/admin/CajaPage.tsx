@@ -176,9 +176,9 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-5 px-5 py-6 overflow-y-auto">
           {category === 'ADJUSTMENT' && (
             <div>
-              <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
+              <span className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-2">
                 Tipo de ajuste
-              </label>
+              </span>
               <div className="flex gap-2">
                 {(['IN', 'OUT'] as const).map((t) => (
                   <button
@@ -547,10 +547,8 @@ export default function CajaPage() {
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
             <span className="text-sm text-pe-muted dark:text-pe-beige/70">
-              Caja abierta
-              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
-              Sesión #{shortId(caja.id)}
-              <span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
+              Caja abierta<span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
+              Sesión #{shortId(caja.id)}<span className="mx-1.5 text-pe-muted dark:text-pe-beige/30">·</span>
               {formatTime(caja.openedAt)}h
             </span>
           </div>
@@ -716,8 +714,9 @@ export default function CajaPage() {
       <div className="space-y-5">
         <div className="border border-[#EDE3D8] dark:border-white/10 p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Estado</label>
+            <label htmlFor="caja-status-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Estado</label>
             <select
+              id="caja-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'OPEN' | 'CLOSED')}
               className="w-full border border-[#EDE3D8] dark:border-white/20 bg-transparent px-3 py-2 text-sm text-pe-charcoal dark:text-pe-beige focus:outline-hidden focus:border-[#B76E79]"
@@ -728,8 +727,9 @@ export default function CajaPage() {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Desde</label>
+            <label htmlFor="caja-from-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Desde</label>
             <input
+              id="caja-from-filter"
               type="date"
               value={fromFilter}
               onChange={(e) => setFromFilter(e.target.value)}
@@ -737,8 +737,9 @@ export default function CajaPage() {
             />
           </div>
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Hasta</label>
+            <label htmlFor="caja-to-filter" className="block text-[10px] tracking-widest uppercase text-pe-muted dark:text-pe-beige/50 mb-1">Hasta</label>
             <input
+              id="caja-to-filter"
               type="date"
               value={toFilter}
               onChange={(e) => setToFilter(e.target.value)}
