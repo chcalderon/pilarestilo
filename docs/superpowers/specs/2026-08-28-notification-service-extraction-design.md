@@ -1,217 +1,426 @@
 # Notification Service Extraction — Design Spec
 
 **Date:** 2026-08-28
-**Status:** approved by user, pending implementation plan
+**Status:** approved by user; **revised 2026-08-28 after reading the actual module** — the first
+approved version rested on assumptions the code contradicts. This revision is what the implementation
+plan is written from.
 
-## Context and motivation
+---
 
-The backend monolith currently holds two full `DataSource`/`EntityManagerFactory`/`TransactionManager`
-triples in one Spring Boot process: the main `pilarestilo` database and `pilarestilo_notifications`
-(split into its own database on 2026-08-20, see the `notification-database-split` memory). This is
-what produces the two `@Primary @ConfigurationProperties` beans in `PersistenceConfig.java`.
+## 0. What changed in this revision, and why
 
-Despite living in one process, the split was done with real hexagonal discipline: only one class,
-`NotificationRepositoryAdapter`, touches the notifications database, sitting behind domain ports
-(`InAppNotificationRepository`, `InAppNotificationPort`). Triggering is already 100% event-driven
-(a `Kafka*NotificationListener` per dispatcher). The database-per-service half of extraction is
-already done — only the process boundary is missing.
+The first version of this spec said notification-service would "touch exactly one database"
+(`pilarestilo_notifications`), with the only cross-service dependency being a Redis-cached lookup of
+`system_settings.notification_providers` through a new internal backend endpoint.
 
-This is the safest extraction candidate available in the codebase: unlike `order-service` (which
-writes to the shared `orders` table alongside the monolith — the source of 5 documented bugs),
-nothing else touches `pilarestilo_notifications`. There is no shared-table hazard here.
+Reading the module showed every one of those assumptions is wrong:
 
-This extraction is also stated to be the first step of a longer-term direction: the monolith
-disaggregating into microservices, module by module, until nothing is left. The order and
-boundaries for the other 16+ hexagonal modules are explicitly **out of scope** for this spec — a
-separate brainstorming session, when picked up. See the `monolith-dissolution-direction` memory.
+1. **The events carry only IDs.** `OrderCreated(orderId, customerId, occurredAt)` and nothing more;
+   the same for `OrderStatusChanged`, `PaymentConfirmed`, `PaymentRegistered`, `PaymentSubmitted`,
+   `PaymentRejected`, `SalesDocumentIssued`, `ReturnRequested`, `ReturnApproved`, `RefundRegistered`,
+   `UserRegistered`, `DiscountCodeAssigned`. Every dispatcher **re-reads the aggregate** from the
+   main database to compose a message.
 
-## Prior art — how the four existing services are built
+2. **Six of seven dispatchers read main-DB aggregates:**
 
-`services/product-service`, `inventory-service`, `order-service`, `payment-service` are each:
-- An independent Maven project (own `pom.xml`, `groupId com.pilarestilo`, own package namespace —
-  e.g. `com.pilarestilo.orderservice`, **not** `com.pilarestilo.order`). No shared compiled module
-  with `backend/`. Extracting code into one of these means porting/reimplementing it, not moving a
-  package.
-- Spring Boot 4.1.1, Java 25, multi-stage `Dockerfile` (`maven:3.9-eclipse-temurin-25` build stage →
-  `eclipse-temurin:25-jre-alpine` runtime stage), own `EXPOSE` port (8081-8084 used so far).
-- Connected to the **same shared** `pilarestilo` database as the monolith (`SPRING_DATASOURCE_URL:
-  jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}`) — none of the four have their own
-  database. This is different from notification, which already has a dedicated database.
-- Wired into the full observability stack: `/actuator/prometheus` scraped by
-  `infra/monitoring/prometheus/prometheus.yml` as a new `job_name`; `APP_TRACING_ENABLED` /
-  `APP_TRACING_OTLP_ENDPOINT` / `APP_TRACING_SAMPLING_PROBABILITY` sending spans through the OTel
-  Collector to Tempo, same as the backend.
-- Behind Caddy, routed by HTTP method and path prefix (`GET/HEAD /api/products*` →
-  `product-service:8081`, etc.); everything else (`POST/PATCH/DELETE /api/*`) still goes to
-  `backend:8080`.
+   | Dispatcher | Reads from `pilarestilo` |
+   |---|---|
+   | `OrderNotificationDispatcher` | `OrderRepository`, `UserRepository` |
+   | `PaymentNotificationDispatcher` | `OrderRepository`, `UserRepository`, `PaymentRepository` |
+   | `BillingNotificationDispatcher` | `SalesDocumentRepository`, `OrderRepository`, `UserRepository` |
+   | `ReturnNotificationDispatcher` | `ReturnRequestRepository`, `OrderRepository`, `UserRepository`, `findByRoleIn` |
+   | `UserNotificationDispatcher` | `UserRepository` |
+   | `DiscountNotificationDispatcher` | `UserRepository` |
+   | `PaymentRegisteredNotificationListener` (logic in the listener, not a dispatcher) | `PaymentRepository`, `OrderRepository`, `UserRepository`, `SystemSettingsRepository`, `BankTransferDeadline` |
+
+   `NotificationComposer` renders full order lines, per-item variant + unit price, subtotal /
+   discount / net / tax / total, shipping courier and zone, the payment's bank-transfer snapshot,
+   the sales document's folio and amounts, and the return's kind / reason / deadline / refund block.
+
+3. **The "settings lookup" is not one provider list.** `SmtpEmailNotificationSender`,
+   `SendGridEmailNotificationSender`, `TwilioWhatsAppNotificationSender`,
+   `SimulatedWhatsAppNotificationSender` and `N8nWebhookNotificationSender` each read the **entire
+   messaging configuration block** from `system_settings` (`smtp_*`, `sendgrid_*`,
+   `whatsapp_twilio_*`, `whatsapp_simulated_*`, `n8n_*`, `notification_providers`, `updated_by`),
+   including **encrypted secrets** decrypted through `SystemSettingsCryptoService`. An internal
+   endpoint here would mean streaming decrypted SMTP passwords and Twilio tokens as plaintext JSON.
+
+4. **A domain write is buried in a dispatcher.** `PaymentNotificationDispatcher.onPaymentSubmitted`
+   calls `updateOrderStatusUseCase.execute(order.getId(), OrderStatus.PAYMENT_UNDER_REVIEW)`. That
+   is order-domain behaviour, not notification behaviour, and it cannot travel to a read-only
+   service.
+
+**The decision that follows (section 3): notification-service connects to the shared `pilarestilo`
+database read-only — exactly like the four existing services — and maps only the columns it needs.
+No internal API. No Redis.**
+
+---
+
+## 1. Context and motivation
+
+The backend monolith holds two full `DataSource` / `EntityManagerFactory` / `TransactionManager`
+triples in one process: the main `pilarestilo` database and `pilarestilo_notifications` (split off
+2026-08-20, `notification-database-split` memory). That is what forces the hand-built
+`PersistenceConfig` + `EntityScanConfig` + `NotificationsPersistenceConfig` +
+`NotificationsFlywayMigrator` machinery, and the `EntityScanCoversEveryModuleTest` guard.
+
+Only one class, `NotificationRepositoryAdapter`, touches the notifications database, behind the
+`InAppNotificationRepository` / `InAppNotificationPort` domain ports. Triggering is already 100%
+event-driven (a `Kafka*NotificationListener` per dispatcher). The database-per-service half of the
+split is done; the process boundary is not.
+
+This extraction is the first concrete step of a stated longer-term direction — the monolith
+disaggregating module by module until nothing is left. The order and boundaries of the other 16+
+modules are **out of scope**; that is its own brainstorming session (`monolith-dissolution-direction`
+memory).
+
+---
+
+## 2. Prior art — how the four existing services are built
+
+`services/{product,inventory,order,payment}-service` are each:
+
+- An independent Maven project (Spring Boot 4.1.1, Java 25, own `pom.xml`, `groupId
+  com.pilarestilo`, own package namespace e.g. `com.pilarestilo.orderservice` — **not**
+  `com.pilarestilo.order`). No compiled module is shared with `backend/`; extracting code means
+  porting it, not moving a package.
+- Multi-stage `Dockerfile` (`maven:3.9-eclipse-temurin-25` build → `eclipse-temurin:25-jre-alpine`
+  runtime), own `EXPOSE` port (8081–8084 used).
+- **Connected to the same shared `pilarestilo` database as the monolith**
+  (`SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}`),
+  `ddl-auto: validate`, `open-in-view: false`. None has its own database. Each maps a **hand-picked
+  subset** of tables and columns as JPA entities — e.g. `order-service`'s `SystemSettingsEntity`
+  maps 8 of the ~90 columns of `system_settings`, only the bank-transfer and shipping ones it reads.
+- Wired into observability: `/actuator/prometheus` scraped as a new `job_name` in
+  `infra/monitoring/prometheus/prometheus.yml`; `APP_TRACING_ENABLED` /
+  `APP_TRACING_OTLP_ENDPOINT` / `APP_TRACING_SAMPLING_PROBABILITY` to the OTel Collector → Tempo.
+- Behind Caddy, routed by HTTP method + path prefix, with `backend:8080` as a `lb_policy first`
+  fallback when the `microservices` profile is off.
+- `profiles: ["microservices"]` in `infra/docker-compose.yml`; `depends_on: postgres:
+  condition: service_healthy`.
+- `sonar.coverage.jacoco.xmlReportPaths` in the pom + a jacoco `check` execution at `verify` with a
+  **0.50 line-coverage** bundle minimum. Part of the existing CI services matrix.
 - Internal service-to-service calls use a shared-secret header token
-  (`APP_ORDER_INTERNAL_TOKEN` / `APP_PAYMENT_INTERNAL_TOKEN`), set from the same env var the
-  monolith uses to call out (`APP_ORDER_REMOTE_SERVICE_TOKEN` etc.).
-- `profiles: ["microservices"]` in `infra/docker-compose.yml`; only started when that profile is
-  active. `depends_on: postgres: condition: service_healthy`.
-- Sonar/Jacoco: `sonar.coverage.jacoco.xmlReportPaths` property in the pom, feeds the same
-  `sonar-scan.sh` sweep as everything else; part of the CI matrix already covering four services.
+  (`APP_ORDER_INTERNAL_TOKEN` etc.); `SecurityConfig` is stateless JWT, CSRF off, and a
+  `JwtAuthenticationFilter` reads the credential from the `Authorization` header only.
 
-None of the four use Redis today. Notification-service would be the first.
+**None of the four consume Kafka.** notification-service is the first service to be a Kafka consumer
+— but the whole consumer stack (`KafkaDomainEventsConfiguration`, `DomainEventTopics`,
+`KafkaDomainEventsProperties`) already exists in `backend/src/main/java/com/pilarestilo/shared/` and
+is transport-only; it ports cleanly.
 
-## 1. Architecture and components
+**None of the four use Redis.** With this decision, neither does notification-service.
 
-New independent project: `services/notification-service/`, following the exact skeleton above.
-Port **8085** (next free in the 8081-8084 sequence).
+---
 
-**Moves out of the backend, completely, with no copy left behind:**
-- The 7 `*NotificationDispatcher` classes (`OrderNotificationDispatcher`,
-  `PaymentNotificationDispatcher`, `BillingNotificationDispatcher`, `DiscountNotificationDispatcher`,
-  `ReturnNotificationDispatcher`, `UserNotificationDispatcher`) plus `NotificationComposer` and
-  `EmailLayout`.
-- All senders: `SmtpEmailNotificationSender`, `SendGridEmailNotificationSender`,
+## 3. Decision: shared read-only database
+
+notification-service connects to the shared `pilarestilo` database **read-only**, exactly as the
+four existing services do, and maps only the columns it needs. It owns `pilarestilo_notifications`
+read-write. It ports `SystemSettingsCryptoService` (a pure AES-GCM helper — no database, keyed off
+the existing `SYSTEM_SETTINGS_CRYPTO_SECRET` env) so it decrypts stored secrets itself, identically
+to the monolith today.
+
+### Why not an internal read API on the monolith
+
+- The senders need the full `system_settings` messaging block **with decrypted secrets**. An
+  internal endpoint means SMTP passwords, the Twilio auth token, the SendGrid key and the n8n key
+  crossing the wire as plaintext JSON on every refresh. Reading the ciphertext column and decrypting
+  locally is what the monolith does now and is strictly better.
+- It introduces a **service → monolith** call direction that nothing in the codebase does today.
+- Total cost is higher: ~6 internal endpoints + 6 HTTP clients + 6 contract tests, *and* the
+  settings/crypto problem still has to be solved on top.
+
+### Why not enrich the events
+
+- ~11 event records, published by `order` / `payment` / `billing` / `returns` / `user` /
+  `discount` and consumed by other listeners, would have to carry every field the composer renders,
+  plus the customer's email and phone — PII onto Kafka topics.
+- The role-based recipient lists (`findByRoleIn([ADMIN, ADMINISTRACION])` for payment reviewers and
+  return handlers) are a query, not an event payload.
+- Largest blast radius of the three options for the least architectural gain.
+
+### Accepted cost — cross-codebase schema coupling
+
+notification-service's `ddl-auto: validate` will now also validate its mapped subsets of `orders`,
+`order_items`, `users`, `payments`, `sales_documents`, `return_requests` and `system_settings`. A
+monolith migration that renames or drops a column notification-service maps breaks its startup until
+its entity is updated **in the same deploy**. This is the same coupling the four existing services
+already carry, and the reads here are of settled-state rows (an order that exists, a payment that
+confirmed, a document that issued), not fast-changing derived values. Mitigations in section 10.
+
+`orders` / `order_items` is the one table with a real write-from-two-places hazard already
+(`order-service` performs the INSERT in production). notification-service only **reads** it — it
+adds a reader, not a third writer — but the CLAUDE.md "any change to `orders` / `order_items` …
+must be applied in the same commit" rule now extends to `services/notification-service/` as well.
+
+---
+
+## 4. Architecture
+
+New independent project **`services/notification-service/`**, port **8085**, following the exact
+skeleton of the other four.
+
+### 4.1 Moves out of the backend completely (no copy left behind)
+
+Ported into `com.pilarestilo.notificationservice.*` (thin event DTOs, view entities and composer
+signatures change; message-building bodies do not):
+
+- **Dispatchers (7):** `OrderNotificationDispatcher`, `PaymentNotificationDispatcher`,
+  `BillingNotificationDispatcher`, `DiscountNotificationDispatcher`, `ReturnNotificationDispatcher`,
+  `UserNotificationDispatcher`, and a **new** `PaymentRegisteredNotificationDispatcher` (see 6.2).
+- **Composition:** `NotificationComposer`, `EmailLayout` (pure — ports verbatim), `EmailFormat`,
+  the `email/pilar-estilo-logo.png` classpath resource.
+- **Senders (8):** `SmtpEmailNotificationSender`, `SendGridEmailNotificationSender`,
   `TwilioWhatsAppNotificationSender`, `SimulatedWhatsAppNotificationSender`,
   `N8nWebhookNotificationSender`, `InAppNotificationSender`, `LogNotificationSender`,
-  `SystemSettingsNotificationSender`.
-- The 7 `Kafka*NotificationListener` classes. The in-process (non-Kafka) `@EventListener` variants
-  are **not** ported — see the Kafka-only decision below.
-- `NotificationController` and its four use cases (`GetNotificationsUseCase`,
-  `GetUnreadCountUseCase`, `MarkNotificationReadUseCase`, `MarkAllNotificationsReadUseCase`).
-- All persistence: `NotificationEntity`, `NotificationJpaRepository`,
-  `NotificationsPersistenceConfig`, `NotificationsFlywayMigrator` — pointed at
-  `pilarestilo_notifications`, which already exists in production.
+  `SystemSettingsNotificationSender` (`@Primary`, fans out over every configured channel).
+- **Kafka listeners (7):** one per dispatcher, transport-only. The in-process `@EventListener`
+  twins are **not** ported (Kafka-only, section 7).
+- **In-app read side:** `NotificationController` (`GET /api/notifications`,
+  `GET /api/notifications/unread-count`, `PUT /api/notifications/{id}/read`,
+  `PUT /api/notifications/read-all`), its four use cases, `InAppNotificationDto`, the domain models
+  (`InAppNotification`, `NotificationMessage`, `NotificationRecipient`, `NotificationType`) and
+  ports (`InAppNotificationRepository`, `InAppNotificationPort`, `NotificationSender`).
+- **Persistence:** `NotificationEntity`, `NotificationJpaRepository`, `NotificationRepositoryAdapter`
+  → pointed at `pilarestilo_notifications`. **Simplification:** standalone, the "a migrator that is
+  deliberately not a `Flyway` bean" workaround is gone — a normal `spring-boot-flyway` bean
+  migrates the one database. The `@Transactional(NotificationsPersistenceConfig.TRANSACTION_MANAGER)`
+  qualifiers drop to plain `@Transactional`.
 
-**Simplification available once standalone:** with only one database in this service, the custom
-"a migrator bean that is deliberately not a `Flyway` bean" workaround (needed in the monolith only
-to avoid `FlywayAutoConfiguration` backing off the *main* migrations) is no longer necessary — a
-normal `spring-boot-flyway`-autoconfigured `Flyway` bean works, because there is no second
-DataSource to protect.
+> **Note on the controller verbs:** the current controller uses `@PutMapping` for
+> `/{id}/read` and `/read-all` (the first spec said PATCH). Caddy routes must match the real verbs:
+> **`GET`, `HEAD`, `PUT`** on `/api/notifications*`.
 
-**Stays in the backend:** nothing notification-specific. The backend continues publishing domain
-events to Kafka exactly as today (`KafkaDomainEventPublisher`), and gains one new internal
-read-only endpoint (see below).
+### 4.2 Read-only view of the shared `pilarestilo` database
 
-**Using the infrastructure that already runs, not reinventing anything:**
+New JPA entities in `com.pilarestilo.notificationservice.persistence.readonly.*`, `insertable =
+false, updatable = false` throughout, mapping the **minimum** columns the composer and dispatchers
+read. Several are copyable from `order-service`:
 
-| Existing piece | How notification-service uses it |
+| Entity (table) | Columns mapped (minimum) |
 |---|---|
-| Kafka | Sole trigger — consumes the same topics already published (OrderCreated, PaymentConfirmed, etc.) as another consumer group |
-| Prometheus | Exposes `/actuator/prometheus`; new `notification_service` job added to `prometheus.yml`, same pattern as the other four |
-| Tempo + OTel Collector | Same `APP_TRACING_ENABLED`/`APP_TRACING_OTLP_ENDPOINT` — an event's path from publish to send/store becomes a traceable span for the first time |
-| Redis | First service to use it besides the backend: caches the `system_settings.notification_providers` lookup with a short TTL, gated by the existing `APP_CACHE_REDIS_ENABLED` flag. Optional — falls back to calling the backend directly if Redis is off |
-| Postgres | Its own database, `pilarestilo_notifications`, already exists |
-| Caddy | `GET`, `HEAD`, **and `PATCH`** on `/api/notifications*` route directly to the new service (not just reads — see routing note below) |
-| SonarQube + Jacoco | Same `sonar.coverage.jacoco.xmlReportPaths` pattern, enters the existing scan |
-| CI | Fifth entry in the existing services test/build matrix |
+| `system_settings` | `id`, `notification_providers`, `updated_by`, all `smtp_*`, all `sendgrid_*`, all `whatsapp_twilio_*`, `whatsapp_simulated_to/sender`, all `n8n_*`, `bank_transfer_auto_cancel_enabled/timeout_minutes` (for the transfer deadline) |
+| `orders` | `id`, `public_reference`, `customer_id`, `status`, `subtotal_amount`+currency, `discount_amount`, `net_amount`, `tax_amount`, `tax_rate`, `total_amount`, `shipping_courier_id`, `shipping_courier_name`, `shipping_zone_code` |
+| `order_items` | `order_id`, `product_name`, `variant_color`, `variant_size`, `quantity`, `unit_price_amount`+currency |
+| `users` | `id`, `email`, `phone`, `full_name`, `role`, `active`, `notification_channel_preference` |
+| `payments` | `id`, `order_id`, `method`, `status`, `reviewer_id`, `rejection_reason`, `proof_reference`, `created_at`, all `transfer_account_*` snapshot columns |
+| `sales_documents` | `id`, `type`, `folio`, `net_amount`, `tax_amount`, `tax_rate`, `total_amount` |
+| `return_requests` | `id`, `order_id`, `kind`, `reason`, `deadline_at`, `refund_amount`+currency, `refund_method`, `refund_reference`, `refunded_at` |
 
-**Routing note:** product/inventory/order/payment only extracted *reads* — writes still land on
-shared tables the monolith keeps governing. Notification, with a clean cut and its own database,
-extracts both: `PATCH /api/notifications/:id/read` and `/read-all` go to the new service too, since
-nothing else in the system ever needs to write there.
+Repositories: Spring Data `JpaRepository`, read methods only. Adapters implement the same domain
+ports the dispatchers already depend on (`OrderReadPort`, `CustomerReadPort`, `PaymentReadPort`,
+`SalesDocumentReadPort`, `ReturnReadPort`, `MessagingSettingsPort`), so the dispatcher bodies barely
+change.
 
-**Operational note:** because triggering is 100% Kafka, `notification-service` needs the `kafka`
-profile active alongside `microservices`. Running `microservices` alone leaves it unable to resolve
-the `kafka` host — the same failure mode already documented for the backend, now applying to a new
-consumer.
+### 4.3 Uses the infrastructure that already runs
 
-## 2. Data flow
+| Piece | Use |
+|---|---|
+| Kafka | Sole trigger. Consumes the same `pe.domain.*` topics as a new consumer group `pe-notification-service`. Config ported from `shared/infrastructure/kafka`. |
+| Postgres | `pilarestilo_notifications` (owned, RW) + `pilarestilo` (shared, RO). |
+| Prometheus | `/actuator/prometheus`; new `notification_service` job in `prometheus.yml`. |
+| Tempo + OTel | Same tracing envs. First time an event's publish→send path is one traceable span. |
+| Caddy | `GET`, `HEAD`, `PUT` on `/api/notifications*` → `notification-service:8085`, `backend:8080` fallback. |
+| Sonar + Jacoco | Same pom pattern; 5th entry in the CI services matrix. 0.50 line-coverage gate. |
+
+### 4.4 Stays in the backend
+
+Nothing notification-specific. The backend keeps publishing domain events to Kafka
+(`KafkaDomainEventPublisher`) unchanged, and gains one small listener for the relocated order-status
+write (6.1). No internal endpoint.
+
+---
+
+## 5. Data flow
 
 **Trigger (event → notification):**
 ```
-Monolith (OrderCreated, PaymentConfirmed, etc.)
-  -> Kafka topic (unchanged)
-  -> notification-service: Kafka*NotificationListener
-  -> *NotificationDispatcher composes the message (NotificationComposer/EmailLayout)
-  -> looks up active channels (see below)
-  -> each enabled sender, in its own try (an SMTP outage must not block WhatsApp)
-  -> NotificationRepositoryAdapter persists the in-app record to pilarestilo_notifications
+backend (OrderCreated, PaymentConfirmed, …)  ->  Kafka topic (unchanged)
+  ->  notification-service Kafka*NotificationListener  (group pe-notification-service)
+  ->  *NotificationDispatcher
+        reads what it needs from pilarestilo (RO):   order + items, customer, payment,
+                                                     sales document, return request
+        composes via NotificationComposer / EmailLayout
+  ->  SystemSettingsNotificationSender:
+        reads system_settings.notification_providers (RO) + messaging config,
+        decrypts secrets locally with SystemSettingsCryptoService
+        fans out to every enabled channel, each in its own try
+  ->  NotificationRepositoryAdapter writes the in-app row to pilarestilo_notifications (RW)
 ```
-
-**Active-channel lookup (new, on every event dispatched):**
-```
-notification-service -> Redis: GET notif:providers
-  hit  -> use that list
-  miss -> GET http://backend:8080/api/internal/notification-settings (header X-Service-Token)
-          -> store in Redis with a 60s TTL
-          -> use that list
-```
-60s TTL: an admin toggling this is rare (an occasional panel change), so up to a minute of lag
-between "saved in the panel" and "the next event respects it" is acceptable, and avoids hitting the
-backend on every notification.
 
 **In-app reads (the bell, live):**
 ```
-Frontend -> Caddy -> notification-service (GET /api/notifications, GET /unread-count)
-Frontend -> Caddy -> notification-service (PATCH /:id/read, PATCH /read-all)
+Frontend -> Caddy -> notification-service   GET /api/notifications, GET .../unread-count
+Frontend -> Caddy -> notification-service   PUT /api/notifications/{id}/read, PUT .../read-all
 ```
-Never touches the monolith — the new service fully owns this data.
+Never touches the monolith. The new service fully owns this data.
 
-## 3. Cutover plan
+No Redis, no internal HTTP. Every lookup is a local DB read; volume is a handful of events per day.
 
-Central risk of a clean cut: while both the monolith and the new service consume the same Kafka
-topic at the same time, every event fires twice — a customer receives a duplicated email. This
-cannot be gradual; it has to be atomic.
+---
 
-**Sequence within a single deploy:**
-1. `notification-service` built and tested locally against the full stack (Kafka + microservices +
-   cache profiles), with its Kafka listeners **disabled** until step 3.
-2. In the same deploy: the backend gains the internal endpoint
-   `GET /api/internal/notification-settings` (must exist before the new service's first event
-   arrives, or that first lookup fails).
-3. In the same deploy: the 7 `Kafka*NotificationListener` classes (and the rest of the module) are
-   deleted from the backend **and** `notification-service`'s listeners are enabled — one commit, one
-   deploy, no window where both listen at once.
-4. Caddy's routing changes in the same deploy: `/api/notifications*` (GET and PATCH) now points at
-   the new service.
-5. Mandatory pre-production verification, not optional: a real order against the full local stack,
-   using the fixed test customer (`test_estilo@pilarestilo.com`), confirming **exactly one** email
-   arrives — not zero, not two — and that the in-app bell works end to end. This is not just UX:
-   Ley 21.398 requires that written confirmation, so a botched cutover here carries legal weight,
-   not only a cosmetic one.
+## 6. Monolith-side changes (same commit, same deploy as the cutover)
 
-**Accepted cost of "clean cut":** no toggle to fall back to instantly. If something breaks
-post-cutover, rollback means reverting the whole deploy (the monolith regains the code, the new
-container stops) — not flipping a flag. This was chosen deliberately over keeping dead code as a
-safety net, to avoid two copies of the same logic drifting apart.
+### 6.1 Relocate the order-status write
 
-## 4. Error handling
+`PaymentNotificationDispatcher.onPaymentSubmitted` moves an order to `PAYMENT_UNDER_REVIEW` when a
+proof is uploaded. Extract that transition into a **backend** listener on `PaymentSubmitted`
+(e.g. `MarkOrderUnderReviewOnPaymentSubmittedListener` in `payment/` or `order/`), with both an
+in-process and a Kafka transport like every other event handler, calling the existing
+`UpdateOrderStatusUseCase`. notification-service's ported `PaymentNotificationDispatcher.onPaymentSubmitted`
+then only emails the reviewers.
 
-Today's failure mode is silent by design and that should not be inherited: `InAppNotificationSender`
-logs and swallows; if the transaction manager were ever misconfigured, a notification would simply
-not exist, with nothing but a WARN. In the new service:
+### 6.2 Give `PaymentRegistered` a dispatcher first
 
-- Each sender stays in its own try (already true today — an SMTP outage must not take WhatsApp
-  down), but a failure now increments a Prometheus counter
-  (`notification_send_failures_total{channel=...}`), not just a log line. With Grafana already
-  provisioned, a dead channel becomes visible instead of guessed at.
-- **Active-channel lookup** (Redis → backend): if the internal backend call fails and Redis has
-  nothing cached, the code does not silently assume "no channels active" — it retries with a short
-  backoff (2-3 attempts), and on continued failure the event is marked pending/retryable rather than
-  dropped. Losing an event here means a customer never gets their purchase confirmation.
-- **Kafka**: a listener exception must not auto-acknowledge the offset — Kafka redelivers. A retry
-  limit plus a dead-letter topic is needed so a genuinely malformed message doesn't loop forever
-  (unresolved today, since this code has never run as an isolated consumer before).
-- **In-app write** (`NotificationRepositoryAdapter`): failures here must be loud — exception
-  propagates, Kafka redelivers. This is the one database this service owns; there is no "the rest
-  still works" to fall back on.
+`PaymentRegisteredNotificationListener` holds its logic directly in the listener, against the
+CLAUDE.md "add behaviour to the dispatcher, never a listener" rule. Before porting, refactor it in
+the monolith into a `PaymentRegisteredNotificationDispatcher` with transport-only listeners
+(matches the other six), verify green, **then** port. The `BankTransferDeadline.forPayment(payment,
+settings)` calculation ports alongside it (needs `payments.created_at` +
+`bank_transfer_auto_cancel_*` settings).
 
-## 5. Testing
+### 6.3 Delete the module, collapse back to one datasource
 
-- **Unit**: dispatchers, `NotificationComposer`/`EmailLayout`, and every sender — ported with their
-  existing backend tests, same coverage, same style. No test hits real SMTP/SendGrid/Twilio; they
-  stay mocked exactly as today.
-- **Integration (Testcontainers)**: real Postgres for `pilarestilo_notifications` and real Kafka
-  consuming a test event end to end (publish `OrderCreated` → assert the right sender was invoked
-  and the in-app row landed). The `system_settings` lookup is stubbed with WireMock — no need to run
-  the full backend just for this.
-- **Internal-endpoint contract**: unlike every prior extraction (which has zero tests crossing the
-  monolith/service boundary), this one has real HTTP between two independent codebases. A contract
-  test on each side against the same `GET /api/internal/notification-settings` response shape
-  doesn't eliminate drift risk, but it's strictly more than any other extraction has today.
-- **CI coverage gate**: same as the other four services (Jacoco, the existing 0.50 line-coverage
-  bar), joins the existing matrix rather than inventing a new one.
-- **Pre-production verification** (restated from the cutover plan): a real order against the full
-  local stack, fixed test customer, exactly one email, working bell — non-negotiable before that
-  deploy.
+- Delete `com.pilarestilo.notification.**` and `com.pilarestilo.notifications.**`.
+- Delete `NotificationsPersistenceConfig`, `NotificationsFlywayMigrator`, and the
+  `com.pilarestilo.notifications` carve-outs: the `excludeFilters` in `PersistenceConfig`'s
+  `@EnableJpaRepositories`, the `NotificationsPersistenceConfig.ROOT_PACKAGE` line in
+  `EntityScanCoversEveryModuleTest`.
+- With the second `EntityManagerFactory` gone, `PersistenceConfig` and `EntityScanConfig` can revert
+  to Boot's auto-configuration (`HibernateJpaAutoConfiguration` + default `com.pilarestilo` entity
+  scan + `spring-boot-flyway` autoconfig). Delete `EntityScanCoversEveryModuleTest`
+  (its reason for existing — "the main factory must not scan `com.pilarestilo.notifications`" — is
+  gone). Keep `spring-boot-flyway` on the classpath (CLAUDE.md: without it migrations never run).
+- Delete the notifications datasource envs from the backend service in `docker-compose.yml`
+  (`APP_NOTIFICATION_DATASOURCE_*`) and `.env.example`; move them to the new service.
+- Delete backend-only notification tests / `NotificationsTestDatabase` / `NotificationsUseTheirOwnDatabaseIT`.
+- **Keep** `infra/postgres/init/01-notifications-database.sh` (creates `pilarestilo_notifications`)
+  and **do not** drop the old `notifications` table on the main DB yet — it is still the rollback
+  path (`notification-database-split` memory).
 
-## Open items for the implementation plan
+### 6.4 Infra
 
-- Exact DTO shape for `GET /api/internal/notification-settings`.
-- Dead-letter topic naming convention and retry-count threshold for the Kafka consumer.
-- Whether `notification_send_failures_total` needs a Grafana panel added now or later (not
-  required for v1 functionality).
+- **Caddy:** a `@notification_reads` block (`method GET HEAD PUT`, `path /api/notifications
+  /api/notifications/*`) → `reverse_proxy notification-service:8085 backend:8080` with the same
+  `lb_policy first` fallback shape as the others. Placed before the generic `handle /api/*`.
+- **prometheus.yml:** `job_name: notification_service`, target `notification-service:8085`,
+  `metrics_path: /actuator/prometheus`.
+- **docker-compose.yml:** `notification-service` under `profiles: ["microservices"]`, `SERVER_PORT
+  "8085"`, shared datasource envs, `APP_NOTIFICATION_DATASOURCE_*`, `SYSTEM_SETTINGS_CRYPTO_SECRET`,
+  `KAFKA_BOOTSTRAP_SERVERS`, `APP_DOMAIN_EVENTS_KAFKA_*`, all `NOTIFICATION_PROVIDER` /
+  `EMAIL_SMTP_*` / `SENDGRID_*` / `WHATSAPP_*` env fallbacks (moved from the backend block — the
+  backend no longer needs them), tracing envs, healthcheck on `/actuator/health`,
+  `depends_on: postgres: service_healthy`. **Operational:** it needs the `kafka` profile up
+  alongside `microservices` or it cannot resolve the broker — same failure mode already documented
+  for the backend.
+- **CI:** 5th entry in the services build/test matrix.
+- **CLAUDE.md:** extend the "two codebases write the `orders` table" section to name
+  `services/notification-service/` as a reader that must be kept in lockstep on `orders` /
+  `order_items` / `users` / `payments` / `sales_documents` / `return_requests` / `system_settings`
+  column changes. Add the module to the services list and the Caddy routing table.
+
+---
+
+## 7. Cutover plan
+
+The risk of a clean cut: while both the monolith and the new service consume the same Kafka topic,
+every event fires twice — a customer gets a duplicated email. This must be atomic.
+
+**Single deploy, single commit for steps 3–5:**
+
+1. `notification-service` built and green locally against the full stack (`kafka` + `microservices`
+   profiles), Kafka listeners **disabled** by config until step 3.
+2. Backend gains the relocated order-status listener (6.1) and the `PaymentRegisteredNotificationDispatcher`
+   refactor (6.2), each verified green on its own.
+3. Same commit: the 7 `Kafka*NotificationListener` classes and the whole `notification` /
+   `notifications` code are **deleted from the backend** *and* notification-service's listeners are
+   **enabled** — one deploy, no window where both consume.
+4. Same deploy: Caddy routes `/api/notifications*` (GET/HEAD/PUT) to `notification-service:8085`.
+5. **Mandatory pre-production verification** (not optional): a real order against the full local
+   stack with the fixed test customer (`test_estilo@pilarestilo.com`), confirming **exactly one**
+   confirmation email arrives — not zero, not two — and the in-app bell works end to end. Ley 21.398
+   requires that written confirmation, so a botched cutover here has legal weight, not just UX.
+
+**Rollback** is reverting the whole deploy (the monolith regains the code, the container stops) —
+there is no toggle. Chosen deliberately over keeping dead code that would drift.
+
+---
+
+## 8. Error handling
+
+Today's silent-by-design failure mode must not be inherited:
+
+- **Senders:** each stays in its own try (an SMTP outage must not take WhatsApp down). A failure now
+  increments `notification_send_failures_total{channel=...}` (Micrometer) as well as logging, so a
+  dead channel is visible in Grafana instead of guessed at. If **no** channel accepts, that stays an
+  ERROR log (as today).
+- **Kafka consumer:** reuse the shared `DefaultErrorHandler` +
+  `DeadLetterPublishingRecoverer` config verbatim — retry `retryMaxAttempts` (3) with
+  `FixedBackOff` (1500 ms), then publish to `<topic>.dlt` (the `DomainEventTopics.deadLetterTopicFor`
+  convention). A listener exception must not auto-ack. **This resolves open item #2 of the first
+  spec** — the convention already exists, it is not invented here.
+- **In-app write** (`NotificationRepositoryAdapter`): failures propagate — Kafka redelivers. This is
+  the one database the service owns; there is no "the rest still works".
+- **Read of a shared-DB aggregate that isn't there yet:** the dispatchers already handle this
+  (`log.warn` + return, or send to `NotificationRecipient.unknown()`), because the same race exists
+  today between a Kafka event and its aggregate's commit. Ported behaviour, not new.
+
+---
+
+## 9. Testing
+
+- **Unit:** dispatchers, `NotificationComposer` / `EmailLayout`, every sender — ported with their
+  existing backend tests, same coverage and style. No test hits real SMTP / SendGrid / Twilio.
+- **Read-only mapping guard (Testcontainers):** one integration test that boots the service against
+  a real `pilarestilo` schema (the monolith's Flyway output) and asserts every read-only entity
+  validates — this is what turns a monolith column rename into a red local test instead of a
+  production restart loop.
+- **Kafka integration (Testcontainers):** real Postgres for `pilarestilo_notifications` + real
+  Kafka, publish `OrderCreated` end to end → assert the right sender was invoked and the in-app row
+  landed. `system_settings` seeded in the shared test DB, not stubbed.
+- **In-app own-database IT:** port `NotificationsUseTheirOwnDatabaseIT`'s intent — a saved row lands
+  in `pilarestilo_notifications` and reads come back from it.
+- **CI coverage gate:** same 0.50 line-coverage bundle minimum as the other four services.
+- **Pre-production verification** (restated from section 7): real order, fixed test customer,
+  exactly one email, working bell — non-negotiable before that deploy.
+
+---
+
+## 10. Schema-coupling risk and mitigation
+
+1. **Map the minimum.** Only the columns in the 4.2 table, `insertable=false, updatable=false`.
+   Fewer mapped columns, smaller target for a breaking migration.
+2. **The 9.2 mapping guard test** makes a break a local red test.
+3. **CLAUDE.md rule extended** (6.4) so `orders` / `users` / etc. changes are a known
+   two-repo (now three-repo) change, same as `orders` already is for `order-service`.
+4. **Reads are of settled state** — an order/payment/document/return that already reached a terminal
+   or near-terminal status. Not stock, not price, not anything a second writer is racing.
+5. **Deploy them together.** notification-service ships in the same pipeline run as the backend, so
+   a coordinated migration + entity change lands as one deploy.
+
+---
+
+## 11. Open items resolved / remaining
+
+**Resolved by this revision:**
+
+- *Data access mechanism* → shared read-only DB (section 3).
+- *DTO shape for an internal settings endpoint* → **no endpoint**; the service maps
+  `system_settings` messaging columns directly and decrypts locally.
+- *Dead-letter topic naming + retry threshold* → reuse `DomainEventTopics` /
+  `KafkaDomainEventsProperties`: `<topic>.dlt`, 3 attempts, 1500 ms backoff.
+- *Redis dependency* → dropped entirely.
+
+**Remaining for the implementation plan / later:**
+
+- Whether `notification_send_failures_total` gets a Grafana panel now or later (not required for v1
+  function).
+- Exact package/name for the relocated order-status listener (6.1) — decide in the plan against
+  where `UpdateOrderStatusUseCase` and `PaymentSubmitted` already live.
+- The `notification` domain enum `NotificationChannelPreference` currently lives on
+  `NotificationRecipient`; confirm `users.notification_channel_preference` column name during the
+  read-entity task.
+- Whether to keep `SendGridEmailNotificationSender` / `TwilioWhatsAppNotificationSender` at all, or
+  drop them as unused (the shop's direction is SMTP + n8n + WhatsApp-simulated). Not required for
+  the extraction; a separate cleanup.
