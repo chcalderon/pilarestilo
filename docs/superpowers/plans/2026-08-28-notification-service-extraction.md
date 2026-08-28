@@ -13,8 +13,9 @@ database.
 reads the shared `pilarestilo` database **read-only** — mapping only the columns its dispatchers and
 composer need, exactly as `order-service` maps a subset of `system_settings`. It consumes the
 existing `pe.domain.*` Kafka topics as a new consumer group. No internal HTTP API, no Redis.
-Cutover is atomic: the monolith's notification code is deleted and the new service's Kafka listeners
-are enabled in one deploy.
+Cutover is two deploys, reversible by flags: deploy 1 enables the service and gates the monolith's
+notification consumers off (its code stays); deploy 2, after production verification, deletes the
+dead module. A consumer-group offset pre-seed prevents history replay.
 
 **Tech Stack:** Java 25, Spring Boot 4.1.1, Spring Kafka, Spring Data JPA, PostgreSQL, jjwt 0.12.6,
 Micrometer/Prometheus, OpenTelemetry, Testcontainers, Maven. Docker Compose + Caddy for the stack.
@@ -48,8 +49,10 @@ argues from that spec.
   order-service's plugin config).
 - **Do NOT drop** the old `notifications` table on the main DB, and **keep**
   `infra/postgres/init/01-notifications-database.sh`. Both are the rollback path.
-- **Atomic cutover:** Tasks 13 and 14 land in the **same commit and same deploy**. They are split
-  only so a reviewer can gate each half.
+- **Two-deploy reversible cutover:** Task 13 (monolith flag) ships anytime. Task 14 is deploy 1 —
+  service on, monolith consumers gated off, code kept. Task 16 is deploy 2 — delete the dead module,
+  only after Task 15 verifies deploy 1 in production. Rollback at any point = flip the two flags
+  (`APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED`, `APP_NOTIFICATION_LISTENERS_ENABLED`), no deploy.
 - Work on `develop`. Verify against the local Docker stack before any push to `master`
   (`verify-in-local-docker-before-pushing` memory). Frequent commits, one per task.
 
@@ -112,13 +115,14 @@ services/notification-service/
     metrics/     NotificationMetrics    # notification_send_failures_total{channel}
 ```
 
-Monolith changes (Tasks 1, 2, 13):
+Monolith changes (Tasks 1, 2, 13, 16):
 ```
 backend/src/main/java/com/pilarestilo/
-  payment/ or order/  MarkOrderUnderReviewOnPaymentSubmittedListener (+ kafka twin)   # Task 1
+  payment/  MarkOrderUnderReviewOnPaymentSubmittedHandler (+ 2 listeners)             # Task 1
   notification/application/  PaymentRegisteredNotificationDispatcher                  # Task 2
-  notification/**, notifications/**                                                   # DELETED Task 13
-  shared/infrastructure/config/PersistenceConfig.java, EntityScanConfig.java          # DELETED Task 13
+  notification/infrastructure/listeners/kafka/*  + app.notification.kafka-listeners.enabled flag  # Task 13
+  notification/**, notifications/**                                                   # DELETED Task 16
+  shared/infrastructure/config/PersistenceConfig.java, EntityScanConfig.java          # DELETED Task 16
 ```
 
 ---
@@ -783,8 +787,9 @@ public record DiscountCodeAssignedEvent(UUID assignedUserId, String code, Instan
   `UserRegistered`, `DiscountCodeAssigned`) — NOT the local `*Event` names.
 
 > **The `app.notification.listeners.enabled` flag stays `false` in `application.yml`.** It is
-> flipped to `true` only in Task 14, in the same commit that deletes the monolith listeners — so
-> there is never a window where both consume (spec §7).
+> flipped to `true` in Task 14 (cutover deploy 1), where the monolith's own consumers are
+> simultaneously gated off by `app.notification.kafka-listeners.enabled=false` (Task 13) — so there
+> is no lasting window where both consume (spec §7).
 
 - [ ] **Step 1: Write `KafkaNotificationFlowIT`** — `@SpringBootTest` with
   `app.domain-events.kafka.enabled=true`, `app.notification.listeners.enabled=true`, Testcontainers
@@ -806,83 +811,64 @@ public record DiscountCodeAssignedEvent(UUID assignedUserId, String code, Instan
 
 ---
 
-## Task 13: Delete the notification module from the monolith, collapse to one datasource
+## Task 13: A flag to silence the monolith's notification Kafka listeners (monolith prep)
 
-**This and Task 14 land in the same commit and same deploy.** Split for review only.
+**Ships on its own, before the cutover.** This is what makes the cutover reversible by a flag flip
+instead of a deploy revert (spec §6.3, §7).
 
 **Files:**
-- Delete: `backend/src/main/java/com/pilarestilo/notification/**`
-- Delete: `backend/src/main/java/com/pilarestilo/notifications/**`
-- Delete: `backend/src/main/java/com/pilarestilo/shared/infrastructure/config/PersistenceConfig.java`
-- Delete: `backend/src/main/java/com/pilarestilo/shared/infrastructure/config/EntityScanConfig.java`
-- Delete: `backend/src/test/java/com/pilarestilo/shared/infrastructure/config/EntityScanCoversEveryModuleTest.java`
-- Delete: `backend/src/test/java/com/pilarestilo/support/NotificationsTestDatabase.java`,
-  `backend/src/test/java/com/pilarestilo/notifications/**`, all `*NotificationDispatcherTest`,
-  `*NotificationListenerTest`, `NotificationControllerTest`, composer/sender/EmailLayout tests
-- Delete: `backend/src/main/resources/db/migration-notifications/` (moved to the service in Task 4)
-- Modify: `backend/src/main/resources/application.yml` — delete the whole `app.notification:` block
-  (lines ~102–147) and the `app.system-settings.crypto-secret` line **stays** (still used elsewhere?
-  — grep first; keep if `SystemSettingsCryptoService` remains in the monolith for payment-gateway /
-  media secrets, which it does)
-- Modify: `backend/src/main/resources/application-local.yml` — same, if it repeats any keys
-- Modify: `backend/pom.xml` — remove `spring-boot-starter-mail` if nothing else uses it (grep
-  `JavaMailSender`); keep `spring-boot-flyway`, `spring-boot-kafka`
-- Modify: `backend/.../additional-spring-configuration-metadata.json` — remove the `app.notification.*`
-  entries
-- Modify: `docker-compose.yml` — delete `APP_NOTIFICATION_DATASOURCE_*` and every
-  `NOTIFICATION_PROVIDER` / `EMAIL_SMTP_*` / `SENDGRID_*` / `WHATSAPP_*` env from the **backend**
-  service block (they move to notification-service in Task 14)
-- Modify: `infra/.env.example` — same reshuffle
-- Modify: `CLAUDE.md` — see Task 14
+- Modify: `backend/src/main/java/com/pilarestilo/notification/infrastructure/listeners/kafka/`
+  — all 7 `Kafka*NotificationListener` classes
+- Modify: `backend/src/main/resources/application.yml` — add the property + metadata
+- Modify: `backend/src/main/resources/META-INF/additional-spring-configuration-metadata.json`
+- Modify: `infra/docker-compose.yml` — `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED` on the backend block
+- Modify: `infra/.env.example`
+- Test: `backend/src/test/java/.../KafkaNotificationListenersFlagTest.java` (or extend an existing
+  slice) — with the flag `false` the beans are absent; with `true` they are present
 
 **Interfaces:**
-- Produces: a monolith with one `DataSource`, Boot-auto-configured JPA + Flyway, no notification
-  code. `@SpringBootApplication`'s default `com.pilarestilo` entity scan covers everything that
-  remains.
+- Produces: `app.notification.kafka-listeners.enabled` (default `true`) — a second gate on the 7
+  notification Kafka listeners, independent of `app.domain-events.kafka.enabled`.
 
-- [ ] **Step 1: Delete the two packages + their tests.** `git rm -r` the `notification` and
-  `notifications` trees and every test listed.
+- [ ] **Step 1: Write the failing test** — an `ApplicationContextRunner` (or a `@SpringBootTest`
+  slice with `app.domain-events.kafka.enabled=true`) that asserts
+  `context.getBeansOfType(KafkaOrderNotificationListener.class)` is empty when
+  `app.notification.kafka-listeners.enabled=false` and non-empty when `true`.
 
-- [ ] **Step 2: Delete `PersistenceConfig` + `EntityScanConfig` + the guard test.** With no second
-  `EntityManagerFactory`, `HibernateJpaAutoConfiguration` builds the default one from
-  `spring.datasource` + a `com.pilarestilo` entity scan, and `FlywayAutoConfiguration` runs the main
-  migrations. Keep `spring-boot-flyway` on the classpath.
+- [ ] **Step 2: Run it, confirm it fails** — `cd backend && mvn test -Dtest=KafkaNotificationListenersFlagTest`.
 
-- [ ] **Step 3: Check the SQL/JPA properties.** `application.yml` currently hand-writes Hibernate
-  naming + `ddl-auto` "because the bean that supplies them backs off once an EMF is declared". With
-  the EMF gone, Boot's `HibernateJpaAutoConfiguration` supplies the physical naming strategy again —
-  but leave the explicit `spring.jpa.hibernate.ddl-auto: validate` and the naming properties in
-  place (harmless, and removing them risks the `createdAt`-vs-`created_at` regression the comment
-  warns about). Just delete the now-stale comment.
+- [ ] **Step 3: Add the second condition** — on each of the 7 classes, alongside the existing
+  `@ConditionalOnProperty(prefix = "app.domain-events.kafka", name = "enabled", havingValue = "true")`
+  add
+  `@ConditionalOnProperty(prefix = "app.notification.kafka-listeners", name = "enabled", havingValue = "true", matchIfMissing = true)`.
+  (Two `@ConditionalOnProperty` annotations are AND-ed. `matchIfMissing = true` keeps today's
+  behaviour when the property is unset.)
 
-- [ ] **Step 4: Remove `app.notification.*`** from `application.yml`, `application-local.yml`,
-  `additional-spring-configuration-metadata.json`.
+- [ ] **Step 4: Config + metadata** — `application.yml`:
+  `app.notification.kafka-listeners.enabled: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:true}`.
+  Add the key to `additional-spring-configuration-metadata.json` with a one-line description.
 
-- [ ] **Step 5: Grep for danglers** — `cd backend && grep -rn "com.pilarestilo.notification" src/`
-  → must be empty. `grep -rn "NotificationsPersistenceConfig\|NotificationsFlywayMigrator" src/` →
-  empty. `grep -rn "JavaMailSender\|MimeMessage" src/main` → if empty, drop `spring-boot-starter-mail`
-  from the pom.
+- [ ] **Step 5: docker-compose + .env.example** —
+  `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:-true}` on
+  the backend service block.
 
-- [ ] **Step 6: Build + full verify** — `cd backend && mvn clean verify` → PASS. The context starts
-  with one datasource; migrations run; no `notification` beans.
+- [ ] **Step 6: Run** — `cd backend && mvn test -Dtest='KafkaNotificationListenersFlagTest,*Notification*'` → PASS.
 
-- [ ] **Step 7: Boot against local Docker** — `cd infra && docker compose --env-file .env
-  --profile kafka up -d --build postgres backend` → backend healthy, logs show the main Flyway ran
-  and no notification wiring. (Full stack check is Task 15.)
-
-- [ ] **Step 8: Do NOT commit yet** — Task 14 completes the same commit.
+- [ ] **Step 7: Commit** —
+  `git commit -m "feat(notification): app.notification.kafka-listeners.enabled — a flag to silence the monolith's notification consumers for the cutover"`
 
 ---
 
-## Task 14: Enable the service, wire the infra, cut Caddy over
+## Task 14: Cutover — deploy 1 (reversible)
 
-**Same commit as Task 13.**
+**One commit. Enables the service, wires the infra, silences the monolith's consumers — the
+monolith notification code stays for now (deleted in Task 16, once verified).**
 
 **Files:**
-- Modify: `services/notification-service/src/main/resources/application.yml` —
-  `app.notification.listeners.enabled: ${APP_NOTIFICATION_LISTENERS_ENABLED:true}` (default now
-  **true**), and set `app.domain-events.kafka.enabled: ${APP_DOMAIN_EVENTS_KAFKA_ENABLED:false}`
-  (flipped on by the deploy env, same as the backend)
+- Modify: `services/notification-service/src/main/java/.../config/KafkaConsumerConfig.java` —
+  `props.putIfAbsent(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest")` (was `"earliest"`; the
+  pre-seed in Step 2 makes this moot but it is the correct default for a service that must never
+  replay history)
 - Modify: `infra/Caddyfile` — add before the generic `handle /api/*`:
 
 ```
@@ -916,15 +902,19 @@ handle @notification_reads {
   `order-service` block; `context: ../services/notification-service`, `container_name:
   pe_notification_service`, `SERVER_PORT "8085"`, healthcheck on `:8085/actuator/health`,
   `profiles: ["microservices"]`, `depends_on: postgres: service_healthy`). Env:
-  `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` (shared DB, → `app.shared-db.datasource.*` via a
-  `SPRING_DATASOURCE_*`→`APP_SHARED_DB_DATASOURCE_*` mapping or just name the keys directly),
+  `SPRING_DATASOURCE_URL/USERNAME/PASSWORD` (the service reads them for `app.shared-db.datasource.*`
+  via `${SPRING_DATASOURCE_URL:...}` — name them directly),
   `APP_NOTIFICATION_DATASOURCE_URL/USERNAME/PASSWORD`, `SYSTEM_SETTINGS_CRYPTO_SECRET`, `JWT_SECRET`,
   `KAFKA_BOOTSTRAP_SERVERS`, `APP_DOMAIN_EVENTS_KAFKA_ENABLED` + the other `APP_DOMAIN_EVENTS_KAFKA_*`,
-  `APP_NOTIFICATION_LISTENERS_ENABLED`, and every `NOTIFICATION_PROVIDER` / `EMAIL_SMTP_*` /
-  `SENDGRID_*` / `WHATSAPP_*` / `NOTIFICATION_N8N_*` fallback (moved from the backend block),
-  tracing envs.
-- Modify: `infra/.env.example` — add `APP_NOTIFICATION_LISTENERS_ENABLED=true`, keep the messaging
-  envs (now consumed by notification-service).
+  `APP_NOTIFICATION_LISTENERS_ENABLED: ${APP_NOTIFICATION_LISTENERS_ENABLED:-true}`, and every
+  `NOTIFICATION_PROVIDER` / `EMAIL_SMTP_*` / `SENDGRID_*` / `WHATSAPP_*` / `NOTIFICATION_N8N_*`
+  fallback (**copied** — leave them on the backend block too, as the rollback path; removed there in
+  Task 16), tracing envs.
+- Modify: `infra/docker-compose.yml` backend block — flip
+  `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:-false}`
+  (the flag from Task 13; default in the shipped `.env` becomes `false`).
+- Modify: `infra/.env.example` — `APP_NOTIFICATION_LISTENERS_ENABLED=true`,
+  `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=false`.
 - Modify: `.github/workflows/*` — add `notification-service` to the services build/test matrix.
 - Modify: `CLAUDE.md` —
   - Monorepo layout / Modules: add `notification-service` to `services/`.
@@ -934,51 +924,129 @@ handle @notification_reads {
     same commit and deploy or the service fails `validate` on boot.
   - Caddy routing table: `GET/HEAD/PUT /api/notifications*` → `notification-service:8085`.
   - "Every in-process `@EventListener` is dead when Kafka is on" / notifications sections: note the
-    dispatchers/senders now live in `services/notification-service`, Kafka-only, no in-process twin.
+    dispatchers/senders now live in `services/notification-service`, Kafka-only. The monolith's
+    twins stay until Task 16 but are gated off by `app.notification.kafka-listeners.enabled=false`.
 
-- [ ] **Step 1: Flip the flags** in the service's `application.yml`.
+- [ ] **Step 1: `AUTO_OFFSET_RESET` → `latest`** in `KafkaConsumerConfig`, run the service suite
+  (`cd services/notification-service && mvn -o verify -Djacoco.skip=true`) → PASS.
 
-- [ ] **Step 2: Caddyfile + prometheus.yml + docker-compose + .env.example + CI + CLAUDE.md** edits.
+- [ ] **Step 2: Caddyfile + prometheus.yml + docker-compose (both blocks) + .env.example + CI +
+  CLAUDE.md** edits. `caddy validate` the Caddyfile
+  (`docker run --rm -v "$PWD/infra/Caddyfile:/etc/caddy/Caddyfile" caddy caddy validate --config /etc/caddy/Caddyfile`).
 
-- [ ] **Step 3: `caddy validate`** — `docker run --rm -v "$PWD/infra/Caddyfile:/etc/caddy/Caddyfile" caddy caddy validate --config /etc/caddy/Caddyfile`.
+- [ ] **Step 3: Commit** —
+  `git add -A && git commit -m "feat: extract notification-service — cutover deploy 1 (service consumes, monolith consumers gated off, reversible)"`
 
-- [ ] **Step 4: Commit Tasks 13 + 14 together** —
-  `git add -A && git commit -m "feat: extract notification-service — monolith drops the notification module and its second database (atomic cutover)"`
+- [ ] **Step 4: The deploy runbook** (goes in the PR description, executed at deploy time, not now):
+  1. Pre-seed the consumer group while the current prod backend still consumes:
+     `docker compose exec kafka kafka-consumer-groups.sh --bootstrap-server kafka:9092 --group pe-notification-service --reset-offsets --to-latest --all-topics --execute`
+  2. Deploy the new backend image (`APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=false`) — its 7
+     notification consumers do not register.
+  3. Immediately deploy / start `notification-service` (`APP_NOTIFICATION_LISTENERS_ENABLED=true`)
+     — it joins the pre-seeded group and drains the short pile-up plus every new event, once.
+  4. Run Task 15 in production.
+  5. **Rollback if needed:** set `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=true` on the backend and
+     `APP_NOTIFICATION_LISTENERS_ENABLED=false` on the service. No deploy revert.
 
 ---
 
-## Task 15: Full-stack cutover verification
+## Task 15: Full-stack verification (mandatory before deploy 1 reaches production)
 
-**Not code — the mandatory pre-production check from spec §7. Do not merge to `master` without it.**
+**Not code — the mandatory check from spec §7. Do not merge to `master` without it.**
 
 - [ ] **Step 1: Bring up the full stack** —
   `cd infra && docker compose --env-file .env --profile kafka --profile cache --profile microservices --profile observability up -d --build`
-  Set in `.env` first: `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`, messaging on
-  `NOTIFICATION_PROVIDER=LOG` (or SMTP with the fixed test mailbox), `APP_NOTIFICATION_LISTENERS_ENABLED=true`.
+  In `.env`: `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`, `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=false`,
+  `APP_NOTIFICATION_LISTENERS_ENABLED=true`, messaging on `NOTIFICATION_PROVIDER=LOG` (or SMTP with
+  the fixed test mailbox).
 
-- [ ] **Step 2: Confirm no double-consume** — `docker compose logs kafka | grep -i "pe-notification-service\|pe-backend-domain-events"`;
-  the backend must have **no** `Kafka*NotificationListener` registered (grep its startup log), only
-  notification-service does.
+- [ ] **Step 2: Confirm exactly one consumer** — the backend startup log shows **no**
+  `Kafka*NotificationListener` bean registered; `notification-service` shows its 7. Both consumer
+  groups exist in `kafka-consumer-groups.sh --list` but only `pe-notification-service` has lag
+  moving.
 
-- [ ] **Step 3: Place a real order** as the fixed test customer `test_estilo@pilarestilo.com`
+- [ ] **Step 3: Place a real order** as `test_estilo@pilarestilo.com`
   (`no-real-emails-from-tests` memory) through the storefront on `http://localhost`, pay it
-  (STUB gateway), and let it reach paid.
+  (STUB gateway), let it reach paid.
 
 - [ ] **Step 4: Assert exactly one confirmation** — `docker compose logs notification-service`
-  shows one `ORDER_CONFIRMATION` send; the backend logs show none; the customer's mailbox (or the
-  `LOG` output) has exactly one — **not zero, not two**. Ley 21.398 requires this message.
+  shows one `ORDER_CONFIRMATION` send; `docker compose logs infra-backend-1` shows none; the
+  mailbox / `LOG` output has exactly one — **not zero, not two**. Ley 21.398 requires this message
+  (zero → the customer's retracto window is 90 days not 10).
 
-- [ ] **Step 5: Assert the bell works** — log in as the test customer, open
-  `GET /api/notifications` and `/unread-count` (served by `notification-service:8085` per Caddy),
-  `PUT /{id}/read` marks it. Check `docker compose logs caddy` confirms the route hit 8085.
+- [ ] **Step 5: Assert the bell works** — log in as the test customer, `GET /api/notifications`
+  and `/unread-count` (served by `notification-service:8085` per Caddy), `PUT /{id}/read` marks it.
+  `docker compose logs caddy` confirms the route hit 8085.
 
-- [ ] **Step 6: Check the DLT + metrics are wired** — `curl -s localhost/api/actuator/prometheus`
-  is the backend; `docker compose exec notification-service wget -qO- localhost:8085/actuator/prometheus | grep notification_send_failures_total`
+- [ ] **Step 6: DLT + metrics wired** —
+  `docker compose exec notification-service wget -qO- localhost:8085/actuator/prometheus | grep notification_send_failures_total`
   exists (0 is fine). Prometheus targets page shows `notification_service` UP.
 
-- [ ] **Step 7: Record the result** in the PR description and update the
-  `notification-service-extraction-analysis` + `pending-work-queue` memories. Only then merge to
-  `master` (a push to `master` deploys — `spring-boot-4-deploy` memory).
+- [ ] **Step 7: Test the rollback path once** — flip the two flags back, restart both, place another
+  order → the monolith sends the one confirmation, `notification-service` sends none. Flip forward
+  again. This proves the rollback works before you need it.
+
+- [ ] **Step 8: Record the result** in the PR description; update the
+  `notification-service-extraction-analysis` + `pending-work-queue` memories. Merge to `master`
+  (a push to `master` deploys — `spring-boot-4-deploy` memory), then run the Task 14 Step 4 runbook.
+
+---
+
+## Task 16: Cleanup — delete the monolith module (deploy 2, after verification)
+
+**A separate, later deploy. Pure dead-code removal — the monolith stopped using any of this in
+deploy 1. Do NOT start until `notification-service` has run clean in production for ~a day.**
+
+**Files:**
+- Delete: `backend/src/main/java/com/pilarestilo/notification/**` (incl. the Task 13 flag),
+  `backend/src/main/java/com/pilarestilo/notifications/**`
+- Delete: `backend/src/main/java/com/pilarestilo/shared/infrastructure/config/PersistenceConfig.java`,
+  `EntityScanConfig.java`
+- Delete: `backend/src/test/java/com/pilarestilo/shared/infrastructure/config/EntityScanCoversEveryModuleTest.java`,
+  `backend/src/test/java/com/pilarestilo/support/NotificationsTestDatabase.java`,
+  `backend/src/test/java/com/pilarestilo/notifications/**`, every `*NotificationDispatcherTest` /
+  `*NotificationListenerTest` / `NotificationControllerTest` / composer / sender / `EmailLayout` test
+- Delete: `backend/src/main/resources/db/migration-notifications/`
+- Modify: `backend/src/main/resources/application.yml` + `application-local.yml` — delete the whole
+  `app.notification:` block and the `app.notification.kafka-listeners` flag. **Keep**
+  `app.system-settings.crypto-secret` (the monolith still uses `SystemSettingsCryptoService` for the
+  payment-gateway and media secrets — grep to confirm).
+- Modify: `backend/.../additional-spring-configuration-metadata.json` — drop the `app.notification.*`
+  entries.
+- Modify: `backend/pom.xml` — drop `spring-boot-starter-mail` if `grep -rn "JavaMailSender\|MimeMessage" backend/src/main`
+  is empty. Keep `spring-boot-flyway`, `spring-boot-kafka`.
+- Modify: `infra/docker-compose.yml` — remove `APP_NOTIFICATION_DATASOURCE_*`,
+  `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED`, and the messaging envs from the **backend** block
+  (they stay only on `notification-service`).
+- Modify: `infra/.env.example` — same.
+- **Keep** `infra/postgres/init/01-notifications-database.sh` and the old `notifications` table on
+  the main DB — still the rollback path (`notification-database-split` memory).
+
+- [ ] **Step 1: `git rm -r`** the two packages + every listed test + `db/migration-notifications/`.
+
+- [ ] **Step 2: Delete `PersistenceConfig` + `EntityScanConfig` + the guard test.** With no second
+  `EntityManagerFactory`, `HibernateJpaAutoConfiguration` builds the default one from
+  `spring.datasource`, `FlywayAutoConfiguration` runs the main migrations. Delete the now-stale
+  comment in `application.yml` about the hand-written naming strategy; **keep** the explicit
+  `spring.jpa.hibernate.ddl-auto: validate` and the naming properties (removing them risks the
+  `createdAt`-vs-`created_at` regression the comment warned about).
+
+- [ ] **Step 3: Config + compose + pom** edits per the file list.
+
+- [ ] **Step 4: Grep for danglers** — `cd backend && grep -rn "com.pilarestilo.notification" src/`
+  → empty. `grep -rn "NotificationsPersistenceConfig\|NotificationsFlywayMigrator" src/` → empty.
+
+- [ ] **Step 5: `cd backend && mvn clean verify`** → PASS (one datasource, migrations run, no
+  `notification` beans).
+
+- [ ] **Step 6: Boot against local Docker** — `cd infra && docker compose --env-file .env
+  --profile kafka --profile microservices up -d --build postgres backend notification-service` →
+  both healthy; backend log shows the main Flyway ran and no notification wiring; place an order →
+  still exactly one confirmation, now with the monolith code gone.
+
+- [ ] **Step 7: Commit + merge** —
+  `git commit -m "chore(backend): delete the extracted notification module — one datasource again"`,
+  then merge to `master`.
 
 ---
 
@@ -992,13 +1060,14 @@ handle @notification_reads {
 - §4.1 Flyway simplification → Task 4 Step 2. ✅
 - §6.1 relocate order-status write → Task 1. ✅
 - §6.2 PaymentRegistered dispatcher → Task 2. ✅
-- §6.3 delete module, one datasource, drop guard test → Task 13. ✅
+- §6.3 monolith kafka-listeners flag → Task 13. ✅
+- §6.4 delete module, one datasource, drop guard test → Task 16 (deploy 2). ✅
 - §6.4 Caddy/prometheus/compose/CI/CLAUDE.md → Task 14. ✅
-- §7 atomic cutover (flag stays false until the delete commit) → Task 12 note + Tasks 13–14 same commit. ✅
+- §7 two-deploy reversible cutover (pre-seed offset, flags) → Task 12 note + Tasks 13 (flag), 14 (deploy 1 + runbook), 15 (verify), 16 (deploy 2 delete). ✅
 - §8 error handling: failure counter → Task 8; DLT reuse → Task 10; loud in-app write → Task 4 (adapter propagates; `InAppNotificationSender` still swallows per port fidelity — **deviation noted**, Kafka redelivery is the net). Acceptable; revisit if §8 wants the swallow removed.
-- §9 testing: mapping guard IT → Task 6; Kafka IT → Task 12; own-DB IT → Task 4; coverage gate → Task 3 pom + Task 12. ✅
+- §9 testing: mapping guard IT → Task 6; Kafka end-to-end → Task 15 compose verification (embedded-Kafka IT dropped — `spring-kafka-test` not in offline cache); own-DB IT → Task 4; coverage gate → Task 3 pom. ✅
 - §10 schema-coupling mitigation → Task 6 (minimum columns + guard test), Task 14 (CLAUDE.md). ✅
-- §11 remaining: Grafana panel deferred; relocated-listener package decided in Task 1; SendGrid/Twilio keep-or-drop deferred. ✅
+- §11 deferred: `sent_notifications` idempotency table (own future task); Grafana panel; SendGrid/Twilio keep-or-drop. ✅
 
 **Placeholder scan:** "verify the exact record components / column names against the monolith source"
 appears in Tasks 1, 6, 10, 11 — these are genuine verification steps against real files the executor
@@ -1009,7 +1078,9 @@ has, not hand-waves; each names the file to check. No `TODO`/`TBD`. Code blocks 
 Task 5. View records defined in Task 6, consumed in Tasks 7 and 11. Event records defined in Task 10,
 consumed in Tasks 11–12. `NotificationSender.send(NotificationMessage, NotificationRecipient)` fixed
 in Task 5, implemented in Tasks 8–9, called in Task 11. `app.notification.listeners.enabled` — false
-in Task 12, flipped in Task 14. Caddy verbs `GET HEAD PUT` consistent between §4.1 note, Task 5, Task 14.
+in Task 12, flipped in Task 14; `app.notification.kafka-listeners.enabled` (monolith) — added in
+Task 13, flipped off in Task 14, deleted in Task 16. Caddy verbs `GET HEAD PUT` consistent between
+§4.1 note, Task 5, Task 14.
 
 ---
 

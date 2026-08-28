@@ -260,7 +260,7 @@ No Redis, no internal HTTP. Every lookup is a local DB read; volume is a handful
 
 ---
 
-## 6. Monolith-side changes (same commit, same deploy as the cutover)
+## 6. Monolith-side changes
 
 ### 6.1 Relocate the order-status write
 
@@ -280,9 +280,24 @@ the monolith into a `PaymentRegisteredNotificationDispatcher` with transport-onl
 settings)` calculation ports alongside it (needs `payments.created_at` +
 `bank_transfer_auto_cancel_*` settings).
 
-### 6.3 Delete the module, collapse back to one datasource
+### 6.3 A flag to silence the monolith's notification Kafka listeners (cutover deploy 1)
 
-- Delete `com.pilarestilo.notification.**` and `com.pilarestilo.notifications.**`.
+Add `app.notification.kafka-listeners.enabled` (default `true`) as a **second**
+`@ConditionalOnProperty` on the 7 `Kafka*NotificationListener` classes (they already carry
+`app.domain-events.kafka.enabled=true`). This is what lets the cutover disable *only* notification
+consumption on the monolith without touching any other Kafka listener, and — crucially — makes the
+cutover reversible by a flag flip rather than a deploy revert. The in-process `@EventListener`
+twins are already dead when Kafka is on, so they need no guard.
+
+Small, safe, verifiable on its own: the monolith boots with the flag both ways.
+
+### 6.4 Delete the module, collapse back to one datasource (cutover deploy 2, later)
+
+Done only once notification-service has run in production and been verified (§7), as a separate,
+low-risk dead-code removal:
+
+- Delete `com.pilarestilo.notification.**` and `com.pilarestilo.notifications.**` (including the
+  Kafka listeners and their new flag from 6.3).
 - Delete `NotificationsPersistenceConfig`, `NotificationsFlywayMigrator`, and the
   `com.pilarestilo.notifications` carve-outs: the `excludeFilters` in `PersistenceConfig`'s
   `@EnableJpaRepositories`, the `NotificationsPersistenceConfig.ROOT_PACKAGE` line in
@@ -293,8 +308,11 @@ settings)` calculation ports alongside it (needs `payments.created_at` +
   (its reason for existing — "the main factory must not scan `com.pilarestilo.notifications`" — is
   gone). Keep `spring-boot-flyway` on the classpath (CLAUDE.md: without it migrations never run).
 - Delete the notifications datasource envs from the backend service in `docker-compose.yml`
-  (`APP_NOTIFICATION_DATASOURCE_*`) and `.env.example`; move them to the new service.
+  (`APP_NOTIFICATION_DATASOURCE_*`) and `.env.example`; and now remove the messaging envs from the
+  backend block too (they were kept there through deploy 1 as the rollback safety net).
 - Delete backend-only notification tests / `NotificationsTestDatabase` / `NotificationsUseTheirOwnDatabaseIT`.
+- Drop `spring-boot-starter-mail` from `backend/pom.xml` if nothing else uses `JavaMailSender`
+  (grep first).
 - **Keep** `infra/postgres/init/01-notifications-database.sh` (creates `pilarestilo_notifications`)
   and **do not** drop the old `notifications` table on the main DB yet — it is still the rollback
   path (`notification-database-split` memory).
@@ -308,9 +326,10 @@ settings)` calculation ports alongside it (needs `payments.created_at` +
   `metrics_path: /actuator/prometheus`.
 - **docker-compose.yml:** `notification-service` under `profiles: ["microservices"]`, `SERVER_PORT
   "8085"`, shared datasource envs, `APP_NOTIFICATION_DATASOURCE_*`, `SYSTEM_SETTINGS_CRYPTO_SECRET`,
-  `KAFKA_BOOTSTRAP_SERVERS`, `APP_DOMAIN_EVENTS_KAFKA_*`, all `NOTIFICATION_PROVIDER` /
-  `EMAIL_SMTP_*` / `SENDGRID_*` / `WHATSAPP_*` env fallbacks (moved from the backend block — the
-  backend no longer needs them), tracing envs, healthcheck on `/actuator/health`,
+  `KAFKA_BOOTSTRAP_SERVERS`, `APP_DOMAIN_EVENTS_KAFKA_*`, `APP_NOTIFICATION_LISTENERS_ENABLED`, all
+  `NOTIFICATION_PROVIDER` / `EMAIL_SMTP_*` / `SENDGRID_*` / `WHATSAPP_*` / `NOTIFICATION_N8N_*` env
+  fallbacks (**copied** to this block — kept on the backend block through deploy 1 as the rollback
+  path, removed from it in deploy 2), tracing envs, healthcheck on `/actuator/health`,
   `depends_on: postgres: service_healthy`. **Operational:** it needs the `kafka` profile up
   alongside `microservices` or it cannot resolve the broker — same failure mode already documented
   for the backend.
@@ -322,28 +341,68 @@ settings)` calculation ports alongside it (needs `payments.created_at` +
 
 ---
 
-## 7. Cutover plan
+## 7. Cutover plan — two deploys, reversible by flags
 
-The risk of a clean cut: while both the monolith and the new service consume the same Kafka topic,
-every event fires twice — a customer gets a duplicated email. This must be atomic.
+The first version of this spec chose a single atomic deploy (delete the module *and* enable the
+service in one commit) because concurrent Kafka consumption on both sides would double-send every
+notification, and there was no idempotency layer to absorb it. That is still true — but Kafka's own
+guarantees plus a consumer-group offset pre-seed make the cutover safe **without** deleting the
+monolith code in the same step, which buys back a fast flag-flip rollback.
 
-**Single deploy, single commit for steps 3–5:**
+### Why this is safe
+
+- **No message loss.** Kafka retains every `pe.domain.*` event for 7 days regardless of consumers.
+  A consumer that is briefly absent resumes from its committed offset and catches up. The only
+  loss window is the *first* connection of the `pe-notification-service` group, where
+  `auto.offset.reset` decides the start position — closed by pre-seeding (step 2 below).
+- **No history replay.** `auto.offset.reset` is set to `latest` on the service's consumer, and the
+  pre-seed commits offsets at the current log-end *before* the group ever has an active member, so
+  the service processes only events published after the cutover — never the 7 days of retained
+  `OrderCreated` behind it (which would mass-send confirmations for old orders).
+- **Duplication is the one thing Kafka does not solve** (it is at-least-once — a listener that
+  sends then dies before committing its offset already double-sends today, in the monolith too).
+  The sequencing below keeps the double-consume window to the sub-second gap between two flag
+  flips; a permanent fix (`sent_notifications` dedup table) is deferred, section 11.
+
+### Deploy 1 — the cutover (reversible)
 
 1. `notification-service` built and green locally against the full stack (`kafka` + `microservices`
-   profiles), Kafka listeners **disabled** by config until step 3.
-2. Backend gains the relocated order-status listener (6.1) and the `PaymentRegisteredNotificationDispatcher`
-   refactor (6.2), each verified green on its own.
-3. Same commit: the 7 `Kafka*NotificationListener` classes and the whole `notification` /
-   `notifications` code are **deleted from the backend** *and* notification-service's listeners are
-   **enabled** — one deploy, no window where both consume.
-4. Same deploy: Caddy routes `/api/notifications*` (GET/HEAD/PUT) to `notification-service:8085`.
-5. **Mandatory pre-production verification** (not optional): a real order against the full local
-   stack with the fixed test customer (`test_estilo@pilarestilo.com`), confirming **exactly one**
-   confirmation email arrives — not zero, not two — and the in-app bell works end to end. Ley 21.398
-   requires that written confirmation, so a botched cutover here has legal weight, not just UX.
+   + `cache` + `observability` profiles), Kafka listeners still **disabled** by
+   `APP_NOTIFICATION_LISTENERS_ENABLED=false`.
+2. **Pre-seed the consumer group**, with the monolith still consuming notifications:
+   ```
+   docker compose exec kafka kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
+     --group pe-notification-service --reset-offsets --to-latest --all-topics --execute
+   ```
+   The group now has committed offsets at the current log-end and no active members.
+3. Deploy, in this order:
+   a. new backend image with `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=false` (6.3) — the 7
+      `Kafka*NotificationListener` beans do not register. From here, nobody consumes notification
+      events; they pile up in Kafka, retained.
+   b. immediately after, notification-service with `APP_NOTIFICATION_LISTENERS_ENABLED=true` — it
+      joins the pre-seeded group, drains the pile-up and every new event, **exactly once**, with a
+      few minutes' delay at most (acceptable for a confirmation email).
+   c. Caddy routes `/api/notifications*` (GET/HEAD/PUT) to `notification-service:8085 backend:8080`.
+   d. the messaging envs (`EMAIL_SMTP_*` etc.) are **copied** to the notification-service compose
+      block and **left on the backend block** as the rollback path.
+4. **Rollback** (if the service misbehaves): flip both flags back —
+   `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=true` on the backend,
+   `APP_NOTIFICATION_LISTENERS_ENABLED=false` on the service. The monolith code is still present, so
+   it resumes consuming from its own group's committed offset. Seconds, no deploy revert.
 
-**Rollback** is reverting the whole deploy (the monolith regains the code, the container stops) —
-there is no toggle. Chosen deliberately over keeping dead code that would drift.
+### Deploy 2 — cleanup (after verification, low risk)
+
+Once §7's verification passes in production and the service has run clean for a day: delete the
+monolith notification module and collapse to one datasource (6.4). Pure dead-code removal — the
+monolith already stopped using any of it in deploy 1.
+
+### Mandatory verification (before deploy 1 reaches production)
+
+A real order against the full local stack with the fixed test customer
+(`test_estilo@pilarestilo.com`), confirming **exactly one** confirmation email arrives — not zero,
+not two — and the in-app bell works end to end. Ley 21.398 requires that written confirmation:
+zero emails is a compliance failure (the customer's right of withdrawal runs 90 days instead of
+10), two emails means the cutover was not clean. Restated in section 9.
 
 ---
 
@@ -376,9 +435,10 @@ Today's silent-by-design failure mode must not be inherited:
   a real `pilarestilo` schema (the monolith's Flyway output) and asserts every read-only entity
   validates — this is what turns a monolith column rename into a red local test instead of a
   production restart loop.
-- **Kafka integration (Testcontainers):** real Postgres for `pilarestilo_notifications` + real
-  Kafka, publish `OrderCreated` end to end → assert the right sender was invoked and the in-app row
-  landed. `system_settings` seeded in the shared test DB, not stubbed.
+- **Kafka listeners:** unit-tested for delegation (each is a one-line delegate). An embedded-Kafka
+  end-to-end IT was intended but `spring-kafka-test` is not in the offline build cache; the full
+  publish→send→persist path is covered instead by the mandatory compose-stack verification below,
+  against a real broker.
 - **In-app own-database IT:** port `NotificationsUseTheirOwnDatabaseIT`'s intent — a saved row lands
   in `pilarestilo_notifications` and reads come back from it.
 - **CI coverage gate:** same 0.50 line-coverage bundle minimum as the other four services.
@@ -411,6 +471,18 @@ Today's silent-by-design failure mode must not be inherited:
 - *Dead-letter topic naming + retry threshold* → reuse `DomainEventTopics` /
   `KafkaDomainEventsProperties`: `<topic>.dlt`, 3 attempts, 1500 ms backoff.
 - *Redis dependency* → dropped entirely.
+
+**Deferred — its own future task (not in this extraction):**
+
+- **`sent_notifications` idempotency table.** Kafka is at-least-once: a listener that sends a
+  message then dies before committing its offset re-sends on redelivery — true in the monolith
+  today, tolerated. A dedup table in `pilarestilo_notifications` keyed on
+  `(reference_id, template_key, recipient)` with `INSERT … ON CONFLICT DO NOTHING` before each send
+  would make every path exactly-once and also make any future cutover timing-proof. Left out here
+  because it is a real feature with real edge cases: the fan-out templates
+  (`PAYMENT_PROOF_SUBMITTED`, `RETURN_REQUESTED_STAFF` go to N reviewers — the key must include the
+  recipient) and the null-`referenceId` templates (`WELCOME`, `DISCOUNT_CODE_ASSIGNED` — key on the
+  user id instead). Needs its own design pass.
 
 **Remaining for the implementation plan / later:**
 
