@@ -54,13 +54,14 @@ public class KafkaPaymentNotificationListener {
         dispatcher.onPaymentRejected(event);
     }
 
-    /** Writable: this branch moves the order to PAYMENT_UNDER_REVIEW. */
+    /** Read-only now: this branch only emails the reviewers. The order's move to
+     *  PAYMENT_UNDER_REVIEW is handled separately by the payment module. */
     @KafkaListener(
             groupId = "${app.domain-events.kafka.consumer-group-id:pe-backend-domain-events}-notification",
             topics = "#{@domainEventTopics.topicFor('PaymentSubmitted')}",
             containerFactory = "domainEventsKafkaListenerContainerFactory"
     )
-    @Transactional
+    @Transactional(readOnly = true)
     public void onPaymentSubmitted(PaymentSubmitted event) {
         dispatcher.onPaymentSubmitted(event);
     }
