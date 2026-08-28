@@ -982,7 +982,7 @@ export default function ProductTable() {
           <button
             type="button"
             onClick={() => setEditTarget(null)}
-            className="ml-auto inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
+            className="ml-auto inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
           >
             <Plus size={13} />
             Nuevo producto

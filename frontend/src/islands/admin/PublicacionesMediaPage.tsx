@@ -264,7 +264,7 @@ export default function PublicacionesMediaPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-4 inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase hover:bg-pe-rose-action-action-deep transition-colors"
+                className="mt-4 inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase hover:bg-pe-rose-deep transition-colors"
               >
                 <FolderUp size={14} />
                 Seleccionar imagenes

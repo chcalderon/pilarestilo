@@ -92,7 +92,7 @@ function PanelFooter({ locale, subtotal, viewCartHref, onClose, padded }: PanelF
       <a
         href={viewCartHref}
         onClick={onClose}
-        className={`block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 ${padded ? 'py-3' : 'py-2.5'} bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200`}
+        className={`block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 ${padded ? 'py-3' : 'py-2.5'} bg-pe-rose-action text-pe-white hover:bg-pe-rose-deep transition-colors duration-200`}
       >
         {locale === 'es' ? 'Ver carrito' : 'View cart'}
       </a>

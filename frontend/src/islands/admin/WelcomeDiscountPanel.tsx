@@ -256,7 +256,7 @@ export default function WelcomeDiscountPanel() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
         >
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar

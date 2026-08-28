@@ -106,7 +106,7 @@ export default function StockUnavailableModal({
               ref={btnRef}
               type="button"
               onClick={onClose}
-              className="w-full font-sans text-xs tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-2"
+              className="w-full font-sans text-xs tracking-[0.22em] uppercase px-4 py-3 bg-pe-rose-action text-pe-white hover:bg-pe-rose-deep transition-colors duration-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-2"
             >
               Entendido
             </button>
