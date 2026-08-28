@@ -3,15 +3,11 @@ package com.pilarestilo.notificationservice;
 import com.pilarestilo.notificationservice.domain.enums.NotificationType;
 import com.pilarestilo.notificationservice.domain.model.InAppNotification;
 import com.pilarestilo.notificationservice.domain.ports.InAppNotificationRepository;
+import com.pilarestilo.notificationservice.support.AbstractSharedStackIT;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Map;
 import java.util.UUID;
@@ -24,22 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the same place. Booting the full context here is also the real "context loads" check.
  */
 @SpringBootTest
-@Testcontainers
-class NotificationStoreIT {
-
-    @Container
-    @SuppressWarnings("resource")
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16")
-            .withDatabaseName("pilarestilo_notifications")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void props(DynamicPropertyRegistry registry) {
-        registry.add("app.notification.datasource.url", postgres::getJdbcUrl);
-        registry.add("app.notification.datasource.username", postgres::getUsername);
-        registry.add("app.notification.datasource.password", postgres::getPassword);
-    }
+class NotificationStoreIT extends AbstractSharedStackIT {
 
     @Autowired
     InAppNotificationRepository repository;

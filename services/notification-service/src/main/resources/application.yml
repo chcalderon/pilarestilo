@@ -47,3 +47,9 @@ app:
       url: ${APP_NOTIFICATION_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo_notifications}
       username: ${APP_NOTIFICATION_DATASOURCE_USERNAME:pilar}
       password: ${APP_NOTIFICATION_DATASOURCE_PASSWORD:pilar}
+  shared-db:
+    # Read-only view of the shared pilarestilo database — same as the other four services.
+    datasource:
+      url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo}
+      username: ${SPRING_DATASOURCE_USERNAME:pilar}
+      password: ${SPRING_DATASOURCE_PASSWORD:pilar}
