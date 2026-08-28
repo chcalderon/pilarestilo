@@ -32,9 +32,16 @@ export function RegisterPopoverPanel({ anchor, initialTab, locale, onClose }: Pr
     if (node && !node.open) node.showModal();
   }, []);
 
+  /*
+   * dialog's UA stylesheet hardcodes left:0; right:0 (its built-in centering trick) and only
+   * dialog:modal overrides top/bottom. left:0 + our right + our width leaves the box
+   * over-constrained, and CSS 2.1 10.3.7 drops `right` in that case (ltr) -- the panel pinned to
+   * the left edge no matter what `right` said. left:"auto" is what actually frees `right` to work.
+   */
   const desktopStyle: React.CSSProperties = {
     position: "fixed",
     top: anchor.bottom + 8,
+    left: "auto",
     right: window.innerWidth - anchor.right,
     width: 320,
     margin: 0,
