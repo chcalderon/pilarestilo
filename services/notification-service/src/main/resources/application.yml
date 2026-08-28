@@ -17,6 +17,8 @@ spring:
           "[time_zone]": UTC
   # spring.flyway.* is not used: NotificationsDbConfig declares an explicit Flyway bean pointed at
   # the owned database, and FlywayAutoConfiguration backs off on it.
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
 management:
   endpoints:
@@ -44,6 +46,10 @@ app:
   notification:
     # Fallback for a system_settings row nobody has saved yet — the shop's own list wins over this.
     provider: ${NOTIFICATION_PROVIDER:LOG}
+    listeners:
+      # Flipped to true in the same commit that deletes the monolith's Kafka notification listeners,
+      # so the two never consume the same topic at once (spec §7).
+      enabled: ${APP_NOTIFICATION_LISTENERS_ENABLED:false}
     n8n:
       webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}
       api-key: ${NOTIFICATION_N8N_API_KEY:}
@@ -87,3 +93,12 @@ app:
       url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo}
       username: ${SPRING_DATASOURCE_USERNAME:pilar}
       password: ${SPRING_DATASOURCE_PASSWORD:pilar}
+  domain-events:
+    kafka:
+      # Sole trigger. Enabled by the deploy env, same as the backend.
+      enabled: ${APP_DOMAIN_EVENTS_KAFKA_ENABLED:false}
+      topic-prefix: ${APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX:pe.domain}
+      consumer-group-id: ${APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID:pe-notification-service}
+      retry-backoff-ms: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:1500}
+      retry-max-attempts: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:3}
+      dlt-suffix: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:.dlt}
