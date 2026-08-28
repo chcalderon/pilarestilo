@@ -107,7 +107,7 @@ export default function ReviewStep({
             <li
               key={item.id}
               className={`flex gap-3 items-start ${
-                issue ? 'border-l-4 border-[#8f2d3b] bg-[#fff6f7] -ml-3 pl-3 py-2' : ''
+                issue ? 'border border-[#8f2d3b]/30 bg-[#fff6f7] rounded-md p-3' : ''
               }`}
             >
               {item.imageUrl && (

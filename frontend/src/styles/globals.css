@@ -173,6 +173,20 @@
     @apply font-sans uppercase text-[0.7rem] tracking-[0.32em] text-pe-rose-ink;
   }
   .pe-script { font-family: 'Pinyon Script', cursive; font-weight: 400; }
+
+  /*
+   * Every clickable icon (nav, cart, wishlist, close buttons) gets this same circular hit area:
+   * 44px is the touch-target floor regardless of how small the glyph inside it looks. Global, not
+   * scoped to one component, because it has to reach both plain Astro markup and React islands —
+   * Astro's own scoped <style> blocks never touch a client-rendered island's DOM. See DESIGN.md's
+   * Icon Buttons section.
+   */
+  .icon-hit {
+    @apply inline-flex items-center justify-center w-11 h-11;
+  }
+  #site-header.theme-light .icon-hit:hover {
+    background-color: color-mix(in srgb, var(--pe-charcoal) 8%, transparent);
+  }
 }
 
 @layer utilities {

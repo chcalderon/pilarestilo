@@ -276,7 +276,7 @@ export default function CartPopover({ locale }: Props) {
       aria-expanded={open}
       aria-controls="cart-popover-content"
       aria-label={cartLabel}
-      className="relative flex items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
+      className="icon-hit relative rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
     >
       <ShoppingBag size={20} strokeWidth={1.5} />
       {totalItems > 0 && (

@@ -222,9 +222,13 @@ export default function ProductVariantSelector({
             <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
               {labels.selectSecondary}
             </p>
-            {allSecondarySummary && (
+            {/*
+             * Only worth a line of its own when picking a primary actually narrowed the secondary
+             * options -- otherwise it just repeats, word for word, the button row two lines down.
+             */}
+            {selectedPrimarySecondarySummary && selectedPrimarySecondarySummary !== allSecondarySummary && (
               <p className="text-[10px] tracking-[0.08em] uppercase text-[#3A3A3A]/45 mb-2">
-                {labels.availableSecondary}: {selectedPrimarySecondarySummary || allSecondarySummary}
+                {labels.availableSecondary}: {selectedPrimarySecondarySummary}
               </p>
             )}
             <div className="flex flex-wrap gap-2">
@@ -263,9 +267,9 @@ export default function ProductVariantSelector({
         if (!canAdd) {
           addButtonClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
         } else if (added) {
-          addButtonClass = 'bg-pe-gold/80 text-pe-on-light';
+          addButtonClass = 'bg-pe-rose-deep text-pe-on-light';
         } else {
-          addButtonClass = 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95';
+          addButtonClass = 'bg-pe-rose-action text-pe-on-light hover:bg-pe-rose-deep active:scale-95';
         }
         let addButtonLabel: string;
         if (outOfStock) {
@@ -282,8 +286,8 @@ export default function ProductVariantSelector({
             disabled={!canAdd}
             aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
             className={[
-              'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
-              'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
+              'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3 transition-all duration-200',
+              'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1',
               addButtonClass,
             ].join(' ')}
           >

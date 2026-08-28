@@ -197,7 +197,7 @@ export default function CartPage({ locale }: Props) {
           {conflictCount > 0 && (
             <div
               role="alert"
-              className="flex items-start gap-3 border-l-4 border-[#8f2d3b] bg-[#ffe9ec] p-4 mb-6"
+              className="flex items-start gap-3 border border-[#8f2d3b]/30 bg-[#ffe9ec] p-4 mb-6"
             >
               <PackageX size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" aria-hidden="true" />
               <p className="font-sans text-sm text-[#732731]">
@@ -216,9 +216,9 @@ export default function CartPage({ locale }: Props) {
                 return (
                   <div
                     key={item.id}
-                    className={`flex gap-4 p-4 border-l-4 border-y border-r ${
+                    className={`flex gap-4 p-4 border ${
                       conflict
-                        ? 'bg-[#fff6f7] border-[#cb6070]/45 border-l-[#8f2d3b]'
+                        ? 'bg-[#fff6f7] border-[#cb6070]/45'
                         : 'bg-pe-white border-transparent'
                     }`}
                   >
@@ -312,7 +312,7 @@ export default function CartPage({ locale }: Props) {
                               clearIssue(item.id);
                               updateQuantity(item.id, item.quantity - 1);
                             }}
-                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold-ink transition-colors"
+                            className="icon-hit rounded-full border border-pe-black/20 font-sans text-sm hover:border-pe-rose hover:text-pe-rose-ink transition-colors"
                             aria-label={locale === 'es' ? 'Disminuir cantidad' : 'Decrease quantity'}
                           >
                             -
@@ -321,7 +321,7 @@ export default function CartPage({ locale }: Props) {
                           <button
                             type="button"
                             onClick={() => void increaseQuantity(item)}
-                            className="w-7 h-7 border border-pe-black/20 flex items-center justify-center font-sans text-sm hover:border-pe-gold hover:text-pe-gold-ink transition-colors"
+                            className="icon-hit rounded-full border border-pe-black/20 font-sans text-sm hover:border-pe-rose hover:text-pe-rose-ink transition-colors"
                             aria-label={locale === 'es' ? 'Aumentar cantidad' : 'Increase quantity'}
                           >
                             +
@@ -338,10 +338,11 @@ export default function CartPage({ locale }: Props) {
                             clearIssue(item.id);
                             removeItem(item.id);
                           }}
-                          className="font-sans text-[10px] tracking-widest uppercase text-pe-muted hover:text-pe-gold-ink transition-colors"
+                          className="icon-hit -mr-2.5 shrink-0 rounded-full text-pe-muted hover:text-pe-rose-ink hover:bg-pe-black/5 transition-colors"
+                          title={l.remove}
                           aria-label={`${l.remove} ${item.name}`}
                         >
-                          {l.remove}
+                          <Trash2 size={16} aria-hidden="true" />
                         </button>
                       </div>
                     </div>

@@ -13,6 +13,8 @@ export interface Props {
   description?: string;
   locale: Locale;
   hideChrome?: boolean;
+  /** Only the home hero gets the full logo entrance; every other page starts already compact. */
+  isHome?: boolean;
 }
 
 const {
@@ -20,6 +22,7 @@ const {
   description = 'Pilar Estilo — Lujo con Propósito. Moda de lujo curada, nueva y de segunda mano.',
   locale,
   hideChrome = false,
+  isHome = false,
 } = Astro.props;
 
 const storeSettings = await getPublicStoreSettings();
@@ -43,7 +46,7 @@ const storeSettings = await getPublicStoreSettings();
   </head>
   <body class="min-h-screen flex flex-col antialiased relative">
     <div class="pe-grain-site" aria-hidden="true"></div>
-    {!hideChrome && <Navbar locale={locale} />}
+    {!hideChrome && <Navbar locale={locale} isHome={isHome} />}
     <main class="flex-1 relative z-[2]">
       <slot />
     </main>
