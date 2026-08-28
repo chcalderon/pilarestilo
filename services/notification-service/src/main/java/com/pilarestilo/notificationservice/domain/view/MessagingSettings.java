@@ -47,4 +47,16 @@ public record MessagingSettings(
     public boolean seededBySystem() {
         return updatedBy != null && updatedBy.startsWith("system-");
     }
+
+    /** Every field null/blank/false — a {@code system_settings} row with nothing configured. */
+    public static MessagingSettings empty() {
+        return new MessagingSettings(
+                List.of(), null,
+                null, null, null, null, null, false, false,
+                null, null, null, null, null,
+                null, null, null, null, null, null,
+                null, null,
+                null, null, null,
+                false, 0);
+    }
 }

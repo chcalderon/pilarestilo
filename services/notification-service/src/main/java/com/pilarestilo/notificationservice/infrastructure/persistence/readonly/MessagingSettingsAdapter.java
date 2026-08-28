@@ -13,15 +13,6 @@ public class MessagingSettingsAdapter implements MessagingSettingsPort {
     /** The single {@code system_settings} row. */
     private static final short SETTINGS_ID = 1;
 
-    private static final MessagingSettings EMPTY = new MessagingSettings(
-            List.of(), null,
-            null, null, null, null, null, false, false,
-            null, null, null, null, null,
-            null, null, null, null, null, null,
-            null, null,
-            null, null, null,
-            false, 0);
-
     private final SystemSettingsRoRepository repository;
 
     public MessagingSettingsAdapter(SystemSettingsRoRepository repository) {
@@ -30,7 +21,9 @@ public class MessagingSettingsAdapter implements MessagingSettingsPort {
 
     @Override
     public MessagingSettings current() {
-        return repository.findById(SETTINGS_ID).map(MessagingSettingsAdapter::toView).orElse(EMPTY);
+        return repository.findById(SETTINGS_ID)
+                .map(MessagingSettingsAdapter::toView)
+                .orElseGet(MessagingSettings::empty);
     }
 
     private static MessagingSettings toView(SystemSettingsRoEntity e) {

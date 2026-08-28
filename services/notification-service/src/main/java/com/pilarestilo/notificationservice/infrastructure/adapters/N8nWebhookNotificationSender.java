@@ -1,0 +1,169 @@
+package com.pilarestilo.notificationservice.infrastructure.adapters;
+
+import com.pilarestilo.notificationservice.domain.model.NotificationMessage;
+import com.pilarestilo.notificationservice.domain.model.NotificationRecipient;
+import com.pilarestilo.notificationservice.domain.ports.MessagingSettingsPort;
+import com.pilarestilo.notificationservice.domain.ports.NotificationSender;
+import com.pilarestilo.notificationservice.domain.view.MessagingSettings;
+import com.pilarestilo.notificationservice.metrics.NotificationMetrics;
+import com.pilarestilo.notificationservice.shared.DomainException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+
+@Component
+public class N8nWebhookNotificationSender implements NotificationSender {
+
+    private static final Logger log = LoggerFactory.getLogger(N8nWebhookNotificationSender.class);
+    private static final String DEFAULT_TOKEN_HEADER_NAME = "X-PE-N8N-TOKEN";
+    private static final String CHANNEL = "N8N_WEBHOOK";
+
+    private final RestClient.Builder restClientBuilder;
+    private final MessagingSettingsPort messagingSettings;
+    private final SystemSettingsCryptoService cryptoService;
+    private final NotificationMetrics metrics;
+    private final String envWebhookUrl;
+    private final String envApiKey;
+    private final String envTokenHeaderName;
+
+    public N8nWebhookNotificationSender(
+            RestClient.Builder restClientBuilder,
+            MessagingSettingsPort messagingSettings,
+            SystemSettingsCryptoService cryptoService,
+            NotificationMetrics metrics,
+            @Value("${app.notification.n8n.webhook-url:}") String webhookUrl,
+            @Value("${app.notification.n8n.api-key:}") String apiKey,
+            @Value("${app.notification.n8n.token-header-name:X-PE-N8N-TOKEN}") String tokenHeaderName
+    ) {
+        this.restClientBuilder = restClientBuilder;
+        this.messagingSettings = messagingSettings;
+        this.cryptoService = cryptoService;
+        this.metrics = metrics;
+        this.envWebhookUrl = normalize(webhookUrl);
+        this.envApiKey = normalize(apiKey);
+        this.envTokenHeaderName = normalize(tokenHeaderName);
+    }
+
+    @SuppressWarnings("java:S2629")
+    private void sendWebhook(String eventType, UUID referenceId, NotificationRecipient recipient,
+                             String subject, String bodyText, Map<String, Object> data) {
+        EffectiveConfig config = resolveConfig();
+        if (config == null) {
+            log.warn("[NOTIFICATION:N8N] disabled: missing webhook URL.");
+            return;
+        }
+
+        Map<String, Object> recipientPayload = new LinkedHashMap<>();
+        recipientPayload.put("phone", recipient.phone());
+        recipientPayload.put("email", recipient.email());
+        recipientPayload.put("channelPreference", recipient.preference().name());
+        recipientPayload.put("allowWhatsApp", recipient.allowsWhatsApp());
+        recipientPayload.put("allowEmail", recipient.allowsEmail());
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("eventType", eventType);
+        payload.put("referenceId", referenceId == null ? null : referenceId.toString());
+        payload.put("occurredAt", Instant.now().toString());
+        payload.put("recipient", recipientPayload);
+        if (subject != null) {
+            payload.put("subject", subject);
+        }
+        if (bodyText != null) {
+            payload.put("bodyText", bodyText);
+        }
+        if (data != null && !data.isEmpty()) {
+            payload.put("data", data);
+        }
+
+        try {
+            RestClient.RequestBodySpec request = restClientBuilder
+                    .build()
+                    .post()
+                    .uri(config.webhookUrl())
+                    .contentType(MediaType.APPLICATION_JSON);
+
+            if (!config.apiKey().isBlank()) {
+                request = request.header(config.tokenHeaderName(), config.apiKey());
+            }
+
+            request.body(payload).retrieve().toBodilessEntity();
+            log.info("[NOTIFICATION:N8N] event={} referenceId={} recipient={} preference={}",
+                    eventType, referenceId, recipient.preferredEmailThenPhone(), recipient.preference());
+        } catch (Exception ex) {
+            metrics.countSendFailure(CHANNEL);
+            log.warn("[NOTIFICATION:N8N] send failed event={} referenceId={} reason={}",
+                    eventType, referenceId, ex.getMessage());
+        }
+    }
+
+    private EffectiveConfig resolveConfig() {
+        MessagingSettings settings = messagingSettings.current();
+        String webhookUrl = firstNonBlank(settings.n8nWebhookUrl(), envWebhookUrl);
+        String decryptedApiKey = decryptSecret(settings.n8nApiKeyEncrypted(), "n8n api key");
+        String apiKey = firstNonBlank(decryptedApiKey, envApiKey);
+        String tokenHeaderName = normalizeHeaderName(firstNonBlank(settings.n8nTokenHeaderName(), envTokenHeaderName));
+
+        if (webhookUrl == null || webhookUrl.isBlank()) {
+            return null;
+        }
+
+        return new EffectiveConfig(webhookUrl, normalize(apiKey), tokenHeaderName);
+    }
+
+    private String decryptSecret(String encryptedValue, String label) {
+        if (encryptedValue == null || encryptedValue.isBlank()) {
+            return null;
+        }
+        try {
+            String decrypted = cryptoService.decrypt(encryptedValue);
+            if (decrypted == null || decrypted.isBlank()) {
+                return null;
+            }
+            return decrypted.trim();
+        } catch (DomainException ex) {
+            log.warn("[NOTIFICATION:N8N] could not decrypt {}: {}", label, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String normalizeHeaderName(String value) {
+        if (value == null || value.isBlank()) {
+            return DEFAULT_TOKEN_HEADER_NAME;
+        }
+        return value.trim();
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
+        }
+        if (second != null && !second.isBlank()) {
+            return second.trim();
+        }
+        return null;
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private record EffectiveConfig(
+            String webhookUrl,
+            String apiKey,
+            String tokenHeaderName
+    ) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        sendWebhook(message.templateKey(), message.referenceId(), recipient,
+                message.subject(), message.bodyText(), message.data());
+    }
+}
