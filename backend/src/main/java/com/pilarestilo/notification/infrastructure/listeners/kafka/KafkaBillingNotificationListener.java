@@ -2,6 +2,7 @@ package com.pilarestilo.notification.infrastructure.listeners.kafka;
 
 import com.pilarestilo.billing.domain.events.SalesDocumentIssued;
 import com.pilarestilo.notification.application.BillingNotificationDispatcher;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConditionalOnProperty(prefix = "app.domain-events.kafka", name = "enabled", havingValue = "true")
+@ConditionalOnBooleanProperty(name = "app.notification.kafka-listeners.enabled", matchIfMissing = true)
 public class KafkaBillingNotificationListener {
 
     private final BillingNotificationDispatcher dispatcher;

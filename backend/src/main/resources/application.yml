@@ -113,6 +113,11 @@ app:
     flyway:
       locations: ${APP_NOTIFICATION_FLYWAY_LOCATIONS:classpath:db/migration-notifications}
     provider: ${NOTIFICATION_PROVIDER:LOG}
+    # A second gate on the 7 Kafka*NotificationListener beans, independent of the Kafka switch.
+    # Set false at the notification-service cutover so this monolith stops consuming notification
+    # events without touching any other Kafka listener; flip back to roll back.
+    kafka-listeners:
+      enabled: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:true}
     n8n:
       webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}
       api-key: ${NOTIFICATION_N8N_API_KEY:}

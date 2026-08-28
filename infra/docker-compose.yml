@@ -81,6 +81,9 @@ services:
       APP_CACHE_REDIS_ENABLED: ${APP_CACHE_REDIS_ENABLED:-false}
       APP_CACHE_REDIS_TTL_SECONDS: ${APP_CACHE_REDIS_TTL_SECONDS:-300}
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
+      # Second gate on the monolith's 7 Kafka notification consumers. Flip to false at the
+      # notification-service cutover (deploy 1); flip back to roll back.
+      APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:-true}
       WHATSAPP_SIMULATED_TO: ${WHATSAPP_SIMULATED_TO:-+56900000000}
       WHATSAPP_SIMULATED_SENDER: ${WHATSAPP_SIMULATED_SENDER:-Pilar Estilo}
       WHATSAPP_TWILIO_API_BASE_URL: ${WHATSAPP_TWILIO_API_BASE_URL:-https://api.twilio.com}

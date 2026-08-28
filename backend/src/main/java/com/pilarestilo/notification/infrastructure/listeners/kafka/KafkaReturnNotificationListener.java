@@ -4,6 +4,7 @@ import com.pilarestilo.notification.application.ReturnNotificationDispatcher;
 import com.pilarestilo.returns.domain.events.RefundRegistered;
 import com.pilarestilo.returns.domain.events.ReturnApproved;
 import com.pilarestilo.returns.domain.events.ReturnRequested;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConditionalOnProperty(prefix = "app.domain-events.kafka", name = "enabled", havingValue = "true")
+@ConditionalOnBooleanProperty(name = "app.notification.kafka-listeners.enabled", matchIfMissing = true)
 public class KafkaReturnNotificationListener {
 
     private final ReturnNotificationDispatcher dispatcher;
