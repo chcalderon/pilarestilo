@@ -1,0 +1,33 @@
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:notification-service}
+  mvc:
+    problemdetails:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    # Boot 4 renamed both of these. The old management.tracing.enabled and
+    # management.otlp.tracing.endpoint still parse and bind to nothing.
+    export:
+      enabled: ${APP_TRACING_ENABLED:false}
+    sampling:
+      probability: ${APP_TRACING_SAMPLING_PROBABILITY:1.0}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${APP_TRACING_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+  system-settings:
+    crypto-secret: ${SYSTEM_SETTINGS_CRYPTO_SECRET:${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}}
