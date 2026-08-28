@@ -1,0 +1,11 @@
+package com.pilarestilo.notificationservice.domain.enums;
+
+public enum NotificationType {
+    DISCOUNT_CODE_ASSIGNED,
+    ORDER_CONFIRMED,
+    PAYMENT_RECEIVED,
+    ORDER_PREPARING,
+    ORDER_SHIPPED,
+    ORDER_DELIVERED,
+    WELCOME
+}

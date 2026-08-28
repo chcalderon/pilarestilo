@@ -7,6 +7,16 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          "[time_zone]": UTC
+  # spring.flyway.* is not used: NotificationsDbConfig declares an explicit Flyway bean pointed at
+  # the owned database, and FlywayAutoConfiguration backs off on it.
 
 management:
   endpoints:
@@ -31,3 +41,9 @@ app:
     secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
   system-settings:
     crypto-secret: ${SYSTEM_SETTINGS_CRYPTO_SECRET:${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}}
+  notification:
+    # The database this service owns. Read-write, its own Flyway history.
+    datasource:
+      url: ${APP_NOTIFICATION_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo_notifications}
+      username: ${APP_NOTIFICATION_DATASOURCE_USERNAME:pilar}
+      password: ${APP_NOTIFICATION_DATASOURCE_PASSWORD:pilar}
