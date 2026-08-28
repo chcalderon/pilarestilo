@@ -32,7 +32,7 @@ function slugify(input: string) {
 }
 
 const OPTION_SELECTED_CLASS = 'border-[#B76E79] bg-[#B76E79] text-white';
-const OPTION_DEFAULT_CLASS = 'border-[#3A3A3A]/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]';
+const OPTION_DEFAULT_CLASS = 'border-pe-charcoal/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]';
 
 function optionButtonClass(disabled: boolean, isSelected: boolean, disabledClass: string) {
   if (disabled) return disabledClass;
