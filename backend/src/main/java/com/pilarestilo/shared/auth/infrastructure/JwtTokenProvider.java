@@ -49,6 +49,15 @@ public class JwtTokenProvider {
                                       UserRole role,
                                       List<String> permissions,
                                       List<String> permissionCodes) {
+        return generateAccessToken(userId, email, role, permissions, permissionCodes, 1);
+    }
+
+    public String generateAccessToken(UUID userId,
+                                      String email,
+                                      UserRole role,
+                                      List<String> permissions,
+                                      List<String> permissionCodes,
+                                      int sessionVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
@@ -56,6 +65,7 @@ public class JwtTokenProvider {
                 .claim("role", role.name())
                 .claim("permissions", permissions)
                 .claim("permissionCodes", permissionCodes)
+                .claim("sv", sessionVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(ACCESS_EXPIRY_MS)))
                 .signWith(key)
@@ -63,10 +73,15 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(UUID userId) {
+        return generateRefreshToken(userId, 1);
+    }
+
+    public String generateRefreshToken(UUID userId, int sessionVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("type", "refresh")
+                .claim("sv", sessionVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(REFRESH_EXPIRY_MS)))
                 .signWith(key)
