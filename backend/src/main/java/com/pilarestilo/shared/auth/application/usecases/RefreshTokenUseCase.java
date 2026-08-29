@@ -48,6 +48,14 @@ public class RefreshTokenUseCase {
             throw new DomainException("This account is blocked");
         }
 
+        // A refresh token from before the last password change cannot mint fresh access tokens.
+        // Missing "sv" predates the feature and counts as version 1.
+        Integer tokenSessionVersion = claims.get("sv", Integer.class);
+        int effectiveSessionVersion = tokenSessionVersion != null ? tokenSessionVersion : 1;
+        if (effectiveSessionVersion != user.getSessionVersion()) {
+            throw new DomainException("Session no longer valid");
+        }
+
         UserRole role = user.getRole();
         if (role != UserRole.ADMIN && role != UserRole.CUSTOMER) {
             LocalDate today = LocalDate.now(STORE_ZONE);
