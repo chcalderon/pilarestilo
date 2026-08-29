@@ -77,8 +77,9 @@ public class RegisterUseCase {
         List<String> permissions = List.of(); // CUSTOMER has no worker permissions
         List<String> permissionCodes = List.of();
         String access  = jwtTokenProvider.generateAccessToken(
-                saved.getId(), saved.getEmail(), saved.getRole(), permissions, permissionCodes);
-        String refresh = jwtTokenProvider.generateRefreshToken(saved.getId());
+                saved.getId(), saved.getEmail(), saved.getRole(), permissions, permissionCodes,
+                saved.getSessionVersion());
+        String refresh = jwtTokenProvider.generateRefreshToken(saved.getId(), saved.getSessionVersion());
         return AuthTokenDto.of(
                 access,
                 refresh,
