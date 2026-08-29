@@ -99,6 +99,12 @@ export default function LoginForm({ locale, redirect }: Props) {
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
+        <a
+          href={`/${locale}/auth/forgot-password`}
+          className="self-end font-sans text-[0.74rem] text-pe-rose-ink hover:underline underline-offset-2"
+        >
+          {es ? '¿Olvidaste tu contraseña?' : 'Forgot your password?'}
+        </a>
       </div>
 
       {/* Error */}
