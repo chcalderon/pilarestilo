@@ -2544,13 +2544,13 @@ export default function AccountPage({ locale }: Props) {
       </div>
 
       <div className="pe-container py-10">
-        <nav className="flex gap-0 border-b border-pe-black/10 mb-8">
+        <nav className="flex gap-0 border-b border-pe-black/10 mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((t) => (
             <button
               type="button"
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-5 py-3 font-sans text-[0.72rem] tracking-[0.18em] uppercase transition-colors duration-200 border-b-2 -mb-px ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap px-3.5 sm:px-5 py-3 font-sans text-[0.72rem] tracking-[0.18em] uppercase transition-colors duration-200 border-b-2 -mb-px ${
                 tab === t.id
                   ? 'border-pe-rose text-pe-rose-ink'
                   : 'border-transparent text-pe-muted hover:text-pe-charcoal'
