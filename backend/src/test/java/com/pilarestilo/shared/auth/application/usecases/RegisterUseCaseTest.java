@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -55,9 +56,9 @@ class RegisterUseCaseTest {
         lenient().when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(jwtTokenProvider.generateAccessToken(
-                        any(), any(), any(UserRole.class), anyList(), anyList()))
+                        any(), any(), any(UserRole.class), anyList(), anyList(), anyInt()))
                 .thenReturn("access-token");
-        lenient().when(jwtTokenProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        lenient().when(jwtTokenProvider.generateRefreshToken(any(), anyInt())).thenReturn("refresh-token");
         lenient().when(issueWelcomeDiscountUseCase.issueFor(any(), anyBoolean()))
                 .thenReturn(Optional.empty());
     }
@@ -107,6 +108,14 @@ class RegisterUseCaseTest {
 
         verify(afterCommitPublisher).publish(argThat(event ->
                 ((UserRegistered) event).welcomeDiscount() == null));
+    }
+
+    @Test
+    void issuesTheTokensWithTheNewUsersSessionVersion() {
+        useCase.execute("camila@example.com", "secret123", "Camila Torres", "127.0.0.1", "Mozilla", false);
+
+        verify(jwtTokenProvider).generateAccessToken(any(), any(), any(UserRole.class), anyList(), anyList(), eq(1));
+        verify(jwtTokenProvider).generateRefreshToken(any(), eq(1));
     }
 
     /** A coupon that fails to issue must never take the account down with it. */

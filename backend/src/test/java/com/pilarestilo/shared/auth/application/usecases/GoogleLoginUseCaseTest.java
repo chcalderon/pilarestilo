@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -73,9 +74,9 @@ class GoogleLoginUseCaseTest {
         mediaStorageService = mock(MediaStorageService.class);
         rolePermissionResolutionService = mock(RolePermissionResolutionService.class);
 
-        lenient().when(jwtTokenProvider.generateAccessToken(any(), any(), any(), any(), any()))
+        lenient().when(jwtTokenProvider.generateAccessToken(any(), any(), any(), any(), any(), anyInt()))
                 .thenReturn("access-token");
-        lenient().when(jwtTokenProvider.generateRefreshToken(any())).thenReturn("refresh-token");
+        lenient().when(jwtTokenProvider.generateRefreshToken(any(), anyInt())).thenReturn("refresh-token");
         lenient().when(rolePermissionResolutionService.resolve(any()))
                 .thenReturn(new ResolvedPermissions(List.of("legacyView"), List.of("perm.code")));
         lenient().when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

@@ -69,8 +69,9 @@ public class RefreshTokenUseCase {
                 user.getEmail(),
                 role,
                 resolvedPermissions.legacyViewKeys(),
-                resolvedPermissions.permissionCodes());
-        String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId());
+                resolvedPermissions.permissionCodes(),
+                user.getSessionVersion());
+        String newRefresh = jwtTokenProvider.generateRefreshToken(user.getId(), user.getSessionVersion());
         return AuthTokenDto.of(
                 access,
                 newRefresh,
