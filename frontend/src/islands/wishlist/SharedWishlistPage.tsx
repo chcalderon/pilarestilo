@@ -55,7 +55,7 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {SKELETON_TILES.map((key) => (
-          <div key={key} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
+          <div key={key} className="aspect-[3/4] bg-pe-cream animate-pulse" />
         ))}
       </div>
     );
@@ -64,10 +64,10 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
   if (notFound) {
     return (
       <div className="text-center py-24">
-        <p className="font-['Cormorant_Garamond',serif] text-3xl text-[#1A1A1A] mb-4">
+        <p className="font-display text-3xl text-pe-black mb-4">
           {locale === 'es' ? 'Link no disponible' : 'Link not available'}
         </p>
-        <p className="text-sm text-[#6B5A4B]">
+        <p className="text-sm text-pe-charcoal">
           {locale === 'es'
             ? 'Este wishlist compartido no existe o fue desactivado.'
             : 'This shared wishlist does not exist or has been disabled.'}
@@ -79,7 +79,7 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
   if (!products.length) {
     return (
       <div className="text-center py-24">
-        <p className="font-['Cormorant_Garamond',serif] text-3xl text-[#1A1A1A] mb-4">
+        <p className="font-display text-3xl text-pe-black mb-4">
           {locale === 'es' ? 'Sin productos compartidos' : 'No shared products'}
         </p>
       </div>
@@ -99,11 +99,11 @@ export default function SharedWishlistPage({ locale = 'es', shareToken }: Props)
               />
             </div>
             <p className="pe-wishlist-brand text-[10px] tracking-widest uppercase mb-1">{p.brand}</p>
-            <p className="pe-wishlist-name font-['Cormorant_Garamond',serif] text-lg leading-tight mb-1">{p.name}</p>
+            <p className="pe-wishlist-name font-display text-lg leading-tight mb-1">{p.name}</p>
             {hasDiscount(p) && (
-              <p className="pe-wishlist-price font-sans text-xs text-[#3A3A3A]/45 line-through">{formatListPrice(p)}</p>
+              <p className="pe-wishlist-price font-sans text-xs text-pe-charcoal/45 line-through">{formatListPrice(p)}</p>
             )}
-            <p className="pe-wishlist-price font-['Cormorant_Garamond',serif]">{formatPrice(p)}</p>
+            <p className="pe-wishlist-price font-display">{formatPrice(p)}</p>
           </a>
 
           <button

@@ -31,13 +31,13 @@ interface SharePanelProps {
 
 function SharePanel({ locale, shareState, shareLoading, shareUrl, shareMessage, onEnable, onDisable, onCopy }: SharePanelProps) {
   return (
-    <section className="border border-[#C9BCA9]/50 bg-[#F6EFE6] dark:bg-[#181214] dark:border-[#3F2A2F] p-4 sm:p-5">
+    <section className="border border-pe-black/10 bg-pe-offwhite p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[10px] tracking-[0.28em] uppercase text-[#8E4F58] mb-1">
+          <p className="text-[10px] tracking-[0.28em] uppercase text-pe-rose-ink mb-1">
             {locale === 'es' ? 'Wishlist compartible' : 'Shareable wishlist'}
           </p>
-          <p className="text-sm text-[#3A3A3A] dark:text-[#D6C8B5]">
+          <p className="text-sm text-pe-charcoal">
             {locale === 'es'
               ? 'Genera un link publico para compartir tus favoritos.'
               : 'Generate a public link to share your wishlist.'}
@@ -49,7 +49,7 @@ function SharePanel({ locale, shareState, shareLoading, shareUrl, shareMessage, 
               type="button"
               onClick={onEnable}
               disabled={shareLoading}
-              className="px-3 py-2 text-[11px] tracking-widest uppercase bg-[#B76E79] text-[#F8F4EF] hover:bg-[#8E4F58] transition-colors disabled:opacity-60"
+              className="px-3 py-2 text-[11px] tracking-widest uppercase bg-pe-rose-action text-pe-offwhite hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
             >
               {locale === 'es' ? 'Activar link' : 'Enable link'}
             </button>
@@ -58,7 +58,7 @@ function SharePanel({ locale, shareState, shareLoading, shareUrl, shareMessage, 
               <button
                 type="button"
                 onClick={onCopy}
-                className="px-3 py-2 text-[11px] tracking-widest uppercase border border-[#B76E79]/50 text-[#8E4F58] dark:text-[#E4B8BF] hover:bg-[#B76E79]/10 transition-colors"
+                className="px-3 py-2 text-[11px] tracking-widest uppercase border border-pe-rose/50 text-pe-rose-ink hover:bg-pe-rose/10 transition-colors"
               >
                 {locale === 'es' ? 'Copiar link' : 'Copy link'}
               </button>
@@ -66,7 +66,7 @@ function SharePanel({ locale, shareState, shareLoading, shareUrl, shareMessage, 
                 type="button"
                 onClick={onDisable}
                 disabled={shareLoading}
-                className="px-3 py-2 text-[11px] tracking-widest uppercase border border-[#8E4F58]/35 text-[#8E4F58] dark:text-[#D6C8B5] hover:bg-[#8E4F58]/10 transition-colors disabled:opacity-60"
+                className="px-3 py-2 text-[11px] tracking-widest uppercase border border-pe-rose-deep/35 text-pe-rose-ink hover:bg-pe-rose-deep/10 transition-colors disabled:opacity-60"
               >
                 {locale === 'es' ? 'Desactivar' : 'Disable'}
               </button>
@@ -75,12 +75,12 @@ function SharePanel({ locale, shareState, shareLoading, shareUrl, shareMessage, 
         </div>
       </div>
       {shareState.enabled && shareUrl ? (
-        <div className="mt-3 p-2.5 border border-dashed border-[#C9BCA9] dark:border-[#4A3238] text-xs break-all text-[#5B4A3B] dark:text-[#D6C8B5]">
+        <div className="mt-3 p-2.5 border border-dashed border-pe-black/15 text-xs break-all text-pe-charcoal">
           {shareUrl}
         </div>
       ) : null}
       {shareMessage ? (
-        <p className="mt-3 text-xs text-[#8E4F58] dark:text-[#E4B8BF]">{shareMessage}</p>
+        <p className="mt-3 text-xs text-pe-rose-ink">{shareMessage}</p>
       ) : null}
     </section>
   );
@@ -107,7 +107,7 @@ function WishlistCard({ product: p, locale, token, onRemove, onAddToCart }: Wish
         className="pe-wishlist-remove absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center transition-colors"
         aria-label="Quitar de favoritos"
       >
-        <X size={14} strokeWidth={1.5} className="text-[#1A1A1A]" />
+        <X size={14} strokeWidth={1.5} className="text-pe-black" />
       </button>
 
       <a href={`/${locale}/products/${p.id}`} className="block">
@@ -119,13 +119,13 @@ function WishlistCard({ product: p, locale, token, onRemove, onAddToCart }: Wish
           />
         </div>
         <p className="pe-wishlist-brand text-[10px] tracking-widest uppercase mb-1">{p.brand}</p>
-        <p className="pe-wishlist-name font-['Cormorant_Garamond',serif] text-lg leading-tight mb-1">{p.name}</p>
+        <p className="pe-wishlist-name font-display text-lg leading-tight mb-1">{p.name}</p>
         {discounted && (
-          <p className="pe-wishlist-price font-sans text-xs text-[#3A3A3A]/45 line-through">
+          <p className="pe-wishlist-price font-sans text-xs text-pe-charcoal/45 line-through">
             {format(p.listPrice!.amount, p.listPrice!.currency)}
           </p>
         )}
-        <p className="pe-wishlist-price font-['Cormorant_Garamond',serif]">{format(p.price.amount, p.price.currency)}</p>
+        <p className="pe-wishlist-price font-display">{format(p.price.amount, p.price.currency)}</p>
       </a>
 
       <button
@@ -241,7 +241,7 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
         {sharePanel}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {SKELETON_TILES.map((key) => (
-            <div key={key} className="aspect-[3/4] bg-[#DDCCB8] animate-pulse" />
+            <div key={key} className="aspect-[3/4] bg-pe-cream animate-pulse" />
           ))}
         </div>
       </div>
@@ -254,12 +254,12 @@ export default function WishlistPage({ locale = 'es', token }: Props) {
         {sharePanel}
         <div className="text-center py-24">
           <img src="/ornaments/seal-pe.svg" alt="" className="w-24 h-24 mx-auto mb-6 opacity-20" />
-          <p className="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A] mb-4">
+          <p className="font-display text-2xl text-pe-charcoal mb-4">
             {locale === 'es' ? 'Tu lista de favoritos esta vacia' : 'Your wishlist is empty'}
           </p>
           <a
             href={`/${locale}/products`}
-            className="inline-flex items-center gap-2 bg-[#B76E79] text-[#F8F4EF] px-6 py-3 text-sm tracking-widest uppercase hover:bg-[#8E4F58] transition-colors"
+            className="inline-flex items-center gap-2 bg-pe-rose-action text-pe-offwhite px-6 py-3 text-sm tracking-widest uppercase hover:bg-pe-rose-deep transition-colors"
           >
             {locale === 'es' ? 'Explorar productos' : 'Explore products'}
           </a>

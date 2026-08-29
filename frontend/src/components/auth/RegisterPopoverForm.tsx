@@ -193,7 +193,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
   if (welcomeName) {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
-        <CheckCircle2 size={38} className="text-[#B76E79]" strokeWidth={1.75} />
+        <CheckCircle2 size={38} className="text-pe-rose" strokeWidth={1.75} />
         <p className="font-display text-lg text-[var(--pe-foreground)]">
           {es ? `Bienvenido/a, ${welcomeName}` : `Welcome, ${welcomeName}`}
         </p>
@@ -291,7 +291,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
               checked={marketing}
               onChange={e => setMarketing(e.target.checked)}
               disabled={loading}
-              className="mt-0.5 w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
+              className="mt-0.5 w-3.5 h-3.5 shrink-0 accent-pe-rose"
             />
             <span className="text-[0.68rem] leading-relaxed text-[var(--pe-muted)]">
               {es
@@ -304,7 +304,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#1A1A1A] text-[#F8F4EF] py-2 text-sm tracking-widest uppercase hover:bg-[#B76E79] disabled:opacity-50 transition-colors"
+          className="bg-pe-black text-pe-offwhite py-2 text-sm tracking-widest uppercase hover:bg-pe-rose disabled:opacity-50 transition-colors"
         >
           {submitLabel}
         </button>

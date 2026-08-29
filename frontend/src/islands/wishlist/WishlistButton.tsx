@@ -37,13 +37,13 @@ export default function WishlistButton({ productId, token, className = '', showL
         strokeWidth={1.25}
         className={`flex-shrink-0 transition-all duration-200 ${
           inWishlist
-            ? 'fill-[#B76E79] stroke-[#B76E79]'
-            : 'stroke-current group-hover:stroke-[#B76E79]'
+            ? 'fill-pe-rose stroke-pe-rose'
+            : 'stroke-current group-hover:stroke-pe-rose'
         }`}
       />
       {showLabel && (
         <span className={`font-sans text-xs tracking-widest uppercase transition-colors duration-200 ${
-          inWishlist ? 'text-[#B76E79]' : 'group-hover:text-[#B76E79]'
+          inWishlist ? 'text-pe-rose-ink' : 'group-hover:text-pe-rose-ink'
         }`}>
           {inWishlist ? labelRemove : labelAdd}
         </span>

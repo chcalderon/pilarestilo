@@ -37,7 +37,7 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
 <BaseLayout title={title} locale={locale}>
   <div class="min-h-screen" style="background-color: var(--pe-surface, #F8F4EF)">
     <!-- Category hero band -->
-    <section class="relative overflow-hidden border-b border-[#EDE3D8]">
+    <section class="relative overflow-hidden border-b border-pe-black/10">
       {category.imageUrl && (
         <img
           src={category.imageUrl}
@@ -47,33 +47,33 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
       )}
       <div class="relative pe-container py-16">
         <!-- Breadcrumbs -->
-        <nav class="flex items-center gap-2 text-xs text-[#3A3A3A]/50 mb-6" aria-label="Breadcrumb">
-          <a href={`/${locale}/`} class="hover:text-[#B76E79] transition-colors">
+        <nav class="flex items-center gap-2 text-xs text-pe-charcoal/50 mb-6" aria-label="Breadcrumb">
+          <a href={`/${locale}/`} class="hover:text-pe-rose-ink transition-colors">
             {locale === 'es' ? 'Inicio' : 'Home'}
           </a>
           <span>›</span>
-          <a href={`/${locale}/products`} class="hover:text-[#B76E79] transition-colors">
+          <a href={`/${locale}/products`} class="hover:text-pe-rose-ink transition-colors">
             {locale === 'es' ? 'Productos' : 'Products'}
           </a>
           {parent && (
             <>
               <span>›</span>
-              <a href={`/${locale}/categories/${parent.slug}`} class="hover:text-[#B76E79] transition-colors">
+              <a href={`/${locale}/categories/${parent.slug}`} class="hover:text-pe-rose-ink transition-colors">
                 {locale === 'es' ? parent.nameEs : parent.nameEn}
               </a>
             </>
           )}
           <span>›</span>
-          <span class="text-[#1A1A1A]">{title}</span>
+          <span class="text-pe-black">{title}</span>
         </nav>
 
-        <p class="text-[10px] tracking-[0.3em] uppercase text-[#B76E79] mb-2">
+        <p class="text-[10px] tracking-[0.3em] uppercase text-pe-rose-ink mb-2">
           {locale === 'es' ? 'Categoría' : 'Category'}
         </p>
-        <h1 class="font-['Cormorant_Garamond',serif] text-5xl font-light text-[#1A1A1A]">
+        <h1 class="font-display text-5xl font-light text-pe-black">
           {title}
         </h1>
-        <p class="mt-3 text-[#3A3A3A]/60 text-sm">
+        <p class="mt-3 text-pe-charcoal/60 text-sm">
           {productsPage.totalElements} {locale === 'es'
             ? (productsPage.totalElements === 1 ? 'producto' : 'productos')
             : (productsPage.totalElements === 1 ? 'product' : 'products')}
@@ -86,12 +86,12 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
       {products.length === 0 ? (
         <div class="text-center py-24">
           <img src="/ornaments/seal-pe.svg" alt="" class="w-20 h-20 mx-auto mb-6 opacity-20" />
-          <p class="font-['Cormorant_Garamond',serif] text-2xl text-[#3A3A3A]/50">
+          <p class="font-display text-2xl text-pe-charcoal/50">
             {locale === 'es' ? 'Sin productos en esta categoría aún' : 'No products in this category yet'}
           </p>
           <a
             href={`/${locale}/products`}
-            class="inline-flex items-center gap-2 mt-6 border border-[#B76E79] text-[#B76E79] px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] hover:text-white transition-colors"
+            class="inline-flex items-center gap-2 mt-6 border border-pe-rose text-pe-rose-ink px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose-action hover:text-pe-offwhite transition-colors"
           >
             {locale === 'es' ? 'Ver todo el catálogo' : 'Browse all products'}
           </a>

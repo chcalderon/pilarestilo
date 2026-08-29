@@ -14,9 +14,9 @@ function LoginPrompt({ locale, loginHref }: { readonly locale: string; readonly 
   const label = locale === 'es' ? 'Inicia sesión' : 'Sign in';
   const suffix = locale === 'es' ? 'para escribir una reseña.' : 'to write a review.';
   return (
-    <div className="py-6 border-t border-[#EDE3D8]">
-      <p className="text-[#3A3A3A]/60 text-sm">
-        <a href={loginHref} className="text-[#B76E79] hover:underline">{label}</a>{' '}{suffix}
+    <div className="py-6 border-t border-pe-black/10">
+      <p className="text-pe-charcoal/60 text-sm">
+        <a href={loginHref} className="text-pe-rose-ink hover:underline">{label}</a>{' '}{suffix}
       </p>
     </div>
   );
@@ -29,11 +29,11 @@ function successTitleFor(locale: string, replacing: boolean): string {
 
 function SuccessMessage({ locale, replacing }: { readonly locale: string; readonly replacing: boolean }) {
   return (
-    <div className="py-6 border-t border-[#EDE3D8]">
-      <p className="text-[#B76E79] font-['Cormorant_Garamond',serif] text-lg">
+    <div className="py-6 border-t border-pe-black/10">
+      <p className="text-pe-rose-ink font-display text-lg">
         {successTitleFor(locale, replacing)}
       </p>
-      <p className="text-[#3A3A3A]/50 text-sm mt-1">
+      <p className="text-pe-charcoal/50 text-sm mt-1">
         {locale === 'es' ? 'Será visible una vez aprobada.' : 'It will be visible once approved.'}
       </p>
     </div>
@@ -72,7 +72,7 @@ function StarRating({ display, onRate, onHover }: StarRatingProps) {
           <Star
             size={20}
             strokeWidth={1.25}
-            className={`transition-colors ${i <= display ? 'fill-[#B76E79] stroke-[#B76E79]' : 'stroke-[#3A3A3A]/30 fill-none'}`}
+            className={`transition-colors ${i <= display ? 'fill-pe-rose stroke-pe-rose' : 'stroke-pe-charcoal/30 fill-none'}`}
           />
         </button>
       ))}
@@ -141,14 +141,14 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
   const submitLabel = submitLabelFor(locale, submitting, replacing);
 
   return (
-    <form onSubmit={handleSubmit} className="py-6 border-t border-[#EDE3D8] space-y-5">
-      <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A]">
+    <form onSubmit={handleSubmit} className="py-6 border-t border-pe-black/10 space-y-5">
+      <h3 className="font-display text-xl text-pe-black">
         {formTitle}
       </h3>
 
       {/* Star rating */}
       <div>
-        <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
+        <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
           {locale === 'es' ? 'Puntuación' : 'Rating'}
         </p>
         <StarRating display={display} onRate={setRating} onHover={setHovered} />
@@ -156,7 +156,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
 
       {/* Title */}
       <div>
-        <label className="block text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-1">
+        <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
           {locale === 'es' ? 'Título (opcional)' : 'Title (optional)'}
         </label>
         <input
@@ -164,13 +164,13 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
           value={title}
           onChange={e => setTitle(e.target.value)}
           maxLength={100}
-          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-hidden focus:border-[#B76E79] transition-colors"
+          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose transition-colors"
         />
       </div>
 
       {/* Comment */}
       <div>
-        <label className="block text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-1">
+        <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
           {locale === 'es' ? 'Comentario' : 'Comment'} *
         </label>
         <textarea
@@ -178,9 +178,9 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
           onChange={e => setComment(e.target.value)}
           maxLength={1000}
           rows={4}
-          className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm text-[#1A1A1A] focus:outline-hidden focus:border-[#B76E79] transition-colors resize-none"
+          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose transition-colors resize-none"
         />
-        <p className="text-[10px] text-[#3A3A3A]/40 text-right mt-1">{comment.length}/1000</p>
+        <p className="text-[10px] text-pe-charcoal/40 text-right mt-1">{comment.length}/1000</p>
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -188,7 +188,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
       <button
         type="submit"
         disabled={submitting}
-        className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
+        className="bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
       >
         {submitLabel}
       </button>

@@ -31,8 +31,8 @@ function slugify(input: string) {
     .replace(/-+$/, '') || 'variant';
 }
 
-const OPTION_SELECTED_CLASS = 'border-[#B76E79] bg-[#B76E79] text-white';
-const OPTION_DEFAULT_CLASS = 'border-pe-charcoal/30 text-[#1A1A1A] hover:border-[#B76E79] hover:text-[#B76E79]';
+const OPTION_SELECTED_CLASS = 'border-pe-rose bg-pe-rose text-white';
+const OPTION_DEFAULT_CLASS = 'border-pe-charcoal/30 text-pe-black hover:border-pe-rose hover:text-pe-rose-ink';
 
 function optionButtonClass(disabled: boolean, isSelected: boolean, disabledClass: string) {
   if (disabled) return disabledClass;
@@ -192,7 +192,7 @@ export default function ProductVariantSelector({
       {hasVariants && (
         <>
           <div>
-            <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
+            <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectPrimary}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -208,7 +208,7 @@ export default function ProductVariantSelector({
                       'px-3 py-2 text-xs tracking-wider border transition-colors',
                       optionButtonClass(
                         depletedByGlobalStock, isSelected,
-                        'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed'),
+                        'border-pe-black/10 text-pe-charcoal/25 cursor-not-allowed'),
                     ].join(' ')}
                   >
                     {primaryValue}
@@ -219,7 +219,7 @@ export default function ProductVariantSelector({
           </div>
 
           <div>
-            <p className="text-[10px] tracking-widest uppercase text-[#3A3A3A]/60 mb-2">
+            <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectSecondary}
             </p>
             {/*
@@ -227,7 +227,7 @@ export default function ProductVariantSelector({
              * options -- otherwise it just repeats, word for word, the button row two lines down.
              */}
             {selectedPrimarySecondarySummary && selectedPrimarySecondarySummary !== allSecondarySummary && (
-              <p className="text-[10px] tracking-[0.08em] uppercase text-[#3A3A3A]/45 mb-2">
+              <p className="text-[10px] tracking-[0.08em] uppercase text-pe-charcoal/45 mb-2">
                 {labels.availableSecondary}: {selectedPrimarySecondarySummary}
               </p>
             )}
@@ -246,7 +246,7 @@ export default function ProductVariantSelector({
                       'min-w-12 px-2 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
                       optionButtonClass(
                         depletedByGlobalStock || noStock, isSelected,
-                        'border-[#EDE3D8] text-[#3A3A3A]/25 cursor-not-allowed line-through'),
+                        'border-pe-black/10 text-pe-charcoal/25 cursor-not-allowed line-through'),
                     ].join(' ')}
                   >
                     {value}
@@ -259,7 +259,7 @@ export default function ProductVariantSelector({
       )}
 
       {hasVariants && !selectedVariantEntry && (
-        <p className="text-xs text-[#8E4F58]">{labels.chooseVariant}</p>
+        <p className="text-xs text-pe-rose-ink">{labels.chooseVariant}</p>
       )}
 
       {(() => {
