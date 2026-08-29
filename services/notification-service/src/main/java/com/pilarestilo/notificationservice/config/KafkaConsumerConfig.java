@@ -53,7 +53,11 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, domainEventsProperties.getConsumerGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        props.putIfAbsent(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        // `latest`, not `earliest`: this service must never replay the topic's retained history —
+        // that would re-send a confirmation for every order in the last 7 days. At the cutover the
+        // group's offsets are pre-seeded to the log-end while the monolith still consumes, so this
+        // reset only ever applies if that step is skipped; even then, forward-only is the safe default.
+        props.putIfAbsent(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 

@@ -232,12 +232,36 @@
               <goal>prepare-agent-integration</goal>
             </goals>
           </execution>
+          <!-- Merge the surefire (jacoco.exec) and failsafe (jacoco-it.exec) execution data so the
+               Testcontainers ITs — which exercise the full context, config classes and adapters —
+               count toward coverage. -->
+          <execution>
+            <id>merge</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>merge</goal>
+            </goals>
+            <configuration>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>*.exec</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+              <destFile>${project.build.directory}/jacoco-merged.exec</destFile>
+            </configuration>
+          </execution>
           <execution>
             <id>report</id>
             <phase>verify</phase>
             <goals>
               <goal>report</goal>
             </goals>
+            <configuration>
+              <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
+            </configuration>
           </execution>
           <execution>
             <id>check</id>
@@ -246,6 +270,7 @@
               <goal>check</goal>
             </goals>
             <configuration>
+              <dataFile>${project.build.directory}/jacoco-merged.exec</dataFile>
               <rules>
                 <rule>
                   <element>BUNDLE</element>
