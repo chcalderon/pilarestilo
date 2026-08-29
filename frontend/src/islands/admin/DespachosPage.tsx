@@ -422,14 +422,14 @@ export default function DespachosPage() {
                                 onClick={() => {
                                   void openOrderDetail(d.orderId);
                                 }}
-                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                               >
                                 Ver detalle
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setActive(null)}
-                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                               >
                                 Cancelar
                               </button>
@@ -448,7 +448,7 @@ export default function DespachosPage() {
                               type="button"
                               onClick={() => unclaim(d.id)}
                               disabled={busy}
-                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                             >
                               Liberar
                             </button>
@@ -457,7 +457,7 @@ export default function DespachosPage() {
                               onClick={() => {
                                 void openOrderDetail(d.orderId);
                               }}
-                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                             >
                               Ver detalle
                             </button>
@@ -484,7 +484,7 @@ export default function DespachosPage() {
                           onClick={() => {
                             void openOrderDetail(d.orderId);
                           }}
-                          className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                          className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                         >
                           Ver detalle
                         </button>
@@ -529,7 +529,7 @@ export default function DespachosPage() {
                             onClick={() => {
                               void openOrderDetail(d.orderId);
                             }}
-                            className="border border-pe-black/10 px-3 py-1 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                            className="border border-pe-black/10 px-3 py-1 text-xs tracking-widest uppercase text-pe-muted hover:bg-pe-charcoal/10"
                           >
                             Ver detalle
                           </button>
