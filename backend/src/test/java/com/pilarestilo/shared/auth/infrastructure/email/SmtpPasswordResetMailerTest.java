@@ -53,6 +53,19 @@ class SmtpPasswordResetMailerTest {
     }
 
     @Test
+    void a_multi_host_base_url_collapses_to_the_first_host() throws Exception {
+        smtpConfigured();
+        RecordingMailer mailer = new RecordingMailer(
+                systemSettingsRepository, "https://pilarestilo.com www.pilarestilo.com");
+
+        mailer.sendResetLink("cliente@example.com", "Camila", "TOK-123");
+
+        String body = textOf(mailer.sent);
+        assertThat(body).contains("https://pilarestilo.com/es/reset-password?token=TOK-123");
+        assertThat(body).doesNotContain("www.pilarestilo.com");
+    }
+
+    @Test
     void is_a_no_op_when_smtp_is_not_configured() {
         smtpNotConfigured();
         RecordingMailer mailer = new RecordingMailer(systemSettingsRepository, "https://pilarestilo.cl");
