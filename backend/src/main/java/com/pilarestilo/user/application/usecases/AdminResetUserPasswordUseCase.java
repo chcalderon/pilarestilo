@@ -25,6 +25,9 @@ public class AdminResetUserPasswordUseCase {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
         user.changePasswordHash(passwordEncoder.encode(newPassword));
+        // An admin resetting a compromised worker's password logs that worker's stolen sessions
+        // out too — same mechanism as a self-service reset.
+        user.incrementSessionVersion();
         userRepository.save(user);
     }
 }
