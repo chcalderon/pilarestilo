@@ -205,8 +205,8 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                     'flex items-center gap-3 px-3 py-2.5 rounded-sm transition-colors duration-150 group',
                     'font-sans text-[0.78rem] tracking-[0.04em]',
                     active
-                      ? 'bg-pe-rose/12 text-pe-rose-soft border-l-2 border-pe-rose pl-[10px]'
-                      : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4 border-l-2 border-transparent',
+                      ? 'bg-pe-rose/12 text-pe-rose-soft'
+                      : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4',
                   ].join(' ')}
                   aria-current={active ? 'page' : undefined}
                   title={isCollapsed ? item.label : undefined}
@@ -232,11 +232,11 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
               type="button"
               onClick={handleSettingsToggle}
               className={[
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all duration-200 group border-l-2',
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all duration-200 group',
                 'font-sans text-[0.78rem] tracking-[0.04em]',
                 settingsRouteActive
-                  ? 'bg-pe-rose/12 text-pe-rose-soft border-pe-rose'
-                  : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4 border-transparent',
+                  ? 'bg-pe-rose/12 text-pe-rose-soft'
+                  : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4',
               ].join(' ')}
               aria-expanded={showSettingsChildren}
               aria-controls={settingsSubmenuId}
@@ -278,11 +278,11 @@ export default function AdminSidebar({ currentPath, mobile = false }: Props) {
                         href={subitem.href}
                         onClick={closeMobileMenu}
                         className={[
-                          'flex items-center gap-2 px-2.5 py-2 rounded-sm border-l transition-all duration-200',
+                          'flex items-center gap-2 px-2.5 py-2 rounded-sm transition-all duration-200',
                           'font-sans text-[0.7rem] tracking-[0.06em]',
                           active
-                            ? 'border-pe-rose text-pe-rose-soft bg-pe-rose/8'
-                            : 'border-transparent text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4',
+                            ? 'text-pe-rose-soft bg-pe-rose/8'
+                            : 'text-pe-on-dark-muted hover:text-pe-on-dark hover:bg-pe-white/4',
                         ].join(' ')}
                         aria-current={active ? 'page' : undefined}
                       >
