@@ -26,6 +26,7 @@ public class ApiGatewayRateLimitFilter extends OncePerRequestFilter {
     private final int windowSeconds;
     private final int loginMaxRequests;
     private final int registerMaxRequests;
+    private final int forgotPasswordMaxRequests;
     private final int webhookMaxRequests;
 
     private final Map<String, CounterWindow> counters = new ConcurrentHashMap<>();
@@ -35,12 +36,14 @@ public class ApiGatewayRateLimitFilter extends OncePerRequestFilter {
             @Value("${app.gateway.rate-limit.window-seconds:60}") int windowSeconds,
             @Value("${app.gateway.rate-limit.login-max-requests:12}") int loginMaxRequests,
             @Value("${app.gateway.rate-limit.register-max-requests:6}") int registerMaxRequests,
+            @Value("${app.gateway.rate-limit.forgot-password-max-requests:5}") int forgotPasswordMaxRequests,
             @Value("${app.gateway.rate-limit.webhook-max-requests:180}") int webhookMaxRequests
     ) {
         this.enabled = enabled;
         this.windowSeconds = Math.max(1, windowSeconds);
         this.loginMaxRequests = Math.max(1, loginMaxRequests);
         this.registerMaxRequests = Math.max(1, registerMaxRequests);
+        this.forgotPasswordMaxRequests = Math.max(1, forgotPasswordMaxRequests);
         this.webhookMaxRequests = Math.max(1, webhookMaxRequests);
     }
 
@@ -96,6 +99,9 @@ public class ApiGatewayRateLimitFilter extends OncePerRequestFilter {
         }
         if ("/api/auth/register".equals(path)) {
             return new RateLimitPolicy("register", registerMaxRequests);
+        }
+        if ("/api/auth/forgot-password".equals(path)) {
+            return new RateLimitPolicy("forgot_password", forgotPasswordMaxRequests);
         }
         if ("/api/payments/webhooks/gateway".equals(path)
                 || "/api/payments/webhooks/gateway/mercadopago".equals(path)) {

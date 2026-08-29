@@ -6,11 +6,15 @@ import com.pilarestilo.shared.auth.application.usecases.*;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import org.springframework.web.multipart.MultipartFile;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.ChangeMyPasswordRequest;
+import com.pilarestilo.shared.auth.infrastructure.web.requests.ForgotPasswordRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.GoogleLoginRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.LoginRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RefreshRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.RegisterRequest;
+import com.pilarestilo.shared.auth.infrastructure.web.requests.ResetPasswordRequest;
 import com.pilarestilo.shared.auth.infrastructure.web.requests.UpdateMyProfileRequest;
+
+import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -29,6 +33,8 @@ public class AuthController {
     private final ChangeMyPasswordUseCase changeMyPasswordUseCase;
     private final GoogleLoginUseCase googleLoginUseCase;
     private final UploadMyAvatarUseCase uploadMyAvatarUseCase;
+    private final RequestPasswordResetUseCase requestPasswordResetUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
 
     // One dependency per use case this controller wires -- exactly what a hexagonal web adapter
     // is for, not a design smell to fix by folding use cases together.
@@ -40,7 +46,9 @@ public class AuthController {
                           UpdateMyProfileUseCase updateMyProfileUseCase,
                           ChangeMyPasswordUseCase changeMyPasswordUseCase,
                           GoogleLoginUseCase googleLoginUseCase,
-                          UploadMyAvatarUseCase uploadMyAvatarUseCase) {
+                          UploadMyAvatarUseCase uploadMyAvatarUseCase,
+                          RequestPasswordResetUseCase requestPasswordResetUseCase,
+                          ResetPasswordUseCase resetPasswordUseCase) {
         this.registerUseCase = registerUseCase;
         this.loginUseCase = loginUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
@@ -49,6 +57,8 @@ public class AuthController {
         this.changeMyPasswordUseCase = changeMyPasswordUseCase;
         this.googleLoginUseCase = googleLoginUseCase;
         this.uploadMyAvatarUseCase = uploadMyAvatarUseCase;
+        this.requestPasswordResetUseCase = requestPasswordResetUseCase;
+        this.resetPasswordUseCase = resetPasswordUseCase;
     }
 
     @PostMapping("/register")
@@ -87,6 +97,24 @@ public class AuthController {
     @PostMapping("/google")
     public AuthTokenDto googleLogin(@RequestBody @Valid GoogleLoginRequest req) {
         return googleLoginUseCase.execute(req.idToken());
+    }
+
+    /**
+     * Always the same 200 body, whether or not the address belongs to an account — anything else
+     * would confirm which addresses are registered.
+     */
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.OK)
+    public Map<String, String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest req) {
+        requestPasswordResetUseCase.execute(req.email());
+        return Map.of("message",
+                "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.");
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@RequestBody @Valid ResetPasswordRequest req) {
+        resetPasswordUseCase.execute(req.token(), req.newPassword());
     }
 
     @GetMapping("/me")
