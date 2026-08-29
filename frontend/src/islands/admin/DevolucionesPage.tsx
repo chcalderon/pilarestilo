@@ -38,9 +38,9 @@ function Deadline({ days, closed }: { readonly days: number; readonly closed: bo
   const urgent = days <= 10;
   let deadlineColor = 'opacity-70';
   if (overdue) {
-    deadlineColor = 'text-red-600 font-medium';
+    deadlineColor = 'text-pe-danger-ink font-medium';
   } else if (urgent) {
-    deadlineColor = 'text-amber-700';
+    deadlineColor = 'text-pe-warning-ink';
   }
   return (
     <span
@@ -176,7 +176,7 @@ export default function DevolucionesPage() {
       {overdue > 0 && (
         <p
           role="alert"
-          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600"
+          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink"
         >
           <AlertTriangle size={14} aria-hidden="true" />
           {overdue === 1
@@ -211,7 +211,7 @@ export default function DevolucionesPage() {
       </div>
 
       {error && (
-        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600">
+        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink">
           {error}
         </p>
       )}

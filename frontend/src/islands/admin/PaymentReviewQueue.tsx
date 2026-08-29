@@ -16,10 +16,10 @@ import { openBlobInNewTab } from '../../lib/openBlob';
 import { decodeJwtPayload } from '../../lib/jwt';
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-50 text-amber-700',
+  PENDING: 'bg-pe-warning-surface text-pe-warning-ink',
   UNDER_REVIEW: 'bg-blue-50 text-blue-700',
-  APPROVED: 'bg-green-50 text-green-800',
-  REJECTED: 'bg-red-50 text-red-500',
+  APPROVED: 'bg-pe-positive-surface text-pe-positive-ink',
+  REJECTED: 'bg-pe-danger-surface text-pe-danger-ink',
   SUBMITTED: 'bg-pe-cream text-pe-muted',
 };
 
@@ -247,7 +247,7 @@ export default function PaymentReviewQueue() {
                   void handleSimulate(id, 'simulate-approve');
                 }}
                 disabled={!!acting}
-                className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-green-600 text-white px-2.5 py-1 hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-pe-positive text-white px-2.5 py-1 hover:opacity-90 transition-colors disabled:opacity-50"
               >
                 {isActing && acting?.action === 'simulate-approve' ? '...' : <><Check size={11} /> Sim aprobar</>}
               </button>
@@ -258,7 +258,7 @@ export default function PaymentReviewQueue() {
                   void handleSimulate(id, 'simulate-reject');
                 }}
                 disabled={!!acting}
-                className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-red-300 text-red-500 px-2.5 py-1 hover:bg-red-50 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-pe-danger/40 text-pe-danger-ink px-2.5 py-1 hover:bg-pe-danger-surface transition-colors disabled:opacity-50"
               >
                 {isActing && acting?.action === 'simulate-reject' ? '...' : <><X size={11} /> Sim rechazar</>}
               </button>
@@ -275,7 +275,7 @@ export default function PaymentReviewQueue() {
                 void handleAction(id, 'approve');
               }}
               disabled={!!acting}
-              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-green-600 text-white px-2.5 py-1 hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-pe-positive text-white px-2.5 py-1 hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {isActing && acting?.action === 'approve' ? '...' : <><Check size={11} /> Aprobar</>}
             </button>
@@ -286,7 +286,7 @@ export default function PaymentReviewQueue() {
                 void handleAction(id, 'reject');
               }}
               disabled={!!acting}
-              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-red-300 text-red-500 px-2.5 py-1 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-pe-danger/40 text-pe-danger-ink px-2.5 py-1 hover:bg-pe-danger-surface transition-colors disabled:opacity-50"
             >
               {isActing && acting?.action === 'reject' ? '...' : <><X size={11} /> Rechazar</>}
             </button>
@@ -489,8 +489,8 @@ export default function PaymentReviewQueue() {
           className={[
             'mb-3 flex items-start justify-between gap-3 border px-3 py-2',
             feedback.type === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-green-200 bg-green-50 text-green-800',
+              ? 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink'
+              : 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink',
           ].join(' ')}
         >
           <p className="font-sans text-[0.74rem]">{feedback.text}</p>

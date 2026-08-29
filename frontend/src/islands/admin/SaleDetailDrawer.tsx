@@ -185,7 +185,7 @@ const btnPrimary =
 const btnSecondary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-pe-danger/40 text-pe-danger-ink hover:bg-pe-danger-surface disabled:opacity-40 transition-colors';
 
 function Section({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
@@ -223,7 +223,7 @@ function CopyField({ label, value }: { readonly label: string; readonly value: s
         aria-label={`Copiar ${label}`}
       >
         <span className="break-all">{value}</span>
-        {copied ? <Check size={12} className="text-pe-positive shrink-0" /> : <Copy size={12} className="opacity-40 shrink-0" />}
+        {copied ? <Check size={12} className="text-pe-positive-ink shrink-0" /> : <Copy size={12} className="opacity-40 shrink-0" />}
       </button>
     </div>
   );
@@ -467,7 +467,7 @@ function IssueDocumentForm({
         </label>
         {fileName && <p className="text-[0.7rem] opacity-60">{fileName}</p>}
         {fileError && (
-          <p role="alert" className="text-[0.7rem] text-red-500">
+          <p role="alert" className="text-[0.7rem] text-pe-danger-ink">
             {fileError} La boleta se puede registrar igual, pero quedará sin imagen.
           </p>
         )}
@@ -752,8 +752,8 @@ export default function SaleDetailDrawer({
             <output
               className={`block text-[0.78rem] px-3 py-2 rounded-xs border ${
                 feedback.tone === 'success'
-                  ? 'border-green-300/60 text-pe-positive'
-                  : 'border-red-300/60 text-red-600'
+                  ? 'border-pe-positive/40 text-pe-positive-ink'
+                  : 'border-pe-danger/40 text-pe-danger-ink'
               }`}
             >
               {feedback.text}
@@ -872,7 +872,7 @@ export default function SaleDetailDrawer({
                         Quedó registrada sin archivo. Adjuntarlo no cambia el folio ni los montos.
                       </p>
                       {attachError && (
-                        <p role="alert" className="text-[0.7rem] text-red-500">{attachError}</p>
+                        <p role="alert" className="text-[0.7rem] text-pe-danger-ink">{attachError}</p>
                       )}
                     </div>
                   )}

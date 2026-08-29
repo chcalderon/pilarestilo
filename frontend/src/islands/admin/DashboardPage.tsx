@@ -327,7 +327,7 @@ export default function DashboardPage() {
   }, [effectiveToken]);
 
   if (error) {
-    return <p className="text-sm text-red-500 p-4">{error}</p>;
+    return <p className="text-sm text-pe-danger-ink p-4">{error}</p>;
   }
 
   if (!data) {

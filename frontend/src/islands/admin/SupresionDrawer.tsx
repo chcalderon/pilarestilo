@@ -24,7 +24,7 @@ const btnSecondary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs bg-pe-danger text-white hover:opacity-90 disabled:opacity-40 transition-colors';
 
 function Field({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
@@ -145,7 +145,7 @@ export default function SupresionDrawer({ request, token, canResolve, onClose, o
             {error && (
               <p
                 role="alert"
-                className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600"
+                className="text-[0.78rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink"
               >
                 {error}
               </p>
@@ -163,8 +163,8 @@ export default function SupresionDrawer({ request, token, canResolve, onClose, o
             )}
 
             {open && canResolve && mode === 'anonymise' && (
-              <div className="space-y-3 rounded-xs border border-red-300/60 p-4">
-                <p className="flex items-center gap-2 text-[0.8rem] font-medium text-red-600">
+              <div className="space-y-3 rounded-xs border border-pe-danger/40 p-4">
+                <p className="flex items-center gap-2 text-[0.8rem] font-medium text-pe-danger-ink">
                   <AlertTriangle size={14} aria-hidden="true" /> Esto no se puede deshacer
                 </p>
                 <ul className="text-[0.78rem] space-y-1.5 opacity-80 list-disc pl-4">

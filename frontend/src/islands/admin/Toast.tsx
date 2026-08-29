@@ -42,13 +42,13 @@ export function Toaster({ toasts, dismiss }: Props) {
           className={[
             'flex items-start gap-2 px-3 py-2.5 shadow-lg pointer-events-auto',
             t.type === 'error'
-              ? 'bg-red-50 border border-red-200 text-red-800'
-              : 'bg-green-50 border border-green-200 text-green-800',
+              ? 'bg-pe-danger-surface border border-pe-danger/40 text-pe-danger-ink'
+              : 'bg-pe-positive-surface border border-pe-positive/40 text-pe-positive-ink',
           ].join(' ')}
         >
           {t.type === 'error'
-            ? <XCircle size={15} className="shrink-0 mt-0.5 text-red-500" />
-            : <CheckCircle size={15} className="shrink-0 mt-0.5 text-pe-positive" />}
+            ? <XCircle size={15} className="shrink-0 mt-0.5 text-pe-danger-ink" />
+            : <CheckCircle size={15} className="shrink-0 mt-0.5 text-pe-positive-ink" />}
           <span className="font-sans text-[0.72rem] flex-1 leading-snug">{t.message}</span>
           <button
             type="button"

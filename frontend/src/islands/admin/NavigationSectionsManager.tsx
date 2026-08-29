@@ -413,8 +413,8 @@ export default function NavigationSectionsManager() {
           className={[
             'mb-4 px-4 py-2.5 font-sans text-[0.78rem] flex items-center gap-2',
             toast.type === 'success'
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-              : 'bg-red-50 border border-red-200 text-red-700',
+              ? 'bg-pe-positive-surface border border-pe-positive/40 text-pe-positive-ink'
+              : 'bg-pe-danger-surface border border-pe-danger/40 text-pe-danger-ink',
           ].join(' ')}
           role="status"
           aria-live="polite"
@@ -474,7 +474,7 @@ export default function NavigationSectionsManager() {
                     className={[
                       'font-sans text-[0.58rem] uppercase tracking-wider px-1.5 py-0.5 shrink-0',
                       section.active
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        ? 'bg-pe-positive-surface text-pe-positive-ink border border-pe-positive/40'
                         : 'bg-pe-cream text-pe-muted border border-pe-black/8',
                     ].join(' ')}
                   >
@@ -514,7 +514,7 @@ export default function NavigationSectionsManager() {
                     <button
                       type="button"
                       onClick={() => void handleDelete(section)}
-                      className="p-1 text-pe-muted hover:text-red-500 transition-colors"
+                      className="p-1 text-pe-muted hover:text-pe-danger-ink transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 size={14} />

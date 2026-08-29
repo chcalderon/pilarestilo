@@ -55,12 +55,12 @@ const btnSecondary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-pe-danger/40 text-pe-danger-ink hover:bg-pe-danger-surface disabled:opacity-40 transition-colors';
 
 function OkBadge({ show }: { readonly show: boolean }) {
   if (!show) return null;
   return (
-    <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
+    <span className="text-[0.7rem] text-pe-positive-ink flex items-center gap-1">
       <Check size={12} /> Guardado
     </span>
   );
@@ -108,7 +108,7 @@ function BasicInfoSection({
           className={`${inputCls} opacity-50 cursor-not-allowed`}
         />
       </label>
-      {nameError && <p className="text-[0.7rem] text-red-500">{nameError}</p>}
+      {nameError && <p className="text-[0.7rem] text-pe-danger-ink">{nameError}</p>}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -151,7 +151,7 @@ function StatusSection({ active, canEditBasics, statusSaving, statusError, statu
           disabled={!canEditBasics || statusSaving}
           aria-label={active ? 'Bloquear usuario' : 'Habilitar usuario'}
           className={`relative w-11 h-6 rounded-full overflow-hidden transition-colors duration-200 focus:outline-hidden disabled:opacity-40 ${
-            active ? 'bg-green-500' : 'bg-[var(--pe-border)]'
+            active ? 'bg-pe-positive' : 'bg-[var(--pe-border)]'
           }`}
         >
           <span
@@ -161,9 +161,9 @@ function StatusSection({ active, canEditBasics, statusSaving, statusError, statu
           />
         </button>
       </div>
-      {statusError && <p className="text-[0.7rem] text-red-500">{statusError}</p>}
+      {statusError && <p className="text-[0.7rem] text-pe-danger-ink">{statusError}</p>}
       {statusOk && (
-        <span className="text-[0.7rem] text-pe-positive flex items-center gap-1">
+        <span className="text-[0.7rem] text-pe-positive-ink flex items-center gap-1">
           <Check size={12} /> Estado actualizado
         </span>
       )}
@@ -233,7 +233,7 @@ function PasswordSection({
               placeholder="Repite la contraseña"
             />
           </label>
-          {pwError && <p className="text-[0.7rem] text-red-500">{pwError}</p>}
+          {pwError && <p className="text-[0.7rem] text-pe-danger-ink">{pwError}</p>}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -298,7 +298,7 @@ function CreditSection({
           className={inputCls}
         />
       </label>
-      {creditError && <p className="text-[0.7rem] text-red-500">{creditError}</p>}
+      {creditError && <p className="text-[0.7rem] text-pe-danger-ink">{creditError}</p>}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -376,7 +376,7 @@ function WorkerRoleSection({
           className={inputCls}
         />
       </label>
-      {roleError && <p className="text-[0.7rem] text-red-500">{roleError}</p>}
+      {roleError && <p className="text-[0.7rem] text-pe-danger-ink">{roleError}</p>}
       <div className="flex items-center gap-2 flex-wrap">
         <button
           type="button"
@@ -449,7 +449,7 @@ function DangerZone({
           </button>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[0.7rem] text-red-500">¿Confirmar eliminación?</span>
+            <span className="text-[0.7rem] text-pe-danger-ink">¿Confirmar eliminación?</span>
             <button
               type="button"
               onClick={onConfirmDelete}
@@ -469,10 +469,10 @@ function DangerZone({
         )}
       </div>
       {roleChangeError && (
-        <p className="text-[0.7rem] text-red-500">{roleChangeError}</p>
+        <p className="text-[0.7rem] text-pe-danger-ink">{roleChangeError}</p>
       )}
       {deleteError && (
-        <p className="text-[0.7rem] text-red-500">{deleteError}</p>
+        <p className="text-[0.7rem] text-pe-danger-ink">{deleteError}</p>
       )}
     </div>
   );
@@ -741,7 +741,7 @@ export default function UserEditDrawer({
               </p>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-green-500' : 'bg-amber-500'}`}
+                  className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-pe-positive' : 'bg-pe-warning'}`}
                 />
                 <span className="text-[0.65rem] font-sans uppercase tracking-widest opacity-50">
                   {active ? 'Activo' : 'Bloqueado'}

@@ -157,8 +157,8 @@ function PaginationControls({ total, pageSize, page, totalPages, displayedFrom, 
 }
 
 function stockColorClass(stock: number, defaultClass: string) {
-  if (stock === 0) return 'text-red-500';
-  return stock <= 2 ? 'text-amber-600' : defaultClass;
+  if (stock === 0) return 'text-pe-danger-ink';
+  return stock <= 2 ? 'text-pe-warning-ink' : defaultClass;
 }
 
 export default function ProductTable() {
@@ -456,7 +456,7 @@ export default function ProductTable() {
             )}
             <span className="font-sans text-[0.82rem] text-pe-charcoal">
               {fmt(row.price.amount, row.price.currency)}
-              {discountPct !== null && <span className="ml-1 text-[0.66rem] text-pe-positive">-{discountPct}%</span>}
+              {discountPct !== null && <span className="ml-1 text-[0.66rem] text-pe-positive-ink">-{discountPct}%</span>}
             </span>
           </div>
         );
@@ -501,7 +501,7 @@ export default function ProductTable() {
         <span
           className={[
             'inline-flex items-center rounded-sm px-2 py-0.5 font-sans text-[0.65rem] uppercase tracking-[0.1em]',
-            row.active ? 'bg-emerald-50 text-emerald-800' : 'bg-pe-cream text-pe-muted',
+            row.active ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-cream text-pe-muted',
           ].join(' ')}
         >
           {row.active ? 'Si' : 'No'}
@@ -542,7 +542,7 @@ export default function ProductTable() {
               e.stopPropagation();
               setDeleteConfirm(row.id);
             }}
-            className={`${actionButtonClass} text-pe-muted hover:text-red-500`}
+            className={`${actionButtonClass} text-pe-muted hover:text-pe-danger-ink`}
           >
             <Trash2 size={13} />
             Eliminar
@@ -634,7 +634,7 @@ export default function ProductTable() {
                 <span
                   className={[
                     'absolute top-3 right-3 px-2 py-1 text-[0.62rem] uppercase tracking-[0.12em] font-sans',
-                    row.active ? 'bg-emerald-50 text-emerald-800' : 'bg-pe-cream text-pe-muted',
+                    row.active ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-cream text-pe-muted',
                   ].join(' ')}
                 >
                   {row.active ? 'Activo' : 'Inactivo'}
@@ -655,7 +655,7 @@ export default function ProductTable() {
                     <p className="font-sans text-[0.85rem] text-pe-charcoal">
                       {fmt(row.price.amount, row.price.currency)}
                       {getDiscountPercent(row) !== null && (
-                        <span className="ml-1 text-[0.66rem] text-pe-positive">-{getDiscountPercent(row)}%</span>
+                        <span className="ml-1 text-[0.66rem] text-pe-positive-ink">-{getDiscountPercent(row)}%</span>
                       )}
                     </p>
                   </div>
@@ -687,7 +687,7 @@ export default function ProductTable() {
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(row.id)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-red-300 text-red-500 text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-red-50 transition-colors"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-danger/40 text-pe-danger-ink text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-pe-danger-surface transition-colors"
                     >
                       <Trash2 size={12} />
                       Eliminar
@@ -806,7 +806,7 @@ export default function ProductTable() {
                 type="button"
                 onClick={() => handleDelete(deleteConfirm)}
                 disabled={deleting}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-red-600 text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-pe-danger text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:opacity-90 disabled:opacity-50 transition-colors"
               >
                 <Trash2 size={13} />
                 {deleting ? 'Eliminando...' : 'Eliminar'}
@@ -922,13 +922,13 @@ export default function ProductTable() {
         )}
 
         {heroAssignmentFeedback && (
-          <div className="rounded-xs border border-emerald-500/30 bg-emerald-50 px-2.5 py-1.5 font-sans text-[0.7rem] text-pe-positive">
+          <div className="rounded-xs border border-pe-positive/40 bg-pe-positive-surface px-2.5 py-1.5 font-sans text-[0.7rem] text-pe-positive-ink">
             {heroAssignmentFeedback}
           </div>
         )}
 
         {loadError && (
-          <div className="rounded-xs border border-red-300/70 bg-red-50 px-3 py-2 font-sans text-[0.72rem] text-red-700">
+          <div className="rounded-xs border border-pe-danger/40 bg-pe-danger-surface px-3 py-2 font-sans text-[0.72rem] text-pe-danger-ink">
             Error cargando productos: {loadError}
           </div>
         )}

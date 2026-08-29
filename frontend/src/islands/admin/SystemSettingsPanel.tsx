@@ -613,9 +613,9 @@ function SecurityHint({
   return (
     <div className="mt-3 inline-flex items-center gap-2 rounded-xs border border-pe-black/10 bg-pe-offwhite px-2.5 py-2">
       {configured && !clearFlag ? (
-        <ShieldCheck size={14} className="text-pe-positive" />
+        <ShieldCheck size={14} className="text-pe-positive-ink" />
       ) : (
-        <ShieldX size={14} className="text-amber-700" />
+        <ShieldX size={14} className="text-pe-warning-ink" />
       )}
       <span className="font-sans text-[0.72rem] text-pe-muted">{hint}</span>
     </div>
@@ -1178,8 +1178,8 @@ export default function SystemSettingsPanel() {
           className={[
             'border px-3 py-2 font-sans text-[0.74rem]',
             feedback.tone === 'success'
-              ? 'border-green-200 bg-green-50 text-green-800'
-              : 'border-red-200 bg-red-50 text-red-700',
+              ? 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink'
+              : 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink',
           ].join(' ')}
         >
           {feedback.text}
@@ -1754,7 +1754,7 @@ export default function SystemSettingsPanel() {
             {migrating ? 'Migrando...' : 'Migrar imágenes de categorías'}
           </button>
           {migrateResult && (
-            <p className={`font-sans text-[0.72rem] mt-2 ${migrateResult.failed === -1 ? 'text-red-500' : 'text-pe-muted'}`}>
+            <p className={`font-sans text-[0.72rem] mt-2 ${migrateResult.failed === -1 ? 'text-pe-danger-ink' : 'text-pe-muted'}`}>
               {migrateResult.failed === -1
                 ? 'Error al ejecutar la migración.'
                 : `Migradas: ${migrateResult.migrated} · Fallidas: ${migrateResult.failed}`}
@@ -1783,7 +1783,7 @@ export default function SystemSettingsPanel() {
             {optimizing ? 'Optimizando...' : 'Optimizar imágenes existentes'}
           </button>
           {optimizeError && (
-            <p className="font-sans text-[0.72rem] mt-2 text-red-500">{optimizeError}</p>
+            <p className="font-sans text-[0.72rem] mt-2 text-pe-danger-ink">{optimizeError}</p>
           )}
           {optimizeResult && (
             <div className="mt-2 space-y-1 font-sans text-[0.72rem] text-pe-muted">
@@ -1825,7 +1825,7 @@ export default function SystemSettingsPanel() {
             {resizingTo15cm ? 'Redimensionando...' : 'Redimensionar productos y categorias'}
           </button>
           {resizeTo15cmError && (
-            <p className="font-sans text-[0.72rem] mt-2 text-red-500">{resizeTo15cmError}</p>
+            <p className="font-sans text-[0.72rem] mt-2 text-pe-danger-ink">{resizeTo15cmError}</p>
           )}
           {resizeTo15cmResult && (
             <p className="font-sans text-[0.72rem] mt-2 text-pe-muted">

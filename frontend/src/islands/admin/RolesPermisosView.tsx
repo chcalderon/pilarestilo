@@ -129,8 +129,8 @@ export default function RolesPermisosView() {
         </table>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {saved && <p className="text-pe-positive text-sm">Permisos guardados. Los cambios aplican en el próximo inicio de sesión.</p>}
+      {error && <p className="text-pe-danger-ink text-sm">{error}</p>}
+      {saved && <p className="text-pe-positive-ink text-sm">Permisos guardados. Los cambios aplican en el próximo inicio de sesión.</p>}
 
       {(() => {
         let saveLabel = 'Guardar cambios';

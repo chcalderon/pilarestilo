@@ -58,10 +58,10 @@ const CATEGORY_LABELS: Record<CashMovementCategory, string> = {
 
 const CATEGORY_CHIP_CLASS: Record<CashMovementCategory, string> = {
   INITIAL_BALANCE: 'bg-pe-beige text-pe-charcoal dark:bg-pe-black/60',
-  CASH_SALE: 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  WITHDRAWAL: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  EXPENSE: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  REFUND: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  CASH_SALE: 'bg-pe-positive-surface text-pe-positive-ink',
+  WITHDRAWAL: 'bg-pe-danger-surface text-pe-danger-ink',
+  EXPENSE: 'bg-pe-danger-surface text-pe-danger-ink',
+  REFUND: 'bg-pe-warning-surface text-pe-warning-ink',
   ADJUSTMENT: 'bg-pe-beige text-pe-charcoal dark:bg-pe-black/60',
 };
 
@@ -237,7 +237,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
             />
           </div>
 
-          {error && <p className="text-red-500 text-xs">{error}</p>}
+          {error && <p className="text-pe-danger-ink text-xs">{error}</p>}
 
           <div className="mt-auto">
             <button
@@ -464,7 +464,7 @@ export default function CajaPage() {
     if (difference < 0) {
       differenceColor = 'text-pe-rose-ink';
     } else if (difference > 0) {
-      differenceColor = 'text-pe-positive';
+      differenceColor = 'text-pe-positive-ink';
     } else {
       differenceColor = 'text-pe-charcoal';
     }
@@ -491,7 +491,7 @@ export default function CajaPage() {
               className="w-full border border-pe-black/10 bg-transparent px-3 py-2 text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose"
             />
           </div>
-          {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
+          {operationError && <p className="text-pe-danger-ink text-sm">{operationError}</p>}
           <button
             type="button"
             onClick={openCaja}
@@ -525,7 +525,7 @@ export default function CajaPage() {
             <span className="text-pe-muted">Balance declarado</span>
             <span className="text-right text-pe-charcoal">{CLP(caja.closingBalance ?? 0)}</span>
             <span className="text-pe-muted">Diferencia</span>
-            <span className={`text-right font-medium ${(caja.difference ?? 0) === 0 ? 'text-pe-positive' : 'text-pe-rose-ink'}`}>
+            <span className={`text-right font-medium ${(caja.difference ?? 0) === 0 ? 'text-pe-positive-ink' : 'text-pe-rose-ink'}`}>
               {CLP(caja.difference ?? 0)}
             </span>
           </div>
@@ -551,7 +551,7 @@ export default function CajaPage() {
         {/* Status header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+            <span className="w-2 h-2 rounded-full bg-pe-positive inline-block" />
             <span className="text-sm text-pe-muted">
               Caja abierta<span className="mx-1.5 text-pe-muted">·</span>
               Sesión #{shortId(caja.id)}<span className="mx-1.5 text-pe-muted">·</span>
@@ -676,7 +676,7 @@ export default function CajaPage() {
           </div>
         )}
 
-        {operationError && <p className="text-red-500 text-sm">{operationError}</p>}
+        {operationError && <p className="text-pe-danger-ink text-sm">{operationError}</p>}
 
         {/* Movement table */}
         <div>
@@ -787,7 +787,7 @@ export default function CajaPage() {
           )}
         </div>
 
-        {historyError && <p className="text-red-500 text-sm">{historyError}</p>}
+        {historyError && <p className="text-pe-danger-ink text-sm">{historyError}</p>}
         {historyLoading && <p className="text-pe-muted text-sm">Cargando registros...</p>}
 
         <div className="border border-pe-black/10 overflow-auto">
@@ -820,7 +820,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2">
                     <span className={`px-2 py-0.5 text-[10px] tracking-widest uppercase rounded-sm ${
                       register.status === 'OPEN'
-                        ? 'bg-green-100 text-pe-positive dark:bg-green-900/30 dark:text-green-400'
+                        ? 'bg-pe-positive-surface text-pe-positive-ink'
                         : 'bg-pe-charcoal/10 text-pe-muted dark:bg-white/10'
                     }`}>
                       {register.status === 'OPEN' ? 'Abierta' : 'Cerrada'}
@@ -829,7 +829,7 @@ export default function CajaPage() {
                   <td className="px-3 py-2 text-pe-charcoal">{CLP(register.openingBalance)}</td>
                   <td className="px-3 py-2 text-pe-charcoal">{CLP(register.expectedBalance)}</td>
                   <td className="px-3 py-2 text-pe-charcoal">{CLP(register.closingBalance ?? 0)}</td>
-                  <td className={`px-3 py-2 font-medium ${(register.difference ?? 0) === 0 ? 'text-pe-positive' : 'text-pe-rose-ink'}`}>
+                  <td className={`px-3 py-2 font-medium ${(register.difference ?? 0) === 0 ? 'text-pe-positive-ink' : 'text-pe-rose-ink'}`}>
                     {CLP(register.difference ?? 0)}
                   </td>
                   <td className="px-3 py-2 text-pe-charcoal">{register.movements.length}</td>
@@ -989,7 +989,7 @@ function MovementRow({ movement }: { readonly movement: CashMovementDto }) {
         <CategoryChip category={movement.category ?? 'ADJUSTMENT'} />
       </td>
       <td className="px-3 py-2 text-pe-charcoal">{movement.description}</td>
-      <td className="px-3 py-2 text-right tabular-nums text-pe-positive">
+      <td className="px-3 py-2 text-right tabular-nums text-pe-positive-ink">
         {isIn ? CLP(movement.amount) : '—'}
       </td>
       <td className="px-3 py-2 text-right tabular-nums text-pe-rose-ink">

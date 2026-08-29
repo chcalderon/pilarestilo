@@ -221,7 +221,7 @@ export default function UserManagement() {
       width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
-          row.active ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-700'].join(' ')}
+          row.active ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-warning-surface text-pe-warning-ink'].join(' ')}
         >
           {row.active ? 'Habilitado' : 'Bloqueado'}
         </span>
@@ -295,7 +295,7 @@ export default function UserManagement() {
                 title="Eliminar usuario"
                 onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
                 disabled={busyUserId !== null}
-                className="inline-flex items-center justify-center p-2 rounded-xs text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+                className="inline-flex items-center justify-center p-2 rounded-xs text-pe-danger-ink hover:text-pe-danger-ink hover:bg-pe-danger-surface disabled:opacity-45 transition-all"
               >
                 <Trash2 size={15} />
               </button>
@@ -330,7 +330,7 @@ export default function UserManagement() {
       width: '110px',
       render: (row) => (
         <span className={['font-sans text-[0.65rem] uppercase tracking-wider px-2 py-1',
-          row.active ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-700'].join(' ')}
+          row.active ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-warning-surface text-pe-warning-ink'].join(' ')}
         >
           {row.active ? 'Habilitado' : 'Bloqueado'}
         </span>
@@ -384,7 +384,7 @@ export default function UserManagement() {
                 title="Eliminar trabajador"
                 onClick={(e) => { e.stopPropagation(); setEditingUser(row); }}
                 disabled={busyUserId !== null}
-                className="inline-flex items-center justify-center p-2 rounded-xs text-red-400 hover:text-red-600 hover:bg-red-50/60 disabled:opacity-45 transition-all"
+                className="inline-flex items-center justify-center p-2 rounded-xs text-pe-danger-ink hover:text-pe-danger-ink hover:bg-pe-danger-surface disabled:opacity-45 transition-all"
               >
                 <Trash2 size={15} />
               </button>
@@ -497,8 +497,8 @@ export default function UserManagement() {
           className={[
             'flex items-start justify-between gap-3 border px-3 py-2',
             feedback.tone === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-green-200 bg-green-50 text-green-800',
+              ? 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink'
+              : 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink',
           ].join(' ')}
         >
           <p className="font-sans text-[0.74rem]">{feedback.text}</p>

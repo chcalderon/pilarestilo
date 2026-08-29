@@ -108,7 +108,7 @@ function DispatchOrderHeader({ dispatch, compact = false }: { readonly dispatch:
         {summary?.needsSalesDocument && (
           // Words, not a colour: this is the difference between a parcel that can leave and one
           // that cannot, and it has to survive a printout and a colourblind reader alike.
-          <p className="mt-1 inline-flex items-center gap-1 text-[0.68rem] tracking-wider uppercase text-amber-600">
+          <p className="mt-1 inline-flex items-center gap-1 text-[0.68rem] tracking-wider uppercase text-pe-warning-ink">
             Sin boleta
           </p>
         )}
@@ -118,8 +118,8 @@ function DispatchOrderHeader({ dispatch, compact = false }: { readonly dispatch:
 }
 
 function dispatchStatusColor(status: string): string {
-  if (status === 'DELIVERED') return 'text-pe-positive';
-  if (status === 'FAILED') return 'text-red-500';
+  if (status === 'DELIVERED') return 'text-pe-positive-ink';
+  if (status === 'FAILED') return 'text-pe-danger-ink';
   return 'text-blue-500';
 }
 
@@ -374,7 +374,7 @@ export default function DespachosPage() {
               {error && (
                 <p
                   role="alert"
-                  className="mb-4 px-3 py-2 text-[0.8rem] border border-red-400/60 text-red-500"
+                  className="mb-4 px-3 py-2 text-[0.8rem] border border-pe-danger/40 text-pe-danger-ink"
                 >
                   {error}
                 </p>
@@ -407,7 +407,7 @@ export default function DespachosPage() {
                               placeholder="Código de seguimiento"
                               className="w-full border border-pe-black/10 px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose"
                             />
-                            {error && <p className="text-red-500 text-xs">{error}</p>}
+                            {error && <p className="text-pe-danger-ink text-xs">{error}</p>}
                             <div className="flex gap-2">
                               <button
                                 type="button"
@@ -491,7 +491,7 @@ export default function DespachosPage() {
                         {d.orderSummary?.needsSalesDocument ? (
                           <a
                             href="/admin/ventas"
-                            className="px-4 py-2 text-xs tracking-widest uppercase border border-amber-500/60 text-amber-600 hover:bg-amber-500/10 transition-colors"
+                            className="px-4 py-2 text-xs tracking-widest uppercase border border-pe-warning/40 text-pe-warning-ink hover:opacity-90/10 transition-colors"
                           >
                             Registrar boleta
                           </a>
@@ -589,7 +589,7 @@ export default function DespachosPage() {
             </div>
           </div>
 
-          {historyError && <p className="text-sm text-red-600">{historyError}</p>}
+          {historyError && <p className="text-sm text-pe-danger-ink">{historyError}</p>}
 
           {historyLoading ? (
             <div className="flex items-center gap-2 text-sm text-pe-muted">
@@ -635,7 +635,7 @@ export default function DespachosPage() {
                         <div className="flex flex-col gap-0.5">
                           <span>{row.carrier || '-'} {row.trackingCode ? `(${row.trackingCode})` : ''}</span>
                           {carrierOverride && (
-                            <span className="text-[11px] text-amber-700">
+                            <span className="text-[11px] text-pe-warning-ink">
                               Override courier: {carrierOverride.configured}{' -> '}{carrierOverride.selected}
                               {carrierOverride.at ? ` (${new Date(carrierOverride.at).toLocaleString('es-CL')})` : ''}
                             </span>
@@ -716,7 +716,7 @@ export default function DespachosPage() {
                   Cargando orden...
                 </div>
               )}
-              {orderDetailError && <p className="text-sm text-red-600">{orderDetailError}</p>}
+              {orderDetailError && <p className="text-sm text-pe-danger-ink">{orderDetailError}</p>}
               {orderDetail && (
                 <div className="space-y-3">
                   <div className="text-xs text-pe-muted">

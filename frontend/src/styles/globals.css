@@ -109,18 +109,25 @@
      * because a value dark enough for cream is invisible on a near-black panel.
      */
     --pe-gold-ink: #584622;
-    --pe-positive-ink: #03513A;
     /*
-     * Error red. The stock and checkout alerts hand-rolled #8f2d3b for text with a lighter
-     * dark:red-400 twin, and painted their panels #ffe9ec / #fff6f7 — a value pair, per theme,
-     * in every alert. -ink is the readable text/icon step (6.9:1 on parchment, 7:1 on the dark
-     * panel); -surface is the tinted panel; -rgb is the solid fill the SOLD OUT chip is painted
-     * in (white on it clears 6.9:1) and the base every /NN alert border resolves against, so it
-     * is a constant — a saturated red chip reads on either ground.
+     * Status families — positive / danger / warning. Three roles each, shaped the same:
+     *   -ink      readable text + icons on any surface of its own theme (flips per theme)
+     *   -surface  the tinted alert panel background (flips)
+     *   -rgb      the constant saturated chip fill (white on it clears 4.5:1) and the base their
+     *             /NN alert borders resolve against — a chip that reads on either ground
+     * They replace the per-component `bg-{red,green,amber}-50 dark:bg-…-900/30 text-…-700
+     * dark:text-…-300` pairs, a dozen shades of the same three ideas. `text-pe-positive` was the
+     * old name for what is now `text-pe-positive-ink`.
      */
+    --pe-positive-ink: #03513A;
+    --pe-positive-surface: #E6F3EC;
+    --pe-positive-rgb: 3 81 58;
     --pe-danger-ink: #8F2D3B;
     --pe-danger-surface: #FBE9EC;
     --pe-danger-rgb: 143 45 59;
+    --pe-warning-ink: #7A4E15;
+    --pe-warning-surface: #FBF0DC;
+    --pe-warning-rgb: 180 83 9;
     /* The script is display-sized, so 3:1 is the bar it has to clear rather than 4.5. */
     --pe-rose-display: #984C57;
     /*
@@ -156,10 +163,13 @@
     --pe-muted-ink: #BFB2A9;
     --pe-rose-ink: #D8AEB3;
     --pe-gold-ink: #C6A96B;
+    /* -rgb (each chip fill + border base) is not redefined here: constant across themes. */
     --pe-positive-ink: #06B382;
-    /* -rgb (the chip fill + border base) is not redefined here: it stays #8F2D3B in both themes. */
+    --pe-positive-surface: #122019;
     --pe-danger-ink: #FCA5A5;
     --pe-danger-surface: #39191E;
+    --pe-warning-ink: #F0C674;
+    --pe-warning-surface: #332612;
     --pe-rose-display: #E8C9CC;
     --pe-rose-action: #A1505C;
     color-scheme: dark;

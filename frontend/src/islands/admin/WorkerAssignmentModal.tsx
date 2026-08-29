@@ -74,7 +74,7 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
               className="w-full border border-pe-black/10 bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose" />
           </div>
         </div>
-        {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
+        {error && <p className="text-pe-danger-ink text-sm mt-3">{error}</p>}
         <div className="flex gap-3 mt-6">
           <button type="button" onClick={assign} disabled={saving}
             className="flex-1 bg-pe-black text-pe-offwhite py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50">
@@ -82,7 +82,7 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
           </button>
           {WORKER_ROLES.includes(currentRole) && (
             <button type="button" onClick={revoke} disabled={saving}
-              className="px-4 border border-red-300 text-red-500 text-xs tracking-widest uppercase hover:bg-red-50 transition-colors disabled:opacity-50">
+              className="px-4 border border-pe-danger/40 text-pe-danger-ink text-xs tracking-widest uppercase hover:bg-pe-danger-surface transition-colors disabled:opacity-50">
               Revocar
             </button>
           )}

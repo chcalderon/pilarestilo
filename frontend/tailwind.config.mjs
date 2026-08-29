@@ -24,11 +24,18 @@ export default {
         'pe-gold-ink': 'var(--pe-gold-ink)',
         'pe-rose-display': 'var(--pe-rose-display)',
         'pe-rose-action': 'var(--pe-rose-action)',
-        'pe-positive': 'var(--pe-positive-ink)',
-        /* Error red. -rgb form so the /NN alert borders (border-pe-danger/40) resolve; see globals.css. */
+        /* Status families: positive / danger / warning, three roles each. The bare name is the
+           -rgb chip fill (so bg-pe-{fam}/10 and border-pe-{fam}/40 resolve); -ink is the readable
+           text step; -surface is the panel tint. See globals.css. */
+        'pe-positive': 'rgb(var(--pe-positive-rgb) / <alpha-value>)',
+        'pe-positive-ink': 'var(--pe-positive-ink)',
+        'pe-positive-surface': 'var(--pe-positive-surface)',
         'pe-danger': 'rgb(var(--pe-danger-rgb) / <alpha-value>)',
         'pe-danger-ink': 'var(--pe-danger-ink)',
         'pe-danger-surface': 'var(--pe-danger-surface)',
+        'pe-warning': 'rgb(var(--pe-warning-rgb) / <alpha-value>)',
+        'pe-warning-ink': 'var(--pe-warning-ink)',
+        'pe-warning-surface': 'var(--pe-warning-surface)',
         'pe-on-dark': 'var(--pe-on-dark)',
         'pe-on-light': 'var(--pe-on-light)',
         'pe-on-dark-muted': 'var(--pe-on-dark-muted)',

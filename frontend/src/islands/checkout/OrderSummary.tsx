@@ -78,7 +78,7 @@ export default function OrderSummary({
       {totals.employeeDiscount > 0 && (
         <div className="flex justify-between font-sans text-sm mb-4">
           <span className="text-pe-charcoal">{l.employeeDiscount}</span>
-          <span className="font-semibold text-pe-positive tabular-nums">
+          <span className="font-semibold text-pe-positive-ink tabular-nums">
             −{formatPrice(totals.employeeDiscount, currency, locale)}
           </span>
         </div>
@@ -92,10 +92,10 @@ export default function OrderSummary({
         {appliedDiscount ? (
           <>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[0.78rem] text-pe-positive border border-green-200 bg-green-50 px-2 py-1.5 flex-1 truncate">
+              <span className="font-mono text-[0.78rem] text-pe-positive-ink border border-pe-positive/40 bg-pe-positive-surface px-2 py-1.5 flex-1 truncate">
                 {appliedDiscount.code}
               </span>
-              <span className="font-sans text-sm font-semibold text-pe-positive tabular-nums">
+              <span className="font-sans text-sm font-semibold text-pe-positive-ink tabular-nums">
                 −{formatPrice(totals.codeDiscount, currency, locale)}
               </span>
               <button

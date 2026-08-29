@@ -113,7 +113,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel, token }: FormRowPr
         </label>
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} className="accent-pe-rose" />
-          <Star size={11} className="text-amber-500" /> Destacada en inicio
+          <Star size={11} className="text-pe-warning-ink" /> Destacada en inicio
         </label>
         <label className="flex items-center gap-1.5 font-sans text-[0.78rem] text-pe-muted cursor-pointer">
           <input type="checkbox" checked={form.menuVisible} onChange={e => setForm(f => ({ ...f, menuVisible: e.target.checked }))} className="accent-pe-rose" />{' '}
@@ -232,7 +232,7 @@ function CategoryRow({
         )}
         {node.featured && (
           <span title="Destacada en inicio">
-            <Star size={11} className="shrink-0 text-amber-400 fill-amber-400" />
+            <Star size={11} className="shrink-0 text-pe-warning-ink fill-pe-warning" />
           </span>
         )}
 
@@ -258,7 +258,7 @@ function CategoryRow({
           <button
             type="button"
             onClick={() => onDelete(node.id, node.nameEs)}
-            className="p-1 text-pe-muted hover:text-red-500 transition-colors"
+            className="p-1 text-pe-muted hover:text-pe-danger-ink transition-colors"
             title="Eliminar"
           >
             <Trash2 size={13} />

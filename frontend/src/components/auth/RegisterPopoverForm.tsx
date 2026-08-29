@@ -279,7 +279,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         </div>
 
         {error && (
-          <p role="alert" aria-live="polite" className="text-xs text-red-500">
+          <p role="alert" aria-live="polite" className="text-xs text-pe-danger-ink">
             {error}
           </p>
         )}

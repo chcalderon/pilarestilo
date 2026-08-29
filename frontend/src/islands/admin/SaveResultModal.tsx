@@ -62,7 +62,7 @@ export default function SaveResultModal({ ok, title, detail, onClose }: Props) {
           <img src="/logo-pe.svg" alt="" width="72" height="64" className="mx-auto mb-4 opacity-90" />
 
           <p
-            className={`font-display text-xl font-light ${ok ? '' : 'text-red-500'}`}
+            className={`font-display text-xl font-light ${ok ? '' : 'text-pe-danger-ink'}`}
           >
             {title}
           </p>

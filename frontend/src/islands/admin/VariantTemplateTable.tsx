@@ -181,7 +181,7 @@ export default function VariantTemplateTable() {
                   <button
                     type="button"
                     onClick={() => handleDelete(t.id, t.name)}
-                    className="p-1 text-pe-muted hover:text-red-500 transition-colors"
+                    className="p-1 text-pe-muted hover:text-pe-danger-ink transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 size={13} />

@@ -441,14 +441,14 @@ interface OrderTimelineStepsProps {
 }
 
 function timelineDotClass(state: TimelineState): string {
-  if (state === 'done') return 'bg-emerald-600 border-emerald-600 dark:bg-emerald-400 dark:border-emerald-400';
+  if (state === 'done') return 'bg-pe-positive border-pe-positive';
   if (state === 'current') return 'bg-pe-rose border-pe-rose';
   if (state === 'ended') return 'bg-pe-danger-ink border-pe-danger-ink';
   return 'bg-transparent border-pe-black/20 dark:border-pe-cream/25';
 }
 
 function timelineLabelClass(state: TimelineState): string {
-  if (state === 'done') return 'text-pe-positive dark:text-emerald-400';
+  if (state === 'done') return 'text-pe-positive-ink';
   if (state === 'current') return 'text-pe-rose-ink dark:text-pe-rose-ink';
   if (state === 'ended') return 'text-pe-danger-ink font-semibold';
   if (state === 'skipped') return 'text-pe-muted dark:text-pe-cream/25 line-through';
@@ -714,7 +714,7 @@ function OrderTransferProofSection({
       )}
 
       {proofFeedback && (
-        <p className={`font-sans text-[0.72rem] ${proofFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
+        <p className={`font-sans text-[0.72rem] ${proofFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
           {proofFeedback.text}
         </p>
       )}
@@ -748,7 +748,7 @@ function GatewaySimulationButtons({
         type="button"
         onClick={() => onSimulateGateway('APPROVED')}
         disabled={disabled}
-        className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-green-700 transition-colors disabled:opacity-60"
+        className="inline-flex items-center justify-center px-3 py-2 bg-pe-positive text-white font-sans text-[0.66rem] tracking-wider uppercase hover:opacity-90 transition-colors disabled:opacity-60"
       >
         {toggleLabel(isSimulatingGateway, es, 'Simulando...', 'Simulating...', 'Simular aprobado', 'Simulate approve')}
       </button>
@@ -756,7 +756,7 @@ function GatewaySimulationButtons({
         type="button"
         onClick={() => onSimulateGateway('FAILED')}
         disabled={disabled}
-        className="inline-flex items-center justify-center px-3 py-2 border border-red-300 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
+        className="inline-flex items-center justify-center px-3 py-2 border border-pe-danger/40 text-pe-danger-ink font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-danger-surface transition-colors disabled:opacity-60"
       >
         {toggleLabel(isSimulatingGateway, es, 'Simulando...', 'Simulating...', 'Simular rechazado', 'Simulate reject')}
       </button>
@@ -800,7 +800,7 @@ function OrderGatewaySection({
       )}
 
       {gatewayFeedback && (
-        <p className={`font-sans text-[0.72rem] ${gatewayFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
+        <p className={`font-sans text-[0.72rem] ${gatewayFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
           {gatewayFeedback.text}
         </p>
       )}
@@ -837,7 +837,7 @@ function OrderFooterActions({
           type="button"
           onClick={onConfirmDelivery}
           disabled={isConfirmingDelivery}
-          className="inline-flex items-center justify-center px-3 py-2 bg-emerald-700 text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-emerald-800 transition-colors disabled:opacity-60"
+          className="inline-flex items-center justify-center px-3 py-2 bg-pe-positive text-white font-sans text-[0.66rem] tracking-wider uppercase hover:opacity-90 transition-colors disabled:opacity-60"
         >
           {toggleLabel(isConfirmingDelivery, es, 'Confirmando...', 'Confirming...', 'Marcar como recibido', 'Mark as received')}
         </button>
@@ -1072,7 +1072,7 @@ function AvatarUploadCard({
             />
           </label>
           {avatarFeedback && (
-            <span className={`font-sans text-[0.7rem] ${avatarFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
+            <span className={`font-sans text-[0.7rem] ${avatarFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
               {avatarFeedback.text}
             </span>
           )}
@@ -1176,7 +1176,7 @@ function ProfileDetailsCard({
           {toggleLabel(profileSaving, es, 'Guardando...', 'Saving...', 'Guardar perfil', 'Save profile')}
         </button>
         {profileFeedback && (
-          <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
+          <span className={`font-sans text-[0.72rem] ${profileFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
             {profileFeedback.text}
           </span>
         )}
@@ -1263,7 +1263,7 @@ function ChangePasswordCard({
           {toggleLabel(passwordSaving, es, 'Actualizando...', 'Updating...', 'Actualizar contraseña', 'Update password')}
         </button>
         {passwordFeedback && (
-          <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-500'}`}>
+          <span className={`font-sans text-[0.72rem] ${passwordFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
             {passwordFeedback.text}
           </span>
         )}
@@ -1398,7 +1398,7 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
               <div className="flex items-center gap-3 mt-1">
                 <span
                   className={`font-sans text-[0.65rem] tracking-wider uppercase px-2 py-0.5 ${
-                    review.approved ? 'bg-green-50 text-green-800' : 'bg-pe-cream text-pe-muted'
+                    review.approved ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-cream text-pe-muted'
                   }`}
                 >
                   {toggleLabel(review.approved, es, 'Aprobada', 'Approved', 'Pendiente', 'Pending')}
@@ -1471,7 +1471,7 @@ function AddressCard({ address, es, addressDefaultingId, addressDeletingId, onEd
           type="button"
           onClick={() => onDelete(address.id)}
           disabled={addressDeletingId === address.id}
-          className="px-3 py-1.5 border border-red-200 text-red-600 font-sans text-[0.66rem] tracking-wider uppercase hover:bg-red-50 transition-colors disabled:opacity-60"
+          className="px-3 py-1.5 border border-pe-danger/40 text-pe-danger-ink font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-danger-surface transition-colors disabled:opacity-60"
         >
           {toggleLabel(addressDeletingId === address.id, es, 'Eliminando...', 'Deleting...', 'Eliminar', 'Delete')}
         </button>
@@ -1693,7 +1693,7 @@ function AddressesTab({
       </div>
 
       {addressFeedback && (
-        <p className={`font-sans text-[0.74rem] ${addressFeedback.type === 'success' ? 'text-pe-positive' : 'text-red-600'}`}>
+        <p className={`font-sans text-[0.74rem] ${addressFeedback.type === 'success' ? 'text-pe-positive-ink' : 'text-pe-danger-ink'}`}>
           {addressFeedback.text}
         </p>
       )}
@@ -1751,8 +1751,8 @@ function GatewayReturnFeedbackBanner({ feedback }: { readonly feedback: ProofFee
       className={[
         'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
         feedback.type === 'success'
-          ? 'border-green-200 bg-green-50 text-green-800'
-          : 'border-red-200 bg-red-50 text-red-700',
+          ? 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink'
+          : 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink',
       ].join(' ')}
     >
       {feedback.text}

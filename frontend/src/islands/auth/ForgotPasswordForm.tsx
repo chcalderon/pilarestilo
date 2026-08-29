@@ -89,8 +89,8 @@ export default function ForgotPasswordForm({ locale }: Props) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 font-sans text-[0.78rem] text-red-300 bg-red-500/20 border border-red-500/50 px-3 py-2.5">
-          <AlertCircle size={14} className="shrink-0 text-red-400" />
+        <div className="flex items-center gap-2 font-sans text-[0.78rem] text-pe-danger-ink bg-pe-danger-surface border border-pe-danger/50 px-3 py-2.5">
+          <AlertCircle size={14} className="shrink-0 text-pe-danger-ink" />
           {error}
         </div>
       )}

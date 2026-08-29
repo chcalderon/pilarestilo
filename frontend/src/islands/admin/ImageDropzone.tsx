@@ -194,7 +194,7 @@ export default function ImageDropzone({
   if (dragging) {
     idleBorderClass = 'border-pe-rose bg-pe-rose/5 dark:bg-pe-rose/10';
   } else if (state === 'error') {
-    idleBorderClass = 'border-red-400 bg-red-50/30 dark:bg-red-900/20';
+    idleBorderClass = 'border-pe-danger/40 bg-pe-danger-surface';
   }
 
   return (
@@ -306,10 +306,10 @@ export default function ImageDropzone({
       </button>
 
       {state === 'error' && (
-        <p className="font-sans text-[0.65rem] text-red-500">{error}</p>
+        <p className="font-sans text-[0.65rem] text-pe-danger-ink">{error}</p>
       )}
       {cameraError && (
-        <p className="font-sans text-[0.65rem] text-amber-600 dark:text-amber-300">{cameraError}</p>
+        <p className="font-sans text-[0.65rem] text-pe-warning-ink">{cameraError}</p>
       )}
       <input
         ref={inputRef}

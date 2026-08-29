@@ -28,9 +28,9 @@ function Waiting({ days, open }: { readonly days: number; readonly open: boolean
   const soon = days >= WARN_DAYS;
   let waitingColor = 'opacity-70';
   if (late) {
-    waitingColor = 'text-red-600 font-medium';
+    waitingColor = 'text-pe-danger-ink font-medium';
   } else if (soon) {
-    waitingColor = 'text-amber-700';
+    waitingColor = 'text-pe-warning-ink';
   }
   return (
     <span
@@ -134,7 +134,7 @@ export default function PrivacidadPage() {
       {late > 0 && (
         <p
           role="alert"
-          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600"
+          className="flex items-center gap-2 text-[0.8rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink"
         >
           <AlertTriangle size={14} aria-hidden="true" />
           {late === 1
@@ -169,7 +169,7 @@ export default function PrivacidadPage() {
       </div>
 
       {error && (
-        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600">
+        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink">
           {error}
         </p>
       )}

@@ -920,7 +920,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   const inputClass =
     'w-full font-sans text-[0.82rem] border border-pe-charcoal/30 px-2.5 py-1.5 bg-pe-white text-pe-black placeholder-pe-charcoal/40 focus:outline-hidden focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
   const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-pe-charcoal mb-1';
-  const errorClass = 'font-sans text-xs text-red-500 dark:text-red-300 mt-1';
+  const errorClass = 'font-sans text-xs text-pe-danger-ink mt-1';
 
   const categoryTree = buildCategoryTree(categories);
 
@@ -951,9 +951,9 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
           </button>
         </div>
 
-        {apiError && <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm px-4 py-2 mb-4">{apiError}</div>}
-        {aiInfo && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-pe-positive dark:text-emerald-300 text-sm px-4 py-2 mb-4">{aiInfo}</div>}
-        {heroAssignFeedback && <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-pe-positive dark:text-emerald-300 text-sm px-4 py-2 mb-4">{heroAssignFeedback}</div>}
+        {apiError && <div className="bg-pe-danger-surface border border-pe-danger/40 text-pe-danger-ink text-sm px-4 py-2 mb-4">{apiError}</div>}
+        {aiInfo && <div className="bg-pe-positive-surface border border-pe-positive/40 text-pe-positive-ink text-sm px-4 py-2 mb-4">{aiInfo}</div>}
+        {heroAssignFeedback && <div className="bg-pe-positive-surface border border-pe-positive/40 text-pe-positive-ink text-sm px-4 py-2 mb-4">{heroAssignFeedback}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3">
           <div>
@@ -1190,7 +1190,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                     <button
                       type="button"
                       onClick={() => removeVariantRow(index)}
-                      className="w-full h-[36px] inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-500 dark:text-red-300 text-[0.62rem] uppercase tracking-[0.1em] px-2 whitespace-nowrap hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="w-full h-[36px] inline-flex items-center justify-center border border-pe-danger/40 text-pe-danger-ink text-[0.62rem] uppercase tracking-[0.1em] px-2 whitespace-nowrap hover:bg-pe-danger-surface transition-colors"
                     >
                       Quitar
                     </button>
@@ -1205,7 +1205,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             </p>
 
             {stockSyncHint && (
-              <p className="font-sans text-[0.68rem] text-amber-700 dark:text-amber-300">
+              <p className="font-sans text-[0.68rem] text-pe-warning-ink">
                 {stockSyncHint}
               </p>
             )}
@@ -1428,7 +1428,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             <button
               type="button"
               onClick={handleDiscardAndClose}
-              className="flex-1 inline-flex items-center justify-center border border-red-300 dark:border-red-800/50 text-red-600 dark:text-red-300 font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="flex-1 inline-flex items-center justify-center border border-pe-danger/40 text-pe-danger-ink font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:bg-pe-danger-surface transition-colors"
             >
               Salir sin guardar
             </button>

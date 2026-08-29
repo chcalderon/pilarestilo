@@ -132,7 +132,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
         {hasDiscount && <span class="font-sans text-[0.68rem] text-pe-muted line-through">{listPriceFormatted}</span>}
         <div class="flex items-center gap-1.5">
           <span class="font-display text-pe-black text-lg font-medium tracking-tight">{priceFormatted}</span>
-          {discountPct !== null && <span class="font-sans text-[0.6rem] tracking-[0.08em] uppercase text-pe-positive">-{discountPct}%</span>}
+          {discountPct !== null && <span class="font-sans text-[0.6rem] tracking-[0.08em] uppercase text-pe-positive-ink">-{discountPct}%</span>}
         </div>
       </div>
       {product.stock === 1 && (

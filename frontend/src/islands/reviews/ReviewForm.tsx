@@ -183,7 +183,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
         <p className="text-[10px] text-pe-charcoal/40 text-right mt-1">{comment.length}/1000</p>
       </div>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-pe-danger-ink text-sm">{error}</p>}
 
       <button
         type="submit"

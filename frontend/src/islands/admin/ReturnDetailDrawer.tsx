@@ -31,7 +31,7 @@ const btnPrimary =
 const btnSecondary =
   'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-border)] hover:bg-[var(--pe-surface-soft)] disabled:opacity-40 transition-colors';
 const btnDanger =
-  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-red-300/60 text-red-500 hover:bg-red-50/50 disabled:opacity-40 transition-colors';
+  'inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-pe-danger/40 text-pe-danger-ink hover:bg-pe-danger-surface disabled:opacity-40 transition-colors';
 
 function Section({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
@@ -69,7 +69,7 @@ function SolicitudSection({ request, closed }: SolicitudSectionProps) {
           closed ? (
             <span className="opacity-50">Cerrada</span>
           ) : (
-            <span className={request.daysUntilDeadline <= 10 ? 'text-amber-700' : ''}>
+            <span className={request.daysUntilDeadline <= 10 ? 'text-pe-warning-ink' : ''}>
               {request.daysUntilDeadline} días ·{' '}
               {new Date(request.deadlineAt).toLocaleDateString('es-CL')}
             </span>
@@ -470,7 +470,7 @@ function CreditNoteForm({
         registra aquí el folio que te dieron.
       </p>
       {staleForCreditNote && (
-        <p className="text-[0.72rem] text-amber-600">
+        <p className="text-[0.72rem] text-pe-warning-ink">
           La boleta tiene más de seis meses. Pasado ese plazo el SII ya no permite rebajar
           el débito fiscal; regístrala igual si la necesitas para tu contabilidad.
         </p>
@@ -715,7 +715,7 @@ export default function ReturnDetailDrawer({
           {feedback && (
             <output
               className={`block text-[0.78rem] px-3 py-2 rounded-xs border ${
-                feedback.tone === 'success' ? 'border-green-300/60 text-pe-positive' : 'border-red-300/60 text-red-600'
+                feedback.tone === 'success' ? 'border-pe-positive/40 text-pe-positive-ink' : 'border-pe-danger/40 text-pe-danger-ink'
               }`}
             >
               {feedback.text}

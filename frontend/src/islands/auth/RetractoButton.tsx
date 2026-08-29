@@ -130,7 +130,7 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
             text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
         />
       </label>
-      {error && <p className="font-sans text-[0.72rem] text-red-500">{error}</p>}
+      {error && <p className="font-sans text-[0.72rem] text-pe-danger-ink">{error}</p>}
       <div className="flex gap-2">
         <button
           type="button"

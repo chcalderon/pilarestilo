@@ -25,8 +25,8 @@ function StatusBadge({ status }: { readonly status: ProductAiJobStatus }) {
   const cls = {
     PENDING: 'bg-pe-cream text-pe-muted border-pe-black/10',
     PROCESSING: 'bg-blue-50 text-blue-700 border-blue-200',
-    SUCCESS: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    ERROR: 'bg-red-50 text-red-700 border-red-200',
+    SUCCESS: 'bg-pe-positive-surface text-pe-positive-ink border-pe-positive/40',
+    ERROR: 'bg-pe-danger-surface text-pe-danger-ink border-pe-danger/40',
   }[status];
 
   return (
@@ -200,12 +200,12 @@ export default function PublicacionesMediaPage() {
   return (
     <section className="flex flex-col gap-4">
       {error && (
-        <div className="border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
+        <div className="border border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink px-3 py-2 text-sm">
           {error}
         </div>
       )}
       {successMessage && (
-        <div className="border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-2 text-sm">
+        <div className="border border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink px-3 py-2 text-sm">
           {successMessage}
         </div>
       )}
@@ -353,7 +353,7 @@ export default function PublicacionesMediaPage() {
                           <button
                             type="button"
                             onClick={() => void handleRetry(row.id)}
-                            className="inline-flex items-center gap-1 border border-red-300 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-red-600"
+                            className="inline-flex items-center gap-1 border border-pe-danger/40 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-danger-ink"
                           >
                             <RefreshCw size={11} />
                             Reintentar
@@ -363,7 +363,7 @@ export default function PublicacionesMediaPage() {
                           <button
                             type="button"
                             onClick={() => void handleApprovePublish(row.draftId)}
-                            className="inline-flex items-center gap-1 border border-emerald-300 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-positive"
+                            className="inline-flex items-center gap-1 border border-pe-positive/40 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.1em] text-pe-positive-ink"
                           >
                             <CheckCircle2 size={11} />
                             Aprobar/Publicar
@@ -385,13 +385,13 @@ export default function PublicacionesMediaPage() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-            <div className="border border-emerald-200 bg-emerald-50 p-3 flex items-start gap-2">
-              <CheckCircle2 size={16} className="text-pe-positive mt-0.5" />
-              <p className="font-sans text-[0.76rem] text-emerald-800">Lotes exitosos quedan listos para aprobar/publicar en catalogo.</p>
+            <div className="border border-pe-positive/40 bg-pe-positive-surface p-3 flex items-start gap-2">
+              <CheckCircle2 size={16} className="text-pe-positive-ink mt-0.5" />
+              <p className="font-sans text-[0.76rem] text-pe-positive-ink">Lotes exitosos quedan listos para aprobar/publicar en catalogo.</p>
             </div>
-            <div className="border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
-              <AlertTriangle size={16} className="text-amber-700 mt-0.5" />
-              <p className="font-sans text-[0.76rem] text-amber-800">Los errores conservan trazabilidad por job_id para analisis y retry.</p>
+            <div className="border border-pe-warning/40 bg-pe-warning-surface p-3 flex items-start gap-2">
+              <AlertTriangle size={16} className="text-pe-warning-ink mt-0.5" />
+              <p className="font-sans text-[0.76rem] text-pe-warning-ink">Los errores conservan trazabilidad por job_id para analisis y retry.</p>
             </div>
           </div>
         </article>
@@ -439,7 +439,7 @@ export default function PublicacionesMediaPage() {
       )}
 
       {hasFailures && activeTab !== 'processing' && (
-        <div className="border border-amber-200 bg-amber-50 p-3 text-amber-800 text-sm">
+        <div className="border border-pe-warning/40 bg-pe-warning-surface p-3 text-pe-warning-ink text-sm">
           Hay jobs con error pendientes de reintento en la pestaña de procesamiento.
         </div>
       )}

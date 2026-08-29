@@ -38,7 +38,7 @@ function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
   const documentable = ['PAID', 'PREPARING_ORDER', 'SHIPPED', 'DELIVERED'].includes(sale.orderStatus);
   if (sale.documentFolio) {
     return (
-      <span className="inline-flex items-center text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-green-50 text-green-800">
+      <span className="inline-flex items-center text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-pe-positive-surface text-pe-positive-ink">
         Boleta {sale.documentFolio}
       </span>
     );
@@ -47,7 +47,7 @@ function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
     return <span className="text-[0.7rem] opacity-40">—</span>;
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-amber-50 text-amber-700">
+    <span className="inline-flex items-center gap-1 text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-pe-warning-surface text-pe-warning-ink">
       <AlertTriangle size={11} /> Sin boleta
     </span>
   );
@@ -238,7 +238,7 @@ export default function VentasPage() {
       </div>
 
       {error && (
-        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-red-300/60 text-red-600">
+        <p role="alert" className="text-[0.78rem] px-3 py-2 rounded-xs border border-pe-danger/40 text-pe-danger-ink">
           {error}
         </p>
       )}

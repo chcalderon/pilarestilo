@@ -40,10 +40,10 @@ function StatusBadge({ dto }: { readonly dto: DiscountCodeDto }) {
     <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-charcoal/8 text-pe-muted px-1.5 py-0.5">Usado</span>
   );
   if (isExpired(dto)) return (
-    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-red-50 text-red-400 px-1.5 py-0.5">Caducado</span>
+    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-danger-surface text-pe-danger-ink px-1.5 py-0.5">Caducado</span>
   );
   return (
-    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-green-50 text-green-800 px-1.5 py-0.5">Vigente</span>
+    <span className="font-sans text-[0.6rem] uppercase tracking-wider bg-pe-positive-surface text-pe-positive-ink px-1.5 py-0.5">Vigente</span>
   );
 }
 
@@ -396,7 +396,7 @@ export default function DiscountCodeManager() {
                     <button
                       type="button"
                       onClick={() => handleDelete(c.id, c.code)}
-                      className="p-1.5 text-pe-muted hover:text-red-500 transition-colors"
+                      className="p-1.5 text-pe-muted hover:text-pe-danger-ink transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 size={14} />

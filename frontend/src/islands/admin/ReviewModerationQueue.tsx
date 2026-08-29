@@ -120,7 +120,7 @@ export default function ReviewModerationQueue() {
       render: row => (
         <span className={[
           'font-sans text-[0.65rem] tracking-wider uppercase px-2 py-0.5',
-          row.approved ? 'bg-green-50 text-green-800' : 'bg-pe-cream text-pe-muted',
+          row.approved ? 'bg-pe-positive-surface text-pe-positive-ink' : 'bg-pe-cream text-pe-muted',
         ].join(' ')}>
           {row.approved ? 'Aprobada' : 'Pendiente'}
         </span>
@@ -147,7 +147,7 @@ export default function ReviewModerationQueue() {
               type="button"
               onClick={() => handleApprove(row.id as string)}
               disabled={acting === row.id}
-              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-green-600 text-white px-2 py-1 hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider bg-pe-positive text-white px-2 py-1 hover:opacity-90 transition-colors disabled:opacity-50"
               title="Aprobar"
             >
               <Check size={11} /> Aprobar
@@ -157,7 +157,7 @@ export default function ReviewModerationQueue() {
             type="button"
             onClick={() => handleDelete(row.id as string)}
             disabled={acting === row.id}
-            className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-red-300 text-red-500 px-2 py-1 hover:bg-red-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 font-sans text-[0.65rem] uppercase tracking-wider border border-pe-danger/40 text-pe-danger-ink px-2 py-1 hover:bg-pe-danger-surface transition-colors disabled:opacity-50"
             title="Eliminar"
           >
             <Trash2 size={11} /> Eliminar
