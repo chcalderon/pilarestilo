@@ -954,6 +954,14 @@ handle @notification_reads {
 
 **Not code — the mandatory check from spec §7. Do not merge to `master` without it.**
 
+> **Verified locally 2026-08-29** (partial-swap: rebuilt backend + notification-service, shared
+> postgres/kafka untouched). Real order `PE-63EAA4E287` → exactly one `ORDER_CONFIRMATION` from
+> notification-service, zero from the backend; bell GET/PUT via Caddy → 8085; in-app rows in
+> `pilarestilo_notifications`; prometheus target up; rollback (flip both flags) puts the monolith
+> back in charge. Bug found + fixed: `V1__notifications.sql` must be **byte-identical** to the
+> monolith's or Flyway checksum validation crash-loops the service (commit `ea0ff64`). The steps
+> below are the production re-run.
+
 - [ ] **Step 1: Bring up the full stack** —
   `cd infra && docker compose --env-file .env --profile kafka --profile cache --profile microservices --profile observability up -d --build`
   In `.env`: `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true`, `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED=false`,
