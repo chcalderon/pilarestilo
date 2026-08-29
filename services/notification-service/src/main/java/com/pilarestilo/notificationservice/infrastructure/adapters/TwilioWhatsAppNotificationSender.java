@@ -1,0 +1,239 @@
+package com.pilarestilo.notificationservice.infrastructure.adapters;
+
+import com.pilarestilo.notificationservice.domain.model.NotificationMessage;
+import com.pilarestilo.notificationservice.domain.model.NotificationRecipient;
+import com.pilarestilo.notificationservice.domain.ports.MessagingSettingsPort;
+import com.pilarestilo.notificationservice.domain.ports.NotificationSender;
+import com.pilarestilo.notificationservice.domain.view.MessagingSettings;
+import com.pilarestilo.notificationservice.metrics.NotificationMetrics;
+import com.pilarestilo.notificationservice.shared.DomainException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+
+import java.util.Locale;
+import java.util.UUID;
+
+@Component
+public class TwilioWhatsAppNotificationSender implements NotificationSender {
+
+    private static final String WHATSAPP_PREFIX = "whatsapp:";
+    private static final String CHANNEL = "WHATSAPP_TWILIO";
+
+    private static final Logger log = LoggerFactory.getLogger(TwilioWhatsAppNotificationSender.class);
+
+    private final RestClient.Builder restClientBuilder;
+    private final MessagingSettingsPort messagingSettings;
+    private final SystemSettingsCryptoService cryptoService;
+    private final NotificationMetrics metrics;
+    private final String envApiBaseUrl;
+    private final String envAccountSid;
+    private final String envAuthToken;
+    private final String envFrom;
+    private final String envToFallback;
+    private final String envSenderAlias;
+
+    public TwilioWhatsAppNotificationSender(
+            RestClient.Builder restClientBuilder,
+            MessagingSettingsPort messagingSettings,
+            SystemSettingsCryptoService cryptoService,
+            NotificationMetrics metrics,
+            @Value("${app.notification.whatsapp.twilio.api-base-url:https://api.twilio.com}") String apiBaseUrl,
+            @Value("${app.notification.whatsapp.twilio.account-sid:}") String accountSid,
+            @Value("${app.notification.whatsapp.twilio.auth-token:}") String authToken,
+            @Value("${app.notification.whatsapp.twilio.from:}") String from,
+            @Value("${app.notification.whatsapp.twilio.to-fallback:-+56900000000}") String toFallback,
+            @Value("${app.notification.whatsapp.twilio.sender-alias:Pilar Estilo}") String senderAlias
+    ) {
+        this.restClientBuilder = restClientBuilder;
+        this.messagingSettings = messagingSettings;
+        this.cryptoService = cryptoService;
+        this.metrics = metrics;
+        this.envApiBaseUrl = normalize(apiBaseUrl, "https://api.twilio.com");
+        this.envAccountSid = normalize(accountSid, "");
+        this.envAuthToken = normalize(authToken, "");
+        this.envFrom = normalize(from, "");
+        this.envToFallback = normalize(toFallback, "+56900000000");
+        this.envSenderAlias = normalize(senderAlias, "Pilar Estilo");
+    }
+
+    private void send(String template, UUID referenceId, NotificationRecipient recipient,
+                      String overrideBody) {
+        if (!recipient.allowsWhatsApp()) {
+            log.info("[WHATSAPP:TWILIO] skipped template={} referenceId={} reason=channel-preference preference={}",
+                    template, referenceId, recipient.preference());
+            return;
+        }
+
+        EffectiveConfig config = resolveConfig();
+        if (config == null) {
+            return;
+        }
+
+        String body = overrideBody != null ? overrideBody
+                : buildMessage(template, referenceId, config.senderAlias());
+        String recipientContact = normalize(recipient.preferredPhoneThenEmail(), "unknown");
+        String toAddress = resolveToAddress(recipientContact, config.fallbackToAddress());
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("To", toAddress);
+        form.add("From", config.fromAddress());
+        form.add("Body", body);
+
+        try {
+            RestClient restClient = restClientBuilder
+                    .baseUrl(config.apiBaseUrl())
+                    .defaultHeaders(headers -> headers.setBasicAuth(config.accountSid(), config.authToken()))
+                    .build();
+
+            restClient.post()
+                    .uri("/2010-04-01/Accounts/{sid}/Messages.json", config.accountSid())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("[WHATSAPP:TWILIO] template={} to={} recipient={} referenceId={}",
+                    template, toAddress, recipientContact, referenceId);
+        } catch (Exception ex) {
+            metrics.countSendFailure(CHANNEL);
+            log.warn("[WHATSAPP:TWILIO] send failed template={} to={} recipient={} referenceId={} reason={}",
+                    template, toAddress, recipientContact, referenceId, ex.getMessage());
+        }
+    }
+
+    private String buildMessage(String template, UUID referenceId, String senderAlias) {
+        return switch (template) {
+            case "ORDER_CONFIRMATION" -> String.format(Locale.ROOT,
+                    "%s: pedido %s creado. Te avisaremos cuando avance.", senderAlias, shortId(referenceId));
+            case "PAYMENT_RECEIVED" -> String.format(Locale.ROOT,
+                    "%s: pago %s confirmado. Gracias por tu compra.", senderAlias, shortId(referenceId));
+            case "ORDER_PREPARING" -> String.format(Locale.ROOT,
+                    "%s: pedido %s en preparacion. Te avisaremos al despacharlo.", senderAlias, shortId(referenceId));
+            default -> String.format(Locale.ROOT,
+                    "%s: pedido %s enviado. Pronto llegara a destino.", senderAlias, shortId(referenceId));
+        };
+    }
+
+    private EffectiveConfig resolveConfig() {
+        MessagingSettings settings = messagingSettings.current();
+        String apiBaseUrl = firstNonBlank(settings.twilioApiBaseUrl(), envApiBaseUrl);
+        String accountSid = firstNonBlank(settings.twilioAccountSid(), envAccountSid);
+        String decryptedToken = decryptSecret(settings.twilioAuthTokenEncrypted(), "Twilio auth token");
+        String authToken = firstNonBlank(decryptedToken, envAuthToken);
+        String fromAddress = normalizeWhatsappAddress(firstNonBlank(settings.twilioFrom(), envFrom));
+        String fallbackToAddress = normalizeWhatsappAddress(firstNonBlank(settings.twilioToFallback(), envToFallback));
+        String senderAlias = normalize(firstNonBlank(settings.twilioSenderAlias(), envSenderAlias), "Pilar Estilo");
+
+        if (accountSid == null || accountSid.isBlank()) {
+            log.warn("[WHATSAPP:TWILIO] disabled: missing account SID.");
+            return null;
+        }
+        if (authToken == null || authToken.isBlank()) {
+            log.warn("[WHATSAPP:TWILIO] disabled: missing auth token.");
+            return null;
+        }
+        if (fromAddress == null) {
+            log.warn("[WHATSAPP:TWILIO] disabled: missing/invalid 'from' number.");
+            return null;
+        }
+        if (fallbackToAddress == null) {
+            log.warn("[WHATSAPP:TWILIO] disabled: missing/invalid fallback number.");
+            return null;
+        }
+
+        return new EffectiveConfig(
+                normalize(apiBaseUrl, "https://api.twilio.com"),
+                accountSid.trim(), authToken.trim(), fromAddress, fallbackToAddress, senderAlias);
+    }
+
+    private String resolveToAddress(String recipientContact, String fallbackToAddress) {
+        String normalized = normalizeWhatsappAddress(recipientContact);
+        if (normalized != null) {
+            return normalized;
+        }
+        return fallbackToAddress;
+    }
+
+    private String normalizeWhatsappAddress(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String candidate = value.trim();
+        if (candidate.regionMatches(true, 0, WHATSAPP_PREFIX, 0, WHATSAPP_PREFIX.length())) {
+            candidate = candidate.substring(WHATSAPP_PREFIX.length());
+        }
+        String normalizedPhone = normalizePhone(candidate);
+        if (normalizedPhone == null) {
+            return null;
+        }
+        return WHATSAPP_PREFIX + normalizedPhone;
+    }
+
+    private String normalizePhone(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String digits = value.replaceAll("\\D", "");
+        if (digits.length() < 8 || digits.length() > 15) {
+            return null;
+        }
+        return "+" + digits;
+    }
+
+    private String decryptSecret(String encryptedValue, String label) {
+        if (encryptedValue == null || encryptedValue.isBlank()) {
+            return null;
+        }
+        try {
+            String decrypted = cryptoService.decrypt(encryptedValue);
+            if (decrypted == null || decrypted.isBlank()) {
+                return null;
+            }
+            return decrypted.trim();
+        } catch (DomainException ex) {
+            log.warn("[WHATSAPP:TWILIO] could not decrypt {}: {}", label, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String shortId(UUID id) {
+        String raw = String.valueOf(id);
+        return raw.length() >= 8 ? raw.substring(0, 8) : raw;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
+        }
+        if (second != null && !second.isBlank()) {
+            return second.trim();
+        }
+        return null;
+    }
+
+    private String normalize(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
+    private record EffectiveConfig(
+            String apiBaseUrl,
+            String accountSid,
+            String authToken,
+            String fromAddress,
+            String fallbackToAddress,
+            String senderAlias
+    ) {}
+
+    @Override
+    public void send(NotificationMessage message, NotificationRecipient recipient) {
+        send(message.templateKey(), message.referenceId(), recipient, message.bodyText());
+    }
+}

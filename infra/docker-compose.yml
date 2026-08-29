@@ -81,6 +81,10 @@ services:
       APP_CACHE_REDIS_ENABLED: ${APP_CACHE_REDIS_ENABLED:-false}
       APP_CACHE_REDIS_TTL_SECONDS: ${APP_CACHE_REDIS_TTL_SECONDS:-300}
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
+      # notification-service now owns Kafka notification consumption (cutover deploy 1). This gate
+      # keeps the monolith's own 7 consumers off. Flip to true (and the service's flag to false) to
+      # roll back — the monolith code is still here until cleanup deploy 2.
+      APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:-false}
       WHATSAPP_SIMULATED_TO: ${WHATSAPP_SIMULATED_TO:-+56900000000}
       WHATSAPP_SIMULATED_SENDER: ${WHATSAPP_SIMULATED_SENDER:-Pilar Estilo}
       WHATSAPP_TWILIO_API_BASE_URL: ${WHATSAPP_TWILIO_API_BASE_URL:-https://api.twilio.com}
@@ -283,6 +287,78 @@ services:
       - pe_net
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 45s
+      retries: 3
+
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: pe_notification_service
+    profiles: ["microservices"]
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8085"
+      # Shared pilarestilo database, read-only view (orders/users/payments/documents/returns/settings).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      # Owned notifications database.
+      APP_NOTIFICATION_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_NOTIFICATIONS_DB:-pilarestilo_notifications}
+      APP_NOTIFICATION_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
+      APP_NOTIFICATION_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
+      JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+      SYSTEM_SETTINGS_CRYPTO_SECRET: ${SYSTEM_SETTINGS_CRYPTO_SECRET:-U2VjcmV0U3lzdGVtU2V0dGluZ3MxMjM0NTY3ODkw}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      APP_DOMAIN_EVENTS_KAFKA_ENABLED: ${APP_DOMAIN_EVENTS_KAFKA_ENABLED:-false}
+      APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX: ${APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX:-pe.domain}
+      # Its own consumer group — NOT the backend's. Hardcoded so the shipped .env's
+      # APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID (pe-backend-domain-events) cannot leak in.
+      APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID: pe-notification-service
+      APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:-1500}
+      APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:-3}
+      APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:-.dlt}
+      # Kafka listeners on. Flip false to roll the cutover back (with the backend flag flipped true).
+      APP_NOTIFICATION_LISTENERS_ENABLED: ${APP_NOTIFICATION_LISTENERS_ENABLED:-true}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
+      NOTIFICATION_N8N_WEBHOOK_URL: ${NOTIFICATION_N8N_WEBHOOK_URL:-}
+      NOTIFICATION_N8N_API_KEY: ${NOTIFICATION_N8N_API_KEY:-}
+      NOTIFICATION_N8N_TOKEN_HEADER_NAME: ${NOTIFICATION_N8N_TOKEN_HEADER_NAME:-X-PE-N8N-TOKEN}
+      WHATSAPP_SIMULATED_TO: ${WHATSAPP_SIMULATED_TO:-+56900000000}
+      WHATSAPP_SIMULATED_SENDER: ${WHATSAPP_SIMULATED_SENDER:-Pilar Estilo}
+      WHATSAPP_TWILIO_API_BASE_URL: ${WHATSAPP_TWILIO_API_BASE_URL:-https://api.twilio.com}
+      WHATSAPP_TWILIO_ACCOUNT_SID: ${WHATSAPP_TWILIO_ACCOUNT_SID:-}
+      WHATSAPP_TWILIO_AUTH_TOKEN: ${WHATSAPP_TWILIO_AUTH_TOKEN:-}
+      WHATSAPP_TWILIO_FROM: ${WHATSAPP_TWILIO_FROM:-}
+      WHATSAPP_TWILIO_TO_FALLBACK: ${WHATSAPP_TWILIO_TO_FALLBACK:-+56900000000}
+      WHATSAPP_TWILIO_SENDER_ALIAS: ${WHATSAPP_TWILIO_SENDER_ALIAS:-Pilar Estilo}
+      SENDGRID_API_BASE_URL: ${SENDGRID_API_BASE_URL:-https://api.sendgrid.com}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-}
+      SENDGRID_SENDER_NAME: ${SENDGRID_SENDER_NAME:-Pilar Estilo}
+      SENDGRID_TO_FALLBACK: ${SENDGRID_TO_FALLBACK:-}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-}
+      EMAIL_SMTP_USERNAME: ${EMAIL_SMTP_USERNAME:-}
+      EMAIL_SMTP_PASSWORD: ${EMAIL_SMTP_PASSWORD:-}
+      EMAIL_SMTP_FROM_EMAIL: ${EMAIL_SMTP_FROM_EMAIL:-}
+      EMAIL_SMTP_SENDER_NAME: ${EMAIL_SMTP_SENDER_NAME:-Pilar Estilo}
+      EMAIL_SMTP_AUTH_ENABLED: ${EMAIL_SMTP_AUTH_ENABLED:-}
+      EMAIL_SMTP_STARTTLS_ENABLED: ${EMAIL_SMTP_STARTTLS_ENABLED:-}
+      EMAIL_SMTP_SSL_ENABLED: ${EMAIL_SMTP_SSL_ENABLED:-}
+      EMAIL_SMTP_TO_FALLBACK: ${EMAIL_SMTP_TO_FALLBACK:-}
+      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
+      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
+      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pe_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8085/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 45s
