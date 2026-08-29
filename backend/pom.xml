@@ -107,6 +107,8 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
+    <!-- JavaMailSender: used by SmtpPasswordResetMailer (shared/auth) for the self-service
+         password reset link. Keep this even after the monolith's notification package is deleted. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-mail</artifactId>

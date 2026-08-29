@@ -74,6 +74,11 @@
       "name": "app.notification.whatsapp.twilio"
     },
     {
+      "name": "app.password-reset",
+      "type": "java.lang.Object",
+      "description": "Self-service password reset link generation and cleanup."
+    },
+    {
       "name": "app.order",
       "type": "java.lang.Object",
       "description": "Remote order-service delegation."
@@ -186,6 +191,12 @@
       "defaultValue": true
     },
     {
+      "name": "app.gateway.rate-limit.forgot-password-max-requests",
+      "type": "java.lang.Integer",
+      "description": "Per-IP cap on POST /api/auth/forgot-password within the rate-limit window.",
+      "defaultValue": 5
+    },
+    {
       "name": "app.gateway.rate-limit.login-max-requests",
       "type": "java.lang.Integer",
       "defaultValue": 12
@@ -231,6 +242,24 @@
       "type": "java.lang.String",
       "description": "HS256 signing key, base64-encoded, minimum 32 bytes.",
       "defaultValue": "U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
+    },
+    {
+      "name": "app.password-reset.link-base-url",
+      "type": "java.lang.String",
+      "description": "Storefront origin the reset link points at, no trailing slash.",
+      "defaultValue": "http://localhost:4321"
+    },
+    {
+      "name": "app.password-reset.token-ttl-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes a password-reset link stays valid.",
+      "defaultValue": 30
+    },
+    {
+      "name": "app.password-reset.cleanup-cron",
+      "type": "java.lang.String",
+      "description": "Cron for pruning expired password-reset tokens.",
+      "defaultValue": "0 30 3 * * *"
     },
     {
       "name": "app.media.storage-path",
