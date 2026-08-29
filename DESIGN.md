@@ -193,6 +193,7 @@ El botón es una instrucción, no una decoración. Sin radius. Sin gradiente. La
 
 - **Shape:** sin radius (0px). Bordes rectos siempre.
 - **Primary:** fondo rosa empolvado (`#B76E79`), texto blanco, padding 14px 48px, label uppercase 0.28em tracking. Hover → rosa profundo (`#8E4F58`), transición 0.2s ease-out.
+- **Ink (`.pe-btn-ink`):** el segundo primario, para acciones con gravedad (CTA de checkout, submits, confirmaciones). Relleno tinta + label crema en claro; **se invierte en oscuro** — relleno claro, label tinta — para que el botón sea lo más brillante de su fila en cualquier tema. Hover → rosa (`--pe-rose-action`) en ambos. `bg-pe-black` a secas (sin `.pe-btn-ink`) es superficie, no botón: footer, barras de nav, secciones de marca, sidebar admin — esas no se invierten.
 - **Ghost:** sin fondo, borde 1px tinta (`#1A1A1A`), texto tinta. Hover → borde y texto rosa empolvado. Misma tipografía que primary.
 - **Focus-visible:** outline 2px rosa a 3px de distancia. Nunca quitar el focus ring.
 - **Disabled:** opacity 0.38, cursor not-allowed, sin hover.
