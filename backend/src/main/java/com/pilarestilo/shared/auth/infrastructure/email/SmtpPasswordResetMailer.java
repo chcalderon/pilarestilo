@@ -61,7 +61,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
     ) {
         this.systemSettingsRepository = systemSettingsRepository;
         this.cryptoService = cryptoService;
-        this.linkBaseUrl = stripTrailingSlash(blankToDefault(linkBaseUrl, "http://localhost:4321"));
+        this.linkBaseUrl = stripTrailingSlash(firstToken(blankToDefault(linkBaseUrl, "http://localhost:4321")));
         this.tokenTtlMinutes = tokenTtlMinutes;
         this.envHost = trimToEmpty(envHost);
         this.envPort = trimToEmpty(envPort);
@@ -235,6 +235,17 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
 
     private static String stripTrailingSlash(String value) {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    }
+
+    /**
+     * The storefront origin, first token only. {@code DOMAIN} in the shipped env may hold several
+     * space-separated hostnames (so Caddy serves them all); {@code https://${DOMAIN}} would then be
+     * two hosts joined by a space, which URL-encodes to a broken link.
+     */
+    private static String firstToken(String value) {
+        String trimmed = value.trim();
+        int space = trimmed.indexOf(' ');
+        return space > 0 ? trimmed.substring(0, space) : trimmed;
     }
 
     private static String escapeHtml(String value) {
