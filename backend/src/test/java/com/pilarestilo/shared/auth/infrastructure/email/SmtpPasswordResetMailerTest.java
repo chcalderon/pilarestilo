@@ -48,7 +48,7 @@ class SmtpPasswordResetMailerTest {
         assertThat(mailer.sent).isNotNull();
         assertThat(mailer.sent.getSubject()).isEqualTo("Restablece tu contraseña — Pilar Estilo");
         String body = textOf(mailer.sent);
-        assertThat(body).contains("https://pilarestilo.cl/es/reset-password?token=TOK-123");
+        assertThat(body).contains("https://pilarestilo.cl/es/auth/reset-password?token=TOK-123");
         assertThat(body).contains("30 minutos");
     }
 
@@ -61,7 +61,7 @@ class SmtpPasswordResetMailerTest {
         mailer.sendResetLink("cliente@example.com", "Camila", "TOK-123");
 
         String body = textOf(mailer.sent);
-        assertThat(body).contains("https://pilarestilo.com/es/reset-password?token=TOK-123");
+        assertThat(body).contains("https://pilarestilo.com/es/auth/reset-password?token=TOK-123");
         assertThat(body).doesNotContain("www.pilarestilo.com");
     }
 

@@ -85,7 +85,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
             return;
         }
 
-        String link = linkBaseUrl + "/es/reset-password?token=" + rawToken;
+        String link = linkBaseUrl + "/es/auth/reset-password?token=" + rawToken;
         String greetingName = (fullName == null || fullName.isBlank()) ? "" : " " + fullName.trim();
         String text = """
                 Hola%s,
