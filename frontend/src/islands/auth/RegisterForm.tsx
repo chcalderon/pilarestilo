@@ -176,7 +176,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
 
       {/* Error */}
       {error && (
-        <p className="font-sans text-[0.78rem] text-pe-rose-ink bg-pe-rose-soft/40 px-3 py-2 border-l-2 border-pe-rose">
+        <p className="font-sans text-[0.78rem] text-pe-danger-ink bg-pe-danger-surface px-3 py-2 border border-pe-danger/40">
           {error}
         </p>
       )}

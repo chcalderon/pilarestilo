@@ -183,7 +183,7 @@ export default function PaymentStep({
 
       {/* Only meaningful for a transfer, and only when the sweep is actually enabled. */}
       {method === 'TRANSFER' && transferWindowMinutes !== null && transferWindowMinutes > 0 && (
-        <div className="flex items-start gap-3 border-l-2 border-pe-rose/50 bg-pe-cream/40 p-4 mb-6">
+        <div className="flex items-start gap-3 border border-pe-rose/30 bg-pe-cream/40 p-4 mb-6">
           <Clock size={16} className="text-pe-rose-ink shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal">

@@ -155,7 +155,6 @@ export default function NotificationHistory({ locale }: Props) {
                 padding: '1rem',
                 backgroundColor: n.read ? 'transparent' : 'rgba(183,110,121,0.07)',
                 border: '1px solid var(--pe-border)',
-                borderLeft: n.read ? '3px solid transparent' : `3px solid ${TYPE_COLORS[n.type] ?? '#B76E79'}`,
                 cursor: n.read ? 'default' : 'pointer',
                 transition: 'background-color 150ms',
               }}
@@ -165,7 +164,7 @@ export default function NotificationHistory({ locale }: Props) {
                   display: 'inline-block',
                   padding: '2px 8px',
                   borderRadius: '2px',
-                  backgroundColor: TYPE_COLORS[n.type] ?? '#B76E79',
+                  backgroundColor: TYPE_COLORS[n.type] ?? '#A1505C',
                   color: '#fff',
                   fontSize: '0.60rem',
                   fontFamily: 'var(--font-sans,sans-serif)',
@@ -189,7 +188,7 @@ export default function NotificationHistory({ locale }: Props) {
                   {relativeTime(n.createdAt, es)}
                 </span>
                 {!n.read && (
-                  <span className="font-sans" style={{ fontSize: '0.58rem', color: '#B76E79', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <span className="font-sans text-pe-rose-ink" style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                     {es ? 'Marcar leída' : 'Mark read'}
                   </span>
                 )}
