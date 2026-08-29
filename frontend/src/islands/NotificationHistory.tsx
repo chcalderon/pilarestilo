@@ -103,9 +103,9 @@ export default function NotificationHistory({ locale }: Props) {
   const allRead = page?.content.every((n) => n.read) ?? true;
 
   return (
-    <div id="notifications" style={{ paddingTop: '2rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <h2 className="font-display text-2xl text-pe-black font-light" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <div id="notifications" className="pt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-2xl text-pe-black font-light flex items-center gap-2">
           <Bell size={20} />
           {es ? 'Notificaciones' : 'Notifications'}
         </h2>
@@ -114,7 +114,7 @@ export default function NotificationHistory({ locale }: Props) {
             type="button"
             onClick={handleMarkAll}
             disabled={marking}
-            className="font-sans text-xs text-pe-rose-ink hover:text-pe-rose-ink transition-colors disabled:opacity-50"
+            className="font-sans text-xs text-pe-rose-ink hover:underline underline-offset-2 transition-colors disabled:opacity-50"
           >
             {es ? 'Marcar todas como leidas' : 'Mark all as read'}
           </button>
@@ -122,7 +122,7 @@ export default function NotificationHistory({ locale }: Props) {
       </div>
 
       {loading && (
-        <div className="font-sans text-sm text-pe-muted" style={{ padding: '2rem 0', textAlign: 'center' }}>
+        <div className="font-sans text-sm text-pe-muted py-8 text-center">
           {es ? 'Cargando...' : 'Loading...'}
         </div>
       )}
@@ -134,7 +134,7 @@ export default function NotificationHistory({ locale }: Props) {
       )}
 
       {!loading && page && page.content.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div className="flex flex-col gap-0.5">
           {page.content.map((n) => (
             <div
               key={n.id}
@@ -149,46 +149,33 @@ export default function NotificationHistory({ locale }: Props) {
                   void handleMarkOne(n);
                 }
               }}
-              style={{
-                display: 'flex',
-                gap: '1rem',
-                padding: '1rem',
-                backgroundColor: n.read ? 'transparent' : 'rgba(183,110,121,0.07)',
-                border: '1px solid var(--pe-border)',
-                cursor: n.read ? 'default' : 'pointer',
-                transition: 'background-color 150ms',
-              }}
+              className={`flex gap-4 p-4 border border-[var(--pe-border)] transition-colors duration-150 ${
+                n.read ? 'cursor-default' : 'cursor-pointer bg-pe-rose/[0.07]'
+              }`}
             >
-              <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                <span style={{
-                  display: 'inline-block',
-                  padding: '2px 8px',
-                  borderRadius: '2px',
-                  backgroundColor: TYPE_COLORS[n.type] ?? '#A1505C',
-                  color: '#fff',
-                  fontSize: '0.60rem',
-                  fontFamily: 'var(--font-sans,sans-serif)',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  fontWeight: 600,
-                }}>
+              <div className="shrink-0 mt-0.5">
+                {/* One of five per-type category hues; a data-driven colour, so it stays inline. */}
+                <span
+                  className="inline-block px-2 py-0.5 rounded-xs font-sans text-[0.6rem] tracking-[0.1em] uppercase font-semibold text-white"
+                  style={{ backgroundColor: TYPE_COLORS[n.type] ?? '#A1505C' }}
+                >
                   {labels[n.type] ?? n.type}
                 </span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p className="font-sans text-sm text-pe-black" style={{ margin: 0, fontWeight: n.read ? 400 : 600 }}>
+              <div className="flex-1 min-w-0">
+                <p className={`font-sans text-sm text-pe-black ${n.read ? 'font-normal' : 'font-semibold'}`}>
                   {n.title}
                 </p>
-                <p className="font-sans text-sm text-pe-muted" style={{ margin: '4px 0 0' }}>
+                <p className="font-sans text-sm text-pe-muted mt-1">
                   {n.body}
                 </p>
               </div>
-              <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <span className="font-sans text-pe-muted" style={{ fontSize: '0.65rem' }}>
+              <div className="shrink-0 text-right flex flex-col items-end gap-1">
+                <span className="font-sans text-pe-muted text-[0.65rem]">
                   {relativeTime(n.createdAt, es)}
                 </span>
                 {!n.read && (
-                  <span className="font-sans text-pe-rose-ink" style={{ fontSize: '0.58rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  <span className="font-sans text-pe-rose-ink text-[0.58rem] tracking-[0.08em] uppercase">
                     {es ? 'Marcar leída' : 'Mark read'}
                   </span>
                 )}
@@ -199,7 +186,7 @@ export default function NotificationHistory({ locale }: Props) {
       )}
 
       {page && page.totalPages > 1 && (
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+        <div className="flex gap-2 justify-center mt-6">
           <button
             type="button"
             disabled={currentPage === 0}
