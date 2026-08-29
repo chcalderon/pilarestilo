@@ -164,7 +164,7 @@ export default function DiscountCodeManager() {
         <button
           type="button"
           onClick={() => { setShowForm(v => !v); setError(''); }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors"
         >
           {showForm ? <X size={13} /> : <Plus size={13} />}
           {showForm ? 'Cancelar' : 'Nuevo código'}
@@ -337,7 +337,7 @@ export default function DiscountCodeManager() {
               type="button"
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-4 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
             >
               {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
               Crear código

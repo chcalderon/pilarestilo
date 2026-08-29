@@ -273,6 +273,12 @@
       "defaultValue": "pilar"
     },
     {
+      "name": "app.notification.kafka-listeners.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Second gate on the Kafka*NotificationListener beans, independent of app.domain-events.kafka.enabled. Set false at the notification-service cutover so this monolith stops consuming notification events; flip back to roll back.",
+      "defaultValue": true
+    },
+    {
       "name": "app.notification.datasource.url",
       "type": "java.lang.String",
       "description": "JDBC URL of the notifications database. A database of its own, not a schema: Postgres joins across schemas, so a schema would look like a boundary without being one.",

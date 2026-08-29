@@ -103,13 +103,13 @@ export default function AddToCartButton({
     buttonStateClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
     buttonLabel = labels.outOfStock;
   } else if (verifying) {
-    buttonStateClass = 'bg-pe-gold/50 text-pe-on-light cursor-wait';
+    buttonStateClass = 'bg-pe-rose-action/50 text-pe-on-light cursor-wait';
     buttonLabel = labels.verifying;
   } else if (added) {
-    buttonStateClass = 'bg-pe-gold/80 text-pe-on-light';
+    buttonStateClass = 'bg-pe-rose-deep text-pe-on-light';
     buttonLabel = labels.added;
   } else {
-    buttonStateClass = 'bg-pe-gold text-pe-on-light hover:bg-pe-gold/90 active:scale-95';
+    buttonStateClass = 'bg-pe-rose-action text-pe-on-light hover:bg-pe-rose-deep active:scale-95';
     buttonLabel = labels.addToCart;
   }
 
@@ -121,8 +121,8 @@ export default function AddToCartButton({
         disabled={outOfStock || verifying}
         aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
         className={[
-          'w-full font-sans text-xs tracking-widest uppercase px-4 py-2.5 transition-all duration-200',
-          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-gold focus-visible:ring-offset-1',
+          'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3 transition-all duration-200',
+          'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1',
           buttonStateClass,
         ].join(' ')}
       >

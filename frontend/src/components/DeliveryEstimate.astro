@@ -21,15 +21,15 @@ const copyLine = [title, eta].filter(Boolean).join(' · ') || (isEs ? 'Despacho 
 <div class="flex items-start gap-3 text-sm">
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
        fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
-       class="text-[#B76E79] mt-0.5 flex-shrink-0">
+       class="text-pe-rose-ink mt-0.5 flex-shrink-0">
     <rect x="1" y="3" width="15" height="13" rx="1"/>
     <path d="M16 8h4l3 5v4h-7V8z"/>
     <circle cx="5.5" cy="18.5" r="2.5"/>
     <circle cx="18.5" cy="18.5" r="2.5"/>
   </svg>
   <div>
-    <p class="text-[#1A1A1A] font-medium">{copyLine}</p>
-    <p class="text-[10px] tracking-wide text-[#3A3A3A]/50 mt-0.5">
+    <p class="text-pe-charcoal font-medium">{copyLine}</p>
+    <p class="text-[10px] tracking-wide text-pe-muted mt-0.5">
       {isEs ? 'Entrega estimada' : 'Estimated delivery'}
     </p>
   </div>

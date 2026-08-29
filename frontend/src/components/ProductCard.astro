@@ -66,10 +66,10 @@ const secondaryAttribute = getSecondaryAttribute(variantSchema);
 const sizesSummary = summarizeProductVariantSecondaryValues(product);
 ---
 
-<article class="group relative flex flex-col bg-pe-white overflow-hidden fx-lift cursor-rose" aria-label={product.name}>
+<article class="group relative flex flex-col bg-pe-white overflow-hidden rounded-md fx-lift cursor-rose" aria-label={product.name}>
   <div class="rose-rule"></div>
 
-  <a href={`/${locale}/products/${product.id}`} class="block overflow-hidden aspect-[3/4] bg-pe-cream" tabindex="-1" aria-hidden="true">
+  <a href={`/${locale}/products/${product.id}`} class="block overflow-hidden rounded-t-md aspect-[3/4] bg-pe-cream" tabindex="-1" aria-hidden="true">
     <img
       src={product.imageUrl}
       alt={product.name}
@@ -97,7 +97,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
       client:visible
       productId={product.id}
       token={token}
-      className="p-1.5 bg-pe-offwhite/80 backdrop-blur-xs text-pe-muted hover:text-pe-rose-ink"
+      className="icon-hit rounded-full bg-pe-offwhite/80 backdrop-blur-xs text-pe-muted hover:text-pe-rose-ink"
     />
   </div>
 

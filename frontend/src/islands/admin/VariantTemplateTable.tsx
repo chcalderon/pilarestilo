@@ -48,7 +48,7 @@ function FormRow({ form, setForm, saving, onSubmit, onCancel }: FormRowProps) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={onSubmit} disabled={saving}
-          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50">
+          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50">
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar
         </button>
@@ -140,7 +140,7 @@ export default function VariantTemplateTable() {
         <button
           type="button"
           onClick={() => { setCreating(true); setForm({ ...EMPTY_FORM }); setEditing(null); }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nuevo tipo de variante

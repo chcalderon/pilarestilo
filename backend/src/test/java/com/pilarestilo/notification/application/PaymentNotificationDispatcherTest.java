@@ -6,8 +6,6 @@ import com.pilarestilo.notification.domain.ports.NotificationSender;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
-import com.pilarestilo.order.application.usecases.UpdateOrderStatusUseCase;
-import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.ports.OrderRepository;
 import com.pilarestilo.payment.domain.events.PaymentConfirmed;
 import com.pilarestilo.payment.domain.events.PaymentRejected;
@@ -54,7 +52,6 @@ class PaymentNotificationDispatcherTest {
     @Mock OrderRepository orderRepository;
     @Mock UserRepository userRepository;
     @Mock PaymentRepository paymentRepository;
-    @Mock UpdateOrderStatusUseCase updateOrderStatusUseCase;
     final NotificationComposer composer = new NotificationComposer();
 
     PaymentNotificationDispatcher dispatcher;
@@ -67,8 +64,7 @@ class PaymentNotificationDispatcherTest {
     @BeforeEach
     void setUp() {
         dispatcher = new PaymentNotificationDispatcher(notificationSender, composer,
-                inAppNotificationPort, orderRepository, userRepository, paymentRepository,
-                updateOrderStatusUseCase);
+                inAppNotificationPort, orderRepository, userRepository, paymentRepository);
 
         order = Order.create(
                 customerId,
@@ -172,19 +168,6 @@ class PaymentNotificationDispatcherTest {
         return user;
     }
 
-    @Test
-    void submitted_movesTheOrderIntoReview() {
-        Payment payment = submittedPayment();
-        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        /* No reviewers configured: the order still has to move — that is not their business. */
-        when(userRepository.findByRoleIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
-
-        dispatcher.onPaymentSubmitted(new PaymentSubmitted(paymentId, "comprobante.pdf", Instant.now()));
-
-        verify(updateOrderStatusUseCase).execute(orderId, OrderStatus.PAYMENT_UNDER_REVIEW);
-    }
-
     /** Both roles that may approve get told; a receipt nobody looks at is the same as none. */
     @Test
     void submitted_emailsEveryReviewer() {
@@ -208,7 +191,6 @@ class PaymentNotificationDispatcherTest {
 
         dispatcher.onPaymentSubmitted(new PaymentSubmitted(paymentId, "x.pdf", Instant.now()));
 
-        verifyNoInteractions(updateOrderStatusUseCase);
         verifyNoInteractions(notificationSender);
     }
 }

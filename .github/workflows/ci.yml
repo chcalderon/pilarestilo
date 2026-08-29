@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [order-service, inventory-service, product-service, payment-service]
+        service: [order-service, inventory-service, product-service, payment-service, notification-service]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}

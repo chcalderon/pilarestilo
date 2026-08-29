@@ -183,7 +183,7 @@ El estado USADO/NUEVO no se disculpa; se anuncia. Posicionado absolute sobre la 
 
 La card no grita; invita. El hover sube la pieza hacia el usuario con la sombra rosa.
 
-- **Corner Style:** sin radius (0px).
+- **Corner Style:** radius 6px (`rounded-md`), en la card y en la máscara de imagen. Excepción deliberada a la regla general de "sin radius": pedida por el dueño para que la vitrina se sienta menos angular sin perder el borde recto de botones, badges e inputs — la suavidad vive en el contenedor, no en la acción. Nunca más de 6px; una card no es un ícono de app.
 - **Background:** blanco puro para la superficie; parchment como placeholder de imagen.
 - **Image:** aspect-ratio 3:4, object-fit cover. En hover: scale(1.04) con transition 0.4s.
 - **Hover:** translateY(-4px) + card-lift shadow. Solo transform + box-shadow; nunca layout properties.
@@ -191,6 +191,14 @@ La card no grita; invita. El hover sube la pieza hacia el usuario con la sombra 
 - **Name:** Montserrat 0.8rem weight 300, tinta.
 - **Pricing:** precio de lista tachado en carbón opacity 0.5; precio de venta en tinta weight 500; porcentaje de descuento en rosa.
 - **Internal Padding:** 12px top, 4px horizontal, 16px bottom.
+
+### Icon Buttons
+
+Un ícono solo, sin caja, no es un botón — es un glifo flotando que además falla el mínimo táctil. Todo ícono clickeable (tema, buscar, menú, carrito, favoritos, cerrar) vive dentro de un área circular.
+
+- **Shape:** `rounded-full`. Es la misma excepción que las product cards: el contenedor se suaviza, el ícono adentro no cambia.
+- **Hit area:** 44×44px mínimo siempre, aunque el glifo visual sea más chico (18-20px) — el padding hace la diferencia, no el ícono.
+- **Estado:** fondo transparente en reposo; `hover:` un tinte rosa suave (`pe-rose-soft` en claro, equivalente atenuado en oscuro) más color de ícono a rosa. El mismo lenguaje que ya usaba el botón `icon` de `Button.astro`; esto lo extiende a la navegación, que antes no lo usaba.
 
 ### Inputs / Fields
 

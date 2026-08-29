@@ -100,7 +100,7 @@ block, and are burned down deliberately rather than by a gate nobody can turn gr
 ```
 backend/          Spring Boot monolith (hexagonal, 21 modules)
 services/         Extracted microservices (P6 — optional profile)
-  product-service, inventory-service, order-service, payment-service
+  product-service, inventory-service, order-service, payment-service, notification-service
 frontend/         Astro 4 SSR + React islands
 infra/            Docker Compose, Caddy, Flyway, env
 docs/             Architecture, roadmap, API contracts
@@ -162,6 +162,7 @@ All traffic enters through Caddy. In the `microservices` profile, read paths are
 | `GET/HEAD /api/inventory*` | inventory-service:8082 |
 | `GET/HEAD /api/payments*` | payment-service:8084 |
 | `GET/HEAD /api/orders*` | order-service:8083 |
+| `GET/HEAD/PUT /api/notifications*` | notification-service:8085 (the whole resource, reads and mark-as-read writes) |
 | `POST/PATCH/DELETE /api/*` | backend:8080 |
 | everything else | frontend:4321 |
 
@@ -201,13 +202,27 @@ Discount codes are the exception that proves the rule: `order-service` owns no r
 so the monolith evaluates the code, claims the slot, calls the service with only the resulting
 amount, then binds the ledger row to the returned order id.
 
+`services/notification-service/` is a **read-only** third party to the same coupling: it maps
+minimal `insertable=false` views of `orders`, `order_items`, `users`, `payments`, `sales_documents`,
+`return_requests` and `system_settings` on the shared DB, under `ddl-auto: validate`. A column
+rename or drop on any of those must update the matching `*RoEntity` in
+`notification-service/.../persistence/readonly/` **in the same commit and deploy**, or the service
+fails to boot. `ReadOnlyMappingIT` (runs the monolith's real migration set) turns that into a red
+local test.
+
 ### Every in-process `@EventListener` is dead when Kafka is on
 
 `KafkaDomainEventPublisher` is `@Primary`, so with `APP_DOMAIN_EVENTS_KAFKA_ENABLED=true` only the
 Kafka listeners run. Four separate defects came from a twin drifting from its in-process original,
-or never existing. Behaviour now lives in a `*NotificationDispatcher` in `notification/application/`
-and the listeners are transport adapters with none of their own. **Add behaviour to the dispatcher,
-never to a listener.**
+or never existing. Behaviour lives in a `*NotificationDispatcher`, and the listeners are transport
+adapters with none of their own. **Add behaviour to the dispatcher, never to a listener.**
+
+**Notification dispatchers/senders now live in `services/notification-service/`** (Kafka-only,
+consumer group `pe-notification-service`, port 8085). The monolith's `notification` /
+`notifications` packages are still present but their 7 Kafka consumers are gated off by
+`app.notification.kafka-listeners.enabled=false` (the cutover's rollback switch — flip it and the
+service's `app.notification.listeners.enabled` to revert). They are deleted in a later cleanup
+deploy. The `notification` rule above still applies inside the service.
 
 ### Domain events
 

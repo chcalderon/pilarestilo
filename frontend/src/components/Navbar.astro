@@ -12,9 +12,11 @@ import MobileNavOverlay from '../islands/nav/MobileNavOverlay';
 
 export interface Props {
   locale: Locale;
+  /** The home hero earns the full logo entrance; every other page starts already compact. */
+  isHome?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, isHome = false } = Astro.props;
 
 let navTree: import('../lib/api').NavigationTreeDto = { sections: [] };
 try {
@@ -62,7 +64,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
 }));
 ---
 
-<header class="sticky top-0 z-50" id="site-header">
+<header class="sticky top-0 z-50" class:list={[!isHome && 'logo-compact']} id="site-header">
   <div id="nav-utility" class="border-b transition-colors duration-300 bg-pe-black border-pe-white/8">
     <div id="nav-utility-grid" class="pe-container">
       <p id="nav-shipping" class="pe-eyebrow text-pe-on-dark-muted whitespace-nowrap overflow-hidden text-ellipsis">
@@ -71,7 +73,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
       <button
         id="theme-toggle"
         aria-label="Cambiar tema"
-        class="text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200"
+        class="icon-hit rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
       >
         <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -106,7 +108,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
         <div class="flex items-center gap-1">
           <button
             id="nav-hamburger"
-            class="lg:hidden text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            class="icon-hit lg:hidden rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
             aria-label={locale === 'es' ? 'Abrir menú' : 'Open menu'}
             aria-expanded="false"
             aria-controls="mobile-nav-overlay"
@@ -119,7 +121,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
           </button>
           <button
             id="nav-search-btn"
-            class="text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            class="icon-hit rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
             aria-label={locale === 'es' ? 'Buscar' : 'Search'}
           >
             <Icon name="search" size={18} />
@@ -149,7 +151,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
           <NavNotificationBell client:only="react" locale={locale} />
           <a
             href={`/${locale}/wishlist`}
-            class="text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
+            class="icon-hit rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
             aria-label={locale === 'es' ? 'Favoritos' : 'Wishlist'}
             id="nav-wishlist-link"
           >
@@ -707,7 +709,9 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
 <script>
   const COMPACT_ON_SCROLL_Y = 120;
   const EXPAND_ON_SCROLL_Y = 16;
-  let isCompact = false;
+  // Non-home pages render already-compact server-side (see isHome in Navbar.astro); read that
+  // instead of assuming expanded, or the first scroll event fights the state it starts in.
+  let isCompact = document.getElementById('site-header')?.classList.contains('logo-compact') ?? false;
   let lastScrollY = 0;
   let transitionLocked = false;
   let transitionUnlockTimer: number | undefined;

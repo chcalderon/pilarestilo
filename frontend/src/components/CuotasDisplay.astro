@@ -18,21 +18,21 @@ const cuotas = [
 ];
 ---
 
-<div class="border border-[#EDE3D8] p-4 space-y-2">
-  <p class="text-[10px] tracking-widest uppercase text-[#3A3A3A]/50 mb-3">
+<div class="border border-pe-black/10 p-4 space-y-2">
+  <p class="text-[10px] tracking-widest uppercase text-pe-muted mb-3">
     {locale === 'es' ? 'Financiación sin interés' : 'Installment plans available'}
   </p>
   {cuotas.map(c => (
     <div class="flex items-baseline justify-between">
-      <span class="font-['Cormorant_Garamond',serif] text-[#1A1A1A]">
+      <span class="font-display text-pe-charcoal">
         {c.n} {locale === 'es' ? `cuotas de` : `installments of`}
       </span>
-      <span class="font-['Cormorant_Garamond',serif] text-[#B76E79] font-medium">
+      <span class="font-display text-pe-rose-ink font-medium">
         {fmt(c.amount)}
       </span>
     </div>
   ))}
-  <p class="text-[9px] tracking-wide text-[#3A3A3A]/40 pt-1">
+  <p class="text-[9px] tracking-wide text-pe-muted pt-1">
     {locale === 'es' ? 'sin interés con tarjetas seleccionadas' : 'interest-free with selected cards'}
   </p>
 </div>

@@ -265,7 +265,7 @@ function SectionFormPanel({ form, setForm, saving, categories, token, onSubmit, 
           type="button"
           onClick={onSubmit}
           disabled={saving}
-          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-action-action-deep transition-colors disabled:opacity-50"
+          className="flex items-center gap-1 bg-pe-rose-action text-pe-offwhite font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
         >
           {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
           Guardar
@@ -436,7 +436,7 @@ export default function NavigationSectionsManager() {
             setForm({ ...EMPTY_FORM });
             setEditing(null);
           }}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-action-action-deep transition-colors duration-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.72rem] tracking-[0.14em] uppercase px-4 py-2 hover:bg-pe-rose-deep transition-colors duration-200"
         >
           <Plus size={13} />
           Nueva sección

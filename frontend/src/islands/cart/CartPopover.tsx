@@ -92,7 +92,7 @@ function PanelFooter({ locale, subtotal, viewCartHref, onClose, padded }: PanelF
       <a
         href={viewCartHref}
         onClick={onClose}
-        className={`block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 ${padded ? 'py-3' : 'py-2.5'} bg-pe-rose-action text-pe-white hover:bg-pe-rose-action-action-deep transition-colors duration-200`}
+        className={`block w-full text-center font-sans text-[0.65rem] tracking-[0.22em] uppercase px-4 ${padded ? 'py-3' : 'py-2.5'} bg-pe-rose-action text-pe-white hover:bg-pe-rose-deep transition-colors duration-200`}
       >
         {locale === 'es' ? 'Ver carrito' : 'View cart'}
       </a>
@@ -276,7 +276,7 @@ export default function CartPopover({ locale }: Props) {
       aria-expanded={open}
       aria-controls="cart-popover-content"
       aria-label={cartLabel}
-      className="relative flex items-center gap-1 text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-200 p-1"
+      className="icon-hit relative rounded-full text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/8 transition-colors duration-200"
     >
       <ShoppingBag size={20} strokeWidth={1.5} />
       {totalItems > 0 && (

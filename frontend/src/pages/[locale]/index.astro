@@ -71,7 +71,7 @@ function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
 const categoryTiles = collectFeatured(categoryTree);
 ---
 
-<BaseLayout title={t('nav.home', locale)} locale={locale}>
+<BaseLayout title={t('nav.home', locale)} locale={locale} isHome>
   <Hero locale={locale} />
 
   <section class="py-10 md:py-12 bg-pe-offwhite border-y border-pe-black/8" aria-label={locale === 'es' ? 'Valor de Pilar Estilo' : 'Pilar Estilo value'}>

@@ -115,7 +115,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-action-action-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={15} className="animate-spin" /> : <LogIn size={15} />}
         {loading ? 'Ingresando...' : 'Acceder al panel'}

@@ -1,0 +1,104 @@
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:notification-service}
+  mvc:
+    problemdetails:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          "[time_zone]": UTC
+  # spring.flyway.* is not used: NotificationsDbConfig declares an explicit Flyway bean pointed at
+  # the owned database, and FlywayAutoConfiguration backs off on it.
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    # Boot 4 renamed both of these. The old management.tracing.enabled and
+    # management.otlp.tracing.endpoint still parse and bind to nothing.
+    export:
+      enabled: ${APP_TRACING_ENABLED:false}
+    sampling:
+      probability: ${APP_TRACING_SAMPLING_PROBABILITY:1.0}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${APP_TRACING_OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+  system-settings:
+    crypto-secret: ${SYSTEM_SETTINGS_CRYPTO_SECRET:${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}}
+  notification:
+    # Fallback for a system_settings row nobody has saved yet — the shop's own list wins over this.
+    provider: ${NOTIFICATION_PROVIDER:LOG}
+    listeners:
+      # Flipped to true in the same commit that deletes the monolith's Kafka notification listeners,
+      # so the two never consume the same topic at once (spec §7).
+      enabled: ${APP_NOTIFICATION_LISTENERS_ENABLED:false}
+    n8n:
+      webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}
+      api-key: ${NOTIFICATION_N8N_API_KEY:}
+      token-header-name: ${NOTIFICATION_N8N_TOKEN_HEADER_NAME:X-PE-N8N-TOKEN}
+    email:
+      smtp:
+        host: ${EMAIL_SMTP_HOST:}
+        port: ${EMAIL_SMTP_PORT:}
+        username: ${EMAIL_SMTP_USERNAME:}
+        password: ${EMAIL_SMTP_PASSWORD:}
+        from-email: ${EMAIL_SMTP_FROM_EMAIL:}
+        sender-name: ${EMAIL_SMTP_SENDER_NAME:Pilar Estilo}
+        auth-enabled: ${EMAIL_SMTP_AUTH_ENABLED:}
+        starttls-enabled: ${EMAIL_SMTP_STARTTLS_ENABLED:}
+        ssl-enabled: ${EMAIL_SMTP_SSL_ENABLED:}
+        to-fallback: ${EMAIL_SMTP_TO_FALLBACK:}
+      sendgrid:
+        api-base-url: ${SENDGRID_API_BASE_URL:https://api.sendgrid.com}
+        api-key: ${SENDGRID_API_KEY:}
+        from-email: ${SENDGRID_FROM_EMAIL:}
+        sender-name: ${SENDGRID_SENDER_NAME:Pilar Estilo}
+        to-fallback: ${SENDGRID_TO_FALLBACK:}
+    whatsapp:
+      simulated-to: ${WHATSAPP_SIMULATED_TO:-+56900000000}
+      simulated-sender: ${WHATSAPP_SIMULATED_SENDER:Pilar Estilo}
+      twilio:
+        api-base-url: ${WHATSAPP_TWILIO_API_BASE_URL:https://api.twilio.com}
+        account-sid: ${WHATSAPP_TWILIO_ACCOUNT_SID:}
+        auth-token: ${WHATSAPP_TWILIO_AUTH_TOKEN:}
+        from: ${WHATSAPP_TWILIO_FROM:}
+        to-fallback: ${WHATSAPP_TWILIO_TO_FALLBACK:-+56900000000}
+        sender-alias: ${WHATSAPP_TWILIO_SENDER_ALIAS:Pilar Estilo}
+    # The database this service owns. Read-write, its own Flyway history.
+    datasource:
+      url: ${APP_NOTIFICATION_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo_notifications}
+      username: ${APP_NOTIFICATION_DATASOURCE_USERNAME:pilar}
+      password: ${APP_NOTIFICATION_DATASOURCE_PASSWORD:pilar}
+  shared-db:
+    # Read-only view of the shared pilarestilo database — same as the other four services.
+    datasource:
+      url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo}
+      username: ${SPRING_DATASOURCE_USERNAME:pilar}
+      password: ${SPRING_DATASOURCE_PASSWORD:pilar}
+  domain-events:
+    kafka:
+      # Sole trigger. Enabled by the deploy env, same as the backend.
+      enabled: ${APP_DOMAIN_EVENTS_KAFKA_ENABLED:false}
+      topic-prefix: ${APP_DOMAIN_EVENTS_KAFKA_TOPIC_PREFIX:pe.domain}
+      consumer-group-id: ${APP_DOMAIN_EVENTS_KAFKA_CONSUMER_GROUP_ID:pe-notification-service}
+      retry-backoff-ms: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:1500}
+      retry-max-attempts: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:3}
+      dlt-suffix: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:.dlt}
