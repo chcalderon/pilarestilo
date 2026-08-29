@@ -428,23 +428,6 @@ function shippingPaymentModeLabel(mode: string | null | undefined, es: boolean) 
   return (es ? labelsEs : labelsEn)[normalized] ?? normalized;
 }
 
-function notificationChannelLabel(value: string | null | undefined, es: boolean) {
-  const normalized = (value ?? 'AUTO').toUpperCase();
-  const labelsEs: Record<string, string> = {
-    AUTO: 'Automatico',
-    WHATSAPP: 'WhatsApp',
-    EMAIL: 'Correo',
-    BOTH: 'Ambos',
-  };
-  const labelsEn: Record<string, string> = {
-    AUTO: 'Automatic',
-    WHATSAPP: 'WhatsApp',
-    EMAIL: 'Email',
-    BOTH: 'Both',
-  };
-  return (es ? labelsEs : labelsEn)[normalized] ?? normalized;
-}
-
 function maskAccountNumber(accountNumber: string | null | undefined) {
   const normalized = (accountNumber ?? '').trim();
   if (!normalized) return '-';
@@ -460,14 +443,14 @@ interface OrderTimelineStepsProps {
 function timelineDotClass(state: TimelineState): string {
   if (state === 'done') return 'bg-emerald-600 border-emerald-600 dark:bg-emerald-400 dark:border-emerald-400';
   if (state === 'current') return 'bg-pe-rose border-pe-rose';
-  if (state === 'ended') return 'bg-[#8f2d3b] border-[#8f2d3b] dark:bg-red-400 dark:border-red-400';
+  if (state === 'ended') return 'bg-pe-danger-ink border-pe-danger-ink';
   return 'bg-transparent border-pe-black/20 dark:border-pe-cream/25';
 }
 
 function timelineLabelClass(state: TimelineState): string {
   if (state === 'done') return 'text-pe-positive dark:text-emerald-400';
   if (state === 'current') return 'text-pe-rose-ink dark:text-pe-rose-ink';
-  if (state === 'ended') return 'text-[#8f2d3b] dark:text-red-400 font-semibold';
+  if (state === 'ended') return 'text-pe-danger-ink font-semibold';
   if (state === 'skipped') return 'text-pe-muted dark:text-pe-cream/25 line-through';
   return 'text-pe-muted dark:text-pe-cream/45';
 }
@@ -927,7 +910,7 @@ function OrderListItem({
           <OrderTimelineSteps steps={timeline.steps} es={es} />
         </div>
         {timeline.cancelled && (
-          <p className="font-sans text-[0.68rem] text-[#8f2d3b] dark:text-red-300 mt-2">
+          <p className="font-sans text-[0.68rem] text-pe-danger-ink mt-2">
             {es
               ? 'Pedido cancelado. Si fue por falta de pago dentro del plazo, los productos volvieron a estar disponibles y puedes hacer un nuevo pedido.'
               : 'Order cancelled. If the payment window lapsed, the items are available again and you can place a new order.'}
@@ -1275,7 +1258,7 @@ function ChangePasswordCard({
           type="button"
           onClick={onChangePassword}
           disabled={passwordSaving}
-          className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-[#3A3A3A] transition-colors disabled:opacity-60"
+          className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-charcoal transition-colors disabled:opacity-60"
         >
           {toggleLabel(passwordSaving, es, 'Actualizando...', 'Updating...', 'Actualizar contraseña', 'Update password')}
         </button>
@@ -1295,39 +1278,6 @@ function roleLabel(role: StoredUser['role'], es: boolean): string {
   return es ? 'Cliente' : 'Customer';
 }
 
-interface ProfileSummaryCardsProps {
-  readonly es: boolean;
-  readonly user: StoredUser;
-  readonly profile: UserProfileDto | null;
-}
-
-function ProfileSummaryCards({ es, user, profile }: ProfileSummaryCardsProps) {
-  return (
-    <>
-      <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-        <p className="pe-eyebrow text-pe-muted">Email</p>
-        <p className="font-sans text-pe-charcoal">{profile?.email ?? user.email}</p>
-      </div>
-      <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-        <p className="pe-eyebrow text-pe-muted">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</p>
-        <p className="font-sans text-pe-charcoal">{profile?.phone ?? (es ? 'No configurado' : 'Not configured')}</p>
-      </div>
-      <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-        <p className="pe-eyebrow text-pe-muted">{es ? 'Canal de notificaciones' : 'Notification channel'}</p>
-        <p className="font-sans text-pe-charcoal">{notificationChannelLabel(profile?.notificationChannelPreference, es)}</p>
-      </div>
-      <div className="bg-pe-white p-6 flex flex-col gap-3 border border-pe-black/6">
-        <p className="pe-eyebrow text-pe-muted">{es ? 'Rol' : 'Role'}</p>
-        <p className="font-sans text-pe-charcoal">{roleLabel(user.role, es)}</p>
-      </div>
-      <p className="font-sans text-[0.72rem] text-pe-muted">
-        {es ? 'ID de cuenta: ' : 'Account ID: '}
-        {user.id}
-      </p>
-    </>
-  );
-}
-
 function ProfileTab({
   es, user, profile, displayName, avatarUrl, avatarDragging, avatarUploading, avatarFeedback, avatarInputRef,
   onAvatarFile, onAvatarDraggingChange, profileName, onProfileNameChange, profilePhone, onProfilePhoneChange,
@@ -1336,7 +1286,7 @@ function ProfileTab({
   onConfirmPasswordChange, passwordSaving, passwordFeedback, onChangePassword,
 }: ProfileTabProps) {
   return (
-    <div className="max-w-2xl flex flex-col gap-5">
+    <div className="mx-auto max-w-xl flex flex-col gap-5">
       <AvatarUploadCard
         es={es}
         displayName={displayName}
@@ -1375,7 +1325,10 @@ function ProfileTab({
         passwordFeedback={passwordFeedback}
         onChangePassword={onChangePassword}
       />
-      <ProfileSummaryCards es={es} user={user} profile={profile} />
+      <p className="font-sans text-[0.72rem] text-pe-muted">
+        {es ? 'ID de cuenta: ' : 'Account ID: '}
+        {user.id}
+      </p>
     </div>
   );
 }
@@ -1391,7 +1344,7 @@ interface ReviewsTabProps {
 function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: ReviewsTabProps) {
   if (loadingReviews) {
     return (
-      <div className="max-w-2xl">
+      <div className="mx-auto max-w-2xl">
         <div className="flex justify-center py-16">
           <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
         </div>
@@ -1401,10 +1354,10 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
 
   if (reviews.length === 0) {
     return (
-      <div className="max-w-2xl">
+      <div className="mx-auto max-w-2xl">
         <div className="text-center py-20">
           <Star size={32} className="text-pe-muted mx-auto mb-3" />
-          <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no escribiste resenas' : 'No reviews yet'}</p>
+          <p className="font-display text-pe-charcoal/45 text-xl">{es ? 'Aun no escribiste resenas' : 'No reviews yet'}</p>
           <a
             href={`/${locale}/products`}
             className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
@@ -1417,7 +1370,7 @@ function ReviewsTab({ es, locale, loadingReviews, reviews, onDeleteReview }: Rev
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <ul className="flex flex-col gap-4">
         {reviews.map((review) => (
             <li key={review.id} className="bg-pe-white border border-pe-black/6 p-5 flex flex-col gap-2">
@@ -1725,7 +1678,7 @@ function AddressesTab({
   }
 
   return (
-    <div className="max-w-4xl flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="font-display text-pe-black text-xl">
           {es ? 'Libreta de direcciones' : 'Address book'}
@@ -1811,7 +1764,7 @@ function EmptyOrdersState({ es, locale }: { readonly es: boolean; readonly local
   return (
     <div className="text-center py-20">
       <ShoppingBag size={32} className="text-pe-muted mx-auto mb-3" />
-      <p className="font-display text-pe-black/30 text-xl">{es ? 'Aun no tienes pedidos' : 'No orders yet'}</p>
+      <p className="font-display text-pe-charcoal/45 text-xl">{es ? 'Aun no tienes pedidos' : 'No orders yet'}</p>
       <a
         href={`/${locale}/products`}
         className="inline-block mt-4 font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-rose-ink hover:underline underline-offset-2"
@@ -1831,7 +1784,7 @@ function OrdersTab({
 }: OrdersTabProps) {
   if (loadingOrders) {
     return (
-      <div className="max-w-3xl">
+      <div className="mx-auto max-w-3xl">
         {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
         <div className="flex justify-center py-16">
           <Loader2 size={24} className="animate-spin text-pe-rose-ink" />
@@ -1842,7 +1795,7 @@ function OrdersTab({
 
   if (orders.length === 0) {
     return (
-      <div className="max-w-3xl">
+      <div className="mx-auto max-w-3xl">
         {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
         <EmptyOrdersState es={es} locale={locale} />
       </div>
@@ -1850,7 +1803,7 @@ function OrdersTab({
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       {gatewayReturnFeedback && <GatewayReturnFeedbackBanner feedback={gatewayReturnFeedback} />}
       <ul className="flex flex-col gap-4">
         {orders.map((order) => (
@@ -2524,7 +2477,8 @@ export default function AccountPage({ locale }: Props) {
   return (
     <div className="min-h-[calc(100vh-180px)] bg-pe-offwhite">
       <div className="bg-pe-cream border-b border-pe-black/6 py-10">
-        <div className="pe-container flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div className="pe-container">
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <p className="pe-eyebrow text-pe-muted mb-1">{es ? 'Mi cuenta' : 'My account'}</p>
           <h1 className="font-display text-pe-black text-3xl font-light">{displayName}</h1>
@@ -2541,9 +2495,11 @@ export default function AccountPage({ locale }: Props) {
             {es ? 'Cerrar sesion' : 'Sign out'}
           </button>
         </div>
+        </div>
       </div>
 
       <div className="pe-container py-10">
+        <div className="mx-auto max-w-4xl">
         <nav className="flex gap-0 border-b border-pe-black/10 mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((t) => (
             <button
@@ -2633,7 +2589,11 @@ export default function AccountPage({ locale }: Props) {
           />
         )}
 
-        {tab === 'notifications' && <NotificationHistory locale={locale} />}
+        {tab === 'notifications' && (
+          <div className="mx-auto max-w-3xl">
+            <NotificationHistory locale={locale} />
+          </div>
+        )}
 
         {tab === 'orders' && (
           <OrdersTab
@@ -2662,6 +2622,7 @@ export default function AccountPage({ locale }: Props) {
             onReturnRequested={(created) => setMyReturns((current) => [created, ...current])}
           />
         )}
+        </div>
       </div>
     </div>
   );
