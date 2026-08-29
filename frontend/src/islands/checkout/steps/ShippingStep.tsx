@@ -212,7 +212,7 @@ export default function ShippingStep({
   function fieldError(name: keyof AddressDraft) {
     if (!errors[name]) return null;
     return (
-      <p id={`addr-${name}-error`} role="alert" className="font-sans text-[0.72rem] text-[#8f2d3b] mt-1">
+      <p id={`addr-${name}-error`} role="alert" className="font-sans text-[0.72rem] text-pe-danger-ink mt-1">
         {errors[name]}
       </p>
     );
@@ -542,7 +542,7 @@ export default function ShippingStep({
           </label>
 
           {formError && (
-            <p role="alert" className="font-sans text-[0.75rem] text-[#8f2d3b] mt-3">
+            <p role="alert" className="font-sans text-[0.75rem] text-pe-danger-ink mt-3">
               {formError}
             </p>
           )}
@@ -572,7 +572,7 @@ export default function ShippingStep({
       )}
 
       {continueError && (
-        <p role="alert" className="font-sans text-[0.78rem] text-[#8f2d3b] mb-3">
+        <p role="alert" className="font-sans text-[0.78rem] text-pe-danger-ink mb-3">
           {continueError}
         </p>
       )}

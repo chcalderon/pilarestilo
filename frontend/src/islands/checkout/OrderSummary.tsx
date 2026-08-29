@@ -148,7 +148,7 @@ export default function OrderSummary({
           <p
             id="checkout-discount-error"
             role="alert"
-            className="font-sans text-[0.72rem] text-[#8f2d3b] mt-2"
+            className="font-sans text-[0.72rem] text-pe-danger-ink mt-2"
           >
             {error}
           </p>

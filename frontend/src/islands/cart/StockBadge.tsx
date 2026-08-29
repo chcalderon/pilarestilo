@@ -46,8 +46,8 @@ export default function StockBadge({ issue, locale }: Props) {
       className={`inline-flex items-center gap-1.5 px-2 py-1 font-sans text-[0.66rem]
         tracking-[0.14em] uppercase whitespace-nowrap ${
           blocking
-            ? 'bg-[#8f2d3b] text-white font-semibold'
-            : 'bg-[#ffe9ec] text-[#8f2d3b] border border-[#cb6070]/50'
+            ? 'bg-pe-danger text-white font-semibold'
+            : 'bg-pe-danger-surface text-pe-danger-ink border border-pe-danger/50'
         }`}
     >
       <Icon size={12} strokeWidth={2.5} aria-hidden="true" />

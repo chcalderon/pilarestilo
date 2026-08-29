@@ -25,6 +25,10 @@ export default {
         'pe-rose-display': 'var(--pe-rose-display)',
         'pe-rose-action': 'var(--pe-rose-action)',
         'pe-positive': 'var(--pe-positive-ink)',
+        /* Error red. -rgb form so the /NN alert borders (border-pe-danger/40) resolve; see globals.css. */
+        'pe-danger': 'rgb(var(--pe-danger-rgb) / <alpha-value>)',
+        'pe-danger-ink': 'var(--pe-danger-ink)',
+        'pe-danger-surface': 'var(--pe-danger-surface)',
         'pe-on-dark': 'var(--pe-on-dark)',
         'pe-on-light': 'var(--pe-on-light)',
         'pe-on-dark-muted': 'var(--pe-on-dark-muted)',

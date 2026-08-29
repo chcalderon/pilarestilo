@@ -197,10 +197,10 @@ export default function CartPage({ locale }: Props) {
           {conflictCount > 0 && (
             <div
               role="alert"
-              className="flex items-start gap-3 border border-[#8f2d3b]/30 bg-[#ffe9ec] p-4 mb-6"
+              className="flex items-start gap-3 border border-pe-danger/30 bg-pe-danger-surface p-4 mb-6"
             >
-              <PackageX size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="font-sans text-sm text-[#732731]">
+              <PackageX size={18} className="text-pe-danger-ink shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="font-sans text-sm text-pe-danger-ink">
                 {conflictCount === 1
                   ? l.unavailableBanner
                   : `${conflictCount} ${l.unavailableBannerPlural}`}
@@ -218,7 +218,7 @@ export default function CartPage({ locale }: Props) {
                     key={item.id}
                     className={`flex gap-4 p-4 border ${
                       conflict
-                        ? 'bg-[#fff6f7] border-[#cb6070]/45'
+                        ? 'bg-pe-danger-surface border-pe-danger/45'
                         : 'bg-pe-white border-transparent'
                     }`}
                   >
@@ -262,7 +262,7 @@ export default function CartPage({ locale }: Props) {
                         <div
                           role="status"
                           aria-live="polite"
-                          className="mt-2 border border-[#cb6070]/45 bg-[#ffe9ec] px-2.5 py-2"
+                          className="mt-2 border border-pe-danger/45 bg-pe-danger-surface px-2.5 py-2"
                         >
                           {/*
                             * One message per reason. NEEDS_VARIANT used to fall through to the
@@ -271,7 +271,7 @@ export default function CartPage({ locale }: Props) {
                             * badge right above it and sending the customer to look for a
                             * replacement that was never needed.
                             */}
-                          <p className="font-sans text-xs text-[#732731]">
+                          <p className="font-sans text-xs text-pe-danger-ink">
                             {(() => {
                               if (conflict.type === 'SOLD_OUT') return l.stockAdjusted;
                               if (conflict.type === 'NEEDS_VARIANT') return l.needsVariantHint;
@@ -283,8 +283,8 @@ export default function CartPage({ locale }: Props) {
                               type="button"
                               onClick={() => removeWithUndo(item)}
                               className="inline-flex items-center gap-1.5 font-sans text-[10px] tracking-[0.14em]
-                                uppercase min-h-11 px-2.5 border border-[#8f2d3b]/40 text-[#8f2d3b]
-                                hover:bg-[#8f2d3b] hover:text-white transition-colors
+                                uppercase min-h-11 px-2.5 border border-pe-danger/40 text-pe-danger-ink
+                                hover:bg-pe-danger hover:text-white transition-colors
                                 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                             >
                               <Trash2 size={13} aria-hidden="true" />
@@ -371,7 +371,7 @@ export default function CartPage({ locale }: Props) {
                 </div>
 
                 {conflictCount > 0 && (
-                  <output className="block font-sans text-[0.72rem] text-[#8f2d3b] mb-3">
+                  <output className="block font-sans text-[0.72rem] text-pe-danger-ink mb-3">
                     {l.resolveStockFirst}
                   </output>
                 )}

@@ -110,6 +110,17 @@
      */
     --pe-gold-ink: #584622;
     --pe-positive-ink: #03513A;
+    /*
+     * Error red. The stock and checkout alerts hand-rolled #8f2d3b for text with a lighter
+     * dark:red-400 twin, and painted their panels #ffe9ec / #fff6f7 — a value pair, per theme,
+     * in every alert. -ink is the readable text/icon step (6.9:1 on parchment, 7:1 on the dark
+     * panel); -surface is the tinted panel; -rgb is the solid fill the SOLD OUT chip is painted
+     * in (white on it clears 6.9:1) and the base every /NN alert border resolves against, so it
+     * is a constant — a saturated red chip reads on either ground.
+     */
+    --pe-danger-ink: #8F2D3B;
+    --pe-danger-surface: #FBE9EC;
+    --pe-danger-rgb: 143 45 59;
     /* The script is display-sized, so 3:1 is the bar it has to clear rather than 4.5. */
     --pe-rose-display: #984C57;
     /*
@@ -146,6 +157,9 @@
     --pe-rose-ink: #D8AEB3;
     --pe-gold-ink: #C6A96B;
     --pe-positive-ink: #06B382;
+    /* -rgb (the chip fill + border base) is not redefined here: it stays #8F2D3B in both themes. */
+    --pe-danger-ink: #FCA5A5;
+    --pe-danger-surface: #39191E;
     --pe-rose-display: #E8C9CC;
     --pe-rose-action: #A1505C;
     color-scheme: dark;

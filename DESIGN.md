@@ -12,6 +12,8 @@ colors:
   mid-cream: "#E3D2BE"
   parchment: "#F5F1EB"
   pure-white: "#FFFFFF"
+  danger-ink: "#8F2D3B"
+  danger-surface: "#FBE9EC"
 typography:
   display:
     fontFamily: "Cormorant Garamond, Georgia, serif"
@@ -128,6 +130,25 @@ Color strategy: **Restrained**. Las superficies son crema y parchment. El rosa (
 **La Regla del Acento Único.** El rosa aparece en ≤10% de cualquier pantalla. Su rareza es el punto. Cuando todos los CTAs, todos los badges y todos los hovers son rosas, el rosa deja de significar algo.
 
 **La Regla del Oro Escaso.** El dorado aparece máximo 2-3 veces por pantalla. Si puedes contar más de 3 instancias, elimina todas menos una.
+
+### Peligro / Error
+
+Un solo rojo semántico, tres roles, todos ligados al tema (`globals.css` + `tailwind.config.mjs`):
+
+- **`pe-danger-ink`** (`#8F2D3B` claro → `#FCA5A5` oscuro): texto de error, íconos de alerta, dot
+  del timeline en estado `ended`, texto del botón "quitar". Es el paso legible, despeja 4.5:1 en
+  cada superficie de su tema. Es el reemplazo del `#8f2d3b` / `dark:red-400` hecho a mano.
+- **`pe-danger`** (`rgb(143 45 59)` **constante**, forma `/ <alpha-value>`): relleno sólido del
+  chip SIN STOCK (con `text-white`, despeja 6.9:1) y base de los bordes `/NN` de los paneles de
+  alerta. Constante a propósito: un chip rojo saturado se lee en parchment y en la superficie
+  oscura por igual.
+- **`pe-danger-surface`** (`#FBE9EC` claro → `#39191E` oscuro): fondo del panel de alerta.
+
+Es rojo de estado, no de marca: no cuenta contra la Regla del Acento Único, pero un panel de
+peligro visible en pantalla ya es señal de que algo se rompió. No decorar con él.
+
+**Nunca** una franja lateral (`border-l`/`border-r` > 1px de color) como acento en una alerta —
+borde completo + `bg-pe-danger-surface`.
 
 ## 3. Typography: Dos Voces, Un Oficio
 

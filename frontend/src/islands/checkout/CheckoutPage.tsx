@@ -352,10 +352,10 @@ export default function CheckoutPage({ locale }: Props) {
     mainContent = (
       <div
         role="alert"
-        className="bg-pe-white p-6 flex items-start gap-3 border-l-2 border-[#cb6070]"
+        className="p-6 flex items-start gap-3 border border-pe-danger/40 bg-pe-danger-surface"
       >
-        <AlertTriangle size={18} className="text-[#8f2d3b] shrink-0 mt-0.5" />
-        <p className="font-sans text-sm text-pe-charcoal">{l.unavailable}</p>
+        <AlertTriangle size={18} className="text-pe-danger-ink shrink-0 mt-0.5" />
+        <p className="font-sans text-sm text-pe-danger-ink">{l.unavailable}</p>
       </div>
     );
   } else {

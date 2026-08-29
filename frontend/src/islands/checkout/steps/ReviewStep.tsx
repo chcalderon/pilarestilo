@@ -107,7 +107,7 @@ export default function ReviewStep({
             <li
               key={item.id}
               className={`flex gap-3 items-start ${
-                issue ? 'border border-[#8f2d3b]/30 bg-[#fff6f7] rounded-md p-3' : ''
+                issue ? 'border border-pe-danger/30 bg-pe-danger-surface rounded-md p-3' : ''
               }`}
             >
               {item.imageUrl && (
@@ -148,7 +148,7 @@ export default function ReviewStep({
                       type="button"
                       onClick={() => onRemoveItem(item.id)}
                       className="mt-1 inline-flex items-center gap-1.5 min-h-11 pr-2 font-sans
-                        text-[0.66rem] tracking-[0.14em] uppercase text-[#8f2d3b] underline
+                        text-[0.66rem] tracking-[0.14em] uppercase text-pe-danger-ink underline
                         underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2
                         focus-visible:ring-pe-rose"
                     >
@@ -189,8 +189,8 @@ export default function ReviewStep({
              * legitimately — deleted from the address book after it was chosen — so this states
              * the problem and offers the way out rather than only refusing.
              */
-            <div role="alert" className="border border-[#8f2d3b]/40 bg-[#8f2d3b]/5 p-3">
-              <p className="font-sans text-[0.8rem] text-[#8f2d3b] mb-2">{l.addressMissing}</p>
+            <div role="alert" className="border border-pe-danger/40 bg-pe-danger-surface p-3">
+              <p className="font-sans text-[0.8rem] text-pe-danger-ink mb-2">{l.addressMissing}</p>
               <button
                 type="button"
                 onClick={onFixShipping}
@@ -229,10 +229,10 @@ export default function ReviewStep({
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2 border-l-2 border-[#cb6070] bg-[#fff0f2] p-3 mb-4"
+          className="flex items-start gap-2 border border-pe-danger/40 bg-pe-danger-surface p-3 mb-4"
         >
-          <AlertTriangle size={15} className="text-[#8f2d3b] shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="font-sans text-[0.78rem] text-[#732731]">{error}</p>
+          <AlertTriangle size={15} className="text-pe-danger-ink shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="font-sans text-[0.78rem] text-pe-danger-ink">{error}</p>
         </div>
       )}
 
