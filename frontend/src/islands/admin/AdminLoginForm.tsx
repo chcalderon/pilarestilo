@@ -98,6 +98,12 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
+        <a
+          href="/es/auth/forgot-password"
+          className="self-end font-sans text-[0.74rem] text-pe-rose-ink hover:underline underline-offset-2"
+        >
+          ¿Olvidaste tu contraseña?
+        </a>
       </div>
 
       {error && (

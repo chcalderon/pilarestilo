@@ -1288,6 +1288,22 @@ export async function googleLogin(idToken: string): Promise<AuthTokenResponse> {
   });
 }
 
+/** Always resolves with the same generic message — the backend never reveals whether the email exists. */
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+/** Resolves on 204; throws ApiError with the generic message on an invalid/used/expired token. */
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  return apiFetch<void>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
 export async function getAuthMe(token: string): Promise<{ id: string; email: string; role: string; fullName?: string; avatarUrl?: string }> {
   return apiFetch<{ id: string; email: string; role: string; fullName?: string; avatarUrl?: string }>('/auth/me/profile', {
     headers: { Authorization: `Bearer ${token}` },
