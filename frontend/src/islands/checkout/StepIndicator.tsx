@@ -41,7 +41,7 @@ export default function StepIndicator({ locale, current, furthest, onSelect }: P
 
           let circleClass: string;
           if (isDone) {
-            circleClass = 'bg-pe-black text-pe-white';
+            circleClass = 'pe-btn-ink';
           } else if (isCurrent) {
             circleClass = 'border border-pe-black text-pe-black';
           } else {

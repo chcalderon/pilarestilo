@@ -234,7 +234,7 @@ export default function PublicacionesMediaPage() {
             className={[
               'px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.11em] transition-colors whitespace-nowrap',
               activeTab === tab.key
-                ? 'bg-pe-black text-pe-offwhite'
+                ? 'pe-btn-ink'
                 : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
@@ -278,7 +278,7 @@ export default function PublicacionesMediaPage() {
                 type="button"
                 onClick={() => void handleStartBatch()}
                 disabled={uploading || selectedFiles.length === 0}
-                className="mt-3 inline-flex items-center gap-2 border border-pe-black/20 bg-pe-black text-pe-offwhite px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase disabled:opacity-50"
+                className="mt-3 inline-flex items-center gap-2 border border-pe-black/20 pe-btn-ink px-4 py-2 text-[0.72rem] tracking-[0.13em] uppercase disabled:opacity-50"
               >
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 Iniciar procesamiento IA
@@ -430,7 +430,7 @@ export default function PublicacionesMediaPage() {
             <button
               type="button"
               onClick={() => window.location.assign('/admin/settings?tab=notifications')}
-              className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-pe-black text-pe-offwhite px-4 py-2 text-[0.7rem] uppercase tracking-[0.12em] hover:bg-pe-charcoal transition-colors"
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 pe-btn-ink px-4 py-2 text-[0.7rem] uppercase tracking-[0.12em] transition-colors"
             >
               Ir a configuracion n8n
             </button>

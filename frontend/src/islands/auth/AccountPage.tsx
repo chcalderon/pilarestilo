@@ -1258,7 +1258,7 @@ function ChangePasswordCard({
           type="button"
           onClick={onChangePassword}
           disabled={passwordSaving}
-          className="inline-flex items-center justify-center px-4 py-2 bg-pe-black text-pe-offwhite font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-charcoal transition-colors disabled:opacity-60"
+          className="inline-flex items-center justify-center px-4 py-2 pe-btn-ink font-sans text-[0.68rem] tracking-wider uppercase transition-colors disabled:opacity-60"
         >
           {toggleLabel(passwordSaving, es, 'Actualizando...', 'Updating...', 'Actualizar contraseña', 'Update password')}
         </button>

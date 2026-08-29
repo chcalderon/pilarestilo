@@ -212,7 +212,7 @@ export default function PaymentStep({
           type="button"
           onClick={onContinue}
           className="flex-1 sm:flex-none inline-flex items-center justify-center min-h-12 px-8
-            bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
+            pe-btn-ink font-sans text-[0.7rem] tracking-[0.16em] uppercase
             focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >
           {l.continue}

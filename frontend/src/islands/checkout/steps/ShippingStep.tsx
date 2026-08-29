@@ -359,7 +359,7 @@ export default function ShippingStep({
               font-sans text-[0.68rem] tracking-[0.16em] uppercase transition-colors
               focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2
               ${book.addresses.length === 0 && !book.loading
-                ? 'bg-pe-black text-pe-white hover:opacity-90'
+                ? 'pe-btn-ink'
                 : 'border border-pe-charcoal/25 text-pe-charcoal hover:border-pe-black hover:text-pe-black'}`}
           >
             <Plus size={14} />
@@ -551,7 +551,7 @@ export default function ShippingStep({
             <button
               type="submit"
               disabled={book.saving}
-              className="inline-flex items-center gap-2 min-h-11 px-5 bg-pe-black text-pe-white
+              className="inline-flex items-center gap-2 min-h-11 px-5 pe-btn-ink
                 font-sans text-[0.68rem] tracking-[0.16em] uppercase disabled:opacity-40
                 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
             >
@@ -582,7 +582,7 @@ export default function ShippingStep({
         onClick={handleContinue}
         disabled={!selected}
         className="w-full sm:w-auto inline-flex items-center justify-center min-h-12 px-8
-          bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
+          pe-btn-ink font-sans text-[0.7rem] tracking-[0.16em] uppercase
           transition-opacity disabled:opacity-40 disabled:cursor-not-allowed
           focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
       >

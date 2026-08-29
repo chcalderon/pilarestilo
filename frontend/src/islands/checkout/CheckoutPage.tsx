@@ -330,7 +330,7 @@ export default function CheckoutPage({ locale }: Props) {
           <p className="font-sans text-pe-charcoal mb-6">{l.emptyCart}</p>
           <a
             href={`/${locale}/products`}
-            className="inline-flex items-center min-h-11 px-6 bg-pe-black text-pe-white
+            className="inline-flex items-center min-h-11 px-6 pe-btn-ink
               font-sans text-[0.7rem] tracking-[0.16em] uppercase"
           >
             {l.emptyCartAction}

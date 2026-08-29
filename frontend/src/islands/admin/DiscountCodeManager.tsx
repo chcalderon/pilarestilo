@@ -153,7 +153,7 @@ export default function DiscountCodeManager() {
               className={[
                 'font-sans text-[0.68rem] uppercase tracking-wider px-3 py-1.5 transition-colors',
                 tab === t.key
-                  ? 'bg-pe-black text-white'
+                  ? 'pe-btn-ink'
                   : 'border border-pe-black/12 text-pe-muted hover:border-pe-charcoal/30',
               ].join(' ')}
             >

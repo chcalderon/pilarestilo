@@ -263,7 +263,7 @@ export default function ReviewStep({
           onClick={onSubmit}
           disabled={submitting || !address || Object.keys(stockIssues).length > 0}
           className="flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-8
-            bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
+            pe-btn-ink font-sans text-[0.7rem] tracking-[0.16em] uppercase
             transition-opacity disabled:opacity-50 disabled:cursor-wait
             focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
         >

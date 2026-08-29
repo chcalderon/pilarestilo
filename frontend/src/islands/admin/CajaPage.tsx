@@ -193,7 +193,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
                     onClick={() => setAdjustType(t)}
                     className={`flex-1 py-2 text-xs tracking-widest uppercase border transition-colors ${
                       adjustType === t
-                        ? 'bg-pe-black text-pe-offwhite border-pe-black'
+                        ? 'pe-btn-ink border-pe-black'
                         : 'border-pe-black/10 text-pe-muted hover:border-pe-rose'
                     }`}
                   >
@@ -243,7 +243,7 @@ function MovementDrawer({ open, category, onClose, onSubmit, busy, error }: Draw
             <button
               type="submit"
               disabled={busy || !amount || !description.trim()}
-              className="w-full bg-pe-black text-pe-offwhite px-6 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+              className="w-full pe-btn-ink px-6 py-3 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
             >
               {busy ? 'Registrando...' : 'Registrar'}
             </button>
@@ -496,7 +496,7 @@ export default function CajaPage() {
             type="button"
             onClick={openCaja}
             disabled={operationBusy || !Number.isFinite(Number.parseFloat(openBalance)) || Number.parseFloat(openBalance) < 0}
-            className="w-full bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+            className="w-full pe-btn-ink px-8 py-3 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
           >
             {operationBusy ? 'Abriendo...' : 'Abrir caja'}
           </button>
@@ -533,7 +533,7 @@ export default function CajaPage() {
         <button
           type="button"
           onClick={() => setOperationView('open_form')}
-          className="bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors"
+          className="pe-btn-ink px-8 py-3 text-xs tracking-widest uppercase transition-colors"
         >
           Abrir nueva caja
         </button>
@@ -642,7 +642,7 @@ export default function CajaPage() {
                   type="button"
                   onClick={closeCaja}
                   disabled={operationBusy || !declaredBalance || Number.parseFloat(declaredBalance) < 0}
-                  className="bg-pe-black text-pe-offwhite px-6 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+                  className="pe-btn-ink px-6 py-2 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
                 >
                   {operationBusy ? 'Cerrando...' : 'Cerrar caja'}
                 </button>
@@ -768,7 +768,7 @@ export default function CajaPage() {
               <button
                 type="button"
                 onClick={() => void loadHistory(0)}
-                className="w-full bg-pe-black text-pe-offwhite px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors"
+                className="w-full pe-btn-ink px-4 py-2.5 text-xs tracking-widest uppercase transition-colors"
               >
                 Aplicar
               </button>
@@ -779,7 +779,7 @@ export default function CajaPage() {
               <button
                 type="button"
                 onClick={() => void loadHistory(0)}
-                className="bg-pe-black text-pe-offwhite px-6 py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors"
+                className="pe-btn-ink px-6 py-2.5 text-xs tracking-widest uppercase transition-colors"
               >
                 Aplicar filtros
               </button>

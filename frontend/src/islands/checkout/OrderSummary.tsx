@@ -134,7 +134,7 @@ export default function OrderSummary({
             <button
               type="submit"
               disabled={applying || !draft.trim()}
-              className="shrink-0 h-11 px-4 bg-pe-black text-pe-white font-sans text-[0.7rem]
+              className="shrink-0 h-11 px-4 pe-btn-ink font-sans text-[0.7rem]
                 tracking-[0.16em] uppercase transition-opacity
                 disabled:opacity-40 disabled:cursor-not-allowed
                 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"

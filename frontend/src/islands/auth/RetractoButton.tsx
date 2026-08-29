@@ -136,7 +136,7 @@ export default function RetractoButton({ orderId, token, locale, existing, onReq
           type="button"
           onClick={() => void submit()}
           disabled={busy}
-          className="inline-flex items-center px-3 py-2 bg-pe-black text-pe-white
+          className="inline-flex items-center px-3 py-2 pe-btn-ink
             font-sans text-[0.66rem] tracking-wider uppercase disabled:opacity-60"
         >
           {busy ? l.sending : l.confirm}

@@ -342,7 +342,7 @@ export default function DespachosPage() {
             onClick={() => setMode('operacion')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'operacion'
-                ? 'bg-pe-black text-pe-offwhite border-pe-black'
+                ? 'pe-btn-ink border-pe-black'
                 : 'border-pe-black/10 text-pe-muted'
             }`}
           >
@@ -353,7 +353,7 @@ export default function DespachosPage() {
             onClick={() => setMode('historial')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'historial'
-                ? 'bg-pe-black text-pe-offwhite border-pe-black'
+                ? 'pe-btn-ink border-pe-black'
                 : 'border-pe-black/10 text-pe-muted'
             }`}
           >
@@ -413,7 +413,7 @@ export default function DespachosPage() {
                                 type="button"
                                 onClick={() => dispatchOrder(d.id)}
                                 disabled={busy}
-                                className="bg-pe-black text-pe-offwhite px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+                                className="pe-btn-ink px-4 py-2 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
                               >
                                 Marcar despachado
                               </button>
@@ -440,7 +440,7 @@ export default function DespachosPage() {
                             <button
                               type="button"
                               onClick={() => startDispatch(d)}
-                              className="bg-pe-black text-pe-offwhite px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors"
+                              className="pe-btn-ink px-4 py-2 text-xs tracking-widest uppercase transition-colors"
                             >
                               Despachar
                             </button>
@@ -582,7 +582,7 @@ export default function DespachosPage() {
                   setHistoryPage(0);
                   void loadHistory(0);
                 }}
-                className="px-4 py-2 bg-pe-black text-pe-offwhite text-xs tracking-widest uppercase"
+                className="px-4 py-2 pe-btn-ink text-xs tracking-widest uppercase"
               >
                 Filtrar
               </button>

@@ -433,7 +433,7 @@ export default function ProductTable() {
           className={[
             'font-sans text-[0.65rem] tracking-[0.12em] uppercase px-2 py-0.5',
             row.condition === 'NEW'
-              ? 'bg-pe-black text-pe-offwhite'
+              ? 'pe-btn-ink'
               : 'bg-pe-rose-soft text-black border border-pe-rose/45',
           ].join(' ')}
         >
@@ -626,7 +626,7 @@ export default function ProductTable() {
                 <span
                   className={[
                     'absolute top-3 left-3 px-2 py-1 text-[0.62rem] uppercase tracking-[0.12em] font-sans',
-                    row.condition === 'NEW' ? 'bg-pe-black text-pe-offwhite' : 'bg-pe-rose-soft text-black border border-pe-rose/45',
+                    row.condition === 'NEW' ? 'pe-btn-ink' : 'bg-pe-rose-soft text-black border border-pe-rose/45',
                   ].join(' ')}
                 >
                   {row.condition === 'NEW' ? 'Nuevo' : 'Usado'}
@@ -942,7 +942,7 @@ export default function ProductTable() {
                 onClick={() => setViewMode('grid')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors',
-                  viewMode === 'grid' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+                  viewMode === 'grid' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
                 ].join(' ')}
                 title="Vista grilla"
               >
@@ -954,7 +954,7 @@ export default function ProductTable() {
                 onClick={() => setViewMode('cards')}
                 className={[
                   'inline-flex items-center gap-1.5 px-3 py-2 font-sans text-[0.68rem] uppercase tracking-[0.1em] transition-colors border-l border-pe-black/12',
-                  viewMode === 'cards' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+                  viewMode === 'cards' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
                 ].join(' ')}
                 title="Vista cards"
               >

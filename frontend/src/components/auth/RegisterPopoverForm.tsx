@@ -304,7 +304,7 @@ export function RegisterPopoverForm({ initialTab = "register", locale }: Props) 
         <button
           type="submit"
           disabled={loading}
-          className="bg-pe-black text-pe-offwhite py-2 text-sm tracking-widest uppercase hover:bg-pe-rose disabled:opacity-50 transition-colors"
+          className="pe-btn-ink py-2 text-sm tracking-widest uppercase disabled:opacity-50 transition-colors"
         >
           {submitLabel}
         </button>

@@ -447,7 +447,7 @@ export default function UserManagement() {
               onClick={() => setTab('customers')}
               className={[
                 'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-                tab === 'customers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+                tab === 'customers' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
               ].join(' ')}
             >
               Clientes
@@ -457,7 +457,7 @@ export default function UserManagement() {
               onClick={() => setTab('workers')}
               className={[
                 'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-                tab === 'workers' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+                tab === 'workers' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
               ].join(' ')}
             >
               Trabajadores

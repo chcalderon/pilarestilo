@@ -164,7 +164,7 @@ export default function CartPage({ locale }: Props) {
             <p className="font-sans text-pe-charcoal mb-6">{l.empty}</p>
             <a
               href={`/${locale}/products`}
-              className="inline-flex items-center min-h-11 px-6 bg-pe-black text-pe-white
+              className="inline-flex items-center min-h-11 px-6 pe-btn-ink
                 font-sans text-[0.7rem] tracking-[0.16em] uppercase"
             >
               {l.emptyLink}
@@ -389,7 +389,7 @@ export default function CartPage({ locale }: Props) {
                   <a
                     href={checkoutHref}
                     className="w-full inline-flex items-center justify-center gap-2 min-h-12 px-6
-                      bg-pe-black text-pe-white font-sans text-[0.7rem] tracking-[0.16em] uppercase
+                      pe-btn-ink font-sans text-[0.7rem] tracking-[0.16em] uppercase
                       hover:bg-pe-black/90 transition-colors
                       focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
                   >
@@ -412,7 +412,7 @@ export default function CartPage({ locale }: Props) {
           role="status"
           aria-live="polite"
           className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 flex items-center gap-3
-            bg-pe-black text-pe-white px-4 py-3 shadow-xl max-w-[calc(100vw-2rem)]"
+            pe-btn-ink px-4 py-3 shadow-xl max-w-[calc(100vw-2rem)]"
         >
           <span className="font-sans text-[0.78rem] truncate">
             {l.removed}: {undoable.name}

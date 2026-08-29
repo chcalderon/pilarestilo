@@ -144,7 +144,7 @@ export default function RolesPermisosView() {
             type="button"
             onClick={save}
             disabled={saving || !canManage}
-            className="bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+            className="pe-btn-ink px-8 py-3 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
           >
             {saveLabel}
           </button>

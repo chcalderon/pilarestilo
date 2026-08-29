@@ -77,7 +77,7 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
         {error && <p className="text-pe-danger-ink text-sm mt-3">{error}</p>}
         <div className="flex gap-3 mt-6">
           <button type="button" onClick={assign} disabled={saving}
-            className="flex-1 bg-pe-black text-pe-offwhite py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50">
+            className="flex-1 pe-btn-ink py-2.5 text-xs tracking-widest uppercase transition-colors disabled:opacity-50">
             {saving ? 'Guardando...' : 'Asignar rol'}
           </button>
           {WORKER_ROLES.includes(currentRole) && (

@@ -412,7 +412,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('queue')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'queue' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+              activeTab === 'queue' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Por revisar ({queuePayments.length})
@@ -422,7 +422,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('approved')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'approved' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+              activeTab === 'approved' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Pagados ({approvedPayments.length})
@@ -432,7 +432,7 @@ export default function PaymentReviewQueue() {
             onClick={() => setActiveTab('rejected')}
             className={[
               'px-3 py-1.5 font-sans text-[0.7rem] tracking-wider uppercase transition-colors',
-              activeTab === 'rejected' ? 'bg-pe-black text-pe-offwhite' : 'text-pe-muted hover:text-pe-charcoal',
+              activeTab === 'rejected' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
             ].join(' ')}
           >
             Rechazados ({rejectedPayments.length})

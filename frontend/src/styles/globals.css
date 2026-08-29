@@ -211,6 +211,31 @@
   #site-header.theme-light .icon-hit:hover {
     background-color: color-mix(in srgb, var(--pe-charcoal) 8%, transparent);
   }
+
+  /*
+   * The ink button: an ink fill with cream label in light, and its inverse in dark — a light
+   * fill with an ink label. `bg-pe-black` alone stayed #1A1A1A on the near-black dark page, a box
+   * you had to hunt for behind a crisp label; the invert makes the button the brightest thing in
+   * its row on either theme. The drenched-dark surfaces (footer, nav bars, brand sections, the
+   * admin sidebar) keep `bg-pe-black` and do not flip. Hover is the readable rose on both.
+   */
+  .pe-btn-ink {
+    background-color: var(--pe-on-light);
+    color: var(--pe-on-dark);
+    transition: background-color 200ms, color 200ms;
+  }
+  .pe-btn-ink:hover:not(:disabled) {
+    background-color: var(--pe-rose-action);
+    color: var(--pe-on-dark);
+  }
+  html[data-theme='dark'] .pe-btn-ink {
+    background-color: var(--pe-on-dark);
+    color: var(--pe-on-light);
+  }
+  html[data-theme='dark'] .pe-btn-ink:hover:not(:disabled) {
+    background-color: var(--pe-rose-action);
+    color: var(--pe-on-dark);
+  }
 }
 
 @layer utilities {

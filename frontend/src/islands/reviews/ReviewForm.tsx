@@ -188,7 +188,7 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
       <button
         type="submit"
         disabled={submitting}
-        className="bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
+        className="pe-btn-ink px-8 py-3 text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
       >
         {submitLabel}
       </button>
