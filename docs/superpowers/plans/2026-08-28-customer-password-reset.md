@@ -281,8 +281,9 @@ void refresh_token_carries_the_session_version() {
 **Interfaces:**
 - Consumes: `User.getSessionVersion()` (Task 2), `claims.get("sv", Integer.class)` (Task 3).
 - Produces: an authenticated request whose token's `sv` (or `1` if absent) does not equal the
-  user's current `session_version` → no `SecurityContext` set → the request answers 401, the same
-  as an expired token. `RefreshTokenUseCase.execute(...)` → `DomainException` on the same mismatch.
+  user's current `session_version` → no `SecurityContext` set → the request answers 403 (this app
+  wires no 401 entry point, so an unauthenticated request to a guarded route is 403), the same as
+  an expired token. `RefreshTokenUseCase.execute(...)` → `DomainException` on the same mismatch.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -701,7 +702,7 @@ void the_full_flow_changes_the_password_and_invalidates_old_tokens() throws Exce
     mockMvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
                     .content("{\"token\":\"" + raw + "\",\"newPassword\":\"BrandNew123\"}"))
             .andExpect(status().isNoContent());
-    // old access token (sv=1) now 401 on /api/auth/me; a fresh login with BrandNew123 works
+    // old access token (sv=1) now 403 on /api/auth/me; a fresh login with BrandNew123 works
 }
 
 @Test
@@ -857,7 +858,7 @@ void reset_password_with_a_garbage_token_is_a_generic_400() throws Exception {
   token from the backend (`GET` is not exposed — read it from the DB via a small psql `docker exec`,
   or expose the raw token only in a `test` Spring profile — prefer the psql read, no prod surface),
   open `/es/reset-password?token=...`, submit a new password, assert redirect to login and that the
-  new password logs in while the old one 401s.
+  new password logs in while the old one 403s.
 
 - [ ] **Step 7: Commit** — `git commit -m "feat(frontend): forgot-password + reset-password pages and login links"`
 
@@ -880,8 +881,9 @@ void reset_password_with_a_garbage_token_is_a_generic_400() throws Exception {
   redirects to login.
 
 - [ ] **Step 4:** confirm the **old** session is dead: in a second browser tab still "logged in" as
-  that customer from before the reset, the next action → 401 / bounced to login. And a **new** login
-  with the new password works.
+  that customer from before the reset, the next action → **403** (this app has no 401 entry point;
+  same status as an expired token) / bounced to login. And a **new** login with the new password
+  works.
 
 - [ ] **Step 5:** confirm enumeration safety by eye: `forgot-password` for a made-up address returns
   the same screen, and the SMTP server shows no send.
