@@ -12,8 +12,12 @@ colors:
   mid-cream: "#E3D2BE"
   parchment: "#F5F1EB"
   pure-white: "#FFFFFF"
+  positive-ink: "#03513A"
+  positive-surface: "#E6F3EC"
   danger-ink: "#8F2D3B"
   danger-surface: "#FBE9EC"
+  warning-ink: "#7A4E15"
+  warning-surface: "#FBF0DC"
 typography:
   display:
     fontFamily: "Cormorant Garamond, Georgia, serif"
@@ -131,24 +135,25 @@ Color strategy: **Restrained**. Las superficies son crema y parchment. El rosa (
 
 **La Regla del Oro Escaso.** El dorado aparece máximo 2-3 veces por pantalla. Si puedes contar más de 3 instancias, elimina todas menos una.
 
-### Peligro / Error
+### Estados: Positivo / Peligro / Advertencia
 
-Un solo rojo semántico, tres roles, todos ligados al tema (`globals.css` + `tailwind.config.mjs`):
+Tres familias semánticas, la misma forma de tres roles, todas ligadas al tema (`globals.css` +
+`tailwind.config.mjs`). Reemplazan los pares `text-{red,green,amber}-500 dark:text-…-300` y
+`bg-…-50 dark:bg-…-900/30` hechos a mano por componente, en una docena de tonos.
 
-- **`pe-danger-ink`** (`#8F2D3B` claro → `#FCA5A5` oscuro): texto de error, íconos de alerta, dot
-  del timeline en estado `ended`, texto del botón "quitar". Es el paso legible, despeja 4.5:1 en
-  cada superficie de su tema. Es el reemplazo del `#8f2d3b` / `dark:red-400` hecho a mano.
-- **`pe-danger`** (`rgb(143 45 59)` **constante**, forma `/ <alpha-value>`): relleno sólido del
-  chip SIN STOCK (con `text-white`, despeja 6.9:1) y base de los bordes `/NN` de los paneles de
-  alerta. Constante a propósito: un chip rojo saturado se lee en parchment y en la superficie
-  oscura por igual.
-- **`pe-danger-surface`** (`#FBE9EC` claro → `#39191E` oscuro): fondo del panel de alerta.
+| rol | qué es | positivo | peligro | advertencia |
+|---|---|---|---|---|
+| **`-ink`** | texto + íconos legibles en cualquier superficie de su tema (flip por tema) | `#03513A` → `#06B382` | `#8F2D3B` → `#FCA5A5` | `#7A4E15` → `#F0C674` |
+| **bare** (`rgb(… / <alpha-value>)`) | relleno sólido del chip (blanco encima despeja 4.5:1) + base de los bordes `/NN` de alerta; **constante** | `rgb(3 81 58)` | `rgb(143 45 59)` | `rgb(180 83 9)` |
+| **`-surface`** | fondo del panel de alerta (flip por tema) | `#E6F3EC` → `#122019` | `#FBE9EC` → `#39191E` | `#FBF0DC` → `#332612` |
 
-Es rojo de estado, no de marca: no cuenta contra la Regla del Acento Único, pero un panel de
-peligro visible en pantalla ya es señal de que algo se rompió. No decorar con él.
+`text-pe-positive` es el nombre viejo de `text-pe-positive-ink`.
+
+Son colores de **estado, no de marca**: no cuentan contra la Regla del Acento Único, pero un panel
+de peligro o advertencia visible en pantalla ya es señal de que algo pasó. No decorar con ellos.
 
 **Nunca** una franja lateral (`border-l`/`border-r` > 1px de color) como acento en una alerta —
-borde completo + `bg-pe-danger-surface`.
+borde completo + la `-surface` correspondiente.
 
 ## 3. Typography: Dos Voces, Un Oficio
 
