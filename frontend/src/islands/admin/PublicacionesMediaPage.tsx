@@ -430,7 +430,7 @@ export default function PublicacionesMediaPage() {
             <button
               type="button"
               onClick={() => window.location.assign('/admin/settings?tab=notifications')}
-              className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-pe-black text-pe-offwhite px-4 py-2 text-[0.7rem] uppercase tracking-[0.12em] hover:bg-[#2A2A2A] transition-colors"
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-pe-black text-pe-offwhite px-4 py-2 text-[0.7rem] uppercase tracking-[0.12em] hover:bg-pe-charcoal transition-colors"
             >
               Ir a configuracion n8n
             </button>

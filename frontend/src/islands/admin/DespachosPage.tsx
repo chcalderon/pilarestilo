@@ -83,12 +83,12 @@ function DispatchOrderHeader({ dispatch, compact = false }: { readonly dispatch:
           src={summary.firstItemImageUrl}
           alt={summary.firstItemName ?? 'Prenda del pedido'}
           loading="lazy"
-          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} object-cover border border-[#EDE3D8] shrink-0 bg-[#F8F4EF]`}
+          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} object-cover border border-pe-black/10 shrink-0 bg-pe-offwhite`}
         />
       ) : (
         <div
           aria-hidden="true"
-          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} border border-dashed border-[#EDE3D8] shrink-0`}
+          className={`${compact ? 'w-10 h-12' : 'w-14 h-16'} border border-dashed border-pe-black/10 shrink-0`}
         />
       )}
       <div className="min-w-0">
@@ -342,8 +342,8 @@ export default function DespachosPage() {
             onClick={() => setMode('operacion')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'operacion'
-                ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
-                : 'border-[#EDE3D8] text-pe-muted'
+                ? 'bg-pe-black text-pe-offwhite border-pe-black'
+                : 'border-pe-black/10 text-pe-muted'
             }`}
           >
             Operación
@@ -353,8 +353,8 @@ export default function DespachosPage() {
             onClick={() => setMode('historial')}
             className={`px-3 py-2 text-xs tracking-widest uppercase border ${
               mode === 'historial'
-                ? 'bg-[#1A1A1A] text-[#F8F4EF] border-[#1A1A1A]'
-                : 'border-[#EDE3D8] text-pe-muted'
+                ? 'bg-pe-black text-pe-offwhite border-pe-black'
+                : 'border-pe-black/10 text-pe-muted'
             }`}
           >
             Historial
@@ -384,7 +384,7 @@ export default function DespachosPage() {
                   <h2 className="text-[10px] tracking-widest uppercase text-pe-muted mb-3">En progreso</h2>
                   <ul className="space-y-3">
                     {inProgress.map((d) => (
-                      <li key={d.id} className="border border-[#EDE3D8] p-4">
+                      <li key={d.id} className="border border-pe-black/10 p-4">
                         <div className="mb-3"><DispatchOrderHeader dispatch={d} /></div>
                         {active?.id === d.id ? (
                           <div className="space-y-2">
@@ -393,7 +393,7 @@ export default function DespachosPage() {
                               value={carrier}
                               onChange={(e) => setCarrier(e.target.value)}
                               placeholder="Carrier (ej. Chilexpress)"
-                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]"
+                              className="w-full border border-pe-black/10 px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose"
                             />
                             {d.orderShippingCourierName && (
                               <p className="text-[11px] text-pe-muted">
@@ -405,7 +405,7 @@ export default function DespachosPage() {
                               value={tracking}
                               onChange={(e) => setTracking(e.target.value)}
                               placeholder="Código de seguimiento"
-                              className="w-full border border-[#EDE3D8] px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]"
+                              className="w-full border border-pe-black/10 px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose"
                             />
                             {error && <p className="text-red-500 text-xs">{error}</p>}
                             <div className="flex gap-2">
@@ -413,7 +413,7 @@ export default function DespachosPage() {
                                 type="button"
                                 onClick={() => dispatchOrder(d.id)}
                                 disabled={busy}
-                                className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
+                                className="bg-pe-black text-pe-offwhite px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
                               >
                                 Marcar despachado
                               </button>
@@ -422,14 +422,14 @@ export default function DespachosPage() {
                                 onClick={() => {
                                   void openOrderDetail(d.orderId);
                                 }}
-                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                               >
                                 Ver detalle
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setActive(null)}
-                                className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                                className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                               >
                                 Cancelar
                               </button>
@@ -440,7 +440,7 @@ export default function DespachosPage() {
                             <button
                               type="button"
                               onClick={() => startDispatch(d)}
-                              className="bg-[#1A1A1A] text-[#F8F4EF] px-4 py-2 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors"
+                              className="bg-pe-black text-pe-offwhite px-4 py-2 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors"
                             >
                               Despachar
                             </button>
@@ -448,7 +448,7 @@ export default function DespachosPage() {
                               type="button"
                               onClick={() => unclaim(d.id)}
                               disabled={busy}
-                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                             >
                               Liberar
                             </button>
@@ -457,7 +457,7 @@ export default function DespachosPage() {
                               onClick={() => {
                                 void openOrderDetail(d.orderId);
                               }}
-                              className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                              className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                             >
                               Ver detalle
                             </button>
@@ -476,7 +476,7 @@ export default function DespachosPage() {
                 {pending.length === 0 && <p className="text-pe-muted text-sm">Sin órdenes pendientes.</p>}
                 <ul className="space-y-2">
                   {pending.map((d) => (
-                    <li key={d.id} className="border border-[#EDE3D8] p-4 flex items-center justify-between">
+                    <li key={d.id} className="border border-pe-black/10 p-4 flex items-center justify-between">
                       <DispatchOrderHeader dispatch={d} />
                       <div className="flex items-center gap-2">
                         <button
@@ -484,7 +484,7 @@ export default function DespachosPage() {
                           onClick={() => {
                             void openOrderDetail(d.orderId);
                           }}
-                          className="border border-[#EDE3D8] px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                          className="border border-pe-black/10 px-4 py-2 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                         >
                           Ver detalle
                         </button>
@@ -516,7 +516,7 @@ export default function DespachosPage() {
                   <h2 className="text-[10px] tracking-widest uppercase text-pe-muted mb-3">Completados</h2>
                   <ul className="space-y-2">
                     {done.map((d) => (
-                      <li key={d.id} className="border border-[#EDE3D8] p-3 flex items-center justify-between gap-3 text-sm">
+                      <li key={d.id} className="border border-pe-black/10 p-3 flex items-center justify-between gap-3 text-sm">
                         <DispatchOrderHeader dispatch={d} compact />
                         <div className="flex items-center gap-2">
                           <span
@@ -529,7 +529,7 @@ export default function DespachosPage() {
                             onClick={() => {
                               void openOrderDetail(d.orderId);
                             }}
-                            className="border border-[#EDE3D8] px-3 py-1 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
+                            className="border border-pe-black/10 px-3 py-1 text-xs tracking-widest uppercase text-pe-muted hover:bg-gray-50"
                           >
                             Ver detalle
                           </button>
@@ -553,7 +553,7 @@ export default function DespachosPage() {
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="border border-[#EDE3D8] px-3 py-2 text-sm"
+                className="border border-pe-black/10 px-3 py-2 text-sm"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-pe-muted">
@@ -562,7 +562,7 @@ export default function DespachosPage() {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="border border-[#EDE3D8] px-3 py-2 text-sm"
+                className="border border-pe-black/10 px-3 py-2 text-sm"
               />
             </label>
             <div className="md:col-span-2 flex items-end gap-2">
@@ -573,7 +573,7 @@ export default function DespachosPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar por cualquier dato del listado..."
-                  className="w-full border border-[#EDE3D8] pl-9 pr-3 py-2 text-sm"
+                  className="w-full border border-pe-black/10 pl-9 pr-3 py-2 text-sm"
                 />
               </div>
               <button
@@ -582,7 +582,7 @@ export default function DespachosPage() {
                   setHistoryPage(0);
                   void loadHistory(0);
                 }}
-                className="px-4 py-2 bg-[#1A1A1A] text-[#F8F4EF] text-xs tracking-widest uppercase"
+                className="px-4 py-2 bg-pe-black text-pe-offwhite text-xs tracking-widest uppercase"
               >
                 Filtrar
               </button>
@@ -597,7 +597,7 @@ export default function DespachosPage() {
               Cargando historial...
             </div>
           ) : (
-            <div className="border border-[#EDE3D8] overflow-x-auto">
+            <div className="border border-pe-black/10 overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-pe-cream/45">
                   <tr>
@@ -622,7 +622,7 @@ export default function DespachosPage() {
                   {searchedHistoryRows.map((row) => {
                     const carrierOverride = resolveCarrierOverride(row);
                     return (
-                    <tr key={row.id} className="border-t border-[#EDE3D8]">
+                    <tr key={row.id} className="border-t border-pe-black/10">
                       <td className="px-3 py-2 text-pe-muted">
                         {row.orderCreatedAt ? new Date(row.orderCreatedAt).toLocaleString('es-CL') : '-'}
                       </td>
@@ -650,7 +650,7 @@ export default function DespachosPage() {
                           onClick={() => {
                             void openOrderDetail(row.orderId);
                           }}
-                          className="px-2 py-1 border border-[#EDE3D8] text-xs uppercase tracking-wider hover:bg-pe-cream/40"
+                          className="px-2 py-1 border border-pe-black/10 text-xs uppercase tracking-wider hover:bg-pe-cream/40"
                         >
                           Ver detalle
                         </button>
@@ -675,7 +675,7 @@ export default function DespachosPage() {
                   void loadHistory(next);
                 }}
                 disabled={historyPage <= 0 || historyLoading}
-                className="px-3 py-1.5 border border-[#EDE3D8] text-xs uppercase tracking-wider disabled:opacity-40"
+                className="px-3 py-1.5 border border-pe-black/10 text-xs uppercase tracking-wider disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -686,7 +686,7 @@ export default function DespachosPage() {
                   void loadHistory(next);
                 }}
                 disabled={historyLoading || historyTotalPages === 0 || historyPage >= historyTotalPages - 1}
-                className="px-3 py-1.5 border border-[#EDE3D8] text-xs uppercase tracking-wider disabled:opacity-40"
+                className="px-3 py-1.5 border border-pe-black/10 text-xs uppercase tracking-wider disabled:opacity-40"
               >
                 Siguiente
               </button>
@@ -697,8 +697,8 @@ export default function DespachosPage() {
 
       {orderModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4">
-          <div className="bg-pe-white w-full max-w-2xl border border-[#EDE3D8] max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#EDE3D8]">
+          <div className="bg-pe-white w-full max-w-2xl border border-pe-black/10 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-pe-black/10">
               <h3 className="text-base font-medium text-pe-charcoal">Detalle de orden</h3>
               <button
                 type="button"
@@ -727,7 +727,7 @@ export default function DespachosPage() {
                     <p><span className="font-semibold">Envío (courier):</span> {orderDetail.shippingCourierName || orderDetail.shippingCourierId || '-'}</p>
                     <p><span className="font-semibold">Envío (referencia):</span> {orderDetail.shippingAddressReference || '-'}</p>
                   </div>
-                  <ul className="border border-[#EDE3D8] divide-y divide-[#EDE3D8]">
+                  <ul className="border border-pe-black/10 divide-y divide-pe-charcoal/15">
                     {orderDetail.items.map((item) => (
                       <li key={item.id} className="px-3 py-2 flex items-center justify-between gap-2 text-sm">
                         <span>{item.productName} x{item.quantity}</span>

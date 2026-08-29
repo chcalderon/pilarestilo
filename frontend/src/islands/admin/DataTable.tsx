@@ -88,7 +88,7 @@ function BulkActionBar({ count, actions, onRun, onCancel }: BulkActionBarProps) 
               'flex items-center gap-1.5 font-sans text-[0.72rem] tracking-[0.08em] uppercase px-3 py-1.5 transition-colors duration-150',
               action.variant === 'danger'
                 ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-pe-black text-pe-offwhite hover:bg-[#3A3A3A]',
+                : 'bg-pe-black text-pe-offwhite hover:bg-pe-charcoal',
             ].join(' ')}
           >
             {action.icon}

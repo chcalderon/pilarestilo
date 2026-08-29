@@ -119,7 +119,7 @@ export default function RolesPermisosView() {
                       checked={matrix[role]?.has(viewKey) ?? false}
                       onChange={() => toggle(role, viewKey)}
                       disabled={!canManage}
-                      className="accent-[#B76E79] w-4 h-4"
+                      className="accent-pe-rose w-4 h-4"
                     />
                   </td>
                 ))}
@@ -144,7 +144,7 @@ export default function RolesPermisosView() {
             type="button"
             onClick={save}
             disabled={saving || !canManage}
-            className="bg-[#1A1A1A] text-[#F8F4EF] px-8 py-3 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50"
+            className="bg-pe-black text-pe-offwhite px-8 py-3 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50"
           >
             {saveLabel}
           </button>

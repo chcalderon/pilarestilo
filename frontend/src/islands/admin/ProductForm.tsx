@@ -97,11 +97,11 @@ function CategoryTreeItem({
 
   // Visual hierarchy by depth — stronger contrast, clearer rhythm
   const ROW_CLASS_BY_DEPTH = [
-    'text-[0.82rem] font-semibold text-[#1A1A1A] dark:text-[#E8DCC8] tracking-tight',
-    'text-[0.78rem] font-medium text-[#2A2A2A] dark:text-[#D6C8B5]',
-    'text-[0.74rem] text-[#4A4A4A] dark:text-[#C2B49E]',
+    'text-[0.82rem] font-semibold text-pe-black tracking-tight',
+    'text-[0.78rem] font-medium text-pe-charcoal',
+    'text-[0.74rem] text-pe-charcoal/75',
   ];
-  const rowClass = ROW_CLASS_BY_DEPTH[depth] ?? 'text-[0.7rem] text-[#6A6A6A] dark:text-[#A89C88]';
+  const rowClass = ROW_CLASS_BY_DEPTH[depth] ?? 'text-[0.7rem] text-pe-charcoal/55';
 
   const indent = depth * 16;
 
@@ -111,8 +111,8 @@ function CategoryTreeItem({
         className={[
           'flex items-center gap-1.5 py-1 pr-2 group transition-colors rounded-xs',
           isSelected
-            ? 'bg-[#B76E79]/8 dark:bg-[#E4B8BF]/12'
-            : 'hover:bg-[#B76E79]/5 dark:hover:bg-[#E4B8BF]/8',
+            ? 'bg-pe-rose/8'
+            : 'hover:bg-pe-rose/5',
         ].join(' ')}
         style={{ paddingLeft: `${indent + 4}px` }}
       >
@@ -121,13 +121,13 @@ function CategoryTreeItem({
           <button
             type="button"
             onClick={() => onToggleExpand(node.id)}
-            className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+            className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted hover:text-pe-rose-ink transition-colors"
             aria-label={isOpen ? 'Contraer' : 'Expandir'}
           >
             {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
         ) : (
-          <span className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted dark:text-[#D6C8B5]/30">
+          <span className="shrink-0 w-4 h-4 flex items-center justify-center text-pe-muted">
             <Tag size={9} />
           </span>
         )}
@@ -135,20 +135,20 @@ function CategoryTreeItem({
         <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
           <input
             type="checkbox"
-            className="w-3.5 h-3.5 shrink-0 accent-[#B76E79]"
+            className="w-3.5 h-3.5 shrink-0 accent-pe-rose"
             checked={isSelected}
             onChange={() => onToggle(node.id)}
           />
           {hasChildren && (
-            <span className="shrink-0 text-pe-muted dark:text-[#D6C8B5]/55 group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors">
+            <span className="shrink-0 text-pe-muted group-hover:text-pe-rose-ink transition-colors">
               {isOpen ? <FolderOpen size={12} /> : <Folder size={12} />}
             </span>
           )}
-          <span className={`font-sans leading-snug truncate group-hover:text-[#B76E79] dark:group-hover:text-[#E4B8BF] transition-colors ${rowClass}`}>
+          <span className={`font-sans leading-snug truncate group-hover:text-pe-rose-ink transition-colors ${rowClass}`}>
             {node.nameEs}
           </span>
           {hasChildren && (
-            <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45">
+            <span className="shrink-0 ml-auto font-sans text-[0.6rem] text-pe-muted">
               {descendantsSelected > 0
                 ? `${descendantsSelected}/${node.children.length}`
                 : node.children.length}
@@ -918,8 +918,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
   }
 
   const inputClass =
-    'w-full font-sans text-[0.82rem] border border-pe-black/30 dark:border-[#3F2A2F] px-2.5 py-1.5 bg-[#fffdfa] dark:bg-[#1F1518] text-[#1A1A1A] dark:text-[#E8DCC8] placeholder-pe-charcoal/40 dark:placeholder-[#D6C8B5]/35 focus:outline-hidden focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
-  const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-[#1A1A1A]/70 dark:text-[#D6C8B5]/65 mb-1';
+    'w-full font-sans text-[0.82rem] border border-pe-charcoal/30 px-2.5 py-1.5 bg-pe-white text-pe-black placeholder-pe-charcoal/40 focus:outline-hidden focus:border-pe-rose focus:ring-1 focus:ring-pe-rose/25 transition-colors';
+  const labelClass = 'block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-pe-charcoal mb-1';
   const errorClass = 'font-sans text-xs text-red-500 dark:text-red-300 mt-1';
 
   const categoryTree = buildCategoryTree(categories);
@@ -935,16 +935,16 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         onClick={(event) => {
           if (event.target === dialogRef.current) handleAttemptClose();
         }}
-        className="m-auto max-w-xl max-h-[92vh] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] overflow-y-auto p-3 sm:p-5 border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl backdrop:bg-[#1A1A1A]/68 dark:backdrop:bg-black/72"
+        className="m-auto max-w-xl max-h-[92vh] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] overflow-y-auto p-3 sm:p-5 border border-pe-charcoal/20 bg-pe-offwhite shadow-2xl backdrop:bg-pe-black/68"
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-['Cormorant_Garamond',serif] text-[#1A1A1A] dark:text-[#E8DCC8] text-xl font-light">
+          <h2 className="font-display text-pe-black text-xl font-light">
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </h2>
           <button
             type="button"
             onClick={handleAttemptClose}
-            className="inline-flex items-center justify-center w-8 h-8 text-[#3A3A3A]/40 dark:text-[#D6C8B5]/45 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+            className="inline-flex items-center justify-center w-8 h-8 text-pe-charcoal/40 hover:text-pe-rose-ink transition-colors"
             aria-label="Cerrar formulario"
           >
             <X size={16} />
@@ -1037,7 +1037,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
               <span className={labelClass}>
                 Condicion
               </span>
-              <div className="grid grid-cols-2 border border-pe-black/30 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1F1518]">
+              <div className="grid grid-cols-2 border border-pe-charcoal/30 bg-pe-white">
                 {[
                   { value: 'NEW' as const, label: 'Nuevo' },
                   { value: 'USED' as const, label: 'Usado' },
@@ -1049,8 +1049,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                     className={[
                       'px-3 py-2 font-sans text-[0.72rem] uppercase tracking-[0.1em] transition-colors',
                       form.condition === option.value
-                        ? 'bg-[#B76E79] text-white'
-                        : 'text-pe-muted dark:text-[#D6C8B5]/65 hover:bg-[#B76E79]/10',
+                        ? 'bg-pe-rose text-white'
+                        : 'text-pe-muted hover:bg-pe-rose/10',
                     ].join(' ')}
                     aria-pressed={form.condition === option.value}
                   >
@@ -1076,7 +1076,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 readOnly
                 disabled
               />
-              <p className="font-sans text-[0.66rem] text-pe-muted dark:text-[#D6C8B5]/55 mt-1">
+              <p className="font-sans text-[0.66rem] text-pe-muted mt-1">
                 Se calcula automaticamente desde {primaryAttribute.label.toLowerCase()} + {secondaryAttribute.label.toLowerCase()} + stock por variante.
               </p>
             </div>
@@ -1084,11 +1084,11 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 accent-[#B76E79]"
+                  className="w-4 h-4 accent-pe-rose"
                   checked={form.active}
                   onChange={(e) => setForm({ ...form, active: e.target.checked })}
                 />
-                <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8] select-none">Activo</span>
+                <span className="font-sans text-sm text-pe-black select-none">Activo</span>
               </div>
             </div>
           </div>
@@ -1110,13 +1110,13 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             </select>
           </div>
 
-          <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-3">
+          <div className="border border-pe-charcoal/12 bg-pe-white p-3 space-y-3">
             <div className="flex items-center justify-between">
               <p className={labelClass + ' mb-0'}>{variantSchema.title}</p>
               <button
                 type="button"
                 onClick={addVariantRow}
-                className="inline-flex items-center gap-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/10 transition-colors"
+                className="inline-flex items-center gap-1.5 border border-pe-rose/40 text-pe-rose-ink font-sans text-[0.66rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-pe-rose/10 transition-colors"
               >
                 + Agregar
               </button>
@@ -1124,7 +1124,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
 
             <div className="space-y-2">
               {variantRows.map((row, index) => (
-                <div key={row.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-black/10 dark:border-[#3F2A2F] p-2">
+                <div key={row.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-charcoal/10 p-2">
                   <div className="sm:col-span-3 space-y-1">
                     <p className={labelClass + ' mb-0'}>{primaryAttribute.label}</p>
                     <input
@@ -1149,8 +1149,8 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                               className={[
                                 'px-2 py-1 font-sans text-[0.62rem] uppercase tracking-[0.08em] border transition-colors',
                                 selected
-                                  ? 'border-[#B76E79] bg-[#B76E79]/12 text-[#8E4F58] dark:text-[#E4B8BF]'
-                                  : 'border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/65 hover:border-[#B76E79]/40',
+                                  ? 'border-pe-rose bg-pe-rose/12 text-pe-rose-ink'
+                                  : 'border-pe-charcoal/20 text-pe-muted hover:border-pe-rose/40',
                               ].join(' ')}
                             >
                               {option.label}
@@ -1168,7 +1168,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                         onChange={(e) => updateVariantAttributeValue(index, secondaryAttribute, e.target.value)}
                       />
                     )}
-                    <p className="font-sans text-[0.62rem] text-pe-muted dark:text-[#D6C8B5]/60">
+                    <p className="font-sans text-[0.62rem] text-pe-muted">
                       Valor guardado:{' '}
                       <span className="font-semibold">
                         {selectionsToLegacyVariant(row.attributes, parseSafeStock(row.stock), variantSchema).size || '-'}
@@ -1198,7 +1198,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 </div>
               ))}
             </div>
-            <p className="font-sans text-[0.62rem] text-pe-muted dark:text-[#D6C8B5]/55">
+            <p className="font-sans text-[0.62rem] text-pe-muted">
               {secondaryAttribute.allowMultiple
                 ? `Puedes seleccionar varias ${secondaryAttribute.label.toLowerCase()}s por fila. Se guardan como valor compuesto.`
                 : `La interfaz se adapta segun la metadata de categoria, sin asumir talla o color fijos.`}
@@ -1233,7 +1233,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleAssignHeroFromCurrentProduct('left')}
                   disabled={heroAssigningSlot !== null}
-                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center border border-pe-charcoal/20 text-pe-muted font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
                 >
                   {heroAssigningSlot === 'left' ? 'Asignando...' : 'Usar como Hero Izq'}
                 </button>
@@ -1241,7 +1241,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleAssignHeroFromCurrentProduct('right')}
                   disabled={heroAssigningSlot !== null}
-                  className="inline-flex items-center justify-center border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center border border-pe-charcoal/20 text-pe-muted font-sans text-[0.62rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
                 >
                   {heroAssigningSlot === 'right' ? 'Asignando...' : 'Usar como Hero Der'}
                 </button>
@@ -1249,14 +1249,14 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             )}
           </div>
 
-          <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] p-3 space-y-2">
+          <div className="border border-pe-charcoal/12 bg-pe-white p-3 space-y-2">
             <button
               type="button"
               onClick={() => setAiToolsOpen((prev) => !prev)}
               className="w-full flex items-center justify-between text-left"
               aria-expanded={aiToolsOpen}
             >
-              <span className="font-sans text-sm text-[#1A1A1A] dark:text-[#E8DCC8]">Utilitarios IA</span>
+              <span className="font-sans text-sm text-pe-black">Utilitarios IA</span>
               {aiToolsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
             {aiToolsOpen && (
@@ -1265,7 +1265,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleInferWithAi()}
                   disabled={aiRunning}
-                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 border border-pe-rose/35 text-pe-rose-ink font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-pe-rose/8 transition-colors disabled:opacity-50"
                 >
                   {aiRunning ? <Loader2 size={13} className="animate-spin" /> : null}
                   {aiRunning ? 'Procesando IA...' : 'Inferir texto con IA'}
@@ -1286,34 +1286,34 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   type="button"
                   onClick={() => void handleTransformWithAi()}
                   disabled={aiTransformRunning}
-                  className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-[#B76E79]/8 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 border border-pe-rose/35 text-pe-rose-ink font-sans text-[0.68rem] tracking-[0.1em] uppercase px-3 py-2 hover:bg-pe-rose/8 transition-colors disabled:opacity-50"
                 >
                   {aiTransformRunning ? <Loader2 size={13} className="animate-spin" /> : null}
                   {aiTransformRunning ? 'Transformando...' : 'Transformar imagen con IA'}
                 </button>
 
                 {aiTransformPreviewUrl && (
-                  <div className="border border-pe-black/12 dark:border-[#3F2A2F] bg-[#fffdfa] dark:bg-[#1A1012] p-2.5 space-y-2">
-                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-muted dark:text-[#D6C8B5]/65">
+                  <div className="border border-pe-charcoal/12 bg-pe-white p-2.5 space-y-2">
+                    <p className="font-sans text-[0.68rem] tracking-[0.08em] uppercase text-pe-muted">
                       Preview transformada
                     </p>
                     <img
                       src={aiTransformPreviewUrl}
                       alt="Previsualizacion transformada"
-                      className="w-full max-w-[220px] h-auto border border-pe-black/15 dark:border-[#3F2A2F]"
+                      className="w-full max-w-[220px] h-auto border border-pe-charcoal/15"
                     />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleApplyTransformPreview}
-                        className="inline-flex items-center gap-2 border border-[#B76E79]/35 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-[#B76E79]/8 transition-colors"
+                        className="inline-flex items-center gap-2 border border-pe-rose/35 text-pe-rose-ink font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:bg-pe-rose/8 transition-colors"
                       >
                         Reemplazar imagen actual
                       </button>
                       <a
                         href={aiTransformPreviewUrl}
                         download
-                        className="inline-flex items-center gap-2 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-charcoal dark:text-[#D6C8B5] font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:border-[#B76E79] hover:text-[#B76E79] transition-colors"
+                        className="inline-flex items-center gap-2 border border-pe-charcoal/20 text-pe-charcoal font-sans text-[0.64rem] tracking-[0.1em] uppercase px-2.5 py-1.5 hover:border-pe-rose hover:text-pe-rose-ink transition-colors"
                       >
                         Descargar preview
                       </a>
@@ -1330,28 +1330,28 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 <p className={labelClass + ' mb-0'}>Categorias</p>
                 <div className="flex items-center gap-2">
                   {selectedCatIds.length > 0 && (
-                    <span className="font-sans text-[0.65rem] text-[#B76E79] dark:text-[#E4B8BF]">
+                    <span className="font-sans text-[0.65rem] text-pe-rose-ink">
                       {selectedCatIds.length} {selectedCatIds.length === 1 ? 'seleccionada' : 'seleccionadas'}
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={expandAllCategories}
-                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose-ink transition-colors"
                   >
                     Expandir
                   </button>
-                  <span className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/25">|</span>
+                  <span className="font-sans text-[0.6rem] text-pe-muted">|</span>
                   <button
                     type="button"
                     onClick={collapseAllCategories}
-                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted dark:text-[#D6C8B5]/55 hover:text-[#B76E79] dark:hover:text-[#E4B8BF] transition-colors"
+                    className="font-sans text-[0.6rem] uppercase tracking-wider text-pe-muted hover:text-pe-rose-ink transition-colors"
                   >
                     Contraer
                   </button>
                 </div>
               </div>
-              <div className="border border-[#EDE3D8] dark:border-[#3F2A2F] bg-[#FDFAF6] dark:bg-[#1F1518] py-1.5 max-h-60 overflow-y-auto">
+              <div className="border border-pe-charcoal/20 bg-pe-white py-1.5 max-h-60 overflow-y-auto">
                 {categoryTree.map(root => (
                   <CategoryTreeItem
                     key={root.id}
@@ -1364,7 +1364,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                   />
                 ))}
               </div>
-              <p className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/45 mt-1">
+              <p className="font-sans text-[0.6rem] text-pe-muted mt-1">
                 Al seleccionar una subcategoría, su categoría padre se marca automáticamente.
               </p>
             </div>
@@ -1374,7 +1374,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#B76E79] text-white font-sans text-xs tracking-widest uppercase py-2.5 hover:bg-[#8E4F58] transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-pe-rose text-white font-sans text-xs tracking-widest uppercase py-2.5 hover:bg-pe-rose-deep transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -1391,7 +1391,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
             <button
               type="button"
               onClick={handleAttemptClose}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-xs tracking-widest uppercase py-2.5 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-charcoal/25 text-pe-black font-sans text-xs tracking-widest uppercase py-2.5 hover:border-pe-rose-ink hover:text-pe-rose-ink transition-colors"
             >
               <X size={14} />
               Cancelar
@@ -1409,19 +1409,19 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
           onClick={(event) => {
             if (event.target === confirmDialogRef.current) setUnsavedConfirmOpen(false);
           }}
-          className="m-auto max-w-sm w-[calc(100%-2rem)] border border-pe-black/20 dark:border-[#3F2A2F] bg-[#F8F4EF] dark:bg-[#181214] shadow-2xl p-4 sm:p-5 backdrop:bg-black/55"
+          className="m-auto max-w-sm w-[calc(100%-2rem)] border border-pe-charcoal/20 bg-pe-offwhite shadow-2xl p-4 sm:p-5 backdrop:bg-black/55"
         >
-          <h3 className="font-['Cormorant_Garamond',serif] text-xl text-[#1A1A1A] dark:text-[#E8DCC8] mb-2">
+          <h3 className="font-display text-xl text-pe-black mb-2">
             Salir sin guardar
           </h3>
-          <p className="font-sans text-[0.82rem] text-pe-charcoal dark:text-[#D6C8B5]/75 leading-relaxed">
+          <p className="font-sans text-[0.82rem] text-pe-charcoal leading-relaxed">
             Tienes cambios sin guardar en este producto. Si sales ahora, los cambios se perderan.
           </p>
           <div className="mt-4 flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               onClick={() => setUnsavedConfirmOpen(false)}
-              className="flex-1 inline-flex items-center justify-center border border-[#3A3A3A]/20 dark:border-[#3F2A2F] text-[#1A1A1A] dark:text-[#D6C8B5] font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:border-[#B76E79] hover:text-[#B76E79] dark:hover:border-[#E4B8BF] dark:hover:text-[#E4B8BF] transition-colors"
+              className="flex-1 inline-flex items-center justify-center border border-pe-charcoal/25 text-pe-black font-sans text-[0.68rem] tracking-[0.1em] uppercase py-2 hover:border-pe-rose-ink hover:text-pe-rose-ink transition-colors"
             >
               Seguir editando
             </button>

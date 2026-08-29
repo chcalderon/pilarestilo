@@ -829,14 +829,14 @@ export default function ProductTable() {
           <div className="relative flex-1 min-w-[260px]">
             <Search
               size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-muted dark:text-[#D6C8B5]/45 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-pe-muted pointer-events-none"
             />
             <input
               type="text"
               placeholder="Buscar por nombre, marca, descripcion, categoria... (ej: vestido activo nuevo)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full font-sans text-[0.78rem] border border-pe-black/12 dark:border-[#3F2A2F] bg-pe-white dark:bg-[#1F1518] pl-9 pr-9 py-2 text-pe-charcoal dark:text-[#E8DCC8] placeholder:text-pe-muted dark:placeholder:text-[#D6C8B5]/50 focus:outline-hidden focus:border-pe-rose/50 transition-colors"
+              className="w-full font-sans text-[0.78rem] border border-pe-charcoal/12 bg-pe-white pl-9 pr-9 py-2 text-pe-charcoal placeholder:text-pe-muted focus:outline-hidden focus:border-pe-rose/50 transition-colors"
             />
             {searchInput && (
               <button
@@ -903,7 +903,7 @@ export default function ProductTable() {
         {/* Active filter chips */}
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted dark:text-[#D6C8B5]/45">
+            <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
               Filtros activos:
             </span>
             {activeChips.map((chip) => (
@@ -911,7 +911,7 @@ export default function ProductTable() {
                 type="button"
                 key={chip.label}
                 onClick={chip.onClear}
-                className="inline-flex items-center gap-1 bg-pe-rose/10 dark:bg-[#E4B8BF]/12 border border-pe-rose/30 dark:border-[#E4B8BF]/30 text-pe-rose-ink dark:text-[#E4B8BF] font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
+                className="inline-flex items-center gap-1 bg-pe-rose/10 border border-pe-rose/30 text-pe-rose-ink font-sans text-[0.66rem] tracking-[0.06em] uppercase px-2 py-0.5 hover:bg-pe-rose/15 transition-colors"
                 title={`Quitar filtro ${chip.label}`}
               >
                 {chip.label}

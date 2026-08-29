@@ -2834,7 +2834,7 @@ export default function SystemSettingsPanel() {
           type="button"
           onClick={() => void handleSave()}
           disabled={saving || !canUpdateSettings}
-          className="inline-flex items-center gap-2 bg-pe-black px-4 py-2.5 font-sans text-[0.68rem] uppercase tracking-[0.16em] text-pe-offwhite hover:bg-[#3A3A3A] disabled:opacity-50"
+          className="inline-flex items-center gap-2 bg-pe-black px-4 py-2.5 font-sans text-[0.68rem] uppercase tracking-[0.16em] text-pe-offwhite hover:bg-pe-charcoal disabled:opacity-50"
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           {canUpdateSettings ? 'Guardar configuracion' : 'Solo lectura'}

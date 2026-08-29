@@ -54,7 +54,7 @@ function StatCard({ label, value, sub }: { readonly label: string; readonly valu
   return (
     <div className="border border-[var(--pe-border)] p-4 flex flex-col gap-1">
       <span className="text-[10px] tracking-widest uppercase text-[var(--pe-muted)]">{label}</span>
-      <span className="text-2xl font-bold font-[Cormorant_Garamond,serif]">{value}</span>
+      <span className="text-2xl font-bold font-display">{value}</span>
       {sub && <span className="text-xs text-[var(--pe-muted)]">{sub}</span>}
     </div>
   );
@@ -76,23 +76,23 @@ function PaymentsAwaitingCard({ count }: { readonly count: number }) {
     <a
       href="/admin/payments"
       /*
-       * A left rule and a filled count, not a tinted background. The tint was a light-mode
-       * value and vanished on the dark panel, so the one card meant to be noticed read as the
-       * quietest. A border and a solid figure carry in both themes without a second palette.
+       * A full danger border, a leading icon and a solid figure, not a tinted background or a
+       * side rule. The tint was a light-mode value and vanished on the dark panel; the rule was
+       * a border-left accent. The pe-danger token carries the "needs attention" in both themes.
        */
-      className="group border border-[var(--pe-border)] border-l-4 border-l-[#cb6070] p-4
+      className="group border border-pe-danger/40 p-4
         flex flex-col gap-1 transition-colors
-        hover:border-[#cb6070] hover:bg-[#cb6070]/10
-        focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#cb6070]"
+        hover:border-pe-danger hover:bg-pe-danger/5
+        focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-danger"
     >
-      <span className="text-[10px] tracking-widest uppercase text-[#cb6070] flex items-center gap-1.5">
+      <span className="text-[10px] tracking-widest uppercase text-pe-danger-ink flex items-center gap-1.5">
         <AlertCircle size={11} aria-hidden="true" />
         Pagos por revisar
       </span>
-      <span className="text-2xl font-bold font-[Cormorant_Garamond,serif] text-[#cb6070]">
+      <span className="text-2xl font-bold font-display text-pe-danger-ink">
         {count}
       </span>
-      <span className="text-xs text-[var(--pe-muted)] group-hover:text-[#cb6070] transition-colors">
+      <span className="text-xs text-[var(--pe-muted)] group-hover:text-pe-danger-ink transition-colors">
         {count === 1 ? 'comprobante esperando' : 'comprobantes esperando'} →
       </span>
     </a>

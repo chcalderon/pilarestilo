@@ -59,25 +59,25 @@ export default function WorkerAssignmentModal({ userId, userFullName, currentRol
           <div>
             <label htmlFor="wam-role" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Rol</label>
             <select id="wam-role" value={role} onChange={e => setRole(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]">
+              className="w-full border border-pe-black/10 bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose">
               {WORKER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label htmlFor="wam-vigency-start" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Inicio vigencia</label>
             <input id="wam-vigency-start" type="date" value={vigencyStart} onChange={e => setVigencyStart(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
+              className="w-full border border-pe-black/10 bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose" />
           </div>
           <div>
             <label htmlFor="wam-vigency-end" className="block text-[10px] tracking-widest uppercase text-pe-muted mb-1">Fin vigencia (opcional)</label>
             <input id="wam-vigency-end" type="date" value={vigencyEnd} onChange={e => setVigencyEnd(e.target.value)}
-              className="w-full border border-[#EDE3D8] bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-[#B76E79]" />
+              className="w-full border border-pe-black/10 bg-transparent px-3 py-2 text-sm focus:outline-hidden focus:border-pe-rose" />
           </div>
         </div>
         {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
         <div className="flex gap-3 mt-6">
           <button type="button" onClick={assign} disabled={saving}
-            className="flex-1 bg-[#1A1A1A] text-[#F8F4EF] py-2.5 text-xs tracking-widest uppercase hover:bg-[#B76E79] transition-colors disabled:opacity-50">
+            className="flex-1 bg-pe-black text-pe-offwhite py-2.5 text-xs tracking-widest uppercase hover:bg-pe-rose transition-colors disabled:opacity-50">
             {saving ? 'Guardando...' : 'Asignar rol'}
           </button>
           {WORKER_ROLES.includes(currentRole) && (

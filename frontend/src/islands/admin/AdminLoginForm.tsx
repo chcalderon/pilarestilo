@@ -107,7 +107,7 @@ export default function AdminLoginForm({ redirect, backendUnavailable = false }:
       </div>
 
       {error && (
-        <p className="font-sans text-[0.78rem] font-medium text-[#FFF4F6] bg-[#8E4F58]/78 px-3 py-2 border border-[#E8C9CC]/55 shadow-[inset_3px_0_0_0_#E8C9CC]">
+        <p className="font-sans text-[0.78rem] font-medium text-pe-danger-ink bg-pe-danger-surface px-3 py-2 border border-pe-danger/40">
           {error}
         </p>
       )}

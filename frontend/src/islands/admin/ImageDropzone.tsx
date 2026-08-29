@@ -190,7 +190,7 @@ export default function ImageDropzone({
   const dragging = state === 'dragging';
   const uploading = state === 'uploading';
 
-  let idleBorderClass = 'border-pe-black/20 bg-pe-cream/30 hover:border-pe-rose/40 dark:border-[#3F2A2F] dark:bg-[#1F1518] dark:hover:border-[#E4B8BF]/40';
+  let idleBorderClass = 'border-pe-black/20 bg-pe-cream/30 hover:border-pe-rose/40';
   if (dragging) {
     idleBorderClass = 'border-pe-rose bg-pe-rose/5 dark:bg-pe-rose/10';
   } else if (state === 'error') {
@@ -214,7 +214,7 @@ export default function ImageDropzone({
           'relative h-48 w-full overflow-hidden cursor-pointer select-none',
           !preview
             ? ['border-2 border-dashed transition-colors', idleBorderClass].join(' ')
-            : 'bg-pe-cream/40 dark:bg-[#0F0A0C]',
+            : 'bg-pe-cream/40',
         ].join(' ')}
         onClick={() => !uploading && inputRef.current?.click()}
         onDragEnter={e => { e.preventDefault(); setState('dragging'); }}
@@ -237,8 +237,8 @@ export default function ImageDropzone({
         ) : (
           /* Placeholder — shown when no image yet */
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-            <ImageIcon size={28} className="text-pe-muted dark:text-[#D6C8B5]/30" strokeWidth={1.25} />
-            <span className="font-sans text-[0.68rem] text-pe-muted dark:text-[#D6C8B5]/55 text-center px-6 leading-relaxed whitespace-pre-line">
+            <ImageIcon size={28} className="text-pe-muted" strokeWidth={1.25} />
+            <span className="font-sans text-[0.68rem] text-pe-muted text-center px-6 leading-relaxed whitespace-pre-line">
               {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
             </span>
           </div>
@@ -289,8 +289,8 @@ export default function ImageDropzone({
         {/* No-image upload hint overlay on hover */}
         {!preview && !uploading && !dragging && (
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-1.5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-            <Upload size={11} className="text-pe-muted dark:text-[#D6C8B5]/55" />
-            <span className="font-sans text-[0.6rem] text-pe-muted dark:text-[#D6C8B5]/55">Clic para seleccionar</span>
+            <Upload size={11} className="text-pe-muted" />
+            <span className="font-sans text-[0.6rem] text-pe-muted">Clic para seleccionar</span>
           </div>
         )}
       </div>
@@ -298,7 +298,7 @@ export default function ImageDropzone({
       <button
         type="button"
         onClick={() => void openCamera()}
-        className="inline-flex items-center justify-center gap-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/65 font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-[#B76E79]/50 hover:text-[#8E4F58] dark:hover:text-[#E4B8BF] transition-colors disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-1.5 border border-pe-charcoal/20 text-pe-muted font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
         disabled={uploading || cameraStarting}
       >
         {cameraStarting ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
@@ -329,8 +329,8 @@ export default function ImageDropzone({
 
       {cameraOpen && (
         <div className="fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-4">
-          <div className="w-full max-w-[720px] bg-pe-white dark:bg-[#1B1215] border border-pe-black/20 dark:border-[#3F2A2F] p-3 space-y-3">
-            <p className="font-sans text-[0.72rem] uppercase tracking-[0.1em] text-pe-muted dark:text-[#D6C8B5]/75">
+          <div className="w-full max-w-[720px] bg-pe-white border border-pe-charcoal/20 p-3 space-y-3">
+            <p className="font-sans text-[0.72rem] uppercase tracking-[0.1em] text-pe-muted">
               Camara
             </p>
             <div className="w-full bg-black">
@@ -346,14 +346,14 @@ export default function ImageDropzone({
               <button
                 type="button"
                 onClick={closeCamera}
-                className="px-3 py-1.5 border border-pe-black/20 dark:border-[#3F2A2F] text-pe-muted dark:text-[#D6C8B5]/70 font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:border-[#B76E79]/40 transition-colors"
+                className="px-3 py-1.5 border border-pe-charcoal/20 text-pe-muted font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:border-pe-rose/40 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => void captureCameraPhoto()}
-                className="px-3 py-1.5 border border-[#B76E79]/40 text-[#8E4F58] dark:text-[#E4B8BF] font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:bg-[#B76E79]/10 transition-colors"
+                className="px-3 py-1.5 border border-pe-rose/40 text-pe-rose-ink font-sans text-[0.64rem] uppercase tracking-[0.1em] hover:bg-pe-rose/10 transition-colors"
               >
                 Capturar
               </button>
