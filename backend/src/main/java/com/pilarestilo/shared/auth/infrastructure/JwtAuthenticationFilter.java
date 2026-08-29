@@ -58,6 +58,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // A token minted before this user's last password change is dead, on every device. A token
+        // with no "sv" claim predates the feature entirely and counts as version 1, so a deploy
+        // does not log everyone out. Same outcome as an expired token: the request stays anonymous.
+        Integer tokenSessionVersion = claims.get("sv", Integer.class);
+        int effectiveSessionVersion = tokenSessionVersion != null ? tokenSessionVersion : 1;
+        if (effectiveSessionVersion != user.getSessionVersion()) {
+            return;
+        }
+
         String email = claims.get("email", String.class);
         UserRole role = UserRole.valueOf(claims.get("role", String.class));
         @SuppressWarnings("unchecked")

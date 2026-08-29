@@ -150,6 +150,52 @@ class JwtAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
+    @Test
+    void aTokenWhoseSessionVersionIsBehindTheUsersIsRejected() throws Exception {
+        validToken();
+        User user = User.reconstruct(userId, "ana@correo.cl", "Ana", UserRole.CUSTOMER, true, "hash", Instant.now());
+        user.setSessionVersion(3);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(claims.get("sv", Integer.class)).thenReturn(2);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void aTokenWithNoSvClaimIsTreatedAsVersion1AndStillAuthenticates() throws Exception {
+        validToken();
+        activeUser();
+        when(claims.get("permissions", List.class)).thenReturn(List.of("productos"));
+        when(claims.get("permissionCodes", List.class)).thenReturn(List.of("products.read"));
+        when(claims.get("sv", Integer.class)).thenReturn(null);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void aTokenWhoseSessionVersionMatchesTheUsersAuthenticates() throws Exception {
+        validToken();
+        User user = User.reconstruct(userId, "ana@correo.cl", "Ana", UserRole.CUSTOMER, true, "hash", Instant.now());
+        user.setSessionVersion(5);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        lenient().when(claims.get("email", String.class)).thenReturn("ana@correo.cl");
+        lenient().when(claims.get("role", String.class)).thenReturn("CUSTOMER");
+        when(claims.get("permissions", List.class)).thenReturn(List.of("productos"));
+        when(claims.get("permissionCodes", List.class)).thenReturn(List.of("products.read"));
+        when(claims.get("sv", Integer.class)).thenReturn(5);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+        verify(filterChain).doFilter(request, response);
+    }
+
     private void validToken() {
         when(request.getHeader("Authorization")).thenReturn("Bearer good-token");
         when(jwtTokenProvider.isValid("good-token")).thenReturn(true);
@@ -162,5 +208,6 @@ class JwtAuthenticationFilterTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         lenient().when(claims.get("email", String.class)).thenReturn("ana@correo.cl");
         lenient().when(claims.get("role", String.class)).thenReturn("CUSTOMER");
+        lenient().when(claims.get("sv", Integer.class)).thenReturn(1);
     }
 }
