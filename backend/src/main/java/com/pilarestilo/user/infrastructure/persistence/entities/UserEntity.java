@@ -36,6 +36,9 @@ public class UserEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "session_version", nullable = false)
+    private int sessionVersion = 1;
+
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
@@ -76,6 +79,9 @@ public class UserEntity {
 
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
+    public int getSessionVersion() { return sessionVersion; }
+    public void setSessionVersion(int sessionVersion) { this.sessionVersion = sessionVersion; }
 
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }

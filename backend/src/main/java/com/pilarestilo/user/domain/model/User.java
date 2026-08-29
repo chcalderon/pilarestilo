@@ -20,6 +20,7 @@ public class User {
     private UserRole role;
     private boolean active;
     private String passwordHash;
+    private int sessionVersion = 1;
     private String avatarUrl;
     private boolean avatarManuallySet;
     private Instant createdAt;
@@ -116,6 +117,7 @@ public class User {
     public UserRole getRole() { return role; }
     public boolean isActive() { return active; }
     public String getPasswordHash() { return passwordHash; }
+    public int getSessionVersion() { return sessionVersion; }
     public String getAvatarUrl() { return avatarUrl; }
     public boolean isAvatarManuallySet() { return avatarManuallySet; }
     public Instant getCreatedAt() { return createdAt; }
@@ -167,6 +169,23 @@ public class User {
             throw new DomainException("User password hash cannot be blank");
         }
         this.passwordHash = newPasswordHash;
+    }
+
+    /**
+     * Bumped on every password change, self-service or admin-forced. Every JWT carries the value
+     * it was minted with; the auth filter rejects a token whose value is behind this one, which
+     * is how a reset logs every existing session out without a revocation list.
+     */
+    public void incrementSessionVersion() {
+        this.sessionVersion++;
+    }
+
+    /** Rehydration only — carries the persisted {@code session_version} back onto the aggregate. */
+    public void setSessionVersion(int sessionVersion) {
+        if (sessionVersion < 1) {
+            throw new DomainException("User session version must be at least 1");
+        }
+        this.sessionVersion = sessionVersion;
     }
 
     public void updatePhone(String newPhone) {
