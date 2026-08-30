@@ -39,7 +39,14 @@ services:
     container_name: pe_kafka
     profiles: ["kafka"]
     restart: unless-stopped
+    # Heap caps across the JVM services (this file). Without them every JVM sees the host's
+    # 12 GB and MaxRAMPercentage lets its heap grow toward ~3 GB; six of them overcommit and a
+    # ProductUpdated fan-out makes them all GC at once (prod load hit 87, 2026-08-30). mem_limit
+    # sets the cgroup ceiling; JAVA_TOOL_OPTIONS makes the JVM size its heap against that ceiling.
+    # Deliberately tight for a 12 GB box — revisit if a service OOMs or if the box is upsized.
+    mem_limit: 1300m
     environment:
+      KAFKA_HEAP_OPTS: "-Xmx1g -Xms1g"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -59,7 +66,9 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    mem_limit: 2g          # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
@@ -160,7 +169,9 @@ services:
     container_name: pe_product_service
     profiles: ["microservices"]
     restart: unless-stopped
+    mem_limit: 820m         # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
@@ -192,7 +203,9 @@ services:
     container_name: pe_inventory_service
     profiles: ["microservices"]
     restart: unless-stopped
+    mem_limit: 820m         # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
@@ -219,7 +232,9 @@ services:
     container_name: pe_order_service
     profiles: ["microservices"]
     restart: unless-stopped
+    mem_limit: 1g           # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
@@ -249,7 +264,9 @@ services:
     container_name: pe_payment_service
     profiles: ["microservices"]
     restart: unless-stopped
+    mem_limit: 820m         # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
@@ -278,7 +295,9 @@ services:
     container_name: pe_notification_service
     profiles: ["microservices"]
     restart: unless-stopped
+    mem_limit: 1g           # heap cap — see the note on the kafka service
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
       SERVER_PORT: "8085"
       # Shared pilarestilo database, read-only view (orders/users/payments/documents/returns/settings).
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
