@@ -51,19 +51,6 @@ public class DiscountRedemptionRepositoryAdapter implements DiscountRedemptionRe
         }
     }
 
-    /**
-     * Binds the order with a conditional UPDATE rather than a load-then-set, so a row that was
-     * released or already bound in the meantime affects nothing and is reported instead of
-     * silently overwritten.
-     */
-    @Override
-    @Transactional
-    public void attachOrder(UUID redemptionId, UUID orderId) {
-        if (usageRepository.attachOrder(redemptionId, orderId) == 0) {
-            throw new DomainException("La reserva del descuento ya no está disponible");
-        }
-    }
-
     @Override
     @Transactional
     public boolean settle(UUID orderId) {

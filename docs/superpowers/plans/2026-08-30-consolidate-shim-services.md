@@ -26,9 +26,13 @@
 >   blocks + metadata; fixed 8 tests, deleted `InventoryServiceRemoteDelegationTest` + the
 >   `createRemotely`/`remoteWrite_*` block of `CreateOrderUseCaseTest`. `spring-boot-restclient`
 >   KEPT (MercadoPago gateway, ProductAI, n8n clients use `RestClient`).
->   **Left for a possible Phase 2b:** the now-unused public helpers `CreateOrderCommand.withResolvedDiscount`,
->   `DiscountRedemptionService.reserveWithoutOrder`/`attachOrder` (+ their port/adapter/repo chain) —
->   removing them changes a record shape and a port, so it needs its own pass.
+> - **Phase 2b — DONE 2026-08-30.** Removed the last dead delegated-write helpers:
+>   `CreateOrderCommand.resolvedDiscountId` component + `withResolvedDiscount()` + the redundant
+>   11-arg constructor; `DiscountRedemptionService.reserveWithoutOrder()`/`attachOrder()`;
+>   `DiscountRedemptionRepository.attachOrder` (port) + its adapter override + the
+>   `DiscountCodeUsageJpaRepository.attachOrder` `@Modifying` query. No schema change — `order_id`
+>   stays nullable for pre-V67 rows. `reserve()` is now always called with a saved order. No test
+>   touched the removed methods; `mvn -o test` green.
 
 **Goal:** Stop deploying `product-service`, `inventory-service`, `order-service` and
 `payment-service`; the monolith serves all of their routes already.

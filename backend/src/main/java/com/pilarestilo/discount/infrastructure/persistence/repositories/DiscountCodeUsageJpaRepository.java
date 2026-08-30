@@ -34,19 +34,6 @@ public interface DiscountCodeUsageJpaRepository extends JpaRepository<DiscountCo
         """, nativeQuery = true)
     int settleForOrder(@Param("orderId") UUID orderId);
 
-    /**
-     * Binds a reservation made before its order existed. Conditional on the row still being
-     * PENDING and unbound, so a release that landed first, or a second attach, changes nothing
-     * and is reported through the affected-row count.
-     */
-    @Modifying
-    @Query(value = """
-        UPDATE discount_code_usages
-           SET order_id = :orderId
-         WHERE id = :redemptionId AND status = 'PENDING' AND order_id IS NULL
-        """, nativeQuery = true)
-    int attachOrder(@Param("redemptionId") UUID redemptionId, @Param("orderId") UUID orderId);
-
     /** Releases the order's pending redemption. Same idempotency guard as settle. */
     @Modifying
     @Query(value = """
