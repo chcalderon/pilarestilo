@@ -3,6 +3,24 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this
 > plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status 2026-08-30 (inline execution):**
+> - **Task 1 (infra) — DONE**, commit `668361b`. Extra vs the plan: the 4 `APP_*_REMOTE_ENABLED`
+>   flags are pinned to `"false"` **directly in `docker-compose.yml`** (not `${VAR:-false}`), so a
+>   stale `=true` in the VPS `.env` can't make the monolith delegate to a deleted service. The
+>   `.env`/`.env.example` flag lines were removed (compose is the source of truth now).
+> - **Task 2 (delete codebases + CI) — DONE**, commit `8efbce9`. notification-service gained a
+>   Dependabot entry it was missing; CodeQL matrix now names it.
+> - **Task 3 (docs) — DONE**, commit `831f252`. Also touched `docs/roadmap.md` (P6 revert note),
+>   `docs/notification-database-split.md` (historical header) and the discount-code note in
+>   `docs/architecture.md`.
+> - **Task 4 — Step 1 (local smoke) PASS**: only `pe_notification_service` among the extracted;
+>   14 purchases to DELIVERED, 0 failed, 68/68 checks, 0 backend errors; `docker stats` all under
+>   `mem_limit`. Step 2 skipped (backend/ unchanged). Steps 3–4 (merge → master deploy + prod
+>   smoke) pending the owner's go.
+> - **Phase 2** (delete the monolith's dormant `order`/`payment` remote clients + the
+>   inventory remote-write branch — touches `backend/src`, needs the real `mvn verify`) is a
+>   separate later commit.
+
 **Goal:** Stop deploying `product-service`, `inventory-service`, `order-service` and
 `payment-service`; the monolith serves all of their routes already.
 
