@@ -1,9 +1,10 @@
 version: 2
 
 # The "18 CVEs -> 0" incident (see project memory) happened because dependency pins live only in
-# the monolith by convention -- the four extracted services drifted out of sync silently until a
-# manual audit caught it, payment-service alone carrying nine. These entries open the fix
-# themselves instead of waiting for the next manual audit.
+# the monolith by convention -- the extracted services drifted out of sync silently until a manual
+# audit caught it. These entries open the fix themselves. product/inventory/order/payment-service
+# were consolidated back into the monolith on 2026-08-30; notification-service is the one that
+# remains.
 #
 # Target branch is develop, not master: PRs go through the normal Docker-verified path before a
 # human merges to master, same as every other change -- see CLAUDE.md.
@@ -21,49 +22,13 @@ updates:
           - patch
 
   - package-ecosystem: maven
-    directory: /services/order-service
+    directory: /services/notification-service
     target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      order-service-minor-patch:
-        update-types:
-          - minor
-          - patch
-
-  - package-ecosystem: maven
-    directory: /services/inventory-service
-    target-branch: develop
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    groups:
-      inventory-service-minor-patch:
-        update-types:
-          - minor
-          - patch
-
-  - package-ecosystem: maven
-    directory: /services/product-service
-    target-branch: develop
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    groups:
-      product-service-minor-patch:
-        update-types:
-          - minor
-          - patch
-
-  - package-ecosystem: maven
-    directory: /services/payment-service
-    target-branch: develop
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
-    groups:
-      payment-service-minor-patch:
+      notification-service-minor-patch:
         update-types:
           - minor
           - patch

@@ -38,18 +38,16 @@ jobs:
         run: mvn -B -P pmd org.apache.maven.plugins:maven-pmd-plugin:3.28.0:check
         continue-on-error: true
 
-  # The four extracted services were never built here. Their first compilation happened on the VPS,
-  # during the deploy, so a broken one surfaced as a failed production deploy rather than a failed
-  # pull request -- and their tests, seventy-nine of them, ran nowhere at all. That is the same
-  # blind spot that let them ship without the CVE pins the monolith already carried and answer
-  # catalogue queries differently from it.
+  # notification-service is the one remaining extracted service (its own DB, Kafka-only). Built
+  # and tested here; product/inventory/order/payment-service were consolidated back into the
+  # monolith on 2026-08-30.
   service-tests:
     name: Service Tests (${{ matrix.service }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: [order-service, inventory-service, product-service, payment-service, notification-service]
+        service: [notification-service]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}

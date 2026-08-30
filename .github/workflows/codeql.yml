@@ -28,18 +28,9 @@ jobs:
           - name: backend
             language: java-kotlin
             working-directory: backend
-          - name: order-service
+          - name: notification-service
             language: java-kotlin
-            working-directory: services/order-service
-          - name: inventory-service
-            language: java-kotlin
-            working-directory: services/inventory-service
-          - name: product-service
-            language: java-kotlin
-            working-directory: services/product-service
-          - name: payment-service
-            language: java-kotlin
-            working-directory: services/payment-service
+            working-directory: services/notification-service
           - name: frontend
             language: javascript-typescript
             working-directory: frontend
