@@ -10,12 +10,23 @@ real TRANSFER checkout flow from **9 concurrent buyers + 1 admin** for ~10 minut
 
 ```bash
 # full compose stack must be up (kafka + microservices + cache + observability)
-bash scripts/loadtest/prep.sh        # snapshot + inflate stock + provider -> LOG
+bash scripts/loadtest/prep.sh        # snapshot + inflate stock + provider LOG + 2 extra admins
 bash scripts/loadtest/run.sh         # k6 in docker on infra_pe_net + resource sampler
 bash scripts/loadtest/cleanup.sh     # restore + delete simulated data + verify
 ```
 
-Knobs: `BUYERS=5 HOLD=4m bash scripts/loadtest/run.sh`.
+Knobs (env): `BUYERS` (default 9), `ADMIN_VUS` (default 1, max 3 — the CMS operators),
+`HOLD` (default 8m), `ADMIN_DURATION` (default 9m30s), `LABEL` (artifact suffix).
+
+Staged run to find the ceiling — `prep` once, `cleanup` once at the end:
+
+```bash
+bash scripts/loadtest/prep.sh
+for n in 15 30 50; do
+  BUYERS=$n ADMIN_VUS=3 HOLD=6m ADMIN_DURATION=7m30s LABEL=b$n bash scripts/loadtest/run.sh
+done
+bash scripts/loadtest/cleanup.sh
+```
 
 ## Artifacts (gitignored)
 

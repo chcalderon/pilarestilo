@@ -62,6 +62,8 @@ playwright-report/
 scripts/loadtest/.stock-snapshot.sql
 scripts/loadtest/.provider-snapshot.txt
 scripts/loadtest/.run-start.txt
-scripts/loadtest/k6-output.log
+scripts/loadtest/k6-*.log
+scripts/loadtest/summary-*.json
+scripts/loadtest/metrics-*.log
 scripts/loadtest/summary.json
 scripts/loadtest/metrics-sample.log

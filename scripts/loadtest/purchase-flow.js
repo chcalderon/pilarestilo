@@ -12,10 +12,22 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
 
+// The buyer polls GET /payments/order/{id} until the payment row is registered off OrderCreated
+// (Kafka, async) — the 404s in that window are expected, not failures. Everything else must be 2xx.
+http.setResponseCallback(http.expectedStatuses({ min: 200, max: 299 }, 404));
+
 const BASE = __ENV.BASE_URL || 'http://backend:8080/api';
 const BUYERS = Number(__ENV.BUYERS || 9);
+const ADMIN_VUS = Number(__ENV.ADMIN_VUS || 1);
 const HOLD = __ENV.HOLD || '8m';
 const ADMIN_DURATION = __ENV.ADMIN_DURATION || '9m30s';
+
+// CMS operator accounts. loadadmin1/2 are created by prep.sh; all use admin2026.
+const ADMIN_ACCOUNTS = [
+  { email: 'admin@pilarestilo.com', password: 'admin2026' },
+  { email: 'loadadmin1@loadtest.local', password: 'admin2026' },
+  { email: 'loadadmin2@loadtest.local', password: 'admin2026' },
+];
 const PASSWORD = 'LoadTest2026!';
 const PROOF_URL = 'https://placehold.co/400x600/png';
 
@@ -45,7 +57,7 @@ export const options = {
     admin: {
       executor: 'constant-vus',
       exec: 'admin',
-      vus: 1,
+      vus: ADMIN_VUS,
       duration: ADMIN_DURATION,
       gracefulStop: '30s',
     },
@@ -72,14 +84,18 @@ function j(res) {
 // ---------------------------------------------------------------- setup
 
 export function setup() {
-  const login = http.post(`${BASE}/auth/login`, JSON.stringify({
-    email: 'admin@pilarestilo.com',
-    password: 'admin2026',
-  }), { headers: { 'Content-Type': 'application/json' } });
-  if (login.status !== 200) {
-    throw new Error(`admin login failed: ${login.status} ${login.body}`);
+  const admins = [];
+  for (let i = 0; i < ADMIN_VUS && i < ADMIN_ACCOUNTS.length; i++) {
+    const a = ADMIN_ACCOUNTS[i];
+    const r = http.post(`${BASE}/auth/login`, JSON.stringify(a),
+      { headers: { 'Content-Type': 'application/json' } });
+    if (r.status !== 200) {
+      throw new Error(`admin login failed for ${a.email}: ${r.status} ${r.body}`);
+    }
+    const body = j(r);
+    admins.push({ token: body.accessToken, userId: body.userId });
   }
-  const admin = j(login);
+  const admin = admins[0];
 
   const settings = j(http.get(`${BASE}/system-settings/public`));
   const zones = safeArr(settings.shippingZonesJson).filter((z) => z && z.code && z.active !== false);
@@ -114,7 +130,8 @@ export function setup() {
   if (!products.length) throw new Error('no in-stock product for checkout');
 
   return {
-    adminToken: admin.accessToken,
+    admins,                       // [{token, userId}] — one per CMS operator VU
+    adminToken: admin.token,      // buyers reuse the first for the payment-row bootstrap
     adminUserId: admin.userId,
     zoneCode: zones[zones.length - 1].code,
     courierId: couriers[couriers.length - 1].id,
@@ -239,37 +256,55 @@ export function buyer(data) {
 
 // ---------------------------------------------------------------- admin
 
+// one CMS operator per VU, each working a disjoint slice of the queue so operators
+// don't fight over the same order (that's the realistic "you take these, I take those").
+const boletaDone = new Set();
+
+function mine(id, count, idx) {
+  const h = parseInt(String(id).replace(/-/g, '').slice(-3), 16);
+  return (h % count) === idx;
+}
+
 export function admin(data) {
-  const A = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.adminToken}` } };
+  const n = data.admins.length;
+  const idx = (__VU - 1) % n;
+  const me = data.admins[idx];
+  const A = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${me.token}` } };
   const s0 = Date.now();
 
+  // 1. approve payments that have a proof (only this operator's slice)
   const pl = http.get(`${BASE}/payments?size=100`, A);
   if (pl.status === 200) {
-    const content = (j(pl) || {}).content || [];
-    for (const p of content) {
-      if (p.status === 'SUBMITTED' || p.status === 'UNDER_REVIEW') {
+    for (const p of ((j(pl) || {}).content || [])) {
+      if ((p.status === 'SUBMITTED' || p.status === 'UNDER_REVIEW') && mine(p.id, n, idx)) {
         const rv = http.patch(`${BASE}/payments/${p.id}/review`,
-          JSON.stringify({ action: 'APPROVE', reviewerId: data.adminUserId }), A);
+          JSON.stringify({ action: 'APPROVE', reviewerId: me.userId }), A);
         if (rv.status < 300) adminApproved.add(1);
       }
     }
   }
 
+  // 2. move dispatches: PENDING -> boleta + claim, IN_PROGRESS -> dispatch (this operator's slice)
   const dl = http.get(`${BASE}/despachos`, A);
   if (dl.status === 200) {
-    const rows = j(dl) || [];
-    for (const d of rows) {
+    for (const d of (j(dl) || [])) {
+      if (!mine(d.id, n, idx)) continue;
       const st = (d.status || '').toUpperCase();
-      if (st === 'SHIPPED' || st === 'DELIVERED') continue;
-      http.post(`${BASE}/admin/sales-documents`,
-        JSON.stringify({ orderId: d.orderId, folio: `LT-${String(d.orderId).slice(0, 8)}` }), A);
-      http.post(`${BASE}/despachos/${d.id}/claim`, null, A);
-      const ds = http.post(`${BASE}/despachos/${d.id}/dispatch`,
-        JSON.stringify({ carrier: data.courierId, trackingCode: `LT-TRK-${Date.now()}` }), A);
-      if (ds.status < 300) adminDispatched.add(1);
+      if (st === 'PENDING') {
+        if (!boletaDone.has(d.orderId)) {
+          const sd = http.post(`${BASE}/admin/sales-documents`,
+            JSON.stringify({ orderId: d.orderId, folio: `LT-${String(d.orderId).slice(0, 8)}` }), A);
+          if (sd.status < 300 || sd.status === 409) boletaDone.add(d.orderId);
+        }
+        http.post(`${BASE}/despachos/${d.id}/claim`, null, A);
+      } else if (st === 'IN_PROGRESS') {
+        const ds = http.post(`${BASE}/despachos/${d.id}/dispatch`,
+          JSON.stringify({ carrier: data.courierId, trackingCode: `LT-TRK-${__VU}-${Date.now()}` }), A);
+        if (ds.status < 300) adminDispatched.add(1);
+      }
     }
   }
 
   adminSweep.add(Date.now() - s0);
-  sleep(1.5);
+  sleep(1.2);
 }

@@ -10,7 +10,10 @@ RUN_START="$(cat "$DIR/.run-start.txt" 2>/dev/null || echo '2000-01-01T00:00:00'
 echo "[cleanup] delete simulated purchase data (FK order)"
 "${PSQL[@]}" <<'SQL'
 BEGIN;
-CREATE TEMP TABLE lt_users AS SELECT id FROM users WHERE email LIKE 'load\_%@loadtest.local';
+CREATE TEMP TABLE lt_users AS
+  SELECT id FROM users
+  WHERE email LIKE 'load\_%@loadtest.local'
+     OR email IN ('loadadmin1@loadtest.local', 'loadadmin2@loadtest.local');
 CREATE TEMP TABLE lt_orders AS SELECT id FROM orders WHERE customer_id IN (SELECT id FROM lt_users);
 DELETE FROM dispatches         WHERE order_id IN (SELECT id FROM lt_orders);
 DELETE FROM sales_documents    WHERE order_id IN (SELECT id FROM lt_orders);
@@ -54,6 +57,6 @@ echo "[cleanup] verify"
   UNION ALL SELECT 'dispatches', count(*), 0 FROM dispatches
   UNION ALL SELECT 'sales_documents', count(*), 0 FROM sales_documents
   UNION ALL SELECT 'customer_addresses', count(*), 0 FROM customer_addresses
-  UNION ALL SELECT 'lt_users_left', count(*), 0 FROM users WHERE email LIKE 'load\_%@loadtest.local';
+  UNION ALL SELECT 'lt_users_left', count(*), 0 FROM users WHERE email LIKE '%@loadtest.local';
 "
 echo "[cleanup] done"

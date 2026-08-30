@@ -26,6 +26,18 @@ echo "[prep] inflate stock (100000, zero reservations)"
 echo "[prep] notification_providers -> LOG"
 "${PSQL[@]}" -c "UPDATE system_settings SET notification_providers = 'LOG';"
 
+echo "[prep] create 2 extra ADMIN users for the CMS-operator VUs (login: admin2026)"
+"${PSQL[@]}" -c "
+  INSERT INTO users (email, full_name, role, password_hash, active)
+  SELECT 'loadadmin1@loadtest.local', 'LoadTest Admin 1', role, password_hash, true
+    FROM users WHERE email = 'admin@pilarestilo.com'
+  ON CONFLICT (email) DO NOTHING;
+  INSERT INTO users (email, full_name, role, password_hash, active)
+  SELECT 'loadadmin2@loadtest.local', 'LoadTest Admin 2', role, password_hash, true
+    FROM users WHERE email = 'admin@pilarestilo.com'
+  ON CONFLICT (email) DO NOTHING;
+"
+
 echo "[prep] flush redis (products/settings cache)"
 docker exec pe_redis redis-cli FLUSHALL
 

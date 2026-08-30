@@ -6,11 +6,13 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 NET="${LT_NET:-infra_pe_net}"
 BUYERS="${BUYERS:-9}"
+ADMIN_VUS="${ADMIN_VUS:-1}"
 HOLD="${HOLD:-8m}"
 ADMIN_DURATION="${ADMIN_DURATION:-9m30s}"
+LABEL="${LABEL:-b${BUYERS}}"
 
 date -u +%Y-%m-%dT%H:%M:%S > "$DIR/.run-start.txt"
-echo "[run] start $(cat "$DIR/.run-start.txt")Z  buyers=$BUYERS hold=$HOLD net=$NET"
+echo "[run] start $(cat "$DIR/.run-start.txt")Z  buyers=$BUYERS admins=$ADMIN_VUS hold=$HOLD net=$NET label=$LABEL"
 
 # ---- resource sampler (background) --------------------------------------
 {
@@ -29,10 +31,11 @@ trap 'kill $SAMPLER 2>/dev/null || true' EXIT
 
 # ---- k6 ----------------------------------------------------------------
 MSYS_NO_PATHCONV=1 docker run --rm --network "$NET" \
-  -e BASE_URL=http://backend:8080/api -e BUYERS="$BUYERS" -e HOLD="$HOLD" \
-  -e ADMIN_DURATION="$ADMIN_DURATION" \
+  -e BASE_URL=http://backend:8080/api -e BUYERS="$BUYERS" -e ADMIN_VUS="$ADMIN_VUS" \
+  -e HOLD="$HOLD" -e ADMIN_DURATION="$ADMIN_DURATION" \
   -v "$DIR":/lt grafana/k6 run /lt/purchase-flow.js \
-  --summary-export=/lt/summary.json 2>&1 | tee "$DIR/k6-output.log"
+  --summary-export="/lt/summary-${LABEL}.json" 2>&1 | tee "$DIR/k6-${LABEL}.log"
+cp "$DIR/metrics-sample.log" "$DIR/metrics-${LABEL}.log" 2>/dev/null || true
 
 kill $SAMPLER 2>/dev/null || true
 echo "[run] done. artifacts: k6-output.log, summary.json, metrics-sample.log"
