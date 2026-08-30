@@ -57,7 +57,7 @@ jobs:
           cache-dependency-path: ${{ matrix.working-directory }}/pom.xml
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
@@ -72,7 +72,7 @@ jobs:
         run: mvn -B -DskipTests -Dmaven.test.skip=true clean package
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           # Disambiguates the five java-kotlin runs from each other in the Security tab -- without
           # it, each service's results would overwrite the previous one under the same language.
