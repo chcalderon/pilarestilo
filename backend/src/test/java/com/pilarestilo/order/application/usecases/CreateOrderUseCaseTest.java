@@ -9,8 +9,6 @@ import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
-import com.pilarestilo.order.domain.enums.OrderStatus;
-import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
