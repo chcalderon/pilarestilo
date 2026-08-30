@@ -1,6 +1,5 @@
 package com.pilarestilo.rbac.application;
 
-import com.pilarestilo.support.NotificationsTestDatabase;
 import com.pilarestilo.shared.auth.application.dto.AuthTokenDto;
 import com.pilarestilo.shared.auth.application.usecases.LoginUseCase;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ class LoginWithPermissionsTest {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired

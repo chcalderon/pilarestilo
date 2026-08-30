@@ -2,7 +2,6 @@ package com.pilarestilo.shared.auth.infrastructure.persistence.repositories;
 
 import com.pilarestilo.shared.auth.domain.model.PasswordResetToken;
 import com.pilarestilo.shared.auth.domain.ports.PasswordResetTokenRepository;
-import com.pilarestilo.support.NotificationsTestDatabase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,7 +40,6 @@ class PasswordResetTokenRepositoryAdapterIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(registry, postgres);
     }
 
     @Autowired

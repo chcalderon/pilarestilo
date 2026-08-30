@@ -11,6 +11,12 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
       password: ${SPRING_DATA_REDIS_PASSWORD:}
+      # Redis is a cache here (@Cacheable / RedisTemplate), never a Spring Data repository store.
+      # With the notification module's explicit @EnableJpaRepositories gone, repository auto-scan
+      # runs in strict multi-module mode; turning Redis repositories off keeps it from inspecting
+      # (and logging about) every JpaRepository.
+      repositories:
+        enabled: false
   servlet:
     multipart:
       max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:10MB}
@@ -18,12 +24,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-      # Boot's own defaults, written out because the bean that normally supplies them lives in
-      # HibernateJpaConfiguration, and that whole auto-configuration backs off the moment an
-      # EntityManagerFactory is declared -- which PersistenceConfig has to do, since notifications
-      # need a second one. Left implicit, Hibernate falls back to its own strategies and every
-      # column not carrying an explicit @Column name stops resolving: createdAt would look for
-      # "createdAt", not "created_at".
+      # Boot's snake_case defaults, pinned explicitly: a column without an explicit @Column name
+      # must resolve created_at, not createdAt.
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
         implicit-strategy: org.springframework.boot.hibernate.SpringImplicitNamingStrategy
@@ -106,57 +108,9 @@ app:
     redis:
       enabled: ${APP_CACHE_REDIS_ENABLED:false}
       ttl-seconds: ${APP_CACHE_REDIS_TTL_SECONDS:300}
-  notification:
-    # The notifications database. A second instance would cost 200-400 MB and buy nothing: the
-    # boundary is the database, not the process. A separate schema would not be a boundary at all
-    # -- Postgres still joins across schemas, so it would look like separation and not be any.
-    datasource:
-      url: ${APP_NOTIFICATION_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pilarestilo_notifications}
-      username: ${APP_NOTIFICATION_DATASOURCE_USERNAME:pilar}
-      password: ${APP_NOTIFICATION_DATASOURCE_PASSWORD:pilar}
-    # Its own history. Two databases, two histories: a migration for one must never run on the
-    # other. spring.flyway.* does not reach here -- see NotificationsFlywayMigrator for why this
-    # side cannot be a Flyway bean.
-    flyway:
-      locations: ${APP_NOTIFICATION_FLYWAY_LOCATIONS:classpath:db/migration-notifications}
-    provider: ${NOTIFICATION_PROVIDER:LOG}
-    # A second gate on the 7 Kafka*NotificationListener beans, independent of the Kafka switch.
-    # Set false at the notification-service cutover so this monolith stops consuming notification
-    # events without touching any other Kafka listener; flip back to roll back.
-    kafka-listeners:
-      enabled: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:true}
-    n8n:
-      webhook-url: ${NOTIFICATION_N8N_WEBHOOK_URL:}
-      api-key: ${NOTIFICATION_N8N_API_KEY:}
-      token-header-name: ${NOTIFICATION_N8N_TOKEN_HEADER_NAME:X-PE-N8N-TOKEN}
-    email:
-      smtp:
-        host: ${EMAIL_SMTP_HOST:}
-        port: ${EMAIL_SMTP_PORT:}
-        username: ${EMAIL_SMTP_USERNAME:}
-        password: ${EMAIL_SMTP_PASSWORD:}
-        from-email: ${EMAIL_SMTP_FROM_EMAIL:}
-        sender-name: ${EMAIL_SMTP_SENDER_NAME:Pilar Estilo}
-        auth-enabled: ${EMAIL_SMTP_AUTH_ENABLED:}
-        starttls-enabled: ${EMAIL_SMTP_STARTTLS_ENABLED:}
-        ssl-enabled: ${EMAIL_SMTP_SSL_ENABLED:}
-        to-fallback: ${EMAIL_SMTP_TO_FALLBACK:}
-      sendgrid:
-        api-base-url: ${SENDGRID_API_BASE_URL:https://api.sendgrid.com}
-        api-key: ${SENDGRID_API_KEY:}
-        from-email: ${SENDGRID_FROM_EMAIL:}
-        sender-name: ${SENDGRID_SENDER_NAME:Pilar Estilo}
-        to-fallback: ${SENDGRID_TO_FALLBACK:}
-    whatsapp:
-      simulated-to: ${WHATSAPP_SIMULATED_TO:-+56900000000}
-      simulated-sender: ${WHATSAPP_SIMULATED_SENDER:Pilar Estilo}
-      twilio:
-        api-base-url: ${WHATSAPP_TWILIO_API_BASE_URL:https://api.twilio.com}
-        account-sid: ${WHATSAPP_TWILIO_ACCOUNT_SID:}
-        auth-token: ${WHATSAPP_TWILIO_AUTH_TOKEN:}
-        from: ${WHATSAPP_TWILIO_FROM:}
-        to-fallback: ${WHATSAPP_TWILIO_TO_FALLBACK:-+56900000000}
-        sender-alias: ${WHATSAPP_TWILIO_SENDER_ALIAS:Pilar Estilo}
+  # Notifications moved to services/notification-service (Kafka-only, own DB). The monolith keeps
+  # only the SMTP credentials the password-reset mailer reads directly (EMAIL_SMTP_* env, or
+  # system_settings) — no app.notification.* block, no messaging providers here anymore.
   payment:
     gateway:
       provider: ${PAYMENT_GATEWAY_PROVIDER:STUB}

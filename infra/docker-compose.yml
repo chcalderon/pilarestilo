@@ -63,12 +63,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
-      # Notifications live in a database of their own, same instance. Created by
-      # infra/postgres/init/01-notifications-database.sh on a fresh volume; an existing volume
-      # needs it created by hand, since that hook only runs when the data directory is empty.
-      APP_NOTIFICATION_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_NOTIFICATIONS_DB:-pilarestilo_notifications}
-      APP_NOTIFICATION_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
-      APP_NOTIFICATION_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       SPRING_DATA_REDIS_PASSWORD: ${SPRING_DATA_REDIS_PASSWORD:-}
@@ -80,24 +74,8 @@ services:
       DOCUMENTS_STORAGE_PATH: /app/documents
       APP_CACHE_REDIS_ENABLED: ${APP_CACHE_REDIS_ENABLED:-false}
       APP_CACHE_REDIS_TTL_SECONDS: ${APP_CACHE_REDIS_TTL_SECONDS:-300}
-      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-LOG}
-      # notification-service now owns Kafka notification consumption (cutover deploy 1). This gate
-      # keeps the monolith's own 7 consumers off. Flip to true (and the service's flag to false) to
-      # roll back — the monolith code is still here until cleanup deploy 2.
-      APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED: ${APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED:-false}
-      WHATSAPP_SIMULATED_TO: ${WHATSAPP_SIMULATED_TO:-+56900000000}
-      WHATSAPP_SIMULATED_SENDER: ${WHATSAPP_SIMULATED_SENDER:-Pilar Estilo}
-      WHATSAPP_TWILIO_API_BASE_URL: ${WHATSAPP_TWILIO_API_BASE_URL:-https://api.twilio.com}
-      WHATSAPP_TWILIO_ACCOUNT_SID: ${WHATSAPP_TWILIO_ACCOUNT_SID:-}
-      WHATSAPP_TWILIO_AUTH_TOKEN: ${WHATSAPP_TWILIO_AUTH_TOKEN:-}
-      WHATSAPP_TWILIO_FROM: ${WHATSAPP_TWILIO_FROM:-}
-      WHATSAPP_TWILIO_TO_FALLBACK: ${WHATSAPP_TWILIO_TO_FALLBACK:-+56900000000}
-      WHATSAPP_TWILIO_SENDER_ALIAS: ${WHATSAPP_TWILIO_SENDER_ALIAS:-Pilar Estilo}
-      SENDGRID_API_BASE_URL: ${SENDGRID_API_BASE_URL:-https://api.sendgrid.com}
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
-      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-}
-      SENDGRID_SENDER_NAME: ${SENDGRID_SENDER_NAME:-Pilar Estilo}
-      SENDGRID_TO_FALLBACK: ${SENDGRID_TO_FALLBACK:-}
+      # SMTP for SmtpPasswordResetMailer (shared/auth). It reads system_settings first, then these
+      # as the fallback. All other messaging config moved to the notification-service block.
       EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-}
       EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-}
       EMAIL_SMTP_USERNAME: ${EMAIL_SMTP_USERNAME:-}
@@ -107,7 +85,6 @@ services:
       EMAIL_SMTP_AUTH_ENABLED: ${EMAIL_SMTP_AUTH_ENABLED:-}
       EMAIL_SMTP_STARTTLS_ENABLED: ${EMAIL_SMTP_STARTTLS_ENABLED:-}
       EMAIL_SMTP_SSL_ENABLED: ${EMAIL_SMTP_SSL_ENABLED:-}
-      EMAIL_SMTP_TO_FALLBACK: ${EMAIL_SMTP_TO_FALLBACK:-}
       PAYMENT_GATEWAY_PROVIDER: ${PAYMENT_GATEWAY_PROVIDER:-STUB}
       PAYMENT_GATEWAY_WEBHOOK_SECRET: ${PAYMENT_GATEWAY_WEBHOOK_SECRET:-}
       PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL: ${PAYMENT_GATEWAY_STUB_CHECKOUT_BASE_URL:-/es/account?tab=orders}

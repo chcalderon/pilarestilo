@@ -1,6 +1,5 @@
 package com.pilarestilo.cashregister.infrastructure.web;
 
-import com.pilarestilo.support.NotificationsTestDatabase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -38,7 +37,6 @@ class PosControllerTest {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired

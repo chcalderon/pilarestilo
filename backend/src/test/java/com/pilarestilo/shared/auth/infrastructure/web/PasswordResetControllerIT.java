@@ -1,7 +1,6 @@
 package com.pilarestilo.shared.auth.infrastructure.web;
 
 import com.pilarestilo.shared.auth.domain.ports.PasswordResetMailer;
-import com.pilarestilo.support.NotificationsTestDatabase;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +45,6 @@ class PasswordResetControllerIT {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(r, postgres);
         // The rate limiter is per-IP and process-wide; several forgot-password calls in one test
         // would trip it. Off for this class.
         r.add("app.gateway.rate-limit.enabled", () -> "false");

@@ -7,7 +7,6 @@ import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.product.domain.ports.ProductRepository.ProductFilter;
 import com.pilarestilo.shared.application.Money;
-import com.pilarestilo.support.NotificationsTestDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +50,6 @@ class ProductRepositoryAdapterIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(registry, postgres);
     }
 
     @Autowired

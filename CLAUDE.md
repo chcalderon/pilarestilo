@@ -132,7 +132,7 @@ Every domain module follows the same three-layer pattern:
 
 Naming conventions: `{Action}UseCase`, `{Entity}RepositoryJpaAdapter`, `{Entity}Controller`. Domain objects carry no framework annotations — JPA entities are separate from domain models. Use cases take ports (interfaces) as constructor args; Spring wires them.
 
-Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `notification`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`, `customeraddress`, `billing` + `shared` (auth, rbac, kafka, common domain).
+Modules: `product`, `category`, `inventory`, `order`, `payment`, `discount`, `review`, `wishlist`, `customercredit`, `systemsettings`, `productai`, `cashregister`, `dispatch`, `dashboard`, `user`, `navigation`, `location`, `publication`, `customeraddress`, `billing` + `shared` (auth, rbac, kafka, common domain). (`notification` was extracted to `services/notification-service/` and deleted from the monolith — T16.)
 
 `cashregister` also exposes `POST /api/pos/sales` (stub, returns 501) — planned Windows POS integration; see `docs/pos-channel.md`.
 
@@ -217,12 +217,16 @@ Kafka listeners run. Four separate defects came from a twin drifting from its in
 or never existing. Behaviour lives in a `*NotificationDispatcher`, and the listeners are transport
 adapters with none of their own. **Add behaviour to the dispatcher, never to a listener.**
 
-**Notification dispatchers/senders now live in `services/notification-service/`** (Kafka-only,
-consumer group `pe-notification-service`, port 8085). The monolith's `notification` /
-`notifications` packages are still present but their 7 Kafka consumers are gated off by
-`app.notification.kafka-listeners.enabled=false` (the cutover's rollback switch — flip it and the
-service's `app.notification.listeners.enabled` to revert). They are deleted in a later cleanup
-deploy. The `notification` rule above still applies inside the service.
+**All notification code now lives in `services/notification-service/`** (Kafka-only, consumer
+group `pe-notification-service`, port 8085). The monolith's `notification` / `notifications`
+packages were deleted in the cleanup deploy (T16) — with them went `PersistenceConfig` /
+`EntityScanConfig` and the second `pilarestilo_notifications` datasource, so the backend is back to
+one Boot-autoconfigured JPA datasource. The `notification` rule above still applies inside the
+service. Rollback is no longer a flag flip: it needs `git revert` of the cleanup commit plus
+`APP_NOTIFICATION_LISTENERS_ENABLED=false` on the service. The old `notifications` table on the
+main DB and `infra/postgres/init/01-notifications-database.sh` are kept as the data-side fallback.
+The monolith still ships `spring-boot-starter-mail` — `SmtpPasswordResetMailer` (`shared/auth`)
+uses `JavaMailSender` directly and reads `EMAIL_SMTP_*` (env or `system_settings`).
 
 ### Domain events
 
@@ -272,13 +276,15 @@ Recent migrations (V54–V66):
 ### Notifications go out on every enabled channel
 
 `system_settings.notification_providers` is a **set**, not a value (V82). `SystemSettingsNotificationSender`
-fans a message out to all of them, each inside its own try, so a dead SMTP host cannot take WhatsApp
-down with it; if none accepts, that is logged as an error rather than passing for silence. Before
-V82 the column held one provider and the sender switched on it, so turning on WhatsApp silently
-stopped every email — including the written confirmation the Ley 21.398 requires.
+(now in `services/notification-service/`) fans a message out to all of them, each inside its own try,
+so a dead SMTP host cannot take WhatsApp down with it; if none accepts, that is logged as an error
+rather than passing for silence. Before V82 the column held one provider and the sender switched on
+it, so turning on WhatsApp silently stopped every email — including the written confirmation the Ley
+21.398 requires.
 
 The panel enforces one rule the domain repeats: the last active channel cannot be turned off.
-`NOTIFICATION_PROVIDER` remains as the fallback for a row nobody has saved yet.
+`NOTIFICATION_PROVIDER` (on the notification-service container) remains as the fallback for a row
+nobody has saved yet.
 
 ### Spring Boot 4 modular auto-configuration
 

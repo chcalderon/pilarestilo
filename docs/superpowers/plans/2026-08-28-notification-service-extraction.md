@@ -1030,31 +1030,54 @@ deploy 1. Do NOT start until `notification-service` has run clean in production 
 - **Keep** `infra/postgres/init/01-notifications-database.sh` and the old `notifications` table on
   the main DB — still the rollback path (`notification-database-split` memory).
 
-- [ ] **Step 1: `git rm -r`** the two packages + every listed test + `db/migration-notifications/`.
+- [x] **Step 1: `git rm -r`** the two packages + every listed test + `db/migration-notifications/`.
+  Done on branch `chore/notification-t16-cleanup` (worktree off `develop`, 2026-08-30).
 
-- [ ] **Step 2: Delete `PersistenceConfig` + `EntityScanConfig` + the guard test.** With no second
-  `EntityManagerFactory`, `HibernateJpaAutoConfiguration` builds the default one from
-  `spring.datasource`, `FlywayAutoConfiguration` runs the main migrations. Delete the now-stale
-  comment in `application.yml` about the hand-written naming strategy; **keep** the explicit
-  `spring.jpa.hibernate.ddl-auto: validate` and the naming properties (removing them risks the
-  `createdAt`-vs-`created_at` regression the comment warned about).
+- [x] **Step 2: Delete `PersistenceConfig` + `EntityScanConfig` + the guard test.** Done. Stale
+  naming-strategy comment in `application.yml` trimmed to one line; `ddl-auto: validate` + the two
+  naming properties kept.
 
-- [ ] **Step 3: Config + compose + pom** edits per the file list.
+- [x] **Step 3: Config + compose + pom** edits.
+  - `application.yml`: whole `app.notification:` block removed.
+  - `additional-spring-configuration-metadata.json`: all 38 `app.notification.*` entries removed
+    (script, deletion-only, valid JSON).
+  - `docker-compose.yml` **backend block**: removed `APP_NOTIFICATION_DATASOURCE_*`,
+    `NOTIFICATION_PROVIDER`, `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED`, all `WHATSAPP_*`/`TWILIO_*`,
+    all `SENDGRID_*`, `EMAIL_SMTP_TO_FALLBACK`. **Kept `EMAIL_SMTP_{HOST,PORT,USERNAME,PASSWORD,
+    FROM_EMAIL,SENDER_NAME,AUTH_ENABLED,STARTTLS_ENABLED,SSL_ENABLED}`** — `SmtpPasswordResetMailer`
+    (shipped after this plan was written) reads them as the fallback after `system_settings`.
+  - `.env.example`: dropped `APP_NOTIFICATION_KAFKA_LISTENERS_ENABLED` only; kept the messaging vars
+    (notification-service consumes them) and `APP_NOTIFICATION_LISTENERS_ENABLED`.
+  - `pom.xml`: **no change** — `spring-boot-starter-mail` stays (grep for `JavaMailSender` is
+    non-empty: `SmtpPasswordResetMailer`). The dep's comment already said to keep it.
+  - `CLAUDE.md`: module list, the "@EventListener dead when Kafka is on" section, and the
+    "Notifications go out on every enabled channel" section updated.
+  - **Not in the original plan:** 21 IT/unit classes outside `notification/` called
+    `NotificationsTestDatabase.register(...)` in `@DynamicPropertySource` (mandatory while the 2nd
+    datasource existed). Removed the import + the call from all 21.
 
-- [ ] **Step 4: Grep for danglers** — `cd backend && grep -rn "com.pilarestilo.notification" src/`
-  → empty. `grep -rn "NotificationsPersistenceConfig\|NotificationsFlywayMigrator" src/` → empty.
+- [x] **Step 4: Grep for danglers** — `com.pilarestilo.notification` in `src/` → empty.
+  `NotificationsPersistenceConfig|NotificationsFlywayMigrator|NotificationsTestDatabase|
+  EntityScanCoversEveryModule|PersistenceConfig|EntityScanConfig` in `src/` → empty. No
+  `/api/notifications` matchers in monolith security config. `mvn -o clean test-compile` → SUCCESS.
 
-- [ ] **Step 5: `cd backend && mvn clean verify`** → PASS (one datasource, migrations run, no
-  `notification` beans).
+- [x] **Step 5: `mvn clean verify`** → **BUILD SUCCESS** 2026-08-30 (whole compose stack stopped
+  first). 560 unit + 79 IT, 0 failures/errors, jacoco gate met. Log confirms one datasource
+  (`HikariPool-1` only), one EMF (`persistence unit 'default'`), main Flyway validates + runs all
+  migrations, "Found 0 Redis repository interfaces". Pre-existing noise unrelated to T16:
+  `ProductAiJobScheduler` logs `CannotCreateTransactionException` every 20s during ITs (its
+  `@Scheduled` poll hitting a torn-down Testcontainer between classes) — build stays green.
 
-- [ ] **Step 6: Boot against local Docker** — `cd infra && docker compose --env-file .env
-  --profile kafka --profile microservices up -d --build postgres backend notification-service` →
-  both healthy; backend log shows the main Flyway ran and no notification wiring; place an order →
-  still exactly one confirmation, now with the monolith code gone.
+- [x] **Step 6: Boot against local Docker** — T16 backend image run against the real prod-schema DB
+  (main compose + image override). `Started PilarEstiloApplication in 43s`, health UP via Caddy,
+  `Successfully validated 94 migrations` then applied the one pending (V92), one `HikariPool`, one
+  EMF, **zero "notification" lines anywhere in the backend log**, no `pe-backend-domain-events-
+  notification` consumer group (only `-dispatch`/`-payment`/`-review` remain). Registered a probe
+  user → exactly one `WELCOME` composed + stored + SMTP-attempted by **notification-service only**
+  (SMTP auth fails locally — no creds — but the pipeline ran); backend did nothing. Bell
+  (`GET /api/notifications`, `unread-count`) returns it via Caddy → `notification-service:8085`.
 
-- [ ] **Step 7: Commit + merge** —
-  `git commit -m "chore(backend): delete the extracted notification module — one datasource again"`,
-  then merge to `master`.
+- [ ] **Step 7: Commit + merge** to `develop`, then `develop → master` on the owner's go (deploy).
 
 ---
 

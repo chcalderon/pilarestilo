@@ -2,7 +2,6 @@ package com.pilarestilo.discount.infrastructure.persistence.repositories;
 
 import com.pilarestilo.discount.domain.enums.DiscountType;
 import com.pilarestilo.discount.infrastructure.persistence.entities.DiscountEntity;
-import com.pilarestilo.support.NotificationsTestDatabase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +39,6 @@ class DiscountJpaRepositoryIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(registry, postgres);
     }
 
     @Autowired

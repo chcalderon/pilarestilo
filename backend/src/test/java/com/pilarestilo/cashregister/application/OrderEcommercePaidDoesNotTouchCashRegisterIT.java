@@ -1,6 +1,5 @@
 package com.pilarestilo.cashregister.application;
 
-import com.pilarestilo.support.NotificationsTestDatabase;
 import tools.jackson.databind.ObjectMapper;
 import com.pilarestilo.cashregister.domain.ports.CashRegisterRepository;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
@@ -66,7 +65,6 @@ class OrderEcommercePaidDoesNotTouchCashRegisterIT {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired MockMvc mvc;

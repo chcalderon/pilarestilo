@@ -1,6 +1,5 @@
 package com.pilarestilo.rbac.infrastructure;
 
-import com.pilarestilo.support.NotificationsTestDatabase;
 import com.pilarestilo.shared.rbac.domain.PermissionRegistry;
 import com.pilarestilo.shared.rbac.domain.model.PermissionDefinition;
 import com.pilarestilo.shared.rbac.infrastructure.persistence.entities.PermissionEntity;
@@ -33,7 +32,6 @@ class PermissionCatalogSeedIT {
         r.add("spring.datasource.url", postgres::getJdbcUrl);
         r.add("spring.datasource.username", postgres::getUsername);
         r.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(r, postgres);
     }
 
     @Autowired

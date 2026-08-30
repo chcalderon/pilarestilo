@@ -1,6 +1,5 @@
 package com.pilarestilo.dashboard.infrastructure.persistence;
 
-import com.pilarestilo.support.NotificationsTestDatabase;
 import com.pilarestilo.dashboard.application.port.out.DashboardStatsRepository;
 import com.pilarestilo.dashboard.domain.model.DashboardStats;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,6 @@ class DashboardStatsRepositoryAdapterIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        NotificationsTestDatabase.register(registry, postgres);
     }
 
     @Autowired
