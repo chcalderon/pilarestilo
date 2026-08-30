@@ -16,7 +16,7 @@ function LoginPrompt({ locale, loginHref }: { readonly locale: string; readonly 
   return (
     <div className="py-6 border-t border-pe-black/10">
       <p className="text-pe-charcoal/60 text-sm">
-        <a href={loginHref} className="text-pe-rose-ink hover:underline">{label}</a>{' '}{suffix}
+        <a href={loginHref} className="text-pe-rose-ink underline underline-offset-2 decoration-pe-rose-ink/40 hover:decoration-pe-rose-ink">{label}</a>{' '}{suffix}
       </p>
     </div>
   );
@@ -53,25 +53,36 @@ function submitLabelFor(locale: string, submitting: boolean, replacing: boolean)
 
 interface StarRatingProps {
   readonly display: number;
+  readonly rating: number;
+  readonly locale: string;
   readonly onRate: (i: number) => void;
   readonly onHover: (i: number) => void;
 }
 
-function StarRating({ display, onRate, onHover }: StarRatingProps) {
+function starLabel(i: number, locale: string): string {
+  if (locale === 'es') return i === 1 ? '1 estrella' : `${i} estrellas`;
+  return i === 1 ? '1 star' : `${i} stars`;
+}
+
+function StarRating({ display, rating, locale, onRate, onHover }: StarRatingProps) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1" role="radiogroup" aria-labelledby="review-rating-label">
       {[1, 2, 3, 4, 5].map(i => (
         <button
           key={i}
           type="button"
+          role="radio"
+          aria-checked={i === rating}
+          aria-label={starLabel(i, locale)}
           onClick={() => onRate(i)}
           onMouseEnter={() => onHover(i)}
           onMouseLeave={() => onHover(0)}
-          className="p-1"
+          className="p-1 focus-visible:outline-2 focus-visible:outline-pe-rose focus-visible:outline-offset-1"
         >
           <Star
             size={20}
             strokeWidth={1.25}
+            aria-hidden="true"
             className={`transition-colors ${i <= display ? 'fill-pe-rose stroke-pe-rose' : 'stroke-pe-charcoal/30 fill-none'}`}
           />
         </button>
@@ -148,39 +159,43 @@ export default function ReviewForm({ productId, token, userId, locale = 'es', on
 
       {/* Star rating */}
       <div>
-        <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
+        <p id="review-rating-label" className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
           {locale === 'es' ? 'Puntuación' : 'Rating'}
         </p>
-        <StarRating display={display} onRate={setRating} onHover={setHovered} />
+        <StarRating display={display} rating={rating} locale={locale} onRate={setRating} onHover={setHovered} />
       </div>
 
       {/* Title */}
       <div>
-        <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
+        <label htmlFor="review-title" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
           {locale === 'es' ? 'Título (opcional)' : 'Title (optional)'}
         </label>
         <input
+          id="review-title"
           type="text"
           value={title}
           onChange={e => setTitle(e.target.value)}
           maxLength={100}
-          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose transition-colors"
+          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors"
         />
       </div>
 
       {/* Comment */}
       <div>
-        <label className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
+        <label htmlFor="review-comment" className="block text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-1">
           {locale === 'es' ? 'Comentario' : 'Comment'} *
         </label>
         <textarea
+          id="review-comment"
           value={comment}
           onChange={e => setComment(e.target.value)}
           maxLength={1000}
           rows={4}
-          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose transition-colors resize-none"
+          aria-required="true"
+          aria-describedby="review-comment-count"
+          className="w-full border border-pe-black/15 bg-transparent px-3 py-2 text-sm text-pe-black focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors resize-none"
         />
-        <p className="text-[10px] text-pe-charcoal/40 text-right mt-1">{comment.length}/1000</p>
+        <p id="review-comment-count" className="text-[10px] text-pe-charcoal/40 text-right mt-1">{comment.length}/1000</p>
       </div>
 
       {error && <p className="text-pe-danger-ink text-sm">{error}</p>}

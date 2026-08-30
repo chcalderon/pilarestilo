@@ -139,7 +139,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
             placeholder={es ? 'Al menos 8 caracteres' : 'At least 8 characters'}
           />
           <button
@@ -164,7 +164,7 @@ export default function ResetPasswordForm({ locale }: Props) {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
           placeholder={es ? 'Repite la contraseña' : 'Repeat the password'}
         />
       </div>

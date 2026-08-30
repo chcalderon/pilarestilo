@@ -87,7 +87,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
   <div class="py-12 min-h-screen" style="background-color: var(--pe-surface)">
     <div class="pe-container">
       <!-- Breadcrumb -->
-      <nav class="mb-8 font-sans text-xs text-pe-charcoal/50 flex items-center gap-2" aria-label="Breadcrumb">
+      <nav class="mb-8 font-sans text-xs text-pe-charcoal/50 flex items-center gap-2" aria-label={locale === 'es' ? 'Ruta de navegación' : 'Breadcrumb'}>
         <a href={`/${locale}/`} class="hover:text-pe-rose-ink transition-colors">{t('nav.home', locale)}</a>
         <span aria-hidden="true">›</span>
         <a href={`/${locale}/products`} class="hover:text-pe-rose-ink transition-colors">{t('nav.products', locale)}</a>
@@ -140,7 +140,12 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
 
           <!-- Rating stars -->
           {(product.avgRating ?? 0) > 0 && (
-            <a href="#resenas" class="pe-detail-item flex items-center gap-2" style="--delay: 210ms">
+            <a
+              href="#resenas"
+              class="pe-detail-item flex items-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
+              style="--delay: 210ms"
+              aria-label={locale === 'es' ? 'Ver reseñas' : 'See reviews'}
+            >
               <RatingStars value={product.avgRating ?? 0} count={product.reviewCount} />
             </a>
           )}

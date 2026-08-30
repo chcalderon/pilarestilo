@@ -92,7 +92,7 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
 
   </a>
 
-  <div class="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 translate-y-0 md:translate-y-1 md:group-hover:translate-y-0 transition-all duration-300">
+  <div class="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 translate-y-0 md:translate-y-1 md:group-hover:translate-y-0 transition-[opacity,transform] duration-300 ease-out">
     <WishlistButton
       client:visible
       productId={product.id}
@@ -136,38 +136,40 @@ const sizesSummary = summarizeProductVariantSecondaryValues(product);
         </div>
       </div>
       {product.stock === 1 && (
-        <span class="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-ink/70">
+        <span class="font-sans text-[0.6rem] tracking-wider uppercase text-pe-rose-ink">
           {locale === 'es' ? 'Ultimo' : 'Last one'}
         </span>
       )}
     </div>
 
-    <div class="mt-2 overflow-hidden max-h-0 group-hover:max-h-16 transition-all duration-400 ease-in-out">
-      {needsVariantChoice ? (
-        <a
-          href={`/${locale}/products/${product.id}`}
-          class="w-full inline-flex items-center justify-center min-h-11 px-4 border border-pe-black/20
-            font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal
-            hover:border-pe-black hover:text-pe-black transition-colors
-            focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
-        >
-          {locale === 'es' ? 'Elegir talla' : 'Choose size'}
-        </a>
-      ) : (
-        <AddToCartButton
-          client:visible
-          productId={product.id}
-          name={product.name}
-          brand={product.brand}
-          price={product.price}
-          imageUrl={product.imageUrl}
-          condition={product.condition}
-          stock={product.stock}
-          locale={locale}
-          variantColor={onlyVariant?.color}
-          variantSize={onlyVariant?.size}
-        />
-      )}
+    <div class="mt-2 grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none">
+      <div class="overflow-hidden">
+        {needsVariantChoice ? (
+          <a
+            href={`/${locale}/products/${product.id}`}
+            class="w-full inline-flex items-center justify-center min-h-11 px-4 border border-pe-black/20
+              font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal
+              hover:border-pe-black hover:text-pe-black transition-colors
+              focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
+          >
+            {locale === 'es' ? 'Elegir talla' : 'Choose size'}
+          </a>
+        ) : (
+          <AddToCartButton
+            client:visible
+            productId={product.id}
+            name={product.name}
+            brand={product.brand}
+            price={product.price}
+            imageUrl={product.imageUrl}
+            condition={product.condition}
+            stock={product.stock}
+            locale={locale}
+            variantColor={onlyVariant?.color}
+            variantSize={onlyVariant?.size}
+          />
+        )}
+      </div>
     </div>
   </div>
 

@@ -34,12 +34,11 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
             alt={item.name}
             width={60}
             height={76}
-            className="object-cover"
-            style={{ width: 60, height: 76, objectFit: 'cover' }}
+            className="w-[60px] h-[76px] object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="bg-pe-cream" style={{ width: 60, height: 76 }} />
+          <div className="w-[60px] h-[76px] bg-pe-cream" />
         )}
       </a>
 
@@ -78,7 +77,7 @@ export default function CartItemRow({ item, locale, onRemove, onNavigate, cartHr
             type="button"
             onClick={onRemove}
             aria-label={`${locale === 'es' ? 'Eliminar' : 'Remove'} ${item.name}`}
-            className="text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 p-1 -mr-1"
+            className="flex items-center justify-center min-h-11 min-w-11 -mr-2 -mb-1 text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
           >
             <Trash2 size={13} strokeWidth={1.5} />
           </button>

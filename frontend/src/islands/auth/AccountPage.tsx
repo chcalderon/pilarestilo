@@ -441,8 +441,8 @@ interface OrderTimelineStepsProps {
 }
 
 function timelineDotClass(state: TimelineState): string {
-  if (state === 'done') return 'bg-pe-positive border-pe-positive';
-  if (state === 'current') return 'bg-pe-rose border-pe-rose';
+  if (state === 'done') return 'bg-pe-positive-ink border-pe-positive-ink';
+  if (state === 'current') return 'bg-pe-rose-action border-pe-rose-action';
   if (state === 'ended') return 'bg-pe-danger-ink border-pe-danger-ink';
   return 'bg-transparent border-pe-black/20 dark:border-pe-cream/25';
 }
@@ -657,7 +657,7 @@ function ProofUploadForm({ selectedFile, isSubmittingProof, es, onSelectProofFil
           type="button"
           onClick={onSubmitProof}
           disabled={isSubmittingProof}
-          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose-action text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
         >
           {toggleLabel(isSubmittingProof, es, 'Enviando...', 'Submitting...', 'Enviar comprobante', 'Submit proof')}
         </button>
@@ -740,7 +740,7 @@ function GatewaySimulationButtons({
         type="button"
         onClick={onStartGatewayCheckout}
         disabled={disabled}
-        className="inline-flex items-center justify-center px-3 py-2 bg-pe-rose text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+        className="inline-flex items-center justify-center px-3 py-2 bg-pe-rose-action text-white font-sans text-[0.66rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
       >
         {toggleLabel(isStartingGatewayCheckout, es, 'Abriendo...', 'Opening...', 'Ir a pagar', 'Pay now')}
       </button>
@@ -1106,14 +1106,15 @@ interface NotificationChannelFieldProps {
 function NotificationChannelField({ es, value, disabled, onChange }: NotificationChannelFieldProps) {
   return (
     <>
-      <label className="font-sans text-[0.72rem] text-pe-muted">
+      <label htmlFor="profile-notif-channel" className="font-sans text-[0.72rem] text-pe-muted">
         {es ? 'Canal de notificaciones' : 'Notification channel'}
       </label>
       <select
+        id="profile-notif-channel"
         value={value}
         onChange={(event) => onChange(event.target.value as NotificationChannelPreference)}
         disabled={disabled}
-        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
+        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40 disabled:opacity-60"
       >
         <option value="AUTO">{es ? 'Automatico (recomendado)' : 'Automatic (recommended)'}</option>
         <option value="WHATSAPP">WhatsApp</option>
@@ -1137,19 +1138,21 @@ function ProfileDetailsCard({
   return (
     <div className="bg-pe-white p-6 border border-pe-black/6 flex flex-col gap-3">
       <p className="pe-eyebrow text-pe-muted">{es ? 'Datos de perfil' : 'Profile details'}</p>
-      <label className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Nombre completo' : 'Full name'}</label>
+      <label htmlFor="profile-full-name" className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Nombre completo' : 'Full name'}</label>
       <input
+        id="profile-full-name"
         type="text"
         value={profileName}
         onChange={(event) => onProfileNameChange(event.target.value)}
         autoComplete="name"
         name="fullName"
         disabled={disabled}
-        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
+        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40 disabled:opacity-60"
         placeholder={es ? 'Tu nombre completo' : 'Your full name'}
       />
-      <label className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
+      <label htmlFor="profile-phone" className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Telefono WhatsApp' : 'WhatsApp phone'}</label>
       <input
+        id="profile-phone"
         type="tel"
         value={profilePhone}
         onChange={(event) => onProfilePhoneChange(event.target.value)}
@@ -1157,7 +1160,7 @@ function ProfileDetailsCard({
         autoComplete="tel"
         inputMode="tel"
         name="whatsappPhone"
-        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose disabled:opacity-60"
+        className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40 disabled:opacity-60"
         placeholder={es ? '+56912345678' : '+14155550123'}
       />
       <NotificationChannelField
@@ -1171,7 +1174,7 @@ function ProfileDetailsCard({
           type="button"
           onClick={onSaveProfile}
           disabled={disabled}
-          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose-action text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
         >
           {toggleLabel(profileSaving, es, 'Guardando...', 'Saving...', 'Guardar perfil', 'Save profile')}
         </button>
@@ -1225,33 +1228,42 @@ function ChangePasswordCard({
         className="sr-only"
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input
-          type="password"
-          value={currentPassword}
-          onChange={(event) => onCurrentPasswordChange(event.target.value)}
-          autoComplete="current-password"
-          name="currentPassword"
-          className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose"
-          placeholder={es ? 'Contraseña actual' : 'Current password'}
-        />
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(event) => onNewPasswordChange(event.target.value)}
-          autoComplete="new-password"
-          name="newPassword"
-          className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose"
-          placeholder={es ? 'Nueva contraseña' : 'New password'}
-        />
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(event) => onConfirmPasswordChange(event.target.value)}
-          autoComplete="new-password"
-          name="confirmPassword"
-          className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose sm:col-span-2"
-          placeholder={es ? 'Confirmar nueva contraseña' : 'Confirm new password'}
-        />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="pw-current" className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Contraseña actual' : 'Current password'}</label>
+          <input
+            id="pw-current"
+            type="password"
+            value={currentPassword}
+            onChange={(event) => onCurrentPasswordChange(event.target.value)}
+            autoComplete="current-password"
+            name="currentPassword"
+            className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="pw-new" className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Nueva contraseña' : 'New password'}</label>
+          <input
+            id="pw-new"
+            type="password"
+            value={newPassword}
+            onChange={(event) => onNewPasswordChange(event.target.value)}
+            autoComplete="new-password"
+            name="newPassword"
+            className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40"
+          />
+        </div>
+        <div className="flex flex-col gap-1 sm:col-span-2">
+          <label htmlFor="pw-confirm" className="font-sans text-[0.72rem] text-pe-muted">{es ? 'Confirmar nueva contraseña' : 'Confirm new password'}</label>
+          <input
+            id="pw-confirm"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => onConfirmPasswordChange(event.target.value)}
+            autoComplete="new-password"
+            name="confirmPassword"
+            className="border border-pe-black/10 px-3 py-2 font-sans text-sm text-pe-charcoal focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40"
+          />
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <button
@@ -1490,49 +1502,82 @@ interface AddressFormFieldsProps {
   readonly comunaOptions: LocationCommuneDto[];
 }
 
+const addrLabelClass = 'font-sans text-[0.7rem] text-pe-muted mb-1';
+const addrFieldClass = 'border border-pe-black/12 px-3 py-2 font-sans text-sm w-full focus:outline-hidden focus:border-pe-rose focus-visible:ring-1 focus-visible:ring-pe-rose/40';
+
 function AddressFormFields({
   es, addressDraft, onDraftChange, loadingLocations, locationRegions, cityOptions, comunaOptions,
 }: AddressFormFieldsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <input value={addressDraft.label} onChange={(e) => onDraftChange((p) => ({ ...p, label: e.target.value }))} placeholder={es ? 'Alias (Casa, Oficina)' : 'Label (Home, Office)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-      <input value={addressDraft.recipientName} onChange={(e) => onDraftChange((p) => ({ ...p, recipientName: e.target.value }))} placeholder={es ? 'Destinatario' : 'Recipient'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-      <input value={addressDraft.phone} onChange={(e) => onDraftChange((p) => ({ ...p, phone: e.target.value }))} placeholder={es ? 'Teléfono' : 'Phone'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-      <input value={addressDraft.line1} onChange={(e) => onDraftChange((p) => ({ ...p, line1: e.target.value }))} placeholder={es ? 'Dirección (línea 1)' : 'Address line 1'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-      <input value={addressDraft.line2} onChange={(e) => onDraftChange((p) => ({ ...p, line2: e.target.value }))} placeholder={es ? 'Dirección (línea 2, opcional)' : 'Address line 2 (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
-      <select
-        value={addressDraft.regionId}
-        onChange={(e) => onDraftChange((p) => ({ ...p, regionId: e.target.value, cityId: '', comunaId: '', region: '', city: '', comuna: '' }))}
-        className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2 bg-white"
-      >
-        <option value="">{toggleLabel(loadingLocations, es, 'Cargando ubicaciones...', 'Loading locations...', 'Selecciona region', 'Select region')}</option>
-        {locationRegions.map((region) => (
-          <option key={region.id} value={region.id}>{region.name}</option>
-        ))}
-      </select>
-      <select
-        value={addressDraft.cityId}
-        onChange={(e) => onDraftChange((p) => ({ ...p, cityId: e.target.value, comunaId: '', city: '', comuna: '' }))}
-        disabled={!addressDraft.regionId}
-        className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
-      >
-        <option value="">{es ? 'Selecciona ciudad' : 'Select city'}</option>
-        {cityOptions.map((city) => (
-          <option key={city.id} value={city.id}>{city.name}</option>
-        ))}
-      </select>
-      <select
-        value={addressDraft.comunaId}
-        onChange={(e) => onDraftChange((p) => ({ ...p, comunaId: e.target.value }))}
-        disabled={!addressDraft.cityId}
-        className="border border-pe-black/12 px-3 py-2 font-sans text-sm bg-white disabled:bg-pe-cream/25"
-      >
-        <option value="">{es ? 'Selecciona comuna' : 'Select comuna'}</option>
-        {comunaOptions.map((comuna) => (
-          <option key={comuna.id} value={comuna.id}>{comuna.name}</option>
-        ))}
-      </select>
-      <input value={addressDraft.reference} onChange={(e) => onDraftChange((p) => ({ ...p, reference: e.target.value }))} placeholder={es ? 'Referencia (opcional)' : 'Reference (optional)'} className="border border-pe-black/12 px-3 py-2 font-sans text-sm sm:col-span-2" />
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-label" className={addrLabelClass}>{es ? 'Alias (Casa, Oficina)' : 'Label (Home, Office)'}</label>
+        <input id="addr-label" value={addressDraft.label} onChange={(e) => onDraftChange((p) => ({ ...p, label: e.target.value }))} className={addrFieldClass} />
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-recipient" className={addrLabelClass}>{es ? 'Destinatario' : 'Recipient'}</label>
+        <input id="addr-recipient" autoComplete="name" value={addressDraft.recipientName} onChange={(e) => onDraftChange((p) => ({ ...p, recipientName: e.target.value }))} className={addrFieldClass} />
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-phone" className={addrLabelClass}>{es ? 'Teléfono' : 'Phone'}</label>
+        <input id="addr-phone" type="tel" inputMode="tel" autoComplete="tel" value={addressDraft.phone} onChange={(e) => onDraftChange((p) => ({ ...p, phone: e.target.value }))} className={addrFieldClass} />
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-line1" className={addrLabelClass}>{es ? 'Dirección (línea 1)' : 'Address line 1'}</label>
+        <input id="addr-line1" autoComplete="address-line1" value={addressDraft.line1} onChange={(e) => onDraftChange((p) => ({ ...p, line1: e.target.value }))} className={addrFieldClass} />
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-line2" className={addrLabelClass}>{es ? 'Dirección (línea 2, opcional)' : 'Address line 2 (optional)'}</label>
+        <input id="addr-line2" autoComplete="address-line2" value={addressDraft.line2} onChange={(e) => onDraftChange((p) => ({ ...p, line2: e.target.value }))} className={addrFieldClass} />
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-region" className={addrLabelClass}>{es ? 'Región' : 'Region'}</label>
+        <select
+          id="addr-region"
+          value={addressDraft.regionId}
+          onChange={(e) => onDraftChange((p) => ({ ...p, regionId: e.target.value, cityId: '', comunaId: '', region: '', city: '', comuna: '' }))}
+          className={`${addrFieldClass} bg-white`}
+        >
+          <option value="">{toggleLabel(loadingLocations, es, 'Cargando ubicaciones...', 'Loading locations...', 'Selecciona region', 'Select region')}</option>
+          {locationRegions.map((region) => (
+            <option key={region.id} value={region.id}>{region.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label htmlFor="addr-city" className={addrLabelClass}>{es ? 'Ciudad' : 'City'}</label>
+        <select
+          id="addr-city"
+          value={addressDraft.cityId}
+          onChange={(e) => onDraftChange((p) => ({ ...p, cityId: e.target.value, comunaId: '', city: '', comuna: '' }))}
+          disabled={!addressDraft.regionId}
+          className={`${addrFieldClass} bg-white disabled:bg-pe-cream/25`}
+        >
+          <option value="">{es ? 'Selecciona ciudad' : 'Select city'}</option>
+          {cityOptions.map((city) => (
+            <option key={city.id} value={city.id}>{city.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label htmlFor="addr-comuna" className={addrLabelClass}>{es ? 'Comuna' : 'Comuna'}</label>
+        <select
+          id="addr-comuna"
+          value={addressDraft.comunaId}
+          onChange={(e) => onDraftChange((p) => ({ ...p, comunaId: e.target.value }))}
+          disabled={!addressDraft.cityId}
+          className={`${addrFieldClass} bg-white disabled:bg-pe-cream/25`}
+        >
+          <option value="">{es ? 'Selecciona comuna' : 'Select comuna'}</option>
+          {comunaOptions.map((comuna) => (
+            <option key={comuna.id} value={comuna.id}>{comuna.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col sm:col-span-2">
+        <label htmlFor="addr-reference" className={addrLabelClass}>{es ? 'Referencia (opcional)' : 'Reference (optional)'}</label>
+        <input id="addr-reference" value={addressDraft.reference} onChange={(e) => onDraftChange((p) => ({ ...p, reference: e.target.value }))} className={addrFieldClass} />
+      </div>
     </div>
   );
 }
@@ -1594,7 +1639,7 @@ function AddressModal({
             type="button"
             onClick={onSave}
             disabled={addressSaving}
-            className="px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
+            className="px-4 py-2 bg-pe-rose-action text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors disabled:opacity-60"
           >
             {toggleLabel(addressSaving, es, 'Guardando...', 'Saving...', 'Guardar dirección', 'Save address')}
           </button>
@@ -1686,7 +1731,7 @@ function AddressesTab({
         <button
           type="button"
           onClick={onOpenCreateModal}
-          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors"
+          className="inline-flex items-center justify-center px-4 py-2 bg-pe-rose-action text-white font-sans text-[0.68rem] tracking-wider uppercase hover:bg-pe-rose-deep transition-colors"
         >
           {es ? 'Agregar dirección' : 'Add address'}
         </button>

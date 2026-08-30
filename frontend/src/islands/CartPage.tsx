@@ -305,7 +305,7 @@ export default function CartPage({ locale }: Props) {
                       )}
 
                       <div className="mt-auto flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2" aria-label={l.quantity}>
+                        <div className="flex items-center gap-2" role="group" aria-label={l.quantity}>
                           <button
                             type="button"
                             onClick={() => {
@@ -317,7 +317,7 @@ export default function CartPage({ locale }: Props) {
                           >
                             -
                           </button>
-                          <span className="font-sans text-sm w-5 text-center">{item.quantity}</span>
+                          <span className="font-sans text-sm w-5 text-center" aria-live="polite" aria-atomic="true">{item.quantity}</span>
                           <button
                             type="button"
                             onClick={() => void increaseQuantity(item)}
@@ -338,7 +338,7 @@ export default function CartPage({ locale }: Props) {
                             clearIssue(item.id);
                             removeItem(item.id);
                           }}
-                          className="icon-hit -mr-2.5 shrink-0 rounded-full text-pe-muted hover:text-pe-rose-ink hover:bg-pe-black/5 transition-colors"
+                          className="icon-hit -mr-2.5 shrink-0 rounded-full text-pe-muted hover:text-pe-rose-ink hover:bg-pe-charcoal/5 transition-colors"
                           title={l.remove}
                           aria-label={`${l.remove} ${item.name}`}
                         >
@@ -380,7 +380,7 @@ export default function CartPage({ locale }: Props) {
                   <span
                     aria-disabled="true"
                     className="w-full inline-flex items-center justify-center min-h-12 px-6
-                      bg-pe-black/40 text-pe-white font-sans text-[0.7rem] tracking-[0.16em]
+                      bg-pe-charcoal/40 text-pe-white font-sans text-[0.7rem] tracking-[0.16em]
                       uppercase cursor-not-allowed"
                   >
                     {l.continueToCheckout}
@@ -390,7 +390,6 @@ export default function CartPage({ locale }: Props) {
                     href={checkoutHref}
                     className="w-full inline-flex items-center justify-center gap-2 min-h-12 px-6
                       pe-btn-ink font-sans text-[0.7rem] tracking-[0.16em] uppercase
-                      hover:bg-pe-black/90 transition-colors
                       focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"
                   >
                     {l.continueToCheckout}

@@ -299,8 +299,8 @@ describe('AccountPage: change password', () => {
   it('requires the new password to be at least 8 characters', async () => {
     await renderReady();
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText(/contraseña actual/i), 'oldpass1');
-    await user.type(screen.getByPlaceholderText(/^nueva contraseña$/i), 'short');
+    await user.type(screen.getByLabelText(/contraseña actual/i), 'oldpass1');
+    await user.type(screen.getByLabelText(/^nueva contraseña$/i), 'short');
     await user.click(screen.getByRole('button', { name: /actualizar contraseña/i }));
     expect(await screen.findByText(/al menos 8 caracteres/i)).toBeInTheDocument();
   });
@@ -308,9 +308,9 @@ describe('AccountPage: change password', () => {
   it('requires the confirmation to match', async () => {
     await renderReady();
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText(/contraseña actual/i), 'oldpass1');
-    await user.type(screen.getByPlaceholderText(/^nueva contraseña$/i), 'newpass1');
-    await user.type(screen.getByPlaceholderText(/confirmar nueva contraseña/i), 'different1');
+    await user.type(screen.getByLabelText(/contraseña actual/i), 'oldpass1');
+    await user.type(screen.getByLabelText(/^nueva contraseña$/i), 'newpass1');
+    await user.type(screen.getByLabelText(/confirmar nueva contraseña/i), 'different1');
     await user.click(screen.getByRole('button', { name: /actualizar contraseña/i }));
     expect(await screen.findByText(/no coinciden/i)).toBeInTheDocument();
   });
@@ -319,21 +319,21 @@ describe('AccountPage: change password', () => {
     changeMyPassword.mockResolvedValue(undefined);
     await renderReady();
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText(/contraseña actual/i), 'oldpass1');
-    await user.type(screen.getByPlaceholderText(/^nueva contraseña$/i), 'newpass1');
-    await user.type(screen.getByPlaceholderText(/confirmar nueva contraseña/i), 'newpass1');
+    await user.type(screen.getByLabelText(/contraseña actual/i), 'oldpass1');
+    await user.type(screen.getByLabelText(/^nueva contraseña$/i), 'newpass1');
+    await user.type(screen.getByLabelText(/confirmar nueva contraseña/i), 'newpass1');
     await user.click(screen.getByRole('button', { name: /actualizar contraseña/i }));
     expect(await screen.findByText(/actualizada correctamente/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/contraseña actual/i)).toHaveValue('');
+    expect(screen.getByLabelText(/contraseña actual/i)).toHaveValue('');
   });
 
   it('maps the "current password is invalid" server error to a friendly message', async () => {
     changeMyPassword.mockRejectedValue(new Error('Current password is invalid'));
     await renderReady();
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText(/contraseña actual/i), 'wrongpass');
-    await user.type(screen.getByPlaceholderText(/^nueva contraseña$/i), 'newpass1');
-    await user.type(screen.getByPlaceholderText(/confirmar nueva contraseña/i), 'newpass1');
+    await user.type(screen.getByLabelText(/contraseña actual/i), 'wrongpass');
+    await user.type(screen.getByLabelText(/^nueva contraseña$/i), 'newpass1');
+    await user.type(screen.getByLabelText(/confirmar nueva contraseña/i), 'newpass1');
     await user.click(screen.getByRole('button', { name: /actualizar contraseña/i }));
     expect(await screen.findByText(/no es correcta/i)).toBeInTheDocument();
   });
@@ -389,10 +389,10 @@ describe('AccountPage: addresses', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /agregar dirección/i }));
 
-    await user.type(screen.getByPlaceholderText(/alias/i), 'Casa');
-    await user.type(screen.getByPlaceholderText(/^destinatario$/i), 'Ana Perez');
-    await user.type(screen.getByPlaceholderText(/^teléfono$/i), '+56911111111');
-    await user.type(screen.getByPlaceholderText(/línea 1/i), 'Av. Siempre Viva 123');
+    await user.type(screen.getByLabelText(/alias/i), 'Casa');
+    await user.type(screen.getByLabelText(/^destinatario$/i), 'Ana Perez');
+    await user.type(screen.getByLabelText(/^teléfono$/i), '+56911111111');
+    await user.type(screen.getByLabelText(/línea 1/i), 'Av. Siempre Viva 123');
     await user.selectOptions(screen.getByDisplayValue(/selecciona region/i), '1');
     await user.selectOptions(screen.getByDisplayValue(/selecciona ciudad/i), '10');
     await user.selectOptions(screen.getByDisplayValue(/selecciona comuna/i), '100');

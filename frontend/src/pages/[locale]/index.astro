@@ -233,7 +233,7 @@ const categoryTiles = collectFeatured(categoryTree);
                 <button
                   type="button"
                   data-pe-carousel-dot={i}
-                  class={`h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'w-6' : 'w-3'}`}
+                  class={`relative h-1.5 rounded-full transition-[width] duration-300 after:absolute after:inset-x-0 after:-inset-y-2.5 after:content-[''] ${i === 0 ? 'w-6' : 'w-3'}`}
                   style={i === 0 ? 'background-color: var(--pe-ink)' : 'background-color: color-mix(in srgb, var(--pe-ink) 28%, transparent)'}
                   aria-label={locale === 'es' ? `Ir a categoria ${i + 1}` : `Go to category ${i + 1}`}
                   aria-pressed={i === 0 ? 'true' : 'false'}
@@ -248,7 +248,7 @@ const categoryTiles = collectFeatured(categoryTree);
                 data-label-play={locale === 'es' ? 'Reproducir' : 'Play'}
                 data-label-pause={locale === 'es' ? 'Pausar' : 'Pause'}
                 data-hint={locale === 'es' ? 'Click corto abre categoria. Mantener presionado no abre enlace.' : 'Short click opens category. Long press does not open link.'}
-                class="min-w-[8.2rem] h-10 px-4 inline-flex items-center justify-center border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors font-sans text-[0.62rem] tracking-[0.2em] uppercase"
+                class="min-w-[8.2rem] h-11 px-4 inline-flex items-center justify-center border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors font-sans text-[0.62rem] tracking-[0.2em] uppercase focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                 aria-pressed="false"
                 title={locale === 'es' ? 'Click corto abre categoria. Mantener presionado no abre enlace.' : 'Short click opens category. Long press does not open link.'}
               >
@@ -258,7 +258,7 @@ const categoryTiles = collectFeatured(categoryTree);
               <button
                 type="button"
                 data-pe-carousel-prev
-                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
+                class="h-11 w-11 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                 aria-label={locale === 'es' ? 'Categoria anterior' : 'Previous category'}
               >
                 <span aria-hidden="true">&larr;</span>
@@ -267,7 +267,7 @@ const categoryTiles = collectFeatured(categoryTree);
               <button
                 type="button"
                 data-pe-carousel-next
-                class="h-10 w-10 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors"
+                class="h-11 w-11 inline-flex items-center justify-center rounded-full border border-pe-charcoal/20 text-pe-charcoal hover:border-pe-charcoal/40 hover:bg-pe-cream transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                 aria-label={locale === 'es' ? 'Siguiente categoria' : 'Next category'}
               >
                 <span aria-hidden="true">&rarr;</span>
@@ -397,14 +397,14 @@ const categoryTiles = collectFeatured(categoryTree);
           var firstClones = originalSlides.slice(0, cloneCount).map(function (slide) {
             var clone = slide.cloneNode(true);
             clone.classList.add('is-clone');
-            clone.setAttribute('aria-hidden', 'true');
+            clone.setAttribute('aria-hidden', 'true'); clone.setAttribute('inert', '');
             return clone;
           });
 
           var lastClones = originalSlides.slice(-cloneCount).map(function (slide) {
             var clone = slide.cloneNode(true);
             clone.classList.add('is-clone');
-            clone.setAttribute('aria-hidden', 'true');
+            clone.setAttribute('aria-hidden', 'true'); clone.setAttribute('inert', '');
             return clone;
           });
 
@@ -737,13 +737,13 @@ const categoryTiles = collectFeatured(categoryTree);
     }());
   </script>
 
-  <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label="Brand statement">
+  <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label={locale === 'es' ? 'Manifiesto de marca' : 'Brand statement'}>
     <div class="absolute inset-0 opacity-10" aria-hidden="true">
       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-pe-gold/40"></div>
     </div>
 
     <div class="pe-container relative z-10">
-      <p class="pe-script text-pe-rose-display" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
+      <p class="pe-script text-pe-rose-soft" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
         {locale === 'es' ? 'Lujo con Proposito' : 'Luxury with Purpose'}
       </p>
 

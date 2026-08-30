@@ -164,9 +164,9 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
   </div>
 
   {/* Desktop mega menu trigger bar - hidden on mobile */}
-  <div id="nav-mega-bar" class="hidden lg:block border-b transition-colors duration-300 bg-pe-black border-pe-white/8" aria-label="Main categories">
+  <nav id="nav-mega-bar" class="hidden lg:block border-b transition-colors duration-300 bg-pe-black border-pe-white/8" aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
     <div class="pe-container">
-      <ul class="flex items-center gap-0 h-10" role="menubar" aria-label={locale === 'es' ? 'Categorías' : 'Categories'}>
+      <ul class="flex items-center gap-0 h-10">
         <li>
           <a
             href={`/${locale}/`}
@@ -190,8 +190,6 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
             <a
               href={`/${locale}/categories/${section.rootCategorySlug}`}
               class="mega-trigger block font-sans text-[0.63rem] tracking-[0.2em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors px-4 h-10 flex items-center gap-1.5"
-              role="menuitem"
-              aria-haspopup="true"
               aria-expanded="false"
               data-slug={section.rootCategorySlug}
             >
@@ -204,7 +202,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
         ))}
       </ul>
     </div>
-  </div>
+  </nav>
 
   {/* MegaMenuTray island - desktop only */}
   <MegaMenuTray
@@ -244,7 +242,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
             <li class="shrink-0">
               <a
                 href={`/${locale}/products`}
-                class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+                class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3.5 px-4 min-h-11 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
               >
                 {locale === 'es' ? 'Todo' : 'All'}
               </a>
@@ -258,7 +256,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
                 <li class="shrink-0 nav-cat-root">
                   {hasChildren ? (
                     <details class="nav-cat-dropdown" data-nav-cat-dropdown>
-                      <summary class="nav-cat-link nav-cat-summary block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose">
+                      <summary class="nav-cat-link nav-cat-summary block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3.5 px-4 min-h-11 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose">
                         <span>{rootLabel}</span>
                         <span class="nav-cat-caret" aria-hidden="true">▾</span>
                       </summary>
@@ -290,7 +288,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
                   ) : (
                     <a
                       href={`/${locale}/categories/${root.slug}`}
-                      class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3 px-4 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
+                      class="nav-cat-link block font-sans text-[0.68rem] tracking-[0.22em] uppercase text-pe-muted hover:text-pe-rose-ink transition-colors duration-200 py-3.5 px-4 min-h-11 whitespace-nowrap border-b-2 border-transparent hover:border-pe-rose"
                     >
                       {rootLabel}
                     </a>
@@ -583,7 +581,7 @@ const navCategoryRoots: CategoryTreeNode[] = navTree.sections.map((section, inde
   #site-header.theme-light #nav-utility { background-color: var(--pe-surface); border-color: var(--pe-border); }
   #site-header.theme-light #nav-main { background-color: color-mix(in srgb, var(--pe-surface) 95%, transparent); border-color: var(--pe-border); }
   #site-header.theme-light #nav-cats { background-color: var(--pe-surface-soft); border-color: var(--pe-border); }
-  #site-header.theme-light #nav-shipping { color: var(--pe-nav-subtle); }
+  #site-header.theme-light #nav-shipping { color: var(--pe-nav-muted); }
   #site-header.theme-light #theme-toggle { color: var(--pe-nav-subtle); }
   #site-header.theme-light #nav-search-btn { color: var(--pe-nav-subtle); }
   #site-header.theme-light #nav-wishlist-link { color: var(--pe-nav-subtle); }

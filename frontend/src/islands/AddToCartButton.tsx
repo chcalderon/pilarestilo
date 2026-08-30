@@ -100,16 +100,16 @@ export default function AddToCartButton({
   let buttonStateClass: string;
   let buttonLabel: string;
   if (outOfStock) {
-    buttonStateClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
+    buttonStateClass = 'bg-pe-charcoal/10 text-pe-charcoal/40 cursor-not-allowed';
     buttonLabel = labels.outOfStock;
   } else if (verifying) {
-    buttonStateClass = 'bg-pe-rose-action/50 text-pe-on-light cursor-wait';
+    buttonStateClass = 'bg-pe-rose-action/50 text-pe-on-dark cursor-wait';
     buttonLabel = labels.verifying;
   } else if (added) {
-    buttonStateClass = 'bg-pe-rose-deep text-pe-on-light';
+    buttonStateClass = 'bg-pe-rose-deep text-pe-on-dark';
     buttonLabel = labels.added;
   } else {
-    buttonStateClass = 'bg-pe-rose-action text-pe-on-light hover:bg-pe-rose-deep active:scale-95';
+    buttonStateClass = 'bg-pe-rose-action text-pe-on-dark hover:bg-pe-rose-deep active:scale-95';
     buttonLabel = labels.addToCart;
   }
 
@@ -119,15 +119,19 @@ export default function AddToCartButton({
         type="button"
         onClick={handleClick}
         disabled={outOfStock || verifying}
-        aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
         className={[
-          'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3 transition-all duration-200',
+          'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3',
+          'transition-[background-color,transform] duration-200 motion-reduce:transition-none',
           'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1',
           buttonStateClass,
         ].join(' ')}
       >
         {buttonLabel}
       </button>
+
+      <span role="status" aria-live="polite" className="sr-only">
+        {added ? labels.added : ''}
+      </span>
 
       {stockModal && (
         <StockUnavailableModal

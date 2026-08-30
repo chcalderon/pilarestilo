@@ -31,8 +31,9 @@ function slugify(input: string) {
     .replace(/-+$/, '') || 'variant';
 }
 
-const OPTION_SELECTED_CLASS = 'border-pe-rose bg-pe-rose text-white';
+const OPTION_SELECTED_CLASS = 'border-pe-rose-action bg-pe-rose-action text-white';
 const OPTION_DEFAULT_CLASS = 'border-pe-charcoal/30 text-pe-black hover:border-pe-rose hover:text-pe-rose-ink';
+const OPTION_FOCUS_CLASS = 'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1';
 
 function optionButtonClass(disabled: boolean, isSelected: boolean, disabledClass: string) {
   if (disabled) return disabledClass;
@@ -191,8 +192,8 @@ export default function ProductVariantSelector({
     <div className="space-y-4">
       {hasVariants && (
         <>
-          <div>
-            <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
+          <div role="group" aria-labelledby="variant-primary-label">
+            <p id="variant-primary-label" className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectPrimary}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -202,13 +203,15 @@ export default function ProductVariantSelector({
                   <button
                     key={primaryValue}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setSelectedPrimary(primaryValue)}
                     disabled={depletedByGlobalStock}
                     className={[
                       'px-3 py-2 text-xs tracking-wider border transition-colors',
+                      OPTION_FOCUS_CLASS,
                       optionButtonClass(
                         depletedByGlobalStock, isSelected,
-                        'border-pe-black/10 text-pe-charcoal/25 cursor-not-allowed'),
+                        'border-pe-charcoal/15 text-pe-charcoal/30 cursor-not-allowed'),
                     ].join(' ')}
                   >
                     {primaryValue}
@@ -218,8 +221,8 @@ export default function ProductVariantSelector({
             </div>
           </div>
 
-          <div>
-            <p className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
+          <div role="group" aria-labelledby="variant-secondary-label">
+            <p id="variant-secondary-label" className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectSecondary}
             </p>
             {/*
@@ -240,13 +243,15 @@ export default function ProductVariantSelector({
                   <button
                     key={`${item.variant.color}-${item.variant.size}`}
                     type="button"
+                    aria-pressed={isSelected}
                     disabled={depletedByGlobalStock || noStock}
                     onClick={() => setSelectedSecondary(value)}
                     className={[
                       'min-w-12 px-2 h-12 flex items-center justify-center text-xs tracking-wide border transition-colors',
+                      OPTION_FOCUS_CLASS,
                       optionButtonClass(
                         depletedByGlobalStock || noStock, isSelected,
-                        'border-pe-black/10 text-pe-charcoal/25 cursor-not-allowed line-through'),
+                        'border-pe-charcoal/15 text-pe-charcoal/30 cursor-not-allowed line-through'),
                     ].join(' ')}
                   >
                     {value}
@@ -265,11 +270,11 @@ export default function ProductVariantSelector({
       {(() => {
         let addButtonClass: string;
         if (!canAdd) {
-          addButtonClass = 'bg-pe-black/10 text-pe-black/30 cursor-not-allowed';
+          addButtonClass = 'bg-pe-charcoal/10 text-pe-charcoal/40 cursor-not-allowed';
         } else if (added) {
-          addButtonClass = 'bg-pe-rose-deep text-pe-on-light';
+          addButtonClass = 'bg-pe-rose-deep text-pe-on-dark';
         } else {
-          addButtonClass = 'bg-pe-rose-action text-pe-on-light hover:bg-pe-rose-deep active:scale-95';
+          addButtonClass = 'bg-pe-rose-action text-pe-on-dark hover:bg-pe-rose-deep active:scale-95';
         }
         let addButtonLabel: string;
         if (outOfStock) {
@@ -284,9 +289,9 @@ export default function ProductVariantSelector({
             type="button"
             onClick={handleAdd}
             disabled={!canAdd}
-            aria-label={outOfStock ? labels.outOfStock : labels.addToCart}
             className={[
-              'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3 transition-all duration-200',
+              'w-full min-h-11 font-sans text-xs tracking-widest uppercase px-4 py-3',
+              'transition-[background-color,transform] duration-200 motion-reduce:transition-none',
               'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1',
               addButtonClass,
             ].join(' ')}
@@ -295,6 +300,10 @@ export default function ProductVariantSelector({
           </button>
         );
       })()}
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {added ? labels.added : ''}
+      </p>
     </div>
   );
 }

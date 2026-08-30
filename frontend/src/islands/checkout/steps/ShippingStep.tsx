@@ -98,7 +98,7 @@ const FIELD_ORDER: (keyof AddressDraft)[] = [
 
 const inputClass =
   'w-full h-11 border border-pe-charcoal/25 bg-pe-white px-3 font-sans text-sm text-pe-black ' +
-  'focus:outline-hidden focus:border-pe-black';
+  'focus:outline-hidden focus:border-pe-black focus-visible:ring-1 focus-visible:ring-pe-rose/40';
 
 export default function ShippingStep({
   locale,
@@ -305,7 +305,7 @@ export default function ShippingStep({
                       onChange({ addressId: address.id });
                       setContinueError('');
                     }}
-                    className="mt-1 accent-pe-black w-4 h-4 shrink-0"
+                    className="mt-1 accent-pe-rose w-4 h-4 shrink-0"
                   />
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center gap-2 flex-wrap">
@@ -536,7 +536,7 @@ export default function ShippingStep({
               type="checkbox"
               checked={draft.isDefault}
               onChange={(e) => setDraft((prev) => ({ ...prev, isDefault: e.target.checked }))}
-              className="accent-pe-black w-4 h-4"
+              className="accent-pe-rose w-4 h-4"
             />
             <span className="font-sans text-[0.78rem] text-pe-charcoal">{l.makeDefault}</span>
           </label>

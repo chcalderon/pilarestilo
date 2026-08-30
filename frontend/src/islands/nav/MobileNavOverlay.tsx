@@ -15,10 +15,10 @@ type NavLevel =
 const itemClass = 'flex items-center justify-between px-5 py-4 font-sans text-[0.7rem] tracking-[0.2em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
 const sectionButtonClass = 'w-full flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left';
 const sectionLinkClass = 'flex items-center justify-between px-5 py-4 font-display text-xl text-pe-cream hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
-const childButtonClass = 'w-full flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left';
-const childLinkClass = 'flex items-center justify-between px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
-const grandchildLinkClass = 'flex items-center px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
-const viewAllClass = 'flex items-center gap-2 px-5 py-3.5 border-b border-pe-white/5 font-sans text-[0.63rem] tracking-[0.18em] uppercase text-pe-rose-soft/80 hover:text-pe-rose-soft transition-colors';
+const childButtonClass = 'w-full flex items-center justify-between min-h-11 px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors text-left';
+const childLinkClass = 'flex items-center justify-between min-h-11 px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const grandchildLinkClass = 'flex items-center min-h-11 px-5 py-3.5 font-sans text-[0.72rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft hover:bg-pe-white/4 transition-colors';
+const viewAllClass = 'flex items-center gap-2 min-h-11 px-5 py-3.5 border-b border-pe-white/5 font-sans text-[0.63rem] tracking-[0.18em] uppercase text-pe-rose-soft/80 hover:text-pe-rose-soft transition-colors';
 
 interface RootLevelProps {
   readonly sections: NavigationSectionDto[];

@@ -129,7 +129,7 @@ export default function OrderSummary({
               className="flex-1 min-w-0 h-11 border border-pe-charcoal/25 bg-pe-white px-3
                 font-mono text-[0.78rem] uppercase text-pe-black placeholder:font-sans
                 placeholder:normal-case placeholder:text-pe-muted
-                focus:outline-hidden focus:border-pe-black"
+                focus:outline-hidden focus:border-pe-black focus-visible:ring-1 focus-visible:ring-pe-rose/40"
             />
             <button
               type="submit"

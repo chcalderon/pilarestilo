@@ -76,7 +76,7 @@ describe('ReviewForm', () => {
     expect(await screen.findByText(/selecciona una puntuación/i)).toBeInTheDocument();
     expect(createReview).not.toHaveBeenCalled();
 
-    await user.click(screen.getAllByRole('button', { name: '' })[3]);
+    await user.click(screen.getByRole('radio', { name: '4 estrellas' }));
     await user.click(screen.getByRole('button', { name: /publicar reseña/i }));
     expect(await screen.findByText(/el comentario es obligatorio/i)).toBeInTheDocument();
   });
@@ -88,7 +88,7 @@ describe('ReviewForm', () => {
     const { container } = render(<ReviewForm productId="p1" token="tok" userId="u1" locale="es" onSubmitted={onSubmitted} />);
     await screen.findByText('Escribir una reseña');
 
-    await user.click(screen.getAllByRole('button', { name: '' })[3]);
+    await user.click(screen.getByRole('radio', { name: '4 estrellas' }));
     await user.type(container.querySelector('textarea')!, '  Muy bueno  ');
     await user.click(screen.getByRole('button', { name: /publicar reseña/i }));
 
@@ -114,7 +114,7 @@ describe('ReviewForm', () => {
     const { container } = render(<ReviewForm productId="p1" token="tok" userId="u1" locale="es" />);
     await screen.findByText('Escribir una reseña');
 
-    await user.click(screen.getAllByRole('button', { name: '' })[3]);
+    await user.click(screen.getByRole('radio', { name: '4 estrellas' }));
     await user.type(container.querySelector('textarea')!, 'Todo bien');
     await user.click(screen.getByRole('button', { name: /publicar reseña/i }));
 

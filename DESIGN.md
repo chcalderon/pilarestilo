@@ -229,11 +229,11 @@ Un ícono solo, sin caja, no es un botón — es un glifo flotando que además f
 
 ### Inputs / Fields
 
-Sharp. Sin radius. El foco cambia el borde a rosa/50 — no un glow, solo un cambio de color.
+Sharp. Sin radius. El foco cambia el borde a rosa y añade un ring fino — no un glow.
 
 - **Style:** fondo blanco, borde 1px rgba(26,26,26,0.15), sin radius, Montserrat 0.78rem weight 300.
 - **Placeholder:** carbón opacity 0.45 (no más bajo — debe ser legible).
-- **Focus:** borde cambia a rgba(183,110,121,0.5). Sin shadow, sin glow.
+- **Focus:** borde cambia a rosa (`--pe-rose`/60) **más** `focus-visible:ring-1 ring-pe-rose/40` — un hilo de 1px, no un shadow ni un glow. El teclado siempre deja rastro visible.
 - **Error:** borde rojo semántico, texto de error debajo del campo, nunca solo encima.
 - **Disabled:** opacity 0.38, cursor not-allowed.
 

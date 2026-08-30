@@ -278,7 +278,7 @@ export default function NavNotificationBell({ locale }: Props) {
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pe-rose rounded-full flex items-center justify-center shadow-xs">
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pe-rose-deep rounded-full flex items-center justify-center shadow-xs">
             <span className="font-sans text-[0.5rem] font-bold text-white leading-none">{unreadCount > 9 ? '9+' : unreadCount}</span>
           </span>
         )}

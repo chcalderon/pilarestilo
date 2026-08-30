@@ -86,7 +86,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
     let cancelled = false;
     const focusFirstMenuItem = (attempt = 0) => {
       if (cancelled) return;
-      const firstItem = trayRef.current?.querySelector('[role="menuitem"]');
+      const firstItem = trayRef.current?.querySelector("a[href]");
       if (firstItem instanceof HTMLElement) {
         pendingFocusSlugRef.current = null;
         firstItem.focus();
@@ -131,7 +131,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
               <li key={child.id}>
                 <a
                   href={`/${locale}/categories/${child.slug}`}
-                  role="menuitem"
                   className="block font-sans text-[0.7rem] tracking-[0.16em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors duration-150 py-0.5"
                 >
                   {child.name}
@@ -140,7 +139,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                   <a
                     key={gc.id}
                     href={`/${locale}/categories/${gc.slug}`}
-                    role="menuitem"
                     className="block ml-3 font-sans text-[0.61rem] tracking-[0.1em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft/70 transition-colors duration-150 py-0.5"
                   >
                     {gc.name}
@@ -170,7 +168,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
               key={child.id}
               href={`/${locale}/categories/${child.slug}`}
               className="group relative overflow-hidden border border-pe-white/8 bg-pe-white/[0.03] min-h-[12rem]"
-              role="menuitem"
             >
               {child.imageUrl ? (
                 <img
@@ -202,7 +199,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                 <li key={child.id}>
                   <a
                     href={`/${locale}/categories/${child.slug}`}
-                    role="menuitem"
                     className="block font-sans text-[0.68rem] tracking-[0.14em] uppercase text-pe-on-dark-muted hover:text-pe-rose-soft transition-colors"
                   >
                     {child.name}
@@ -231,7 +227,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
             <a
               key={child.id}
               href={`/${locale}/categories/${child.slug}`}
-              role="menuitem"
               className="group flex min-h-[15rem] flex-col justify-end overflow-hidden border border-pe-white/8 bg-pe-white/[0.03] p-5"
               style={child.imageUrl ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.78), rgba(0,0,0,0.15)), url(${child.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
             >
@@ -255,7 +250,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
               <li key={child.id}>
                 <a
                   href={`/${locale}/categories/${child.slug}`}
-                  role="menuitem"
                   className="block border-b border-pe-white/8 pb-2 font-display text-lg text-pe-cream/85 hover:text-pe-rose-soft transition-colors"
                 >
                   {child.name}
@@ -289,7 +283,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
       {/* Tray */}
       <AnimatePresence>
         {activeSection && (
-          <motion.div
+          <motion.nav
             ref={trayRef}
             key={activeSection.rootCategorySlug}
             initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
@@ -300,7 +294,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
             style={{ top: 'var(--header-height, 0px)', minHeight: '60vh', maxHeight: '80vh' }}
             onMouseEnter={cancelClose}
             onMouseLeave={close}
-            role="menu"
             aria-label={activeSection.rootCategoryName}
           >
             <div className="max-w-7xl mx-auto px-6 py-8">
@@ -336,7 +329,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                   <motion.div variants={itemMotion} className="flex flex-col">
                     <a
                       href={activeSection.bannerLink || `/${locale}/categories/${activeSection.rootCategorySlug}`}
-                      role="menuitem"
                       className="group relative block overflow-hidden rounded-xs"
                     >
                       <img
@@ -369,7 +361,6 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                   <motion.div variants={itemMotion} className="flex flex-col">
                     <a
                       href={`/${locale}/categories/${activeSection.rootCategorySlug}`}
-                      role="menuitem"
                       className="group relative block overflow-hidden rounded-xs"
                     >
                       <img
@@ -384,7 +375,7 @@ export default function MegaMenuTray({ sections, locale }: Props) {
                 )}
               </motion.div>
             </div>
-          </motion.div>
+          </motion.nav>
         )}
       </AnimatePresence>
     </>

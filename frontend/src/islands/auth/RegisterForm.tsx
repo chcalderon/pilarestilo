@@ -49,14 +49,14 @@ function RegisterConsent({ locale, es, marketing, onMarketingChange }: ConsentPr
         {es ? 'Al crear la cuenta aceptas los ' : 'Creating an account means accepting our '}
         <a
           href={`/${locale}/shipping-returns`}
-          className="text-pe-rose-ink hover:underline underline-offset-2"
+          className="text-pe-rose-ink underline underline-offset-2 decoration-pe-rose-ink/40 hover:decoration-pe-rose-ink"
         >
           {es ? 'términos de compra' : 'terms of sale'}
         </a>
         {es ? ' y la ' : ' and our '}
         <a
           href={`/${locale}/privacy`}
-          className="text-pe-rose-ink hover:underline underline-offset-2"
+          className="text-pe-rose-ink underline underline-offset-2 decoration-pe-rose-ink/40 hover:decoration-pe-rose-ink"
         >
           {es ? 'política de privacidad' : 'privacy policy'}
         </a>
@@ -115,39 +115,41 @@ export default function RegisterForm({ locale, redirect }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {/* Full name */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="register-name" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Nombre completo' : 'Full name'}
         </label>
         <input
+          id="register-name"
           type="text"
           required
           autoComplete="name"
           value={fullName}
           onChange={e => setFullName(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-muted"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200 placeholder:text-pe-muted"
           placeholder={es ? 'María García' : 'Jane Smith'}
         />
       </div>
 
       {/* Email */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="register-email" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Correo electrónico' : 'Email'}
         </label>
         <input
+          id="register-email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-muted"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200 placeholder:text-pe-muted"
           placeholder={es ? 'tu@email.com' : 'you@email.com'}
         />
       </div>
 
       {/* Password */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="register-password" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Contraseña' : 'Password'}
           <span className="ml-1.5 text-pe-muted normal-case tracking-normal">
             ({es ? 'mín. 8 caracteres' : 'min. 8 characters'})
@@ -155,12 +157,13 @@ export default function RegisterForm({ locale, redirect }: Props) {
         </label>
         <div className="relative">
           <input
+            id="register-password"
             type={showPass ? 'text' : 'password'}
             required
             autoComplete="new-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
             placeholder="••••••••"
           />
           <button
@@ -208,7 +211,7 @@ export default function RegisterForm({ locale, redirect }: Props) {
         {es ? '¿Ya tienes cuenta?' : 'Already have an account?'}{' '}
         <a
           href={`/${locale}/auth/login`}
-          className="text-pe-rose-ink hover:underline underline-offset-2"
+          className="text-pe-rose-ink underline underline-offset-2 decoration-pe-rose-ink/40 hover:decoration-pe-rose-ink"
         >
           {es ? 'Inicia sesión' : 'Sign in'}
         </a>

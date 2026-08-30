@@ -61,33 +61,35 @@ export default function LoginForm({ locale, redirect }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {/* Email */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="login-email" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Correo electrónico' : 'Email'}
         </label>
         <input
+          id="login-email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200 placeholder:text-pe-muted"
+          className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200 placeholder:text-pe-muted"
           placeholder={es ? 'tu@email.com' : 'you@email.com'}
         />
       </div>
 
       {/* Password */}
       <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
+        <label htmlFor="login-password" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
           {es ? 'Contraseña' : 'Password'}
         </label>
         <div className="relative">
           <input
+            id="login-password"
             type={showPass ? 'text' : 'password'}
             required
             autoComplete="current-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+            className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
             placeholder={es ? 'Tu contraseña' : 'Your password'}
           />
           <button
@@ -140,7 +142,7 @@ export default function LoginForm({ locale, redirect }: Props) {
         {es ? '¿No tienes cuenta?' : "Don't have an account?"}{' '}
         <a
           href={`/${locale}/auth/register`}
-          className="text-pe-rose-ink hover:underline underline-offset-2"
+          className="text-pe-rose-ink underline underline-offset-2 decoration-pe-rose-ink/40 hover:decoration-pe-rose-ink"
         >
           {es ? 'Regístrate' : 'Register'}
         </a>

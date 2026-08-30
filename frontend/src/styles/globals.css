@@ -164,7 +164,7 @@
     --pe-rose-ink: #D8AEB3;
     --pe-gold-ink: #C6A96B;
     /* -rgb (each chip fill + border base) is not redefined here: constant across themes. */
-    --pe-positive-ink: #06B382;
+    --pe-positive-ink: #3DD9AB;
     --pe-positive-surface: #122019;
     --pe-danger-ink: #FCA5A5;
     --pe-danger-surface: #39191E;
@@ -303,22 +303,22 @@ html[data-theme='light'] .text-pe-charcoal\/35 {
 
 html[data-theme='light'] .text-pe-charcoal\/40,
 html[data-theme='light'] .text-pe-charcoal\/45 {
-  color: color-mix(in srgb, var(--pe-muted) 70%, transparent) !important;
+  color: color-mix(in srgb, var(--pe-muted) 77%, transparent) !important;
 }
 
 html[data-theme='light'] .text-pe-charcoal\/50,
 html[data-theme='light'] .text-pe-charcoal\/55 {
-  color: color-mix(in srgb, var(--pe-muted) 76%, transparent) !important;
+  color: color-mix(in srgb, var(--pe-muted) 83%, transparent) !important;
 }
 
 html[data-theme='light'] .text-pe-charcoal\/60,
 html[data-theme='light'] .text-pe-charcoal\/65,
 html[data-theme='light'] .text-pe-charcoal\/70 {
-  color: color-mix(in srgb, var(--pe-muted) 82%, transparent) !important;
+  color: color-mix(in srgb, var(--pe-muted) 88%, transparent) !important;
 }
 
 html[data-theme='light'] .text-pe-charcoal\/75 {
-  color: color-mix(in srgb, var(--pe-muted) 88%, transparent) !important;
+  color: color-mix(in srgb, var(--pe-muted) 93%, transparent) !important;
 }
 
 html[data-theme='light'] .placeholder\:text-pe-charcoal\/30::placeholder {

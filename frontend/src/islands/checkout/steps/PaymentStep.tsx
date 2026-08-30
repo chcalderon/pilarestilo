@@ -123,7 +123,7 @@ export default function PaymentStep({
               value="TRANSFER"
               checked={method === 'TRANSFER'}
               onChange={() => onSelect('TRANSFER')}
-              className="mt-1 accent-pe-black w-4 h-4 shrink-0"
+              className="mt-1 accent-pe-rose w-4 h-4 shrink-0"
             />
             <span className="flex-1">
               <span className="flex items-center gap-2 font-sans text-sm font-semibold text-pe-black">
@@ -163,7 +163,7 @@ export default function PaymentStep({
               value="WEBPAY"
               checked={method === 'WEBPAY'}
               onChange={() => onSelect('WEBPAY')}
-              className="mt-1 accent-pe-black w-4 h-4 shrink-0"
+              className="mt-1 accent-pe-rose w-4 h-4 shrink-0"
             />
             <span className="flex-1">
               <span className="flex items-center gap-2 font-sans text-sm font-semibold text-pe-black">

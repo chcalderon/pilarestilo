@@ -110,7 +110,7 @@ const clearUrl = `/${locale}/products`;
       )}
       <div class="relative pe-container py-10">
         <!-- Breadcrumbs -->
-        <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-muted mb-3" aria-label="Breadcrumb">
+        <nav class="flex items-center gap-2 font-sans text-[0.68rem] tracking-[0.18em] uppercase text-pe-muted mb-3" aria-label={locale === 'es' ? 'Ruta de navegación' : 'Breadcrumb'}>
           <a href={`/${locale}/`} class="hover:text-pe-rose-ink transition-colors duration-200">
             {locale === 'es' ? 'Inicio' : 'Home'}
           </a>
@@ -159,7 +159,7 @@ const clearUrl = `/${locale}/products`;
                 <button
                   type="button"
                   id="products-cat-tree-toggle"
-                  class="inline-flex items-center justify-center w-6 h-6 border border-pe-black/15 text-pe-muted hover:text-pe-rose-ink hover:border-pe-rose/40 transition-colors"
+                  class="inline-flex items-center justify-center w-6 h-6 border border-pe-charcoal/20 text-pe-muted hover:text-pe-rose-ink hover:border-pe-rose/40 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose"
                   aria-expanded="true"
                   aria-label={locale === 'es' ? 'Contraer categorías' : 'Collapse categories'}
                   data-label-expand={locale === 'es' ? 'Expandir categorías' : 'Expand categories'}
@@ -200,10 +200,10 @@ const clearUrl = `/${locale}/products`;
 
             <!-- Condition toggle -->
             <div>
-              <h3 class="pe-eyebrow mb-3">
+              <h3 class="pe-eyebrow mb-3" id="products-condition-label">
                 {locale === 'es' ? 'Condición' : 'Condition'}
               </h3>
-              <div class="flex flex-col gap-1.5">
+              <div class="flex flex-col gap-1.5" role="group" aria-labelledby="products-condition-label">
                 {(['NEW', 'USED'] as const).map(c => {
                   const isActive = condition === c;
                   const newUrl = isActive
@@ -212,8 +212,10 @@ const clearUrl = `/${locale}/products`;
                   return (
                     <a
                       href={newUrl}
+                      aria-current={isActive ? 'true' : undefined}
                       class:list={[
                         'flex items-center gap-2 font-sans text-[0.78rem] py-0.5',
+                        'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-1',
                         isActive ? 'text-pe-rose-ink' : 'text-pe-muted hover:text-pe-rose-ink',
                       ]}
                     >
@@ -224,6 +226,9 @@ const clearUrl = `/${locale}/products`;
                         {isActive && <Icon name="check" size={8} class="text-pe-white" strokeWidth={3} />}
                       </span>
                       {c === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale)}
+                      {isActive && (
+                        <span class="sr-only">{locale === 'es' ? '(filtro activo, quitar)' : '(active filter, remove)'}</span>
+                      )}
                     </a>
                   );
                 })}
@@ -241,7 +246,7 @@ const clearUrl = `/${locale}/products`;
                   name="brand"
                   value={brand ?? ''}
                   placeholder={locale === 'es' ? 'Buscar marca...' : 'Search brand...'}
-                  class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-black/10 px-2.5 py-1.5 focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
+                  class="flex-1 font-sans text-[0.78rem] bg-pe-white border border-pe-charcoal/20 px-2.5 py-1.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
                   aria-label={locale === 'es' ? 'Filtrar por marca' : 'Filter by brand'}
                 />
                 {category && <input type="hidden" name="category" value={category} />}
