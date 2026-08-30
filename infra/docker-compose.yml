@@ -111,15 +111,13 @@ services:
       APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:-1500}
       APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:-3}
       APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:-.dlt}
-      APP_INVENTORY_REMOTE_ENABLED: ${APP_INVENTORY_REMOTE_ENABLED:-false}
-      APP_INVENTORY_REMOTE_BASE_URL: ${APP_INVENTORY_REMOTE_BASE_URL:-http://inventory-service:8082}
-      APP_ORDER_REMOTE_ENABLED: ${APP_ORDER_REMOTE_ENABLED:-false}
-      APP_ORDER_REMOTE_WRITE_ENABLED: ${APP_ORDER_REMOTE_WRITE_ENABLED:-false}
-      APP_ORDER_REMOTE_BASE_URL: ${APP_ORDER_REMOTE_BASE_URL:-http://order-service:8083}
-      APP_ORDER_REMOTE_SERVICE_TOKEN: ${APP_ORDER_REMOTE_SERVICE_TOKEN:-order-service-internal-token}
-      APP_PAYMENT_REMOTE_ENABLED: ${APP_PAYMENT_REMOTE_ENABLED:-false}
-      APP_PAYMENT_REMOTE_BASE_URL: ${APP_PAYMENT_REMOTE_BASE_URL:-http://payment-service:8084}
-      APP_PAYMENT_REMOTE_SERVICE_TOKEN: ${APP_PAYMENT_REMOTE_SERVICE_TOKEN:-payment-service-internal-token}
+      # product/inventory/order/payment-service were consolidated back into the monolith on
+      # 2026-08-30. Pinned to "false" here (not via ${VAR}) so a stale =true in a deployed .env
+      # can't make the monolith delegate to a service that no longer exists.
+      APP_INVENTORY_REMOTE_ENABLED: "false"
+      APP_ORDER_REMOTE_ENABLED: "false"
+      APP_ORDER_REMOTE_WRITE_ENABLED: "false"
+      APP_PAYMENT_REMOTE_ENABLED: "false"
       APP_GATEWAY_RATE_LIMIT_ENABLED: ${APP_GATEWAY_RATE_LIMIT_ENABLED:-true}
       APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS: ${APP_GATEWAY_RATE_LIMIT_WINDOW_SECONDS:-60}
       APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS: ${APP_GATEWAY_RATE_LIMIT_LOGIN_MAX_REQUESTS:-12}
@@ -160,132 +158,6 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 90s
-      retries: 3
-
-  product-service:
-    build:
-      context: ../services/product-service
-      dockerfile: Dockerfile
-    container_name: pe_product_service
-    profiles: ["microservices"]
-    restart: unless-stopped
-    mem_limit: 820m         # heap cap — see the note on the kafka service
-    environment:
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
-      APP_DB_READ_REPLICA_ENABLED: ${APP_DB_READ_REPLICA_ENABLED:-false}
-      APP_DB_READ_REPLICA_URL: ${APP_DB_READ_REPLICA_URL:-}
-      APP_DB_READ_REPLICA_USERNAME: ${APP_DB_READ_REPLICA_USERNAME:-}
-      APP_DB_READ_REPLICA_PASSWORD: ${APP_DB_READ_REPLICA_PASSWORD:-}
-      APP_DB_READ_REPLICA_DRIVER_CLASS_NAME: ${APP_DB_READ_REPLICA_DRIVER_CLASS_NAME:-org.postgresql.Driver}
-      SERVER_PORT: "8081"
-      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
-      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
-      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - pe_net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      start_period: 45s
-      retries: 3
-
-  inventory-service:
-    build:
-      context: ../services/inventory-service
-      dockerfile: Dockerfile
-    container_name: pe_inventory_service
-    profiles: ["microservices"]
-    restart: unless-stopped
-    mem_limit: 820m         # heap cap — see the note on the kafka service
-    environment:
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
-      SERVER_PORT: "8082"
-      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
-      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
-      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - pe_net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      start_period: 45s
-      retries: 3
-
-  order-service:
-    build:
-      context: ../services/order-service
-      dockerfile: Dockerfile
-    container_name: pe_order_service
-    profiles: ["microservices"]
-    restart: unless-stopped
-    mem_limit: 1g           # heap cap — see the note on the kafka service
-    environment:
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
-      JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
-      APP_ORDER_INTERNAL_TOKEN: ${APP_ORDER_REMOTE_SERVICE_TOKEN:-order-service-internal-token}
-      APP_INVENTORY_REMOTE_BASE_URL: ${APP_INVENTORY_REMOTE_BASE_URL:-http://inventory-service:8082}
-      SERVER_PORT: "8083"
-      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
-      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
-      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - pe_net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8083/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      start_period: 45s
-      retries: 3
-
-  payment-service:
-    build:
-      context: ../services/payment-service
-      dockerfile: Dockerfile
-    container_name: pe_payment_service
-    profiles: ["microservices"]
-    restart: unless-stopped
-    mem_limit: 820m         # heap cap — see the note on the kafka service
-    environment:
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pilarestilo}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pilar}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pilar}
-      JWT_SECRET: ${JWT_SECRET:-U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
-      APP_PAYMENT_INTERNAL_TOKEN: ${APP_PAYMENT_REMOTE_SERVICE_TOKEN:-payment-service-internal-token}
-      SERVER_PORT: "8084"
-      APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-false}
-      APP_TRACING_OTLP_ENDPOINT: ${APP_TRACING_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
-      APP_TRACING_SAMPLING_PROBABILITY: ${APP_TRACING_SAMPLING_PROBABILITY:-1.0}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - pe_net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      start_period: 45s
       retries: 3
 
   notification-service:

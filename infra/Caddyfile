@@ -34,73 +34,10 @@
     respond @api_invalid_method "Method Not Allowed" 405
 
     route {
-        # Reviews live only in the monolith, and this must be matched before @product_reads or the
-        # path falls into it and reaches product-service, which answers 404. The fallback in that
-        # block does not save it: lb_policy first fails over on a dead connection, not on a
-        # successful 404, so the storefront silently showed no reviews at all.
-        @product_review_reads {
-            method GET HEAD
-            path /api/products/*/reviews /api/products/*/reviews/*
-        }
-        handle @product_review_reads {
-            reverse_proxy backend:8080
-        }
-
-        # Catalog reads - route product GETs to extracted product-service when active,
-        # with backend:8080 as fallback when running without the microservices profile.
-        @product_reads {
-            method GET HEAD
-            path /api/products /api/products/*
-        }
-        handle @product_reads {
-            reverse_proxy product-service:8081 backend:8080 {
-                lb_policy first
-                lb_try_duration 5s
-                fail_duration 15s
-                transport http {
-                    dial_timeout 2s
-                    response_header_timeout 30s
-                }
-            }
-        }
-
-        # Inventory reads - route to extracted inventory-service with backend fallback.
-        @inventory_reads {
-            method GET HEAD
-            path /api/inventory /api/inventory/*
-        }
-        handle @inventory_reads {
-            reverse_proxy inventory-service:8082 backend:8080 {
-                lb_policy first
-                lb_try_duration 5s
-                fail_duration 15s
-                transport http {
-                    dial_timeout 2s
-                    response_header_timeout 30s
-                }
-            }
-        }
-
-        # Payment reads - route GET/HEAD payment queries to extracted payment-service with fallback.
-        @payment_reads {
-            method GET HEAD
-            path /api/payments /api/payments/*
-        }
-        handle @payment_reads {
-            reverse_proxy payment-service:8084 backend:8080 {
-                lb_policy first
-                lb_try_duration 5s
-                fail_duration 15s
-                transport http {
-                    dial_timeout 2s
-                    response_header_timeout 30s
-                }
-            }
-        }
-
         # Notifications - the whole resource is owned by notification-service: the bell reads
         # (GET) and the mark-as-read writes (PUT). backend:8080 as fallback when the microservices
-        # profile is off.
+        # profile is off. (product/inventory/order/payment-service were consolidated back into the
+        # monolith on 2026-08-30 — their routes now fall through to the generic /api/* handler.)
         @notification_reads {
             method GET HEAD PUT
             path /api/notifications /api/notifications/*
@@ -115,47 +52,6 @@
                     response_header_timeout 30s
                 }
             }
-        }
-
-        # Order reads - route catalog/order queries to extracted order-service with backend fallback.
-        @order_reads {
-            method GET HEAD
-            path /api/orders /api/orders/*
-        }
-        handle @order_reads {
-            reverse_proxy order-service:8083 backend:8080 {
-                lb_policy first
-                lb_try_duration 5s
-                fail_duration 15s
-                transport http {
-                    dial_timeout 2s
-                    response_header_timeout 30s
-                }
-            }
-        }
-
-        # Order writes - keep backend as the auth/orchestration entrypoint.
-        # Backend delegates to order-service via internal service token when remote-write is enabled.
-        @order_writes {
-            method POST PATCH
-            path /api/orders /api/orders/*
-        }
-        handle @order_writes {
-            reverse_proxy backend:8080 {
-                lb_try_duration 5s
-                fail_duration 15s
-                transport http {
-                    dial_timeout 2s
-                    response_header_timeout 30s
-                }
-            }
-        }
-
-        @order_disallowed {
-            path /api/orders /api/orders/*
-        }
-        handle @order_disallowed {
-            respond "Method Not Allowed" 405
         }
 
         # Product AI single-image inference/transform can take longer on cold model/API calls.

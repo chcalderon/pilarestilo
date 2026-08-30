@@ -8,26 +8,6 @@ scrape_configs:
     static_configs:
       - targets: ["backend:8080"]
 
-  - job_name: product_service
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["product-service:8081"]
-
-  - job_name: inventory_service
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["inventory-service:8082"]
-
-  - job_name: order_service
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["order-service:8083"]
-
-  - job_name: payment_service
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["payment-service:8084"]
-
   - job_name: notification_service
     metrics_path: /actuator/prometheus
     static_configs:
