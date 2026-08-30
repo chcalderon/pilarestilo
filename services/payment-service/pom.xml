@@ -19,7 +19,7 @@
 
   <properties>
     <java.version>25</java.version>
-    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <!--
       Transitive versions pinned against known CVEs, the same set the monolith carries. They lived
       only there, so the extracted services shipped the vulnerable versions of libraries the
@@ -78,18 +78,18 @@
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
-      <version>0.12.6</version>
+      <version>0.13.0</version>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-impl</artifactId>
-      <version>0.12.6</version>
+      <version>0.13.0</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-jackson</artifactId>
-      <version>0.12.6</version>
+      <version>0.13.0</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -188,7 +188,7 @@
           <plugin>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-maven-plugin</artifactId>
-            <version>4.9.8.0</version>
+            <version>4.10.4.0</version>
             <configuration>
               <effort>Max</effort>
               <threshold>Low</threshold>
