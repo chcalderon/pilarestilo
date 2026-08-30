@@ -21,6 +21,9 @@ const BUYERS = Number(__ENV.BUYERS || 9);
 const ADMIN_VUS = Number(__ENV.ADMIN_VUS || 1);
 const HOLD = __ENV.HOLD || '8m';
 const ADMIN_DURATION = __ENV.ADMIN_DURATION || '9m30s';
+// 'delivery' = buyer waits for the admin to ship, then confirms (measures the operator bottleneck).
+// 'proof'    = buyer stops after submitting the transfer proof (measures raw checkout throughput).
+const STOP_AFTER = __ENV.STOP_AFTER || 'delivery';
 
 // CMS operator accounts. loadadmin1/2 are created by prep.sh; all use admin2026.
 const ADMIN_ACCOUNTS = [
@@ -62,10 +65,11 @@ export const options = {
       gracefulStop: '30s',
     },
   },
+  // Infra gates only. lt_purchase_failed is tracked but not gated — at high buyer counts the
+  // failures are admin/dispatch backlog (operators can't keep up), not the box.
   thresholds: {
     http_req_failed: ['rate<0.05'],
     'http_req_duration{expected_response:true}': ['p(95)<2500'],
-    lt_purchase_failed: ['count<10'],
   },
 };
 
@@ -219,6 +223,13 @@ export function buyer(data) {
     JSON.stringify({ proofReference: PROOF_URL }), B);
   if (!check(proof, { 'proof 2xx': (r) => r.status < 300 })) {
     purchaseFailed.add(1);
+    return;
+  }
+
+  if (STOP_AFTER === 'proof') {
+    purchaseComplete.add(1);
+    purchaseDuration.add(Date.now() - t0);
+    jitter(0.5, 2.0);
     return;
   }
 
