@@ -65,11 +65,13 @@ export const options = {
       gracefulStop: '30s',
     },
   },
-  // Infra gates only. lt_purchase_failed is tracked but not gated — at high buyer counts the
-  // failures are admin/dispatch backlog (operators can't keep up), not the box.
+  // The gate is latency. http_req_failed is NOT gated: this flow polls GET /payments/order/{id}
+  // for a Kafka-async row (404 until it lands) and the 3 operators race on claim/dispatch (409) —
+  // both inflate it without meaning the box is unhealthy. Read `checks` (order/proof 2xx),
+  // lt_purchase_complete, http_req_duration, and the backend error log instead.
   thresholds: {
-    http_req_failed: ['rate<0.05'],
     'http_req_duration{expected_response:true}': ['p(95)<2500'],
+    checks: ['rate>0.98'],
   },
 };
 
@@ -120,6 +122,31 @@ export function setup() {
   }
   if (!loc) throw new Error('no region/city/comuna in /locations/tree');
 
+  // Pre-register a buyer pool once (registering per iteration trips the auth rate limit and,
+  // on failure, k6 restarts the iteration instantly — a thundering herd). Buyers reuse these
+  // tokens; real customers have accounts too.
+  const buyerPoolSize = Math.max(BUYERS * 2, 20);
+  const buyerPool = [];
+  for (let i = 0; i < buyerPoolSize; i++) {
+    const email = `load_pool_${i}_${Date.now()}@loadtest.local`;
+    const r = http.post(`${BASE}/auth/register`, JSON.stringify({
+      email, password: PASSWORD, fullName: `LoadTest Buyer ${i}`,
+    }), { headers: { 'Content-Type': 'application/json' } });
+    if (r.status === 200 || r.status === 201) {
+      const a = j(r);
+      // give each pooled buyer a default address up front
+      const ad = http.post(`${BASE}/auth/me/addresses`, JSON.stringify({
+        label: 'Casa LT', recipientName: `Cliente LT ${i}`, phone: '+56912345678',
+        line1: `LT Calle ${i}`, line2: 'Depto 10',
+        regionId: loc.regionId, cityId: loc.cityId, comunaId: loc.comunaId,
+        comuna: loc.comuna, city: loc.city, region: loc.region, reference: 'Porteria', isDefault: true,
+      }), { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${a.accessToken}` } });
+      buyerPool.push({ token: a.accessToken, userId: a.userId, addressId: (j(ad) || {}).id });
+    }
+    if (i % 12 === 11) sleep(1); // stay under the register rate limit while seeding
+  }
+  if (!buyerPool.length) throw new Error('could not seed the buyer pool');
+
   const prodPage = j(http.get(`${BASE}/products?active=true&inStock=true&page=0&size=50`));
   const products = [];
   for (const p of (prodPage && prodPage.content) || []) {
@@ -135,8 +162,9 @@ export function setup() {
 
   return {
     admins,                       // [{token, userId}] — one per CMS operator VU
-    adminToken: admin.token,      // buyers reuse the first for the payment-row bootstrap
+    adminToken: admin.token,
     adminUserId: admin.userId,
+    buyerPool,                    // [{token, userId, addressId}] — reused, no per-iteration auth
     zoneCode: zones[zones.length - 1].code,
     courierId: couriers[couriers.length - 1].id,
     loc,
@@ -156,41 +184,21 @@ function safeArr(s) {
 
 // ---------------------------------------------------------------- buyer
 
+function bail() {
+  purchaseFailed.add(1);
+  sleep(2);            // never let a failing iteration spin — k6 restarts instantly otherwise
+}
+
 export function buyer(data) {
   const t0 = Date.now();
-  const tag = `${__VU}_${__ITER}_${Date.now()}`;
-  const email = `load_${tag}@loadtest.local`;
-  const H = { headers: { 'Content-Type': 'application/json' } };
-
-  const reg = http.post(`${BASE}/auth/register`, JSON.stringify({
-    email, password: PASSWORD, fullName: `LoadTest Buyer ${__VU}`,
-  }), H);
-  if (!check(reg, { 'register 2xx': (r) => r.status === 200 || r.status === 201 })) {
-    purchaseFailed.add(1);
-    return;
-  }
-  const acc = j(reg);
-  const B = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${acc.accessToken}` } };
+  const me = data.buyerPool[(__VU * 131 + __ITER) % data.buyerPool.length];
+  const B = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${me.token}` } };
+  const addressId = me.addressId;
+  const product = data.products[(__VU + __ITER) % data.products.length];
   jitter(0.3, 1.0);
 
-  const product = data.products[(__VU + __ITER) % data.products.length];
-
-  const addr = http.post(`${BASE}/auth/me/addresses`, JSON.stringify({
-    label: 'Casa LT', recipientName: `Cliente LT ${__VU}`, phone: '+56912345678',
-    line1: `LT Calle ${tag}`, line2: 'Depto 10',
-    regionId: data.loc.regionId, cityId: data.loc.cityId, comunaId: data.loc.comunaId,
-    comuna: data.loc.comuna, city: data.loc.city, region: data.loc.region,
-    reference: 'Porteria', isDefault: true,
-  }), B);
-  if (!check(addr, { 'address 2xx': (r) => r.status < 300 })) {
-    purchaseFailed.add(1);
-    return;
-  }
-  const addressId = j(addr).id;
-  jitter(0.4, 1.2);
-
   const orderBody = {
-    customerId: acc.userId,
+    customerId: me.userId,
     items: [Object.assign({ productId: product.id, quantity: 1 },
       product.variantColor ? { variantColor: product.variantColor, variantSize: product.variantSize } : {})],
     paymentMethod: 'TRANSFER',
@@ -201,30 +209,24 @@ export function buyer(data) {
   const so = Date.now();
   const orderRes = http.post(`${BASE}/orders`, JSON.stringify(orderBody), B);
   stepOrder.add(Date.now() - so);
-  if (!check(orderRes, { 'order 2xx': (r) => r.status < 300 })) {
-    purchaseFailed.add(1);
-    return;
-  }
+  if (!check(orderRes, { 'order 2xx': (r) => r.status < 300 })) { bail(); return; }
   const orderId = j(orderRes).id;
   jitter(0.3, 0.8);
 
   // payment row is registered async off OrderCreated (Kafka) — poll for it
   const sp = Date.now();
   let paymentId = null;
-  for (let i = 0; i < 30 && !paymentId; i++) {
+  for (let i = 0; i < 40 && !paymentId; i++) {
     const pr = http.get(`${BASE}/payments/order/${orderId}`, B);
     if (pr.status === 200) { paymentId = j(pr).id; break; }
     sleep(1);
   }
   stepPayVisible.add(Date.now() - sp);
-  if (!paymentId) { purchaseFailed.add(1); return; }
+  if (!paymentId) { bail(); return; }
 
   const proof = http.patch(`${BASE}/payments/${paymentId}/proof`,
     JSON.stringify({ proofReference: PROOF_URL }), B);
-  if (!check(proof, { 'proof 2xx': (r) => r.status < 300 })) {
-    purchaseFailed.add(1);
-    return;
-  }
+  if (!check(proof, { 'proof 2xx': (r) => r.status < 300 })) { bail(); return; }
 
   if (STOP_AFTER === 'proof') {
     purchaseComplete.add(1);
@@ -245,7 +247,7 @@ export function buyer(data) {
     sleep(1.5);
   }
   waitShipped.add(Date.now() - sw);
-  if (status !== 'SHIPPED' && status !== 'DELIVERED') { purchaseFailed.add(1); return; }
+  if (status !== 'SHIPPED' && status !== 'DELIVERED') { bail(); return; }
 
   if (status === 'SHIPPED') {
     http.patch(`${BASE}/orders/${orderId}/confirm-delivery`, null, B);
@@ -259,10 +261,10 @@ export function buyer(data) {
   if (status === 'DELIVERED') {
     purchaseComplete.add(1);
     purchaseDuration.add(Date.now() - t0);
+    jitter(0.5, 2.0);
   } else {
-    purchaseFailed.add(1);
+    bail();
   }
-  jitter(0.5, 2.0);
 }
 
 // ---------------------------------------------------------------- admin
