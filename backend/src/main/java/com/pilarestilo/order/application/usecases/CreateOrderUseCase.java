@@ -10,7 +10,6 @@ import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
-import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderCreated;
 import com.pilarestilo.order.domain.model.Order;
@@ -47,7 +46,6 @@ public class CreateOrderUseCase {
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final DomainEventPublisher eventPublisher;
-    private final OrderRemoteCommandClient orderRemoteCommandClient;
     private final SystemSettingsRepository systemSettingsRepository;
     private final DiscountRedemptionService discountRedemptionService;
     private final CustomerAddressBookService customerAddressBookService;
@@ -56,7 +54,6 @@ public class CreateOrderUseCase {
                                ProductRepository productRepository,
                                InventoryService inventoryService,
                                DomainEventPublisher eventPublisher,
-                               OrderRemoteCommandClient orderRemoteCommandClient,
                                SystemSettingsRepository systemSettingsRepository,
                                DiscountRedemptionService discountRedemptionService,
                                CustomerAddressBookService customerAddressBookService) {
@@ -64,7 +61,6 @@ public class CreateOrderUseCase {
         this.productRepository = productRepository;
         this.inventoryService = inventoryService;
         this.eventPublisher = eventPublisher;
-        this.orderRemoteCommandClient = orderRemoteCommandClient;
         this.systemSettingsRepository = systemSettingsRepository;
         this.discountRedemptionService = discountRedemptionService;
         this.customerAddressBookService = customerAddressBookService;
@@ -75,10 +71,6 @@ public class CreateOrderUseCase {
         var settings = systemSettingsRepository.get();
         validatePaymentMethodEnabled(command.paymentMethod(), settings);
         ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
-
-        if (orderRemoteCommandClient.isWriteEnabled()) {
-            return createRemotely(command, settings.getTax().vatRate());
-        }
 
         List<OrderItem> orderItems = new ArrayList<>();
 
@@ -101,9 +93,8 @@ public class CreateOrderUseCase {
                 .map(item -> item.getUnitPrice().amount().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Evaluated before inventory is touched. Reserving first meant an invalid code left stock
-        // reserved -- masked by @Transactional locally, but not when APP_INVENTORY_REMOTE_ENABLED
-        // sends the reservation to inventory-service as a committed HTTP call no rollback undoes.
+        // Evaluated before inventory is touched: reserving first would leave stock reserved against
+        // an invalid code until the transaction rolled back.
         DiscountRedemptionService.DiscountEvaluation evaluation = null;
         if (command.discountCode() != null && !command.discountCode().isBlank()) {
             evaluation = discountRedemptionService.evaluate(
@@ -182,65 +173,6 @@ public class CreateOrderUseCase {
 
         eventPublisher.publish(new OrderCreated(saved.getId(), saved.getCustomerId(), Instant.now()));
         return OrderMapper.toDto(saved);
-    }
-
-    /**
-     * Order writes are delegated to order-service, which owns no redemption ledger. The monolith
-     * therefore keeps the whole discount decision and sends order-service only the resulting
-     * amount, a field its request already carried.
-     *
-     * <p>The sequence is inverted relative to the local path. Locally the reservation happens
-     * after the order is saved, because the ledger references {@code orders(id)} and a failure
-     * rolls the order back with it. Here there is no shared transaction with order-service, so a
-     * reservation that failed after the remote write would leave an order to cancel. Claiming the
-     * slot first moves the only racy step to a point where nothing has been created yet: losing
-     * the race throws before order-service is ever called.
-     *
-     * <p>Everything local runs inside this transaction, so a failure anywhere after the claim
-     * rolls the reservation back and frees the slot. The narrow remaining gap is a remote order
-     * that succeeds and a local commit that then fails: the order exists with its discount applied
-     * and no ledger row, so the code stays usable. That favours the customer and is rare. It is
-     * also currently hard to spot after the fact — {@code orders.discount_code} was added for
-     * exactly that trail and no write path fills it in yet, on either side.
-     */
-    private OrderDto createRemotely(CreateOrderCommand command, BigDecimal taxRate) {
-        DiscountRedemptionService.DiscountEvaluation evaluation = null;
-        UUID redemptionId = null;
-
-        if (command.discountCode() != null && !command.discountCode().isBlank()) {
-            /*
-             * Priced from the same products table order-service reads, so both arrive at the same
-             * subtotal; it only ever sees the amount, never the code.
-             */
-            Money subtotal = Money.of(subtotalForRemote(command));
-            evaluation = discountRedemptionService.evaluate(
-                    command.discountCode(), subtotal, command.customerId());
-            redemptionId = discountRedemptionService.reserveWithoutOrder(evaluation, command.customerId());
-        }
-
-        CreateOrderCommand outbound = evaluation == null
-                ? command
-                : command.withResolvedDiscount(evaluation.amount(), evaluation.discountId(), evaluation.code());
-
-        OrderDto created = orderRemoteCommandClient.create(outbound, taxRate);
-
-        if (redemptionId != null) {
-            discountRedemptionService.attachOrder(redemptionId, created.id());
-        }
-
-        eventPublisher.publish(new OrderCreated(created.id(), created.customerId(), Instant.now()));
-        return created;
-    }
-
-    private BigDecimal subtotalForRemote(CreateOrderCommand command) {
-        BigDecimal subtotal = BigDecimal.ZERO;
-        for (CreateOrderCommand.OrderItemCommand item : command.items()) {
-            Product product = productRepository.findById(item.productId())
-                    .orElseThrow(() -> new DomainException("Product not found: " + item.productId()));
-            subtotal = subtotal.add(
-                    product.getPrice().amount().multiply(BigDecimal.valueOf(item.quantity())));
-        }
-        return subtotal.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void validatePaymentMethodEnabled(PaymentMethod paymentMethod, SystemSettings settings) {

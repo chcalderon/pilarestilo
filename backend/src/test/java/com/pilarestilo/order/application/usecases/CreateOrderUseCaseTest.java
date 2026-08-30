@@ -8,9 +8,7 @@ import com.pilarestilo.discount.domain.model.Discount;
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
-import com.pilarestilo.order.application.dto.MoneyDto;
 import com.pilarestilo.order.application.dto.OrderDto;
-import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
@@ -29,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -56,7 +53,6 @@ class CreateOrderUseCaseTest {
     @Mock ProductRepository productRepository;
     @Mock InventoryService inventoryService;
     @Mock DomainEventPublisher eventPublisher;
-    @Mock OrderRemoteCommandClient orderRemoteCommandClient;
     @Mock SystemSettingsRepository systemSettingsRepository;
     @Mock DiscountRedemptionService discountRedemptionService;
     @Mock CustomerAddressBookService customerAddressBookService;
@@ -74,7 +70,6 @@ class CreateOrderUseCaseTest {
                 productRepository,
                 inventoryService,
                 eventPublisher,
-                orderRemoteCommandClient,
                 systemSettingsRepository,
                 discountRedemptionService,
                 customerAddressBookService
@@ -128,7 +123,6 @@ class CreateOrderUseCaseTest {
 
     /** Wires up the standard stubs needed by the happy-path flow. */
     private void stubHappyPath(SystemSettings settings) {
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(systemSettingsRepository.get()).thenReturn(settings);
         when(productRepository.findById(PRODUCT_ID))
                 .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
@@ -218,7 +212,6 @@ class CreateOrderUseCaseTest {
     void createOrder_rejectsCodeThatDoesNotBelongToTheCustomer() {
         // No stubHappyPath: this fails at discount evaluation, before the collaborators it stubs
         // are reached, and strict stubbing rightly objects to the unused ones.
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(systemSettingsRepository.get()).thenReturn(defaultSettings());
         when(productRepository.findById(PRODUCT_ID))
                 .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
@@ -257,7 +250,6 @@ class CreateOrderUseCaseTest {
     @Test
     void createOrder_withEmployeeDiscount_appliesEmployeeDiscount() {
         // Wire stubs manually so there is no duplicate save stub
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(systemSettingsRepository.get()).thenReturn(defaultSettings());
         when(productRepository.findById(PRODUCT_ID))
                 .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
@@ -326,7 +318,6 @@ class CreateOrderUseCaseTest {
 
     @Test
     void createOrder_throwsDomainException_whenProductNotFound() {
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(systemSettingsRepository.get()).thenReturn(defaultSettings());
         when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
                 .thenReturn(defaultAddress());
@@ -366,140 +357,6 @@ class CreateOrderUseCaseTest {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Delegated writes. order-service owns no redemption ledger, so the monolith keeps the whole
-    // discount decision and sends only the resulting amount. These cases pin the ordering, which
-    // is inverted relative to the local path and is the reason the mode works at all.
-    // ---------------------------------------------------------------------------------------
-
-    private OrderDto remoteOrderDto(UUID orderId) {
-        MoneyDto money = new MoneyDto(BigDecimal.valueOf(15_000), "CLP");
-        return new OrderDto(orderId, "PE-0123456789", CUSTOMER_ID, List.of(),
-                money, new MoneyDto(BigDecimal.ZERO, "CLP"), money,
-                new MoneyDto(BigDecimal.valueOf(12_605), "CLP"),
-                new MoneyDto(BigDecimal.valueOf(2_395), "CLP"),
-                new BigDecimal("19.00"),
-                PaymentMethod.TRANSFER, "LOCAL", "starken", "Starken", "POR_PAGAR",
-                ADDRESS_ID, "Casa", null, SalesChannel.ECOMMERCE,
-                OrderStatus.CREATED, Instant.now(), Instant.now());
-    }
-
-    private DiscountRedemptionService.DiscountEvaluation evaluationWorth(BigDecimal amount) {
-        Discount disc = Discount.create("SAVE10", DiscountType.PERCENTAGE, BigDecimal.TEN,
-                Money.zero(), LocalDate.now().minusDays(1), LocalDate.now().plusDays(30), 100);
-        disc.setId(UUID.randomUUID());
-        return new DiscountRedemptionService.DiscountEvaluation(disc, Money.of(amount));
-    }
-
-    /* resolveShippingSelection runs before the remote branch, so the address is always needed. */
-    private void stubRemoteWrite() {
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(true);
-        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
-        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
-                .thenReturn(defaultAddress());
-    }
-
-    private void stubRemoteWriteWithProduct() {
-        stubRemoteWrite();
-        when(productRepository.findById(PRODUCT_ID))
-                .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
-    }
-
-    private CreateOrderCommand commandWithCode(String code) {
-        return new CreateOrderCommand(
-                CUSTOMER_ID,
-                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
-                PaymentMethod.TRANSFER,
-                "LOCAL",
-                "starken",
-                ADDRESS_ID,
-                null,
-                null,
-                false,
-                code
-        );
-    }
-
-    @Test
-    void remoteWrite_reservesTheSlotBeforeCallingOrderService() {
-        UUID orderId = UUID.randomUUID();
-        UUID redemptionId = UUID.randomUUID();
-        stubRemoteWriteWithProduct();
-        var evaluation = evaluationWorth(new BigDecimal("1500.00"));
-        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
-                .thenReturn(evaluation);
-        when(discountRedemptionService.reserveWithoutOrder(evaluation, CUSTOMER_ID)).thenReturn(redemptionId);
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any())).thenReturn(remoteOrderDto(orderId));
-
-        useCase.execute(commandWithCode("SAVE10"));
-
-        // Claim, then create, then bind. Any other order leaves either an unbindable reservation
-        // or an order in another service that would have to be cancelled.
-        InOrder inOrder = inOrder(discountRedemptionService, orderRemoteCommandClient);
-        inOrder.verify(discountRedemptionService).reserveWithoutOrder(evaluation, CUSTOMER_ID);
-        inOrder.verify(orderRemoteCommandClient).create(any(CreateOrderCommand.class), any());
-        inOrder.verify(discountRedemptionService).attachOrder(redemptionId, orderId);
-    }
-
-    @Test
-    void remoteWrite_sendsTheComputedAmountAndNeverTheCode() {
-        stubRemoteWriteWithProduct();
-        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
-                .thenReturn(evaluationWorth(new BigDecimal("1500.00")));
-        when(discountRedemptionService.reserveWithoutOrder(any(), any())).thenReturn(UUID.randomUUID());
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
-                .thenReturn(remoteOrderDto(UUID.randomUUID()));
-
-        useCase.execute(commandWithCode("SAVE10"));
-
-        ArgumentCaptor<CreateOrderCommand> sent = ArgumentCaptor.forClass(CreateOrderCommand.class);
-        verify(orderRemoteCommandClient).create(sent.capture(), any());
-        assertThat(sent.getValue().discountAmount().amount()).isEqualByComparingTo("1500.00");
-    }
-
-    /** A code the customer may not use must fail before order-service is ever contacted. */
-    @Test
-    void remoteWrite_rejectsAnInvalidCodeWithoutCreatingAnything() {
-        stubRemoteWriteWithProduct();
-        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
-                .thenThrow(new DomainException("Codigo ya utilizado"));
-        var command = commandWithCode("SAVE10");
-
-        assertThrows(DomainException.class, () -> useCase.execute(command));
-
-        verify(orderRemoteCommandClient, never()).create(any(), any());
-        verify(discountRedemptionService, never()).reserveWithoutOrder(any(), any());
-    }
-
-    /** Losing the capacity race must also happen before anything is created remotely. */
-    @Test
-    void remoteWrite_doesNotCallOrderServiceWhenTheSlotIsGone() {
-        stubRemoteWriteWithProduct();
-        var evaluation = evaluationWorth(new BigDecimal("1500.00"));
-        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
-                .thenReturn(evaluation);
-        when(discountRedemptionService.reserveWithoutOrder(evaluation, CUSTOMER_ID))
-                .thenThrow(new DomainException("Discount usage limit reached"));
-        var command = commandWithCode("SAVE10");
-
-        assertThrows(DomainException.class, () -> useCase.execute(command));
-
-        verify(orderRemoteCommandClient, never()).create(any(), any());
-    }
-
-    @Test
-    void remoteWrite_withoutACodeTouchesTheLedgerNotAtAll() {
-        stubRemoteWrite();
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
-                .thenReturn(remoteOrderDto(UUID.randomUUID()));
-
-        useCase.execute(basicTransferCommand());
-
-        verify(discountRedemptionService, never()).evaluate(any(), any(), any());
-        verify(discountRedemptionService, never()).reserveWithoutOrder(any(), any());
-        verify(discountRedemptionService, never()).attachOrder(any(), any());
-    }
-
-    // ---------------------------------------------------------------------------------------
     // Discount provenance. orders.discount_id / discount_code exist so that hard-deleting a code
     // cannot erase which orders used it — DeleteDiscountUseCase deletes for real and the ledger's
     // FK is ON DELETE SET NULL. Both write paths must fill them or the columns are decoration.
@@ -532,22 +389,25 @@ class CreateOrderUseCaseTest {
         assertThat(saved.getValue().getDiscountCode()).isNull();
     }
 
-    /** order-service cannot look the code up, so the monolith has to send it along. */
-    @Test
-    void remoteWrite_forwardsTheProvenanceToOrderService() {
-        stubRemoteWriteWithProduct();
-        var evaluation = evaluationWorth(new BigDecimal("1500.00"));
-        when(discountRedemptionService.evaluate(eq("SAVE10"), any(Money.class), eq(CUSTOMER_ID)))
-                .thenReturn(evaluation);
-        when(discountRedemptionService.reserveWithoutOrder(any(), any())).thenReturn(UUID.randomUUID());
-        when(orderRemoteCommandClient.create(any(CreateOrderCommand.class), any()))
-                .thenReturn(remoteOrderDto(UUID.randomUUID()));
+    private DiscountRedemptionService.DiscountEvaluation evaluationWorth(BigDecimal amount) {
+        Discount disc = Discount.create("SAVE10", DiscountType.PERCENTAGE, BigDecimal.TEN,
+                Money.zero(), LocalDate.now().minusDays(1), LocalDate.now().plusDays(30), 100);
+        disc.setId(UUID.randomUUID());
+        return new DiscountRedemptionService.DiscountEvaluation(disc, Money.of(amount));
+    }
 
-        useCase.execute(commandWithCode("SAVE10"));
-
-        ArgumentCaptor<CreateOrderCommand> sent = ArgumentCaptor.forClass(CreateOrderCommand.class);
-        verify(orderRemoteCommandClient).create(sent.capture(), any());
-        assertThat(sent.getValue().resolvedDiscountId()).isEqualTo(evaluation.discountId());
-        assertThat(sent.getValue().discountCode()).isEqualTo("SAVE10");
+    private CreateOrderCommand commandWithCode(String code) {
+        return new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                null,
+                false,
+                code
+        );
     }
 }

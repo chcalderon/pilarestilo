@@ -41,9 +41,6 @@
       "description": "Remote inventory-service delegation."
     },
     {
-      "name": "app.inventory.remote"
-    },
-    {
       "name": "app.jwt",
       "type": "java.lang.Object",
       "description": "JWT signing configuration."
@@ -64,9 +61,6 @@
       "description": "Remote order-service delegation."
     },
     {
-      "name": "app.order.remote"
-    },
-    {
       "name": "app.payment",
       "type": "java.lang.Object",
       "description": "Payment gateway and remote payment-service delegation."
@@ -76,9 +70,6 @@
     },
     {
       "name": "app.payment.gateway.mercadopago"
-    },
-    {
-      "name": "app.payment.remote"
     },
     {
       "name": "app.product-ai",
@@ -207,17 +198,6 @@
       "defaultValue": "https://oauth2.googleapis.com/tokeninfo?id_token="
     },
     {
-      "name": "app.inventory.remote.base-url",
-      "type": "java.lang.String",
-      "defaultValue": "http://inventory-service:8082"
-    },
-    {
-      "name": "app.inventory.remote.enabled",
-      "type": "java.lang.Boolean",
-      "description": "Delegates reserve/release/confirm/return to inventory-service.",
-      "defaultValue": false
-    },
-    {
       "name": "app.jwt.secret",
       "type": "java.lang.String",
       "description": "HS256 signing key, base64-encoded, minimum 32 bytes.",
@@ -246,26 +226,6 @@
       "type": "java.lang.String",
       "description": "Filesystem path where product media is written.",
       "defaultValue": "./media"
-    },
-    {
-      "name": "app.order.remote.base-url",
-      "type": "java.lang.String",
-      "defaultValue": "http://order-service:8083"
-    },
-    {
-      "name": "app.order.remote.enabled",
-      "type": "java.lang.Boolean",
-      "defaultValue": false
-    },
-    {
-      "name": "app.order.remote.service-token",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.order.remote.write-enabled",
-      "type": "java.lang.Boolean",
-      "description": "Lets order-service perform the INSERT into orders. What production runs.",
-      "defaultValue": false
     },
     {
       "name": "app.payment.gateway.mercadopago.access-token",
@@ -308,20 +268,6 @@
     },
     {
       "name": "app.payment.gateway.webhook-secret",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.payment.remote.base-url",
-      "type": "java.lang.String",
-      "defaultValue": "http://payment-service:8084"
-    },
-    {
-      "name": "app.payment.remote.enabled",
-      "type": "java.lang.Boolean",
-      "defaultValue": false
-    },
-    {
-      "name": "app.payment.remote.service-token",
       "type": "java.lang.String"
     },
     {

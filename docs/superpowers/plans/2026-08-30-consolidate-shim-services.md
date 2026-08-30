@@ -17,9 +17,18 @@
 >   14 purchases to DELIVERED, 0 failed, 68/68 checks, 0 backend errors; `docker stats` all under
 >   `mem_limit`. Step 2 skipped (backend/ unchanged). Steps 3–4 (merge → master deploy + prod
 >   smoke) pending the owner's go.
-> - **Phase 2** (delete the monolith's dormant `order`/`payment` remote clients + the
->   inventory remote-write branch — touches `backend/src`, needs the real `mvn verify`) is a
->   separate later commit.
+> - **Phase 2 — DONE 2026-08-30** (same day, after the consolidation deploy verified in prod).
+>   Deleted `OrderRemoteCommandClient` / `OrderRemoteQueryClient` / `PaymentRemoteQueryClient`;
+>   removed the `if (remote.enabled)` branch from `GetOrder`/`ListOrders`/`UpdateOrderStatus`/
+>   `CreateOrder` + `GetPayment`/`GetPaymentByOrder`/`ListPayments` use cases (local path was
+>   always the `else`); stripped the remote-write branch + `RestClient` from `InventoryService`;
+>   dropped the `app.order.remote.*` / `app.payment.remote.*` / `app.inventory.remote.*` yml
+>   blocks + metadata; fixed 8 tests, deleted `InventoryServiceRemoteDelegationTest` + the
+>   `createRemotely`/`remoteWrite_*` block of `CreateOrderUseCaseTest`. `spring-boot-restclient`
+>   KEPT (MercadoPago gateway, ProductAI, n8n clients use `RestClient`).
+>   **Left for a possible Phase 2b:** the now-unused public helpers `CreateOrderCommand.withResolvedDiscount`,
+>   `DiscountRedemptionService.reserveWithoutOrder`/`attachOrder` (+ their port/adapter/repo chain) —
+>   removing them changes a record shape and a port, so it needs its own pass.
 
 **Goal:** Stop deploying `product-service`, `inventory-service`, `order-service` and
 `payment-service`; the monolith serves all of their routes already.

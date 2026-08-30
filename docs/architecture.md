@@ -321,9 +321,10 @@ Inventory / order / payment extraction (P6) and catalog read-replica routing (P7
 - Reverted. `product-service`, `inventory-service`, `order-service` and `payment-service` were
   consolidated back into the monolith on 2026-08-30. The monolith serves `/api/products*`,
   `/api/inventory*`, `/api/orders*` and `/api/payments*` — reads and writes — itself, and reserves
-  inventory in-process again. The `APP_*_REMOTE_ENABLED` / `APP_DB_READ_REPLICA_*` machinery is
-  pinned off (`docker-compose.yml`) and its dormant client code in the monolith is scheduled for
-  deletion in a follow-up.
+  inventory in-process again. The `APP_*_REMOTE_ENABLED` / `APP_DB_READ_REPLICA_*` env, the
+  `OrderRemote*Client` / `PaymentRemoteQueryClient` classes and the `InventoryService`
+  remote-write branch were all removed (Phase 2, same day). `spring-boot-restclient` stays — the
+  MercadoPago gateway, ProductAI and n8n clients still use `RestClient`.
 
 Distributed tracing flow:
 

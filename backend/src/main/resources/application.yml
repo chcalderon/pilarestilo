@@ -124,10 +124,6 @@ app:
         failure-url: ${PAYMENT_GATEWAY_MP_FAILURE_URL:}
         notification-url: ${PAYMENT_GATEWAY_MP_NOTIFICATION_URL:}
         webhook-token: ${PAYMENT_GATEWAY_MP_WEBHOOK_TOKEN:}
-    remote:
-      enabled: ${APP_PAYMENT_REMOTE_ENABLED:false}
-      base-url: ${APP_PAYMENT_REMOTE_BASE_URL:http://payment-service:8084}
-      service-token: ${APP_PAYMENT_REMOTE_SERVICE_TOKEN:}
   system-settings:
     crypto-secret: ${SYSTEM_SETTINGS_CRYPTO_SECRET:${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}}
   domain-events:
@@ -138,16 +134,6 @@ app:
       retry-backoff-ms: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:1500}
       retry-max-attempts: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:3}
       dlt-suffix: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:.dlt}
-  inventory:
-    remote:
-      enabled: ${APP_INVENTORY_REMOTE_ENABLED:false}
-      base-url: ${APP_INVENTORY_REMOTE_BASE_URL:http://inventory-service:8082}
-  order:
-    remote:
-      enabled: ${APP_ORDER_REMOTE_ENABLED:false}
-      write-enabled: ${APP_ORDER_REMOTE_WRITE_ENABLED:false}
-      base-url: ${APP_ORDER_REMOTE_BASE_URL:http://order-service:8083}
-      service-token: ${APP_ORDER_REMOTE_SERVICE_TOKEN:}
   gateway:
     rate-limit:
       enabled: ${APP_GATEWAY_RATE_LIMIT_ENABLED:true}

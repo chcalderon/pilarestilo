@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestClient;
 
 import java.util.UUID;
 
@@ -33,27 +32,15 @@ class InventoryServiceReserveVariantTest {
 
     @Mock
     private InventoryMovementRepository inventoryMovementRepository;
-
-    @Mock
-    private RestClient.Builder restClientBuilder;
-
-    @Mock
-    private RestClient restClient;
-
     private InventoryService inventoryService;
 
     @BeforeEach
     void setUp() {
-        when(restClientBuilder.baseUrl(anyString())).thenReturn(restClientBuilder);
-        when(restClientBuilder.build()).thenReturn(restClient);
         lenient().when(inventoryMovementRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         inventoryService = new InventoryService(
                 productRepository,
                 eventPublisher,
-                inventoryMovementRepository,
-                restClientBuilder,
-                false,
-                "http://localhost:8082"
+                inventoryMovementRepository
         );
     }
 

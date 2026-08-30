@@ -6,7 +6,6 @@ import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.order.application.commands.CreateOrderCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
-import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
@@ -39,7 +38,6 @@ class CreateOrderUseCaseVariantSnapshotTest {
     @Mock ProductRepository productRepository;
     @Mock InventoryService inventoryService;
     @Mock DomainEventPublisher eventPublisher;
-    @Mock OrderRemoteCommandClient orderRemoteCommandClient;
     @Mock SystemSettingsRepository systemSettingsRepository;
     @Mock DiscountRedemptionService discountRedemptionService;
     @Mock CustomerAddressBookService customerAddressBookService;
@@ -53,7 +51,6 @@ class CreateOrderUseCaseVariantSnapshotTest {
                 productRepository,
                 inventoryService,
                 eventPublisher,
-                orderRemoteCommandClient,
                 systemSettingsRepository,
                 discountRedemptionService,
                 customerAddressBookService
@@ -66,8 +63,6 @@ class CreateOrderUseCaseVariantSnapshotTest {
         UUID productId = UUID.randomUUID();
         UUID addressId = UUID.randomUUID();
 
-        // Remote writes disabled — use local path
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
 
         // Settings with bank transfer enabled and default couriers/zones
         SystemSettings settings = SystemSettings.createDefault();
@@ -137,7 +132,6 @@ class CreateOrderUseCaseVariantSnapshotTest {
         UUID productId = UUID.randomUUID();
         UUID addressId = UUID.randomUUID();
 
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
 
         SystemSettings settings = SystemSettings.createDefault();
         when(systemSettingsRepository.get()).thenReturn(settings);

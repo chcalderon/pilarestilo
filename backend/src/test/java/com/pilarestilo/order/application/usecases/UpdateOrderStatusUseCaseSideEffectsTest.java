@@ -2,8 +2,6 @@ package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.discount.application.DiscountRedemptionService;
 import com.pilarestilo.inventory.application.InventoryService;
-import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
-import com.pilarestilo.order.application.remote.OrderRemoteQueryClient;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.model.Order;
@@ -50,8 +48,6 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
 
     @Mock OrderRepository orderRepository;
     @Mock DomainEventPublisher eventPublisher;
-    @Mock OrderRemoteCommandClient orderRemoteCommandClient;
-    @Mock OrderRemoteQueryClient orderRemoteQueryClient;
     @Mock DiscountRedemptionService discountRedemptionService;
     @Mock InventoryService inventoryService;
     @InjectMocks UpdateOrderStatusUseCase useCase;
@@ -78,7 +74,6 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
     }
 
     private void stubLocalPath() {
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -183,7 +178,6 @@ class UpdateOrderStatusUseCaseSideEffectsTest {
      */
     @Test
     void sameStatus_doesNothing() {
-        when(orderRemoteCommandClient.isWriteEnabled()).thenReturn(false);
         when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
 
         useCase.execute(ORDER_ID, order.getStatus());

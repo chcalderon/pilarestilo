@@ -5,8 +5,6 @@ import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.mappers.OrderMapper;
-import com.pilarestilo.order.application.remote.OrderRemoteCommandClient;
-import com.pilarestilo.order.application.remote.OrderRemoteQueryClient;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
 import com.pilarestilo.order.domain.model.Order;
@@ -26,49 +24,21 @@ public class UpdateOrderStatusUseCase {
 
     private final OrderRepository orderRepository;
     private final DomainEventPublisher eventPublisher;
-    private final OrderRemoteCommandClient orderRemoteCommandClient;
-    private final OrderRemoteQueryClient orderRemoteQueryClient;
     private final DiscountRedemptionService discountRedemptionService;
     private final InventoryService inventoryService;
 
     public UpdateOrderStatusUseCase(OrderRepository orderRepository,
                                      DomainEventPublisher eventPublisher,
-                                     OrderRemoteCommandClient orderRemoteCommandClient,
-                                     OrderRemoteQueryClient orderRemoteQueryClient,
                                      DiscountRedemptionService discountRedemptionService,
                                      InventoryService inventoryService) {
         this.orderRepository = orderRepository;
         this.eventPublisher = eventPublisher;
-        this.orderRemoteCommandClient = orderRemoteCommandClient;
-        this.orderRemoteQueryClient = orderRemoteQueryClient;
         this.discountRedemptionService = discountRedemptionService;
         this.inventoryService = inventoryService;
     }
 
     @Transactional
     public OrderDto execute(UUID orderId, OrderStatus targetStatus) {
-        if (orderRemoteCommandClient.isWriteEnabled()) {
-            OrderDto previous = orderRemoteQueryClient.getById(orderId)
-                    .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
-            if (previous.status() == targetStatus) {
-                return previous;
-            }
-            OrderDto updated = orderRemoteCommandClient.updateStatus(orderId, targetStatus);
-            applyCancellationEffects(orderId, previous.status(), targetStatus,
-                    updated.items().stream()
-                            .map(i -> new ReservedLine(i.productId(), i.quantity(),
-                                    i.variantColor(), i.variantSize()))
-                            .toList());
-            eventPublisher.publish(new OrderStatusChanged(
-                    updated.id(),
-                    updated.customerId(),
-                    previous.status(),
-                    updated.status(),
-                    Instant.now()
-            ));
-            return updated;
-        }
-
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Order not found: " + orderId));
 

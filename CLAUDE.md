@@ -288,7 +288,7 @@ declared too, or the feature silently does nothing. The backend already declares
 | Module | Without it |
 |---|---|
 | `spring-boot-flyway` | migrations never run → `ddl-auto: validate` fails on missing tables |
-| `spring-boot-restclient` | no `RestClient.Builder` bean → remote clients fail to wire |
+| `spring-boot-restclient` | no `RestClient.Builder` bean → the MercadoPago gateway, ProductAI and n8n clients fail to wire |
 | `spring-boot-kafka` | `spring-kafka` alone no longer brings `KafkaProperties` |
 | `spring-boot-security-test` (test) | `@AutoConfigureMockMvc` skips `springSecurity()`, so `@WithMockUser` stops authenticating and state-changing requests answer 403 |
 | `spring-boot-starter-webmvc-test` (test) | MockMvc / `@WebMvcTest` slice unavailable |

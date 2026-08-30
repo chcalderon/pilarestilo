@@ -9,12 +9,8 @@ import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -27,59 +23,34 @@ public class InventoryService {
     private final ProductRepository productRepository;
     private final DomainEventPublisher eventPublisher;
     private final InventoryMovementRepository inventoryMovementRepository;
-    private final boolean remoteWriteEnabled;
-    private final RestClient remoteInventoryClient;
 
     public InventoryService(ProductRepository productRepository,
                             DomainEventPublisher eventPublisher,
-                            InventoryMovementRepository inventoryMovementRepository,
-                            RestClient.Builder restClientBuilder,
-                            @Value("${app.inventory.remote.enabled:false}") boolean remoteWriteEnabled,
-                            @Value("${app.inventory.remote.base-url:http://inventory-service:8082}") String remoteInventoryBaseUrl) {
+                            InventoryMovementRepository inventoryMovementRepository) {
         this.productRepository = productRepository;
         this.eventPublisher = eventPublisher;
         this.inventoryMovementRepository = inventoryMovementRepository;
-        this.remoteWriteEnabled = remoteWriteEnabled;
-        this.remoteInventoryClient = restClientBuilder
-                .baseUrl(remoteInventoryBaseUrl)
-                .build();
     }
 
     @Transactional
     public void reserve(UUID productId, int qty, StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, null, null, origin, "reserve");
-            return;
-        }
         reserveLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
     public void reserve(UUID productId, int qty, String variantColor, String variantSize,
                         StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/reserve", productId, qty, variantColor, variantSize, origin, "reserve");
-            return;
-        }
         reserveLocal(productId, qty, variantColor, variantSize, origin);
     }
 
     @Transactional
     public void release(UUID productId, int qty, StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, null, null, origin, "release");
-            return;
-        }
         releaseLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
     public void release(UUID productId, int qty, String variantColor, String variantSize,
                         StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/release", productId, qty, variantColor, variantSize, origin, "release");
-            return;
-        }
         releaseLocal(productId, qty, variantColor, variantSize, origin);
     }
 
@@ -90,20 +61,12 @@ public class InventoryService {
      */
     @Transactional
     public void confirm(UUID productId, int qty, StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, null, null, origin, "confirm");
-            return;
-        }
         confirmLocal(productId, qty, null, null, origin);
     }
 
     @Transactional
     public void confirm(UUID productId, int qty, String variantColor, String variantSize,
                         StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/confirm", productId, qty, variantColor, variantSize, origin, "confirm");
-            return;
-        }
         confirmLocal(productId, qty, variantColor, variantSize, origin);
     }
 
@@ -120,10 +83,6 @@ public class InventoryService {
     @Transactional
     public void returnToStock(UUID productId, int qty, String variantColor, String variantSize,
                               StockMovementOrigin origin) {
-        if (remoteWriteEnabled) {
-            invokeRemoteCommand("/api/inventory/commands/return", productId, qty, variantColor, variantSize, origin, "return");
-            return;
-        }
         returnToStockLocal(productId, qty, variantColor, variantSize, origin);
     }
 
@@ -241,49 +200,5 @@ public class InventoryService {
                 productId, variantColor, variantSize, type, quantity,
                 cause.referenceType(), cause.referenceId(), cause.recordedBy(), null
         ));
-    }
-
-    private void invokeRemoteCommand(String path,
-                                     UUID productId,
-                                     int qty,
-                                     String variantColor,
-                                     String variantSize,
-                                     StockMovementOrigin origin,
-                                     String operation) {
-        StockMovementOrigin cause = origin == null ? StockMovementOrigin.unknown() : origin;
-        try {
-            remoteInventoryClient.post()
-                    .uri(path)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(new InventoryCommandRequest(productId, qty, variantColor, variantSize,
-                            cause.referenceType(), cause.referenceId(), cause.recordedBy()))
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientResponseException ex) {
-            if (ex.getStatusCode().value() == 404) {
-                throw new DomainException(PRODUCT_NOT_FOUND_PREFIX + productId);
-            }
-            throw new DomainException(
-                    "Inventory service rejected " + operation + " for product: " + productId + " (status " + ex.getStatusCode().value() + ")"
-            );
-        } catch (Exception _) {
-            throw new DomainException("Could not " + operation + " stock via inventory-service");
-        }
-    }
-
-    /**
-     * Mirrors {@code InventoryCommandRequest} in inventory-service. The cause travels with the
-     * command: when the write is delegated, that service writes the ledger line, and a payload
-     * without an origin produces exactly the blank row this change exists to end.
-     */
-    private record InventoryCommandRequest(
-            UUID productId,
-            int qty,
-            String variantColor,
-            String variantSize,
-            String referenceType,
-            UUID referenceId,
-            UUID recordedBy
-    ) {
     }
 }
