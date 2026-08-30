@@ -149,7 +149,7 @@ export default function VariantTemplateTable() {
 
       {creating && (
         <div className="mb-4">
-          <FormRow form={form} setForm={setForm} saving={saving} onSubmit={handleCreate} onCancel={handleCancel} />
+          <FormRow key="create" form={form} setForm={setForm} saving={saving} onSubmit={handleCreate} onCancel={handleCancel} />
         </div>
       )}
 
@@ -190,7 +190,7 @@ export default function VariantTemplateTable() {
               </div>
               {editing === t.id && (
                 <div className="px-2">
-                  <FormRow form={form} setForm={setForm} saving={saving}
+                  <FormRow key={t.id} form={form} setForm={setForm} saving={saving}
                     onSubmit={() => handleSaveEdit(t.id)} onCancel={handleCancel} />
                 </div>
               )}

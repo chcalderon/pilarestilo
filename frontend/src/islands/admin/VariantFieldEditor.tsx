@@ -1,6 +1,36 @@
+import { useState } from 'react';
 import type { VariantFieldDto, VariantFieldInputType } from '../../lib/api';
 
 const INPUT_CLASS = 'font-sans text-[0.78rem] border border-pe-black/12 bg-pe-white px-2 py-1.5 text-pe-charcoal focus:outline-hidden focus:border-pe-rose/50 transition-colors';
+
+function parseOptions(raw: string): string[] {
+  return raw.split(',').map((v) => v.trim()).filter(Boolean);
+}
+
+/**
+ * The stored model is a string[]; the field is a comma-separated line. Deriving the input value
+ * straight from `options.join(', ')` ate every comma the moment it was typed — `split`/`filter`
+ * dropped the empty tail before the next character arrived. So the raw text is buffered locally
+ * while editing and only normalised back on blur; the parsed array still flows up on every keystroke.
+ */
+function OptionsInput({
+  options, onOptionsChange,
+}: { readonly options: string[]; readonly onOptionsChange: (next: string[]) => void }) {
+  const [text, setText] = useState(options.join(', '));
+
+  return (
+    <input
+      className={INPUT_CLASS}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        onOptionsChange(parseOptions(e.target.value));
+      }}
+      onBlur={() => setText(options.join(', '))}
+      placeholder="XS, S, M, L, XL"
+    />
+  );
+}
 
 export default function VariantFieldEditor({
   fieldNumber, field, onChange,
@@ -19,9 +49,7 @@ export default function VariantFieldEditor({
         <option value="RANGE">Rango numérico</option>
       </select>
       {field.inputType === 'OPTIONS' && (
-        <input className={INPUT_CLASS} value={field.options.join(', ')}
-          onChange={(e) => onChange({ ...field, options: e.target.value.split(',').map((v) => v.trim()).filter(Boolean) })}
-          placeholder="XS, S, M, L, XL" />
+        <OptionsInput options={field.options} onOptionsChange={(options) => onChange({ ...field, options })} />
       )}
       {field.inputType === 'RANGE' && (
         <div className="flex gap-2">
