@@ -39,11 +39,19 @@ bash scripts/loadtest/cleanup.sh
 
 ## What to read in the result
 
-- `lt_purchase_complete` vs `lt_purchase_failed` — did buyers get to DELIVERED
-- `http_req_duration p(95)` and `lt_wait_shipped_ms` — latency + admin backlog
+- **`checks` rate** — order + proof both 2xx. This is the real "did the request succeed" signal.
+- `http_req_duration p(95)` — end-to-end latency under load.
+- `lt_step_payment_visible_ms` — how far the async `OrderCreated → payment` Kafka consumer falls
+  behind (p95 3 s at 15 buyers, ~16 s at 50 — that consumer is the first thing to saturate).
+- `lt_purchase_complete` vs `lt_wait_shipped_ms` — in `delivery` mode, the operator backlog.
 - `metrics-sample.log`: any container near its `mem_limit`, `hikaricp_connections_pending > 0`
-  (pool starvation), `system_load_average_1m` vs 6 cores, Kafka lag climbing
-- container restarts / OOM: `docker ps` + `docker inspect --format '{{.RestartCount}} {{.State.OOMKilled}}'`
+  (pool starvation), `system_load_average_1m` vs cores, Kafka lag climbing.
+- container restarts / OOM: `docker inspect --format '{{.RestartCount}} {{.State.OOMKilled}}'`.
+- **`docker logs infra-backend-1 | grep ERROR`** — the ground truth. A clean run has zero.
+
+**Ignore `http_req_failed`.** This flow polls `GET /payments/order/{id}` for a Kafka-async row
+(404 until it lands) and 3 operators race on claim/dispatch (409) — those are expected and passed
+per-request, but the metric still reports 40–80 %. It is not a health signal for this test.
 
 ## Prod run
 

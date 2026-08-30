@@ -12,9 +12,11 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
 
-// The buyer polls GET /payments/order/{id} until the payment row is registered off OrderCreated
-// (Kafka, async) — the 404s in that window are expected, not failures. Everything else must be 2xx.
-http.setResponseCallback(http.expectedStatuses({ min: 200, max: 299 }, 404));
+// Default: only 2xx is "expected". The one poll that legitimately 404s (payment row not yet
+// registered off OrderCreated / Kafka) passes its own responseCallback per request, below.
+http.setResponseCallback(http.expectedStatuses({ min: 200, max: 299 }));
+const POLL_OK = http.expectedStatuses(200, 404);          // payment row not registered yet
+const RACE_OK = http.expectedStatuses({ min: 200, max: 299 }, 404, 409); // operators race on the same order
 
 const BASE = __ENV.BASE_URL || 'http://backend:8080/api';
 const BUYERS = Number(__ENV.BUYERS || 9);
@@ -217,7 +219,8 @@ export function buyer(data) {
   const sp = Date.now();
   let paymentId = null;
   for (let i = 0; i < 40 && !paymentId; i++) {
-    const pr = http.get(`${BASE}/payments/order/${orderId}`, B);
+    const pr = http.get(`${BASE}/payments/order/${orderId}`,
+      Object.assign({ responseCallback: POLL_OK }, B));
     if (pr.status === 200) { paymentId = j(pr).id; break; }
     sleep(1);
   }
@@ -285,13 +288,15 @@ export function admin(data) {
   const A = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${me.token}` } };
   const s0 = Date.now();
 
+  const R = Object.assign({ responseCallback: RACE_OK }, A);
+
   // 1. approve payments that have a proof (only this operator's slice)
   const pl = http.get(`${BASE}/payments?size=100`, A);
   if (pl.status === 200) {
     for (const p of ((j(pl) || {}).content || [])) {
       if ((p.status === 'SUBMITTED' || p.status === 'UNDER_REVIEW') && mine(p.id, n, idx)) {
         const rv = http.patch(`${BASE}/payments/${p.id}/review`,
-          JSON.stringify({ action: 'APPROVE', reviewerId: me.userId }), A);
+          JSON.stringify({ action: 'APPROVE', reviewerId: me.userId }), R);
         if (rv.status < 300) adminApproved.add(1);
       }
     }
@@ -306,20 +311,20 @@ export function admin(data) {
       if (st === 'PENDING') {
         if (!boletaDone.has(d.orderId)) {
           // another operator (or a duplicate dispatch row for the same order) may have issued it
-          const existing = http.get(`${BASE}/admin/sales-documents/order/${d.orderId}`, A);
+          const existing = http.get(`${BASE}/admin/sales-documents/order/${d.orderId}`, R);
           if (existing.status === 200) {
             boletaDone.add(d.orderId);
           } else {
             const folio = `LT-${String(d.orderId).replace(/-/g, '').slice(0, 12)}`;
             const sd = http.post(`${BASE}/admin/sales-documents`,
-              JSON.stringify({ orderId: d.orderId, folio }), A);
+              JSON.stringify({ orderId: d.orderId, folio }), R);
             if (sd.status < 500) boletaDone.add(d.orderId);
           }
         }
-        http.post(`${BASE}/despachos/${d.id}/claim`, null, A);
+        http.post(`${BASE}/despachos/${d.id}/claim`, null, R);
       } else if (st === 'IN_PROGRESS') {
         const ds = http.post(`${BASE}/despachos/${d.id}/dispatch`,
-          JSON.stringify({ carrier: data.courierId, trackingCode: `LT-TRK-${__VU}-${Date.now()}` }), A);
+          JSON.stringify({ carrier: data.courierId, trackingCode: `LT-TRK-${__VU}-${Date.now()}` }), R);
         if (ds.status < 300) adminDispatched.add(1);
       }
     }
