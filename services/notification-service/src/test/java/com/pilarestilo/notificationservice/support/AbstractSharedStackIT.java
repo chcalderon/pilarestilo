@@ -27,6 +27,8 @@ public abstract class AbstractSharedStackIT {
     private static final String MONOLITH_MIGRATIONS =
             "filesystem:../../backend/src/main/resources/db/migration";
 
+    @SuppressWarnings("resource") // singleton for the whole JVM — Ryuk reaps it at exit, closing it
+                                  // here would restart a container per test class (see class doc)
     protected static final PostgreSQLContainer POSTGRES;
 
     static {
