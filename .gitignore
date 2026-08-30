@@ -58,3 +58,10 @@ playwright-report/
 # Scratch workspace for superpowers:subagent-driven-development (ledgers, task briefs,
 # implementer reports, review packages) -- per-plan, disposable once the branch merges.
 .superpowers/
+# load-test run artifacts
+scripts/loadtest/.stock-snapshot.sql
+scripts/loadtest/.provider-snapshot.txt
+scripts/loadtest/.run-start.txt
+scripts/loadtest/k6-output.log
+scripts/loadtest/summary.json
+scripts/loadtest/metrics-sample.log
