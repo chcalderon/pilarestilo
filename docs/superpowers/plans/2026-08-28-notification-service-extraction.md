@@ -1077,7 +1077,10 @@ deploy 1. Do NOT start until `notification-service` has run clean in production 
   (SMTP auth fails locally — no creds — but the pipeline ran); backend did nothing. Bell
   (`GET /api/notifications`, `unread-count`) returns it via Caddy → `notification-service:8085`.
 
-- [ ] **Step 7: Commit + merge** to `develop`, then `develop → master` on the owner's go (deploy).
+- [x] **Step 7a: Commit + merge to `develop`** — commit `4d00b8a`, fast-forwarded onto `develop`
+  2026-08-30. `mvn clean verify` ran green twice (2nd on the exact committed tree); FF merge = no
+  integration delta. Worktree removed, branch deleted.
+- [ ] **Step 7b: `develop → master`** on the owner's go — the push to master is the deploy.
 
 ---
 
