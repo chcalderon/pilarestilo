@@ -303,9 +303,16 @@ export function admin(data) {
       const st = (d.status || '').toUpperCase();
       if (st === 'PENDING') {
         if (!boletaDone.has(d.orderId)) {
-          const sd = http.post(`${BASE}/admin/sales-documents`,
-            JSON.stringify({ orderId: d.orderId, folio: `LT-${String(d.orderId).slice(0, 8)}` }), A);
-          if (sd.status < 300 || sd.status === 409) boletaDone.add(d.orderId);
+          // another operator (or a duplicate dispatch row for the same order) may have issued it
+          const existing = http.get(`${BASE}/admin/sales-documents/order/${d.orderId}`, A);
+          if (existing.status === 200) {
+            boletaDone.add(d.orderId);
+          } else {
+            const folio = `LT-${String(d.orderId).replace(/-/g, '').slice(0, 12)}`;
+            const sd = http.post(`${BASE}/admin/sales-documents`,
+              JSON.stringify({ orderId: d.orderId, folio }), A);
+            if (sd.status < 500) boletaDone.add(d.orderId);
+          }
         }
         http.post(`${BASE}/despachos/${d.id}/claim`, null, A);
       } else if (st === 'IN_PROGRESS') {

@@ -32,7 +32,7 @@ trap 'kill $SAMPLER 2>/dev/null || true' EXIT
 # ---- k6 ----------------------------------------------------------------
 MSYS_NO_PATHCONV=1 docker run --rm --network "$NET" \
   -e BASE_URL=http://backend:8080/api -e BUYERS="$BUYERS" -e ADMIN_VUS="$ADMIN_VUS" \
-  -e HOLD="$HOLD" -e ADMIN_DURATION="$ADMIN_DURATION" \
+  -e HOLD="$HOLD" -e ADMIN_DURATION="$ADMIN_DURATION" -e STOP_AFTER="${STOP_AFTER:-delivery}" \
   -v "$DIR":/lt grafana/k6 run /lt/purchase-flow.js \
   --summary-export="/lt/summary-${LABEL}.json" 2>&1 | tee "$DIR/k6-${LABEL}.log"
 cp "$DIR/metrics-sample.log" "$DIR/metrics-${LABEL}.log" 2>/dev/null || true
