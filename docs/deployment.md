@@ -98,11 +98,9 @@ DOMAIN=pilarestilo.com                          # your real domain
 # given in bootstrap.servers", and Docker holds it in a restart loop.
 DEPLOY_PROFILES=microservices,cache,kafka
 
-# Backend-to-microservice delegation (needs the microservices profile):
-APP_INVENTORY_REMOTE_ENABLED=true
-APP_ORDER_REMOTE_ENABLED=true
-APP_ORDER_REMOTE_WRITE_ENABLED=true
-APP_PAYMENT_REMOTE_ENABLED=true
+# (product/inventory/order/payment-service were consolidated back into the monolith 2026-08-30;
+#  the microservices profile now runs only notification-service. The APP_*_REMOTE_ENABLED flags
+#  are pinned off in docker-compose.yml.)
 
 # Redis hot-read cache (needs the cache profile):
 APP_CACHE_REDIS_ENABLED=true
@@ -213,18 +211,16 @@ These scripts:
 - run compose with the canonical file/env path
 - provide a consistent path to rebuild after frontend/backend fixes
 
-With `microservices` profile enabled, Caddy routes:
-- `GET/HEAD /api/products*` to `product-service` (with `backend:8080` fallback, 2 s dial / 30 s response timeout)
-- `GET/HEAD /api/inventory*` to `inventory-service` (with `backend:8080` fallback)
-- `GET/HEAD /api/payments*` to `payment-service` (with `backend:8080` fallback)
-- `GET/HEAD /api/orders*` to `order-service` (with `backend:8080` fallback)
-- `POST/PATCH /api/orders*` to `backend:8080` only (auth/orchestration entrypoint)
+Caddy routes:
+- `GET/HEAD/PUT /api/notifications*` to `notification-service:8085` (with `backend:8080` fallback)
 - All remaining `/api/*` traffic to `backend:8080` via round-robin DNS (`dynamic a backend 8080`)
+
+(product/inventory/order/payment-service were consolidated back into the monolith 2026-08-30 —
+those `/api/*` paths are served by `backend` now.)
 
 Additional gateway policies:
 - `/api/*` request body cap: `12MB`
 - unsupported HTTP methods rejected with `405` (checked before routing)
-- `/api/orders*` only allows `GET|HEAD|POST|PATCH` at gateway (PUT/DELETE/etc. return 405)
 
 Redis cache baseline:
 
@@ -240,25 +236,10 @@ Horizontal backend scaling baseline:
 - Scale down to single replica:
   - `docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --scale backend=1`
 
-When `APP_INVENTORY_REMOTE_ENABLED=true`, backend inventory write commands
-(`reserve/release/confirm`) are also delegated to `inventory-service` through
-internal service-to-service HTTP (`APP_INVENTORY_REMOTE_BASE_URL`).
-
-When `APP_ORDER_REMOTE_ENABLED=true`, backend order reads are delegated to
-`order-service` through internal service-to-service HTTP (`APP_ORDER_REMOTE_BASE_URL`).
-
-When `APP_ORDER_REMOTE_WRITE_ENABLED=true`, backend order create/status updates
-are delegated to `order-service` through internal service-to-service HTTP
-(`APP_ORDER_REMOTE_BASE_URL`).
-
-When `APP_PAYMENT_REMOTE_ENABLED=true`, backend payment reads are delegated to
-`payment-service` through internal service-to-service HTTP (`APP_PAYMENT_REMOTE_BASE_URL`).
-If internal auth is enabled there, backend must also provide
-`APP_PAYMENT_REMOTE_SERVICE_TOKEN` (`X-Service-Token`).
-
-When `APP_DB_READ_REPLICA_ENABLED=true`, `product-service` routes read-only
-catalog queries to the configured replica datasource (`APP_DB_READ_REPLICA_*`).
-If disabled, catalog reads continue using the primary Postgres datasource.
+Inventory reservation, order reads/writes, and payment reads all run in the monolith again
+(2026-08-30 consolidation). The `APP_INVENTORY_REMOTE_ENABLED` / `APP_ORDER_REMOTE_ENABLED` /
+`APP_ORDER_REMOTE_WRITE_ENABLED` / `APP_PAYMENT_REMOTE_ENABLED` / `APP_DB_READ_REPLICA_ENABLED`
+flags are pinned off in `docker-compose.yml`; a stale `=true` in a deployed `.env` has no effect.
 
 The first build takes 3–8 minutes depending on server speed and image cache state.
 
@@ -285,33 +266,20 @@ curl -f https://pilarestilo.com/api/actuator/health
 # Expected: {"status":"UP"}
 ```
 
-**Check catalog read routing through Caddy (when `microservices` profile is enabled):**
+**Check catalog reads through Caddy (served by the monolith):**
 ```bash
-curl -i http://localhost/api/products/_health
-# Expected: HTTP/1.1 204 No Content
-
 curl -f "http://localhost/api/products?page=0&size=1"
 # Expected: 200 with paged JSON payload
-
-curl -i http://localhost/api/inventory/_health
-# Expected: HTTP/1.1 204 No Content
 
 curl -f "http://localhost/api/inventory/products?page=0&size=1"
 # Expected: 200 with paged JSON payload
 ```
 
-**Check extracted order-service health (internal container network):**
+**Check notification-service health (internal container network):**
 ```bash
 docker run --rm --network infra_pe_net curlimages/curl:8.7.1 \
-  -s -o /dev/null -w "%{http_code}\n" http://order-service:8083/api/orders/_health
-# Expected: 204
-```
-
-**Check extracted payment-service health (internal container network):**
-```bash
-docker run --rm --network infra_pe_net curlimages/curl:8.7.1 \
-  -s -o /dev/null -w "%{http_code}\n" http://payment-service:8084/api/payments/_health
-# Expected: 204
+  -s -o /dev/null -w "%{http_code}\n" http://notification-service:8085/api/notifications/_health
+# Expected: 200 {"status":"UP"}
 ```
 
 **Check logs for errors:**

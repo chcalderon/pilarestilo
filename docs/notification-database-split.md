@@ -1,7 +1,13 @@
 # Notificaciones en su propia base
 
 Plan para separar los datos de notificaciones del resto del sistema, dejando el proceso donde
-está. Escrito el 2026-08-20 para revisión; no ejecutado.
+está. Escrito el 2026-08-20 para revisión.
+
+> **Estado 2026-08-30 (histórico):** ejecutado y superado. `notification-service` corre en su
+> propio proceso con su propia base desde el 2026-08-29. Y los cuatro shims que este doc usa de
+> contraejemplo (`order`/`inventory`/`product`/`payment-service`) fueron consolidados de vuelta al
+> monolito el 2026-08-30 — nunca tuvieron datos propios. El texto de abajo se conserva como el
+> argumento original de por qué `notification` era el candidato correcto.
 
 ## Por qué este módulo y no otro
 

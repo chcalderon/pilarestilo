@@ -18,10 +18,7 @@ Monorepo layout:
 PilarEstilo/
   backend/
   services/
-    inventory-service/
-    order-service/
-    payment-service/
-    product-service/
+    notification-service/   # the four read/write shims were consolidated into the monolith 2026-08-30
   frontend/
   infra/
   docs/
@@ -155,9 +152,9 @@ reversed, so an abandoned bank transfer burned the customer's code permanently.
 - Guards (unknown code, expired, exhausted, assigned to another user, already redeemed) live in
   `DiscountRedemptionService.evaluate` so the storefront endpoint and order creation cannot drift.
   They did: order creation used to skip the ownership and prior-use checks entirely.
-- With `APP_ORDER_REMOTE_WRITE_ENABLED=true` a discount code is rejected outright. The remote
-  client drops it from the outbound payload, so it would otherwise be silently ignored and the
-  customer charged full price.
+- (Historical: while order writes ran through `order-service`, a discount code was rejected
+  outright because the remote client dropped it from the payload. Moot since the 2026-08-30
+  consolidation — the monolith evaluates and applies the code in-process.)
 
 Dispatch and shipping architecture highlights:
 
@@ -281,20 +278,22 @@ Flyway migrations currently include baseline plus catalog refinements:
 Optional profiles:
 
 - `kafka`: adds `kafka` broker for Kafka-backed domain-events mode.
-- `microservices`: adds extracted services (`product-service`, `inventory-service`, `order-service`, `payment-service`).
+- `microservices`: adds `notification-service` (the only remaining extracted service).
 - `cache`: adds `redis` for hot-read response caching.
 - `observability`: adds `prometheus` + `grafana` with provisioned datasource/dashboard.
 - `tracing`: adds `otel-collector` + `tempo` stack for distributed traces.
 
-Caddy now applies a read-routing policy for catalog endpoints:
+Caddy routing:
 
-- `GET`/`HEAD /api/products*` -> `product-service` (when `microservices` profile is running)
-- `GET`/`HEAD /api/inventory*` -> `inventory-service` (when `microservices` profile is running)
-- `GET`/`HEAD /api/payments*` -> `payment-service` (JWT auth enforced in `payment-service`)
-- `GET`/`HEAD /api/orders*` -> `order-service` (when `microservices` profile is running; with backend fallback)
-- `POST`/`PATCH /api/orders*` -> `backend` (auth/orchestration entrypoint; backend may delegate writes with `APP_ORDER_REMOTE_WRITE_ENABLED=true`)
+- `GET`/`HEAD`/`PUT /api/notifications*` -> `notification-service` (with `backend` fallback)
 - remaining `/api/*` -> `backend` (dynamic DNS upstreams; supports horizontal scale with `--scale backend=N`)
 - all other routes -> `frontend`
+
+The four read/write shims (`product-service`, `inventory-service`, `order-service`,
+`payment-service`) were consolidated back into the monolith on 2026-08-30 — they were thin layers
+over the same `pilarestilo` database, with no throughput benefit at this scale and the recurring
+"schema changed on one side only" bug class. Their `/api/*` paths are now served by `backend`
+directly. `notification-service` stays: its own database, Kafka-only triggers, a real extraction.
 
 Gateway guardrails currently enforced:
 
@@ -317,55 +316,18 @@ Redis cache baseline (P7):
   - `GET /api/system-settings/public`
 - Category and system-settings write operations evict those caches automatically.
 
-Inventory write extraction (P6 step 3):
+Inventory / order / payment extraction (P6) and catalog read-replica routing (P7):
 
-- `inventory-service` now exposes stock command endpoints:
-  - `POST /api/inventory/commands/reserve`
-  - `POST /api/inventory/commands/release`
-  - `POST /api/inventory/commands/confirm`
-- Backend delegates order-driven inventory writes to those endpoints when `APP_INVENTORY_REMOTE_ENABLED=true`.
-- This delegation uses internal service-to-service calls (`APP_INVENTORY_REMOTE_BASE_URL`) and keeps storefront/public routing unchanged.
-
-Order query extraction (P6 step 4):
-
-- `order-service` now exposes read endpoints:
-  - `GET /api/orders`
-  - `GET /api/orders/{id}`
-  - `GET /api/orders/_health`
-- Backend can delegate order reads to that service when `APP_ORDER_REMOTE_ENABLED=true`.
-- Delegation uses internal service-to-service calls (`APP_ORDER_REMOTE_BASE_URL`) and keeps Caddy public routing unchanged for `/api/orders/**`.
-
-Order write extraction (P6 step 6):
-
-- `order-service` now exposes command endpoints:
-  - `POST /api/orders`
-  - `PATCH /api/orders/{id}/status`
-- Backend can delegate order writes to that service when `APP_ORDER_REMOTE_WRITE_ENABLED=true`.
-- Backend still publishes `OrderCreated` / `OrderStatusChanged` domain events after delegated writes so downstream payment/saga flows keep working.
-
-Payment query extraction (P6 step 5):
-
-- `payment-service` now exposes read endpoints:
-  - `GET /api/payments`
-  - `GET /api/payments/{id}`
-  - `GET /api/payments/order/{orderId}`
-  - `GET /api/payments/_health`
-- Backend can delegate payment reads to that service when `APP_PAYMENT_REMOTE_ENABLED=true`.
-- Delegation uses internal service-to-service calls (`APP_PAYMENT_REMOTE_BASE_URL`) and can include trusted `X-Service-Token` via `APP_PAYMENT_REMOTE_SERVICE_TOKEN`.
-
-Catalog read-replica routing (P7):
-
-- `product-service` supports optional read-replica routing for read-only transactions.
-- When `APP_DB_READ_REPLICA_ENABLED=true`, read queries (`list`, `search`, `getById`) use the replica datasource.
-- Write/default traffic still uses the primary datasource.
-- Required replica env vars:
-  - `APP_DB_READ_REPLICA_URL`
-  - `APP_DB_READ_REPLICA_USERNAME`
-  - `APP_DB_READ_REPLICA_PASSWORD`
+- Reverted. `product-service`, `inventory-service`, `order-service` and `payment-service` were
+  consolidated back into the monolith on 2026-08-30. The monolith serves `/api/products*`,
+  `/api/inventory*`, `/api/orders*` and `/api/payments*` — reads and writes — itself, and reserves
+  inventory in-process again. The `APP_*_REMOTE_ENABLED` / `APP_DB_READ_REPLICA_*` machinery is
+  pinned off (`docker-compose.yml`) and its dormant client code in the monolith is scheduled for
+  deletion in a follow-up.
 
 Distributed tracing flow:
 
-- Backend, `product-service`, `inventory-service`, `order-service`, and `payment-service` emit OTLP traces (Micrometer tracing bridge + OTel exporter).
+- Backend and `notification-service` emit OTLP traces (Micrometer tracing bridge + OTel exporter).
 - `otel-collector` receives and batches spans.
 - `tempo` stores traces and Grafana reads them through provisioned datasource.
 
@@ -385,21 +347,8 @@ Coverage gates are enforced at Maven `verify` phase with `org.jacoco:jacoco-mave
 
 | Module | Gate |
 |---|---|
-| `services/order-service` | `50%` |
-| `services/inventory-service` | `50%` |
-| `services/payment-service` | `50%` |
-| `services/product-service` | `50%` |
-| `backend` | `22%` (temporary baseline while legacy modules are raised) |
-
-Coverage snapshot (measured on **2026-05-10**):
-
-| Module | Line coverage |
-|---|---|
-| `services/order-service` | `82.92%` |
-| `services/inventory-service` | `73.84%` |
-| `services/payment-service` | `85.44%` |
-| `services/product-service` | `59.44%` |
-| `backend` | `23.27%` |
+| `services/notification-service` | `50%` line (jacoco `merge` of surefire + failsafe) |
+| `backend` | `LINE 0.60` / `BRANCH 0.40` |
 
 ### Verification commands
 

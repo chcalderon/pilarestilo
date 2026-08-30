@@ -101,6 +101,12 @@ This roadmap is synced with the current codebase on `master` as of May 7, 2026.
 
 ## P6 - Microservices Extraction
 
+> **Reverted 2026-08-30.** `product` / `inventory` / `order` / `payment-service` were consolidated
+> back into the monolith — they were thin layers over the shared DB with no throughput benefit at
+> this scale (a load test ran 9 concurrent purchase flows at load 2.5 / 6 cores). The one real
+> extraction, `notification-service` (own DB, Kafka-only), stays. The `[x]` items below are kept as
+> the historical record. See `docs/superpowers/plans/2026-08-30-consolidate-shim-services.md`.
+
 - [x] Extract `product` read service (`services/product-service`) with compatible `GET /api/products*` endpoints
 - [x] Route gateway read traffic (`GET/HEAD /api/products*`) to extracted `product-service` through Caddy
 - [x] Extract `inventory` read service (`services/inventory-service`) with compatible `GET /api/inventory*` endpoints
@@ -122,7 +128,7 @@ This roadmap is synced with the current codebase on `master` as of May 7, 2026.
 - [x] Distributed tracing baseline with OpenTelemetry Collector + Tempo
 - [x] Redis-backed hot-read cache baseline (optional profile) for categories + public store settings
 - [x] Horizontal backend scaling behind reverse proxy (`docker compose --scale backend=N`)
-- [x] Postgres read-replica routing baseline for catalog queries in `product-service`
+- [x] ~~Postgres read-replica routing baseline for catalog queries in `product-service`~~ (removed with the P6 revert, 2026-08-30)
 
 ---
 

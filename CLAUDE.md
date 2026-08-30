@@ -36,11 +36,11 @@ cd frontend && npm run test:e2e   # Playwright
 ### Docker (primary local workflow)
 
 `.env.example` ships with the optional subsystems switched **on**
-(`APP_DOMAIN_EVENTS_KAFKA_ENABLED`, `APP_CACHE_REDIS_ENABLED`, the three
-`APP_*_REMOTE_ENABLED` flags, `APP_TRACING_ENABLED`). Those flags register Kafka listeners,
-a Redis connection factory and remote clients at startup, so the containers behind them have
-to exist: without the matching profiles the backend cannot resolve `kafka` or `redis` and dies
-in a restart loop (`No resolvable bootstrap urls given in bootstrap.servers`).
+(`APP_DOMAIN_EVENTS_KAFKA_ENABLED`, `APP_CACHE_REDIS_ENABLED`, `APP_TRACING_ENABLED`). Those flags
+register Kafka listeners and a Redis connection factory at startup, so the containers behind them
+have to exist: without the matching profiles the backend cannot resolve `kafka` or `redis` and
+dies in a restart loop (`No resolvable bootstrap urls given in bootstrap.servers`). The
+`microservices` profile now brings up only `notification-service`.
 
 ```bash
 # Full stack matching the shipped .env — runs at http://localhost
@@ -51,7 +51,8 @@ cd infra && docker compose --env-file .env \
 
 To run the minimal stack (postgres + backend + frontend + caddy) instead, first set
 `APP_DOMAIN_EVENTS_KAFKA_ENABLED=false`, `APP_CACHE_REDIS_ENABLED=false`, `APP_TRACING_ENABLED=false`
-and the three `APP_*_REMOTE_ENABLED=false` in `.env`:
+in `.env` and drop `--profile microservices` (that skips `notification-service`, whose Kafka
+listeners a no-Kafka stack cannot serve anyway):
 
 ```bash
 cd infra && docker compose --env-file .env up -d --build
@@ -99,8 +100,9 @@ block, and are burned down deliberately rather than by a gate nobody can turn gr
 
 ```
 backend/          Spring Boot monolith (hexagonal, 21 modules)
-services/         Extracted microservices (P6 — optional profile)
-  product-service, inventory-service, order-service, payment-service, notification-service
+services/         Extracted microservice (optional profile)
+  notification-service   (own DB, Kafka-only; the four read/write shims —
+  product/inventory/order/payment-service — were consolidated back into the monolith 2026-08-30)
 frontend/         Astro 4 SSR + React islands
 infra/            Docker Compose, Caddy, Flyway, env
 docs/             Architecture, roadmap, API contracts
@@ -154,17 +156,17 @@ API calls use `PUBLIC_API_BASE_URL` (browser) and `INTERNAL_API_BASE_URL` (SSR, 
 
 ### Caddy routing
 
-All traffic enters through Caddy. In the `microservices` profile, read paths are routed to extracted services:
+All traffic enters through Caddy. The notification read/mark-as-read paths route to
+notification-service; everything else is served by the monolith.
 
 | Pattern | Upstream |
 |---|---|
-| `GET/HEAD /api/products*` | product-service:8081 |
-| `GET/HEAD /api/inventory*` | inventory-service:8082 |
-| `GET/HEAD /api/payments*` | payment-service:8084 |
-| `GET/HEAD /api/orders*` | order-service:8083 |
-| `GET/HEAD/PUT /api/notifications*` | notification-service:8085 (the whole resource, reads and mark-as-read writes) |
-| `POST/PATCH/DELETE /api/*` | backend:8080 |
+| `GET/HEAD/PUT /api/notifications*` | notification-service:8085 (the whole resource, reads and mark-as-read writes), `backend:8080` fallback |
+| everything else under `/api/*` | backend:8080 |
 | everything else | frontend:4321 |
+
+(product/inventory/order/payment-service were consolidated back into the monolith 2026-08-30 —
+those `/api/*` paths now fall through to `backend:8080` like everything else.)
 
 Guardrails: 12 MB body cap, per-IP rate limits on auth and webhook endpoints.
 
@@ -189,24 +191,15 @@ hand, and making the money wait on it invites a made-up folio. Boleta files live
 `app.documents.storage-path`, never under `app.media.storage-path` — that whole tree is `permitAll`
 on `/api/media/**`, and a boleta carries a RUT, a buyer name and amounts.
 
-### Two codebases write the `orders` table
+### notification-service reads the monolith's tables
 
-With `APP_ORDER_REMOTE_WRITE_ENABLED=true` — what production runs — `order-service` performs the
-INSERT, not the monolith. They share a database and no compiler, no schema check and no test
-crosses between them, so **any change to `orders` / `order_items`, their DTOs, or the events
-around them must be applied in `services/order-service/` in the same commit, and both must ship in
-the same deploy.** Five bugs have come from forgetting this; green suites on both sides say
-nothing about it. Verify by creating a real order against the full compose stack.
-
-Discount codes are the exception that proves the rule: `order-service` owns no redemption ledger,
-so the monolith evaluates the code, claims the slot, calls the service with only the resulting
-amount, then binds the ledger row to the returned order id.
-
-`services/notification-service/` is a **read-only** third party to the same coupling: it maps
+The monolith writes `orders` / `order_items` directly again (2026-08-30 consolidation — the old
+`order-service` two-writer hazard, and the five bugs it caused, are retired). But
+`services/notification-service/` is still a **read-only** third party on the shared DB: it maps
 minimal `insertable=false` views of `orders`, `order_items`, `users`, `payments`, `sales_documents`,
-`return_requests` and `system_settings` on the shared DB, under `ddl-auto: validate`. A column
-rename or drop on any of those must update the matching `*RoEntity` in
-`notification-service/.../persistence/readonly/` **in the same commit and deploy**, or the service
+`return_requests` and `system_settings`, under `ddl-auto: validate`. **A column rename or drop on
+any of those must update the matching `*RoEntity` in
+`notification-service/.../persistence/readonly/` in the same commit and deploy**, or the service
 fails to boot. `ReadOnlyMappingIT` (runs the monolith's real migration set) turns that into a red
 local test.
 
@@ -330,9 +323,6 @@ Jackson 3 is the default: use `tools.jackson.databind.*`, not `com.fasterxml.jac
 | `APP_PRODUCT_AI_ENGINE` | `stub` short-circuits to the fake pipeline; **any other value** (the repo ships `ollama_backend`) routes to `APP_PRODUCT_AI_OPENAI_BASE_URL`. The name does not pick a provider — the base URL does. |
 | `APP_PRODUCT_AI_OPENAI_INFER_MODEL` | Text model (default: `gpt-4.1-mini`) |
 | `APP_PRODUCT_AI_OPENAI_IMAGE_MODEL` | Image model (default: `gpt-image-1`) |
-| `APP_INVENTORY_REMOTE_ENABLED` | Delegate inventory write commands (`reserve/release/confirm`) to microservice |
-| `APP_ORDER_REMOTE_ENABLED` | Delegate order reads to microservice |
-| `APP_PAYMENT_REMOTE_ENABLED` | Delegate payment reads to microservice |
 | `APP_CACHE_REDIS_ENABLED` | Redis hot-read cache for categories + settings |
 | `APP_TRACING_ENABLED` | OTLP distributed tracing to Tempo |
 
