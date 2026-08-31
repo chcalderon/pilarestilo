@@ -231,7 +231,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V81**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V93**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -265,6 +265,11 @@ Recent migrations (V54–V66):
   `NOTA_CREDITO` as a document type, `sales_documents.reference_code`, and the live-document index
   narrowed to `uq_sales_documents_live_sale_per_order` so a boleta and its credit note coexist
 - V81: `returns.read` / `returns.manage` / `returns.refund` permissions
+- (V82–V92 not listed individually — see the migration folder: notification_providers set,
+  variant templates V89/V90, password-reset + session_version V91, seed featured categories V92)
+- V93: contract half of V69/V87 — drop `products.variant_type`, `categories.defines_variant_fields`,
+  `categories.variant_field_config` (dead since the `varianttemplate` module shipped; `category_type`
+  kept). CHECK constraints drop with the columns
 
 ### Notifications go out on every enabled channel
 
