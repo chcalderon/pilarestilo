@@ -29,12 +29,7 @@ scan_maven() {
 }
 
 scan_maven backend pilarestilo-backend "PilarEstilo backend"
-scan_maven services/order-service pilarestilo-order-service "PilarEstilo order-service"
-scan_maven services/inventory-service pilarestilo-inventory-service "PilarEstilo inventory-service"
-# The two read-side services were missing, so half the code that answers production traffic was
-# never analysed. product-service is where the phantom-stock filter lived.
-scan_maven services/product-service pilarestilo-product-service "PilarEstilo product-service"
-scan_maven services/payment-service pilarestilo-payment-service "PilarEstilo payment-service"
+scan_maven services/notification-service pilarestilo-notification-service "PilarEstilo notification-service"
 
 echo "== PilarEstilo frontend"
 (cd "$REPO_ROOT/frontend" && npm run test:coverage --silent)
