@@ -32,6 +32,7 @@ export const GET: APIRoute = ({ request }) => {
     'User-agent: *',
     ...PRIVATE_PATHS.map((path) => `Disallow: ${path}`),
     'Disallow: /api/',
+    'Disallow: /phog/',
     '',
     `Sitemap: ${site}/sitemap.xml`,
     '',

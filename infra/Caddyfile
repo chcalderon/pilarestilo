@@ -42,6 +42,22 @@
     redir @www https://pilarestilo.com{uri} permanent
 
     route {
+        # PostHog analytics, reverse-proxied through our own origin so ad-blockers that filter
+        # *.posthog.com don't drop the conversion-funnel events. /phog/static/* -> the assets host
+        # (array.js, recorder.js); everything else under /phog/* -> the ingestion host.
+        handle /phog/static/* {
+            uri strip_prefix /phog
+            reverse_proxy https://us-assets.i.posthog.com {
+                header_up Host us-assets.i.posthog.com
+            }
+        }
+        handle /phog/* {
+            uri strip_prefix /phog
+            reverse_proxy https://us.i.posthog.com {
+                header_up Host us.i.posthog.com
+            }
+        }
+
         # Notifications - the whole resource is owned by notification-service: the bell reads
         # (GET) and the mark-as-read writes (PUT). backend:8080 as fallback when the microservices
         # profile is off. (product/inventory/order/payment-service were consolidated back into the

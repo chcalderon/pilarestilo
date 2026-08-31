@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { isTokenExpired, secondsUntilExpiry } from './jwt';
+import { identifyCustomer, resetAnalytics } from './analytics';
 
 export interface StoredUser {
   id: string;
@@ -54,10 +55,14 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (token, user) => {
         writeAuthTokenCookie(token);
         set({ token, user });
+        // Merge the anonymous funnel so far into this customer's PostHog person.
+        identifyCustomer(user.id);
       },
       clearAuth: () => {
         clearAuthTokenCookie();
         set({ token: null, user: null });
+        // Next visitor on this browser starts as a fresh anonymous id.
+        resetAnalytics();
       },
     }),
     {
@@ -70,6 +75,7 @@ export const useAuthStore = create<AuthState>()(
           state.clearAuth();
         } else {
           writeAuthTokenCookie(state.token);
+          if (state.user?.id) identifyCustomer(state.user.id);
         }
       },
     }

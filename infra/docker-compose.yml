@@ -240,12 +240,16 @@ services:
       dockerfile: Dockerfile
       args:
         PUBLIC_GOOGLE_CLIENT_ID: ${PUBLIC_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}
+        PUBLIC_POSTHOG_KEY: ${PUBLIC_POSTHOG_KEY:-}
     container_name: pe_frontend
     restart: unless-stopped
     environment:
       HOST: "0.0.0.0"
       PORT: "4321"
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-/api}
+      # PostHog project token (write-only, safe in client HTML). Unset -> analytics off. Also
+      # passed as a build arg above so `import.meta.env` sees it during the Astro build.
+      PUBLIC_POSTHOG_KEY: ${PUBLIC_POSTHOG_KEY:-}
       # Origin the storefront emits in canonical / og:url / hreflang / sitemap. Set explicitly in
       # prod; the fallback is the request origin, which is only wrong when several hostnames serve
       # the same page and one has to win.
