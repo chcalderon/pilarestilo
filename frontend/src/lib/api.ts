@@ -924,31 +924,58 @@ function toProductMutationBody(data: CreateProductRequest | UpdateProductRequest
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 
+/**
+ * `FIXTURE_PRODUCTS` exists so the storefront renders when there is no backend — a dev convenience
+ * and a unit-test seed. It must NEVER reach production: served there it masks a real outage and,
+ * worse, hands fabricated inventory to shoppers and to Google's crawler. In a production build the
+ * catalogue reads return empty / rethrow instead, and the pages already handle that (an empty
+ * grid, a redirect to the list).
+ */
+const USE_FIXTURE_FALLBACK = import.meta.env.DEV === true;
+
+/** Runs `fn`, and on failure waits briefly and runs it once more — for transient upstream hiccups. */
+async function retryOnce<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    return fn();
+  }
+}
+
 export async function getProducts(filter?: ProductFilter): Promise<Page<ProductDto>> {
   try {
-    const query = buildQuery((filter ?? {}) as Record<string, unknown>);
-    const page = await productReadFetch<Page<unknown>>(`/products${query}`);
-    const normalized = page.content.map(normalizeProduct);
-    const content = filter?.inStock ? normalized.filter(hasSellableStock) : normalized;
-    return { ...page, content };
+    return await retryOnce(async () => {
+      const query = buildQuery((filter ?? {}) as Record<string, unknown>);
+      const page = await productReadFetch<Page<unknown>>(`/products${query}`);
+      const normalized = page.content.map(normalizeProduct);
+      const content = filter?.inStock ? normalized.filter(hasSellableStock) : normalized;
+      return { ...page, content };
+    });
   } catch {
-    return {
-      content: FIXTURE_PRODUCTS,
-      totalElements: FIXTURE_PRODUCTS.length,
-      totalPages: 1,
-      size: FIXTURE_PRODUCTS.length,
-      number: 0,
-    };
+    if (USE_FIXTURE_FALLBACK) {
+      return {
+        content: FIXTURE_PRODUCTS,
+        totalElements: FIXTURE_PRODUCTS.length,
+        totalPages: 1,
+        size: FIXTURE_PRODUCTS.length,
+        number: 0,
+      };
+    }
+    return { content: [], totalElements: 0, totalPages: 0, size: filter?.size ?? 0, number: 0 };
   }
 }
 
 export async function getProduct(id: string): Promise<ProductDto> {
   try {
-    const raw = await productReadFetch<unknown>(`/products/${encodeURIComponent(id)}`);
-    return normalizeProduct(raw);
+    return await retryOnce(async () =>
+      normalizeProduct(await productReadFetch<unknown>(`/products/${encodeURIComponent(id)}`)),
+    );
   } catch {
-    const fixture = FIXTURE_PRODUCTS.find((p) => p.id === id);
-    if (fixture) return fixture;
+    if (USE_FIXTURE_FALLBACK) {
+      const fixture = FIXTURE_PRODUCTS.find((p) => p.id === id);
+      if (fixture) return fixture;
+    }
     throw new Error(`Product ${id} not found`);
   }
 }
@@ -957,17 +984,12 @@ export async function getFeaturedProducts(): Promise<ProductDto[]> {
   const query = buildQuery({ active: true, inStock: true, size: 8, page: 0, sort: 'createdAt,desc' });
 
   try {
-    const firstPage = await productReadFetch<Page<unknown>>(`/products${query}`);
-    return firstPage.content.map(normalizeProduct).filter(hasSellableStock);
+    return await retryOnce(async () => {
+      const page = await productReadFetch<Page<unknown>>(`/products${query}`);
+      return page.content.map(normalizeProduct).filter(hasSellableStock);
+    });
   } catch {
-    // Retry once for transient upstream hiccups before falling back.
-    await new Promise((resolve) => setTimeout(resolve, 180));
-    try {
-      const secondPage = await productReadFetch<Page<unknown>>(`/products${query}`);
-      return secondPage.content.map(normalizeProduct).filter(hasSellableStock);
-    } catch {
-      return FIXTURE_PRODUCTS.slice(0, 8);
-    }
+    return USE_FIXTURE_FALLBACK ? FIXTURE_PRODUCTS.slice(0, 8) : [];
   }
 }
 
