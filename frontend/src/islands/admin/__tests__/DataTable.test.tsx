@@ -157,4 +157,20 @@ describe('DataTable (mobile)', () => {
     expect(screen.getByText(/1 seleccionado/i)).toBeInTheDocument();
     expect(onRowClick).not.toHaveBeenCalled();
   });
+
+  it('opens the row from the card button, by click and by Enter', async () => {
+    const onRowClick = vi.fn();
+    const user = userEvent.setup();
+    render(<DataTable columns={columns} data={rows(1)} keyField="id" onRowClick={onRowClick} />);
+
+    // The card is a real <button> whose accessible name is the row's own content.
+    const card = screen.getByRole('button', { name: /Item 0/i });
+    await user.click(card);
+    expect(onRowClick).toHaveBeenCalledWith(rows(1)[0]);
+
+    onRowClick.mockClear();
+    card.focus();
+    await user.keyboard('{Enter}');
+    expect(onRowClick).toHaveBeenCalledWith(rows(1)[0]);
+  });
 });

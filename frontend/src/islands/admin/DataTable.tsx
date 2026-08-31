@@ -189,18 +189,30 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
           const id = getRowId(row);
           const isSelected = selected.has(id);
 
+          const body = (
+            <div className="flex flex-col gap-2">
+              {columns.map((col) => (
+                <div key={col.key} className="flex flex-col gap-1">
+                  {col.header ? (
+                    <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
+                      {col.header}
+                    </span>
+                  ) : null}
+                  <div className="font-sans text-[0.82rem] text-pe-charcoal">
+                    {col.render ? col.render(row) : formatCellValue((row as Record<string, unknown>)[col.key])}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
           return (
             <article
               key={id}
               className={[
                 'p-3 transition-colors duration-100',
                 isSelected ? 'bg-pe-rose/6' : 'hover:bg-pe-cream/40',
-                onRowClick ? 'cursor-pointer' : '',
               ].join(' ')}
-              tabIndex={onRowClick ? 0 : undefined}
-              role={onRowClick ? 'button' : undefined}
-              onKeyDown={onRowClick ? rowKeyDownHandler(onRowClick, row) : undefined}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {selectable && (
                 <div className="mb-2">
@@ -209,7 +221,6 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleRow(id)}
-                      onClick={(e) => e.stopPropagation()}
                       className="accent-pe-rose cursor-pointer"
                       aria-label={`Seleccionar fila ${id}`}
                     />{' '}
@@ -218,20 +229,25 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
                 </div>
               )}
 
-              <div className="flex flex-col gap-2">
-                {columns.map((col) => (
-                  <div key={col.key} className="flex flex-col gap-1">
-                    {col.header ? (
-                      <span className="font-sans text-[0.62rem] uppercase tracking-[0.12em] text-pe-muted">
-                        {col.header}
-                      </span>
-                    ) : null}
-                    <div className="font-sans text-[0.82rem] text-pe-charcoal">
-                      {col.render ? col.render(row) : formatCellValue((row as Record<string, unknown>)[col.key])}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/*
+               * The row opens a drawer, so it is a real <button>, not a <div role="button">.
+               * -m-3 p-3 stretches its hit area back out to the card edges (kept off when a
+               * checkbox sits above it, which no current screen does but the prop allows).
+               */}
+              {onRowClick ? (
+                <button
+                  type="button"
+                  onClick={() => onRowClick(row)}
+                  className={[
+                    'block w-full cursor-pointer text-left',
+                    selectable ? '' : '-m-3 p-3',
+                  ].join(' ')}
+                >
+                  {body}
+                </button>
+              ) : (
+                body
+              )}
             </article>
           );
         })}

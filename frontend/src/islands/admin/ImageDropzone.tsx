@@ -71,7 +71,6 @@ export default function ImageDropzone({
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
@@ -211,38 +210,69 @@ export default function ImageDropzone({
       */}
       <div
         className={[
-          'relative h-48 w-full overflow-hidden cursor-pointer select-none',
+          'group relative h-48 w-full overflow-hidden select-none',
           !preview
             ? ['border-2 border-dashed transition-colors', idleBorderClass].join(' ')
             : 'bg-pe-cream/40',
         ].join(' ')}
-        onClick={() => !uploading && inputRef.current?.click()}
         onDragEnter={e => { e.preventDefault(); setState('dragging'); }}
         onDragOver={e => { e.preventDefault(); setState('dragging'); }}
         onDragLeave={() => setState('idle')}
         onDrop={onDrop}
-        role="button"
-        aria-label={preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto'}
-        tabIndex={0}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
       >
-        {preview ? (
-          /* Image fits container without cropping (preserve full product view) */
-          <img
-            src={preview}
-            alt="Vista previa del producto"
-            className="w-full h-full object-contain"
-            decoding="async"
+        {/*
+          Click-to-pick is a real <label> for the hidden <input>, not a
+          <div role="button"> — the remove button below is a nested control and
+          cannot live inside a <button>. Drag-and-drop stays on the wrapper.
+        */}
+        <label
+          className="absolute inset-0 cursor-pointer focus-within:outline-hidden focus-within:ring-2 focus-within:ring-inset focus-within:ring-pe-rose"
+          aria-label={preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto'}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={onChange}
+            disabled={uploading}
           />
-        ) : (
-          /* Placeholder — shown when no image yet */
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-            <ImageIcon size={28} className="text-pe-muted" strokeWidth={1.25} />
-            <span className="font-sans text-[0.68rem] text-pe-muted text-center px-6 leading-relaxed whitespace-pre-line">
-              {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
-            </span>
-          </div>
-        )}
+
+          {preview ? (
+            /* Image fits container without cropping (preserve full product view) */
+            <img
+              src={preview}
+              alt="Vista previa del producto"
+              className="w-full h-full object-contain"
+              decoding="async"
+            />
+          ) : (
+            /* Placeholder — shown when no image yet */
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+              <ImageIcon size={28} className="text-pe-muted" strokeWidth={1.25} />
+              <span className="font-sans text-[0.68rem] text-pe-muted text-center px-6 leading-relaxed whitespace-pre-line">
+                {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
+              </span>
+            </div>
+          )}
+
+          {/* Hover overlay when image exists — gradient + hint only; remove button is a sibling below */}
+          {preview && !uploading && !dragging && (
+            <div className="absolute inset-0 flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none">
+              <div className="flex items-center gap-1.5 text-white/75">
+                <Upload size={11} />
+                <span className="font-sans text-[0.62rem]">Clic o arrastra para cambiar</span>
+              </div>
+            </div>
+          )}
+
+          {/* No-image upload hint overlay on hover */}
+          {!preview && !uploading && !dragging && (
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <Upload size={11} className="text-pe-muted" />
+              <span className="font-sans text-[0.6rem] text-pe-muted">Clic para seleccionar</span>
+            </div>
+          )}
+        </label>
 
         {/* Drag-over overlay when image already present */}
         {preview && dragging && (
@@ -258,40 +288,21 @@ export default function ImageDropzone({
           </div>
         )}
 
-        {/* Controls overlay — visible on hover when image exists */}
-        {preview && !uploading && !dragging && (
-          <div className="absolute inset-0 flex flex-col justify-between p-2 opacity-0 hover:opacity-100 transition-opacity bg-gradient-to-t from-black/50 via-transparent to-transparent">
-            <div className="flex justify-end">
-              {allowClear && (
-                <button
-                  type="button"
-                  onClick={e => {
-                    e.stopPropagation();
-                    setPreview(undefined);
-                    onUpload('');
-                    onUploadedFile?.(null);
-                  }}
-                  className="bg-black/55 hover:bg-black/80 text-white p-1 transition-colors"
-                  title="Quitar imagen"
-                  aria-label="Quitar imagen"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 text-white/75">
-              <Upload size={11} />
-              <span className="font-sans text-[0.62rem]">Clic o arrastra para cambiar</span>
-            </div>
-          </div>
-        )}
-
-        {/* No-image upload hint overlay on hover */}
-        {!preview && !uploading && !dragging && (
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-1.5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-            <Upload size={11} className="text-pe-muted" />
-            <span className="font-sans text-[0.6rem] text-pe-muted">Clic para seleccionar</span>
-          </div>
+        {/* Remove — sibling of the <label>, so it is not a <button> inside a <button> */}
+        {preview && !uploading && !dragging && allowClear && (
+          <button
+            type="button"
+            onClick={() => {
+              setPreview(undefined);
+              onUpload('');
+              onUploadedFile?.(null);
+            }}
+            className="absolute right-2 top-2 z-10 bg-black/55 hover:bg-black/80 text-white p-1 opacity-0 group-hover:opacity-100 transition-[opacity,background-color]"
+            title="Quitar imagen"
+            aria-label="Quitar imagen"
+          >
+            <X size={13} />
+          </button>
         )}
       </div>
 
@@ -311,13 +322,6 @@ export default function ImageDropzone({
       {cameraError && (
         <p className="font-sans text-[0.65rem] text-pe-warning-ink">{cameraError}</p>
       )}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onChange}
-      />
       <input
         ref={cameraInputRef}
         type="file"
