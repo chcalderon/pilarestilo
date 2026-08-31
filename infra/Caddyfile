@@ -159,6 +159,16 @@
         Referrer-Policy strict-origin-when-cross-origin
     }
 
+    # Cache the static files under /public (logos, favicon, manifest, fonts). The Astro node
+    # adapter serves them with max-age=0; /_astro/* hashed bundles and /api/media/* already
+    # carry their own long cache and are excluded.
+    @public_static {
+        path *.png *.jpg *.jpeg *.webp *.svg *.ico *.woff *.woff2 *.webmanifest
+        not path /api/*
+        not path /_astro/*
+    }
+    header @public_static Cache-Control "public, max-age=604800"
+
     # Access log
     log {
         output stdout

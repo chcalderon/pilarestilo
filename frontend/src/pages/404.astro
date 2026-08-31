@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+import { getLocaleFromUrl } from '../i18n/index';
+
+/**
+ * Astro renders this for any route that matched nothing, with a 404 status. It has no
+ * `Astro.params`, so the locale comes from the path the visitor tried.
+ */
+const locale = getLocaleFromUrl(Astro.url);
+const isEs = locale === 'es';
+
+const copy = isEs
+  ? {
+      title: 'Página no encontrada',
+      code: 'Error 404',
+      lead: 'La página que buscas no existe o cambió de dirección.',
+      home: 'Ir al inicio',
+      products: 'Ver productos',
+      help: '¿Buscabas algo puntual? Escríbenos y te ayudamos.',
+      contact: 'Contacto',
+    }
+  : {
+      title: 'Page not found',
+      code: 'Error 404',
+      lead: 'The page you are looking for does not exist or has moved.',
+      home: 'Go home',
+      products: 'Browse products',
+      help: 'Looking for something specific? Write to us and we will help.',
+      contact: 'Contact',
+    };
+---
+
+<BaseLayout title={copy.title} description={copy.lead} locale={locale} noindex>
+  <section class="bg-pe-offwhite min-h-[70vh] flex items-center">
+    <div class="pe-container py-20 md:py-28 text-center">
+      <p class="pe-eyebrow text-pe-rose-ink mb-5">{copy.code}</p>
+      <h1 class="font-display text-pe-black text-4xl md:text-6xl font-light tracking-tight">
+        {copy.title}
+      </h1>
+      <p class="mt-6 max-w-xl mx-auto font-sans text-sm md:text-base text-pe-charcoal leading-relaxed">
+        {copy.lead}
+      </p>
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <Button href={`/${locale}/`} variant="primary" trailingIcon="arrow-right">
+          {copy.home}
+        </Button>
+        <Button href={`/${locale}/products`} variant="outline">
+          {copy.products}
+        </Button>
+      </div>
+      <p class="mt-12 font-sans text-[0.8rem] text-pe-muted">
+        {copy.help}{' '}
+        <a
+          href={`/${locale}/contact`}
+          class="underline underline-offset-4 hover:text-pe-rose-ink transition-colors"
+        >
+          {copy.contact}
+        </a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
