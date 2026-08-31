@@ -111,6 +111,12 @@ services:
       APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:-1500}
       APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:-3}
       APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:-.dlt}
+      # Server-side PostHog (order_created / order_paid). Off unless explicitly enabled — keeps a
+      # local dev stack from writing into the prod project. The key defaults to the same
+      # PUBLIC_POSTHOG_KEY the frontend uses, so the VPS .env only needs the one token.
+      APP_ANALYTICS_POSTHOG_ENABLED: ${APP_ANALYTICS_POSTHOG_ENABLED:-false}
+      APP_ANALYTICS_POSTHOG_API_KEY: ${APP_ANALYTICS_POSTHOG_API_KEY:-${PUBLIC_POSTHOG_KEY:-}}
+      APP_ANALYTICS_POSTHOG_HOST: ${APP_ANALYTICS_POSTHOG_HOST:-https://us.i.posthog.com}
       # product/inventory/order/payment-service were consolidated back into the monolith on
       # 2026-08-30. Pinned to "false" here (not via ${VAR}) so a stale =true in a deployed .env
       # can't make the monolith delegate to a service that no longer exists.

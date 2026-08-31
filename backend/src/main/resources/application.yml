@@ -134,6 +134,15 @@ app:
       retry-backoff-ms: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_BACKOFF_MS:1500}
       retry-max-attempts: ${APP_DOMAIN_EVENTS_KAFKA_RETRY_MAX_ATTEMPTS:3}
       dlt-suffix: ${APP_DOMAIN_EVENTS_KAFKA_DLT_SUFFIX:.dlt}
+  analytics:
+    posthog:
+      # Server side of the storefront funnel (order_created / order_paid). Off unless a project
+      # key is set. Same write-only phc_… token the frontend ships; US region by default.
+      enabled: ${APP_ANALYTICS_POSTHOG_ENABLED:false}
+      host: ${APP_ANALYTICS_POSTHOG_HOST:https://us.i.posthog.com}
+      api-key: ${APP_ANALYTICS_POSTHOG_API_KEY:}
+      capture-path: ${APP_ANALYTICS_POSTHOG_CAPTURE_PATH:/i/v0/e/}
+      timeout-ms: ${APP_ANALYTICS_POSTHOG_TIMEOUT_MS:3000}
   gateway:
     rate-limit:
       enabled: ${APP_GATEWAY_RATE_LIMIT_ENABLED:true}
