@@ -10,6 +10,7 @@ import {
   type CheckoutStep,
 } from '../../lib/checkoutStore';
 import { computeTotals } from '../../lib/checkoutTotals';
+import { track } from '../../lib/analytics';
 import { useStockCheck } from '../../lib/useStockCheck';
 import {
   createOrder,
@@ -121,6 +122,24 @@ export default function CheckoutPage({ locale }: Props) {
     () => computeTotals(subtotal, { isEmployee: authUser?.role === 'SELLER', discount: appliedDiscount }),
     [subtotal, authUser?.role, appliedDiscount]
   );
+
+  /** checkout_started once per visit (only if the cart actually has something to check out). */
+  const checkoutStartedFired = useRef(false);
+  useEffect(() => {
+    if (checkoutStartedFired.current || items.length === 0) return;
+    checkoutStartedFired.current = true;
+    track('checkout_started', {
+      item_count: items.reduce((sum, i) => sum + i.quantity, 0),
+      line_count: items.length,
+      subtotal,
+      currency,
+    });
+  }, [items, subtotal, currency]);
+
+  /** checkout_step on every step change, including the first one the customer lands on. */
+  useEffect(() => {
+    track('checkout_step', { step, step_index: stepIndex(step) });
+  }, [step]);
 
   /**
    * Reads the step out of the URL so a shared link and the browser back button both work — but
@@ -297,6 +316,17 @@ export default function CheckoutPage({ locale }: Props) {
         token
       );
 
+      track('checkout_completed', {
+        order_id: order.id,
+        public_reference: order.publicReference,
+        item_count: items.reduce((sum, i) => sum + i.quantity, 0),
+        line_count: items.length,
+        total: totals.total,
+        currency,
+        payment_method: paymentMethod,
+        discount_code: appliedDiscount?.code,
+      });
+
       /*
        * Clear both stores only once the order exists. Doing it optimistically would lose the
        * cart on any failure, and the customer would have to rebuild it to retry.
@@ -385,7 +415,10 @@ export default function CheckoutPage({ locale }: Props) {
               gatewayLabel={config.gatewayLabel}
               transfer={config.transfer}
               transferWindowMinutes={config.transferWindowMinutes}
-              onSelect={setPaymentMethod}
+              onSelect={(method) => {
+                setPaymentMethod(method);
+                track('payment_method_selected', { method });
+              }}
               onBack={() => setStep('shipping')}
               onContinue={() => completeStep('payment')}
             />

@@ -20,7 +20,8 @@ export type CommerceEvent =
   | 'cart_viewed'
   | 'checkout_started'
   | 'checkout_step'
-  | 'payment_method_selected';
+  | 'payment_method_selected'
+  | 'checkout_completed';
 
 interface PostHogLike {
   capture: (event: string, properties?: Record<string, unknown>) => void;

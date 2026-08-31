@@ -1,6 +1,7 @@
 ﻿---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
+import TrackEvent from '../../../islands/analytics/TrackEvent';
 import { type Locale, SUPPORTED_LOCALES } from '../../../i18n/index';
 import { getCategories, getProducts } from '../../../lib/api';
 
@@ -32,9 +33,25 @@ const token = Astro.cookies.get('pe_token')?.value;
 
 // Breadcrumb: find parent if any
 const parent = category.parentId ? categories.find(c => c.id === category.parentId) : null;
+
+const productCount = productsPage.totalElements;
+const productCountEs = productCount === 1 ? 'producto' : 'productos';
+const productCountEn = productCount === 1 ? 'product' : 'products';
+const productCountLabel = locale === 'es' ? productCountEs : productCountEn;
+
+const listViewedProps = {
+  list_name: title,
+  category: slug,
+  brand: null,
+  condition: null,
+  result_count: productsPage.totalElements,
+  page,
+  locale,
+};
 ---
 
 <BaseLayout title={title} locale={locale}>
+  <TrackEvent client:idle event="product_list_viewed" properties={listViewedProps} />
   <div class="min-h-screen" style="background-color: var(--pe-surface, #F8F4EF)">
     <!-- Category hero band -->
     <section class="relative overflow-hidden border-b border-pe-black/10">
@@ -74,9 +91,7 @@ const parent = category.parentId ? categories.find(c => c.id === category.parent
           {title}
         </h1>
         <p class="mt-3 text-pe-charcoal/60 text-sm">
-          {productsPage.totalElements} {locale === 'es'
-            ? (productsPage.totalElements === 1 ? 'producto' : 'productos')
-            : (productsPage.totalElements === 1 ? 'product' : 'products')}
+          {productCount} {productCountLabel}
         </p>
       </div>
     </section>

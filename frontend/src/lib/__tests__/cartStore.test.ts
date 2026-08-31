@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { verifyStockForItem } from '../cartStore';
+import { verifyStockForItem, useCartStore } from '../cartStore';
+import { track } from '../analytics';
 import * as api from '../api';
 
 vi.mock('../api', () => ({
   getProduct: vi.fn(),
+}));
+
+vi.mock('../analytics', () => ({
+  track: vi.fn(),
 }));
 
 const mockGetProduct = vi.mocked(api.getProduct);
@@ -152,5 +157,48 @@ describe('verifyStockForItem', () => {
 
     const result = await verifyStockForItem('p1', { color: 'negro', size: 'M' }, 2);
     expect(result).toEqual({ ok: true, verified: false });
+  });
+});
+
+describe('cart funnel events', () => {
+  const PID = '10000000-0000-0000-0000-000000000001';
+  const baseItem = {
+    id: PID,
+    productId: PID,
+    name: 'Vestido',
+    brand: 'Marca',
+    price: { amount: 19990, currency: 'CLP' },
+    imageUrl: '',
+    condition: 'NEW' as const,
+  };
+
+  beforeEach(() => {
+    useCartStore.setState({ items: [] });
+    vi.mocked(track).mockClear();
+  });
+
+  it('addItem fires add_to_cart with the line properties', () => {
+    useCartStore.getState().addItem(baseItem);
+    expect(track).toHaveBeenCalledWith(
+      'add_to_cart',
+      expect.objectContaining({ product_id: PID, price: 19990, currency: 'CLP', quantity: 1 })
+    );
+  });
+
+  it('removeItem fires remove_from_cart with the removed line and its quantity', () => {
+    useCartStore.getState().addItem(baseItem);
+    useCartStore.getState().addItem(baseItem); // quantity now 2
+    vi.mocked(track).mockClear();
+
+    useCartStore.getState().removeItem(PID);
+    expect(track).toHaveBeenCalledWith(
+      'remove_from_cart',
+      expect.objectContaining({ line_id: PID, quantity: 2 })
+    );
+  });
+
+  it('removeItem for an id that is not in the cart fires nothing', () => {
+    useCartStore.getState().removeItem('not-there');
+    expect(track).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@ import ProductCard from '../../../components/ProductCard.astro';
 import Button from '../../../components/Button.astro';
 import Icon from '../../../components/Icon.astro';
 import CategoryTreeNav from '../../../components/CategoryTreeNav.astro';
+import TrackEvent from '../../../islands/analytics/TrackEvent';
 import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
 import { getProducts, getCategoryTree, type CategoryTreeNode, type ProductFilter, FIXTURE_PRODUCTS } from '../../../lib/api';
 
@@ -79,23 +80,40 @@ const categoryMatch = category ? findNodeAndPath(categoryTree, category) : null;
 const currentCategory = categoryMatch?.node ?? null;
 const openCategorySlugs = categoryMatch?.path ?? [];
 
+let currentCategoryName = '';
+if (currentCategory) {
+  currentCategoryName =
+    locale === 'es'
+      ? currentCategory.nameEs
+      : currentCategory.nameEn || currentCategory.nameEs;
+}
+
 const activeFilters: { label: string; clearKey: string }[] = [];
 if (condition) activeFilters.push({ label: condition === 'NEW' ? t('product.condition.new', locale) : t('product.condition.used', locale), clearKey: 'condition' });
 if (brand) activeFilters.push({ label: brand, clearKey: 'brand' });
 if (category) {
   activeFilters.push({
-    label: currentCategory
-      ? (locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs))
-      : category,
+    label: currentCategoryName || category,
     clearKey: 'category',
   });
 }
 
 const clearUrl = `/${locale}/products`;
 
+const listViewedProps = {
+  list_name: currentCategoryName || 'all_products',
+  category: category ?? null,
+  brand: brand ?? null,
+  condition: condition ?? null,
+  result_count: productsPage.totalElements,
+  page,
+  locale,
+};
+
 ---
 
 <BaseLayout title={t('nav.products', locale)} locale={locale}>
+  <TrackEvent client:idle event="product_list_viewed" properties={listViewedProps} />
   <div class="bg-pe-offwhite min-h-screen">
 
     <!-- Page header band -->
@@ -133,9 +151,7 @@ const clearUrl = `/${locale}/products`;
         </nav>
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <h1 class="font-display text-pe-black text-3xl md:text-4xl font-light">
-            {currentCategory
-              ? (locale === 'es' ? currentCategory.nameEs : (currentCategory.nameEn || currentCategory.nameEs))
-              : (locale === 'es' ? 'Colección' : 'Collection')}
+            {currentCategoryName || (locale === 'es' ? 'Colección' : 'Collection')}
           </h1>
           <p class="font-sans text-[0.78rem] text-pe-muted">
             {productsPage.totalElements} {locale === 'es' ? 'piezas' : 'pieces'}

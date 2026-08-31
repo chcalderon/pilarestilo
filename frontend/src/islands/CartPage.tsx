@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Loader2, PackageX, Trash2, Undo2 } from 'lucide-react';
 import { useCartStore, verifyStockForItem, type CartItem } from '../lib/cartStore';
+import { track } from '../lib/analytics';
 import { useStockCheck } from '../lib/useStockCheck';
 import StockUnavailableModal from './cart/StockUnavailableModal';
 import { useAuthStore, readAuthTokenCookie } from '../lib/authStore';
@@ -91,6 +92,31 @@ export default function CartPage({ locale }: Props) {
   );
   const currency = items[0]?.price.currency ?? 'CLP';
   const conflictCount = Object.keys(issues).length;
+
+  /**
+   * One cart_viewed per visit — but only after the persisted cart has hydrated, otherwise the
+   * snapshot is the empty SSR state, not what the customer is actually looking at. The ref also
+   * survives StrictMode's double mount in dev.
+   */
+  const cartViewedFired = useRef(false);
+  useEffect(() => {
+    const fire = () => {
+      if (cartViewedFired.current) return;
+      cartViewedFired.current = true;
+      const current = useCartStore.getState().items;
+      track('cart_viewed', {
+        item_count: current.reduce((sum, i) => sum + i.quantity, 0),
+        line_count: current.length,
+        subtotal: current.reduce((sum, i) => sum + i.price.amount * i.quantity, 0),
+        currency: current[0]?.price.currency ?? 'CLP',
+      });
+    };
+    if (useCartStore.persist.hasHydrated()) {
+      fire();
+      return;
+    }
+    return useCartStore.persist.onFinishHydration(fire);
+  }, []);
 
   /**
    * Removal is one tap, undone by a toast rather than guarded by a confirmation dialog. The

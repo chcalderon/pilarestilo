@@ -1,6 +1,23 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getProduct } from './api';
+import { track } from './analytics';
+
+/** Shared shape for the add_to_cart / remove_from_cart funnel events. */
+function itemEventProps(item: CartItem, quantity: number) {
+  return {
+    line_id: item.id,
+    product_id: item.productId,
+    name: item.name,
+    brand: item.brand,
+    price: item.price.amount,
+    currency: item.price.currency,
+    condition: item.condition,
+    variant_color: item.variantColor,
+    variant_size: item.variantSize,
+    quantity,
+  };
+}
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -208,10 +225,14 @@ export const useCartStore = create<CartState>()(
           }
           return { items: [...state.items, normalized] };
         });
+        // Every add path (product page, variant selector, cart-page undo) funnels through here.
+        track('add_to_cart', itemEventProps(normalized, 1));
       },
 
       removeItem: (id) => {
+        const removed = get().items.find((i) => i.id === id);
         set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
+        if (removed) track('remove_from_cart', itemEventProps(removed, removed.quantity));
       },
 
       updateQuantity: (id, quantity) => {

@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import WishlistButton from '../../../islands/wishlist/WishlistButton';
 import ProductVariantSelector from '../../../islands/product/ProductVariantSelector';
+import TrackEvent from '../../../islands/analytics/TrackEvent';
 import ReviewList from '../../../islands/reviews/ReviewList';
 import ReviewForm from '../../../islands/reviews/ReviewForm';
 import RatingStars from '../../../components/RatingStars.astro';
@@ -75,6 +76,19 @@ const breadcrumbLd = serializeJsonLd(
   }),
 );
 const availabilityTag = product.stock > 0 ? 'in stock' : 'out of stock';
+
+const productViewedProps = {
+  product_id: product.id,
+  name: product.name,
+  brand: product.brand,
+  price: product.price.amount,
+  currency: product.price.currency,
+  condition: product.condition,
+  category: product.category,
+  in_stock: product.stock > 0,
+  discount_pct: discountPct,
+  locale,
+};
 ---
 
 <BaseLayout
@@ -92,6 +106,9 @@ const availabilityTag = product.stock > 0 ? 'in stock' : 'out of stock';
     <meta property="product:availability" content={availabilityTag} />
     <meta property="og:image:alt" content={product.name} />
   </Fragment>
+
+  <TrackEvent client:idle event="product_viewed" properties={productViewedProps} />
+
 
   <style>
     @keyframes pe-fade-in {
