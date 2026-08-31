@@ -4,21 +4,34 @@ import { resolveSiteUrl } from '../lib/siteUrl';
 export const prerender = false;
 
 /** Paths with nothing to index: the panel, and the per-locale account / checkout / auth flows. */
-const DISALLOW = [
+const PRIVATE_PATHS = [
   '/admin/',
   '/*/checkout',
   '/*/cart',
   '/*/account',
   '/*/auth/',
   '/*/wishlist',
-  '/api/',
 ];
 
+/**
+ * `Googlebot` and `Googlebot-Image` get their own groups so they are NOT subject to the
+ * `Disallow: /api/` that applies to everyone else — product images are served under
+ * `/api/media/`, and Merchant Center's quality checks need to reach both the product pages and
+ * their images. Merchant Center also specifically looks for these two user-agents by name.
+ */
 export const GET: APIRoute = ({ request }) => {
   const site = resolveSiteUrl(new URL(request.url), request.headers);
+
   const body = [
+    'User-agent: Googlebot',
+    ...PRIVATE_PATHS.map((path) => `Disallow: ${path}`),
+    '',
+    'User-agent: Googlebot-Image',
+    'Disallow: /admin/',
+    '',
     'User-agent: *',
-    ...DISALLOW.map((path) => `Disallow: ${path}`),
+    ...PRIVATE_PATHS.map((path) => `Disallow: ${path}`),
+    'Disallow: /api/',
     '',
     `Sitemap: ${site}/sitemap.xml`,
     '',
