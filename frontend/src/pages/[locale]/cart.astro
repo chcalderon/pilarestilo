@@ -10,6 +10,6 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 }
 ---
 
-<BaseLayout title={t('cart.title', locale)} locale={locale}>
+<BaseLayout title={t('cart.title', locale)} locale={locale} noindex>
   <CartPage client:load locale={locale} />
 </BaseLayout>

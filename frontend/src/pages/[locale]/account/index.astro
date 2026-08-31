@@ -7,6 +7,6 @@ const { locale } = Astro.params as { locale: Locale };
 if (!SUPPORTED_LOCALES.includes(locale)) return Astro.redirect('/es/account');
 ---
 
-<BaseLayout title={locale === 'es' ? 'Mi cuenta' : 'My account'} locale={locale}>
+<BaseLayout title={locale === 'es' ? 'Mi cuenta' : 'My account'} locale={locale} noindex>
   <AccountPage client:load locale={locale} />
 </BaseLayout>

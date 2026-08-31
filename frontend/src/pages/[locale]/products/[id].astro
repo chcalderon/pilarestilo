@@ -11,6 +11,8 @@ import { type Locale, SUPPORTED_LOCALES, t } from '../../../i18n/index';
 import { getProduct } from '../../../lib/api';
 import { summarizeProductVariantSecondaryValues } from '../../../lib/productVariants';
 import { buildVariantSchema, getSecondaryAttribute } from '../../../lib/variantSchema';
+import { canonicalUrlFor } from '../../../lib/siteUrl';
+import { productJsonLd, productBreadcrumbJsonLd, serializeJsonLd } from '../../../lib/seo';
 
 const { locale, id } = Astro.params as { locale: Locale; id: string };
 
@@ -57,9 +59,40 @@ const zone = (product.shippingOriginZone ?? 'SANTIAGO') as 'SANTIAGO' | 'RM' | '
 const variantSchema = buildVariantSchema(product.variantFieldConfig ?? null);
 const secondaryAttribute = getSecondaryAttribute(variantSchema);
 const sizesSummary = summarizeProductVariantSecondaryValues(product);
+
+const reqHeaders = Astro.request.headers;
+const canonicalUrl = canonicalUrlFor(Astro.url, reqHeaders);
+const productLd = serializeJsonLd(
+  productJsonLd(product, { locale, canonicalUrl, requestUrl: Astro.url, headers: reqHeaders }),
+);
+const breadcrumbLd = serializeJsonLd(
+  productBreadcrumbJsonLd(product, {
+    locale,
+    homeLabel: t('nav.home', locale),
+    productsLabel: t('nav.products', locale),
+    requestUrl: Astro.url,
+    headers: reqHeaders,
+  }),
+);
+const availabilityTag = product.stock > 0 ? 'in stock' : 'out of stock';
 ---
 
-<BaseLayout title={product.name} description={product.description} locale={locale}>
+<BaseLayout
+  title={product.name}
+  description={product.description}
+  locale={locale}
+  ogImage={product.imageUrl}
+  ogType="product"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={productLd} />
+    <script type="application/ld+json" is:inline set:html={breadcrumbLd} />
+    <meta property="product:price:amount" content={String(product.price.amount)} />
+    <meta property="product:price:currency" content={product.price.currency} />
+    <meta property="product:availability" content={availabilityTag} />
+    <meta property="og:image:alt" content={product.name} />
+  </Fragment>
+
   <style>
     @keyframes pe-fade-in {
       from { opacity: 0; transform: scale(1.025); }

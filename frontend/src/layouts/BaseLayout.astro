@@ -1,11 +1,12 @@
 ---
 import ThemeBootstrap from '../components/ThemeBootstrap.astro';
-import type { Locale } from '../i18n/index';
+import { SUPPORTED_LOCALES, type Locale } from '../i18n/index';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import StoreWhatsAppButton from '../components/StoreWhatsAppButton.astro';
 import SearchOverlay from '../islands/search/SearchOverlay';
 import { getPublicStoreSettings } from '../lib/api';
+import { resolveSiteUrl, absoluteUrl, canonicalUrlFor } from '../lib/siteUrl';
 import '../styles/globals.css';
 
 export interface Props {
@@ -15,6 +16,12 @@ export interface Props {
   hideChrome?: boolean;
   /** Only the home hero gets the full logo entrance; every other page starts already compact. */
   isHome?: boolean;
+  /** Absolute or site-relative image for social cards. Defaults to the store logo. */
+  ogImage?: string;
+  /** `website` for most pages, `product` on a product detail page. */
+  ogType?: 'website' | 'product' | 'article';
+  /** Keep the page out of the index (checkout, account, auth, wishlist…). */
+  noindex?: boolean;
 }
 
 const {
@@ -23,9 +30,31 @@ const {
   locale,
   hideChrome = false,
   isHome = false,
+  ogImage = '/logo-full.png',
+  ogType = 'website',
+  noindex = false,
 } = Astro.props;
 
 const storeSettings = await getPublicStoreSettings();
+
+const reqHeaders = Astro.request.headers;
+const siteUrl = resolveSiteUrl(Astro.url, reqHeaders);
+const canonicalUrl = canonicalUrlFor(Astro.url, reqHeaders);
+const cleanPath = canonicalUrl.slice(siteUrl.length) || '/';
+const ogImageUrl = absoluteUrl(ogImage, Astro.url, reqHeaders);
+const fullTitle = `${title} | Pilar Estilo`;
+
+// hreflang alternates: only for /{locale}/… paths, swapping the leading segment.
+const [, firstSegment, ...restSegments] = cleanPath.split('/');
+const hasLocalePrefix = (SUPPORTED_LOCALES as readonly string[]).includes(firstSegment);
+const alternates = hasLocalePrefix
+  ? SUPPORTED_LOCALES.map((loc) => ({
+      hreflang: loc,
+      href: `${siteUrl}/${[loc, ...restSegments].join('/')}`,
+    }))
+  : [];
+const localeToOg: Record<Locale, string> = { es: 'es_CL', en: 'en_US' };
+const otherLocale: Locale = locale === 'es' ? 'en' : 'es';
 ---
 
 <!doctype html>
@@ -35,14 +64,35 @@ const storeSettings = await getPublicStoreSettings();
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <ThemeBootstrap />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <title>{title} | Pilar Estilo</title>
+    <title>{fullTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/logo-pe.svg" />
-    <meta property="og:title" content={`${title} | Pilar Estilo`} />
+
+    <link rel="canonical" href={canonicalUrl} />
+    {alternates.map((alt) => (
+      <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+    ))}
+    {alternates.length > 0 && (
+      <link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+    )}
+
+    <meta property="og:site_name" content="Pilar Estilo" />
+    <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-pilar-estilo.jpg" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content={localeToOg[locale]} />
+    <meta property="og:locale:alternate" content={localeToOg[otherLocale]} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <slot name="head" />
   </head>
   <body class="min-h-screen flex flex-col antialiased relative">
     <div class="pe-grain-site" aria-hidden="true"></div>

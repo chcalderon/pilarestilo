@@ -10,7 +10,7 @@ if (!SUPPORTED_LOCALES.includes(locale)) return Astro.redirect('/es/auth/login')
 const redirect = safeRedirectPath(Astro.url.searchParams.get('redirect'), `/${locale}/`);
 ---
 
-<BaseLayout title={locale === 'es' ? 'Iniciar sesión' : 'Sign in'} locale={locale}>
+<BaseLayout title={locale === 'es' ? 'Iniciar sesión' : 'Sign in'} locale={locale} noindex>
   <div class="min-h-[calc(100vh-180px)] grid grid-cols-1 lg:grid-cols-5">
 
     <!-- Left: editorial brand panel -->

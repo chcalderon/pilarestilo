@@ -4,7 +4,9 @@ import Hero from '../../components/Hero.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import Button from '../../components/Button.astro';
 import { SUPPORTED_LOCALES, type Locale, t } from '../../i18n/index';
-import { getFeaturedProducts, getCategoryTree, FIXTURE_PRODUCTS } from '../../lib/api';
+import { getFeaturedProducts, getCategoryTree, getPublicStoreSettings, FIXTURE_PRODUCTS } from '../../lib/api';
+import { resolveSiteUrl } from '../../lib/siteUrl';
+import { organizationJsonLd, serializeJsonLd } from '../../lib/seo';
 
 const { locale } = Astro.params as { locale: Locale };
 
@@ -69,9 +71,22 @@ function collectFeatured(nodes: typeof categoryTree): typeof categoryTree {
 }
 
 const categoryTiles = collectFeatured(categoryTree);
+
+const storeSettings = await getPublicStoreSettings();
+const organizationLd = serializeJsonLd(
+  organizationJsonLd({
+    siteUrl: resolveSiteUrl(Astro.url, Astro.request.headers),
+    instagramUrl: storeSettings?.instagramUrl,
+    facebookUrl: storeSettings?.facebookUrl,
+  }),
+);
 ---
 
 <BaseLayout title={t('nav.home', locale)} locale={locale} isHome>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={organizationLd} />
+  </Fragment>
+
   <Hero locale={locale} />
 
   <section class="py-10 md:py-12 bg-pe-offwhite border-y border-pe-black/8" aria-label={locale === 'es' ? 'Valor de Pilar Estilo' : 'Pilar Estilo value'}>

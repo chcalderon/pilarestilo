@@ -12,6 +12,6 @@ if (!SUPPORTED_LOCALES.includes(locale)) {
 // The session gate lives in src/middleware.ts: reaching this file means there is a token.
 ---
 
-<BaseLayout title={locale === 'es' ? 'Finalizar compra' : 'Checkout'} locale={locale}>
+<BaseLayout title={locale === 'es' ? 'Finalizar compra' : 'Checkout'} locale={locale} noindex>
   <CheckoutPage client:load locale={locale} />
 </BaseLayout>
