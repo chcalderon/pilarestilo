@@ -13,6 +13,8 @@
 #   docker compose). Caddy will contact Let's Encrypt automatically and
 #   provision/renew the TLS certificate - no manual certbot needed.
 #   Ports 80 and 443 must be reachable from the internet.
+#   To also serve www, put both in DOMAIN ("pilarestilo.com www.pilarestilo.com"):
+#   the www host still needs a cert, but every www request 301s to the apex (below).
 #
 # NOTE: If the frontend Dockerfile serves via nginx on port 80, change
 #       `frontend:4321` to `frontend:80` in the reverse_proxy directive below.
@@ -32,6 +34,12 @@
         not method GET HEAD POST PUT PATCH DELETE OPTIONS
     }
     respond @api_invalid_method "Method Not Allowed" 405
+
+    # Canonical host: 301 www to the bare apex so search engines index one URL, not two.
+    # Hardcoded rather than reconstructed from {labels.*} (that math is position-dependent and
+    # loops on a 2-label host). Inert unless the request host is exactly www.pilarestilo.com.
+    @www host www.pilarestilo.com
+    redir @www https://pilarestilo.com{uri} permanent
 
     route {
         # Notifications - the whole resource is owned by notification-service: the bell reads
