@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/Button.astro';
+import AnalyticsToggle from '../../islands/analytics/AnalyticsToggle';
 import { SUPPORTED_LOCALES, type Locale } from '../../i18n/index';
 import { getPublicStoreSettings } from '../../lib/api';
 
@@ -38,6 +39,7 @@ const sections = isEs
           ['Boletas', 'Obligación tributaria: se conservan 6 años'],
           ['Datos bancarios de reembolso', 'Devolverte el dinero; se borran al cerrar el reembolso'],
           ['Consentimientos', 'Poder probar qué aceptaste y bajo qué versión'],
+          ['Navegación en el sitio (PostHog)', 'Ver qué se mira y dónde se abandona la compra, para mejorar la tienda. Sin cookies; puedes desactivarla más abajo'],
         ],
       },
     ]
@@ -52,6 +54,7 @@ const sections = isEs
           ['Tax documents', 'Legal obligation: kept for 6 years'],
           ['Refund bank details', 'To give your money back; erased once the refund settles'],
           ['Consents', 'To be able to show what you agreed to, and under which version'],
+          ['Site browsing (PostHog)', 'To see what gets viewed and where checkout is abandoned, to improve the store. No cookies; you can turn it off below'],
         ],
       },
     ];
@@ -145,6 +148,29 @@ const rights = isEs
         </div>
       </section>
     ))}
+
+    <section class="py-14 md:py-20 border-t border-pe-black/10">
+      <div class="pe-container">
+        <h2 class="font-display text-3xl md:text-4xl text-pe-black font-light mb-6">
+          {isEs ? 'Analítica' : 'Analytics'}
+        </h2>
+        <div class="max-w-3xl font-sans text-sm text-pe-charcoal leading-relaxed space-y-3 mb-8">
+          <p>
+            {isEs
+              ? 'Usamos PostHog para entender cómo se usa la tienda: qué productos se miran, en qué paso del checkout se abandona la compra. Nos sirve para arreglar lo que estorba.'
+              : 'We use PostHog to understand how the store is used: which products get viewed, at which checkout step a purchase is abandoned. It tells us what to fix.'}
+          </p>
+          <p>
+            {isEs
+              ? 'No usa cookies. El identificador se guarda solo mientras la pestaña está abierta y se borra al cerrarla. Si no inicias sesión, no se arma un perfil tuyo, solo conteos anónimos. No se graba tu pantalla ni lo que escribes. Los datos pasan por nuestro propio dominio, no por servidores de terceros directamente.'
+              : 'It uses no cookies. The id is kept only while the tab is open and is cleared when you close it. If you are not logged in, no profile of you is built, only anonymous counts. Your screen and what you type are not recorded. The data goes through our own domain, not straight to a third party.'}
+          </p>
+        </div>
+        <div class="border border-pe-black/10 bg-pe-cream p-6">
+          <AnalyticsToggle client:load locale={locale} />
+        </div>
+      </div>
+    </section>
 
     <section class="bg-pe-black py-14 md:py-16">
       <div class="pe-container">
