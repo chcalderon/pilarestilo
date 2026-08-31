@@ -246,8 +246,15 @@ services:
       HOST: "0.0.0.0"
       PORT: "4321"
       PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-/api}
+      # Origin the storefront emits in canonical / og:url / hreflang / sitemap. Set explicitly in
+      # prod; the fallback is the request origin, which is only wrong when several hostnames serve
+      # the same page and one has to win.
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-}
       INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8080/api}
-      INTERNAL_PRODUCTS_API_BASE_URL: ${INTERNAL_PRODUCTS_API_BASE_URL:-http://product-service:8081/api}
+      # Pinned, not ${VAR:-…}: product-service was consolidated back into the monolith 2026-08-30
+      # and a stale `INTERNAL_PRODUCTS_API_BASE_URL=http://product-service:8081/api` left in a
+      # deployed .env makes every SSR catalogue read fail and the storefront fall back to fixtures.
+      INTERNAL_PRODUCTS_API_BASE_URL: "http://backend:8080/api"
       PUBLIC_WHATSAPP_PHONE: ${PUBLIC_WHATSAPP_PHONE:-+56900000000}
       PUBLIC_WHATSAPP_MESSAGE_ES: ${PUBLIC_WHATSAPP_MESSAGE_ES:-Hola Pilar Estilo, quiero ayuda con una compra.}
       PUBLIC_WHATSAPP_MESSAGE_EN: ${PUBLIC_WHATSAPP_MESSAGE_EN:-Hi Pilar Estilo, I need help with a purchase.}
