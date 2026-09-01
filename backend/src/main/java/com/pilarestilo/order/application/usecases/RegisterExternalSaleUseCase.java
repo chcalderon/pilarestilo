@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static com.pilarestilo.order.domain.enums.OrderStatus.PAID;
@@ -69,18 +70,22 @@ public class RegisterExternalSaleUseCase {
         List<OrderItem> items = new ArrayList<>();
         for (RegisterExternalSaleCommand.Line line : cmd.items()) {
             Product product = productRepository.findById(line.productId())
-                    .orElseThrow(() -> new DomainException("Product not found: " + line.productId()));
+                    .orElseThrow(() -> new NoSuchElementException("Product not found: " + line.productId()));
             items.add(new OrderItem(
                     UUID.randomUUID(), product.getId(), product.getName(),
                     Money.of(line.unitPrice()), line.quantity(),
                     line.variantColor(), line.variantSize()));
         }
 
-        // Sell stock first — blocking. posSale throws InsufficientStockException (-> 409) when a
-        // line would go short, and @Transactional rolls the whole thing back.
+        // Sell stock — blocking. reserve() throws InsufficientStockException (-> 409) when a line
+        // would go short, and @Transactional rolls the whole thing back. Reserve + confirm in one
+        // go: the sale already happened, there is no window where the stock is only "held".
         for (RegisterExternalSaleCommand.Line line : cmd.items()) {
-            inventoryService.posSale(line.productId(), line.quantity(),
-                    line.variantColor(), line.variantSize(), StockMovementOrigin.forOrder(orderId));
+            StockMovementOrigin origin = StockMovementOrigin.forOrder(orderId);
+            inventoryService.reserve(line.productId(), line.quantity(),
+                    line.variantColor(), line.variantSize(), origin);
+            inventoryService.confirm(line.productId(), line.quantity(),
+                    line.variantColor(), line.variantSize(), origin);
         }
 
         BigDecimal vatRate = systemSettingsRepository.get().getTax().vatRate();

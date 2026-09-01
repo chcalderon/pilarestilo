@@ -98,7 +98,8 @@ class RegisterExternalSaleUseCaseTest {
         assertThat(dto.deliveryMethod()).isEqualTo(DeliveryMethod.SHIPPING);
         assertThat(dto.buyerName()).isEqualTo("Javiera");
         assertThat(dto.totalAmount().amount()).isEqualByComparingTo("30000"); // edited price, not 19990
-        verify(inventoryService).posSale(eq(pid), eq(2), eq("Rojo"), eq("M"), any());
+        verify(inventoryService).reserve(eq(pid), eq(2), eq("Rojo"), eq("M"), any());
+        verify(inventoryService).confirm(eq(pid), eq(2), eq("Rojo"), eq("M"), any());
         verify(eventPublisher).publish(isA(OrderCreated.class));
         verify(eventPublisher).publish(isA(OrderStatusChanged.class));
     }
@@ -124,7 +125,7 @@ class RegisterExternalSaleUseCaseTest {
         UUID pid = UUID.randomUUID();
         stubProduct(pid);
         doThrow(new InsufficientStockException("Stock insuficiente para Rojo / M"))
-                .when(inventoryService).posSale(eq(pid), anyInt(), any(), any(), any());
+                .when(inventoryService).reserve(eq(pid), anyInt(), any(), any(), any());
         var cmd = new RegisterExternalSaleCommand("k3", "Ana", "@ana",
                 SalesChannel.WHATSAPP, PaymentMethod.OTHER, DeliveryMethod.PICKUP, null, null,
                 List.of(line(pid, "Rojo", "M", 5, "8000")));
@@ -141,8 +142,8 @@ class RegisterExternalSaleUseCaseTest {
                 SalesChannel.WHATSAPP, PaymentMethod.OTHER, DeliveryMethod.PICKUP, null, null,
                 List.of(line(pid, null, null, 1, "8000")));
 
-        assertThatThrownBy(() -> useCase.execute(cmd)).isInstanceOf(DomainException.class);
-        verify(inventoryService, never()).posSale(any(), anyInt(), any(), any(), any());
+        assertThatThrownBy(() -> useCase.execute(cmd)).isInstanceOf(java.util.NoSuchElementException.class);
+        verify(inventoryService, never()).reserve(any(), anyInt(), any(), any(), any());
     }
 
     @Test
