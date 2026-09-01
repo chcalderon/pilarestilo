@@ -65,8 +65,6 @@ public class RegisterExternalSaleUseCase {
             }
         }
 
-        UUID orderId = UUID.randomUUID();
-
         List<OrderItem> items = new ArrayList<>();
         for (RegisterExternalSaleCommand.Line line : cmd.items()) {
             Product product = productRepository.findById(line.productId())
@@ -77,22 +75,24 @@ public class RegisterExternalSaleUseCase {
                     line.variantColor(), line.variantSize()));
         }
 
+        BigDecimal vatRate = systemSettingsRepository.get().getTax().vatRate();
+        Order order = Order.createExternalSale(
+                cmd.buyerName(), cmd.buyerContact(), items, cmd.paymentMethod(),
+                cmd.deliveryMethod(), cmd.shippingAddress(), cmd.notes(),
+                cmd.salesChannel(), vatRate, cmd.idempotencyKey());
+
         // Sell stock — blocking. reserve() throws InsufficientStockException (-> 409) when a line
         // would go short, and @Transactional rolls the whole thing back. Reserve + confirm in one
-        // go: the sale already happened, there is no window where the stock is only "held".
+        // go: the sale already happened, there is no window where the stock is only "held". The
+        // order exists now, so its RESERVE/CONFIRM ledger lines name it rather than a discarded UUID.
         for (RegisterExternalSaleCommand.Line line : cmd.items()) {
-            StockMovementOrigin origin = StockMovementOrigin.forOrder(orderId);
+            StockMovementOrigin origin = StockMovementOrigin.forOrder(order.getId());
             inventoryService.reserve(line.productId(), line.quantity(),
                     line.variantColor(), line.variantSize(), origin);
             inventoryService.confirm(line.productId(), line.quantity(),
                     line.variantColor(), line.variantSize(), origin);
         }
 
-        BigDecimal vatRate = systemSettingsRepository.get().getTax().vatRate();
-        Order order = Order.createExternalSale(
-                cmd.buyerName(), cmd.buyerContact(), items, cmd.paymentMethod(),
-                cmd.deliveryMethod(), cmd.shippingAddress(), cmd.notes(),
-                cmd.salesChannel(), vatRate, cmd.idempotencyKey());
         order.markAsPendingPayment();
         order.markAsPaid();
 

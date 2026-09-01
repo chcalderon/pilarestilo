@@ -2,6 +2,7 @@ package com.pilarestilo.order.application.usecases;
 
 import com.pilarestilo.inventory.application.InventoryService;
 import com.pilarestilo.inventory.domain.InsufficientStockException;
+import com.pilarestilo.inventory.domain.model.StockMovementOrigin;
 import com.pilarestilo.order.application.commands.RegisterExternalSaleCommand;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.domain.enums.DeliveryMethod;
@@ -23,6 +24,7 @@ import com.pilarestilo.systemsettings.domain.ports.SystemSettingsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -63,10 +65,14 @@ class RegisterExternalSaleUseCaseTest {
                 inventoryService, eventPublisher, systemSettingsRepository);
     }
 
-    private void stubSettingsAndSave() {
+    private void stubSettings() {
         SystemSettings s = mock(SystemSettings.class, RETURNS_DEEP_STUBS);
         when(s.getTax().vatRate()).thenReturn(new BigDecimal("19.00"));
         when(systemSettingsRepository.get()).thenReturn(s);
+    }
+
+    private void stubSettingsAndSave() {
+        stubSettings();
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -105,6 +111,25 @@ class RegisterExternalSaleUseCaseTest {
     }
 
     @Test
+    void the_stock_movement_origin_carries_the_id_of_the_order_that_persists() {
+        stubSettingsAndSave();
+        UUID pid = UUID.randomUUID();
+        stubProduct(pid);
+        var cmd = new RegisterExternalSaleCommand("k-ref", "Javiera", "+56911112222",
+                SalesChannel.INSTAGRAM, PaymentMethod.TRANSFER, DeliveryMethod.PICKUP, null, "por IG",
+                List.of(line(pid, "Rojo", "M", 1, "15000")));
+
+        UUID orderId = useCase.execute(cmd).dto().id();
+
+        ArgumentCaptor<StockMovementOrigin> reserveOrigin = ArgumentCaptor.forClass(StockMovementOrigin.class);
+        ArgumentCaptor<StockMovementOrigin> confirmOrigin = ArgumentCaptor.forClass(StockMovementOrigin.class);
+        verify(inventoryService).reserve(eq(pid), eq(1), eq("Rojo"), eq("M"), reserveOrigin.capture());
+        verify(inventoryService).confirm(eq(pid), eq(1), eq("Rojo"), eq("M"), confirmOrigin.capture());
+        assertThat(reserveOrigin.getValue().referenceId()).isEqualTo(orderId);
+        assertThat(confirmOrigin.getValue().referenceId()).isEqualTo(orderId);
+    }
+
+    @Test
     void pickup_sale_has_no_address_and_still_publishes_the_paid_event() {
         stubSettingsAndSave();
         UUID pid = UUID.randomUUID();
@@ -122,6 +147,7 @@ class RegisterExternalSaleUseCaseTest {
 
     @Test
     void insufficient_stock_rolls_back_nothing_is_saved() {
+        stubSettings();
         UUID pid = UUID.randomUUID();
         stubProduct(pid);
         doThrow(new InsufficientStockException("Stock insuficiente para Rojo / M"))

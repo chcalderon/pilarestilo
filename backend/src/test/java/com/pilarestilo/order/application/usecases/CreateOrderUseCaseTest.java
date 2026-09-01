@@ -162,6 +162,20 @@ class CreateOrderUseCaseTest {
         verify(orderRepository).save(any(Order.class));
     }
 
+    @Test
+    void createOrder_reservationOriginNamesThePersistedOrder() {
+        stubHappyPath(defaultSettings());
+
+        useCase.execute(basicTransferCommand());
+
+        ArgumentCaptor<StockMovementOrigin> origin = ArgumentCaptor.forClass(StockMovementOrigin.class);
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        verify(inventoryService).reserve(eq(PRODUCT_ID), eq(1), eq("Rojo"), eq("M"), origin.capture());
+        verify(orderRepository).save(saved.capture());
+        // The ledger line must point at the order that actually persisted, not a throwaway UUID.
+        assertThat(origin.getValue().referenceId()).isEqualTo(saved.getValue().getId());
+    }
+
     // -----------------------------------------------------------------------
     // Test 2: discount code — applies discount, saves usage
     // -----------------------------------------------------------------------
