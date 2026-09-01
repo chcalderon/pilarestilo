@@ -231,7 +231,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V93**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V94**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -270,6 +270,12 @@ Recent migrations (V54–V66):
 - V93: contract half of V69/V87 — drop `products.variant_type`, `categories.defines_variant_fields`,
   `categories.variant_field_config` (dead since the `varianttemplate` module shipped; `category_type`
   kept). CHECK constraints drop with the columns
+- V94: external sale intake (Fase 2 F) — `orders.customer_id` becomes nullable (an off-platform
+  sale has no account), `orders.delivery_method` (`SHIPPING`/`PICKUP`, default `SHIPPING`,
+  backfilled), `orders.buyer_name`/`buyer_contact` (free-text snapshot, nullable),
+  `orders.external_idempotency_key` (partial unique index), + `orders.create` permission for
+  ADMIN and SELLER. `RegisterExternalSaleUseCase` + `POST /api/admin/sales/external` create a
+  born-PAID order via reserve+confirm; a `PICKUP` order skips the dispatch queue.
 
 ### Notifications go out on every enabled channel
 

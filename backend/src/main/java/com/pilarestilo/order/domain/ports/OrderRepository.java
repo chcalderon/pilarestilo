@@ -15,6 +15,9 @@ public interface OrderRepository {
 
     Optional<Order> findById(UUID id);
 
+    /** The order registered under this external-sale idempotency key, if any. */
+    Optional<Order> findByExternalIdempotencyKey(String key);
+
     /** Every order in the given set, in one query. Missing ids are simply absent. */
     List<Order> findAllByIds(Collection<UUID> ids);
 

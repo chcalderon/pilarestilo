@@ -39,6 +39,14 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
+    public Optional<Order> findByExternalIdempotencyKey(String key) {
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        return jpaRepository.findByExternalIdempotencyKey(key).map(this::toDomain);
+    }
+
+    @Override
     public List<Order> findAllByIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();
@@ -81,6 +89,10 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setShippingAddressReference(order.getShippingAddressReference());
         entity.setNotes(order.getNotes());
         entity.setSalesChannel(order.getSalesChannel() != null ? order.getSalesChannel() : SalesChannel.ECOMMERCE);
+        entity.setDeliveryMethod(order.getDeliveryMethod());
+        entity.setBuyerName(order.getBuyerName());
+        entity.setBuyerContact(order.getBuyerContact());
+        entity.setExternalIdempotencyKey(order.getExternalIdempotencyKey());
         entity.setStatus(order.getStatus());
         entity.setCreatedAt(order.getCreatedAt());
         entity.setUpdatedAt(order.getUpdatedAt());
@@ -136,7 +148,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getPublicReference(),
-                entity.getTaxRate()
+                entity.getTaxRate(),
+                entity.getDeliveryMethod(),
+                entity.getBuyerName(),
+                entity.getBuyerContact(),
+                entity.getExternalIdempotencyKey()
         );
         order.recordDiscountProvenance(entity.getDiscountId(), entity.getDiscountCode());
         return order;

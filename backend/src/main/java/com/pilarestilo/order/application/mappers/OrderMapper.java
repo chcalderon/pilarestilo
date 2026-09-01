@@ -39,7 +39,10 @@ public class OrderMapper {
                 order.getSalesChannel(),
                 order.getStatus(),
                 order.getCreatedAt(),
-                order.getUpdatedAt()
+                order.getUpdatedAt(),
+                order.getDeliveryMethod(),
+                order.getBuyerName(),
+                order.getBuyerContact()
         );
     }
 

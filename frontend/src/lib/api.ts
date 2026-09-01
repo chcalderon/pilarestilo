@@ -177,6 +177,11 @@ export interface OrderDto {
   status: 'CREATED' | 'PENDING_PAYMENT' | 'PAYMENT_UNDER_REVIEW' | 'PAID' | 'PREPARING_ORDER' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
+  /** SHIPPING for web orders and shipped external sales; PICKUP for a counter/pickup sale. */
+  deliveryMethod?: 'SHIPPING' | 'PICKUP';
+  /** Free-text buyer for an off-platform sale; null for a web order (it has customerId). */
+  buyerName?: string | null;
+  buyerContact?: string | null;
 }
 
 export interface DispatchHistoryRowDto {
@@ -1454,6 +1459,39 @@ export async function createOrder(data: CreateOrderRequest, token: string): Prom
     method: 'POST',
     body: JSON.stringify(data),
     headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export interface ExternalSaleLine {
+  productId: string;
+  variantColor?: string | null;
+  variantSize?: string | null;
+  quantity: number;
+  /** CLP, integer. Preloaded from the product, editable per line. */
+  unitPrice: number;
+}
+
+export interface ExternalSaleRequest {
+  idempotencyKey: string;
+  buyerName: string;
+  buyerContact: string;
+  salesChannel: 'INSTAGRAM' | 'FACEBOOK' | 'WHATSAPP' | 'MANUAL';
+  paymentMethod: 'TRANSFER' | 'OTHER';
+  deliveryMethod: 'SHIPPING' | 'PICKUP';
+  shippingAddress?: string;
+  notes?: string;
+  items: ExternalSaleLine[];
+}
+
+/** Records an off-platform sale (IG / FB / WhatsApp) as a real paid order. Needs `orders.create`. */
+export async function registerExternalSale(
+  body: ExternalSaleRequest,
+  token: string,
+): Promise<OrderDto> {
+  return apiFetch<OrderDto>('/admin/sales/external', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: authHeaders(token),
   });
 }
 

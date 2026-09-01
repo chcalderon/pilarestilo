@@ -1,5 +1,6 @@
 package com.pilarestilo.order.infrastructure.persistence.entities;
 
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
@@ -18,7 +19,8 @@ public class OrderEntity {
     @Id
     private UUID id;
 
-    @Column(name = "customer_id", nullable = false)
+    /** Null for an external sale (V94). The FK to users(id) still holds for non-null values. */
+    @Column(name = "customer_id")
     private UUID customerId;
 
     @Column(name = "public_reference", nullable = false, length = 16)
@@ -95,6 +97,19 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "sales_channel", nullable = false, length = 20)
     private SalesChannel salesChannel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_method", nullable = false, length = 16)
+    private DeliveryMethod deliveryMethod = DeliveryMethod.SHIPPING;
+
+    @Column(name = "buyer_name", length = 160)
+    private String buyerName;
+
+    @Column(name = "buyer_contact", length = 160)
+    private String buyerContact;
+
+    @Column(name = "external_idempotency_key", length = 64)
+    private String externalIdempotencyKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -174,6 +189,18 @@ public class OrderEntity {
 
     public SalesChannel getSalesChannel() { return salesChannel; }
     public void setSalesChannel(SalesChannel salesChannel) { this.salesChannel = salesChannel; }
+
+    public DeliveryMethod getDeliveryMethod() { return deliveryMethod; }
+    public void setDeliveryMethod(DeliveryMethod deliveryMethod) { this.deliveryMethod = deliveryMethod; }
+
+    public String getBuyerName() { return buyerName; }
+    public void setBuyerName(String buyerName) { this.buyerName = buyerName; }
+
+    public String getBuyerContact() { return buyerContact; }
+    public void setBuyerContact(String buyerContact) { this.buyerContact = buyerContact; }
+
+    public String getExternalIdempotencyKey() { return externalIdempotencyKey; }
+    public void setExternalIdempotencyKey(String externalIdempotencyKey) { this.externalIdempotencyKey = externalIdempotencyKey; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }

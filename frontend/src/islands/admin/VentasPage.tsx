@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, Search, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Search, AlertTriangle, Plus } from 'lucide-react';
 import DataTable, { type Column } from './DataTable';
 import SaleDetailDrawer from './SaleDetailDrawer';
+import RegisterSaleDrawer from './RegisterSaleDrawer';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import { useCan } from '../../lib/permissions';
 import { getAdminSales, type SaleSummaryDto } from '../../lib/api';
@@ -61,6 +62,7 @@ export default function VentasPage() {
   const canIssue = useCan('documents.issue');
   const canVoid = useCan('documents.void');
   const canCancelSale = useCan('orders.update');
+  const canRegisterSale = useCan('orders.create');
 
   const [rows, setRows] = useState<SaleSummaryDto[]>([]);
   const [total, setTotal] = useState(0);
@@ -72,6 +74,7 @@ export default function VentasPage() {
   const [status, setStatus] = useState('');
   const [missingOnly, setMissingOnly] = useState(false);
   const [selected, setSelected] = useState<SaleSummaryDto | null>(null);
+  const [registering, setRegistering] = useState(false);
 
   const load = useCallback(async () => {
     if (!effectiveToken || !canReadSales) {
@@ -235,6 +238,16 @@ export default function VentasPage() {
         >
           <RefreshCw size={13} /> Actualizar
         </button>
+
+        {canRegisterSale && (
+          <button
+            type="button"
+            onClick={() => setRegistering(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-[0.7rem] font-sans tracking-widest uppercase rounded-xs border border-[var(--pe-ink)] bg-[var(--pe-ink)] text-[var(--pe-surface)] transition-colors"
+          >
+            <Plus size={13} /> Registrar venta
+          </button>
+        )}
       </div>
 
       {error && (
@@ -269,6 +282,18 @@ export default function VentasPage() {
           canCancelSale={canCancelSale}
           onClose={() => setSelected(null)}
           onChanged={() => void load()}
+        />
+      )}
+
+      {registering && effectiveToken && (
+        <RegisterSaleDrawer
+          token={effectiveToken}
+          onClose={() => setRegistering(false)}
+          onCreated={() => {
+            setRegistering(false);
+            setPage(0);
+            void load();
+          }}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 package com.pilarestilo.order.domain.model;
 
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
@@ -48,6 +49,13 @@ public class Order {
     private String shippingAddressReference;
     private String notes;
     private SalesChannel salesChannel;
+    /** Every order has one. Web orders and shipped external sales are SHIPPING. */
+    private DeliveryMethod deliveryMethod = DeliveryMethod.SHIPPING;
+    /** Free-text buyer snapshot for an external sale. Null for a web order — it has {@link #customerId}. */
+    private String buyerName;
+    private String buyerContact;
+    /** Dedupes a double-submitted external sale. Null for a web order. */
+    private String externalIdempotencyKey;
     private OrderStatus status;
     private Instant createdAt;
     private Instant updatedAt;
@@ -104,6 +112,24 @@ public class Order {
                                      String notes, SalesChannel salesChannel,
                                      OrderStatus status, Instant createdAt, Instant updatedAt,
                                      String publicReference, BigDecimal taxRate) {
+        return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount, paymentMethod,
+                shippingZoneCode, shippingCourierId, shippingCourierName, shippingPaymentMode,
+                shippingAddressId, shippingAddressReference, notes, salesChannel, status, createdAt,
+                updatedAt, publicReference, taxRate,
+                DeliveryMethod.SHIPPING, null, null, null);
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
+                                     Money subtotal, Money discountAmount, Money totalAmount,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                     String notes, SalesChannel salesChannel,
+                                     OrderStatus status, Instant createdAt, Instant updatedAt,
+                                     String publicReference, BigDecimal taxRate,
+                                     DeliveryMethod deliveryMethod, String buyerName, String buyerContact,
+                                     String externalIdempotencyKey) {
         Order order = new Order();
         order.applyTaxRate(totalAmount, taxRate);
         order.id = id;
@@ -126,6 +152,10 @@ public class Order {
         order.shippingAddressReference = shippingAddressReference;
         order.notes = notes;
         order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
+        order.deliveryMethod = deliveryMethod != null ? deliveryMethod : DeliveryMethod.SHIPPING;
+        order.buyerName = buyerName;
+        order.buyerContact = buyerContact;
+        order.externalIdempotencyKey = externalIdempotencyKey;
         order.status = status;
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;
@@ -175,7 +205,7 @@ public class Order {
                                 String notes, SalesChannel salesChannel) {
         return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
                 shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
-                shippingAddressReference, notes, salesChannel, null);
+                shippingAddressReference, notes, salesChannel, null, DeliveryMethod.SHIPPING);
     }
 
     /**
@@ -223,6 +253,18 @@ public class Order {
                                 String shippingCourierId, String shippingCourierName,
                                 String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                 String notes, SalesChannel salesChannel, BigDecimal taxRate) {
+        return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
+                shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
+                shippingAddressReference, notes, salesChannel, taxRate, DeliveryMethod.SHIPPING);
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel, BigDecimal taxRate,
+                                DeliveryMethod deliveryMethod) {
         validateForCreation(customerId, items, paymentMethod, shippingZoneCode, shippingCourierId,
                 shippingCourierName, shippingPaymentMode, shippingAddressId, shippingAddressReference);
 
@@ -254,10 +296,78 @@ public class Order {
         order.shippingAddressReference = shippingAddressReference.trim();
         order.notes = notes;
         order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
+        order.deliveryMethod = deliveryMethod != null ? deliveryMethod : DeliveryMethod.SHIPPING;
         order.status = OrderStatus.CREATED;
         order.createdAt = Instant.now();
         order.updatedAt = order.createdAt;
         return order;
+    }
+
+    /**
+     * A sale that already happened off-platform (Instagram / Facebook / WhatsApp, and later POS /
+     * MercadoLibre). No registered customer, no courier or zone of ours, a free-text address — or
+     * none, for pickup. Payment has already been received; the caller moves this straight to PAID.
+     */
+    @SuppressWarnings("java:S107")
+    public static Order createExternalSale(String buyerName, String buyerContact,
+                                           List<OrderItem> items, PaymentMethod paymentMethod,
+                                           DeliveryMethod deliveryMethod, String shippingAddressText,
+                                           String notes, SalesChannel salesChannel, BigDecimal taxRate,
+                                           String externalIdempotencyKey) {
+        if (isBlank(buyerName)) {
+            throw new DomainException("Buyer name is required");
+        }
+        if (isBlank(buyerContact)) {
+            throw new DomainException("Buyer contact is required");
+        }
+        if (items == null || items.isEmpty()) {
+            throw new DomainException("Order must have at least one item");
+        }
+        if (paymentMethod == null) {
+            throw new DomainException("Payment method cannot be null");
+        }
+        if (deliveryMethod == null) {
+            throw new DomainException("Delivery method cannot be null");
+        }
+        if (deliveryMethod == DeliveryMethod.SHIPPING && isBlank(shippingAddressText)) {
+            throw new DomainException("A shipping address is required for a shipped sale");
+        }
+
+        Money subtotal = items.stream()
+                .map(item -> item.getUnitPrice().multiply(item.getQuantity()))
+                .reduce(Money.zero(), Money::add);
+
+        Order order = new Order();
+        order.id = UUID.randomUUID();
+        order.publicReference = OrderReference.forOrderId(order.id);
+        order.customerId = null;
+        order.items = List.copyOf(items);
+        order.subtotal = subtotal;
+        order.discountAmount = Money.zero();
+        order.totalAmount = subtotal;
+        order.applyTaxRate(subtotal, taxRate);
+        order.paymentMethod = paymentMethod;
+        order.shippingZoneCode = null;
+        order.shippingCourierId = null;
+        order.shippingCourierName = null;
+        order.shippingPaymentMode = null;
+        order.shippingAddressId = null;
+        order.shippingAddressReference = deliveryMethod == DeliveryMethod.SHIPPING
+                ? shippingAddressText.trim() : null;
+        order.notes = notes;
+        order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.MANUAL;
+        order.deliveryMethod = deliveryMethod;
+        order.buyerName = buyerName.trim();
+        order.buyerContact = buyerContact.trim();
+        order.externalIdempotencyKey = externalIdempotencyKey;
+        order.status = OrderStatus.CREATED;
+        order.createdAt = Instant.now();
+        order.updatedAt = order.createdAt;
+        return order;
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     public void markAsPendingPayment() {
@@ -341,6 +451,10 @@ public class Order {
     public String getShippingAddressReference() { return shippingAddressReference; }
     public String getNotes() { return notes; }
     public SalesChannel getSalesChannel() { return salesChannel; }
+    public DeliveryMethod getDeliveryMethod() { return deliveryMethod; }
+    public String getBuyerName() { return buyerName; }
+    public String getBuyerContact() { return buyerContact; }
+    public String getExternalIdempotencyKey() { return externalIdempotencyKey; }
     public OrderStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -4,13 +4,13 @@ import com.pilarestilo.dispatch.domain.model.Dispatch;
 import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 
 /**
  * Puts a paid order into the dispatch queue.
@@ -42,33 +42,33 @@ public class CreateDispatchForPaidOrderUseCase {
         if (dispatchRepository.existsByOrderId(event.orderId())) {
             return;
         }
-        dispatchRepository.save(buildDispatch(event.orderId()));
-        log.info("Created PENDING dispatch for order {}", event.orderId());
-    }
 
-    /**
-     * Copies the order's shipping details onto the dispatch so the queue can be worked without a
-     * second lookup, and so a later change to the address does not rewrite history.
-     *
-     * <p>If the order cannot be read, the dispatch is still created — losing it would lose the
-     * only record that something has to be sent — but at WARN with the reason, because the row it
-     * leaves behind shows an empty zone, courier and reference, and that has been mistaken for a
-     * display bug.
-     */
-    private Dispatch buildDispatch(UUID orderId) {
+        OrderDto order;
         try {
-            OrderDto order = getOrderUseCase.execute(orderId);
-            return Dispatch.create(
-                    orderId,
-                    order.shippingZoneCode(),
-                    order.shippingCourierId(),
-                    order.shippingCourierName(),
-                    order.shippingAddressReference()
-            );
+            order = getOrderUseCase.execute(event.orderId());
         } catch (RuntimeException ex) {
+            // The order cannot be read. Still create the dispatch — losing it would lose the only
+            // record that something has to be sent — but at WARN: the row shows an empty zone,
+            // courier and reference, and that has been mistaken for a display bug.
             log.warn("Dispatch for order {} created without its shipping snapshot: {}",
-                    orderId, ex.getMessage());
-            return Dispatch.create(orderId);
+                    event.orderId(), ex.getMessage());
+            dispatchRepository.save(Dispatch.create(event.orderId()));
+            log.info("Created PENDING dispatch for order {}", event.orderId());
+            return;
         }
+
+        if (order.deliveryMethod() == DeliveryMethod.PICKUP) {
+            log.info("Order {} is PICKUP — no dispatch created", event.orderId());
+            return;
+        }
+
+        dispatchRepository.save(Dispatch.create(
+                event.orderId(),
+                order.shippingZoneCode(),
+                order.shippingCourierId(),
+                order.shippingCourierName(),
+                order.shippingAddressReference()
+        ));
+        log.info("Created PENDING dispatch for order {}", event.orderId());
     }
 }
