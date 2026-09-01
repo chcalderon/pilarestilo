@@ -1,5 +1,6 @@
 package com.pilarestilo.shared.infrastructure.web;
 
+import com.pilarestilo.inventory.domain.InsufficientStockException;
 import com.pilarestilo.shared.domain.DomainException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,13 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ProblemDetail handleInsufficientStock(InsufficientStockException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Insufficient stock");
+        return problem;
+    }
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException ex) {
