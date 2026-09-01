@@ -101,22 +101,6 @@ public class CreateOrderUseCase {
                     command.discountCode(), Money.of(subtotalAmount), command.customerId());
         }
 
-        /*
-         * The order id is minted here rather than after saving, so the ledger line written by the
-         * reservation can name the order that caused it. Reserving first and naming later would
-         * leave the movements of a failed order pointing at nothing.
-         */
-        UUID orderId = UUID.randomUUID();
-        for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
-            inventoryService.reserve(
-                    itemCmd.productId(),
-                    itemCmd.quantity(),
-                    itemCmd.variantColor(),
-                    itemCmd.variantSize(),
-                    StockMovementOrigin.forOrder(orderId)
-            );
-        }
-
         Money discount = evaluation != null ? evaluation.amount() : Money.zero();
 
         // Employee discount stacks on top of code discount
@@ -144,6 +128,22 @@ public class CreateOrderUseCase {
                 // next year has to report the rate this sale was made under.
                 settings.getTax().vatRate()
         );
+
+        /*
+         * Reserve after Order.create(), which is the only place the order id is minted: the ledger
+         * line written by the reservation names the order that caused it. A shortfall here throws
+         * and the surrounding @Transactional rolls back, so the movements of an abandoned order roll
+         * back with it rather than being left pointing at nothing.
+         */
+        for (CreateOrderCommand.OrderItemCommand itemCmd : command.items()) {
+            inventoryService.reserve(
+                    itemCmd.productId(),
+                    itemCmd.quantity(),
+                    itemCmd.variantColor(),
+                    itemCmd.variantSize(),
+                    StockMovementOrigin.forOrder(order.getId())
+            );
+        }
 
         if (evaluation != null) {
             // Provenance, so a later hard delete of the code cannot erase which order used it.

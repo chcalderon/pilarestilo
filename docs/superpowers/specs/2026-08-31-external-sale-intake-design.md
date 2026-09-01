@@ -1,11 +1,18 @@
 # External Sale Intake — Design Spec
 
 **Date:** 2026-08-31
-**Status:** implemented 2026-08-31 (branch `feat/external-sale-intake`). One change from this
-design during build: stock is sold with `InventoryService.reserve` + `confirm` in the same
-transaction, **not** `posSale` — `posSale`'s variant path calls `atomicConfirmVariantStock`, which
-requires a prior reservation (`stock_reserved >= qty`), so it cannot sell an un-reserved variant.
-Reserve+confirm is what the web checkout uses and is correct.
+**Status:** implemented 2026-08-31, merged to `develop` (`3a32ddc`). Two changes from this design
+during build:
+
+1. Stock is sold with `InventoryService.reserve` + `confirm` in the same transaction, **not**
+   `posSale` — `posSale`'s variant path calls `atomicConfirmVariantStock`, which requires a prior
+   reservation (`stock_reserved >= qty`), so it cannot sell an un-reserved variant. Reserve+confirm
+   is what the web checkout uses and is correct.
+2. §1/§2 said "mint `orderId` up front" and reserve with `StockMovementOrigin.forOrder(orderId)`.
+   That copied a latent bug in `CreateOrderUseCase`: the minted id is thrown away, `Order.create*`
+   mints its own. Fixed on branch `fix/inventory-movement-order-ref` (`130319e`) — both use cases
+   build the `Order` first and reserve with `order.getId()`, so `inventory_movements.reference_id`
+   is the persisted order.
 **Roadmap:** Fase 2, Increment F (first half — the intake pipeline; the transactional outbox is
 deferred to Increment I when MercadoLibre stock-sync needs it).
 

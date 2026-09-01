@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -48,6 +49,7 @@ class ExternalSaleControllerIT {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper om;
+    @Autowired JdbcTemplate jdbc;
 
     @Test
     void requires_orders_create_permission() throws Exception {
@@ -85,6 +87,24 @@ class ExternalSaleControllerIT {
         mvc.perform(get("/api/admin/sales?q=Javiera&page=0&size=20").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[?(@.orderId=='" + id + "')].customerName").value("Javiera"));
+    }
+
+    @Test
+    void stock_movements_carry_the_created_order_id() throws Exception {
+        MvcResult res = mvc.perform(post("/api/admin/sales/external")
+                        .header("Authorization", "Bearer " + loginAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body("k-" + UUID.randomUUID(), PRODUCT_005, "Rojo", "M", 1, "15000", "PICKUP", null)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        UUID orderId = UUID.fromString(om.readTree(res.getResponse().getContentAsString()).get("id").asString());
+
+        // The RESERVE and CONFIRM ledger lines must name the order that persisted, not a UUID
+        // that was minted for the reservation and then thrown away.
+        Integer forThisOrder = jdbc.queryForObject(
+                "SELECT count(*) FROM inventory_movements WHERE reference_id = ? AND reference_type = 'ORDER'",
+                Integer.class, orderId);
+        assertThat(forThisOrder).isEqualTo(2);
     }
 
     @Test
