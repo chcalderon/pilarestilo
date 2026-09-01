@@ -64,6 +64,13 @@ test.describe('Registrar venta', () => {
     await drawer.getByPlaceholder(/buscar producto/i).fill(variant.name.slice(0, 6));
     await drawer.getByRole('button', { name: new RegExp(variant.name.slice(0, 6), 'i') }).first().click();
 
+    // Pick the exact in-stock variant we resolved above.
+    const colorSelect = drawer.getByLabel('Color', { exact: true });
+    if (await colorSelect.count()) {
+      await colorSelect.selectOption(variant.color);
+      await drawer.getByLabel('Talla', { exact: true }).selectOption(variant.size);
+    }
+
     await drawer.getByLabel(/^comprador$/i).fill('Cliente E2E');
     await drawer.getByLabel(/contacto/i).fill('@cliente_e2e');
     await drawer.getByRole('button', { name: /retiro en persona/i }).click();

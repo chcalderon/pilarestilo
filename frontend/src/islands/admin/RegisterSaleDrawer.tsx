@@ -96,14 +96,17 @@ export default function RegisterSaleDrawer({ token, onClose, onCreated }: Props)
 
   function addProduct(p: ProductDto) {
     const variants = p.variants ?? [];
+    // Default to the first variant that actually has stock, so the operator does not have to
+    // notice that the alphabetically-first size is the sold-out one.
+    const preferred = variants.find((v) => v.stockAvailable > 0) ?? variants[0];
     setLines((current) => [
       ...current,
       {
         productId: p.id,
         productName: p.name,
         variants,
-        variantColor: variants.length > 0 ? variants[0].color : null,
-        variantSize: variants.length > 0 ? variants[0].size : null,
+        variantColor: preferred ? preferred.color : null,
+        variantSize: preferred ? preferred.size : null,
         quantity: 1,
         unitPrice: Math.round(p.price.amount),
       },
@@ -169,8 +172,13 @@ export default function RegisterSaleDrawer({ token, onClose, onCreated }: Props)
     }
   }
 
-  const secondaryValuesFor = (line: Line, color: string) =>
-    line.variants.filter((v) => v.color === color).map((v) => v.size);
+  const sizesFor = (line: Line, color: string) =>
+    line.variants.filter((v) => v.color === color);
+
+  const firstInStockSize = (line: Line, color: string) => {
+    const inStock = sizesFor(line, color).find((v) => v.stockAvailable > 0);
+    return (inStock ?? sizesFor(line, color)[0])?.size ?? null;
+  };
 
   const colorsFor = (line: Line) => Array.from(new Set(line.variants.map((v) => v.color)));
 
@@ -267,8 +275,7 @@ export default function RegisterSaleDrawer({ token, onClose, onCreated }: Props)
                           value={line.variantColor ?? ''}
                           onChange={(e) => {
                             const color = e.target.value;
-                            const sizes = secondaryValuesFor(line, color);
-                            patchLine(index, { variantColor: color, variantSize: sizes[0] ?? null });
+                            patchLine(index, { variantColor: color, variantSize: firstInStockSize(line, color) });
                           }}
                           className={INPUT}
                         >
@@ -284,8 +291,10 @@ export default function RegisterSaleDrawer({ token, onClose, onCreated }: Props)
                           onChange={(e) => patchLine(index, { variantSize: e.target.value })}
                           className={INPUT}
                         >
-                          {secondaryValuesFor(line, line.variantColor ?? '').map((s) => (
-                            <option key={s} value={s}>{s}</option>
+                          {sizesFor(line, line.variantColor ?? '').map((v) => (
+                            <option key={v.size} value={v.size}>
+                              {v.size}{v.stockAvailable <= 0 ? ' — sin stock' : ` (${v.stockAvailable})`}
+                            </option>
                           ))}
                         </select>
                       </label>
