@@ -96,7 +96,8 @@ class ConfirmOrderDeliveryUseCaseTest {
                 null,
                 status,
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                com.pilarestilo.order.domain.enums.DeliveryMethod.SHIPPING, null, null
         );
     }
 }

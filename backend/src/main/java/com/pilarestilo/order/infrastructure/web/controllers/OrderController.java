@@ -117,7 +117,7 @@ public class OrderController {
     public OrderDto getById(@PathVariable UUID id,
                             @AuthenticationPrincipal AuthenticatedUser currentUser) {
         OrderDto dto = getOrderUseCase.execute(id);
-        if (currentUser.role() == UserRole.CUSTOMER && !dto.customerId().equals(currentUser.id())) {
+        if (currentUser.role() == UserRole.CUSTOMER && !java.util.Objects.equals(dto.customerId(), currentUser.id())) {
             throw new AccessDeniedException("You can only access your own orders");
         }
         return dto;

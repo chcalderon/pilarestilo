@@ -30,6 +30,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
 
     Page<OrderEntity> findByCustomerId(UUID customerId, Pageable pageable);
 
+    @EntityGraph(attributePaths = "items")
+    Optional<OrderEntity> findByExternalIdempotencyKey(String externalIdempotencyKey);
+
     /**
      * Orders with their lines already loaded, for callers that map outside a transaction.
      *

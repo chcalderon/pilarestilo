@@ -1,5 +1,6 @@
 package com.pilarestilo.inventory.application;
 
+import com.pilarestilo.inventory.domain.InsufficientStockException;
 import com.pilarestilo.inventory.domain.enums.InventoryMovementType;
 import com.pilarestilo.inventory.domain.events.StockUpdated;
 import com.pilarestilo.inventory.domain.model.InventoryMovement;
@@ -98,7 +99,7 @@ public class InventoryService {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicConfirmVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
-                throw new DomainException("Stock insuficiente para venta POS de variante: " + variantColor + " / " + variantSize);
+                throw new InsufficientStockException("Stock insuficiente para venta POS de variante: " + variantColor + " / " + variantSize);
             }
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.POS_SALE, -qty, origin);
             return;
@@ -116,7 +117,7 @@ public class InventoryService {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicReserveVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
-                throw new DomainException("Stock insuficiente para variante: " + variantColor + " / " + variantSize);
+                throw new InsufficientStockException("Stock insuficiente para variante: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.RESERVE, qty, origin);
@@ -155,7 +156,7 @@ public class InventoryService {
         if (variantColor != null && variantSize != null) {
             int updated = productRepository.atomicConfirmVariantStock(productId, variantColor, variantSize, qty);
             if (updated == 0) {
-                throw new DomainException("Stock reservado insuficiente para confirmar variante: " + variantColor + " / " + variantSize);
+                throw new InsufficientStockException("Stock reservado insuficiente para confirmar variante: " + variantColor + " / " + variantSize);
             }
             productRepository.syncProductStockFromVariants(productId);
             recordMovement(productId, variantColor, variantSize, InventoryMovementType.CONFIRM, -qty, origin);
