@@ -108,7 +108,8 @@ class CreateDispatchForPaidOrderUseCaseTest {
                 null,
                 OrderStatus.PAID,
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                com.pilarestilo.order.domain.enums.DeliveryMethod.SHIPPING, null, null
         );
     }
 }

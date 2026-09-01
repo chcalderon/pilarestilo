@@ -112,6 +112,24 @@ public class Order {
                                      String notes, SalesChannel salesChannel,
                                      OrderStatus status, Instant createdAt, Instant updatedAt,
                                      String publicReference, BigDecimal taxRate) {
+        return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount, paymentMethod,
+                shippingZoneCode, shippingCourierId, shippingCourierName, shippingPaymentMode,
+                shippingAddressId, shippingAddressReference, notes, salesChannel, status, createdAt,
+                updatedAt, publicReference, taxRate,
+                DeliveryMethod.SHIPPING, null, null, null);
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
+                                     Money subtotal, Money discountAmount, Money totalAmount,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                     String notes, SalesChannel salesChannel,
+                                     OrderStatus status, Instant createdAt, Instant updatedAt,
+                                     String publicReference, BigDecimal taxRate,
+                                     DeliveryMethod deliveryMethod, String buyerName, String buyerContact,
+                                     String externalIdempotencyKey) {
         Order order = new Order();
         order.applyTaxRate(totalAmount, taxRate);
         order.id = id;
@@ -134,6 +152,10 @@ public class Order {
         order.shippingAddressReference = shippingAddressReference;
         order.notes = notes;
         order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
+        order.deliveryMethod = deliveryMethod != null ? deliveryMethod : DeliveryMethod.SHIPPING;
+        order.buyerName = buyerName;
+        order.buyerContact = buyerContact;
+        order.externalIdempotencyKey = externalIdempotencyKey;
         order.status = status;
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;

@@ -137,7 +137,8 @@ class TrackOrderAnalyticsUseCaseTest {
                 SalesChannel.ECOMMERCE,
                 status,
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                com.pilarestilo.order.domain.enums.DeliveryMethod.SHIPPING, null, null
         );
     }
 }

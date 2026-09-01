@@ -1,5 +1,6 @@
 package com.pilarestilo.order.application.dto;
 
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.enums.SalesChannel;
@@ -32,5 +33,9 @@ public record OrderDto(
         SalesChannel salesChannel,
         OrderStatus status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        DeliveryMethod deliveryMethod,
+        /** External-sale buyer snapshot; null for a web order (it has {@link #customerId}). */
+        String buyerName,
+        String buyerContact
 ) {}
