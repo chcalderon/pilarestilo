@@ -54,11 +54,14 @@ public class TrackOrderAnalyticsUseCase {
     }
 
     private void emit(String eventName, UUID orderId, UUID customerId, Map<String, Object> extra) {
-        if (customerId == null) {
-            return;
-        }
+        // An external sale (Instagram / Facebook / WhatsApp, later POS / ML) has no registered
+        // customer. Key it to the order so its revenue still lands in the funnel dashboard; a
+        // repeat buyer just won't merge into one person until a customer-linking feature exists.
+        String distinctId = customerId != null ? customerId.toString() : "order:" + orderId;
+
         Map<String, Object> properties = new HashMap<>(extra);
         properties.put("order_id", orderId.toString());
+        properties.put("customer_type", customerId != null ? "registered" : "external");
         try {
             OrderDto order = getOrderUseCase.execute(orderId);
             properties.putAll(orderProperties(order));
@@ -68,7 +71,7 @@ public class TrackOrderAnalyticsUseCase {
             log.warn("analytics event {} for order {} sent without order detail: {}",
                     eventName, orderId, ex.getMessage());
         }
-        analyticsTracker.track(eventName, customerId.toString(), properties);
+        analyticsTracker.track(eventName, distinctId, properties);
     }
 
     private static Map<String, Object> orderProperties(OrderDto order) {

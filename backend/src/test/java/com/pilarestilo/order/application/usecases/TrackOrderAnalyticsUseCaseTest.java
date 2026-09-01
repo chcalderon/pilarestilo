@@ -52,6 +52,7 @@ class TrackOrderAnalyticsUseCaseTest {
         verify(analyticsTracker).track(eq("order_created"), eq(customerId.toString()), props.capture());
         assertThat(props.getValue())
                 .containsEntry("order_id", orderId.toString())
+                .containsEntry("customer_type", "registered")
                 .containsEntry("public_reference", "PE-ABC123")
                 .containsEntry("total", new BigDecimal("29990"))
                 .containsEntry("currency", "CLP")
@@ -72,7 +73,9 @@ class TrackOrderAnalyticsUseCaseTest {
 
         ArgumentCaptor<Map<String, Object>> props = captor();
         verify(analyticsTracker).track(eq("order_paid"), eq(customerId.toString()), props.capture());
-        assertThat(props.getValue()).containsEntry("previous_status", "PAYMENT_UNDER_REVIEW");
+        assertThat(props.getValue())
+                .containsEntry("previous_status", "PAYMENT_UNDER_REVIEW")
+                .containsEntry("customer_type", "registered");
     }
 
     @Test
@@ -85,10 +88,15 @@ class TrackOrderAnalyticsUseCaseTest {
     }
 
     @Test
-    void an_event_with_no_customer_is_dropped() {
-        useCase.onOrderCreated(new OrderCreated(UUID.randomUUID(), null, Instant.now()));
+    void an_external_sale_with_no_customer_is_tracked_keyed_to_the_order() {
+        UUID orderId = UUID.randomUUID();
+        when(getOrderUseCase.execute(orderId)).thenReturn(order(orderId, OrderStatus.PENDING_PAYMENT));
 
-        verifyNoInteractions(analyticsTracker, getOrderUseCase);
+        useCase.onOrderCreated(new OrderCreated(orderId, null, Instant.now()));
+
+        ArgumentCaptor<Map<String, Object>> props = captor();
+        verify(analyticsTracker).track(eq("order_created"), eq("order:" + orderId), props.capture());
+        assertThat(props.getValue()).containsEntry("customer_type", "external");
     }
 
     @Test
@@ -101,7 +109,7 @@ class TrackOrderAnalyticsUseCaseTest {
 
         ArgumentCaptor<Map<String, Object>> props = captor();
         verify(analyticsTracker).track(eq("order_created"), eq(customerId.toString()), props.capture());
-        assertThat(props.getValue()).containsOnlyKeys("order_id");
+        assertThat(props.getValue()).containsOnlyKeys("order_id", "customer_type");
     }
 
     @SuppressWarnings("unchecked")
