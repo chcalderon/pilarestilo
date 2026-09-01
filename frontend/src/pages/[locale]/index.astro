@@ -176,18 +176,18 @@ const organizationLd = serializeJsonLd(
           {locale === 'es' ? 'Proximamente.' : 'Coming soon.'}
         </p>
       ) : (
-        <div data-pe-carousel class="pe-carousel relative overflow-hidden" role="region" aria-label={locale === 'es' ? 'Carrusel de categorias' : 'Category carousel'}>
+        <div data-pe-carousel class="pe-carousel relative" role="region" aria-label={locale === 'es' ? 'Carrusel de categorias' : 'Category carousel'}>
           <div
-            class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2]"
+            class="pointer-events-none absolute inset-y-0 left-0 w-10 z-[2] hidden sm:block"
             style="background: linear-gradient(to right, var(--pe-surface), transparent)"
           ></div>
 
           <div
-            class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[2]"
+            class="pointer-events-none absolute inset-y-0 right-0 w-10 z-[2] hidden sm:block"
             style="background: linear-gradient(to left, var(--pe-surface), transparent)"
           ></div>
 
-          <div class="overflow-hidden px-1 pb-3">
+          <div class="overflow-hidden px-0 sm:px-1 pb-3">
             <div data-pe-carousel-track class="pe-carousel-track">
               {categoryTiles.map((cat, i) => {
                 const name = locale === 'es' ? cat.nameEs : (cat.nameEn || cat.nameEs);
@@ -242,8 +242,8 @@ const organizationLd = serializeJsonLd(
             </div>
           </div>
 
-          <div data-pe-carousel-controls class="mt-6 flex items-center justify-between gap-4">
-            <div data-pe-carousel-dots class="flex items-center gap-2">
+          <div data-pe-carousel-controls class="mt-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4">
+            <div data-pe-carousel-dots class="flex flex-wrap items-center justify-center gap-2">
               {categoryTiles.map((_, i) => (
                 <button
                   type="button"
@@ -319,6 +319,12 @@ const organizationLd = serializeJsonLd(
       transition: none;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .pe-carousel-track {
+        transition: none;
+      }
+    }
+
     .pe-home-pillar + .pe-home-pillar {
       border-top: 1px solid color-mix(in srgb, var(--pe-border) 70%, transparent);
       padding-top: 1.25rem;
@@ -333,8 +339,10 @@ const organizationLd = serializeJsonLd(
       }
     }
 
+    /* Mobile shows one whole card — no half-peeked neighbour. The 2-up / 3-up tiers below
+       divide the width evenly, so those never leave a partial card either. */
     .pe-carousel-slide {
-      flex: 0 0 82%;
+      flex: 0 0 100%;
     }
 
     .pe-carousel-slide.is-clone {
@@ -392,7 +400,8 @@ const organizationLd = serializeJsonLd(
         var pointerDownAt = 0;
         var suppressClickOnce = false;
         var longPressMs = 420;
-        var autoplayEnabled = true;
+        const reduceMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+        var autoplayEnabled = !(reduceMotionQuery && reduceMotionQuery.matches);
 
         function syncToggleButton() {
           if (!toggleButton) return;
@@ -518,6 +527,7 @@ const organizationLd = serializeJsonLd(
           stopAutoplay();
 
           if (!autoplayEnabled) return;
+          if (reduceMotionQuery && reduceMotionQuery.matches) return;
           if (document.hidden) return;
 
           timer = window.setInterval(function () {
