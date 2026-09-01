@@ -57,7 +57,9 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
             WHERE (CAST(:query AS text) IS NULL
                    OR o.public_reference ILIKE CAST(:query AS text)
                    OR u.full_name ILIKE CAST(:query AS text)
-                   OR u.email ILIKE CAST(:query AS text))
+                   OR u.email ILIKE CAST(:query AS text)
+                   OR o.buyer_name ILIKE CAST(:query AS text)
+                   OR o.buyer_contact ILIKE CAST(:query AS text))
               AND (CAST(:orderStatus AS text) IS NULL OR o.status = CAST(:orderStatus AS text))
               AND (:missingOnly = FALSE
                    OR (d.id IS NULL AND o.status = ANY(CAST(:documentable AS text[]))))
@@ -80,7 +82,7 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
 
         Query rowsQuery = em.createNativeQuery("""
                 SELECT o.id, o.public_reference, o.created_at, o.status,
-                       u.full_name, u.email,
+                       COALESCE(u.full_name, o.buyer_name), COALESCE(u.email, o.buyer_contact),
                        o.total_amount, o.net_amount, o.tax_amount, o.total_currency,
                        p.method, p.status,
                        d.id, d.folio,

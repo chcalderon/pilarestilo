@@ -79,6 +79,12 @@ class ExternalSaleControllerIT {
         String id = om.readTree(res.getResponse().getContentAsString()).get("id").asString();
         mvc.perform(get("/api/orders/" + id).header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk());
+
+        // The sales list shows the free-text buyer where a web order would show the account name,
+        // and it is findable by that name.
+        mvc.perform(get("/api/admin/sales?q=Javiera&page=0&size=20").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.orderId=='" + id + "')].customerName").value("Javiera"));
     }
 
     @Test

@@ -43,8 +43,20 @@ If a `pos-service` is ever extracted, update `infra/Caddyfile` accordingly.
 
 ## Implementation Plan
 
-When ready to implement:
-1. Inject `CreateOrderUseCase` and `RegisterPosSaleUseCase` into `PosController`
-2. Map request body to `CreateOrderCommand` with `salesChannel = SalesChannel.POS`
-3. Execute use case, handle `IllegalStateException` (no open register) as 409
-4. Remove `throw new ResponseStatusException(NOT_IMPLEMENTED, ...)` stub
+The channel-agnostic engine now exists — `RegisterExternalSaleUseCase` +
+`POST /api/admin/sales/external` (Fase 2 F, V94). It creates a born-PAID `Order` for a sale made
+off-platform, with no registered customer, a free-text buyer, `SHIPPING`/`PICKUP` delivery, and
+stock sold via reserve+confirm. **The POS endpoint is now a thin wrapper over it**, not a
+`CreateOrderUseCase` caller:
+
+1. Inject `RegisterExternalSaleUseCase` and `RegisterPosSaleUseCase` into `PosController`
+2. Build a `RegisterExternalSaleCommand` with `salesChannel = SalesChannel.POS` (add `POS` to the
+   controller's accepted-channel set, or give the POS controller its own command mapping) and the
+   POS request's items/payment
+3. `execute(...)`, then if `paymentMethod == CASH` call `RegisterPosSaleUseCase.execute(order.id,
+   SalesChannel.POS, PaymentMethod.CASH)` for the cash movement; handle its `IllegalStateException`
+   (no open register) as 409
+4. Remove the `NOT_IMPLEMENTED` stub
+
+Note: `SalesChannel` already has a `POS` value; `ExternalSaleController` currently restricts the
+accepted channels to `{INSTAGRAM, FACEBOOK, WHATSAPP, MANUAL}` — POS goes through its own path.

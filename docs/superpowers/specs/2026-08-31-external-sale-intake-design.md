@@ -1,7 +1,11 @@
 # External Sale Intake — Design Spec
 
 **Date:** 2026-08-31
-**Status:** approved by user, pending implementation plan
+**Status:** implemented 2026-08-31 (branch `feat/external-sale-intake`). One change from this
+design during build: stock is sold with `InventoryService.reserve` + `confirm` in the same
+transaction, **not** `posSale` — `posSale`'s variant path calls `atomicConfirmVariantStock`, which
+requires a prior reservation (`stock_reserved >= qty`), so it cannot sell an un-reserved variant.
+Reserve+confirm is what the web checkout uses and is correct.
 **Roadmap:** Fase 2, Increment F (first half — the intake pipeline; the transactional outbox is
 deferred to Increment I when MercadoLibre stock-sync needs it).
 
