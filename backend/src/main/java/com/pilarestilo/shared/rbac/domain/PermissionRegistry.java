@@ -75,6 +75,10 @@ public final class PermissionRegistry {
     public static final PermissionDefinition ORDERS_READ = define(
             "orders.read", "Ver ordenes", "Consultar ordenes",
             PermissionModule.ORDERS, PermissionCategory.READ);
+    public static final PermissionDefinition ORDERS_CREATE = define(
+            "orders.create", "Registrar venta",
+            "Registrar una venta hecha fuera del sitio (redes, mostrador)",
+            PermissionModule.ORDERS, PermissionCategory.WRITE);
     public static final PermissionDefinition ORDERS_UPDATE = define(
             "orders.update", "Actualizar ordenes", "Actualizar estado o datos de orden",
             PermissionModule.ORDERS, PermissionCategory.WRITE);
@@ -190,7 +194,7 @@ public final class PermissionRegistry {
             DISCOUNTS_READ, DISCOUNTS_UPDATE,
             PUBLICATIONS_READ, PUBLICATIONS_UPDATE,
             INVENTORY_READ, INVENTORY_ADJUST,
-            ORDERS_READ, ORDERS_UPDATE,
+            ORDERS_READ, ORDERS_CREATE, ORDERS_UPDATE,
             PAYMENTS_READ, PAYMENTS_REVIEW,
             CASH_READ, CASH_OPEN, CASH_CLOSE, CASH_ADJUST,
             DOCUMENTS_READ, DOCUMENTS_ISSUE, DOCUMENTS_VOID,
