@@ -5,6 +5,7 @@ import com.pilarestilo.dispatch.domain.ports.DispatchRepository;
 import com.pilarestilo.order.application.dto.MoneyDto;
 import com.pilarestilo.order.application.dto.OrderDto;
 import com.pilarestilo.order.application.usecases.GetOrderUseCase;
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
 import com.pilarestilo.order.domain.events.OrderStatusChanged;
@@ -62,6 +63,18 @@ class CreateDispatchForPaidOrderUseCaseTest {
     }
 
     @Test
+    void does_not_create_a_dispatch_for_a_pickup_order() {
+        UUID orderId = UUID.randomUUID();
+        when(dispatchRepository.existsByOrderId(orderId)).thenReturn(false);
+        when(getOrderUseCase.execute(orderId)).thenReturn(orderWithDelivery(orderId, DeliveryMethod.PICKUP));
+
+        useCase.onOrderStatusChanged(new OrderStatusChanged(
+                orderId, null, OrderStatus.PENDING_PAYMENT, OrderStatus.PAID, Instant.now()));
+
+        verify(dispatchRepository, never()).save(any());
+    }
+
+    @Test
     void ignores_events_when_dispatch_already_exists_or_status_is_not_paid() {
         UUID orderId = UUID.randomUUID();
         when(dispatchRepository.existsByOrderId(orderId)).thenReturn(true);
@@ -86,6 +99,10 @@ class CreateDispatchForPaidOrderUseCaseTest {
     }
 
     private OrderDto order(UUID orderId) {
+        return orderWithDelivery(orderId, DeliveryMethod.SHIPPING);
+    }
+
+    private OrderDto orderWithDelivery(UUID orderId, DeliveryMethod deliveryMethod) {
         return new OrderDto(
                 orderId,
                 "PE-TEST000000",
@@ -109,7 +126,7 @@ class CreateDispatchForPaidOrderUseCaseTest {
                 OrderStatus.PAID,
                 Instant.now(),
                 Instant.now(),
-                com.pilarestilo.order.domain.enums.DeliveryMethod.SHIPPING, null, null
+                deliveryMethod, null, null
         );
     }
 }
