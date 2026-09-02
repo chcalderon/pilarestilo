@@ -71,6 +71,7 @@ export default function ImageDropzone({
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
@@ -230,6 +231,7 @@ export default function ImageDropzone({
           aria-label={preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto'}
         >
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             className="sr-only"
@@ -250,7 +252,7 @@ export default function ImageDropzone({
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
               <ImageIcon size={28} className="text-pe-muted" strokeWidth={1.25} />
               <span className="font-sans text-[0.68rem] text-pe-muted text-center px-6 leading-relaxed whitespace-pre-line">
-                {dragging ? 'Suelta para subir' : 'Arrastra una imagen\no haz clic para seleccionar'}
+                {dragging ? 'Suelta para subir' : 'Toca para elegir una imagen\no arrastra un archivo aqui'}
               </span>
             </div>
           )}
@@ -306,15 +308,31 @@ export default function ImageDropzone({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => void openCamera()}
-        className="inline-flex items-center justify-center gap-1.5 border border-pe-charcoal/20 text-pe-muted font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
-        disabled={uploading || cameraStarting}
-      >
-        {cameraStarting ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
-        {cameraStarting ? 'Abriendo camara...' : 'Tomar foto'}
-      </button>
+      {/*
+        Two explicit controls. The dropzone above is a real <label> too, but on a phone that
+        affordance is invisible, so people only ever found "Tomar foto" and never the gallery.
+      */}
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex items-center justify-center gap-1.5 border border-pe-charcoal/20 text-pe-muted font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
+          disabled={uploading || cameraStarting}
+        >
+          <ImageIcon size={12} />
+          Elegir imagen
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void openCamera()}
+          className="inline-flex items-center justify-center gap-1.5 border border-pe-charcoal/20 text-pe-muted font-sans text-[0.65rem] uppercase tracking-[0.1em] py-1.5 hover:border-pe-rose/50 hover:text-pe-rose-ink transition-colors disabled:opacity-50"
+          disabled={uploading || cameraStarting}
+        >
+          {cameraStarting ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
+          {cameraStarting ? 'Abriendo camara...' : 'Tomar foto'}
+        </button>
+      </div>
 
       {state === 'error' && (
         <p className="font-sans text-[0.65rem] text-pe-danger-ink">{error}</p>
