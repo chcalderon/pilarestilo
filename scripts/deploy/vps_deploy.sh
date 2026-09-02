@@ -105,4 +105,14 @@ fi
 echo "[deploy] Service status:"
 "${compose_cmd[@]}" ps
 
+# Every deploy runs `up --build`, so old image versions pile up as dangling images and the
+# BuildKit cache grows without bound -- it reached 133 GB once and filled the disk. Trim both
+# here. `image prune` only drops untagged layers (never a running image); the running stack's
+# images stay tagged and in use. Keep 3 GB of build cache so the next `--build` stays fast; the
+# `--keep-storage` flag is a warn-not-error deprecation on Docker 27+, hence the fallback.
+echo "[deploy] Reclaiming disk from old build layers and images..."
+docker image prune -f || true
+docker builder prune -f --keep-storage 3g 2>/dev/null || docker builder prune -f || true
+df -h / | tail -1 || true
+
 echo "[deploy] Done."
