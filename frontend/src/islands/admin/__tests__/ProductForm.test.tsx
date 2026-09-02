@@ -73,6 +73,21 @@ describe('ProductForm: template-driven variant schema', () => {
     expect((name as HTMLInputElement).value).toBe('Zapato Elegance');
   });
 
+  it('lets a free-text variant value hold spaces and commas', async () => {
+    const user = userEvent.setup();
+    render(<ProductForm product={null} token="t" onSave={() => {}} onCancel={() => {}} />);
+    const select = await screen.findByLabelText(/tipo de variante/i);
+    await user.selectOptions(select, 'tpl-zapatos');
+    await screen.findByText('Numero(s)');
+
+    const color = screen.getByPlaceholderText('Color') as HTMLInputElement;
+    await user.type(color, 'rojo, azul y verde');
+    expect(color.value).toBe('rojo, azul y verde');
+
+    await user.tab(); // blur normalises — trailing/dup whitespace only
+    expect(color.value).toBe('rojo, azul y verde');
+  });
+
   it('adds and removes a variant row', async () => {
     const user = userEvent.setup();
     render(<ProductForm product={null} token="t" onSave={() => {}} onCancel={() => {}} />);
