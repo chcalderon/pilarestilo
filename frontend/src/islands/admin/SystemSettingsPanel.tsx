@@ -7,11 +7,13 @@ import {
   Loader2,
   Mail,
   MessageCircleMore,
+  PackageSearch,
   RefreshCw,
   Save,
   ShieldCheck,
   ShieldX,
 } from 'lucide-react';
+import HeroProductPicker from './HeroProductPicker';
 import {
   searchLocationCommunes,
   getHeroModels,
@@ -646,6 +648,7 @@ export default function SystemSettingsPanel() {
   const [heroModels, setHeroModels] = useState<HeroModelsDto | null>(null);
   const [heroLoading, setHeroLoading] = useState(false);
   const [heroUploadSlot, setHeroUploadSlot] = useState<HeroModelSlot | null>(null);
+  const [heroPickerSlot, setHeroPickerSlot] = useState<HeroModelSlot | null>(null);
   const [shippingCommuneSearch, setShippingCommuneSearch] = useState<Record<string, string>>({});
   const [shippingCommuneResults, setShippingCommuneResults] = useState<Record<string, LocationCommuneDto[]>>({});
   const [shippingCommuneLoading, setShippingCommuneLoading] = useState<Record<string, boolean>>({});
@@ -1728,11 +1731,28 @@ export default function SystemSettingsPanel() {
                       onUpload={() => {}}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setHeroPickerSlot(slot)}
+                    className="mt-2 inline-flex w-full items-center justify-center gap-1.5 border border-pe-black/15 py-1.5 font-sans text-[0.62rem] uppercase tracking-[0.1em] text-pe-muted hover:border-pe-rose hover:text-pe-rose-ink transition-colors"
+                  >
+                    <PackageSearch size={12} />
+                    Elegir desde un producto
+                  </button>
                 </article>
               );
             })}
           </div>
         </div>
+        )}
+
+        {heroPickerSlot && (
+          <HeroProductPicker
+            slot={heroPickerSlot}
+            token={effectiveToken ?? ''}
+            onAssigned={() => void loadHeroModels()}
+            onClose={() => setHeroPickerSlot(null)}
+          />
         )}
 
         {isLegacyAdmin && (

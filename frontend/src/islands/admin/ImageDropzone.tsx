@@ -121,8 +121,16 @@ export default function ImageDropzone({
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) void upload(file);
     e.currentTarget.value = '';
+    if (!file) return;
+    // The file input carries no `accept` so Android opens the full file browser (all folders)
+    // instead of routing straight to Google Photos, so a non-image can now come back.
+    if (file.type && !file.type.startsWith('image/')) {
+      setError('Elige un archivo de imagen (JPG, PNG o WebP).');
+      setState('error');
+      return;
+    }
+    void upload(file);
   };
 
   const closeCamera = () => {
@@ -233,7 +241,6 @@ export default function ImageDropzone({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
             className="sr-only"
             onChange={onChange}
             disabled={uploading}
