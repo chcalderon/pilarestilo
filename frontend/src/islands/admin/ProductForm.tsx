@@ -375,6 +375,37 @@ function compareIds(left: string, right: string): number {
   return left < right ? -1 : 1;
 }
 
+/**
+ * A free-text variant value (a colour like "rojo y azul" or "verde, blanco"). The stored value is
+ * trimmed and its whitespace collapsed, which ate the space or comma the moment you typed it — you
+ * could never get past one word. The raw text is buffered locally while the field has focus so what
+ * you type is what you see; the normalised value still flows up on every keystroke (so submitting
+ * without blurring keeps the last edit). Same shape as OptionsInput in VariantFieldEditor.
+ */
+function VariantTextValueInput({
+  value, placeholder, className, onCommit,
+}: {
+  readonly value: string;
+  readonly placeholder: string;
+  readonly className: string;
+  readonly onCommit: (raw: string) => void;
+}) {
+  const [buffer, setBuffer] = useState<string | null>(null);
+  return (
+    <input
+      type="text"
+      className={className}
+      placeholder={placeholder}
+      value={buffer ?? value}
+      onChange={(e) => {
+        setBuffer(e.target.value);
+        onCommit(e.target.value);
+      }}
+      onBlur={() => setBuffer(null)}
+    />
+  );
+}
+
 export default function ProductForm({ product, onSave, onSaveFailed, onCancel, token }: Props) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
@@ -1102,12 +1133,11 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 <div key={row.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start border border-pe-charcoal/10 p-2">
                   <div className="sm:col-span-3 space-y-1">
                     <p className={labelClass + ' mb-0'}>{primaryAttribute.label}</p>
-                    <input
-                      type="text"
+                    <VariantTextValueInput
                       className={inputClass}
                       placeholder={primaryAttribute.placeholder ?? primaryAttribute.label}
                       value={getAttributeValue(row.attributes, primaryAttribute)}
-                      onChange={(e) => updateVariantAttributeValue(index, primaryAttribute, e.target.value)}
+                      onCommit={(raw) => updateVariantAttributeValue(index, primaryAttribute, raw)}
                     />
                   </div>
                   <div className="sm:col-span-5 space-y-1">
@@ -1135,12 +1165,11 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                       </div>
                     )}
                     {(secondaryAttribute.type === 'text' || secondaryAttribute.allowCustom) && (
-                      <input
-                        type="text"
+                      <VariantTextValueInput
                         className={inputClass}
                         placeholder={secondaryAttribute.placeholder ?? secondaryAttribute.label}
                         value={getAttributeValue(row.attributes, secondaryAttribute)}
-                        onChange={(e) => updateVariantAttributeValue(index, secondaryAttribute, e.target.value)}
+                        onCommit={(raw) => updateVariantAttributeValue(index, secondaryAttribute, raw)}
                       />
                     )}
                     <p className="font-sans text-[0.62rem] text-pe-muted">
