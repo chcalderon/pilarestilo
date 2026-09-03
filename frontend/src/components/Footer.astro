@@ -59,23 +59,6 @@ const links = {
             ? 'Moda de lujo curada — piezas nuevas y de segunda mano de las marcas más deseadas del mundo.'
             : 'Curated luxury fashion — new and pre-loved pieces from the world\'s most desired brands.'}
         </p>
-
-        <!-- Newsletter -->
-        <form class="flex gap-2 mt-2" onsubmit="return false;">
-          <input
-            type="email"
-            placeholder={locale === 'es' ? 'Tu email' : 'Your email'}
-            class="flex-1 bg-pe-white/6 border border-pe-white/12 text-pe-on-dark-muted placeholder-pe-white/25 px-3 py-2 text-[0.8rem] font-sans focus:outline-hidden focus:border-pe-rose/60 transition-colors duration-200"
-            aria-label={locale === 'es' ? 'Correo electrónico para newsletter' : 'Newsletter email'}
-          />
-          <button
-            type="submit"
-            class="bg-pe-rose-action hover:bg-pe-rose-deep transition-colors duration-200 text-pe-offwhite px-3 py-2"
-            aria-label={locale === 'es' ? 'Suscribirse' : 'Subscribe'}
-          >
-            <Icon name="send" size={14} />
-          </button>
-        </form>
       </div>
 
       <!-- Colección links -->
