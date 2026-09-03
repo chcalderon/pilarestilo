@@ -3,8 +3,9 @@ import { useAuthStore } from '../../lib/authStore';
 
 /**
  * The two admin-shell actions that belong in the top bar, not buried in the sidebar footer:
- * jump to the public storefront (new tab, session untouched) and sign out. Sign-out reuses the
- * store's `clearAuth` so the cookie, the persisted state and the PostHog identity all reset the
+ * jump to the public storefront and sign out. "Ver tienda" navigates in place — the admin session
+ * lives in the `pe_token` cookie, so coming back to `/admin` keeps you logged in. Sign-out reuses
+ * the store's `clearAuth` so the cookie, the persisted state and the PostHog identity all reset the
  * same way the sidebar's button does.
  */
 export default function AdminTopbarActions() {
@@ -23,13 +24,7 @@ export default function AdminTopbarActions() {
 
   return (
     <>
-      <a
-        href="/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={control}
-        title="Ver tienda"
-      >
+      <a href="/" className={control} title="Ver tienda">
         <Store size={14} className="flex-shrink-0" />
         <span className="hidden lg:inline">Ver tienda</span>
       </a>

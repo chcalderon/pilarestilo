@@ -16,12 +16,11 @@ beforeEach(() => {
 });
 
 describe('AdminTopbarActions', () => {
-  it('links to the storefront in a new tab without touching the session', () => {
+  it('links to the storefront in place without touching the session', () => {
     render(<AdminTopbarActions />);
     const link = screen.getByRole('link', { name: /ver tienda/i });
     expect(link).toHaveAttribute('href', '/');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(link).not.toHaveAttribute('target');
     expect(clearAuth).not.toHaveBeenCalled();
   });
 
