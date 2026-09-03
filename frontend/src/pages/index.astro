@@ -1,3 +1,5 @@
 ---
-return Astro.redirect('/es/');
+// 301, not the default 302: the root has no content of its own and never will — Spanish is the
+// permanent home. A permanent redirect lets Google consolidate all signals onto /es/.
+return Astro.redirect('/es/', 301);
 ---

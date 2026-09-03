@@ -31,9 +31,11 @@ test.describe('Home page', () => {
     await expect(page.getByText('Shipping across Chile')).toBeVisible();
   });
 
-  test('Root / redirects to /es/', async ({ page }) => {
-    await gotoApp(page, '/');
+  test('Root / permanently (301) redirects to /es/', async ({ page }) => {
+    const response = await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/es\//);
+    const hop = response?.request().redirectedFrom();
+    expect((await hop?.response())?.status()).toBe(301);
   });
 });
 
