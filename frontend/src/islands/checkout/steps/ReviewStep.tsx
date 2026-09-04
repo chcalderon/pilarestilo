@@ -7,6 +7,11 @@ import type { StockIssues } from '../../../lib/useStockCheck';
 import StockBadge, { stockImageClass } from '../../cart/StockBadge';
 import type { Locale } from '../../../i18n/index';
 
+function paymentLabel(method: CheckoutPaymentMethod, transferLabel: string, gatewayLabel: string, gatewayBrand?: string): string {
+  if (method === 'TRANSFER') return transferLabel;
+  return gatewayBrand ? `${gatewayLabel} · ${gatewayBrand}` : gatewayLabel;
+}
+
 interface Props {
   readonly locale: Locale;
   readonly items: CartItem[];
@@ -19,6 +24,10 @@ interface Props {
   readonly total: number;
   readonly currency: string;
   readonly submitting: boolean;
+  /** Overrides the button's processing text -- used to say where the redirect is actually going. */
+  readonly submittingLabel?: string;
+  /** The active gateway's brand (e.g. "Mercado Pago"), shown next to the generic payment label. */
+  readonly gatewayLabel?: string;
   readonly error: string;
   /** Lines the last check found unavailable, keyed by cart line id. */
   readonly stockIssues: StockIssues;
@@ -83,6 +92,8 @@ export default function ReviewStep({
   total,
   currency,
   submitting,
+  submittingLabel,
+  gatewayLabel,
   error,
   stockIssues,
   onRemoveItem,
@@ -221,7 +232,7 @@ export default function ReviewStep({
             {l.payment}
           </h3>
           <p className="font-sans text-[0.8rem] text-pe-charcoal">
-            {method === 'TRANSFER' ? l.transfer : l.gateway}
+            {paymentLabel(method, l.transfer, l.gateway, gatewayLabel)}
           </p>
         </section>
       </div>
@@ -270,7 +281,7 @@ export default function ReviewStep({
           {submitting ? (
             <>
               <Loader2 size={14} className="animate-spin" />
-              {l.submitting}
+              {submittingLabel ?? l.submitting}
             </>
           ) : (
             <>

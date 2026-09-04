@@ -82,11 +82,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
-    public void deleteById(UUID id) {
-        jpaRepository.deleteById(id);
-    }
-
-    @Override
     public void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount) {
         jpaRepository.updateRatingSummary(productId, avgRating, reviewCount);
     }

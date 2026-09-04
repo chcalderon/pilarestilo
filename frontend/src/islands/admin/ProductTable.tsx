@@ -5,7 +5,7 @@ import {
   LayoutGrid,
   Rows3,
   PencilLine,
-  Trash2,
+  EyeOff,
   PackageSearch,
   ChevronLeft,
   ChevronRight,
@@ -184,6 +184,12 @@ export default function ProductTable() {
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  /*
+   * Default view is active-only -- a magic-word search ("inactivo") still overrides this per
+   * search, same as before. The tab is the discoverable way to reach deactivated products
+   * without knowing the magic word exists.
+   */
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive'>('active');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -252,6 +258,10 @@ export default function ProductTable() {
     setPage(0);
   }, [createdFrom, createdTo]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter]);
+
   const parsed = useMemo(
     () => parseSearchInput(debouncedSearch, categories),
     [debouncedSearch, categories],
@@ -276,7 +286,7 @@ export default function ProductTable() {
     try {
       const res = await searchProducts({
         q: parsed.q,
-        active: parsed.active,
+        active: parsed.active ?? (statusFilter === 'active'),
         condition: parsed.condition,
         category: parsed.category,
         createdFrom: createdFrom || undefined,
@@ -295,7 +305,7 @@ export default function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, parsed.q, parsed.active, parsed.condition, parsed.category, createdFrom, createdTo, sortParam]);
+  }, [page, pageSize, parsed.q, parsed.active, parsed.condition, parsed.category, createdFrom, createdTo, sortParam, statusFilter]);
 
   useEffect(() => {
     load();
@@ -322,7 +332,7 @@ export default function ProductTable() {
       setProducts((prev) => prev.filter((p) => p.id !== id));
       setTotal((prev) => prev - 1);
     } catch {
-      alert('Error al eliminar el producto.');
+      alert('Error al desactivar el producto.');
     } finally {
       setDeleting(false);
       setDeleteConfirm(null);
@@ -521,8 +531,8 @@ export default function ProductTable() {
             }}
             className={`${actionButtonClass} text-pe-muted hover:text-pe-danger-ink`}
           >
-            <Trash2 size={13} />
-            Eliminar
+            <EyeOff size={13} />
+            Desactivar
           </button>
         </div>
       ),
@@ -531,11 +541,11 @@ export default function ProductTable() {
 
   const bulkActions: BulkAction[] = [
     {
-      label: 'Eliminar seleccionados',
-      icon: <Trash2 size={12} />,
+      label: 'Desactivar seleccionados',
+      icon: <EyeOff size={12} />,
       variant: 'danger',
       action: async (ids) => {
-        if (!confirm(`Eliminar ${ids.length} producto(s)?`)) return;
+        if (!confirm(`Desactivar ${ids.length} producto(s)? Podras reactivarlos editandolos.`)) return;
         for (const id of ids) {
           try {
             await deleteProduct(id, effectiveToken ?? undefined);
@@ -643,8 +653,8 @@ export default function ProductTable() {
                     onClick={() => setDeleteConfirm(row.id)}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 border border-pe-danger/40 text-pe-danger-ink text-[0.68rem] uppercase tracking-[0.1em] py-2 hover:bg-pe-danger-surface transition-colors"
                   >
-                    <Trash2 size={12} />
-                    Eliminar
+                    <EyeOff size={12} />
+                    Desactivar
                   </button>
                 </div>
               </div>
@@ -734,8 +744,11 @@ export default function ProductTable() {
       {deleteConfirm && (
         <div className="fixed inset-0 bg-pe-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-pe-white p-6 max-w-sm w-full shadow-2xl border border-pe-black/6">
-            <h3 className="font-display text-pe-black text-lg font-light mb-2">Eliminar producto?</h3>
-            <p className="font-sans text-sm text-pe-muted mb-6">Esta accion no se puede deshacer.</p>
+            <h3 className="font-display text-pe-black text-lg font-light mb-2">Desactivar producto?</h3>
+            <p className="font-sans text-sm text-pe-muted mb-6">
+              Dejara de mostrarse en la tienda y en el listado de activos. Puedes reactivarlo editandolo
+              desde la pestana &ldquo;Inactivos&rdquo;.
+            </p>
             <div className="flex gap-3">
               <button
                 type="button"
@@ -743,8 +756,8 @@ export default function ProductTable() {
                 disabled={deleting}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 bg-pe-danger text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:opacity-90 disabled:opacity-50 transition-colors"
               >
-                <Trash2 size={13} />
-                {deleting ? 'Eliminando...' : 'Eliminar'}
+                <EyeOff size={13} />
+                {deleting ? 'Desactivando...' : 'Desactivar'}
               </button>
               <button
                 type="button"
@@ -794,6 +807,37 @@ export default function ProductTable() {
             title="Actualizar"
           >
             <RefreshCw size={15} />
+          </button>
+        </div>
+
+        {/*
+         * Discoverable alternative to the "activo"/"inactivo" magic word -- most admins will
+         * never type it. This is the primary way to reach deactivated products.
+         */}
+        <div className="flex items-center gap-1 border border-pe-black/12 w-fit" role="tablist" aria-label="Filtrar por estado">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === 'active'}
+            onClick={() => setStatusFilter('active')}
+            className={[
+              'font-sans text-[0.68rem] uppercase tracking-[0.1em] px-3 py-1.5 transition-colors',
+              statusFilter === 'active' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
+            ].join(' ')}
+          >
+            Activos
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === 'inactive'}
+            onClick={() => setStatusFilter('inactive')}
+            className={[
+              'font-sans text-[0.68rem] uppercase tracking-[0.1em] px-3 py-1.5 transition-colors',
+              statusFilter === 'inactive' ? 'pe-btn-ink' : 'text-pe-muted hover:text-pe-charcoal',
+            ].join(' ')}
+          >
+            Inactivos
           </button>
         </div>
 
