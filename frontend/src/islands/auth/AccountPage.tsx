@@ -1,10 +1,17 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, Star, ShoppingBag, Trash2, Loader2, Camera, MapPin, X } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie, type StoredUser } from '../../lib/authStore';
 import NotificationHistory from '../NotificationHistory';
 import { orderStatusLabel } from '../../lib/orderStatusLabels';
 import RetractoButton from './RetractoButton';
 import { openBlobInNewTab } from '../../lib/openBlob';
+import {
+  emptyAddressDraft,
+  draftFromAddress,
+  useCityOptions,
+  useComunaOptions,
+  type AddressDraft,
+} from '../checkout/useAddressBook';
 import {
   getMyReviews,
   getLocationTree,
@@ -67,22 +74,6 @@ type ProofFeedback = { type: 'success' | 'error'; text: string };
 type TimelineState = 'done' | 'current' | 'todo' | 'skipped' | 'ended';
 type TimelineStepStatus = Exclude<OrderDto['status'], 'CANCELLED'>;
 type NotificationChannelPreference = 'AUTO' | 'WHATSAPP' | 'EMAIL' | 'BOTH';
-type AddressDraft = {
-  label: string;
-  recipientName: string;
-  phone: string;
-  line1: string;
-  line2: string;
-  regionId: string;
-  cityId: string;
-  comunaId: string;
-  comuna: string;
-  city: string;
-  region: string;
-  reference: string;
-  isDefault: boolean;
-};
-
 const ORDER_TIMELINE_FLOW: TimelineStepStatus[] = [
   'CREATED',
   'PENDING_PAYMENT',
@@ -99,42 +90,6 @@ function sanitizePhoneDraft(value: string | null | undefined): string {
   if (!trimmed) return '';
   const digits = trimmed.replace(/\D/g, '');
   return digits.length >= 8 && digits.length <= 15 ? trimmed : '';
-}
-
-function emptyAddressDraft(): AddressDraft {
-  return {
-    label: '',
-    recipientName: '',
-    phone: '',
-    line1: '',
-    line2: '',
-    regionId: '',
-    cityId: '',
-    comunaId: '',
-    comuna: '',
-    city: '',
-    region: '',
-    reference: '',
-    isDefault: false,
-  };
-}
-
-function draftFromAddress(address: CustomerAddressDto): AddressDraft {
-  return {
-    label: address.label ?? '',
-    recipientName: address.recipientName ?? '',
-    phone: address.phone ?? '',
-    line1: address.line1 ?? '',
-    line2: address.line2 ?? '',
-    regionId: address.regionId ? String(address.regionId) : '',
-    cityId: address.cityId ? String(address.cityId) : '',
-    comunaId: address.communeId ? String(address.communeId) : '',
-    comuna: address.comuna ?? '',
-    city: address.city ?? '',
-    region: address.region ?? '',
-    reference: address.reference ?? '',
-    isDefault: Boolean(address.isDefault),
-  };
 }
 
 export function errorMessageOr(error: unknown, fallback: string): string {
@@ -1954,14 +1909,8 @@ export default function AccountPage({ locale }: Props) {
   const selectedRegionId = addressDraft.regionId ? Number(addressDraft.regionId) : null;
   const selectedCityId = addressDraft.cityId ? Number(addressDraft.cityId) : null;
   const selectedComunaId = addressDraft.comunaId ? Number(addressDraft.comunaId) : null;
-  const cityOptions = useMemo<LocationCityDto[]>(() => {
-    if (!selectedRegionId) return [];
-    return locationRegions.find((region) => region.id === selectedRegionId)?.cities ?? [];
-  }, [locationRegions, selectedRegionId]);
-  const comunaOptions = useMemo<LocationCommuneDto[]>(() => {
-    if (!selectedCityId) return [];
-    return cityOptions.find((city) => city.id === selectedCityId)?.communes ?? [];
-  }, [cityOptions, selectedCityId]);
+  const cityOptions = useCityOptions(locationRegions, addressDraft.regionId);
+  const comunaOptions = useComunaOptions(cityOptions, addressDraft.cityId);
 
   useEffect(() => {
     setReady(true);
