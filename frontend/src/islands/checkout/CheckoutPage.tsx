@@ -373,7 +373,14 @@ export default function CheckoutPage({ locale }: Props) {
        * Skip straight to the gateway instead. If starting that session fails for any reason
        * (gateway down, network blip), the order already exists and is not lost: falling through
        * to the account panel below leaves the same manual "Pagar" button as the safety net.
+       *
+       * That fallback used to be silent -- no submitError, and this page navigates away right
+       * after, so setting one here would flash for an instant and vanish. `gw=fallback` carries
+       * the explanation across the hard navigation instead: AccountPage reads it the same way it
+       * already reads Mercado Pago's own return signals (mp/collection_status/status) and shows a
+       * reassuring banner there, where the customer actually lands.
        */
+      let gatewayRedirectFailed = false;
       if (isGatewayMethod) {
         setRedirectingToGateway(true);
         try {
@@ -384,10 +391,12 @@ export default function CheckoutPage({ locale }: Props) {
           return;
         } catch {
           setRedirectingToGateway(false);
+          gatewayRedirectFailed = true;
         }
       }
 
-      window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
+      const fallbackSignal = gatewayRedirectFailed ? '&gw=fallback' : '';
+      window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}${fallbackSignal}`;
     } catch (error) {
       const raw = error instanceof Error ? error.message : '';
 

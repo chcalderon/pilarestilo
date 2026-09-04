@@ -250,6 +250,21 @@ describe('AccountPage: loading and tabs', () => {
     render(<AccountPage locale="es" />);
     expect(await screen.findByText(/rechazado o cancelado/i)).toBeInTheDocument();
   });
+
+  /**
+   * Checkout sets this itself when it could not even start a gateway session -- the redirect
+   * used to fail silently (order created, customer just lands here with no explanation). Not a
+   * Mercado Pago signal, so it must not read as a payment failure.
+   */
+  it('explains a failed automatic gateway redirect without it reading as a payment error', async () => {
+    window.history.pushState({}, '', '/es/account?gw=fallback');
+    render(<AccountPage locale="es" />);
+    const banner = await screen.findByText(/no pudimos abrir la pasarela de pago autom.ticamente/i);
+    expect(banner).toBeInTheDocument();
+    expect(banner.className).not.toContain('pe-danger');
+    await waitFor(() => expect(getMyOrders).toHaveBeenCalled());
+    expect(window.location.search).toBe('');
+  });
 });
 
 describe('AccountPage: profile', () => {

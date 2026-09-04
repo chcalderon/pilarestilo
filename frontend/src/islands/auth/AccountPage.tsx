@@ -66,7 +66,7 @@ function toggleLabel(
 }
 
 type Tab = 'profile' | 'reviews' | 'orders' | 'addresses' | 'notifications';
-type ProofFeedback = { type: 'success' | 'error'; text: string };
+type ProofFeedback = { type: 'success' | 'error' | 'warning'; text: string };
 /**
  * 'skipped' is a step the order will never reach because it ended early. Rendering those as
  * 'todo' said the journey was still going, which is what a cancelled order looked like.
@@ -161,6 +161,15 @@ const MP_RETURN_KEYS = [
   'preference_id', 'external_reference', 'site_id', 'processing_mode', 'merchant_account_id',
 ];
 
+function gatewayFallbackFeedback(es: boolean): ProofFeedback {
+  return {
+    type: 'warning',
+    text: es
+      ? 'Tu pedido ya está creado. No pudimos abrir la pasarela de pago automáticamente — puedes pagarlo aquí abajo cuando quieras.'
+      : 'Your order was created. We could not open the payment gateway automatically — you can pay it below whenever you like.',
+  };
+}
+
 function gatewayReturnFeedbackFor(normalizedSignal: string, es: boolean): ProofFeedback | null {
   if (normalizedSignal === 'success' || normalizedSignal === 'approved') {
     return {
@@ -201,6 +210,19 @@ export function resolveQueryParamEffects(url: URL, es: boolean): QueryParamResol
     || requestedTab === 'addresses' || requestedTab === 'notifications'
     ? requestedTab
     : null;
+
+  /*
+   * Not a Mercado Pago return signal -- CheckoutPage sets this itself when it could not even
+   * start a gateway session (the redirect used to just fail silently: the order exists, but
+   * nothing said why she landed here instead of at Mercado Pago). Checked separately from the
+   * mp/collection_status/status signals below since 'fallback' is never a value MP itself sends.
+   */
+  if ((searchParams.get('gw') ?? '').trim().toLowerCase() === 'fallback') {
+    searchParams.delete('gw');
+    const nextQuery = searchParams.toString();
+    const cleanedUrl = nextQuery ? `${url.pathname}?${nextQuery}` : url.pathname;
+    return { tab: 'orders', gatewayFeedback: gatewayFallbackFeedback(es), cleanedUrl };
+  }
 
   const mpSignal = (searchParams.get('mp') ?? '').trim().toLowerCase();
   const collectionStatusSignal = (searchParams.get('collection_status') ?? '').trim().toLowerCase();
@@ -1762,16 +1784,18 @@ interface OrdersTabProps {
   readonly onReturnRequested: (created: ReturnRequestDto) => void;
 }
 
+/** 'warning' is neither a success nor an error -- it's "nothing failed, but you have a manual
+ * step left" (the automatic gateway redirect not starting). Giving it the danger styling would
+ * read as alarming for something the order itself survived just fine. */
+function gatewayReturnBannerClass(type: ProofFeedback['type']): string {
+  if (type === 'success') return 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink';
+  if (type === 'warning') return 'border-pe-warning/40 bg-pe-warning-surface text-pe-warning-ink';
+  return 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink';
+}
+
 function GatewayReturnFeedbackBanner({ feedback }: { readonly feedback: ProofFeedback }) {
   return (
-    <div
-      className={[
-        'mb-4 border px-3 py-2 font-sans text-[0.74rem]',
-        feedback.type === 'success'
-          ? 'border-pe-positive/40 bg-pe-positive-surface text-pe-positive-ink'
-          : 'border-pe-danger/40 bg-pe-danger-surface text-pe-danger-ink',
-      ].join(' ')}
-    >
+    <div className={`mb-4 border px-3 py-2 font-sans text-[0.74rem] ${gatewayReturnBannerClass(feedback.type)}`}>
       {feedback.text}
     </div>
   );
