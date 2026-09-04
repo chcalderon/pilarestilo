@@ -123,12 +123,6 @@
     "lastN": "Últimas {n}",
     "soldOut": "Sin stock"
   },
-  "delivery": {
-    "title": "Entrega estimada",
-    "santiago": "Envío local 24-48 hs (Los Andes, San Felipe, Calle Larga, Rinconada)",
-    "rm": "V Región y Región Metropolitana 2-4 días hábiles",
-    "regiones": "Otras regiones 3-7 días hábiles"
-  },
   "cuotas": {
     "title": "Financiación sin interés",
     "of": "cuotas de",

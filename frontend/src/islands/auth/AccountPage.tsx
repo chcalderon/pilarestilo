@@ -28,6 +28,7 @@ import {
   uploadMyAvatar,
   createGatewayCheckoutSession,
   simulateGatewayPaymentStatus,
+  getPublicShippingConfig,
   type ReviewDto,
   type OrderDto,
   type PaymentDto,
@@ -37,6 +38,7 @@ import {
   type LocationCityDto,
   type LocationCommuneDto,
   type LocationRegionDto,
+  type ShippingZoneConfig,
 } from '../../lib/api';
 
 interface Props {
@@ -428,6 +430,19 @@ function shippingPaymentModeLabel(mode: string | null | undefined, es: boolean) 
   return (es ? labelsEs : labelsEn)[normalized] ?? normalized;
 }
 
+/**
+ * The zone an order was routed through is an internal detail -- it was never something the
+ * customer picked -- so it never renders here as "LOCAL"/"REGIONAL". Only the ETA it produces
+ * is customer-facing, and it says nothing at all if the zone is missing or the config hasn't
+ * loaded rather than showing a blank "Entrega estimada:" line.
+ */
+function zoneEtaLabel(zones: ShippingZoneConfig[], code: string | null | undefined, es: boolean): string | undefined {
+  if (!code) return undefined;
+  const zone = zones.find((z) => z.code === code);
+  if (!zone) return undefined;
+  return (es ? zone.etaEs : zone.etaEn) || undefined;
+}
+
 function maskAccountNumber(accountNumber: string | null | undefined) {
   const normalized = (accountNumber ?? '').trim();
   if (!normalized) return '-';
@@ -492,6 +507,7 @@ function OrderTimelineSteps({ steps, es }: OrderTimelineStepsProps) {
 interface OrderListItemProps {
   readonly order: OrderDto;
   readonly es: boolean;
+  readonly shippingZones: ShippingZoneConfig[];
   readonly payment: PaymentDto | undefined;
   readonly loadingPayments: boolean;
   readonly isSubmittingProof: boolean;
@@ -513,23 +529,23 @@ interface OrderListItemProps {
 }
 
 interface OrderShippingInfoProps {
-  readonly shippingZone: string | undefined;
+  readonly shippingEta: string | undefined;
   readonly shippingCourier: string | undefined;
   readonly shippingMode: string | undefined;
   readonly shippingReference: string | undefined;
   readonly es: boolean;
 }
 
-function OrderShippingInfo({ shippingZone, shippingCourier, shippingMode, shippingReference, es }: OrderShippingInfoProps) {
-  if (!shippingZone && !shippingCourier && !shippingMode && !shippingReference) return null;
+function OrderShippingInfo({ shippingEta, shippingCourier, shippingMode, shippingReference, es }: OrderShippingInfoProps) {
+  if (!shippingEta && !shippingCourier && !shippingMode && !shippingReference) return null;
   return (
     <div className="border border-pe-black/8 bg-pe-cream/25 px-3 py-2">
       <p className="font-sans text-[0.62rem] tracking-[0.14em] uppercase text-pe-muted mb-1">
         {es ? 'Envio' : 'Shipping'}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-sans text-[0.72rem] text-pe-muted">
-        {shippingZone && (
-          <p><span className="text-pe-muted">{es ? 'Zona:' : 'Zone:'}</span> {shippingZone}</p>
+        {shippingEta && (
+          <p><span className="text-pe-muted">{es ? 'Entrega estimada:' : 'Estimated delivery:'}</span> {shippingEta}</p>
         )}
         {shippingCourier && (
           <p><span className="text-pe-muted">{'Courier:'}</span> {shippingCourier}</p>
@@ -860,7 +876,7 @@ function OrderFooterActions({
 }
 
 function OrderListItem({
-  order, es, payment, loadingPayments, isSubmittingProof, proofFeedback, isStartingGatewayCheckout,
+  order, es, shippingZones, payment, loadingPayments, isSubmittingProof, proofFeedback, isStartingGatewayCheckout,
   isSimulatingGateway, isConfirmingDelivery, gatewayFeedback, selectedFile, existingReturn, effectiveToken,
   onSelectProofFile, onOpenOwnProof, onSubmitProof, onStartGatewayCheckout, onSimulateGateway, onConfirmDelivery,
   onReturnRequested,
@@ -868,7 +884,7 @@ function OrderListItem({
   const timeline = getOrderTimeline(order.status);
   const canUploadProof = canSubmitProof(order, payment);
   const canSimulate = canSimulateGateway(order, payment);
-  const shippingZone = order.shippingZoneCode?.trim();
+  const shippingEta = zoneEtaLabel(shippingZones, order.shippingZoneCode, es);
   const shippingCourier = order.shippingCourierName?.trim() || order.shippingCourierId?.trim();
   const shippingMode = shippingPaymentModeLabel(order.shippingPaymentMode, es);
   const shippingReference = order.shippingAddressReference?.trim();
@@ -893,7 +909,7 @@ function OrderListItem({
       </div>
 
       <OrderShippingInfo
-        shippingZone={shippingZone}
+        shippingEta={shippingEta}
         shippingCourier={shippingCourier}
         shippingMode={shippingMode}
         shippingReference={shippingReference}
@@ -1770,6 +1786,7 @@ interface OrdersTabProps {
   readonly gatewayReturnFeedback: ProofFeedback | null;
   readonly loadingOrders: boolean;
   readonly orders: OrderDto[];
+  readonly shippingZones: ShippingZoneConfig[];
   readonly paymentsByOrder: Record<string, PaymentDto>;
   readonly loadingPayments: boolean;
   readonly proofSubmittingByOrder: Record<string, boolean>;
@@ -1821,7 +1838,7 @@ function EmptyOrdersState({ es, locale }: { readonly es: boolean; readonly local
 }
 
 function OrdersTab({
-  es, locale, gatewayReturnFeedback, loadingOrders, orders, paymentsByOrder, loadingPayments,
+  es, locale, gatewayReturnFeedback, loadingOrders, orders, shippingZones, paymentsByOrder, loadingPayments,
   proofSubmittingByOrder, proofFeedbackByOrder, gatewayCheckoutLoadingByOrder, gatewaySimulatingByOrder,
   deliveryConfirmingByOrder, gatewayFeedbackByOrder, proofFilesByOrder, myReturns, effectiveToken,
   onSelectProofFile, onOpenOwnProof, onSubmitProof, onStartGatewayCheckout, onSimulateGateway,
@@ -1856,6 +1873,7 @@ function OrdersTab({
             key={order.id}
             order={order}
             es={es}
+            shippingZones={shippingZones}
             payment={paymentsByOrder[order.id]}
             loadingPayments={loadingPayments}
             isSubmittingProof={proofSubmittingByOrder[order.id] === true}
@@ -1889,6 +1907,7 @@ export default function AccountPage({ locale }: Props) {
   const [tab, setTab] = useState<Tab>('profile');
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [orders, setOrders] = useState<OrderDto[]>([]);
+  const [shippingZones, setShippingZones] = useState<ShippingZoneConfig[]>([]);
   const [paymentsByOrder, setPaymentsByOrder] = useState<Record<string, PaymentDto>>({});
   const [proofFilesByOrder, setProofFilesByOrder] = useState<Record<string, File | null>>({});
   const [proofSubmittingByOrder, setProofSubmittingByOrder] = useState<Record<string, boolean>>({});
@@ -1988,6 +2007,24 @@ export default function AccountPage({ locale }: Props) {
       .then((page) => setOrders(page.content ?? []))
       .finally(() => setLoadingOrders(false));
   }, [tab, effectiveToken]);
+
+  /**
+   * Fetches once, not per order: the zone stored on each order is only ever an internal code
+   * (LOCAL/REGIONAL/NACIONAL) -- this config is what turns it into the ETA copy a customer
+   * actually reads. A failure here is not fatal: OrderShippingInfo just omits that line.
+   */
+  useEffect(() => {
+    if (tab !== 'orders' || shippingZones.length > 0) return;
+    let cancelled = false;
+    getPublicShippingConfig()
+      .then((cfg) => {
+        if (!cancelled) setShippingZones(cfg.zones);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, shippingZones.length]);
 
   useEffect(() => {
     if (tab !== 'orders' || !effectiveToken) return;
@@ -2647,6 +2684,7 @@ export default function AccountPage({ locale }: Props) {
             gatewayReturnFeedback={gatewayReturnFeedback}
             loadingOrders={loadingOrders}
             orders={orders}
+            shippingZones={shippingZones}
             paymentsByOrder={paymentsByOrder}
             loadingPayments={loadingPayments}
             proofSubmittingByOrder={proofSubmittingByOrder}
