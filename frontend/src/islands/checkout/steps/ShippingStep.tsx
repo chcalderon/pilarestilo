@@ -10,7 +10,7 @@ import {
   validateDraft,
   type AddressDraft,
   type AddressErrors,
-} from '../useAddressBook';
+} from '../../../lib/useAddressBook';
 import type { Locale } from '../../../i18n/index';
 
 interface Props {

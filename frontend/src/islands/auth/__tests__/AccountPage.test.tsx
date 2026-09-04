@@ -403,12 +403,17 @@ describe('AccountPage: addresses', () => {
     expect(screen.getByText(/principal/i)).toBeInTheDocument();
   });
 
+  /**
+   * The message text now comes from useAddressBook's shared validateDraft (round 2 of the
+   * address-book de-duplication) instead of this screen's own now-deleted validateAddressDraft --
+   * same underlying rule (an empty label), different wording than before.
+   */
   it('validates the new-address form before saving', async () => {
     await goToAddresses();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /agregar dirección/i }));
     await user.click(screen.getByRole('button', { name: /guardar dirección/i }));
-    expect(await screen.findByText(/alias de dirección/i)).toBeInTheDocument();
+    expect(await screen.findByText(/ingresa un alias/i)).toBeInTheDocument();
     expect(createMyAddress).not.toHaveBeenCalled();
   });
 

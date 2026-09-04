@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import {
-  emptyAddressDraft,
   validateDraft,
   useAddressBook,
   type AddressDraft,
@@ -11,14 +10,18 @@ import type { LocationRegionDto } from '@/lib/api';
 /**
  * Characterization tests written before restructuring validateDraft's seven independent
  * if/ternary checks into a table-driven loop (S3776, complexity 21) -- it had none. Covers every
- * field's error message in both locales, the all-valid case, and the hook's load/save/make-default
- * round trip against the mocked API.
+ * field's error message in both locales, the all-valid case, and the hook's load/save/delete/
+ * make-default round trip against the mocked API.
+ *
+ * Moved here from islands/checkout/ when AccountPage started sharing this hook too (round 2 of
+ * the address-book de-duplication) -- it was never checkout-only, just placed as if it were.
  */
 
 const getMyAddresses = vi.fn();
 const getLocationTree = vi.fn();
 const createMyAddress = vi.fn();
 const updateMyAddress = vi.fn();
+const deleteMyAddress = vi.fn();
 const setMyAddressAsDefault = vi.fn();
 
 vi.mock('@/lib/api', async () => {
@@ -29,6 +32,7 @@ vi.mock('@/lib/api', async () => {
     getLocationTree: (...args: unknown[]) => getLocationTree(...args),
     createMyAddress: (...args: unknown[]) => createMyAddress(...args),
     updateMyAddress: (...args: unknown[]) => updateMyAddress(...args),
+    deleteMyAddress: (...args: unknown[]) => deleteMyAddress(...args),
     setMyAddressAsDefault: (...args: unknown[]) => setMyAddressAsDefault(...args),
   };
 });
@@ -110,6 +114,18 @@ describe('useAddressBook', () => {
     expect(getMyAddresses).not.toHaveBeenCalled();
   });
 
+  /** AccountPage passes `enabled: false` while its addresses tab is not the active one -- this
+   * is the whole point of sharing the hook there instead of always fetching eagerly. */
+  it('fetches neither addresses nor the region tree while disabled', async () => {
+    const { result } = renderHook(() => useAddressBook('tok', 'es', { enabled: false }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.addresses).toEqual([]);
+    expect(result.current.regions).toEqual([]);
+    expect(getMyAddresses).not.toHaveBeenCalled();
+    expect(getLocationTree).not.toHaveBeenCalled();
+  });
+
   it('saves a new address, resolving region/city/comuna by id, and reloads', async () => {
     createMyAddress.mockResolvedValue({ id: 'new-1' });
     const { result } = renderHook(() => useAddressBook('tok', 'es'));
@@ -160,5 +176,55 @@ describe('useAddressBook', () => {
 
     expect(setMyAddressAsDefault).toHaveBeenCalledWith('a1', 'tok');
     expect(getMyAddresses).toHaveBeenCalledTimes(2);
+  });
+
+  it('tracks defaultingId while the call is in flight, for a per-row busy state', async () => {
+    let resolveDefault: () => void = () => {};
+    setMyAddressAsDefault.mockReturnValue(new Promise<void>((resolve) => { resolveDefault = resolve; }));
+    const { result } = renderHook(() => useAddressBook('tok', 'es'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.makeDefault('a1');
+    });
+    await waitFor(() => expect(result.current.defaultingId).toBe('a1'));
+
+    resolveDefault();
+    await act(async () => {
+      await pending;
+    });
+    expect(result.current.defaultingId).toBeNull();
+  });
+
+  it('removes an address and reloads', async () => {
+    const { result } = renderHook(() => useAddressBook('tok', 'es'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.remove('a1');
+    });
+
+    expect(deleteMyAddress).toHaveBeenCalledWith('a1', 'tok');
+    expect(getMyAddresses).toHaveBeenCalledTimes(2);
+  });
+
+  it('tracks deletingId while the call is in flight, for a per-row busy state', async () => {
+    let resolveDelete: () => void = () => {};
+    deleteMyAddress.mockReturnValue(new Promise<void>((resolve) => { resolveDelete = resolve; }));
+    const { result } = renderHook(() => useAddressBook('tok', 'es'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.remove('a1');
+    });
+    await waitFor(() => expect(result.current.deletingId).toBe('a1'));
+
+    resolveDelete();
+    await act(async () => {
+      await pending;
+    });
+    expect(result.current.deletingId).toBeNull();
   });
 });
