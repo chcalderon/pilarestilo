@@ -29,6 +29,8 @@ const copy = {
   es: {
     heading: 'Datos de envío',
     courier: 'Courier',
+    courierReassigned: (name: string) =>
+      `El courier que habías elegido ya no está disponible. Seleccionamos ${name} en su lugar.`,
     addresses: 'Dirección de entrega',
     noAddresses: 'Todavía no tienes direcciones guardadas. Agrega una para continuar.',
     addAddress: 'Agregar dirección',
@@ -57,6 +59,8 @@ const copy = {
   en: {
     heading: 'Shipping details',
     courier: 'Courier',
+    courierReassigned: (name: string) =>
+      `The courier you had chosen is no longer available. We selected ${name} instead.`,
     addresses: 'Delivery address',
     noAddresses: 'You have no saved addresses yet. Add one to continue.',
     addAddress: 'Add address',
@@ -186,17 +190,29 @@ export default function ShippingStep({
   const cities = useCityOptions(book.regions, draft.regionId);
   const comunas = useComunaOptions(cities, draft.cityId);
 
-  /** Defaults that keep a selection valid when the admin deactivates what was chosen. */
+  /*
+   * Defaults that keep the zone valid when the admin deactivates what was chosen. Silent on
+   * purpose: the zone is never customer-facing (derived from her address, see the effect below),
+   * so there is no field on screen whose value would appear to change underneath her.
+   */
   useEffect(() => {
     if (zones.length && !zones.some((z) => z.code === zoneCode)) {
       onChange({ zoneCode: zones[0].code });
     }
   }, [zones, zoneCode, onChange]);
 
+  /*
+   * The courier IS her own choice, shown in a plain dropdown -- unlike the zone, silently
+   * swapping it used to leave no trace: she would only find out at "Confirmar pedido" that she is
+   * paying a courier she never picked. Only flags an actual reassignment (courierId pointed at a
+   * real, now-gone courier), not the ordinary first-load default when nothing was chosen yet.
+   */
+  const [courierReassignedTo, setCourierReassignedTo] = useState<string | null>(null);
   useEffect(() => {
-    if (couriers.length && !couriers.some((c) => c.id === courierId)) {
-      onChange({ courierId: couriers[0].id });
-    }
+    if (!couriers.length || couriers.some((c) => c.id === courierId)) return;
+    const fallback = couriers[0];
+    if (courierId) setCourierReassignedTo(fallback.name);
+    onChange({ courierId: fallback.id });
   }, [couriers, courierId, onChange]);
 
   /** Preselects the default address so the common case needs no interaction at all. */
@@ -423,7 +439,10 @@ export default function ShippingStep({
         <select
           id="checkout-courier"
           value={courierId}
-          onChange={(e) => onChange({ courierId: e.target.value })}
+          onChange={(e) => {
+            setCourierReassignedTo(null);
+            onChange({ courierId: e.target.value });
+          }}
           className={inputClass}
         >
           {couriers.map((courier) => (
@@ -432,6 +451,11 @@ export default function ShippingStep({
             </option>
           ))}
         </select>
+        {courierReassignedTo && (
+          <p role="status" className="mt-1.5 font-sans text-[0.72rem] text-pe-warning-ink">
+            {l.courierReassigned(courierReassignedTo)}
+          </p>
+        )}
       </div>
 
       {formOpen && (
