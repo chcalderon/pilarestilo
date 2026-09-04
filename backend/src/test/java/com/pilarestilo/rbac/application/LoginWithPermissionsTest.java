@@ -42,4 +42,15 @@ class LoginWithPermissionsTest {
         assertTrue(dto.permissionCodes().contains("dashboard.read"));
         assertTrue(dto.permissionCodes().contains("roles.manage"));
     }
+
+    /**
+     * The seeded email is stored lowercase; a login typed with different letter-casing (mobile
+     * auto-capitalize, a pasted signature) used to miss the row entirely and read back as
+     * "Invalid credentials" -- indistinguishable from a wrong password.
+     */
+    @Test
+    void admin_login_is_case_insensitive_on_the_email() {
+        AuthTokenDto dto = loginUseCase.execute("Admin@PilarEstilo.com", "admin2026");
+        assertNotNull(dto.accessToken());
+    }
 }

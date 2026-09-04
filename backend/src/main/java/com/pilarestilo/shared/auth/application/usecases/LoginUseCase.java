@@ -29,7 +29,13 @@ public class LoginUseCase {
     }
 
     public AuthTokenDto execute(String email, String rawPassword) {
-        User user = userRepository.findByEmail(email)
+        /*
+         * Stored emails are always lowercase (User.create normalizes on the way in) but nothing
+         * normalized the way in on this read side -- a correct password typed under "Maria@..."
+         * instead of "maria@..." (mobile auto-capitalize, a pasted signature) missed the match
+         * entirely and read back as "Invalid credentials", indistinguishable from a wrong password.
+         */
+        User user = userRepository.findByEmail(User.normalizeEmail(email))
                 .orElseThrow(() -> new DomainException("Invalid credentials"));
         if (!user.isActive()) {
             throw new DomainException("This account is blocked");

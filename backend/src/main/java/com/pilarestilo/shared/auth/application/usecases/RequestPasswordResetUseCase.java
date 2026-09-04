@@ -42,7 +42,7 @@ public class RequestPasswordResetUseCase {
         if (email == null || email.isBlank()) {
             return;
         }
-        Optional<User> match = userRepository.findByEmail(email.trim().toLowerCase());
+        Optional<User> match = userRepository.findByEmail(User.normalizeEmail(email));
         if (match.isEmpty()) {
             return;
         }
