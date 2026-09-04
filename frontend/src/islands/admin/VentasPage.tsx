@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, Search, AlertTriangle, Plus } from 'lucide-react';
+import { RefreshCw, Search, AlertTriangle, Plus, Undo2 } from 'lucide-react';
 import DataTable, { type Column } from './DataTable';
 import SaleDetailDrawer from './SaleDetailDrawer';
 import RegisterSaleDrawer from './RegisterSaleDrawer';
@@ -52,6 +52,10 @@ function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
       <AlertTriangle size={11} /> Sin boleta
     </span>
   );
+}
+
+function gatewayFlagLabel(flag: string): string {
+  return flag === 'CHARGED_BACK' ? 'Contracargo' : 'Reembolsado';
 }
 
 export default function VentasPage() {
@@ -156,6 +160,11 @@ export default function VentasPage() {
         <div>
           <p className="text-[0.75rem]">{orderStatusLabel(row.orderStatus)}</p>
           <p className="text-[0.68rem] opacity-50">{row.paymentStatus ?? ''}</p>
+          {row.paymentGatewayFlag && (
+            <span className="mt-1 inline-flex items-center gap-1 text-[0.62rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-danger-surface text-pe-danger-ink">
+              <Undo2 size={10} /> {gatewayFlagLabel(row.paymentGatewayFlag)} — revisar
+            </span>
+          )}
         </div>
       ),
     },

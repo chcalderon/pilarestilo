@@ -135,6 +135,10 @@ export interface PaymentDto {
   reviewedAt?: string;
   createdAt: string;
   rejectionReason?: string | null;
+  /** Set when the gateway reported a refund/chargeback after this payment was approved -- the
+   * webhook does not silently flip an approved payment, so this is the signal to look and act. */
+  gatewayFlag?: string | null;
+  gatewayFlaggedAt?: string | null;
 }
 
 export interface PaymentGatewayCheckoutDto {
@@ -1510,6 +1514,8 @@ export interface SaleSummaryDto {
   currency: string | null;
   paymentMethod: string | null;
   paymentStatus: string | null;
+  /** Set when the gateway reported a refund/chargeback after this payment was approved. */
+  paymentGatewayFlag: string | null;
   /** Null means no live document: the sale is undeclared. */
   documentId: string | null;
   documentFolio: string | null;

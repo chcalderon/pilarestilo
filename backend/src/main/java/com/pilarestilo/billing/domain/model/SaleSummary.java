@@ -27,6 +27,9 @@ public record SaleSummary(
         String currency,
         String paymentMethod,
         String paymentStatus,
+        /** Set when the gateway reported a refund/chargeback after this payment was approved --
+         * see {@link com.pilarestilo.payment.domain.model.Payment#flagForReview}. Null otherwise. */
+        String paymentGatewayFlag,
         UUID documentId,
         String documentFolio,
         int itemCount,

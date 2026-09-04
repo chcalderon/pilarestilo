@@ -20,5 +20,9 @@ public record PaymentDto(
         UUID reviewedBy,
         Instant reviewedAt,
         Instant createdAt,
-        String rejectionReason
+        String rejectionReason,
+        /** Set when the gateway reported a reversal (refund, chargeback) after this payment was
+         * already approved -- see {@link com.pilarestilo.payment.domain.model.Payment#flagForReview}. */
+        String gatewayFlag,
+        Instant gatewayFlaggedAt
 ) {}

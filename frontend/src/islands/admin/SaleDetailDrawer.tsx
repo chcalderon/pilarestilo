@@ -818,6 +818,16 @@ export default function SaleDetailDrawer({
           <Section label="Pago">
             <Row label="Método" value={sale.paymentMethod ?? '—'} />
             <Row label="Estado" value={sale.paymentStatus ?? '—'} />
+            {payment?.gatewayFlag && (
+              <div className="mt-2 flex items-start gap-2 border border-pe-danger/40 bg-pe-danger-surface p-3 text-[0.78rem] text-pe-danger-ink">
+                <RotateCcw size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <span>
+                  La pasarela reportó {payment.gatewayFlag === 'CHARGED_BACK' ? 'un contracargo' : 'un reembolso'} el{' '}
+                  {payment.gatewayFlaggedAt ? new Date(payment.gatewayFlaggedAt).toLocaleString('es-CL') : ''} después
+                  de aprobar este pago. Revisa si corresponde cancelar el pedido.
+                </span>
+              </div>
+            )}
             {payment?.proofReference && (
               <PaymentProofLink
                 proofReference={payment.proofReference}

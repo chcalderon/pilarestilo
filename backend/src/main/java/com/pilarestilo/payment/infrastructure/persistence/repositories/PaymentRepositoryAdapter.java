@@ -72,6 +72,8 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         e.setReviewedAt(p.getReviewedAt());
         e.setCreatedAt(p.getCreatedAt());
         e.setRejectionReason(p.getRejectionReason());
+        e.setGatewayFlag(p.getGatewayFlag());
+        e.setGatewayFlaggedAt(p.getGatewayFlaggedAt());
         return e;
     }
 
@@ -85,7 +87,8 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
                 e.getTransferBankName(),
                 e.getTransferAccountType(),
                 e.getReviewedBy(), e.getReviewedAt(), e.getCreatedAt(),
-                e.getRejectionReason()
+                e.getRejectionReason(),
+                e.getGatewayFlag(), e.getGatewayFlaggedAt()
         );
     }
 }
