@@ -20,6 +20,7 @@ import {
   validateDiscountCodeForUser,
   type CustomerAddressDto,
   type DiscountCodeDto,
+  type ShippingZoneConfig,
 } from '../../lib/api';
 import { useCheckoutConfig } from './useCheckoutConfig';
 import StepIndicator from './StepIndicator';
@@ -54,6 +55,12 @@ function resolveSubmittingLabel(
   if (!redirecting) return undefined;
   if (!gatewayLabel) return copyForLocale.redirectingToGatewayGeneric;
   return copyForLocale.redirectingToGateway(gatewayLabel);
+}
+
+/** The locale-appropriate ETA copy for a resolved zone -- the zone itself never reaches the UI. */
+function zoneEta(zone: ShippingZoneConfig | undefined, locale: Locale): string {
+  if (!zone) return '';
+  return locale === 'es' ? zone.etaEs : zone.etaEn;
 }
 
 const copy = {
@@ -259,13 +266,9 @@ export default function CheckoutPage({ locale }: Props) {
   );
   const selectedCourierName =
     config.couriers.find((c) => c.id === shippingCourierId)?.name ?? '';
+  /* The zone itself is never shown to the customer -- only the ETA it produces. */
   const selectedZone = config.zones.find((z) => z.code === shippingZoneCode);
-  let selectedZoneName = '';
-  let selectedZoneEta = '';
-  if (selectedZone) {
-    selectedZoneName = locale === 'es' ? selectedZone.titleEs : selectedZone.titleEn;
-    selectedZoneEta = locale === 'es' ? selectedZone.etaEs : selectedZone.etaEn;
-  }
+  const selectedZoneEta = zoneEta(selectedZone, locale);
 
   /** The review step needs the chosen address by value; the shipping step loads the list. */
   useEffect(() => {
@@ -482,7 +485,6 @@ export default function CheckoutPage({ locale }: Props) {
               address={selectedAddress}
               method={paymentMethod}
               courierName={selectedCourierName}
-              zoneName={selectedZoneName}
               shippingEta={selectedZoneEta}
               total={totals.total}
               currency={currency}

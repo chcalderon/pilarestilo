@@ -18,8 +18,11 @@ interface Props {
   readonly address: CustomerAddressDto | null;
   readonly method: CheckoutPaymentMethod;
   readonly courierName: string;
-  readonly zoneName: string;
-  /** How long the chosen zone takes. Has to be visible before paying, not only on the product page. */
+  /**
+   * How long delivery takes. The zone this is derived from is never shown -- it is an internal
+   * routing detail, not something a customer chose -- but the ETA it produces has to be visible
+   * before paying, not only on the product page.
+   */
   readonly shippingEta: string;
   readonly total: number;
   readonly currency: string;
@@ -87,7 +90,6 @@ export default function ReviewStep({
   address,
   method,
   courierName,
-  zoneName,
   shippingEta,
   total,
   currency,
@@ -219,10 +221,7 @@ export default function ReviewStep({
           <h3 className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2">
             {l.shipping}
           </h3>
-          <p className="font-sans text-[0.8rem] text-pe-charcoal">
-            {courierName}
-            {zoneName ? ` · ${zoneName}` : ''}
-          </p>
+          <p className="font-sans text-[0.8rem] text-pe-charcoal">{courierName}</p>
           {shippingEta && (
             <p className="font-sans text-[0.8rem] text-pe-charcoal mt-0.5">{shippingEta}</p>
           )}

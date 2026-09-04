@@ -246,14 +246,22 @@ const CHILE_BANK_OPTIONS = [
 
 const SETTINGS_SUBMENU_TAB_IDS: Set<SettingsSubmenuTab> = new Set(['store', 'payments', 'media', 'notifications', 'shipping', 'tributarios']);
 
+/** Only used when the stored JSON is missing or unparseable -- kept in sync with the real seed
+ * (migration V97) so re-saving from this fallback can't push the old "4 of 10 Aconcagua comunas"
+ * / "V Region y RM" data back into system_settings. */
 const DEFAULT_SHIPPING_ZONES: ShippingZoneConfig[] = [
   { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
     etaEs: '24-48 hs', etaEn: '24-48h',
-    comunas: ['Los Andes', 'San Felipe', 'Calle Larga', 'Rinconada'],
+    comunas: ['Los Andes', 'San Esteban', 'Calle Larga', 'Rinconada', 'San Felipe', 'Putaendo',
+      'Santa Maria', 'Panquehue', 'Llay-Llay', 'Catemu'],
     active: true, sortOrder: 1 },
-  { code: 'REGIONAL', titleEs: 'V Region y RM', titleEn: 'Valparaiso Region and Metropolitan Region',
+  { code: 'REGIONAL', titleEs: 'Region de Valparaiso', titleEn: 'Valparaiso Region',
     etaEs: '2-4 dias habiles', etaEn: '2-4 business days',
-    comunas: [], active: true, sortOrder: 2 },
+    comunas: ['Algarrobo', 'Cabildo', 'Cartagena', 'Casablanca', 'Concon', 'El Quisco', 'El Tabo',
+      'Hijuelas', 'Juan Fernandez', 'La Calera', 'La Cruz', 'La Ligua', 'Limache', 'Nogales',
+      'Olmue', 'Papudo', 'Petorca', 'Puchuncavi', 'Quillota', 'Quilpue', 'Quintero', 'San Antonio',
+      'Santo Domingo', 'Valparaiso', 'Villa Alemana', 'Vina del Mar', 'Zapallar'],
+    active: true, sortOrder: 2 },
   { code: 'NACIONAL', titleEs: 'Otras regiones', titleEn: 'Other Chilean regions',
     etaEs: '3-7 dias habiles', etaEn: '3-7 business days',
     comunas: [], active: true, sortOrder: 3 },

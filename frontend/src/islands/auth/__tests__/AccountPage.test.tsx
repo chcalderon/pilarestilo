@@ -38,6 +38,7 @@ const fetchPaymentProof = vi.fn();
 const uploadMyAvatar = vi.fn();
 const createGatewayCheckoutSession = vi.fn();
 const simulateGatewayPaymentStatus = vi.fn();
+const getPublicShippingConfig = vi.fn();
 
 vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
@@ -64,6 +65,7 @@ vi.mock('@/lib/api', async () => {
     uploadMyAvatar: (...a: unknown[]) => uploadMyAvatar(...a),
     createGatewayCheckoutSession: (...a: unknown[]) => createGatewayCheckoutSession(...a),
     simulateGatewayPaymentStatus: (...a: unknown[]) => simulateGatewayPaymentStatus(...a),
+    getPublicShippingConfig: (...a: unknown[]) => getPublicShippingConfig(...a),
   };
 });
 
@@ -146,6 +148,18 @@ function region(): LocationRegionDto {
   };
 }
 
+function shippingZonesFixture() {
+  return {
+    zones: [
+      { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone', etaEs: '24-48 hs', etaEn: '24-48h', comunas: [], active: true, sortOrder: 1 },
+      { code: 'REGIONAL', titleEs: 'Región de Valparaíso', titleEn: 'Valparaíso Region', etaEs: '2-4 días hábiles', etaEn: '2-4 business days', comunas: [], active: true, sortOrder: 2 },
+      { code: 'NACIONAL', titleEs: 'Otras regiones', titleEn: 'Other Chilean regions', etaEs: '3-7 días hábiles', etaEn: '3-7 business days', comunas: [], active: true, sortOrder: 3 },
+    ],
+    couriers: [],
+    paymentMode: 'POR_PAGAR' as const,
+  };
+}
+
 function emptyPage<T>() {
   return { content: [] as T[], totalElements: 0, totalPages: 0, size: 20, number: 0 };
 }
@@ -182,6 +196,7 @@ beforeEach(() => {
   getMyAddresses.mockResolvedValue([] as CustomerAddressDto[]);
   getLocationTree.mockResolvedValue([region()]);
   getPaymentByOrder.mockResolvedValue(null);
+  getPublicShippingConfig.mockResolvedValue(shippingZonesFixture());
   window.history.pushState({}, '', '/es/account');
 });
 
@@ -454,6 +469,18 @@ describe('AccountPage: orders', () => {
     await goToOrders();
     expect(await screen.findByText('order-1')).toBeInTheDocument();
     expect(screen.getByText(/\$23\.000/)).toBeInTheDocument();
+  });
+
+  it('shows the delivery ETA, never the raw zone code, once payment is confirmed and the order lands here', async () => {
+    getMyOrders.mockResolvedValue({
+      content: [order({ shippingZoneCode: 'LOCAL' } as Partial<OrderDto>)],
+      totalElements: 1, totalPages: 1, size: 20, number: 0,
+    });
+    await goToOrders();
+    expect(await screen.findByText(/24-48 hs/)).toBeInTheDocument();
+    expect(screen.getByText(/entrega estimada/i)).toBeInTheDocument();
+    expect(screen.queryByText('LOCAL')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^zona:/i)).not.toBeInTheDocument();
   });
 
   it('shows the retracto button for a delivered order and the confirm-delivery button for a shipped one', async () => {

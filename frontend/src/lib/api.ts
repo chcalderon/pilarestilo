@@ -2010,14 +2010,24 @@ export interface PublicShippingConfig {
   paymentMode: ShippingPaymentMode;
 }
 
+/**
+ * Only used if `system_settings.shipping_zones_json` is unreachable or empty -- the real seed
+ * (repaired by migration V97) is the source of truth. Kept in sync with it so this rare fallback
+ * never regresses to the old "4 of 10 Aconcagua comunas" / "V Región y RM" data.
+ */
 const FALLBACK_SHIPPING_ZONES: ShippingZoneConfig[] = [
   { code: 'LOCAL', titleEs: 'Zona local', titleEn: 'Local zone',
     etaEs: '24-48 hs', etaEn: '24-48h',
-    comunas: ['Los Andes', 'San Felipe', 'Calle Larga', 'Rinconada'],
+    comunas: ['Los Andes', 'San Esteban', 'Calle Larga', 'Rinconada', 'San Felipe', 'Putaendo',
+      'Santa María', 'Panquehue', 'Llay-Llay', 'Catemu'],
     active: true, sortOrder: 1 },
-  { code: 'REGIONAL', titleEs: 'V Región y RM', titleEn: 'Valparaíso Region and Metropolitan Region',
+  { code: 'REGIONAL', titleEs: 'Región de Valparaíso', titleEn: 'Valparaíso Region',
     etaEs: '2-4 días hábiles', etaEn: '2-4 business days',
-    comunas: [], active: true, sortOrder: 2 },
+    comunas: ['Algarrobo', 'Cabildo', 'Cartagena', 'Casablanca', 'Concón', 'El Quisco', 'El Tabo',
+      'Hijuelas', 'Juan Fernández', 'La Calera', 'La Cruz', 'La Ligua', 'Limache', 'Nogales',
+      'Olmué', 'Papudo', 'Petorca', 'Puchuncaví', 'Quillota', 'Quilpué', 'Quintero', 'San Antonio',
+      'Santo Domingo', 'Valparaíso', 'Villa Alemana', 'Viña del Mar', 'Zapallar'],
+    active: true, sortOrder: 2 },
   { code: 'NACIONAL', titleEs: 'Otras regiones', titleEn: 'Other Chilean regions',
     etaEs: '3-7 días hábiles', etaEn: '3-7 business days',
     comunas: [], active: true, sortOrder: 3 },

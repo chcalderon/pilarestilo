@@ -123,12 +123,6 @@
     "lastN": "Last {n}",
     "soldOut": "Sold out"
   },
-  "delivery": {
-    "title": "Estimated delivery",
-    "santiago": "Local delivery 24-48h (Los Andes, San Felipe, Calle Larga, Rinconada)",
-    "rm": "Valparaíso Region and Metropolitan Region 2-4 business days",
-    "regiones": "Other Chilean regions 3-7 business days"
-  },
   "cuotas": {
     "title": "Installment plans available",
     "of": "installments of",

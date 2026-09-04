@@ -28,7 +28,6 @@ interface Props {
 const copy = {
   es: {
     heading: 'Datos de envío',
-    zone: 'Zona de envío',
     courier: 'Courier',
     addresses: 'Dirección de entrega',
     noAddresses: 'Todavía no tienes direcciones guardadas. Agrega una para continuar.',
@@ -57,7 +56,6 @@ const copy = {
   },
   en: {
     heading: 'Shipping details',
-    zone: 'Shipping zone',
     courier: 'Courier',
     addresses: 'Delivery address',
     noAddresses: 'You have no saved addresses yet. Add one to continue.',
@@ -85,6 +83,28 @@ const copy = {
     chooseCityFirst: 'Choose a city first',
   },
 } as const;
+
+/**
+ * The zone whose `comunas` list names this address's comuna, or null if none does. NACIONAL is
+ * deliberately not in that search -- it ships with an empty comuna list on purpose (see the
+ * migration that seeds LOCAL/REGIONAL) and is resolved as the implicit "everywhere else" zone by
+ * the caller, not enumerated here.
+ */
+export function zoneForComuna(zones: ShippingZoneConfig[], comuna: string | null | undefined): string | null {
+  if (!comuna) return null;
+  const target = normalizeComunaName(comuna);
+  const explicit = zones.find((zone) => zone.comunas.some((c) => normalizeComunaName(c) === target));
+  if (explicit) return explicit.code;
+  return zones.find((zone) => zone.code === 'NACIONAL')?.code ?? null;
+}
+
+function normalizeComunaName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toLowerCase();
+}
 
 const FIELD_ORDER: (keyof AddressDraft)[] = [
   'label',
@@ -145,6 +165,25 @@ export default function ShippingStep({
     const preferred = book.addresses.find((a) => a.isDefault) ?? book.addresses[0];
     onChange({ addressId: preferred.id });
   }, [book.addresses, addressId, onChange]);
+
+  /*
+   * The zone used to be a dropdown the customer filled in herself, with nothing tying it to
+   * where she actually lived -- she could pick a zone that did not match her address, with no
+   * ETA promise the system could actually keep. It is not customer-facing at all anymore: it is
+   * derived silently from whichever address she picks and carried through to the order, so the
+   * ETA shown after checkout is always the one her real comuna supports. Re-derives whenever the
+   * selected address (or its comuna) changes; converges once matched === zoneCode, so including
+   * both in the deps does not loop.
+   */
+  useEffect(() => {
+    if (!addressId) return;
+    const address = book.addresses.find((a) => a.id === addressId);
+    if (!address) return;
+    const matched = zoneForComuna(zones, address.comuna);
+    if (matched && matched !== zoneCode) {
+      onChange({ zoneCode: matched });
+    }
+  }, [book.addresses, addressId, zones, zoneCode, onChange]);
 
   const selected = useMemo(
     () => book.addresses.find((a) => a.id === addressId) ?? null,
@@ -224,50 +263,6 @@ export default function ShippingStep({
         <Truck size={18} className="text-pe-muted" aria-hidden="true" />
         {l.heading}
       </h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <div>
-          <label
-            htmlFor="checkout-zone"
-            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2"
-          >
-            {l.zone}
-          </label>
-          <select
-            id="checkout-zone"
-            value={zoneCode}
-            onChange={(e) => onChange({ zoneCode: e.target.value })}
-            className={inputClass}
-          >
-            {zones.map((zone) => (
-              <option key={zone.code} value={zone.code}>
-                {locale === 'es' ? zone.titleEs : zone.titleEn}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="checkout-courier"
-            className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2"
-          >
-            {l.courier}
-          </label>
-          <select
-            id="checkout-courier"
-            value={courierId}
-            onChange={(e) => onChange({ courierId: e.target.value })}
-            className={inputClass}
-          >
-            {couriers.map((courier) => (
-              <option key={courier.id} value={courier.id}>
-                {courier.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
 
       <fieldset className="mb-6">
         <legend className="font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-3">
@@ -367,6 +362,29 @@ export default function ShippingStep({
           </button>
         )}
       </fieldset>
+
+      {/* Zone is derived silently from the address above (see the effect) -- the customer never
+        * picks or sees it; only the courier is her choice. */}
+      <div className="max-w-xs mb-8">
+        <label
+          htmlFor="checkout-courier"
+          className="block font-sans text-[0.68rem] tracking-[0.16em] uppercase text-pe-charcoal mb-2"
+        >
+          {l.courier}
+        </label>
+        <select
+          id="checkout-courier"
+          value={courierId}
+          onChange={(e) => onChange({ courierId: e.target.value })}
+          className={inputClass}
+        >
+          {couriers.map((courier) => (
+            <option key={courier.id} value={courier.id}>
+              {courier.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {formOpen && (
         <form
