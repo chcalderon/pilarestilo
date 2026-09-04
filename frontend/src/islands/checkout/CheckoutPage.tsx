@@ -14,7 +14,9 @@ import { track } from '../../lib/analytics';
 import { useStockCheck } from '../../lib/useStockCheck';
 import {
   createOrder,
+  createGatewayCheckoutSession,
   getMyAddresses,
+  getPaymentByOrder,
   validateDiscountCodeForUser,
   type CustomerAddressDto,
   type DiscountCodeDto,
@@ -43,6 +45,17 @@ function resolveProductId(item: { id: string; productId?: string }): string | nu
   return UUID_REGEX.test(candidate) ? candidate : null;
 }
 
+/** Undefined leaves ReviewStep's own default ("Procesando…") in place outside the redirect. */
+function resolveSubmittingLabel(
+  redirecting: boolean,
+  gatewayLabel: string,
+  copyForLocale: { redirectingToGateway: (gateway: string) => string; redirectingToGatewayGeneric: string }
+): string | undefined {
+  if (!redirecting) return undefined;
+  if (!gatewayLabel) return copyForLocale.redirectingToGatewayGeneric;
+  return copyForLocale.redirectingToGateway(gatewayLabel);
+}
+
 const copy = {
   es: {
     title: 'Finalizar compra',
@@ -59,6 +72,8 @@ const copy = {
     submitFailed: 'No pudimos crear el pedido. Inténtalo de nuevo.',
     stockChanged: 'La disponibilidad cambió mientras completabas la compra. Revisa los productos marcados.',
     stockRejected: 'Uno de los productos ya no está disponible en la cantidad o talla elegida. Revisa tu pedido.',
+    redirectingToGateway: (gateway: string) => `Redirigiéndote a ${gateway}…`,
+    redirectingToGatewayGeneric: 'Redirigiéndote a la pasarela de pago…',
   },
   en: {
     title: 'Checkout',
@@ -74,6 +89,8 @@ const copy = {
     submitFailed: 'We could not create the order. Please try again.',
     stockChanged: 'Availability changed while you were checking out. Review the flagged items.',
     stockRejected: 'One of the items is no longer available in the size or quantity chosen. Review your order.',
+    redirectingToGateway: (gateway: string) => `Redirecting you to ${gateway}…`,
+    redirectingToGatewayGeneric: 'Redirecting you to the payment gateway…',
   },
 } as const;
 
@@ -108,6 +125,7 @@ export default function CheckoutPage({ locale }: Props) {
 
   const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [redirectingToGateway, setRedirectingToGateway] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCodeDto | null>(null);
   const [discountApplying, setDiscountApplying] = useState(false);
@@ -298,6 +316,16 @@ export default function CheckoutPage({ locale }: Props) {
         return;
       }
 
+      /*
+       * The store only ever tracks the generic "pay via a gateway" choice ('WEBPAY') -- the
+       * checkout radio already shows the real brand (config.gatewayLabel), so the order itself
+       * should carry the real enum too, not the generic one. Keeps order history from reading
+       * "WebPay" for a payment Mercado Pago actually processed, and stays correct once a second
+       * real gateway (e.g. TUU) exists.
+       */
+      const isGatewayMethod = paymentMethod === 'WEBPAY';
+      const resolvedPaymentMethod = isGatewayMethod ? config.gatewayMethod : paymentMethod;
+
       const order = await createOrder(
         {
           customerId: authUser.id,
@@ -307,7 +335,7 @@ export default function CheckoutPage({ locale }: Props) {
             variantColor: item.variantColor,
             variantSize: item.variantSize,
           })),
-          paymentMethod,
+          paymentMethod: resolvedPaymentMethod,
           shippingZoneCode: selectedZone.code,
           shippingCourierId,
           shippingAddressId,
@@ -323,7 +351,7 @@ export default function CheckoutPage({ locale }: Props) {
         line_count: items.length,
         total: totals.total,
         currency,
-        payment_method: paymentMethod,
+        payment_method: resolvedPaymentMethod,
         discount_code: appliedDiscount?.code,
       });
 
@@ -333,6 +361,27 @@ export default function CheckoutPage({ locale }: Props) {
        */
       clearCart();
       resetCheckout();
+
+      /*
+       * A gateway order used to always stop at the account panel first, where the customer had
+       * to find the new order and click Pagar themselves -- an extra manual step for no reason.
+       * Skip straight to the gateway instead. If starting that session fails for any reason
+       * (gateway down, network blip), the order already exists and is not lost: falling through
+       * to the account panel below leaves the same manual "Pagar" button as the safety net.
+       */
+      if (isGatewayMethod) {
+        setRedirectingToGateway(true);
+        try {
+          const payment = await getPaymentByOrder(order.id, token);
+          if (!payment) throw new Error('missing payment');
+          const session = await createGatewayCheckoutSession(payment.id, token);
+          window.location.assign(session.checkoutUrl);
+          return;
+        } catch {
+          setRedirectingToGateway(false);
+        }
+      }
+
       window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}`;
     } catch (error) {
       const raw = error instanceof Error ? error.message : '';
@@ -436,6 +485,8 @@ export default function CheckoutPage({ locale }: Props) {
               total={totals.total}
               currency={currency}
               submitting={submitting}
+              submittingLabel={resolveSubmittingLabel(redirectingToGateway, config.gatewayLabel, l)}
+              gatewayLabel={config.gatewayLabel}
               error={submitError}
               stockIssues={stock.issues}
               onRemoveItem={(lineId) => {

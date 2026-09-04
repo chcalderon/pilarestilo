@@ -1,5 +1,6 @@
 package com.pilarestilo.product.application.usecases;
 
+import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,8 +19,9 @@ public class DeleteProductUseCase {
 
     @Transactional
     public void execute(UUID id) {
-        productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product not found: " + id));
-        productRepository.deleteById(id);
+        product.deactivate();
+        productRepository.save(product);
     }
 }

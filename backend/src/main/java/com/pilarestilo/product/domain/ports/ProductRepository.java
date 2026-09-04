@@ -22,8 +22,6 @@ public interface ProductRepository {
 
     Page<Product> findAll(ProductFilter filter, Pageable pageable);
 
-    void deleteById(UUID id);
-
     void updateRatingSummary(UUID productId, BigDecimal avgRating, int reviewCount);
 
     int atomicReserveVariantStock(UUID productId, String color, String size, int qty);

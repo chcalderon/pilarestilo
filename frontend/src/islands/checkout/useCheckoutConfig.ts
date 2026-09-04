@@ -22,6 +22,8 @@ export interface CheckoutConfig {
   bankTransferEnabled: boolean;
   gatewayEnabled: boolean;
   gatewayLabel: string;
+  /** The order's real payment method for whichever gateway is active -- never the UI's generic 'WEBPAY'. */
+  gatewayMethod: 'MERCADOPAGO' | 'WEBPAY';
   transfer: BankTransferDetails;
   zones: ShippingZoneConfig[];
   couriers: CourierConfig[];
@@ -45,6 +47,17 @@ function providerLabel(providers: string[]): string {
 }
 
 /**
+ * The order's paymentMethod used to always be the generic 'WEBPAY' regardless of which gateway
+ * actually processed it -- correct for the checkout radio label (already dynamic), wrong for
+ * order history, which has its own 'MERCADOPAGO' label and showed 'WebPay' for a Mercado Pago
+ * payment. 'WEBPAY' stays the fallback for a provider this doesn't recognise yet (e.g. once TUU
+ * ships as a second option).
+ */
+function resolveGatewayMethod(providers: string[]): 'MERCADOPAGO' | 'WEBPAY' {
+  return providers[0] === 'MERCADO_PAGO' ? 'MERCADOPAGO' : 'WEBPAY';
+}
+
+/**
  * Loads the store configuration the checkout depends on: which payment methods are on, the
  * bank details for a transfer, and the shipping zones and couriers.
  *
@@ -58,6 +71,7 @@ export function useCheckoutConfig(): CheckoutConfig {
     bankTransferEnabled: true,
     gatewayEnabled: false,
     gatewayLabel: '',
+    gatewayMethod: 'WEBPAY',
     transfer: EMPTY_TRANSFER,
     zones: [],
     couriers: [],
@@ -98,6 +112,7 @@ export function useCheckoutConfig(): CheckoutConfig {
           bankTransferEnabled,
           gatewayEnabled,
           gatewayLabel: providerLabel(providers.length ? providers : ['MERCADO_PAGO']),
+          gatewayMethod: resolveGatewayMethod(providers.length ? providers : ['MERCADO_PAGO']),
           transfer: {
             accountHolder: settings?.bankTransferAccountHolder?.trim() ?? '',
             contactEmail: settings?.bankTransferContactEmail?.trim() ?? '',

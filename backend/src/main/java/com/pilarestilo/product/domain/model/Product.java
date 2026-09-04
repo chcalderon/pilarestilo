@@ -147,6 +147,16 @@ public class Product {
         this.updatedAt = Instant.now();
     }
 
+    /**
+     * A logical delete: the product stops selling and disappears from the storefront and the
+     * admin's default view, but the row stays — order history, inventory movements and payments
+     * that already reference it stay valid. Reversed by editing the product back to active.
+     */
+    public void deactivate() {
+        this.active = false;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
