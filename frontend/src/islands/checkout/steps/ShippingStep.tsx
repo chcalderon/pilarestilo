@@ -98,6 +98,46 @@ export function zoneForComuna(zones: ShippingZoneConfig[], comuna: string | null
   return zones.find((zone) => zone.code === 'NACIONAL')?.code ?? null;
 }
 
+/**
+ * The rest of checkout survives a refresh via `checkoutStore`; this form did not -- an
+ * interruption mid-form (a call, a notification, a dropped connection on a phone) lost everything
+ * typed one-handed. sessionStorage rather than the persisted store on purpose: this is an
+ * unsaved-work recovery for the current tab, not a checkout answer worth carrying to a new visit.
+ * Scoped to a brand-new address only -- editing an existing one already has a source of truth (the
+ * saved address itself), so restoring an old edit-in-progress there risks overwriting a change she
+ * made since.
+ */
+const NEW_ADDRESS_DRAFT_KEY = 'pe-checkout-new-address-draft';
+
+function readPersistedNewAddressDraft(): AddressDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(NEW_ADDRESS_DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as AddressDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistNewAddressDraft(draft: AddressDraft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(NEW_ADDRESS_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* Storage full or unavailable (private browsing) -- the form still works, just without
+     * recovery, which is the same as before this existed. */
+  }
+}
+
+function clearPersistedNewAddressDraft() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(NEW_ADDRESS_DRAFT_KEY);
+  } catch {
+    /* Nothing to clean up if it never wrote. */
+  }
+}
+
 function normalizeComunaName(value: string): string {
   return value
     .normalize('NFD')
@@ -185,6 +225,13 @@ export default function ShippingStep({
     }
   }, [book.addresses, addressId, zones, zoneCode, onChange]);
 
+  /** Persists a new (not editing) address draft on every change while the form is open, so an
+   * interruption doesn't cost her the typing. */
+  useEffect(() => {
+    if (!formOpen || editingId !== null) return;
+    persistNewAddressDraft(draft);
+  }, [draft, formOpen, editingId]);
+
   const selected = useMemo(
     () => book.addresses.find((a) => a.id === addressId) ?? null,
     [book.addresses, addressId]
@@ -192,7 +239,7 @@ export default function ShippingStep({
 
   function openCreate() {
     setEditingId(null);
-    setDraft(emptyAddressDraft());
+    setDraft(readPersistedNewAddressDraft() ?? emptyAddressDraft());
     setErrors({});
     setFormError('');
     setFormOpen(true);
@@ -222,6 +269,7 @@ export default function ShippingStep({
       const savedId = await book.save(draft, editingId);
       onChange({ addressId: savedId });
       if (draft.isDefault) await book.makeDefault(savedId);
+      if (editingId === null) clearPersistedNewAddressDraft();
       setFormOpen(false);
       setContinueError('');
     } catch (e) {
@@ -308,7 +356,7 @@ export default function ShippingStep({
                         {address.label}
                       </span>
                       {address.isDefault && (
-                        <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
+                        <span className="font-sans text-[0.72rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
                           {l.defaultBadge}
                         </span>
                       )}
@@ -578,7 +626,12 @@ export default function ShippingStep({
             </button>
             <button
               type="button"
-              onClick={() => setFormOpen(false)}
+              onClick={() => {
+                // A deliberate cancel, unlike an interruption, means she does not want this draft
+                // back next time she opens the form.
+                if (editingId === null) clearPersistedNewAddressDraft();
+                setFormOpen(false);
+              }}
               className="min-h-11 px-5 border border-pe-charcoal/25 font-sans text-[0.68rem]
                 tracking-[0.16em] uppercase text-pe-charcoal hover:border-pe-black transition-colors
                 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"

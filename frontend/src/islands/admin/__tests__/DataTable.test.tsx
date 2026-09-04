@@ -120,6 +120,21 @@ describe('DataTable (desktop)', () => {
     expect(onRowClick).toHaveBeenCalledWith(rows(1)[0]);
   });
 
+  /**
+   * Hover + cursor already say "clickable" for a mouse; neither exists for keyboard or touch.
+   * The chevron is the only persistent signal those users get, so it must actually render (and
+   * only when the row is clickable at all).
+   */
+  it('shows a trailing chevron on every row when onRowClick is set, and not otherwise', () => {
+    const { container, rerender } = render(
+      <DataTable columns={columns} data={rows(2)} keyField="id" onRowClick={() => {}} />
+    );
+    expect(container.querySelectorAll('.lucide-chevron-right')).toHaveLength(2);
+
+    rerender(<DataTable columns={columns} data={rows(2)} keyField="id" />);
+    expect(container.querySelectorAll('.lucide-chevron-right')).toHaveLength(0);
+  });
+
   it('paginates: buttons disabled at the edges, onPageChange fires', async () => {
     const onPageChange = vi.fn();
     const user = userEvent.setup();
@@ -156,6 +171,13 @@ describe('DataTable (mobile)', () => {
     await user.click(screen.getByRole('checkbox', { name: /seleccionar fila r0/i }));
     expect(screen.getByText(/1 seleccionado/i)).toBeInTheDocument();
     expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it('shows a trailing chevron on the card too -- touch has no hover state at all', () => {
+    const { container } = render(
+      <DataTable columns={columns} data={rows(1)} keyField="id" onRowClick={() => {}} />
+    );
+    expect(container.querySelector('.lucide-chevron-right')).toBeInTheDocument();
   });
 
   it('opens the row from the card button, by click and by Enter', async () => {

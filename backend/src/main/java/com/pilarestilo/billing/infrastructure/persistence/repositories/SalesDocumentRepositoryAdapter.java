@@ -83,6 +83,12 @@ public class SalesDocumentRepositoryAdapter implements SalesDocumentRepository {
         return Set.copyOf(jpaRepository.findAllFileUrls());
     }
 
+    @Override
+    public Optional<String> findMaxNumericFolio(SalesDocumentType type) {
+        Long max = jpaRepository.findMaxNumericFolio(type.name());
+        return Optional.ofNullable(max).map(String::valueOf);
+    }
+
     private SalesDocumentEntity toEntity(SalesDocument document) {
         SalesDocumentEntity entity = new SalesDocumentEntity();
         entity.setId(document.getId());

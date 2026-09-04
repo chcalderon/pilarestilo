@@ -239,11 +239,14 @@ function MobileCards<T>({ columns, data, loading, emptyMessage, selectable, sele
                   type="button"
                   onClick={() => onRowClick(row)}
                   className={[
-                    'block w-full cursor-pointer text-left',
+                    'flex w-full items-center gap-2 cursor-pointer text-left',
                     selectable ? '' : '-m-3 p-3',
                   ].join(' ')}
                 >
-                  {body}
+                  <span className="flex-1 min-w-0">{body}</span>
+                  {/* Cursor + hover say "clickable" on desktop; touch has neither, so this chevron
+                    * is the only signal a tap here opens something. */}
+                  <ChevronRight size={16} className="shrink-0 text-pe-muted" aria-hidden="true" />
                 </button>
               ) : (
                 body
@@ -284,7 +287,7 @@ function DesktopTable<T>({
   if (loading) {
     tbodyContent = (
       <tr>
-        <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16 text-center">
+        <td colSpan={columns.length + (selectable ? 1 : 0) + (onRowClick ? 1 : 0)} className="py-16 text-center">
           <Loader2 size={22} className="animate-spin text-pe-rose-ink inline-block" />
         </td>
       </tr>
@@ -292,7 +295,7 @@ function DesktopTable<T>({
   } else if (data.length === 0) {
     tbodyContent = (
       <tr>
-        <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">
+        <td colSpan={columns.length + (selectable ? 1 : 0) + (onRowClick ? 1 : 0)} className="py-14 text-center font-sans text-[0.82rem] text-pe-muted">
           {emptyMessage}
         </td>
       </tr>
@@ -343,6 +346,13 @@ function DesktopTable<T>({
               {col.render ? col.render(row) : formatCellValue((row as Record<string, unknown>)[col.key])}
             </td>
           ))}
+          {onRowClick && (
+            /* Hover tint says "clickable" for a mouse; this chevron is the same signal for
+             * keyboard/touch users, who never see the hover state at all. */
+            <td className={tdBase + ' text-pe-muted'} style={{ width: '32px' }} aria-hidden="true">
+              <ChevronRight size={14} />
+            </td>
+          )}
         </tr>
       );
     });
@@ -377,6 +387,7 @@ function DesktopTable<T>({
                 </span>
               </th>
             ))}
+            {onRowClick && <th className={thBase} style={{ width: '32px' }} aria-hidden="true" />}
           </tr>
         </thead>
         <tbody>{tbodyContent}</tbody>

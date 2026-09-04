@@ -6,8 +6,10 @@ import com.pilarestilo.billing.domain.enums.SalesDocumentType;
 import com.pilarestilo.billing.domain.events.SalesDocumentIssued;
 import com.pilarestilo.billing.domain.model.SalesDocument;
 import com.pilarestilo.billing.domain.ports.SalesDocumentRepository;
+import com.pilarestilo.order.domain.enums.DeliveryMethod;
 import com.pilarestilo.order.domain.enums.OrderStatus;
 import com.pilarestilo.order.domain.enums.PaymentMethod;
+import com.pilarestilo.order.domain.enums.SalesChannel;
 import com.pilarestilo.order.domain.model.Order;
 import com.pilarestilo.order.domain.model.OrderItem;
 import com.pilarestilo.order.domain.ports.OrderRepository;
@@ -98,6 +100,27 @@ class IssueSalesDocumentUseCaseTest {
 
         assertEquals("Ana Perez", dto.receiverName());
         assertEquals("ana@correo.cl", dto.receiverEmail());
+    }
+
+    /**
+     * V94's external sale has no linked account -- order.getCustomerId() is null there, and
+     * userRepository.findById(null) throws rather than returning empty. Every boleta issued for
+     * a walk-in / social-media sale hit this until the guard existed.
+     */
+    @Test
+    void issues_a_document_for_a_customerless_external_sale() {
+        Order external = paidExternalOrder();
+        when(orderRepository.findById(external.getId())).thenReturn(Optional.of(external));
+        when(salesDocumentRepository.findLiveByOrderId(external.getId())).thenReturn(Optional.empty());
+
+        SalesDocumentDto dto = useCase.execute(
+                external.getId(), SalesDocumentType.BOLETA, "1042", null, null, null, null, actor);
+
+        assertEquals("1042", dto.folio());
+        // No account to name, but the free-text buyer from the sale itself is still worth
+        // snapshotting -- "who this was sold to" should not go blank for a walk-in sale.
+        assertEquals("Javiera", dto.receiverName());
+        assertNull(dto.receiverEmail());
     }
 
     @Test
@@ -194,6 +217,18 @@ class IssueSalesDocumentUseCaseTest {
 
     private Order pendingOrder() {
         return newOrder();
+    }
+
+    private Order paidExternalOrder() {
+        Order created = Order.createExternalSale(
+                "Javiera", "+56911112222",
+                List.of(new OrderItem(UUID.randomUUID(), UUID.randomUUID(), "Vestido lino",
+                        Money.of(new BigDecimal("45990")), 1, null, null)),
+                PaymentMethod.TRANSFER, DeliveryMethod.PICKUP, null,
+                "por IG", SalesChannel.INSTAGRAM, new BigDecimal("19.00"), "k-" + UUID.randomUUID());
+        created.markAsPendingPayment();
+        created.markAsPaid();
+        return created;
     }
 
     private Order newOrder() {

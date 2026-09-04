@@ -5,6 +5,7 @@ import {
   getPaymentByOrder,
   getSalesDocumentsByOrder,
   attachSalesDocumentFile,
+  getNextFolio,
   issueSalesDocument,
   voidSalesDocument,
   reissueSalesDocument,
@@ -40,7 +41,7 @@ const money = new Intl.NumberFormat('es-CL', {
 
 const inputCls =
   'w-full bg-[var(--pe-surface-card)] border border-[var(--pe-border)] rounded-xs px-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-[var(--pe-border)] placeholder:opacity-30 disabled:opacity-50';
-const labelCls = 'text-[10px] tracking-widest uppercase opacity-60';
+const labelCls = 'text-[0.72rem] tracking-widest uppercase opacity-60';
 
 /**
  * Shows a document rather than handing over a link to it.
@@ -358,6 +359,7 @@ interface IssueDocumentFormProps {
   readonly documentType: IssuedDocumentType;
   readonly onDocumentTypeChange: (value: IssuedDocumentType) => void;
   readonly folio: string;
+  readonly folioSuggested: boolean;
   readonly onFolioChange: (value: string) => void;
   readonly receiverRut: string;
   readonly onReceiverRutChange: (value: string) => void;
@@ -377,6 +379,7 @@ function IssueDocumentForm({
   documentType,
   onDocumentTypeChange,
   folio,
+  folioSuggested,
   onFolioChange,
   receiverRut,
   onReceiverRutChange,
@@ -412,6 +415,11 @@ function IssueDocumentForm({
           placeholder="1042"
           inputMode="numeric"
         />
+        {folioSuggested && (
+          <span className="block text-[0.68rem] opacity-50">
+            Sugerido a partir del último folio de este tipo. Puedes cambiarlo.
+          </span>
+        )}
       </label>
       <label className="block space-y-1">
         <span className={labelCls}>
@@ -507,6 +515,10 @@ export default function SaleDetailDrawer({
   const [busy, setBusy] = useState(false);
 
   const [folio, setFolio] = useState('');
+  /** Only true right after the suggestion effect fills the field -- typing over it, or there
+   * being nothing to suggest, both turn this back off. Drives whether the hint under the field
+   * claims to be a suggestion at all. */
+  const [folioSuggested, setFolioSuggested] = useState(false);
   const [documentType, setDocumentType] = useState<IssuedDocumentType>('BOLETA');
   const [receiverRut, setReceiverRut] = useState('');
   const [receiverBusinessName, setReceiverBusinessName] = useState('');
@@ -552,6 +564,32 @@ export default function SaleDetailDrawer({
       cancelled = true;
     };
   }, [sale.orderId, token]);
+
+  /*
+   * Retyping the folio from scratch every time is where a transposed digit lives. Only ever
+   * fills an EMPTY field -- never fires while she's already typed something, and never re-fires
+   * on every keystroke since `folio` itself isn't a dependency here. Boleta and factura draw from
+   * separate SII folio ranges, so it re-suggests whenever documentType changes or the form
+   * reappears (a fresh `mode`).
+   */
+  useEffect(() => {
+    if (loading || !canIssue) return;
+    if (live && mode !== 'reissue') return; // the issue form isn't even shown yet
+    if (folio.trim()) return;
+    let cancelled = false;
+    void getNextFolio(documentType, token).then((next) => {
+      if (cancelled || next == null) return;
+      setFolio((current) => {
+        if (current.trim()) return current;
+        setFolioSuggested(true);
+        return String(next);
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- folio deliberately excluded, see comment above.
+  }, [loading, canIssue, live, mode, documentType, token]);
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   /*
@@ -632,6 +670,7 @@ export default function SaleDetailDrawer({
         setFeedback({ tone: 'success', text: `${documentName} registrada.` });
       }
       setFolio('');
+      setFolioSuggested(false);
       setDocumentType('BOLETA');
       setReceiverRut('');
       setReceiverBusinessName('');
@@ -721,15 +760,24 @@ export default function SaleDetailDrawer({
 
   return (
     <Overlay>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- backdrop click closes the dialog; Escape (native onCancel below) is the keyboard equivalent, not a second handler on this element. */}
       <dialog
         ref={setDialogRef}
         aria-label={`Venta ${sale.publicReference ?? sale.orderId}`}
+        /*
+         * Closing mid-void/mid-issue used to complete the request in the background with nobody
+         * watching: the feedback banner lives on this component, so it vanished with the drawer
+         * and the only way to learn what happened was reopening the row. Blocking every close
+         * path while `busy` means the outcome is guaranteed to still be on screen when it arrives
+         * -- for a boleta anulada or a sale cancelled, that beats recovering after the fact.
+         */
         onCancel={(event) => {
           event.preventDefault();
+          if (busy) return;
           onClose();
         }}
         onClick={(event) => {
-          if (event.target === dialogRef.current) onClose();
+          if (event.target === dialogRef.current && !busy) onClose();
         }}
         className="fixed inset-y-0 right-0 m-0 h-full w-full max-w-[560px] lg:max-w-[1000px] p-0 border-0 flex flex-col bg-[var(--pe-surface-card)] shadow-2xl overflow-y-auto backdrop:bg-black/30 backdrop:backdrop-blur-[2px]"
       >
@@ -742,7 +790,14 @@ export default function SaleDetailDrawer({
               {orderStatusLabel(sale.orderStatus)} · {new Date(sale.createdAt).toLocaleString('es-CL')}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="p-1 hover:opacity-60">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            aria-label="Cerrar"
+            title={busy ? 'Espera a que termine de procesar' : undefined}
+            className="p-1 hover:opacity-60 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
             <X size={18} />
           </button>
         </header>
@@ -962,7 +1017,11 @@ export default function SaleDetailDrawer({
                 documentType={documentType}
                 onDocumentTypeChange={setDocumentType}
                 folio={folio}
-                onFolioChange={setFolio}
+                folioSuggested={folioSuggested}
+                onFolioChange={(value) => {
+                  setFolioSuggested(false);
+                  setFolio(value);
+                }}
                 receiverRut={receiverRut}
                 onReceiverRutChange={setReceiverRut}
                 receiverBusinessName={receiverBusinessName}

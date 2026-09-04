@@ -96,7 +96,12 @@ public class IssueSalesDocumentUseCase {
             throw new DomainException("Folio " + folio + " is already registered");
         }
 
-        Optional<User> buyer = userRepository.findById(order.getCustomerId());
+        // An external sale (V94) has no linked account -- order.getCustomerId() is then null, and
+        // findById(null) throws rather than returning empty. Every boleta issued for an
+        // off-platform sale hit this before the guard existed.
+        Optional<User> buyer = order.getCustomerId() == null
+                ? Optional.empty()
+                : userRepository.findById(order.getCustomerId());
 
         SalesDocument document = SalesDocument.issue(
                 orderId,
@@ -108,7 +113,10 @@ public class IssueSalesDocumentUseCase {
                 receiverRut,
                 receiverBusinessName,
                 receiverBusinessActivity,
-                buyer.map(User::getFullName).orElse(null),
+                // No account to name means no email to send to either, but the free-text buyer
+                // name from the sale itself (V94) is still worth snapshotting onto the document --
+                // "who this was sold to" should not go blank just because it was a walk-in sale.
+                buyer.map(User::getFullName).orElse(order.getBuyerName()),
                 buyer.map(User::getEmail).orElse(null),
                 fileUrl,
                 issuedBy,

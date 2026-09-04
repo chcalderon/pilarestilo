@@ -39,7 +39,7 @@ function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
   const documentable = ['PAID', 'PREPARING_ORDER', 'SHIPPED', 'DELIVERED'].includes(sale.orderStatus);
   if (sale.documentFolio) {
     return (
-      <span className="inline-flex items-center text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-pe-positive-surface text-pe-positive-ink">
+      <span className="inline-flex items-center text-[0.72rem] tracking-wider uppercase px-2 py-0.5 bg-pe-positive-surface text-pe-positive-ink">
         Boleta {sale.documentFolio}
       </span>
     );
@@ -48,7 +48,7 @@ function DocumentChip({ sale }: { readonly sale: SaleSummaryDto }) {
     return <span className="text-[0.7rem] opacity-40">—</span>;
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[0.65rem] tracking-wider uppercase px-2 py-0.5 bg-pe-warning-surface text-pe-warning-ink">
+    <span className="inline-flex items-center gap-1 text-[0.72rem] tracking-wider uppercase px-2 py-0.5 bg-pe-warning-surface text-pe-warning-ink">
       <AlertTriangle size={11} /> Sin boleta
     </span>
   );
@@ -175,7 +175,7 @@ export default function VentasPage() {
           <p className="text-[0.75rem]">{orderStatusLabel(row.orderStatus)}</p>
           <p className="text-[0.68rem] opacity-50">{row.paymentStatus ?? ''}</p>
           {row.paymentGatewayFlag && (
-            <span className="mt-1 inline-flex items-center gap-1 text-[0.62rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-danger-surface text-pe-danger-ink">
+            <span className="mt-1 inline-flex items-center gap-1 text-[0.72rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-danger-surface text-pe-danger-ink">
               <Undo2 size={10} /> {gatewayFlagLabel(row.paymentGatewayFlag)} — revisar
             </span>
           )}

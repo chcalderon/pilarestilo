@@ -33,6 +33,14 @@ public interface SalesDocumentRepository {
     boolean existsByTypeAndFolio(SalesDocumentType type, String folio);
 
     /**
+     * The highest folio this document type has ever used, voided or not — a folio is never
+     * reused once assigned (see the unique index on {@code (document_type, folio)}), so a voided
+     * one still counts toward what "next" means. Empty when the type has never issued a
+     * numeric-looking folio, or none at all.
+     */
+    Optional<String> findMaxNumericFolio(SalesDocumentType type);
+
+    /**
      * Every stored file name a document points at, voided documents included: a voided boleta keeps
      * its file, because that file is the record of what was voided. Feeds the orphan sweep.
      */
