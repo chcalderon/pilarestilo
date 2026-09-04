@@ -9,6 +9,7 @@ import com.pilarestilo.shared.auth.domain.ports.PasswordEncoder;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.user.domain.enums.UserRole;
 import com.pilarestilo.user.domain.events.UserRegistered;
+import com.pilarestilo.shared.domain.DomainException;
 import com.pilarestilo.user.domain.model.User;
 import com.pilarestilo.user.domain.ports.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -52,7 +54,8 @@ class RegisterUseCaseTest {
                 afterCommitPublisher, issueWelcomeDiscountUseCase);
 
         when(userRepository.existsByEmail("camila@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("secret123")).thenReturn("hash");
+        // lenient: the duplicate-email test throws before ever reaching this call.
+        lenient().when(passwordEncoder.encode("secret123")).thenReturn("hash");
         lenient().when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(jwtTokenProvider.generateAccessToken(
@@ -116,6 +119,22 @@ class RegisterUseCaseTest {
 
         verify(jwtTokenProvider).generateAccessToken(any(), any(), any(UserRole.class), anyList(), anyList(), eq(1));
         verify(jwtTokenProvider).generateRefreshToken(any(), eq(1));
+    }
+
+    /**
+     * The duplicate-email check has to compare against the same normalized form
+     * {@link User#create} stores, or a retry under different letter-casing sails past this
+     * friendly check and hits the DB's unique constraint on save instead -- an unhandled 500 in
+     * place of this method's own message.
+     */
+    @Test
+    void rejectsARegistrationWhoseEmailOnlyDiffersByCase() {
+        when(userRepository.existsByEmail("camila@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                useCase.execute("Camila@Example.com", "secret123", "Camila Torres", "127.0.0.1", "Mozilla", false))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("camila@example.com");
     }
 
     /** A coupon that fails to issue must never take the account down with it. */

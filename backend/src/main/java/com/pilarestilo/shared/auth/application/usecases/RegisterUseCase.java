@@ -53,11 +53,18 @@ public class RegisterUseCase {
      */
     public AuthTokenDto execute(String email, String rawPassword, String fullName,
                                 String ipAddress, String userAgent, boolean acceptsMarketing) {
-        if (userRepository.existsByEmail(email)) {
-            throw new DomainException("Email already registered: " + email);
+        /*
+         * Normalized before the duplicate check, not just before the save below: without this, a
+         * retry with different letter-casing than an existing account (autocapitalized on a phone
+         * keyboard, pasted from a signature) sailed past this check and hit the DB's unique
+         * constraint on save instead -- an unhandled 500 in place of this method's own message.
+         */
+        String normalizedEmail = User.normalizeEmail(email);
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new DomainException("Email already registered: " + normalizedEmail);
         }
         String hash = passwordEncoder.encode(rawPassword);
-        User user = User.create(email, fullName, UserRole.CUSTOMER, hash);
+        User user = User.create(normalizedEmail, fullName, UserRole.CUSTOMER, hash);
         User saved = userRepository.save(user);
 
         /*

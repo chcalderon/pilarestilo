@@ -253,6 +253,24 @@ class GoogleLoginUseCaseTest {
         assertThat(existing.getAvatarUrl()).startsWith("/media/users/avatar.jpg?v=");
     }
 
+    /**
+     * Google's own claim is reliably lowercase in practice, but nothing guarantees it, and the
+     * account-merge feature depends entirely on matching an existing password account by email --
+     * a claim that came back "Existente@Pilarestilo.com" must still find the lowercase-stored row.
+     */
+    @Test
+    void mergesAnExistingAccountEvenWhenGoogleReturnsDifferentLetterCasing() throws IOException {
+        var useCase = buildUseCase(validClaims("Existente@Pilarestilo.com", "Existente", ""));
+        User existing = User.create("existente@pilarestilo.com", "Existente", UserRole.CUSTOMER, "some-hash");
+        existing.setAvatarManuallySet(true);
+        when(userRepository.findByEmail("existente@pilarestilo.com")).thenReturn(Optional.of(existing));
+
+        var result = useCase.execute("token");
+
+        assertThat(result.accountMerged()).isTrue();
+        assertThat(result.email()).isEqualTo("existente@pilarestilo.com");
+    }
+
     @Test
     void aBlockedUserCannotLogIn() throws IOException {
         var useCase = buildUseCase(validClaims("blocked@pilarestilo.com", "Blocked", ""));

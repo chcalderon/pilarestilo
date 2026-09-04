@@ -53,7 +53,10 @@ public class GoogleLoginUseCase {
         JsonNode claims = verifyIdToken(idToken);
         validateClaims(claims);
 
-        String email = claims.path("email").asString();
+        /* Normalized the same way User.create stores it -- Google's own claim is reliably
+         * lowercase in practice, but the account-merge below depends on this matching an
+         * existing password account by email, so it is not left to chance. */
+        String email = User.normalizeEmail(claims.path("email").asString());
         String fullName = resolveFullName(claims, email);
         String pictureUrl = claims.path("picture").asString(null);
 

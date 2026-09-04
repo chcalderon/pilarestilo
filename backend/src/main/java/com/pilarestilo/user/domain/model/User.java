@@ -29,6 +29,16 @@ public class User {
 
     private User() {}
 
+    /**
+     * The single normalization every email lookup or write must agree on. {@link #create} always
+     * stores this form, so a caller comparing against the raw value a customer typed -- a login
+     * attempt, a duplicate-registration check -- has to normalize the same way first, or it
+     * compares "Maria@Gmail.com" against the stored "maria@gmail.com" and finds nothing.
+     */
+    public static String normalizeEmail(String rawEmail) {
+        return rawEmail == null ? null : rawEmail.trim().toLowerCase();
+    }
+
     public static User create(String email, String fullName, UserRole role, String passwordHash) {
         return create(email, fullName, null, null, role, passwordHash);
     }
@@ -57,7 +67,7 @@ public class User {
 
         User user = new User();
         user.id = UUID.randomUUID();
-        user.email = email.trim().toLowerCase();
+        user.email = normalizeEmail(email);
         user.fullName = fullName.trim();
         user.phone = normalizePhone(phone);
         user.notificationChannelPreference = normalizeNotificationChannelPreference(notificationChannelPreference);

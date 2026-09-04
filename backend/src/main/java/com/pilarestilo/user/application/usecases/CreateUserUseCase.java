@@ -20,11 +20,15 @@ public class CreateUserUseCase {
 
     @Transactional
     public UserDto execute(String email, String fullName, String role, String passwordHash) {
-        if (userRepository.existsByEmail(email)) {
-            throw new DomainException("Email already in use: " + email);
+        /* Same normalize-before-check as RegisterUseCase -- otherwise an admin creating a staff
+         * account under different letter-casing than an existing one skips this friendly check
+         * and hits the DB's unique constraint on save instead. */
+        String normalizedEmail = User.normalizeEmail(email);
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new DomainException("Email already in use: " + normalizedEmail);
         }
         UserRole userRole = UserRole.valueOf(role);
-        User user = User.create(email, fullName, userRole, passwordHash);
+        User user = User.create(normalizedEmail, fullName, userRole, passwordHash);
         User saved = userRepository.save(user);
         return UserMapper.toDto(saved);
     }
