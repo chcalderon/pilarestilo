@@ -77,6 +77,8 @@ export default function VentasPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [missingOnly, setMissingOnly] = useState(false);
+  const [sortKey, setSortKey] = useState<string | undefined>(undefined);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selected, setSelected] = useState<SaleSummaryDto | null>(null);
   const [registering, setRegistering] = useState(false);
 
@@ -89,7 +91,7 @@ export default function VentasPage() {
     setError(null);
     try {
       const result = await getAdminSales(
-        { q: query, status, missingDocument: missingOnly, page, size: PAGE_SIZE },
+        { q: query, status, missingDocument: missingOnly, page, size: PAGE_SIZE, sortKey, sortDir },
         effectiveToken,
       );
       setRows(result.content);
@@ -101,17 +103,28 @@ export default function VentasPage() {
     } finally {
       setLoading(false);
     }
-  }, [effectiveToken, canReadSales, query, status, missingOnly, page]);
+  }, [effectiveToken, canReadSales, query, status, missingOnly, page, sortKey, sortDir]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  // Filters reset the page: staying on page 4 of a narrower result set shows an empty table and
-  // reads as "no hay ventas".
+  // Filters (and a sort change) reset the page: staying on page 4 of a narrower or reordered
+  // result set shows an empty table and reads as "no hay ventas".
   useEffect(() => {
     setPage(0);
-  }, [query, status, missingOnly]);
+  }, [query, status, missingOnly, sortKey, sortDir]);
+
+  /** Clicking the active column reverses it; clicking a different one starts at descending --
+   * the more useful default for both amount (highest first) and date (most recent first). */
+  function handleSort(key: string) {
+    if (key === sortKey) {
+      setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }
 
   const columns: Column<SaleSummaryDto>[] = [
     {
@@ -141,6 +154,7 @@ export default function VentasPage() {
       key: 'totalAmount',
       header: 'Total',
       width: '120px',
+      sortable: true,
       render: (row) => (
         <div className="tabular-nums">
           <p>{row.totalAmount != null ? money.format(row.totalAmount) : '—'}</p>
@@ -178,6 +192,7 @@ export default function VentasPage() {
       key: 'createdAt',
       header: 'Fecha',
       width: '130px',
+      sortable: true,
       render: (row) => (
         <span className="text-[0.72rem] opacity-70 tabular-nums">
           {new Date(row.createdAt).toLocaleDateString('es-CL', {
@@ -279,6 +294,9 @@ export default function VentasPage() {
         pageSize={PAGE_SIZE}
         total={total}
         onPageChange={setPage}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
         onRowClick={(row) => setSelected(row)}
       />
 

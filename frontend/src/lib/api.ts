@@ -1553,7 +1553,10 @@ export interface SalesDocumentDto {
 }
 
 export async function getAdminSales(
-  params: { q?: string; status?: string; missingDocument?: boolean; page?: number; size?: number },
+  params: {
+    q?: string; status?: string; missingDocument?: boolean; page?: number; size?: number;
+    sortKey?: string; sortDir?: 'asc' | 'desc';
+  },
   token: string,
 ): Promise<Page<SaleSummaryDto>> {
   const query = buildQuery({
@@ -1562,6 +1565,7 @@ export async function getAdminSales(
     missingDocument: params.missingDocument ? true : undefined,
     page: params.page ?? 0,
     size: params.size ?? 20,
+    sort: params.sortKey ? `${params.sortKey},${params.sortDir ?? 'desc'}` : undefined,
   });
   return apiFetch<Page<SaleSummaryDto>>(`/admin/sales${query}`, { headers: authHeaders(token) });
 }
