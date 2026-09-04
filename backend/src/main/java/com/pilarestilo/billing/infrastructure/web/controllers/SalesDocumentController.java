@@ -1,10 +1,12 @@
 package com.pilarestilo.billing.infrastructure.web.controllers;
 
+import com.pilarestilo.billing.application.dto.NextFolioDto;
 import com.pilarestilo.billing.application.dto.SalesDocumentDto;
 import com.pilarestilo.billing.application.usecases.GetSalesDocumentsForOrderUseCase;
 import com.pilarestilo.billing.application.usecases.IssueCreditNoteUseCase;
 import com.pilarestilo.billing.application.usecases.IssueSalesDocumentUseCase;
 import com.pilarestilo.billing.application.usecases.ReissueSalesDocumentUseCase;
+import com.pilarestilo.billing.application.usecases.SuggestNextFolioUseCase;
 import com.pilarestilo.billing.application.usecases.VoidSalesDocumentUseCase;
 import com.pilarestilo.billing.domain.enums.SalesDocumentType;
 import com.pilarestilo.billing.infrastructure.web.requests.IssueCreditNoteRequest;
@@ -33,17 +35,20 @@ public class SalesDocumentController {
     private final ReissueSalesDocumentUseCase reissueSalesDocumentUseCase;
     private final GetSalesDocumentsForOrderUseCase getSalesDocumentsForOrderUseCase;
     private final IssueCreditNoteUseCase issueCreditNoteUseCase;
+    private final SuggestNextFolioUseCase suggestNextFolioUseCase;
 
     public SalesDocumentController(IssueSalesDocumentUseCase issueSalesDocumentUseCase,
                                    VoidSalesDocumentUseCase voidSalesDocumentUseCase,
                                    ReissueSalesDocumentUseCase reissueSalesDocumentUseCase,
                                    GetSalesDocumentsForOrderUseCase getSalesDocumentsForOrderUseCase,
-                                   IssueCreditNoteUseCase issueCreditNoteUseCase) {
+                                   IssueCreditNoteUseCase issueCreditNoteUseCase,
+                                   SuggestNextFolioUseCase suggestNextFolioUseCase) {
         this.issueSalesDocumentUseCase = issueSalesDocumentUseCase;
         this.voidSalesDocumentUseCase = voidSalesDocumentUseCase;
         this.reissueSalesDocumentUseCase = reissueSalesDocumentUseCase;
         this.getSalesDocumentsForOrderUseCase = getSalesDocumentsForOrderUseCase;
         this.issueCreditNoteUseCase = issueCreditNoteUseCase;
+        this.suggestNextFolioUseCase = suggestNextFolioUseCase;
     }
 
     @PostMapping
@@ -110,6 +115,14 @@ public class SalesDocumentController {
     @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).DOCUMENTS_READ)")
     public List<SalesDocumentDto> byOrder(@PathVariable UUID orderId) {
         return getSalesDocumentsForOrderUseCase.execute(orderId);
+    }
+
+    /** A starting point, not a lock: the operator can still type over it. Gated the same as
+     * issuing itself, since it exposes how many of this type have gone out. */
+    @GetMapping("/next-folio")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).DOCUMENTS_ISSUE)")
+    public NextFolioDto nextFolio(@RequestParam String documentType) {
+        return new NextFolioDto(suggestNextFolioUseCase.execute(parseType(documentType)).orElse(null));
     }
 
     private SalesDocumentType parseType(String raw) {

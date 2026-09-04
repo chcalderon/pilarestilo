@@ -29,6 +29,8 @@ const copy = {
   es: {
     heading: 'Datos de envío',
     courier: 'Courier',
+    courierReassigned: (name: string) =>
+      `El courier que habías elegido ya no está disponible. Seleccionamos ${name} en su lugar.`,
     addresses: 'Dirección de entrega',
     noAddresses: 'Todavía no tienes direcciones guardadas. Agrega una para continuar.',
     addAddress: 'Agregar dirección',
@@ -57,6 +59,8 @@ const copy = {
   en: {
     heading: 'Shipping details',
     courier: 'Courier',
+    courierReassigned: (name: string) =>
+      `The courier you had chosen is no longer available. We selected ${name} instead.`,
     addresses: 'Delivery address',
     noAddresses: 'You have no saved addresses yet. Add one to continue.',
     addAddress: 'Add address',
@@ -96,6 +100,46 @@ export function zoneForComuna(zones: ShippingZoneConfig[], comuna: string | null
   const explicit = zones.find((zone) => zone.comunas.some((c) => normalizeComunaName(c) === target));
   if (explicit) return explicit.code;
   return zones.find((zone) => zone.code === 'NACIONAL')?.code ?? null;
+}
+
+/**
+ * The rest of checkout survives a refresh via `checkoutStore`; this form did not -- an
+ * interruption mid-form (a call, a notification, a dropped connection on a phone) lost everything
+ * typed one-handed. sessionStorage rather than the persisted store on purpose: this is an
+ * unsaved-work recovery for the current tab, not a checkout answer worth carrying to a new visit.
+ * Scoped to a brand-new address only -- editing an existing one already has a source of truth (the
+ * saved address itself), so restoring an old edit-in-progress there risks overwriting a change she
+ * made since.
+ */
+const NEW_ADDRESS_DRAFT_KEY = 'pe-checkout-new-address-draft';
+
+function readPersistedNewAddressDraft(): AddressDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(NEW_ADDRESS_DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as AddressDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistNewAddressDraft(draft: AddressDraft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(NEW_ADDRESS_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    /* Storage full or unavailable (private browsing) -- the form still works, just without
+     * recovery, which is the same as before this existed. */
+  }
+}
+
+function clearPersistedNewAddressDraft() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(NEW_ADDRESS_DRAFT_KEY);
+  } catch {
+    /* Nothing to clean up if it never wrote. */
+  }
 }
 
 function normalizeComunaName(value: string): string {
@@ -146,17 +190,29 @@ export default function ShippingStep({
   const cities = useCityOptions(book.regions, draft.regionId);
   const comunas = useComunaOptions(cities, draft.cityId);
 
-  /** Defaults that keep a selection valid when the admin deactivates what was chosen. */
+  /*
+   * Defaults that keep the zone valid when the admin deactivates what was chosen. Silent on
+   * purpose: the zone is never customer-facing (derived from her address, see the effect below),
+   * so there is no field on screen whose value would appear to change underneath her.
+   */
   useEffect(() => {
     if (zones.length && !zones.some((z) => z.code === zoneCode)) {
       onChange({ zoneCode: zones[0].code });
     }
   }, [zones, zoneCode, onChange]);
 
+  /*
+   * The courier IS her own choice, shown in a plain dropdown -- unlike the zone, silently
+   * swapping it used to leave no trace: she would only find out at "Confirmar pedido" that she is
+   * paying a courier she never picked. Only flags an actual reassignment (courierId pointed at a
+   * real, now-gone courier), not the ordinary first-load default when nothing was chosen yet.
+   */
+  const [courierReassignedTo, setCourierReassignedTo] = useState<string | null>(null);
   useEffect(() => {
-    if (couriers.length && !couriers.some((c) => c.id === courierId)) {
-      onChange({ courierId: couriers[0].id });
-    }
+    if (!couriers.length || couriers.some((c) => c.id === courierId)) return;
+    const fallback = couriers[0];
+    if (courierId) setCourierReassignedTo(fallback.name);
+    onChange({ courierId: fallback.id });
   }, [couriers, courierId, onChange]);
 
   /** Preselects the default address so the common case needs no interaction at all. */
@@ -185,6 +241,13 @@ export default function ShippingStep({
     }
   }, [book.addresses, addressId, zones, zoneCode, onChange]);
 
+  /** Persists a new (not editing) address draft on every change while the form is open, so an
+   * interruption doesn't cost her the typing. */
+  useEffect(() => {
+    if (!formOpen || editingId !== null) return;
+    persistNewAddressDraft(draft);
+  }, [draft, formOpen, editingId]);
+
   const selected = useMemo(
     () => book.addresses.find((a) => a.id === addressId) ?? null,
     [book.addresses, addressId]
@@ -192,7 +255,7 @@ export default function ShippingStep({
 
   function openCreate() {
     setEditingId(null);
-    setDraft(emptyAddressDraft());
+    setDraft(readPersistedNewAddressDraft() ?? emptyAddressDraft());
     setErrors({});
     setFormError('');
     setFormOpen(true);
@@ -222,6 +285,7 @@ export default function ShippingStep({
       const savedId = await book.save(draft, editingId);
       onChange({ addressId: savedId });
       if (draft.isDefault) await book.makeDefault(savedId);
+      if (editingId === null) clearPersistedNewAddressDraft();
       setFormOpen(false);
       setContinueError('');
     } catch (e) {
@@ -308,7 +372,7 @@ export default function ShippingStep({
                         {address.label}
                       </span>
                       {address.isDefault && (
-                        <span className="font-sans text-[0.58rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
+                        <span className="font-sans text-[0.72rem] tracking-wider uppercase px-1.5 py-0.5 bg-pe-rose/12 text-pe-rose-ink">
                           {l.defaultBadge}
                         </span>
                       )}
@@ -375,7 +439,10 @@ export default function ShippingStep({
         <select
           id="checkout-courier"
           value={courierId}
-          onChange={(e) => onChange({ courierId: e.target.value })}
+          onChange={(e) => {
+            setCourierReassignedTo(null);
+            onChange({ courierId: e.target.value });
+          }}
           className={inputClass}
         >
           {couriers.map((courier) => (
@@ -384,6 +451,11 @@ export default function ShippingStep({
             </option>
           ))}
         </select>
+        {courierReassignedTo && (
+          <p role="status" className="mt-1.5 font-sans text-[0.72rem] text-pe-warning-ink">
+            {l.courierReassigned(courierReassignedTo)}
+          </p>
+        )}
       </div>
 
       {formOpen && (
@@ -578,7 +650,12 @@ export default function ShippingStep({
             </button>
             <button
               type="button"
-              onClick={() => setFormOpen(false)}
+              onClick={() => {
+                // A deliberate cancel, unlike an interruption, means she does not want this draft
+                // back next time she opens the form.
+                if (editingId === null) clearPersistedNewAddressDraft();
+                setFormOpen(false);
+              }}
               className="min-h-11 px-5 border border-pe-charcoal/25 font-sans text-[0.68rem]
                 tracking-[0.16em] uppercase text-pe-charcoal hover:border-pe-black transition-colors
                 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-pe-rose focus-visible:ring-offset-2"

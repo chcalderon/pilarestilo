@@ -1553,7 +1553,10 @@ export interface SalesDocumentDto {
 }
 
 export async function getAdminSales(
-  params: { q?: string; status?: string; missingDocument?: boolean; page?: number; size?: number },
+  params: {
+    q?: string; status?: string; missingDocument?: boolean; page?: number; size?: number;
+    sortKey?: string; sortDir?: 'asc' | 'desc';
+  },
   token: string,
 ): Promise<Page<SaleSummaryDto>> {
   const query = buildQuery({
@@ -1562,6 +1565,7 @@ export async function getAdminSales(
     missingDocument: params.missingDocument ? true : undefined,
     page: params.page ?? 0,
     size: params.size ?? 20,
+    sort: params.sortKey ? `${params.sortKey},${params.sortDir ?? 'desc'}` : undefined,
   });
   return apiFetch<Page<SaleSummaryDto>>(`/admin/sales${query}`, { headers: authHeaders(token) });
 }
@@ -1597,6 +1601,21 @@ export async function getSalesDocumentsByOrder(orderId: string, token: string): 
     )) ?? [];
   } catch {
     return [];
+  }
+}
+
+/** A starting point, not a lock: the drawer only ever prefills an empty folio field with this,
+ * never overwrites what the operator already typed. Returns null on any failure -- a missed
+ * suggestion just means an empty field, same as before this existed. */
+export async function getNextFolio(documentType: string, token: string): Promise<number | null> {
+  try {
+    const res = await apiFetch<{ nextFolio: number | null }>(
+      `/admin/sales-documents/next-folio${buildQuery({ documentType })}`,
+      { headers: authHeaders(token) },
+    );
+    return res?.nextFolio ?? null;
+  } catch {
+    return null;
   }
 }
 

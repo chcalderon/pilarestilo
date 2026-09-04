@@ -9,12 +9,14 @@ import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -34,6 +36,16 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
      * time somebody passes this a filter. Now there is no concatenation left to reason about.
      */
     private static final String[] DOCUMENTABLE_STATUSES = DocumentableSale.statusNames();
+
+    /**
+     * Whitelisted, not interpolated: the client's sort property name is only ever used as a map
+     * key here, never spliced into the SQL string itself, so an unrecognized or hostile value
+     * simply falls through to the default order rather than reaching the query.
+     */
+    private static final Map<String, String> SORTABLE_COLUMNS = Map.of(
+            "createdAt", "o.created_at",
+            "totalAmount", "o.total_amount"
+    );
 
     /*
      * LEFT JOIN LATERAL for the payment: an order can carry several attempts and only the newest one
@@ -89,8 +101,7 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
                        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id),
                        (SELECT oi2.product_name FROM order_items oi2 WHERE oi2.order_id = o.id
                          ORDER BY oi2.product_name LIMIT 1)
-                """ + BASE_FROM + """
-                ORDER BY o.created_at DESC
+                """ + BASE_FROM + orderByClause(pageable) + """
                 LIMIT :size OFFSET :offset
                 """);
         bind(rowsQuery, like, status, missingOnly);
@@ -107,6 +118,20 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
         Query query = em.createNativeQuery("SELECT COUNT(*) " + BASE_FROM);
         bind(query, null, null, true);
         return ((Number) query.getSingleResult()).longValue();
+    }
+
+    /** The first sort order whose property is on the whitelist wins; a table like this shows one
+     * sort column at a time, matching what `DataTable`'s header click sends. Falls back to the
+     * newest-first order this screen has always used when the request carries none, or none that
+     * resolve to a real column. */
+    private String orderByClause(Pageable pageable) {
+        for (Sort.Order order : pageable.getSort()) {
+            String column = SORTABLE_COLUMNS.get(order.getProperty());
+            if (column != null) {
+                return "ORDER BY " + column + " " + (order.isAscending() ? "ASC" : "DESC") + "\n";
+            }
+        }
+        return "ORDER BY o.created_at DESC\n";
     }
 
     private void bind(Query query, String like, String status, boolean missingOnly) {

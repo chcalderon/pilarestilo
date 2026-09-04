@@ -15,6 +15,7 @@ import type { OrderDto, PaymentDto, SaleSummaryDto, SalesDocumentDto } from '../
 const getOrderById = vi.fn();
 const getPaymentByOrder = vi.fn();
 const getSalesDocumentsByOrder = vi.fn();
+const getNextFolio = vi.fn();
 const issueSalesDocument = vi.fn();
 const voidSalesDocument = vi.fn();
 const reissueSalesDocument = vi.fn();
@@ -31,6 +32,7 @@ vi.mock('../../../lib/api', async () => {
     getOrderById: (...args: unknown[]) => getOrderById(...args),
     getPaymentByOrder: (...args: unknown[]) => getPaymentByOrder(...args),
     getSalesDocumentsByOrder: (...args: unknown[]) => getSalesDocumentsByOrder(...args),
+    getNextFolio: (...args: unknown[]) => getNextFolio(...args),
     issueSalesDocument: (...args: unknown[]) => issueSalesDocument(...args),
     voidSalesDocument: (...args: unknown[]) => voidSalesDocument(...args),
     reissueSalesDocument: (...args: unknown[]) => reissueSalesDocument(...args),
@@ -155,6 +157,7 @@ beforeEach(() => {
   getOrderById.mockResolvedValue(order());
   getPaymentByOrder.mockResolvedValue(payment());
   getSalesDocumentsByOrder.mockResolvedValue([]);
+  getNextFolio.mockResolvedValue(null);
 });
 
 describe('SaleDetailDrawer', () => {
@@ -269,6 +272,30 @@ describe('SaleDetailDrawer', () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
+  it('prefills an empty folio with the suggestion for the selected document type', async () => {
+    getNextFolio.mockResolvedValue(1043);
+    renderDrawer();
+
+    await waitFor(() => expect(screen.getByLabelText(/^folio/i)).toHaveValue('1043'));
+    expect(getNextFolio).toHaveBeenCalledWith('BOLETA', TOKEN);
+    expect(screen.getByText(/sugerido a partir del último folio/i)).toBeInTheDocument();
+  });
+
+  it('never overwrites a folio the operator already started typing', async () => {
+    let resolveNextFolio: (value: number) => void = () => {};
+    getNextFolio.mockReturnValue(new Promise((resolve) => { resolveNextFolio = resolve; }));
+    const user = userEvent.setup();
+    renderDrawer();
+    await screen.findByLabelText(/^folio/i);
+
+    await user.type(screen.getByLabelText(/^folio/i), '2001');
+    resolveNextFolio(9999);
+    await waitFor(() => expect(getNextFolio).toHaveBeenCalled());
+
+    expect(screen.getByLabelText(/^folio/i)).toHaveValue('2001');
+    expect(screen.queryByText(/sugerido a partir del último folio/i)).not.toBeInTheDocument();
+  });
+
   it('requires a reason before confirming a void', async () => {
     getSalesDocumentsByOrder.mockResolvedValue([boleta()]);
     const user = userEvent.setup();
@@ -329,6 +356,36 @@ describe('SaleDetailDrawer', () => {
     const [documentId, payload] = reissueSalesDocument.mock.calls[0];
     expect(documentId).toBe('doc-1');
     expect(payload).toMatchObject({ voidReason: 'Folio mal escrito', folio: '1044' });
+  });
+
+  /**
+   * Closing used to complete the void in the background with nobody watching: the outcome banner
+   * lives on this component, so it unmounted along with the request still in flight and the only
+   * way to learn what happened was reopening the row.
+   */
+  it('blocks closing while a void is in flight, and allows it again once it settles', async () => {
+    getSalesDocumentsByOrder.mockResolvedValue([boleta()]);
+    let resolveVoid: (value: SalesDocumentDto) => void = () => {};
+    voidSalesDocument.mockReturnValue(new Promise((resolve) => { resolveVoid = resolve; }));
+    const user = userEvent.setup();
+    const { onClose } = renderDrawer();
+    await screen.findByText('1042');
+
+    await user.click(screen.getByRole('button', { name: /^anular$/i }));
+    await user.type(screen.getByLabelText(/motivo de la anulaci[oó]n/i), 'Folio equivocado');
+    await user.click(screen.getByRole('button', { name: /confirmar anulaci[oó]n/i }));
+
+    const closeButton = screen.getByRole('button', { name: /^cerrar$/i });
+    expect(closeButton).toBeDisabled();
+    await user.click(closeButton);
+    expect(onClose).not.toHaveBeenCalled();
+
+    resolveVoid(boleta({ status: 'VOIDED' }));
+    await waitFor(() => expect(closeButton).not.toBeDisabled());
+    expect(await screen.findByRole('status')).toHaveTextContent(/anulada/i);
+
+    await user.click(closeButton);
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('lists voided documents in the history section', async () => {

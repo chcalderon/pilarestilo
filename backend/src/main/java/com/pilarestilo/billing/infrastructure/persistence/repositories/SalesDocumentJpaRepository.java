@@ -31,4 +31,15 @@ public interface SalesDocumentJpaRepository extends JpaRepository<SalesDocumentE
 
     @Query("select d.fileUrl from SalesDocumentEntity d where d.fileUrl is not null")
     List<String> findAllFileUrls();
+
+    /** Native: a folio can be typed as anything the operator wants (it's a plain VARCHAR), so the
+     * `~ '^[0-9]+$'` guard keeps a stray non-numeric one from breaking the cast rather than just
+     * being excluded from the max. */
+    @Query(value = """
+            SELECT MAX(CAST(folio AS BIGINT))
+            FROM sales_documents
+            WHERE document_type = :documentType
+              AND folio ~ '^[0-9]+$'
+            """, nativeQuery = true)
+    Long findMaxNumericFolio(String documentType);
 }

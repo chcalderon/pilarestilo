@@ -47,6 +47,10 @@ const ZONES: ShippingZoneConfig[] = [
 ];
 
 const COURIERS: CourierConfig[] = [{ id: 'starken', name: 'Starken', logoUrl: null, active: true }];
+const TWO_COURIERS: CourierConfig[] = [
+  { id: 'starken', name: 'Starken', logoUrl: null, active: true },
+  { id: 'chilexpress', name: 'Chilexpress', logoUrl: null, active: true },
+];
 
 describe('zoneForComuna', () => {
   it('matches a comuna to the zone that lists it', () => {
@@ -93,7 +97,13 @@ function address(overrides: Partial<CustomerAddressDto> = {}): CustomerAddressDt
  * anymore (it is not customer-facing) -- the debug node below is test-only, so the derived
  * value stays observable without adding test hooks to production markup.
  */
-function Harness({ initialZoneCode = '' }: { readonly initialZoneCode?: string }) {
+function Harness({
+  initialZoneCode = '',
+  couriers = COURIERS,
+}: {
+  readonly initialZoneCode?: string;
+  readonly couriers?: CourierConfig[];
+}) {
   const [zoneCode, setZoneCode] = useState(initialZoneCode);
   const [courierId, setCourierId] = useState('');
   const [addressId, setAddressId] = useState('');
@@ -105,7 +115,7 @@ function Harness({ initialZoneCode = '' }: { readonly initialZoneCode?: string }
         locale="es"
         token="tok"
         zones={ZONES}
-        couriers={COURIERS}
+        couriers={couriers}
         zoneCode={zoneCode}
         courierId={courierId}
         addressId={addressId}
@@ -181,5 +191,37 @@ describe('ShippingStep: zone follows the selected address, invisibly', () => {
     await waitFor(() => {
       expect(screen.getByTestId('zone-debug')).toHaveTextContent('NACIONAL');
     });
+  });
+});
+
+describe('ShippingStep: a courier reassignment is never silent', () => {
+  it('does not flag the ordinary first-load default when nothing was chosen yet', async () => {
+    getMyAddresses.mockResolvedValue([]);
+    render(<Harness couriers={TWO_COURIERS} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/courier/i)).toHaveValue('starken');
+    });
+    expect(screen.queryByText(/ya no está disponible/i)).not.toBeInTheDocument();
+  });
+
+  it('tells her when the courier she had picked is removed, and the notice clears once she picks again', async () => {
+    getMyAddresses.mockResolvedValue([]);
+    const { rerender } = render(<Harness couriers={TWO_COURIERS} />);
+    await waitFor(() => {
+      expect(screen.getByLabelText(/courier/i)).toHaveValue('starken');
+    });
+
+    // Starken (her actual choice) is removed from under her -- the admin deactivated it.
+    rerender(<Harness couriers={[{ id: 'chilexpress', name: 'Chilexpress', logoUrl: null, active: true }]} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/courier/i)).toHaveValue('chilexpress');
+    });
+    expect(screen.getByText(/ya no está disponible.*chilexpress/i)).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText(/courier/i), 'chilexpress');
+    expect(screen.queryByText(/ya no está disponible/i)).not.toBeInTheDocument();
   });
 });
