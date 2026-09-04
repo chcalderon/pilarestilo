@@ -56,6 +56,12 @@ public class Order {
     private String buyerContact;
     /** Dedupes a double-submitted external sale. Null for a web order. */
     private String externalIdempotencyKey;
+    /**
+     * Dedupes a double-submitted web checkout (refresh mid-request, a fast double-click racing the
+     * disabled state). Generated client-side once per checkout attempt. Null for an external sale,
+     * which has {@link #externalIdempotencyKey} instead — the two never overlap.
+     */
+    private String idempotencyKey;
     private OrderStatus status;
     private Instant createdAt;
     private Instant updatedAt;
@@ -130,6 +136,24 @@ public class Order {
                                      String publicReference, BigDecimal taxRate,
                                      DeliveryMethod deliveryMethod, String buyerName, String buyerContact,
                                      String externalIdempotencyKey) {
+        return reconstruct(id, customerId, items, subtotal, discountAmount, totalAmount, paymentMethod,
+                shippingZoneCode, shippingCourierId, shippingCourierName, shippingPaymentMode,
+                shippingAddressId, shippingAddressReference, notes, salesChannel, status, createdAt,
+                updatedAt, publicReference, taxRate, deliveryMethod, buyerName, buyerContact,
+                externalIdempotencyKey, null);
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order reconstruct(UUID id, UUID customerId, List<OrderItem> items,
+                                     Money subtotal, Money discountAmount, Money totalAmount,
+                                     PaymentMethod paymentMethod, String shippingZoneCode,
+                                     String shippingCourierId, String shippingCourierName,
+                                     String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                     String notes, SalesChannel salesChannel,
+                                     OrderStatus status, Instant createdAt, Instant updatedAt,
+                                     String publicReference, BigDecimal taxRate,
+                                     DeliveryMethod deliveryMethod, String buyerName, String buyerContact,
+                                     String externalIdempotencyKey, String idempotencyKey) {
         Order order = new Order();
         order.applyTaxRate(totalAmount, taxRate);
         order.id = id;
@@ -156,6 +180,7 @@ public class Order {
         order.buyerName = buyerName;
         order.buyerContact = buyerContact;
         order.externalIdempotencyKey = externalIdempotencyKey;
+        order.idempotencyKey = idempotencyKey;
         order.status = status;
         order.createdAt = createdAt;
         order.updatedAt = updatedAt;
@@ -258,6 +283,20 @@ public class Order {
                 shippingAddressReference, notes, salesChannel, taxRate, DeliveryMethod.SHIPPING);
     }
 
+    /** The web checkout's entry point — the only caller that has an idempotency key to give. */
+    @SuppressWarnings("java:S107")
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel, BigDecimal taxRate,
+                                String idempotencyKey) {
+        return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
+                shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
+                shippingAddressReference, notes, salesChannel, taxRate, DeliveryMethod.SHIPPING,
+                idempotencyKey);
+    }
+
     @SuppressWarnings("java:S107")
     public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
                                 PaymentMethod paymentMethod, String shippingZoneCode,
@@ -265,6 +304,18 @@ public class Order {
                                 String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
                                 String notes, SalesChannel salesChannel, BigDecimal taxRate,
                                 DeliveryMethod deliveryMethod) {
+        return create(customerId, items, discountAmount, paymentMethod, shippingZoneCode,
+                shippingCourierId, shippingCourierName, shippingPaymentMode, shippingAddressId,
+                shippingAddressReference, notes, salesChannel, taxRate, deliveryMethod, null);
+    }
+
+    @SuppressWarnings("java:S107")
+    public static Order create(UUID customerId, List<OrderItem> items, Money discountAmount,
+                                PaymentMethod paymentMethod, String shippingZoneCode,
+                                String shippingCourierId, String shippingCourierName,
+                                String shippingPaymentMode, UUID shippingAddressId, String shippingAddressReference,
+                                String notes, SalesChannel salesChannel, BigDecimal taxRate,
+                                DeliveryMethod deliveryMethod, String idempotencyKey) {
         validateForCreation(customerId, items, paymentMethod, shippingZoneCode, shippingCourierId,
                 shippingCourierName, shippingPaymentMode, shippingAddressId, shippingAddressReference);
 
@@ -297,6 +348,7 @@ public class Order {
         order.notes = notes;
         order.salesChannel = salesChannel != null ? salesChannel : SalesChannel.ECOMMERCE;
         order.deliveryMethod = deliveryMethod != null ? deliveryMethod : DeliveryMethod.SHIPPING;
+        order.idempotencyKey = idempotencyKey;
         order.status = OrderStatus.CREATED;
         order.createdAt = Instant.now();
         order.updatedAt = order.createdAt;
@@ -455,6 +507,7 @@ public class Order {
     public String getBuyerName() { return buyerName; }
     public String getBuyerContact() { return buyerContact; }
     public String getExternalIdempotencyKey() { return externalIdempotencyKey; }
+    public String getIdempotencyKey() { return idempotencyKey; }
     public OrderStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

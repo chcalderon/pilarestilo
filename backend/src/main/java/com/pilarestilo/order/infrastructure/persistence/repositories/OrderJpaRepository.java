@@ -33,6 +33,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     @EntityGraph(attributePaths = "items")
     Optional<OrderEntity> findByExternalIdempotencyKey(String externalIdempotencyKey);
 
+    @EntityGraph(attributePaths = "items")
+    Optional<OrderEntity> findByIdempotencyKey(String idempotencyKey);
+
     /**
      * Orders with their lines already loaded, for callers that map outside a transaction.
      *

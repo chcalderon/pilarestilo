@@ -68,6 +68,24 @@ describe('checkout step machine', () => {
     expect(after.paymentMethod).toBe('TRANSFER');
     expect(after.discountCode).toBe('');
   });
+
+  /*
+   * A refresh mid-request, or a fast double-click racing the submit button's disabled state,
+   * used to create two real orders -- this key is what the backend now dedupes on, so it has
+   * to actually be there and actually change between unrelated attempts.
+   */
+  it('gives every checkout attempt a non-empty idempotency key', () => {
+    expect(useCheckoutStore.getState().idempotencyKey).toBeTruthy();
+  });
+
+  it('reset mints a fresh idempotency key, never reusing a possibly-already-used one', () => {
+    const before = useCheckoutStore.getState().idempotencyKey;
+
+    useCheckoutStore.getState().reset();
+
+    expect(useCheckoutStore.getState().idempotencyKey).toBeTruthy();
+    expect(useCheckoutStore.getState().idempotencyKey).not.toBe(before);
+  });
 });
 
 describe('checkout answers', () => {
@@ -166,6 +184,29 @@ describe('persisted state is treated as untrusted', () => {
     const merge = useCheckoutStore.persist.getOptions().merge!;
     const merged = merge(undefined, useCheckoutStore.getState()) as { step: string };
     expect(merged.step).toBe('shipping');
+  });
+
+  it('keeps the persisted idempotency key across a refresh, so a retry actually dedupes', () => {
+    const merge = useCheckoutStore.persist.getOptions().merge!;
+    const merged = merge(
+      { idempotencyKey: 'attempt-abc-123' },
+      useCheckoutStore.getState()
+    ) as { idempotencyKey: string };
+
+    expect(merged.idempotencyKey).toBe('attempt-abc-123');
+  });
+
+  it('mints a fresh idempotency key when the persisted one is missing or bogus', () => {
+    const merge = useCheckoutStore.persist.getOptions().merge!;
+
+    const missing = merge({}, useCheckoutStore.getState()) as { idempotencyKey: string };
+    expect(missing.idempotencyKey).toBeTruthy();
+
+    const bogus = merge({ idempotencyKey: 42 }, useCheckoutStore.getState()) as unknown as {
+      idempotencyKey: string;
+    };
+    expect(bogus.idempotencyKey).toBeTruthy();
+    expect(bogus.idempotencyKey).not.toBe(42);
   });
 
   /*

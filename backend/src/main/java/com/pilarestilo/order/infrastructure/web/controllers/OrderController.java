@@ -90,7 +90,8 @@ public class OrderController {
                 Money.zero(),
                 currentUser.role() == UserRole.SELLER,
                 request.discountCode(),
-                salesChannel
+                salesChannel,
+                request.idempotencyKey()
         );
 
         OrderDto dto = createOrderUseCase.execute(command);

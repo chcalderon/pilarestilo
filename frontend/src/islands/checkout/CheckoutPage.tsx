@@ -109,6 +109,7 @@ export default function CheckoutPage({ locale }: Props) {
   const setStep = useCheckoutStore((s) => s.setStep);
   const discountCode = useCheckoutStore((s) => s.discountCode);
   const setDiscountCode = useCheckoutStore((s) => s.setDiscountCode);
+  const idempotencyKey = useCheckoutStore((s) => s.idempotencyKey);
   const completeStep = useCheckoutStore((s) => s.completeStep);
   const shippingZoneCode = useCheckoutStore((s) => s.shippingZoneCode);
   const shippingCourierId = useCheckoutStore((s) => s.shippingCourierId);
@@ -340,6 +341,7 @@ export default function CheckoutPage({ locale }: Props) {
           shippingCourierId,
           shippingAddressId,
           discountCode: appliedDiscount?.code,
+          idempotencyKey,
         },
         token
       );

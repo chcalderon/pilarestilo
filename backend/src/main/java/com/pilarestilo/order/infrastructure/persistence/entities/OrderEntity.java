@@ -111,6 +111,9 @@ public class OrderEntity {
     @Column(name = "external_idempotency_key", length = 64)
     private String externalIdempotencyKey;
 
+    @Column(name = "idempotency_key", length = 64)
+    private String idempotencyKey;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status;
@@ -201,6 +204,9 @@ public class OrderEntity {
 
     public String getExternalIdempotencyKey() { return externalIdempotencyKey; }
     public void setExternalIdempotencyKey(String externalIdempotencyKey) { this.externalIdempotencyKey = externalIdempotencyKey; }
+
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }

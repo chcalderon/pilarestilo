@@ -52,6 +52,14 @@ interface CheckoutState {
    * prior use and the usage cap can all change between visits.
    */
   discountCode: string;
+  /**
+   * Minted once per checkout attempt and sent with the order. Dedupes a resubmit -- a refresh
+   * mid-request, or a fast double-click racing the submit button's disabled state -- which used
+   * to create two real orders (double stock reservation, double discount redemption). Persists
+   * through a refresh like the rest of this store; `reset()` mints a fresh one for the next
+   * attempt so a completed order is never handed back for an unrelated later purchase.
+   */
+  idempotencyKey: string;
 
   setStep: (step: CheckoutStep) => void;
   /** Advances only if `step` is the current one, so a stale click cannot skip ahead. */
@@ -93,9 +101,30 @@ function sanitizeText(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+/**
+ * `crypto.randomUUID()` needs a secure context (https, or localhost) -- true for every real
+ * visitor, but not guaranteed for every test/SSR environment this module might load in.
+ */
+function generateIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function sanitizeIdempotencyKey(value: unknown): string {
+  return typeof value === 'string' && value.trim() ? value : generateIdempotencyKey();
+}
+
+/** The fields reset() and the store's initializer both start from -- idempotencyKey is minted
+ * fresh each call, never shared with a previous (possibly already-used) attempt. */
+function initialCheckoutFields(): typeof INITIAL & { idempotencyKey: string } {
+  return { ...INITIAL, idempotencyKey: generateIdempotencyKey() };
+}
+
 /** Persisted state is user-editable, so every field is re-checked on the way in. */
-function sanitizeState(raw: unknown): typeof INITIAL {
-  if (!raw || typeof raw !== 'object') return { ...INITIAL };
+function sanitizeState(raw: unknown): typeof INITIAL & { idempotencyKey: string } {
+  if (!raw || typeof raw !== 'object') return initialCheckoutFields();
   const state = raw as Record<string, unknown>;
   const step = sanitizeStep(state['step']);
   const furthest = sanitizeStep(state['furthestStep']);
@@ -108,13 +137,14 @@ function sanitizeState(raw: unknown): typeof INITIAL {
     shippingAddressId: sanitizeText(state['shippingAddressId']),
     paymentMethod: sanitizeMethod(state['paymentMethod']),
     discountCode: sanitizeText(state['discountCode']),
+    idempotencyKey: sanitizeIdempotencyKey(state['idempotencyKey']),
   };
 }
 
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
     (set, get) => ({
-      ...INITIAL,
+      ...initialCheckoutFields(),
 
       setStep: (step) =>
         set((state) => ({
@@ -145,7 +175,7 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       setDiscountCode: (discountCode) => set({ discountCode }),
 
-      reset: () => set({ ...INITIAL }),
+      reset: () => set({ ...initialCheckoutFields() }),
     }),
     {
       name: 'pe-checkout',
