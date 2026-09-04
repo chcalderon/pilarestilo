@@ -129,4 +129,66 @@ class ProcessPaymentGatewayWebhookUseCaseTest {
 
         assertThrows(NoSuchElementException.class, () -> useCase.executeByOrderId(orderId, "APPROVED"));
     }
+
+    /*
+     * A refund/chargeback notification used to hit resolveStatus's default branch and throw
+     * "Unknown gateway status" -- Mercado Pago retried a few times and gave up, so the order sat
+     * forever showing PAID with no boleta while the money was already back on the customer's
+     * card. Payment.rejectByGateway() refuses an already-APPROVED payment on purpose (an admin
+     * should look before releasing stock on a possibly-disputed chargeback), so a reversal after
+     * approval flags the payment for review instead of trying to force it through that guard.
+     */
+    @Test
+    void refunded_payment_flags_for_review_without_changing_status() {
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
+        payment.confirmByGateway();
+        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(payment.getId(), "refunded");
+
+        assertEquals(PaymentStatus.APPROVED, payment.getStatus());
+        assertEquals("REFUNDED", payment.getGatewayFlag());
+        verify(paymentRepository).save(payment);
+        verify(eventPublisher, never()).publish(any());
+    }
+
+    @Test
+    void charged_back_payment_flags_for_review() {
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
+        payment.confirmByGateway();
+        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(payment.getId(), "charged_back");
+
+        assertEquals("CHARGED_BACK", payment.getGatewayFlag());
+        verify(paymentRepository).save(payment);
+    }
+
+    @Test
+    void repeated_refund_webhook_is_idempotent() {
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
+        payment.confirmByGateway();
+        payment.flagForReview("REFUNDED");
+        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+
+        useCase.execute(payment.getId(), "refunded");
+
+        verify(paymentRepository, never()).save(any());
+    }
+
+    @Test
+    void refund_before_approval_still_flags_for_review() {
+        // A payment can be refunded without ever settling into APPROVED in our system (e.g. the
+        // approval and refund webhooks arrive out of order) -- flagging never depends on status.
+        Payment payment = Payment.create(UUID.randomUUID(), PaymentMethod.WEBPAY);
+        when(paymentRepository.findById(payment.getId())).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(payment.getId(), "refunded");
+
+        assertEquals(PaymentStatus.PENDING, payment.getStatus());
+        assertEquals("REFUNDED", payment.getGatewayFlag());
+    }
 }

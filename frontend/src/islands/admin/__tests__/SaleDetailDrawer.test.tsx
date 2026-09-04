@@ -58,6 +58,7 @@ function sale(overrides: Partial<SaleSummaryDto> = {}): SaleSummaryDto {
     currency: 'CLP',
     paymentMethod: 'TRANSFER',
     paymentStatus: 'APPROVED',
+    paymentGatewayFlag: null,
     documentId: null,
     documentFolio: null,
     itemCount: 1,
@@ -162,6 +163,22 @@ describe('SaleDetailDrawer', () => {
 
     await screen.findByText('Ana Perez');
     expect(screen.getByText(/Blazer/)).toBeInTheDocument();
+  });
+
+  it('warns when the gateway flagged the payment as refunded, and stays quiet otherwise', async () => {
+    getPaymentByOrder.mockResolvedValue(payment({ gatewayFlag: 'REFUNDED', gatewayFlaggedAt: '2026-09-04T12:00:00Z' }));
+    renderDrawer();
+
+    await screen.findByText('Ana Perez');
+    expect(screen.getByText(/reportó un reembolso/i)).toBeInTheDocument();
+  });
+
+  it('does not show the gateway-flag warning when nothing was flagged', async () => {
+    renderDrawer();
+
+    await screen.findByText('Ana Perez');
+    expect(screen.queryByText(/reportó un reembolso/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/reportó un contracargo/i)).not.toBeInTheDocument();
   });
 
   it('shows "no boleta" and lets ADMIN cancel the sale when there is no live document', async () => {

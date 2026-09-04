@@ -55,6 +55,12 @@ public class PaymentEntity {
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
 
+    @Column(name = "gateway_flag", length = 32)
+    private String gatewayFlag;
+
+    @Column(name = "gateway_flagged_at")
+    private Instant gatewayFlaggedAt;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -92,4 +98,9 @@ public class PaymentEntity {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+
+    public String getGatewayFlag() { return gatewayFlag; }
+    public void setGatewayFlag(String gatewayFlag) { this.gatewayFlag = gatewayFlag; }
+    public Instant getGatewayFlaggedAt() { return gatewayFlaggedAt; }
+    public void setGatewayFlaggedAt(Instant gatewayFlaggedAt) { this.gatewayFlaggedAt = gatewayFlaggedAt; }
 }

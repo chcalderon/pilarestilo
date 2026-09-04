@@ -5,6 +5,7 @@ import com.pilarestilo.payment.domain.enums.PaymentStatus;
 import com.pilarestilo.shared.domain.DomainException;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
 
 public class Payment {
@@ -25,6 +26,8 @@ public class Payment {
     private Instant reviewedAt;
     private Instant createdAt;
     private String rejectionReason;
+    private String gatewayFlag;
+    private Instant gatewayFlaggedAt;
 
     private Payment() {}
 
@@ -67,7 +70,8 @@ public class Payment {
                                        String transferBankName,
                                        String transferAccountType,
                                        UUID reviewedBy, Instant reviewedAt, Instant createdAt,
-                                       String rejectionReason) {
+                                       String rejectionReason,
+                                       String gatewayFlag, Instant gatewayFlaggedAt) {
         Payment p = new Payment();
         p.id = id;
         p.orderId = orderId;
@@ -83,6 +87,8 @@ public class Payment {
         p.reviewedAt = reviewedAt;
         p.createdAt = createdAt;
         p.rejectionReason = rejectionReason;
+        p.gatewayFlag = gatewayFlag;
+        p.gatewayFlaggedAt = gatewayFlaggedAt;
         return p;
     }
 
@@ -174,6 +180,29 @@ public class Payment {
         return true;
     }
 
+    /**
+     * A gateway reversal after the money already moved (refund, chargeback) -- deliberately does
+     * not touch {@link #status}. {@code rejectByGateway} refuses an already-APPROVED payment on
+     * purpose (see there); this is the safe alternative that surfaces the reversal for an admin
+     * to act on (typically by cancelling the order, same as any other undone sale) instead of
+     * silently releasing stock or money nobody has looked at yet.
+     *
+     * @return false when this exact reason is already recorded, so a retried webhook does not
+     *         re-save or re-notify.
+     */
+    public boolean flagForReview(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new DomainException("Flag reason is required");
+        }
+        String normalized = reason.trim().toUpperCase(Locale.ROOT);
+        if (normalized.equals(this.gatewayFlag)) {
+            return false;
+        }
+        this.gatewayFlag = normalized;
+        this.gatewayFlaggedAt = Instant.now();
+        return true;
+    }
+
     public void systemCancel(String reason) {
         if (status != PaymentStatus.PENDING) {
             throw new DomainException("Only PENDING payments can be system-cancelled, got " + status);
@@ -201,4 +230,6 @@ public class Payment {
     public Instant getReviewedAt() { return reviewedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public String getRejectionReason() { return rejectionReason; }
+    public String getGatewayFlag() { return gatewayFlag; }
+    public Instant getGatewayFlaggedAt() { return gatewayFlaggedAt; }
 }

@@ -36,6 +36,14 @@ public class ProcessPaymentGatewayWebhookUseCase {
             throw new DomainException("Webhook received for non-gateway payment");
         }
 
+        String reversal = reversalFlag(gatewayStatus);
+        if (reversal != null) {
+            boolean changed = payment.flagForReview(reversal);
+            if (!changed) return;
+            paymentRepository.save(payment);
+            return;
+        }
+
         PaymentStatus resolvedStatus = resolveStatus(gatewayStatus);
         switch (resolvedStatus) {
             case APPROVED -> {
@@ -64,6 +72,23 @@ public class ProcessPaymentGatewayWebhookUseCase {
         var payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Payment not found for order: " + orderId));
         execute(payment.getId(), gatewayStatus);
+    }
+
+    /**
+     * Null for anything that is not a reversal after the money already moved. Mercado Pago's own
+     * status strings for these are lowercase ("refunded", "charged_back"); the returned value is
+     * the normalized flag stored on the payment.
+     */
+    private String reversalFlag(String gatewayStatus) {
+        if (gatewayStatus == null) {
+            return null;
+        }
+        String normalized = gatewayStatus.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "REFUNDED", "PARTIALLY_REFUNDED" -> "REFUNDED";
+            case "CHARGED_BACK" -> "CHARGED_BACK";
+            default -> null;
+        };
     }
 
     private PaymentStatus resolveStatus(String gatewayStatus) {

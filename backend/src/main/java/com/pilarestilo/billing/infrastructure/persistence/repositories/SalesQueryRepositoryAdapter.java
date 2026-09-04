@@ -47,7 +47,7 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
             FROM orders o
             LEFT JOIN users u ON u.id = o.customer_id
             LEFT JOIN LATERAL (
-                SELECT pay.method, pay.status
+                SELECT pay.method, pay.status, pay.gateway_flag
                 FROM payments pay
                 WHERE pay.order_id = o.id
                 ORDER BY pay.created_at DESC
@@ -84,7 +84,7 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
                 SELECT o.id, o.public_reference, o.created_at, o.status,
                        COALESCE(u.full_name, o.buyer_name), COALESCE(u.email, o.buyer_contact),
                        o.total_amount, o.net_amount, o.tax_amount, o.total_currency,
-                       p.method, p.status,
+                       p.method, p.status, p.gateway_flag,
                        d.id, d.folio,
                        (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id),
                        (SELECT oi2.product_name FROM order_items oi2 WHERE oi2.order_id = o.id
@@ -130,10 +130,11 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
                 asString(row[9]),
                 asString(row[10]),
                 asString(row[11]),
-                toUuid(row[12]),
-                asString(row[13]),
-                row[14] == null ? 0 : ((Number) row[14]).intValue(),
-                asString(row[15])
+                asString(row[12]),
+                toUuid(row[13]),
+                asString(row[14]),
+                row[15] == null ? 0 : ((Number) row[15]).intValue(),
+                asString(row[16])
         );
     }
 
