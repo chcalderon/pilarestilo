@@ -306,6 +306,106 @@ class CreateOrderUseCaseTest {
     }
 
     // -----------------------------------------------------------------------
+    // Idempotency key: a refresh mid-request, or a fast double-click racing the frontend's
+    // disabled state, used to reach here twice and create two real orders.
+    // -----------------------------------------------------------------------
+
+    private Order existingOrderWithId(UUID id) {
+        return Order.reconstruct(
+                id,
+                CUSTOMER_ID,
+                List.of(new com.pilarestilo.order.domain.model.OrderItem(
+                        UUID.randomUUID(), PRODUCT_ID, "Test Product", Money.of(BigDecimal.valueOf(15_000)), 1, "Rojo", "M")),
+                Money.of(BigDecimal.valueOf(15_000)),
+                Money.zero(),
+                Money.of(BigDecimal.valueOf(15_000)),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                "Starken",
+                "POR_PAGAR",
+                ADDRESS_ID,
+                "Test User | +56912345678 | Av. Ejemplo 100, Los Andes, Los Andes, Valparaíso",
+                null,
+                com.pilarestilo.order.domain.enums.OrderStatus.PENDING_PAYMENT,
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    @Test
+    void createOrder_withIdempotencyKey_returnsTheExistingOrder_touchesNothingElse() {
+        Order existing = existingOrderWithId(UUID.randomUUID());
+        when(orderRepository.findByIdempotencyKey("checkout-key-1")).thenReturn(Optional.of(existing));
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                Money.zero(),
+                false,
+                null,
+                com.pilarestilo.order.domain.enums.SalesChannel.ECOMMERCE,
+                "checkout-key-1"
+        );
+
+        OrderDto result = useCase.execute(command);
+
+        assertThat(result.id()).isEqualTo(existing.getId());
+        // A replay must not touch stock, discounts, persistence, or events a second time.
+        verifyNoInteractions(inventoryService, productRepository, discountRedemptionService, eventPublisher);
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void createOrder_withUnusedIdempotencyKey_createsNormallyAndStampsIt() {
+        // Wired manually (not stubHappyPath) so there is no duplicate save stub once the
+        // captor below re-stubs it.
+        when(systemSettingsRepository.get()).thenReturn(defaultSettings());
+        when(productRepository.findById(PRODUCT_ID))
+                .thenReturn(Optional.of(productWithPrice(PRODUCT_ID, BigDecimal.valueOf(15_000))));
+        when(customerAddressBookService.resolveOwnedAddress(CUSTOMER_ID, ADDRESS_ID))
+                .thenReturn(defaultAddress());
+        when(orderRepository.findByIdempotencyKey("checkout-key-2")).thenReturn(Optional.empty());
+
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        when(orderRepository.save(saved.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateOrderCommand command = new CreateOrderCommand(
+                CUSTOMER_ID,
+                List.of(new CreateOrderCommand.OrderItemCommand(PRODUCT_ID, 1, "Rojo", "M")),
+                PaymentMethod.TRANSFER,
+                "LOCAL",
+                "starken",
+                ADDRESS_ID,
+                null,
+                Money.zero(),
+                false,
+                null,
+                com.pilarestilo.order.domain.enums.SalesChannel.ECOMMERCE,
+                "checkout-key-2"
+        );
+
+        useCase.execute(command);
+
+        assertThat(saved.getValue().getIdempotencyKey()).isEqualTo("checkout-key-2");
+        verify(inventoryService).reserve(eq(PRODUCT_ID), eq(1), eq("Rojo"), eq("M"), any());
+    }
+
+    @Test
+    void createOrder_withoutIdempotencyKey_skipsTheLookup() {
+        stubHappyPath(defaultSettings());
+
+        useCase.execute(basicTransferCommand());
+
+        verify(orderRepository, never()).findByIdempotencyKey(any());
+    }
+
+    // -----------------------------------------------------------------------
     // Test 5: payment method disabled → DomainException
     // -----------------------------------------------------------------------
 

@@ -18,7 +18,10 @@ public record CreateOrderCommand(
         Money discountAmount,
         boolean employeeDiscountEligible,
         String discountCode,
-        SalesChannel salesChannel
+        SalesChannel salesChannel,
+        /** Dedupes a double-submitted web checkout. Null skips the check (an older caller, or a
+         * request that genuinely has none). */
+        String idempotencyKey
 ) {
     public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
                                PaymentMethod paymentMethod,
@@ -38,7 +41,8 @@ public record CreateOrderCommand(
                 discountAmount,
                 employeeDiscountEligible,
                 null,
-                SalesChannel.ECOMMERCE
+                SalesChannel.ECOMMERCE,
+                null
         );
     }
 
@@ -61,7 +65,32 @@ public record CreateOrderCommand(
                 discountAmount,
                 employeeDiscountEligible,
                 discountCode,
-                SalesChannel.ECOMMERCE
+                SalesChannel.ECOMMERCE,
+                null
+        );
+    }
+
+    public CreateOrderCommand(UUID customerId, List<OrderItemCommand> items,
+                               PaymentMethod paymentMethod,
+                               String shippingZoneCode,
+                               String shippingCourierId,
+                               UUID shippingAddressId,
+                               String notes,
+                               Money discountAmount, boolean employeeDiscountEligible,
+                               String discountCode, SalesChannel salesChannel) {
+        this(
+                customerId,
+                items,
+                paymentMethod,
+                shippingZoneCode,
+                shippingCourierId,
+                shippingAddressId,
+                notes,
+                discountAmount,
+                employeeDiscountEligible,
+                discountCode,
+                salesChannel,
+                null
         );
     }
 

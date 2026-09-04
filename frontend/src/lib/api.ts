@@ -534,6 +534,8 @@ export interface CreateOrderRequest {
   shippingAddressId: string;
   notes?: string;
   discountCode?: string;
+  /** Dedupes a resubmit (refresh mid-request, a fast double-click). See checkoutStore.ts. */
+  idempotencyKey?: string;
 }
 
 export interface CustomerAddressDto {

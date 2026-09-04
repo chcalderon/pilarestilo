@@ -31,5 +31,9 @@ public record CreateOrderRequest(
 
         String discountCode,
 
-        String salesChannel
+        String salesChannel,
+
+        /** Client-generated, one per checkout attempt. Dedupes a resubmit (refresh mid-request, a
+         * fast double-click). Optional -- a missing key just skips the dedup check. */
+        String idempotencyKey
 ) {}

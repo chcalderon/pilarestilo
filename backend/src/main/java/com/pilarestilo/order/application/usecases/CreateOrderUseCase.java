@@ -68,6 +68,21 @@ public class CreateOrderUseCase {
 
     @Transactional
     public OrderDto execute(CreateOrderCommand command) {
+        /*
+         * A refresh mid-request, or a fast double-click racing the frontend's disabled state,
+         * used to reach here twice and create two real orders -- reserving stock and redeeming a
+         * discount code both times. The key is minted client-side once per checkout attempt and
+         * survives a refresh (it lives in the same store as the rest of the checkout state), so a
+         * retry lands here with the same key and gets the order that already exists back instead
+         * of a second one.
+         */
+        if (command.idempotencyKey() != null && !command.idempotencyKey().isBlank()) {
+            var existing = orderRepository.findByIdempotencyKey(command.idempotencyKey());
+            if (existing.isPresent()) {
+                return OrderMapper.toDto(existing.get());
+            }
+        }
+
         var settings = systemSettingsRepository.get();
         validatePaymentMethodEnabled(command.paymentMethod(), settings);
         ResolvedShippingSelection shippingSelection = resolveShippingSelection(command, settings);
@@ -126,7 +141,8 @@ public class CreateOrderUseCase {
                 command.salesChannel(),
                 // Snapshotted onto the order, not read back from settings later: a boleta issued
                 // next year has to report the rate this sale was made under.
-                settings.getTax().vatRate()
+                settings.getTax().vatRate(),
+                command.idempotencyKey()
         );
 
         /*

@@ -47,6 +47,14 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
+    public Optional<Order> findByIdempotencyKey(String key) {
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        return jpaRepository.findByIdempotencyKey(key).map(this::toDomain);
+    }
+
+    @Override
     public List<Order> findAllByIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();
@@ -93,6 +101,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
         entity.setBuyerName(order.getBuyerName());
         entity.setBuyerContact(order.getBuyerContact());
         entity.setExternalIdempotencyKey(order.getExternalIdempotencyKey());
+        entity.setIdempotencyKey(order.getIdempotencyKey());
         entity.setStatus(order.getStatus());
         entity.setCreatedAt(order.getCreatedAt());
         entity.setUpdatedAt(order.getUpdatedAt());
@@ -152,7 +161,8 @@ public class OrderRepositoryAdapter implements OrderRepository {
                 entity.getDeliveryMethod(),
                 entity.getBuyerName(),
                 entity.getBuyerContact(),
-                entity.getExternalIdempotencyKey()
+                entity.getExternalIdempotencyKey(),
+                entity.getIdempotencyKey()
         );
         order.recordDiscountProvenance(entity.getDiscountId(), entity.getDiscountCode());
         return order;
