@@ -109,7 +109,7 @@ function PaymentsAwaitingCard({ count }: { readonly count: number }) {
 const QUICK_ACTIONS: Record<string, Array<{ href: string; label: string; sub: string }>> = {
   ADMIN: [
     { href: '/admin/products', label: 'Gestionar productos', sub: 'Crear, editar, eliminar' },
-    { href: '/admin/publicaciones', label: 'Publicaciones IA', sub: 'Lotes, assets y campañas n8n' },
+    { href: '/admin/fichas-ia', label: 'Fichas con IA', sub: 'Lotes y assets de producto con IA' },
     { href: '/admin/categories', label: 'Gestionar categorías', sub: 'Árbol de navegación' },
     { href: '/admin/reviews', label: 'Moderar reseñas', sub: 'Aprobar o rechazar' },
     { href: '/admin/payments', label: 'Revisar pagos', sub: 'Aprobar comprobantes' },
