@@ -38,7 +38,7 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
             // message converter is registered for — read the raw string and parse it directly.
             String raw = client.post()
                     .uri("/{pageId}/photos?url={imageUrl}&caption={caption}&access_token={token}",
-                            config.facebookPageId(), payload.mediaUrl(), payload.fullCaptionText(),
+                            config.facebookPageId(), payload.mediaUrls().get(0), payload.fullCaptionText(),
                             config.facebookPageAccessToken())
                     .retrieve()
                     .body(String.class);

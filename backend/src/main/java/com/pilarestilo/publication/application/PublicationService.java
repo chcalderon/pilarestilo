@@ -467,7 +467,9 @@ public class PublicationService {
                 entity.getChannelType(),
                 entity.getCaption(),
                 readHashtags(entity.getHashtagsJson()),
-                bundle == null ? null : bundle.getPrimaryAssetUrl()
+                bundle == null || bundle.getPrimaryAssetUrl() == null
+                        ? List.of()
+                        : List.of(bundle.getPrimaryAssetUrl())
         );
     }
 

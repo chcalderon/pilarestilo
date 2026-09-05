@@ -53,7 +53,7 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         try {
             JsonNode created = postJson(client,
                     "/{userId}/media?image_url={imageUrl}&caption={caption}&access_token={token}",
-                    config.instagramUserId(), payload.mediaUrl(), payload.fullCaptionText(), config.instagramAccessToken());
+                    config.instagramUserId(), payload.mediaUrls().get(0), payload.fullCaptionText(), config.instagramAccessToken());
             String creationId = created.hasNonNull("id") ? created.get("id").asString() : null;
             if (creationId == null) {
                 return failed("Instagram did not return a media container id");

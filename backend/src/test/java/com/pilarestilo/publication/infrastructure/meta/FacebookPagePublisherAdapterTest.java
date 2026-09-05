@@ -23,7 +23,7 @@ class FacebookPagePublisherAdapterTest {
 
     private final PublicationDispatchPayload payload = new PublicationDispatchPayload(
             UUID.randomUUID(), PublicationPlatform.FACEBOOK, PublicationChannelType.FEED_POST,
-            "Chaqueta a solo $49.990", List.of("#pilarestilo"), "https://cdn.example.com/chaqueta.jpg"
+            "Chaqueta a solo $49.990", List.of("#pilarestilo"), List.of("https://cdn.example.com/chaqueta.jpg")
     );
 
     @Test
