@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -63,11 +64,17 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Product> findById(UUID id) {
+        // Read-only tx: toDomain() walks lazy associations (variant template field config,
+        // categories), so the session must stay open through the mapping — otherwise a
+        // non-transactional caller (e.g. PublishProductsBatchUseCase) hits a
+        // LazyInitializationException on any product that has a variant template.
         return jpaRepository.findById(id).map(this::toDomain);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Product> findAllByIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();
