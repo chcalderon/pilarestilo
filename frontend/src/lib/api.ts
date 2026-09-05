@@ -1523,6 +1523,8 @@ export interface PublishProductsBatchRequest {
   imageOverrides?: Record<string, string>;
   /** productId -> chosen variant, used to resolve the {color}/{talla}/{cantidad} caption tokens. */
   variantSelections?: Record<string, { color: string; size: string }>;
+  /** ISO-8601 instant. When set, the batch is scheduled instead of published now. */
+  scheduledAt?: string;
 }
 
 export interface PublishProductsBatchItemResult {
@@ -1531,6 +1533,7 @@ export interface PublishProductsBatchItemResult {
   success: boolean;
   publicationId: string | null;
   errorMessage: string | null;
+  scheduled: boolean;
 }
 
 export interface PublishProductsBatchResponse {
@@ -1569,6 +1572,7 @@ export interface PublicationBatchSummary {
   failed: number;
   scheduled: number;
   pending: number;
+  scheduledAt: string | null;
 }
 
 export interface PublicationBatchDetailRow {
@@ -1591,6 +1595,7 @@ export interface PublicationBatchDetail {
   createdAt: string;
   productIds: string[];
   rows: PublicationBatchDetailRow[];
+  scheduledAt: string | null;
 }
 
 /** Past publish batches, newest first — the "Historial" tab list. */
@@ -1618,6 +1623,36 @@ export async function retryBatchFailed(batchId: string, token: string): Promise<
 export async function retryPublication(publicationId: string, token: string): Promise<unknown> {
   return apiFetch<unknown>(`/admin/publications/${encodeURIComponent(publicationId)}/retry`, {
     method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+/** Cancel a scheduled batch: its SCHEDULED rows become CANCELLED. */
+export async function cancelBatch(batchId: string, token: string): Promise<PublicationBatchDetail> {
+  return apiFetch<PublicationBatchDetail>(`/admin/publications/batches/${encodeURIComponent(batchId)}/cancel`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+/** Move a scheduled batch to a new time (SCHEDULED rows only). */
+export async function rescheduleBatch(batchId: string, scheduledAt: string, token: string): Promise<PublicationBatchDetail> {
+  return apiFetch<PublicationBatchDetail>(`/admin/publications/batches/${encodeURIComponent(batchId)}/reschedule`, {
+    method: 'POST',
+    body: JSON.stringify({ scheduledAt }),
+    headers: authHeaders(token),
+  });
+}
+
+/** Replace the content of a scheduled batch (products/caption/hashtags/time). */
+export async function updateScheduledBatch(
+  batchId: string,
+  body: PublishProductsBatchRequest,
+  token: string,
+): Promise<PublicationBatchDetail> {
+  return apiFetch<PublicationBatchDetail>(`/admin/publications/batches/${encodeURIComponent(batchId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
     headers: authHeaders(token),
   });
 }
