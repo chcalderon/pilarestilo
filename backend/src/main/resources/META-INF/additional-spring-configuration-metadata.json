@@ -97,6 +97,9 @@
       "name": "app.social-publishing.meta"
     },
     {
+      "name": "app.social-publishing.schedule"
+    },
+    {
       "name": "app.system-settings",
       "type": "java.lang.Object",
       "description": "Encryption of secrets stored in system_settings."
@@ -421,6 +424,16 @@
     {
       "name": "app.social-publishing.meta.public-media-base-url",
       "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.schedule.cron",
+      "type": "java.lang.String",
+      "description": "Cron for the scheduled-publication job. Default: every minute."
+    },
+    {
+      "name": "app.social-publishing.schedule.max-lateness-minutes",
+      "type": "java.lang.Long",
+      "description": "A SCHEDULED publication more than this many minutes overdue is failed instead of published."
     },
     {
       "name": "app.system-settings.crypto-secret",

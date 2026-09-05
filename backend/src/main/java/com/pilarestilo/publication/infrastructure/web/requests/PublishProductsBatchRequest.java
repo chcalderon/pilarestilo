@@ -17,7 +17,9 @@ public record PublishProductsBatchRequest(
          *  can't be UUIDs directly). */
         Map<String, String> imageOverrides,
         /** Per-product chosen variant, keyed by productId (as a string, same reason as above). */
-        Map<String, VariantSelectionRequest> variantSelections
+        Map<String, VariantSelectionRequest> variantSelections,
+        /** ISO-8601 instant. When set, the batch is scheduled instead of published now. */
+        String scheduledAt
 ) {
     public record VariantSelectionRequest(String color, String size) {}
 }

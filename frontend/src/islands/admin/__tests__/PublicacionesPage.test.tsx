@@ -1,232 +1,77 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import PublicacionesPage from '../PublicacionesPage';
-import {
-  searchProducts,
-  publishProductsBatch,
-  uploadMediaFile,
-  getProductPublicationImageHistory,
-} from '../../../lib/api';
+import { getPublicationBatches, getPublicationBatchDetail } from '../../../lib/api';
 
 vi.mock('../../../lib/api', () => ({
-  searchProducts: vi.fn(),
+  getPublicationBatches: vi.fn().mockResolvedValue([]),
+  getPublicationBatchDetail: vi.fn(),
+  retryBatchFailed: vi.fn(),
+  retryPublication: vi.fn(),
+  cancelBatch: vi.fn(),
+  rescheduleBatch: vi.fn(),
+  updateScheduledBatch: vi.fn(),
+  searchProducts: vi.fn().mockResolvedValue({ content: [], totalElements: 0, totalPages: 0, size: 24, number: 0 }),
   publishProductsBatch: vi.fn(),
   uploadMediaFile: vi.fn(),
-  getProductPublicationImageHistory: vi.fn(),
+  getProduct: vi.fn(),
+  getProductPublicationImageHistory: vi.fn().mockResolvedValue([]),
 }));
-
 vi.mock('../../../lib/authStore', () => ({
   useAuthStore: () => ({ token: 't' }),
   readAuthTokenCookie: () => 't',
 }));
 
 beforeEach(() => {
-  vi.mocked(searchProducts).mockResolvedValue({
-    content: [
-      {
-        id: 'p1',
-        name: 'Chaqueta',
-        price: { amount: 49990, currency: 'CLP' },
-        imageUrl: 'https://img/chaqueta.jpg',
-      } as never,
-    ],
-    totalElements: 1,
-    totalPages: 1,
-    size: 24,
-    number: 0,
-  } as never);
-  vi.mocked(publishProductsBatch).mockResolvedValue({
-    items: [
-      { productId: 'p1', platform: 'INSTAGRAM', success: true, publicationId: 'pub-1', errorMessage: null },
-      { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: null, errorMessage: 'Credenciales no configuradas' },
-    ],
-  } as never);
-  vi.mocked(getProductPublicationImageHistory).mockResolvedValue([]);
-  vi.mocked(uploadMediaFile).mockResolvedValue('https://img/edited.jpg');
+  window.history.replaceState({}, '', '/admin/publicaciones');
+  vi.mocked(getPublicationBatches).mockResolvedValue([]);
 });
 
-async function selectTheProduct(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByPlaceholderText(/buscar producto/i), 'cha');
-  const hit = await screen.findByRole('button', { name: /chaqueta/i });
-  await user.click(hit);
-}
-
-const productWithVariants = {
-  id: 'p2',
-  name: 'Zapatos',
-  price: { amount: 29990, currency: 'CLP' },
-  imageUrl: 'https://img/zapatos.jpg',
-  variants: [
-    { color: 'Negro', size: '38', stock: 5, stockOnHand: 5, stockReserved: 1, stockAvailable: 4 },
-    { color: 'Negro', size: '39', stock: 3, stockOnHand: 3, stockReserved: 0, stockAvailable: 3 },
-    { color: 'Blanco', size: '38', stock: 2, stockOnHand: 2, stockReserved: 0, stockAvailable: 2 },
-  ],
-} as never;
-
-async function selectZapatos(user: ReturnType<typeof userEvent.setup>) {
-  vi.mocked(searchProducts).mockResolvedValue({
-    content: [productWithVariants],
-    totalElements: 1,
-    totalPages: 1,
-    size: 24,
-    number: 0,
-  } as never);
-  await user.type(screen.getByPlaceholderText(/buscar producto/i), 'zap');
-  const hit = await screen.findByRole('button', { name: /zapatos/i });
-  await user.click(hit);
-}
-
-function setCaptionTemplate(text: string) {
-  // userEvent.type treats { and } as special-key syntax; fireEvent.change sets the raw value
-  // directly and sidesteps that entirely.
-  fireEvent.change(screen.getByLabelText(/plantilla/i), { target: { value: text } });
-}
-
-describe('PublicacionesPage', () => {
-  it('interpolates the caption template in the preview', async () => {
-    const user = userEvent.setup();
+describe('PublicacionesPage shell', () => {
+  it('shows the Publicar tab by default', () => {
     render(<PublicacionesPage />);
-    await selectTheProduct(user);
-
-    expect(await screen.findByText(/chaqueta a solo \$49\.990/i)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /publicar/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByPlaceholderText(/buscar producto/i)).toBeInTheDocument();
   });
 
-  it('publishes the batch and renders a mixed result', async () => {
+  it('switches to Historial and writes ?tab=historial', async () => {
     const user = userEvent.setup();
     render(<PublicacionesPage />);
-    await selectTheProduct(user);
-
-    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-
-    await waitFor(() => expect(publishProductsBatch).toHaveBeenCalled());
-    expect(await screen.findByText(/credenciales no configuradas/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /historial/i }));
+    expect(screen.getByRole('tab', { name: /historial/i })).toHaveAttribute('aria-selected', 'true');
+    expect(new URLSearchParams(window.location.search).get('tab')).toBe('historial');
   });
 
-  it('disables the publish button until a product is selected', () => {
+  it('opens on Historial when the URL says so', () => {
+    window.history.replaceState({}, '', '/admin/publicaciones?tab=historial');
     render(<PublicacionesPage />);
-    expect(screen.getByRole('button', { name: /publicar ahora/i })).toBeDisabled();
+    expect(screen.getByRole('tab', { name: /historial/i })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('shows the catalog on focus, before typing anything', async () => {
+  it('editing a scheduled batch from Historial opens Publicar in edit mode', async () => {
+    const scheduled = {
+      batchId: 'bs', campaignLabel: 'Prog', createdAt: new Date().toISOString(),
+      platforms: ['INSTAGRAM'], total: 1, published: 0, failed: 0, scheduled: 1, pending: 0,
+      scheduledAt: '2027-06-15T14:00:00.000Z',
+    };
+    vi.mocked(getPublicationBatches).mockResolvedValue([scheduled] as never);
+    vi.mocked(getPublicationBatchDetail).mockResolvedValue({
+      batchId: 'bs', campaignLabel: 'Prog', captionTemplate: '{producto}', hashtags: [],
+      createdAt: scheduled.createdAt, productIds: [], scheduledAt: '2027-06-15T14:00:00.000Z',
+      rows: [{ publicationId: 'p', productId: null, productName: 'X', thumbnailUrl: null,
+        platform: 'INSTAGRAM', status: 'SCHEDULED', externalPermalink: null,
+        lastErrorCode: null, lastErrorMessage: null }],
+    } as never);
+
     const user = userEvent.setup();
+    window.history.replaceState({}, '', '/admin/publicaciones?tab=historial');
     render(<PublicacionesPage />);
+    await user.click(await screen.findByRole('button', { name: /prog/i }));
+    await user.click(await screen.findByRole('button', { name: /^editar$/i }));
 
-    expect(screen.queryByRole('button', { name: /chaqueta/i })).not.toBeInTheDocument();
-    await user.click(screen.getByPlaceholderText(/buscar producto/i));
-
-    expect(await screen.findByRole('button', { name: /chaqueta/i })).toBeInTheDocument();
-    expect(searchProducts).toHaveBeenCalledWith({ q: '', page: 0, size: 24 }, 0, 24);
-  });
-
-  it('shows a chosen product as a chip right under the search box', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectTheProduct(user);
-
-    expect(screen.getByText('1 producto(s) elegido(s)')).toBeInTheDocument();
-    const chip = screen.getByRole('button', { name: /quitar chaqueta/i });
-    expect(chip).toBeInTheDocument();
-
-    await user.click(chip);
-    expect(screen.queryByText(/producto\(s\) elegido/i)).not.toBeInTheDocument();
-  });
-
-  it('hides the catalog list once focus leaves the search area, keeping the chip', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectTheProduct(user);
-    expect(screen.getByText('Elegido')).toBeInTheDocument();
-
-    await user.click(screen.getByText('Instagram'));
-
-    expect(screen.queryByText('Elegido')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /quitar chaqueta/i })).toBeInTheDocument();
-  });
-
-  it('uploads an edited photo and sends it as the override for that product', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectTheProduct(user);
-
-    const file = new File(['fake'], 'edited.jpg', { type: 'image/jpeg' });
-    const input = screen.getByLabelText(/subir foto editada/i);
-    await user.upload(input, file);
-
-    await waitFor(() => expect(uploadMediaFile).toHaveBeenCalledWith(file, 'publications', 't'));
-    expect(await screen.findByText(/reemplazar foto editada/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-    await waitFor(() =>
-      expect(publishProductsBatch).toHaveBeenCalledWith(
-        expect.objectContaining({ imageOverrides: { p1: 'https://img/edited.jpg' } }),
-        't',
-      ),
-    );
-  });
-
-  it('auto-picks a variant with stock and fills {color}/{talla}/{cantidad} in the preview', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectZapatos(user);
-    setCaptionTemplate('{color} {talla} quedan {cantidad}');
-
-    expect(await screen.findByText(/Negro 38 quedan 4/)).toBeInTheDocument();
-  });
-
-  it('lets you change talla, and re-picks talla when color changes to one that lacks it', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectZapatos(user);
-    setCaptionTemplate('{color} {talla} quedan {cantidad}');
-    await screen.findByText(/Negro 38 quedan 4/);
-
-    await user.selectOptions(screen.getByLabelText(/^talla$/i), '39');
-    expect(await screen.findByText(/Negro 39 quedan 3/)).toBeInTheDocument();
-
-    await user.selectOptions(screen.getByLabelText(/^color$/i), 'Blanco');
-    expect(await screen.findByText(/Blanco 38 quedan 2/)).toBeInTheDocument();
-  });
-
-  it('warns when the template uses a variant token but the product has no variants', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectTheProduct(user);
-    setCaptionTemplate('{producto} talla {talla}');
-
-    expect(await screen.findByText(/sin variante/i)).toBeInTheDocument();
-  });
-
-  it('sends the chosen variant in the publish payload', async () => {
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectZapatos(user);
-
-    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-    await waitFor(() =>
-      expect(publishProductsBatch).toHaveBeenCalledWith(
-        expect.objectContaining({ variantSelections: { p2: { color: 'Negro', size: '38' } } }),
-        't',
-      ),
-    );
-  });
-
-  it('offers previously used photos for the product and reuses one on click', async () => {
-    vi.mocked(getProductPublicationImageHistory).mockResolvedValue(['https://img/old-edit.jpg']);
-    const user = userEvent.setup();
-    render(<PublicacionesPage />);
-    await selectTheProduct(user);
-
-    const reuseButton = await screen.findByRole('button', { name: /reusar esta foto/i });
-    await user.click(reuseButton);
-
-    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-    await waitFor(() =>
-      expect(publishProductsBatch).toHaveBeenCalledWith(
-        expect.objectContaining({ imageOverrides: { p1: 'https://img/old-edit.jpg' } }),
-        't',
-      ),
-    );
+    expect(new URLSearchParams(window.location.search).get('tab')).toBe('publicar');
+    expect(await screen.findByRole('button', { name: /guardar cambios/i })).toBeInTheDocument();
   });
 });

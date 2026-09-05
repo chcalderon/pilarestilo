@@ -23,7 +23,8 @@ public record CreatePublicationCommand(
         boolean approvalRequired,
         Instant scheduledAt,
         String idempotencyKey,
-        List<MediaBundleCommand> mediaBundles
+        List<MediaBundleCommand> mediaBundles,
+        UUID batchId
 ) {
     public record MediaBundleCommand(
             PublicationMediaBundleType bundleType,

@@ -14,6 +14,7 @@ public interface PublicationDispatcher {
             PublicationAttemptStatus status,
             String remotePostId,
             String errorCode,
-            String errorMessage
+            String errorMessage,
+            String remotePermalink
     ) {}
 }

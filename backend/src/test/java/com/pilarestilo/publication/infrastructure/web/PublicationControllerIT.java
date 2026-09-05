@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -63,6 +64,9 @@ class PublicationControllerIT {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    com.pilarestilo.publication.application.usecases.PublishDueScheduledPublicationsUseCase publishDueScheduledPublicationsUseCase;
 
     @Test
     void admin_can_create_list_and_retrieve_publication() throws Exception {
@@ -285,6 +289,215 @@ class PublicationControllerIT {
                 .andExpect(jsonPath("$.items[2].productId").value(missingProductId))
                 .andExpect(jsonPath("$.items[2].publicationId").doesNotExist())
                 .andExpect(jsonPath("$.items[2].errorMessage", org.hamcrest.Matchers.containsString("no encontrado")));
+    }
+
+    @Test
+    void admin_sees_a_published_batch_in_the_history() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Falda historial", "desc",
+                new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/falda.jpg",
+                ProductCondition.NEW, "Pilar", 3));
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM", "FACEBOOK"),
+                                "captionTemplate", "{producto} a solo {precio}",
+                                "hashtags", List.of("#pilarestilo"),
+                                "campaignLabel", "Historial Test"))))
+                .andExpect(status().isOk());
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].campaignLabel").value("Historial Test"))
+                .andExpect(jsonPath("$[0].total").value(2))
+                .andExpect(jsonPath("$[0].failed").value(2))
+                .andExpect(jsonPath("$[0].published").value(0))
+                .andReturn();
+
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.captionTemplate").value("{producto} a solo {precio}"))
+                .andExpect(jsonPath("$.rows", hasSize(2)))
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"))
+                .andExpect(jsonPath("$.rows[0].lastErrorCode").exists())
+                .andExpect(jsonPath("$.productIds", hasItem(product.getId().toString())));
+    }
+
+    @Test
+    void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Blusa retry", "desc",
+                new Money(BigDecimal.valueOf(19990), "CLP"), "https://cdn.example.com/blusa.jpg",
+                ProductCondition.NEW, "Pilar", 2));
+
+        MvcResult batchResult = mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}"))))
+                .andExpect(status().isOk())
+                .andReturn();
+        String publicationId = om.readTree(batchResult.getResponse().getContentAsString())
+                .get("items").get(0).get("publicationId").asString();
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk()).andReturn();
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"));
+
+        mvc.perform(get("/api/admin/publications/{id}", publicationId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retryCount").value(1));
+    }
+
+    @Test
+    void retry_failed_in_batch_requires_update_permission() throws Exception {
+        String sellerToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000003"),
+                "seller-retry@pilarestilo.com", UserRole.SELLER,
+                List.of("productos"), List.of("publications.read"));
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", UUID.randomUUID())
+                        .header("Authorization", bearer(sellerToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void unknown_batch_id_returns_404() throws Exception {
+        String adminToken = loginAdmin();
+        mvc.perform(get("/api/admin/publications/batches/{id}", UUID.randomUUID())
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void a_scheduled_batch_shows_as_scheduled_and_can_be_cancelled_rescheduled_and_edited() throws Exception {
+        String adminToken = loginAdmin();
+        Product p1 = productRepository.save(Product.create("Falda prog", "d",
+                new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/f.jpg",
+                ProductCondition.NEW, "Pilar", 3));
+        String future = java.time.Instant.now().plusSeconds(3 * 3600).toString();
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(p1.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}",
+                                "campaignLabel", "Programada Test",
+                                "scheduledAt", future))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].scheduled").value(true))
+                .andExpect(jsonPath("$.items[0].success").value(false));
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].scheduledAt").exists())
+                .andReturn();
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$.rows[0].status").value("SCHEDULED"));
+
+        String later = java.time.Instant.now().plusSeconds(5 * 3600).toString();
+        mvc.perform(post("/api/admin/publications/batches/{id}/reschedule", batchId)
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("scheduledAt", later))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scheduledAt", org.hamcrest.Matchers.startsWith(later.substring(0, 19))));
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/reschedule", batchId)
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("scheduledAt",
+                                java.time.Instant.now().minusSeconds(60).toString()))))
+                .andExpect(status().isBadRequest());
+
+        Product p2 = productRepository.save(Product.create("Blusa prog", "d",
+                new Money(BigDecimal.valueOf(19990), "CLP"), "https://cdn.example.com/b.jpg",
+                ProductCondition.NEW, "Pilar", 2));
+        mvc.perform(put("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(p1.getId().toString(), p2.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "Nuevo {producto}",
+                                "scheduledAt", later))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.captionTemplate").value("Nuevo {producto}"))
+                .andExpect(jsonPath("$.rows", hasSize(2)));
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/cancel", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].status").value("CANCELLED"));
+    }
+
+    @Test
+    void a_batch_scheduled_in_the_past_is_rejected() throws Exception {
+        String adminToken = loginAdmin();
+        Product p = productRepository.save(Product.create("Prod pasado", "d",
+                new Money(BigDecimal.valueOf(9990), "CLP"), "https://cdn.example.com/p.jpg",
+                ProductCondition.NEW, "Pilar", 1));
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(p.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}",
+                                "scheduledAt", java.time.Instant.now().minusSeconds(60).toString()))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void the_scheduled_job_publishes_a_due_batch() throws Exception {
+        String adminToken = loginAdmin();
+        Product p = productRepository.save(Product.create("Prod due", "d",
+                new Money(BigDecimal.valueOf(9990), "CLP"), "https://cdn.example.com/d.jpg",
+                ProductCondition.NEW, "Pilar", 1));
+        String soon = java.time.Instant.now().plusSeconds(1).toString();
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(p.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}",
+                                "scheduledAt", soon))))
+                .andExpect(status().isOk());
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken))).andReturn();
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        Thread.sleep(1400);
+        int handled = publishDueScheduledPublicationsUseCase.execute();
+        org.junit.jupiter.api.Assertions.assertTrue(handled >= 1);
+
+        mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"));
     }
 
     private String loginAdmin() throws Exception {

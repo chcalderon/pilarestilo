@@ -46,8 +46,20 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {});
             String remotePostId = String.valueOf(published.get("id"));
 
+            String permalink = null;
+            try {
+                Map<String, Object> permalinkResponse = client.get()
+                        .uri("/{mediaId}?fields=permalink&access_token={token}", remotePostId, config.instagramAccessToken())
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+                Object raw = permalinkResponse == null ? null : permalinkResponse.get("permalink");
+                permalink = raw == null ? null : String.valueOf(raw);
+            } catch (RestClientException permalinkError) {
+                // The post is already live; a permalink lookup failure must not flip it to failed.
+            }
+
             return new PublicationDispatcher.DispatchResult(
-                    UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED, remotePostId, null, null);
+                    UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED, remotePostId, null, null, permalink);
         } catch (RestClientException ex) {
             return failed(ex.getMessage());
         }
@@ -56,6 +68,6 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
     private PublicationDispatcher.DispatchResult failed(String message) {
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.FAILED, null,
-                "INSTAGRAM_PUBLISH_ERROR", message);
+                "INSTAGRAM_PUBLISH_ERROR", message, null);
     }
 }

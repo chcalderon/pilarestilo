@@ -4,10 +4,14 @@ import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
 import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
+import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
+import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
 import com.pilarestilo.publication.application.usecases.GetProductPublicationImageHistoryUseCase;
 import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
+import com.pilarestilo.publication.application.usecases.RetryFailedBatchUseCase;
+import com.pilarestilo.publication.application.usecases.UpdateScheduledBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
@@ -17,6 +21,7 @@ import com.pilarestilo.publication.infrastructure.web.requests.ApprovePublicatio
 import com.pilarestilo.publication.infrastructure.web.requests.CreatePublicationRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.PublishProductsBatchRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.RejectPublicationRequest;
+import com.pilarestilo.publication.infrastructure.web.requests.RescheduleBatchRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,13 +43,19 @@ public class PublicationController {
     private final PublicationService publicationService;
     private final PublishProductsBatchUseCase publishProductsBatchUseCase;
     private final GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase;
+    private final RetryFailedBatchUseCase retryFailedBatchUseCase;
+    private final UpdateScheduledBatchUseCase updateScheduledBatchUseCase;
 
     public PublicationController(PublicationService publicationService,
                                  PublishProductsBatchUseCase publishProductsBatchUseCase,
-                                 GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase) {
+                                 GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase,
+                                 RetryFailedBatchUseCase retryFailedBatchUseCase,
+                                 UpdateScheduledBatchUseCase updateScheduledBatchUseCase) {
         this.publicationService = publicationService;
         this.publishProductsBatchUseCase = publishProductsBatchUseCase;
         this.getProductPublicationImageHistoryUseCase = getProductPublicationImageHistoryUseCase;
+        this.updateScheduledBatchUseCase = updateScheduledBatchUseCase;
+        this.retryFailedBatchUseCase = retryFailedBatchUseCase;
     }
 
     @PostMapping
@@ -117,6 +128,47 @@ public class PublicationController {
         return publishProductsBatchUseCase.execute(toBatchCommand(request), currentUser == null ? null : currentUser.id());
     }
 
+    @GetMapping("/batches")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public List<PublicationBatchSummaryDto> listBatches() {
+        return publicationService.listBatches();
+    }
+
+    @GetMapping("/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public PublicationBatchDetailDto getBatch(@PathVariable UUID batchId) {
+        return publicationService.getBatch(batchId);
+    }
+
+    @PostMapping("/batches/{batchId}/retry-failed")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto retryFailed(@PathVariable UUID batchId,
+                                                 @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return retryFailedBatchUseCase.execute(batchId, currentUser == null ? null : currentUser.id());
+    }
+
+    @PostMapping("/batches/{batchId}/cancel")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto cancelBatch(@PathVariable UUID batchId) {
+        return publicationService.cancelScheduledBatch(batchId);
+    }
+
+    @PostMapping("/batches/{batchId}/reschedule")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto rescheduleBatch(@PathVariable UUID batchId,
+                                                     @Valid @RequestBody RescheduleBatchRequest request) {
+        return publicationService.rescheduleBatch(batchId, parseFutureInstant(request.scheduledAt()));
+    }
+
+    @PutMapping("/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto updateScheduledBatch(@PathVariable UUID batchId,
+                                                          @Valid @RequestBody PublishProductsBatchRequest request,
+                                                          @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return updateScheduledBatchUseCase.execute(batchId, toBatchCommand(request),
+                currentUser == null ? null : currentUser.id());
+    }
+
     private PublishProductsBatchCommand toBatchCommand(PublishProductsBatchRequest request) {
         Set<PublicationPlatform> platforms = request.platforms().stream()
                 .map(p -> PublicationPlatform.valueOf(p.trim().toUpperCase()))
@@ -131,6 +183,8 @@ public class PublicationController {
                         .collect(Collectors.toMap(
                                 e -> UUID.fromString(e.getKey()),
                                 e -> new PublishProductsBatchCommand.VariantSelection(e.getValue().color(), e.getValue().size())));
+        java.time.Instant scheduledAt = request.scheduledAt() == null || request.scheduledAt().isBlank()
+                ? null : parseFutureInstant(request.scheduledAt());
         return new PublishProductsBatchCommand(
                 request.productIds(),
                 platforms,
@@ -138,8 +192,22 @@ public class PublicationController {
                 request.hashtags() == null ? List.of() : request.hashtags(),
                 request.campaignLabel(),
                 imageOverrides,
-                variantSelections
+                variantSelections,
+                scheduledAt
         );
+    }
+
+    private java.time.Instant parseFutureInstant(String raw) {
+        java.time.Instant when;
+        try {
+            when = java.time.Instant.parse(raw);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new com.pilarestilo.shared.domain.DomainException("Fecha de programación inválida");
+        }
+        if (when.isBefore(java.time.Instant.now())) {
+            throw new com.pilarestilo.shared.domain.DomainException("La hora programada ya pasó");
+        }
+        return when;
     }
 
     private CreatePublicationCommand toCommand(CreatePublicationRequest request) {
@@ -162,7 +230,8 @@ public class PublicationController {
                                 bundle.primaryAssetUrl(),
                                 bundle.assetManifest()
                         ))
-                        .toList()
+                        .toList(),
+                null
         );
     }
 }

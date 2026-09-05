@@ -61,4 +61,44 @@ class FacebookPagePublisherAdapterTest {
 
         assertEquals(PublicationAttemptStatus.FAILED, result.status());
     }
+
+    @Test
+    void builds_the_permalink_from_the_post_id() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                null, null, "https://graph.instagram.com/v23.0",
+                "1023624300843445", "token-fb", "https://graph.facebook.com/v23.0", null
+        ));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/1023624300843445/photos")))
+                .andRespond(withSuccess("{\"post_id\":\"1023624300843445_555\",\"id\":\"555\"}", MediaType.APPLICATION_JSON));
+
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver);
+        PublicationDispatcher.DispatchResult result = adapter.publish(payload);
+
+        assertEquals("https://www.facebook.com/1023624300843445_555", result.remotePermalink());
+    }
+
+    @Test
+    void leaves_the_permalink_null_when_only_a_bare_photo_id_is_returned() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                null, null, "https://graph.instagram.com/v23.0",
+                "1023624300843445", "token-fb", "https://graph.facebook.com/v23.0", null
+        ));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/photos")))
+                .andRespond(withSuccess("{\"id\":\"555\"}", MediaType.APPLICATION_JSON));
+
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver);
+        PublicationDispatcher.DispatchResult result = adapter.publish(payload);
+
+        assertEquals(null, result.remotePermalink());
+    }
 }
