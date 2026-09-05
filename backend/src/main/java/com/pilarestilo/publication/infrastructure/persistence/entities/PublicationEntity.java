@@ -74,6 +74,12 @@ public class PublicationEntity {
     @Column(name = "external_post_id", length = 255)
     private String externalPostId;
 
+    @Column(name = "batch_id")
+    private UUID batchId;
+
+    @Column(name = "external_permalink", columnDefinition = "text")
+    private String externalPermalink;
+
     @Column(name = "idempotency_key", nullable = false, length = 160, unique = true)
     private String idempotencyKey;
 
@@ -150,6 +156,10 @@ public class PublicationEntity {
     public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
     public String getExternalPostId() { return externalPostId; }
     public void setExternalPostId(String externalPostId) { this.externalPostId = externalPostId; }
+    public UUID getBatchId() { return batchId; }
+    public void setBatchId(UUID batchId) { this.batchId = batchId; }
+    public String getExternalPermalink() { return externalPermalink; }
+    public void setExternalPermalink(String externalPermalink) { this.externalPermalink = externalPermalink; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
     public int getContentVersion() { return contentVersion; }
