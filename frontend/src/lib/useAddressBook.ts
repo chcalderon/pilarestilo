@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createMyAddress,
+  deleteMyAddress,
   getLocationTree,
   getMyAddresses,
   setMyAddressAsDefault,
@@ -9,8 +10,8 @@ import {
   type LocationCityDto,
   type LocationCommuneDto,
   type LocationRegionDto,
-} from '../../lib/api';
-import type { Locale } from '../../i18n/index';
+} from './api';
+import type { Locale } from '../i18n/index';
 
 export interface AddressDraft {
   label: string;
@@ -25,7 +26,7 @@ export interface AddressDraft {
   isDefault: boolean;
 }
 
-/** Field name → message. Keyed so the step can render each error under its own input. */
+/** Field name → message. Keyed so a form can render each error under its own input. */
 export type AddressErrors = Partial<Record<keyof AddressDraft, string>>;
 
 export function emptyAddressDraft(): AddressDraft {
@@ -93,9 +94,9 @@ const FIELD_CHECKS: ReadonlyArray<readonly [keyof AddressDraft, FieldCheck]> = [
 ];
 
 /**
- * Returns one message per invalid field rather than the first failure. The form shows them
- * all at once under their own inputs, so a customer fixes the address in one pass instead of
- * discovering the next problem after every save.
+ * Returns one message per invalid field rather than the first failure. A per-field form shows
+ * them all at once under their own inputs; a single-message form (AccountPage) collapses this to
+ * `Object.values(errors)[0]` instead of keeping its own parallel copy of these same rules.
  */
 export function validateDraft(draft: AddressDraft, locale: Locale): AddressErrors {
   const es = locale === 'es';
@@ -107,14 +108,28 @@ export function validateDraft(draft: AddressDraft, locale: Locale): AddressError
   return errors;
 }
 
-export function useAddressBook(token: string | null, locale: Locale) {
+export interface UseAddressBookOptions {
+  /**
+   * Gates both fetches (addresses + region tree). Defaults to true: checkout always needs this
+   * data as soon as the step mounts. AccountPage passes `tab === 'addresses'` so it only fetches
+   * while that tab is actually open -- matching what it already did before this hook was shared,
+   * not a new behavior.
+   */
+  enabled?: boolean;
+}
+
+export function useAddressBook(token: string | null, locale: Locale, options?: UseAddressBookOptions) {
+  const enabled = options?.enabled ?? true;
   const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [regions, setRegions] = useState<LocationRegionDto[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [defaultingId, setDefaultingId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    if (!token) {
+    if (!token || !enabled) {
       setAddresses([]);
       return [] as CustomerAddressDto[];
     }
@@ -129,26 +144,30 @@ export function useAddressBook(token: string | null, locale: Locale) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, enabled]);
 
   useEffect(() => {
     void reload();
   }, [reload]);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
+    setRegionsLoading(true);
     void (async () => {
       try {
         const tree = await getLocationTree();
         if (!cancelled) setRegions(tree);
       } catch {
         if (!cancelled) setRegions([]);
+      } finally {
+        if (!cancelled) setRegionsLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   const save = useCallback(
     async (draft: AddressDraft, editingId: string | null): Promise<string> => {
@@ -195,16 +214,38 @@ export function useAddressBook(token: string | null, locale: Locale) {
     [token, regions, locale, reload]
   );
 
-  const makeDefault = useCallback(
+  const remove = useCallback(
     async (addressId: string) => {
       if (!token) return;
-      await setMyAddressAsDefault(addressId, token);
-      await reload();
+      setDeletingId(addressId);
+      try {
+        await deleteMyAddress(addressId, token);
+        await reload();
+      } finally {
+        setDeletingId(null);
+      }
     },
     [token, reload]
   );
 
-  return { addresses, loading, regions, saving, reload, save, makeDefault };
+  const makeDefault = useCallback(
+    async (addressId: string) => {
+      if (!token) return;
+      setDefaultingId(addressId);
+      try {
+        await setMyAddressAsDefault(addressId, token);
+        await reload();
+      } finally {
+        setDefaultingId(null);
+      }
+    },
+    [token, reload]
+  );
+
+  return {
+    addresses, loading, regions, regionsLoading, saving, deletingId, defaultingId,
+    reload, save, remove, makeDefault,
+  };
 }
 
 /** Cities of the selected region; empty until one is chosen. */

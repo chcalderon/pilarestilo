@@ -8,13 +8,14 @@ import { openBlobInNewTab } from '../../lib/openBlob';
 import {
   emptyAddressDraft,
   draftFromAddress,
+  useAddressBook,
   useCityOptions,
   useComunaOptions,
+  validateDraft,
   type AddressDraft,
-} from '../checkout/useAddressBook';
+} from '../../lib/useAddressBook';
 import {
   getMyReviews,
-  getLocationTree,
   deleteReview,
   getMyOrders,
   getMyReturns,
@@ -22,11 +23,6 @@ import {
   getMyProfile,
   updateMyProfile,
   changeMyPassword,
-  getMyAddresses,
-  createMyAddress,
-  updateMyAddress,
-  deleteMyAddress,
-  setMyAddressAsDefault,
   confirmOrderDelivery,
   getPaymentByOrder,
   submitPaymentProof,
@@ -41,7 +37,6 @@ import {
   type PaymentDto,
   type UserProfileDto,
   type CustomerAddressDto,
-  type CreateCustomerAddressRequest,
   type LocationCityDto,
   type LocationCommuneDto,
   type LocationRegionDto,
@@ -125,29 +120,6 @@ export function passwordChangeErrorMessage(error: unknown, es: boolean): string 
     return es ? 'La contraseña actual no es correcta.' : 'Current password is incorrect.';
   }
   return errorMessageOr(error, es ? 'No pudimos cambiar la contraseña.' : 'Could not change password.');
-}
-
-function validateAddressContactFields(draft: AddressDraft, es: boolean): string | null {
-  if (!draft.label.trim()) return es ? 'Debes ingresar un alias de dirección.' : 'Address alias is required.';
-  if (!draft.recipientName.trim()) return es ? 'Debes ingresar destinatario.' : 'Recipient name is required.';
-  if (!draft.phone.trim()) return es ? 'Debes ingresar teléfono.' : 'Phone is required.';
-  const digits = draft.phone.replace(/\D/g, '');
-  if (digits.length < 8 || digits.length > 15) {
-    return es ? 'El teléfono debe tener entre 8 y 15 dígitos.' : 'Phone must contain between 8 and 15 digits.';
-  }
-  return null;
-}
-
-function validateAddressLocationFields(draft: AddressDraft, es: boolean): string | null {
-  if (!draft.line1.trim()) return es ? 'Debes ingresar dirección.' : 'Address line is required.';
-  if (!draft.regionId) return es ? 'Debes seleccionar region.' : 'Region selection is required.';
-  if (!draft.cityId) return es ? 'Debes seleccionar ciudad.' : 'City selection is required.';
-  if (!draft.comunaId) return es ? 'Debes seleccionar comuna.' : 'Comuna selection is required.';
-  return null;
-}
-
-export function validateAddressDraft(draft: AddressDraft, es: boolean): string | null {
-  return validateAddressContactFields(draft, es) ?? validateAddressLocationFields(draft, es);
 }
 
 export interface QueryParamResolution {
@@ -239,39 +211,6 @@ export function resolveQueryParamEffects(url: URL, es: boolean): QueryParamResol
   const cleanedUrl = nextQuery ? `${url.pathname}?${nextQuery}` : url.pathname;
 
   return { tab: 'orders', gatewayFeedback, cleanedUrl };
-}
-
-/** Editing sets the default flag with a follow-up call since updateMyAddress doesn't take it;
- * creating only needs the follow-up when the server didn't already honor isDefault itself. */
-async function persistAddress(
-  payload: CreateCustomerAddressRequest,
-  editingAddressId: string | null,
-  token: string,
-): Promise<void> {
-  if (editingAddressId) {
-    await updateMyAddress(editingAddressId, {
-      label: payload.label,
-      recipientName: payload.recipientName,
-      phone: payload.phone,
-      line1: payload.line1,
-      line2: payload.line2,
-      regionId: payload.regionId,
-      cityId: payload.cityId,
-      comunaId: payload.comunaId,
-      comuna: payload.comuna,
-      city: payload.city,
-      region: payload.region,
-      reference: payload.reference,
-    }, token);
-    if (payload.isDefault) {
-      await setMyAddressAsDefault(editingAddressId, token);
-    }
-    return;
-  }
-  const created = await createMyAddress(payload, token);
-  if (payload.isDefault && !created.isDefault) {
-    await setMyAddressAsDefault(created.id, token);
-  }
 }
 
 function paymentStatusLabel(status: string, es: boolean) {
@@ -1916,24 +1855,17 @@ export default function AccountPage({ locale }: Props) {
   const [avatarDragging, setAvatarDragging] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarFeedback, setAvatarFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [addresses, setAddresses] = useState<CustomerAddressDto[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [addressSaving, setAddressSaving] = useState(false);
-  const [addressDeletingId, setAddressDeletingId] = useState<string | null>(null);
-  const [addressDefaultingId, setAddressDefaultingId] = useState<string | null>(null);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft());
-  const [locationRegions, setLocationRegions] = useState<LocationRegionDto[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
   const [addressFeedback, setAddressFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const es = locale === 'es';
   const displayName = profile?.fullName?.trim() ? profile.fullName : (user?.email ?? '');
-  const selectedRegionId = addressDraft.regionId ? Number(addressDraft.regionId) : null;
-  const selectedCityId = addressDraft.cityId ? Number(addressDraft.cityId) : null;
-  const selectedComunaId = addressDraft.comunaId ? Number(addressDraft.comunaId) : null;
-  const cityOptions = useCityOptions(locationRegions, addressDraft.regionId);
+  // Shared with checkout's ShippingStep -- fetches only while this tab is the active one, same as
+  // this screen's own load-on-tab-open effects did before they were replaced by this hook.
+  const book = useAddressBook(effectiveToken, locale, { enabled: tab === 'addresses' });
+  const cityOptions = useCityOptions(book.regions, addressDraft.regionId);
   const comunaOptions = useComunaOptions(cityOptions, addressDraft.cityId);
 
   useEffect(() => {
@@ -2057,56 +1989,29 @@ export default function AccountPage({ locale }: Props) {
     };
   }, [effectiveToken]);
 
-  const loadAddresses = useCallback(async () => {
-    if (!effectiveToken) return;
-    setLoadingAddresses(true);
-    try {
-      const rows = await getMyAddresses(effectiveToken);
-      setAddresses(rows);
-    } finally {
-      setLoadingAddresses(false);
-    }
-  }, [effectiveToken]);
-
-  const loadLocations = useCallback(async () => {
-    setLoadingLocations(true);
-    try {
-      const regions = await getLocationTree();
-      setLocationRegions(regions);
-    } catch {
-      setLocationRegions([]);
-    } finally {
-      setLoadingLocations(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (tab !== 'addresses' || !effectiveToken) return;
-    void loadAddresses();
-  }, [tab, effectiveToken, loadAddresses]);
-
-  useEffect(() => {
-    if (tab !== 'addresses') return;
-    void loadLocations();
-  }, [tab, loadLocations]);
-
+  /*
+   * The region tree can finish loading after an edit-draft was already prefilled from an
+   * existing address (draftFromAddress) -- if that address's city/comuna no longer resolves
+   * against the tree once it arrives, this clears the stale selection rather than leaving an id
+   * on the draft that points at nothing real.
+   */
   useEffect(() => {
     if (!addressDraft.cityId) return;
-    if (locationRegions.length === 0) return;
+    if (book.regions.length === 0) return;
     const stillValid = cityOptions.some((city) => city.id === Number(addressDraft.cityId));
     if (!stillValid) {
       setAddressDraft((prev) => ({ ...prev, cityId: '', comunaId: '' }));
     }
-  }, [addressDraft.cityId, cityOptions, locationRegions.length]);
+  }, [addressDraft.cityId, cityOptions, book.regions.length]);
 
   useEffect(() => {
     if (!addressDraft.comunaId) return;
-    if (locationRegions.length === 0) return;
+    if (book.regions.length === 0) return;
     const stillValid = comunaOptions.some((comuna) => comuna.id === Number(addressDraft.comunaId));
     if (!stillValid) {
       setAddressDraft((prev) => ({ ...prev, comunaId: '' }));
     }
-  }, [addressDraft.comunaId, comunaOptions, locationRegions.length]);
+  }, [addressDraft.comunaId, comunaOptions, book.regions.length]);
 
   const handleAvatarFile = useCallback(async (file: File) => {
     if (!effectiveToken) return;
@@ -2286,43 +2191,21 @@ export default function AccountPage({ locale }: Props) {
     setAddressModalOpen(true);
   }
 
-  function normalizeAddressPayload(draft: AddressDraft): CreateCustomerAddressRequest {
-    const selectedRegion = locationRegions.find((region) => region.id === selectedRegionId);
-    const selectedCity = cityOptions.find((city) => city.id === selectedCityId);
-    const selectedComuna = comunaOptions.find((comuna) => comuna.id === selectedComunaId);
-    if (!selectedRegion || !selectedCity || !selectedComuna) {
-      throw new Error(es ? 'Selecciona region, ciudad y comuna validas.' : 'Choose valid region, city, and comuna.');
-    }
-    return {
-      label: draft.label.trim(),
-      recipientName: draft.recipientName.trim(),
-      phone: draft.phone.trim(),
-      line1: draft.line1.trim(),
-      line2: draft.line2.trim() || undefined,
-      regionId: selectedRegion.id,
-      cityId: selectedCity.id,
-      comunaId: selectedComuna.id,
-      comuna: selectedComuna.name,
-      city: selectedCity.name,
-      region: selectedRegion.name,
-      reference: draft.reference.trim() || undefined,
-      isDefault: draft.isDefault,
-    };
-  }
-
   async function handleSaveAddress() {
-    if (!effectiveToken || addressSaving) return;
-    const validationError = validateAddressDraft(addressDraft, es);
-    if (validationError) {
-      setAddressFeedback({ type: 'error', text: validationError });
+    if (!effectiveToken || book.saving) return;
+    const errors = validateDraft(addressDraft, locale);
+    const firstError = Object.values(errors)[0];
+    if (firstError) {
+      setAddressFeedback({ type: 'error', text: firstError });
       return;
     }
-    setAddressSaving(true);
     setAddressFeedback(null);
     try {
-      const payload = normalizeAddressPayload(addressDraft);
-      await persistAddress(payload, editingAddressId, effectiveToken);
-      await loadAddresses();
+      const savedId = await book.save(addressDraft, editingAddressId);
+      // Mirrors ShippingStep's own submit: unconditional, not "only if the server didn't already
+      // default it" -- setMyAddressAsDefault is idempotent, and checkout has run this exact call
+      // unconditionally in production without issue.
+      if (addressDraft.isDefault) await book.makeDefault(savedId);
       setAddressModalOpen(false);
       setAddressFeedback({ type: 'success', text: es ? 'Dirección guardada.' : 'Address saved.' });
     } catch (error) {
@@ -2330,42 +2213,32 @@ export default function AccountPage({ locale }: Props) {
         type: 'error',
         text: errorMessageOr(error, es ? 'No se pudo guardar la dirección.' : 'Could not save address.'),
       });
-    } finally {
-      setAddressSaving(false);
     }
   }
 
   async function handleDeleteAddress(addressId: string) {
-    if (!effectiveToken || addressDeletingId) return;
-    setAddressDeletingId(addressId);
+    if (!effectiveToken || book.deletingId) return;
     setAddressFeedback(null);
     try {
-      await deleteMyAddress(addressId, effectiveToken);
-      await loadAddresses();
+      await book.remove(addressId);
     } catch (error) {
       setAddressFeedback({
         type: 'error',
         text: errorMessageOr(error, es ? 'No se pudo eliminar la dirección.' : 'Could not delete address.'),
       });
-    } finally {
-      setAddressDeletingId(null);
     }
   }
 
   async function handleSetDefaultAddress(addressId: string) {
-    if (!effectiveToken || addressDefaultingId) return;
-    setAddressDefaultingId(addressId);
+    if (!effectiveToken || book.defaultingId) return;
     setAddressFeedback(null);
     try {
-      await setMyAddressAsDefault(addressId, effectiveToken);
-      await loadAddresses();
+      await book.makeDefault(addressId);
     } catch (error) {
       setAddressFeedback({
         type: 'error',
         text: errorMessageOr(error, es ? 'No se pudo actualizar principal.' : 'Could not set default address.'),
       });
-    } finally {
-      setAddressDefaultingId(null);
     }
   }
 
@@ -2622,10 +2495,10 @@ export default function AccountPage({ locale }: Props) {
           <AddressesTab
             es={es}
             addressFeedback={addressFeedback}
-            loadingAddresses={loadingAddresses}
-            addresses={addresses}
-            addressDefaultingId={addressDefaultingId}
-            addressDeletingId={addressDeletingId}
+            loadingAddresses={book.loading}
+            addresses={book.addresses}
+            addressDefaultingId={book.defaultingId}
+            addressDeletingId={book.deletingId}
             onOpenCreateModal={openCreateAddressModal}
             onEditAddress={openEditAddressModal}
             onSetDefaultAddress={(addressId) => void handleSetDefaultAddress(addressId)}
@@ -2634,11 +2507,11 @@ export default function AccountPage({ locale }: Props) {
             editingAddressId={editingAddressId}
             addressDraft={addressDraft}
             onDraftChange={setAddressDraft}
-            loadingLocations={loadingLocations}
-            locationRegions={locationRegions}
+            loadingLocations={book.regionsLoading}
+            locationRegions={book.regions}
             cityOptions={cityOptions}
             comunaOptions={comunaOptions}
-            addressSaving={addressSaving}
+            addressSaving={book.saving}
             onSaveAddress={() => void handleSaveAddress()}
             onCloseModal={() => setAddressModalOpen(false)}
           />
