@@ -4,6 +4,7 @@ import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import {
   searchProducts,
   publishProductsBatch,
+  updateScheduledBatch,
   uploadMediaFile,
   getProduct,
   getProductPublicationImageHistory,
@@ -11,6 +12,7 @@ import {
   type ProductVariantDto,
   type PublishProductsBatchItemResult,
 } from '../../lib/api';
+import { santiagoWallTimeToInstant, instantToSantiagoInputValue, instantToSantiagoLabel } from '../../lib/santiagoTime';
 
 type Platform = 'INSTAGRAM' | 'FACEBOOK';
 type VariantSelection = { color: string; size: string };
@@ -20,11 +22,14 @@ export type PublicarTabPreload = {
   captionTemplate: string;
   hashtags: string[];
   campaignLabel: string | null;
+  scheduledAt?: string | null;
 };
 
 type PublicarTabProps = {
   preload?: PublicarTabPreload;
   onPreloadConsumed?: () => void;
+  editingBatchId?: string;
+  onEditCancelled?: () => void;
 };
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -77,7 +82,9 @@ function joinSpanishList(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
 }
 
-export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabProps = {}) {
+export default function PublicarTab(
+  { preload, onPreloadConsumed, editingBatchId, onEditCancelled }: PublicarTabProps = {},
+) {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
@@ -95,7 +102,10 @@ export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabP
   const [campaignLabel, setCampaignLabel] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [publishResults, setPublishResults] = useState<PublishProductsBatchItemResult[] | null>(null);
+  const [scheduledConfirmation, setScheduledConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'now' | 'schedule'>('now');
+  const [scheduleInput, setScheduleInput] = useState('');
   const [imageOverrides, setImageOverrides] = useState<Map<string, string>>(new Map());
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -108,6 +118,10 @@ export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabP
     setCaptionTemplate(preload.captionTemplate);
     setHashtagsInput(preload.hashtags.join(' '));
     setCampaignLabel(preload.campaignLabel ?? '');
+    if (preload.scheduledAt) {
+      setMode('schedule');
+      setScheduleInput(instantToSantiagoInputValue(preload.scheduledAt));
+    }
     void Promise.all(preload.productIds.map((id) => getProduct(id).catch(() => null))).then((loaded) => {
       if (cancelled) return;
       setSelected(() => {
@@ -238,32 +252,55 @@ export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabP
   );
 
   const canPublish =
-    selectedProducts.length > 0 && platforms.size > 0 && captionTemplate.trim().length > 0 && !publishing;
+    selectedProducts.length > 0 &&
+    platforms.size > 0 &&
+    captionTemplate.trim().length > 0 &&
+    (mode === 'now' || scheduleInput.length > 0) &&
+    !publishing;
 
-  async function handlePublish() {
+  const ctaLabel = editingBatchId
+    ? 'Guardar cambios'
+    : mode === 'schedule'
+      ? 'Programar publicación'
+      : 'Publicar ahora';
+
+  async function handleSubmit() {
     if (!canPublish) return;
     setPublishing(true);
     setError(null);
     setPublishResults(null);
+    setScheduledConfirmation(null);
     try {
       const relevantVariants = new Map(
         selectedProducts
           .filter((p) => variantSelections.has(p.id))
           .map((p) => [p.id, variantSelections.get(p.id)!] as const),
       );
-      const response = await publishProductsBatch(
-        {
-          productIds: selectedProducts.map((p) => p.id),
-          platforms: Array.from(platforms),
-          captionTemplate,
-          hashtags,
-          campaignLabel: campaignLabel.trim() || undefined,
-          imageOverrides: imageOverrides.size > 0 ? Object.fromEntries(imageOverrides) : undefined,
-          variantSelections: relevantVariants.size > 0 ? Object.fromEntries(relevantVariants) : undefined,
-        },
-        effectiveToken,
-      );
-      setPublishResults(response.items);
+      const scheduledAt = mode === 'schedule' ? santiagoWallTimeToInstant(scheduleInput) : undefined;
+      const payload = {
+        productIds: selectedProducts.map((p) => p.id),
+        platforms: Array.from(platforms),
+        captionTemplate,
+        hashtags,
+        campaignLabel: campaignLabel.trim() || undefined,
+        imageOverrides: imageOverrides.size > 0 ? Object.fromEntries(imageOverrides) : undefined,
+        variantSelections: relevantVariants.size > 0 ? Object.fromEntries(relevantVariants) : undefined,
+        scheduledAt,
+      };
+      if (editingBatchId) {
+        await updateScheduledBatch(editingBatchId, payload, effectiveToken);
+        setScheduledConfirmation('Cambios guardados.');
+        onEditCancelled?.();
+        return;
+      }
+      const response = await publishProductsBatch(payload, effectiveToken);
+      if (scheduledAt) {
+        setScheduledConfirmation(
+          `Programada para ${instantToSantiagoLabel(scheduledAt)}. La vas a ver en Historial.`,
+        );
+      } else {
+        setPublishResults(response.items);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo publicar el lote.');
     } finally {
@@ -400,6 +437,42 @@ export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabP
           />
         </label>
       </section>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="font-sans text-sm text-pe-muted mb-1">Cuando</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="when"
+            checked={mode === 'now'}
+            onChange={() => setMode('now')}
+            className="accent-pe-rose"
+          />
+          Publicar ahora
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="when"
+            checked={mode === 'schedule'}
+            onChange={() => setMode('schedule')}
+            className="accent-pe-rose"
+          />
+          Programar
+        </label>
+        {mode === 'schedule' && (
+          <label className="flex flex-col gap-1 text-xs text-pe-muted mt-1 max-w-xs">
+            Fecha y hora (hora de Chile)
+            <input
+              type="datetime-local"
+              value={scheduleInput}
+              min={instantToSantiagoInputValue(new Date(Date.now() + 5 * 60000).toISOString())}
+              onChange={(e) => setScheduleInput(e.target.value)}
+              className="bg-pe-surface border border-pe-border rounded-xs px-2 py-1 text-sm text-pe-black"
+            />
+          </label>
+        )}
+      </fieldset>
 
       {selectedProducts.length > 0 && (
         <section>
@@ -542,15 +615,32 @@ export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabP
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => void handlePublish()}
-        disabled={!canPublish}
-        className="self-start flex items-center gap-2 bg-pe-rose text-pe-white px-4 py-2 rounded-xs text-sm disabled:opacity-50"
-      >
-        {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-        Publicar ahora
-      </button>
+      {scheduledConfirmation && (
+        <p className="text-sm text-pe-positive-ink" role="status">
+          {scheduledConfirmation}
+        </p>
+      )}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void handleSubmit()}
+          disabled={!canPublish}
+          className="self-start flex items-center gap-2 bg-pe-rose text-pe-white px-4 py-2 rounded-xs text-sm disabled:opacity-50"
+        >
+          {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          {ctaLabel}
+        </button>
+        {editingBatchId && (
+          <button
+            type="button"
+            onClick={() => onEditCancelled?.()}
+            className="text-sm text-pe-muted hover:text-pe-black"
+          >
+            Cancelar edición
+          </button>
+        )}
+      </div>
 
       {publishResults && (
         <section>

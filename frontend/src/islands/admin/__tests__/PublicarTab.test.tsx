@@ -6,14 +6,18 @@ import PublicarTab from '../PublicarTab';
 import {
   searchProducts,
   publishProductsBatch,
+  updateScheduledBatch,
   uploadMediaFile,
+  getProduct,
   getProductPublicationImageHistory,
 } from '../../../lib/api';
 
 vi.mock('../../../lib/api', () => ({
   searchProducts: vi.fn(),
   publishProductsBatch: vi.fn(),
+  updateScheduledBatch: vi.fn(),
   uploadMediaFile: vi.fn(),
+  getProduct: vi.fn(),
   getProductPublicationImageHistory: vi.fn(),
 }));
 
@@ -39,12 +43,16 @@ beforeEach(() => {
   } as never);
   vi.mocked(publishProductsBatch).mockResolvedValue({
     items: [
-      { productId: 'p1', platform: 'INSTAGRAM', success: true, publicationId: 'pub-1', errorMessage: null },
-      { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: null, errorMessage: 'Credenciales no configuradas' },
+      { productId: 'p1', platform: 'INSTAGRAM', success: true, publicationId: 'pub-1', errorMessage: null, scheduled: false },
+      { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: null, errorMessage: 'Credenciales no configuradas', scheduled: false },
     ],
   } as never);
   vi.mocked(getProductPublicationImageHistory).mockResolvedValue([]);
   vi.mocked(uploadMediaFile).mockResolvedValue('https://img/edited.jpg');
+  vi.mocked(updateScheduledBatch).mockResolvedValue({} as never);
+  vi.mocked(getProduct).mockResolvedValue({
+    id: 'p1', name: 'Chaqueta', price: { amount: 49990, currency: 'CLP' }, imageUrl: 'https://img/chaqueta.jpg',
+  } as never);
 });
 
 async function selectTheProduct(user: ReturnType<typeof userEvent.setup>) {
@@ -228,5 +236,36 @@ describe('PublicarTab', () => {
         't',
       ),
     );
+  });
+
+  it('sends scheduledAt when the batch is scheduled', async () => {
+    const user = userEvent.setup();
+    render(<PublicarTab />);
+    await selectTheProduct(user);
+
+    await user.click(screen.getByRole('radio', { name: /programar/i }));
+    fireEvent.change(screen.getByLabelText(/fecha y hora/i), { target: { value: '2027-06-15T10:00' } });
+
+    await user.click(screen.getByRole('button', { name: /programar publicaci/i }));
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ scheduledAt: '2027-06-15T14:00:00.000Z' }),
+        't',
+      ),
+    );
+    expect(await screen.findByText(/programada para/i)).toBeInTheDocument();
+  });
+
+  it('in edit mode, submit calls updateScheduledBatch and the CTA says Guardar cambios', async () => {
+    const user = userEvent.setup();
+    render(
+      <PublicarTab
+        editingBatchId="b9"
+        preload={{ productIds: [], captionTemplate: 'x', hashtags: [], campaignLabel: null, scheduledAt: '2027-06-15T14:00:00.000Z' }}
+      />,
+    );
+    await selectTheProduct(user);
+    await user.click(screen.getByRole('button', { name: /guardar cambios/i }));
+    await waitFor(() => expect(vi.mocked(updateScheduledBatch)).toHaveBeenCalled());
   });
 });
