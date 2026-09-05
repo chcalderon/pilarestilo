@@ -287,6 +287,59 @@ public class PublicationService {
         return dispatchInternal(id, PublicationAttemptTriggerType.RETRY);
     }
 
+    @Transactional
+    public PublicationDto markScheduleWindowMissed(UUID id) {
+        PublicationEntity entity = findById(id);
+        if (entity.getStatus() != PublicationStatus.SCHEDULED) {
+            throw new DomainException("Publication is not scheduled: " + entity.getStatus());
+        }
+        entity.setStatus(PublicationStatus.FAILED);
+        entity.setLastErrorCode("SCHEDULE_WINDOW_MISSED");
+        entity.setLastErrorMessage(
+                "La hora programada ya pasó; no se publicó automáticamente. Publícala o reprográmala a mano.");
+        entity.setUpdatedAt(Instant.now());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), 0, "SCHEDULE_WINDOW_MISSED"));
+        return toDto(saved);
+    }
+
+    @Transactional
+    public PublicationBatchDetailDto cancelScheduledBatch(UUID batchId) {
+        List<PublicationEntity> rows = publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId);
+        List<PublicationEntity> scheduled = rows.stream()
+                .filter(r -> r.getStatus() == PublicationStatus.SCHEDULED).toList();
+        if (scheduled.isEmpty()) {
+            throw new DomainException("Esta tanda no tiene publicaciones programadas para cancelar");
+        }
+        Instant now = Instant.now();
+        for (PublicationEntity r : scheduled) {
+            r.setStatus(PublicationStatus.CANCELLED);
+            r.setUpdatedAt(now);
+            publicationRepository.save(r);
+        }
+        return getBatch(batchId);
+    }
+
+    @Transactional
+    public PublicationBatchDetailDto rescheduleBatch(UUID batchId, Instant newScheduledAt) {
+        PublicationBatchEntity batch = publicationBatchRepository.findById(batchId)
+                .orElseThrow(() -> new NoSuchElementException("Publication batch not found: " + batchId));
+        List<PublicationEntity> scheduled = publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId).stream()
+                .filter(r -> r.getStatus() == PublicationStatus.SCHEDULED).toList();
+        if (scheduled.isEmpty()) {
+            throw new DomainException("Esta tanda ya no está programada");
+        }
+        Instant now = Instant.now();
+        batch.setScheduledAt(newScheduledAt);
+        publicationBatchRepository.save(batch);
+        for (PublicationEntity r : scheduled) {
+            r.setScheduledAt(newScheduledAt);
+            r.setUpdatedAt(now);
+            publicationRepository.save(r);
+        }
+        return getBatch(batchId);
+    }
+
     private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType) {
         PublicationEntity entity = findById(id);
         if (!(entity.getStatus() == PublicationStatus.APPROVED || entity.getStatus() == PublicationStatus.SCHEDULED)) {

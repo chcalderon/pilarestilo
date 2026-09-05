@@ -367,6 +367,76 @@ class PublicationServiceTest {
         assertThrows(java.util.NoSuchElementException.class, () -> service.getBatch(unknown));
     }
 
+    @Test
+    void mark_schedule_window_missed_fails_the_row_and_emits_the_event() {
+        UUID id = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(id, null);
+        entity.setStatus(PublicationStatus.SCHEDULED);
+        when(publicationRepository.findById(id)).thenReturn(Optional.of(entity));
+
+        PublicationDto dto = service.markScheduleWindowMissed(id);
+
+        assertEquals(PublicationStatus.FAILED, dto.status());
+        assertEquals("SCHEDULE_WINDOW_MISSED", dto.lastErrorCode());
+        verify(eventPublisher).publish(any(com.pilarestilo.publication.domain.events.PublicationDispatchFailed.class));
+    }
+
+    @Test
+    void mark_schedule_window_missed_rejects_a_non_scheduled_row() {
+        UUID id = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(id, null);
+        when(publicationRepository.findById(id)).thenReturn(Optional.of(entity));
+        assertThrows(DomainException.class, () -> service.markScheduleWindowMissed(id));
+    }
+
+    @Test
+    void cancel_scheduled_batch_flips_only_scheduled_rows_to_cancelled() {
+        UUID batchId = UUID.randomUUID();
+        PublicationBatchEntity batch = scheduledBatch(batchId);
+        when(publicationBatchRepository.findById(batchId)).thenReturn(Optional.of(batch));
+        PublicationEntity sched = batchRow(batchId, PublicationStatus.SCHEDULED, PublicationPlatform.INSTAGRAM);
+        PublicationEntity done = batchRow(batchId, PublicationStatus.PUBLISHED, PublicationPlatform.FACEBOOK);
+        when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(sched, done));
+
+        service.cancelScheduledBatch(batchId);
+
+        assertEquals(PublicationStatus.CANCELLED, sched.getStatus());
+        assertEquals(PublicationStatus.PUBLISHED, done.getStatus());
+    }
+
+    @Test
+    void cancel_scheduled_batch_rejects_a_batch_with_nothing_scheduled() {
+        UUID batchId = UUID.randomUUID();
+        when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(
+                List.of(batchRow(batchId, PublicationStatus.PUBLISHED, PublicationPlatform.INSTAGRAM)));
+        assertThrows(DomainException.class, () -> service.cancelScheduledBatch(batchId));
+    }
+
+    @Test
+    void reschedule_batch_updates_the_batch_and_the_scheduled_rows() {
+        UUID batchId = UUID.randomUUID();
+        PublicationBatchEntity batch = scheduledBatch(batchId);
+        when(publicationBatchRepository.findById(batchId)).thenReturn(Optional.of(batch));
+        PublicationEntity sched = batchRow(batchId, PublicationStatus.SCHEDULED, PublicationPlatform.INSTAGRAM);
+        when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(sched));
+
+        Instant newTime = Instant.now().plusSeconds(7200);
+        service.rescheduleBatch(batchId, newTime);
+
+        assertEquals(newTime, batch.getScheduledAt());
+        assertEquals(newTime, sched.getScheduledAt());
+    }
+
+    private PublicationBatchEntity scheduledBatch(UUID batchId) {
+        PublicationBatchEntity batch = new PublicationBatchEntity();
+        batch.setId(batchId);
+        batch.setCaptionTemplate("{producto}");
+        batch.setHashtagsJson("[]");
+        batch.setCreatedAt(Instant.now());
+        batch.setScheduledAt(Instant.now().plusSeconds(3600));
+        return batch;
+    }
+
     private PublicationEntity batchRow(UUID batchId, PublicationStatus status, PublicationPlatform platform) {
         PublicationEntity e = approvedPublication(UUID.randomUUID(), UUID.randomUUID());
         e.setBatchId(batchId);
