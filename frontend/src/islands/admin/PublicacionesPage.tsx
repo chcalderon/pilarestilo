@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FocusEvent } from 'react';
 import { Download, Loader2, Search, Send, Upload } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import {
@@ -7,24 +7,61 @@ import {
   uploadMediaFile,
   getProductPublicationImageHistory,
   type ProductDto,
+  type ProductVariantDto,
   type PublishProductsBatchItemResult,
 } from '../../lib/api';
 
 type Platform = 'INSTAGRAM' | 'FACEBOOK';
+type VariantSelection = { color: string; size: string };
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   INSTAGRAM: 'Instagram',
   FACEBOOK: 'Facebook',
 };
 
+const VARIANT_TOKENS = ['color', 'talla', 'cantidad'] as const;
+
 function formatClp(amount: number): string {
   return new Intl.NumberFormat('es-CL').format(amount);
 }
 
-function interpolateCaption(template: string, product: ProductDto): string {
+function findVariant(product: ProductDto, selection?: VariantSelection): ProductVariantDto | undefined {
+  if (!selection) return undefined;
+  return product.variants?.find((v) => v.color === selection.color && v.size === selection.size);
+}
+
+/** Prefers a variant that actually has stock, falling back to the first one so the picker
+ *  always starts on something real instead of an empty pair of dropdowns. */
+function pickDefaultVariant(variants: ProductVariantDto[]): ProductVariantDto | undefined {
+  return variants.find((v) => v.stockAvailable > 0) ?? variants[0];
+}
+
+function interpolateCaption(template: string, product: ProductDto, selection?: VariantSelection): string {
+  const variant = findVariant(product, selection);
   return template
     .replaceAll('{producto}', product.name)
-    .replaceAll('{precio}', `$${formatClp(product.price.amount)}`);
+    .replaceAll('{precio}', `$${formatClp(product.price.amount)}`)
+    .replaceAll('{color}', variant?.color ?? '')
+    .replaceAll('{talla}', variant?.size ?? '')
+    .replaceAll('{cantidad}', variant ? String(variant.stockAvailable) : '');
+}
+
+/** Which of {color}/{talla}/{cantidad} the template actually uses but this product can't fill
+ *  right now (no variant chosen, or no variants at all) — so the preview can flag the gap
+ *  instead of quietly publishing a caption with a blank in it. */
+function missingVariantTokens(template: string, product: ProductDto, selection?: VariantSelection): string[] {
+  const variant = findVariant(product, selection);
+  const values: Record<(typeof VARIANT_TOKENS)[number], string> = {
+    color: variant?.color ?? '',
+    talla: variant?.size ?? '',
+    cantidad: variant ? String(variant.stockAvailable) : '',
+  };
+  return VARIANT_TOKENS.filter((token) => template.includes(`{${token}}`) && values[token] === '');
+}
+
+function joinSpanishList(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
 }
 
 export default function PublicacionesPage() {
@@ -33,6 +70,7 @@ export default function PublicacionesPage() {
 
   const [term, setTerm] = useState('');
   const [browseRequested, setBrowseRequested] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [results, setResults] = useState<ProductDto[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<Map<string, ProductDto>>(new Map());
@@ -49,6 +87,7 @@ export default function PublicacionesPage() {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageHistory, setImageHistory] = useState<Map<string, string[]>>(new Map());
+  const [variantSelections, setVariantSelections] = useState<Map<string, VariantSelection>>(new Map());
 
   useEffect(() => {
     const q = term.trim();
@@ -93,6 +132,29 @@ export default function PublicacionesPage() {
       void getProductPublicationImageHistory(product.id, effectiveToken)
         .then((urls) => setImageHistory((prev) => new Map(prev).set(product.id, urls)))
         .catch(() => setImageHistory((prev) => new Map(prev).set(product.id, [])));
+    }
+    if (!wasSelected && product.variants && product.variants.length > 0 && !variantSelections.has(product.id)) {
+      const def = pickDefaultVariant(product.variants);
+      if (def) {
+        setVariantSelections((prev) => new Map(prev).set(product.id, { color: def.color, size: def.size }));
+      }
+    }
+  }
+
+  function setProductColor(product: ProductDto, color: string) {
+    const sizesForColor = (product.variants ?? []).filter((v) => v.color === color);
+    const bestSize = pickDefaultVariant(sizesForColor)?.size ?? sizesForColor[0]?.size ?? '';
+    setVariantSelections((prev) => new Map(prev).set(product.id, { color, size: bestSize }));
+  }
+
+  function setProductSize(product: ProductDto, size: string) {
+    const current = variantSelections.get(product.id);
+    setVariantSelections((prev) => new Map(prev).set(product.id, { color: current?.color ?? '', size }));
+  }
+
+  function handleSearchAreaBlur(e: FocusEvent<HTMLElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setListOpen(false);
     }
   }
 
@@ -148,6 +210,11 @@ export default function PublicacionesPage() {
     setError(null);
     setPublishResults(null);
     try {
+      const relevantVariants = new Map(
+        selectedProducts
+          .filter((p) => variantSelections.has(p.id))
+          .map((p) => [p.id, variantSelections.get(p.id)!] as const),
+      );
       const response = await publishProductsBatch(
         {
           productIds: selectedProducts.map((p) => p.id),
@@ -156,6 +223,7 @@ export default function PublicacionesPage() {
           hashtags,
           campaignLabel: campaignLabel.trim() || undefined,
           imageOverrides: imageOverrides.size > 0 ? Object.fromEntries(imageOverrides) : undefined,
+          variantSelections: relevantVariants.size > 0 ? Object.fromEntries(relevantVariants) : undefined,
         },
         effectiveToken,
       );
@@ -169,7 +237,7 @@ export default function PublicacionesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section>
+      <section onBlur={handleSearchAreaBlur}>
         <h2 className="font-sans text-sm text-pe-muted mb-2">1. Elige los productos</h2>
         <label className="relative block max-w-md">
           <span className="sr-only">Buscar producto</span>
@@ -178,7 +246,10 @@ export default function PublicacionesPage() {
             type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            onFocus={() => setBrowseRequested(true)}
+            onFocus={() => {
+              setBrowseRequested(true);
+              setListOpen(true);
+            }}
             placeholder="Buscar producto por nombre, o hace clic para ver el catalogo..."
             className="w-full bg-pe-surface border border-pe-border rounded-xs pl-9 pr-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-pe-border"
           />
@@ -206,13 +277,13 @@ export default function PublicacionesPage() {
           </div>
         )}
 
-        {searching && (
+        {listOpen && searching && (
           <div className="flex items-center gap-2 mt-3 text-pe-muted text-xs">
             <Loader2 size={14} className="animate-spin" /> Buscando...
           </div>
         )}
 
-        {results.length > 0 && (
+        {listOpen && results.length > 0 && (
           <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
             {results.map((product) => {
               const isSelected = selected.has(product.id);
@@ -263,7 +334,8 @@ export default function PublicacionesPage() {
         <h2 className="font-sans text-sm text-pe-muted mb-2">3. Texto del post</h2>
         <label className="block">
           <span className="text-xs text-pe-muted">
-            Plantilla — variables disponibles: <code>{'{producto}'}</code> y <code>{'{precio}'}</code>
+            Plantilla — variables disponibles: <code>{'{producto}'}</code>, <code>{'{precio}'}</code>,{' '}
+            <code>{'{color}'}</code>, <code>{'{talla}'}</code> y <code>{'{cantidad}'}</code>
           </span>
           <textarea
             value={captionTemplate}
@@ -308,6 +380,12 @@ export default function PublicacionesPage() {
               const history = (imageHistory.get(product.id) ?? []).filter(
                 (url) => url !== effectiveImageUrl(product),
               );
+              const variants = product.variants ?? [];
+              const selection = variantSelections.get(product.id);
+              const colors = Array.from(new Set(variants.map((v) => v.color)));
+              const sizesForColor = variants.filter((v) => v.color === selection?.color);
+              const currentVariant = findVariant(product, selection);
+              const missingTokens = missingVariantTokens(captionTemplate, product, selection);
               return (
                 <li key={product.id} className="flex gap-3 border border-pe-border p-3">
                   <img
@@ -316,8 +394,45 @@ export default function PublicacionesPage() {
                     className="w-16 h-20 object-cover flex-shrink-0"
                   />
                   <div className="flex-1 flex flex-col gap-2">
+                    {variants.length > 0 && (
+                      <div className="flex items-end gap-3 flex-wrap">
+                        <label className="flex flex-col gap-1 text-[0.72rem]">
+                          <span className="text-pe-muted">Color</span>
+                          <select
+                            value={selection?.color ?? ''}
+                            onChange={(e) => setProductColor(product, e.target.value)}
+                            className="bg-pe-surface border border-pe-border rounded-xs px-2 py-1 text-xs"
+                          >
+                            {colors.map((color) => (
+                              <option key={color} value={color}>
+                                {color}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="flex flex-col gap-1 text-[0.72rem]">
+                          <span className="text-pe-muted">Talla</span>
+                          <select
+                            value={selection?.size ?? ''}
+                            onChange={(e) => setProductSize(product, e.target.value)}
+                            className="bg-pe-surface border border-pe-border rounded-xs px-2 py-1 text-xs"
+                          >
+                            {sizesForColor.map((v) => (
+                              <option key={v.size} value={v.size}>
+                                {v.size}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {currentVariant && (
+                          <span className="text-[0.7rem] text-pe-muted">
+                            Stock disponible: {currentVariant.stockAvailable}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="text-sm whitespace-pre-wrap">
-                      {interpolateCaption(captionTemplate, product)}
+                      {interpolateCaption(captionTemplate, product, selection)}
                       {hashtags.length > 0 && (
                         <>
                           {'\n\n'}
@@ -325,6 +440,11 @@ export default function PublicacionesPage() {
                         </>
                       )}
                     </p>
+                    {missingTokens.length > 0 && (
+                      <p role="status" className="text-[0.72rem] text-pe-warning-ink">
+                        Sin variante: {joinSpanishList(missingTokens)} quedará vacío en el texto de este producto.
+                      </p>
+                    )}
                     <div className="flex items-center gap-3">
                       <a
                         href={effectiveImageUrl(product)}

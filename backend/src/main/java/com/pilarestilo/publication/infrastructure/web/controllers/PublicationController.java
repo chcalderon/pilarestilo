@@ -125,13 +125,20 @@ public class PublicationController {
                 ? Map.of()
                 : request.imageOverrides().entrySet().stream()
                         .collect(Collectors.toMap(e -> UUID.fromString(e.getKey()), Map.Entry::getValue));
+        Map<UUID, PublishProductsBatchCommand.VariantSelection> variantSelections = request.variantSelections() == null
+                ? Map.of()
+                : request.variantSelections().entrySet().stream()
+                        .collect(Collectors.toMap(
+                                e -> UUID.fromString(e.getKey()),
+                                e -> new PublishProductsBatchCommand.VariantSelection(e.getValue().color(), e.getValue().size())));
         return new PublishProductsBatchCommand(
                 request.productIds(),
                 platforms,
                 request.captionTemplate(),
                 request.hashtags() == null ? List.of() : request.hashtags(),
                 request.campaignLabel(),
-                imageOverrides
+                imageOverrides,
+                variantSelections
         );
     }
 

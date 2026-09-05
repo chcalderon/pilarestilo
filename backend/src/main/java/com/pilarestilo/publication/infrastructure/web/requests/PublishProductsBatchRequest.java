@@ -15,5 +15,9 @@ public record PublishProductsBatchRequest(
         String campaignLabel,
         /** Per-product replacement image URL, keyed by productId (as a string — JSON object keys
          *  can't be UUIDs directly). */
-        Map<String, String> imageOverrides
-) {}
+        Map<String, String> imageOverrides,
+        /** Per-product chosen variant, keyed by productId (as a string, same reason as above). */
+        Map<String, VariantSelectionRequest> variantSelections
+) {
+    public record VariantSelectionRequest(String color, String size) {}
+}

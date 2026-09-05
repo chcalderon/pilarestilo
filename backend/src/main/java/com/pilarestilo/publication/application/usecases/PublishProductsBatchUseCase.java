@@ -16,11 +16,14 @@ import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Component;
 
+import com.pilarestilo.product.domain.model.ProductVariant;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -53,7 +56,7 @@ public class PublishProductsBatchUseCase {
                 }
                 continue;
             }
-            String caption = interpolate(command.captionTemplate(), product);
+            String caption = interpolate(command.captionTemplate(), product, command.variantSelections().get(productId));
             for (PublicationPlatform platform : command.platforms()) {
                 items.add(publishOne(productId, product, platform, caption, command, actorUserId));
             }
@@ -101,10 +104,21 @@ public class PublishProductsBatchUseCase {
         }
     }
 
-    private String interpolate(String template, Product product) {
+    private String interpolate(String template, Product product, PublishProductsBatchCommand.VariantSelection selection) {
         String priceText = NumberFormat.getInstance(Locale.of("es", "CL")).format(product.getPrice().amount());
+        ProductVariant variant = selection == null ? null : resolveVariant(product, selection);
         return template
                 .replace("{producto}", product.getName())
-                .replace("{precio}", "$" + priceText);
+                .replace("{precio}", "$" + priceText)
+                .replace("{color}", variant == null ? "" : variant.getColor())
+                .replace("{talla}", variant == null ? "" : variant.getSize())
+                .replace("{cantidad}", variant == null ? "" : String.valueOf(variant.available()));
+    }
+
+    private ProductVariant resolveVariant(Product product, PublishProductsBatchCommand.VariantSelection selection) {
+        return product.getVariants().stream()
+                .filter(v -> Objects.equals(v.getColor(), selection.color()) && Objects.equals(v.getSize(), selection.size()))
+                .findFirst()
+                .orElse(null);
     }
 }

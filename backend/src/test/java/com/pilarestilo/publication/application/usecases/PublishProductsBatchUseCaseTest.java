@@ -2,6 +2,7 @@ package com.pilarestilo.publication.application.usecases;
 
 import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.model.ProductVariant;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
@@ -72,6 +73,7 @@ class PublishProductsBatchUseCaseTest {
                 "{producto} a solo {precio}!",
                 List.of("#pilarestilo"),
                 "Liquidacion",
+                Map.of(),
                 Map.of()
         ), UUID.randomUUID());
 
@@ -105,7 +107,7 @@ class PublishProductsBatchUseCaseTest {
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(missingProductId, okProductId),
                 Set.of(PublicationPlatform.INSTAGRAM),
-                "{producto}", List.of(), null, Map.of()
+                "{producto}", List.of(), null, Map.of(), Map.of()
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
@@ -124,7 +126,7 @@ class PublishProductsBatchUseCaseTest {
                 .thenThrow(new DomainException("boom"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null, Map.of()
+                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null, Map.of(), Map.of()
         ), UUID.randomUUID());
 
         assertEquals(1, result.items().size());
@@ -145,7 +147,7 @@ class PublishProductsBatchUseCaseTest {
                 .thenReturn(failedDto(publicationId, "Instagram credentials are not configured"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of()
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of(), Map.of()
         ), UUID.randomUUID());
 
         assertFalse(result.items().get(0).success());
@@ -166,13 +168,63 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
-                Map.of(productId, "https://cdn.example.com/edited.jpg")
+                Map.of(productId, "https://cdn.example.com/edited.jpg"), Map.of()
         ), UUID.randomUUID());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
         verify(publicationService).create(captor.capture(), any());
         assertEquals("https://cdn.example.com/edited.jpg",
                 captor.getValue().mediaBundles().get(0).primaryAssetUrl());
+    }
+
+    @Test
+    void resolves_the_chosen_variant_into_the_color_talla_and_cantidad_tokens() {
+        UUID productId = UUID.randomUUID();
+        Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 2);
+        product.setVariants(List.of(
+                new ProductVariant("Negro", "M", 5, 1),
+                new ProductVariant("Rojo", "L", 3, 0)
+        ));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        UUID publicationId = UUID.randomUUID();
+        when(publicationService.create(any(CreatePublicationCommand.class), any()))
+                .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
+        when(publicationService.dispatch(eq(publicationId), any()))
+                .thenReturn(publishedDto(publicationId));
+
+        useCase.execute(new PublishProductsBatchCommand(
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto} color {color} talla {talla}, quedan {cantidad}", List.of(), null,
+                Map.of(), Map.of(productId, new PublishProductsBatchCommand.VariantSelection("Negro", "M"))
+        ), UUID.randomUUID());
+
+        ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
+        verify(publicationService).create(captor.capture(), any());
+        assertEquals("Chaqueta color Negro talla M, quedan 4", captor.getValue().caption());
+    }
+
+    @Test
+    void leaves_the_variant_tokens_blank_when_no_variant_is_selected() {
+        UUID productId = UUID.randomUUID();
+        Product product = Product.create("Bolso", "desc", new Money(BigDecimal.valueOf(9990), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 1);
+        product.setVariants(List.of(new ProductVariant("Negro", "UNICA", 5, 0)));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        UUID publicationId = UUID.randomUUID();
+        when(publicationService.create(any(CreatePublicationCommand.class), any()))
+                .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
+        when(publicationService.dispatch(eq(publicationId), any()))
+                .thenReturn(publishedDto(publicationId));
+
+        useCase.execute(new PublishProductsBatchCommand(
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto} color {color}", List.of(), null, Map.of(), Map.of()
+        ), UUID.randomUUID());
+
+        ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
+        verify(publicationService).create(captor.capture(), any());
+        assertEquals("Bolso color ", captor.getValue().caption());
     }
 
     private PublicationDto publishedDto(UUID id) {
