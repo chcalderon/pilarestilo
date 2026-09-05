@@ -54,6 +54,7 @@ const detail = {
       externalPermalink: 'https://www.instagram.com/p/ABC/',
       lastErrorCode: null,
       lastErrorMessage: null,
+      imageUrls: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'],
     },
     {
       publicationId: 'pub2',
@@ -65,6 +66,7 @@ const detail = {
       externalPermalink: null,
       lastErrorCode: 'FACEBOOK_PUBLISH_ERROR',
       lastErrorMessage: 'OAuthException 190',
+      imageUrls: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'],
     },
   ],
 };
@@ -101,6 +103,33 @@ describe('HistorialTab', () => {
 
     await user.click(screen.getByRole('button', { name: /ver detalle/i }));
     expect(screen.getByText(/OAuthException 190/)).toBeInTheDocument();
+  });
+
+  it('marks a row as a carousel when it has more than one image', async () => {
+    const user = userEvent.setup();
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
+    await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
+    expect((await screen.findAllByText(/carrusel · 3/i)).length).toBeGreaterThan(0);
+  });
+
+  it('"Editar" on a scheduled batch carries imageSelections from the rows', async () => {
+    const s = { ...summary, published: 0, failed: 0, scheduled: 1, scheduledAt: '2027-06-15T14:00:00.000Z' };
+    const d = {
+      ...detail,
+      scheduledAt: '2027-06-15T14:00:00.000Z',
+      rows: [{ ...detail.rows[0], status: 'SCHEDULED', externalPermalink: null }],
+    };
+    vi.mocked(getPublicationBatches).mockResolvedValue([s] as never);
+    vi.mocked(getPublicationBatchDetail).mockResolvedValue(d as never);
+    const onEditScheduled = vi.fn();
+    const user = userEvent.setup();
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={onEditScheduled} />);
+    await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
+    await user.click(await screen.findByRole('button', { name: /^editar$/i }));
+    expect(onEditScheduled).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ imageSelections: { p1: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'] } }),
+    );
   });
 
   it('a published row links to the live post', async () => {

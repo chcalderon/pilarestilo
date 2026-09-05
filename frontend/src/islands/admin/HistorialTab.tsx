@@ -19,11 +19,16 @@ type Preload = {
   hashtags: string[];
   campaignLabel: string | null;
   scheduledAt?: string | null;
+  imageSelections?: Record<string, string[]>;
 };
 type Props = {
   onRepublish: (p: Preload) => void;
   onGoToPublish: () => void;
-  onEditScheduled: (batchId: string, p: Required<Pick<Preload, 'productIds' | 'captionTemplate' | 'hashtags' | 'campaignLabel' | 'scheduledAt'>>) => void;
+  onEditScheduled: (
+    batchId: string,
+    p: Required<Pick<Preload, 'productIds' | 'captionTemplate' | 'hashtags' | 'campaignLabel' | 'scheduledAt'>>
+      & { imageSelections?: Record<string, string[]> },
+  ) => void;
 };
 
 const PLATFORM_SHORT: Record<string, string> = { INSTAGRAM: 'IG', FACEBOOK: 'FB' };
@@ -292,6 +297,11 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                           hashtags: detail.hashtags,
                           campaignLabel: detail.campaignLabel,
                           scheduledAt: detail.scheduledAt,
+                          imageSelections: Object.fromEntries(
+                            detail.productIds
+                              .map((pid) => [pid, detail.rows.find((r) => r.productId === pid)?.imageUrls ?? []] as const)
+                              .filter(([, urls]) => urls.length > 0),
+                          ),
                         })
                       }
                       className="text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose"
@@ -345,6 +355,9 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                           )}
                           <span className="flex-1 min-w-0 truncate text-sm">{r.productName}</span>
                           <span className="text-[0.7rem] text-pe-muted shrink-0">{PLATFORM_SHORT[r.platform] ?? r.platform}</span>
+                          {(r.imageUrls?.length ?? 0) > 1 && (
+                            <span className="text-[0.68rem] text-pe-muted shrink-0">Carrusel · {r.imageUrls.length}</span>
+                          )}
                           <StatusPill status={r.status} />
                           <div className="shrink-0 flex items-center gap-2">
                             {r.status === 'FAILED' && (
