@@ -4,10 +4,13 @@ import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
 import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
+import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
+import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
 import com.pilarestilo.publication.application.usecases.GetProductPublicationImageHistoryUseCase;
 import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
+import com.pilarestilo.publication.application.usecases.RetryFailedBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
@@ -38,13 +41,16 @@ public class PublicationController {
     private final PublicationService publicationService;
     private final PublishProductsBatchUseCase publishProductsBatchUseCase;
     private final GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase;
+    private final RetryFailedBatchUseCase retryFailedBatchUseCase;
 
     public PublicationController(PublicationService publicationService,
                                  PublishProductsBatchUseCase publishProductsBatchUseCase,
-                                 GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase) {
+                                 GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase,
+                                 RetryFailedBatchUseCase retryFailedBatchUseCase) {
         this.publicationService = publicationService;
         this.publishProductsBatchUseCase = publishProductsBatchUseCase;
         this.getProductPublicationImageHistoryUseCase = getProductPublicationImageHistoryUseCase;
+        this.retryFailedBatchUseCase = retryFailedBatchUseCase;
     }
 
     @PostMapping
@@ -115,6 +121,25 @@ public class PublicationController {
     public PublishProductsBatchResult publishBatch(@Valid @RequestBody PublishProductsBatchRequest request,
                                                    @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return publishProductsBatchUseCase.execute(toBatchCommand(request), currentUser == null ? null : currentUser.id());
+    }
+
+    @GetMapping("/batches")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public List<PublicationBatchSummaryDto> listBatches() {
+        return publicationService.listBatches();
+    }
+
+    @GetMapping("/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public PublicationBatchDetailDto getBatch(@PathVariable UUID batchId) {
+        return publicationService.getBatch(batchId);
+    }
+
+    @PostMapping("/batches/{batchId}/retry-failed")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto retryFailed(@PathVariable UUID batchId,
+                                                 @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return retryFailedBatchUseCase.execute(batchId, currentUser == null ? null : currentUser.id());
     }
 
     private PublishProductsBatchCommand toBatchCommand(PublishProductsBatchRequest request) {

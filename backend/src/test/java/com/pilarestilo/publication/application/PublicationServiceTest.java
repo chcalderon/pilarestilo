@@ -6,6 +6,8 @@ import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
+import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
+import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
@@ -19,7 +21,9 @@ import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
 import com.pilarestilo.publication.domain.events.PublicationDispatchRequested;
 import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
 import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
+import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationJpaRepository;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
@@ -53,6 +57,9 @@ import static org.mockito.Mockito.when;
 class PublicationServiceTest {
 
     @Mock
+    PublicationBatchJpaRepository publicationBatchRepository;
+
+    @Mock
     PublicationJpaRepository publicationRepository;
 
     @Mock
@@ -69,6 +76,7 @@ class PublicationServiceTest {
     @BeforeEach
     void setUp() {
         service = new PublicationService(
+                publicationBatchRepository,
                 publicationRepository,
                 productRepository,
                 publicationDispatcher,
@@ -233,6 +241,38 @@ class PublicationServiceTest {
     }
 
     @Test
+    void retry_of_a_failed_publication_bumps_the_count_and_redispatches() {
+        UUID publicationId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(publicationId, productId);
+        entity.setStatus(PublicationStatus.FAILED);
+        entity.setLastErrorCode("INSTAGRAM_PUBLISH_ERROR");
+        entity.setLastErrorMessage("Rate limited");
+        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(
+                Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                        "https://img", ProductCondition.NEW, "Pilar", 2)));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenReturn(new PublicationDispatcher.DispatchResult(
+                        "req-2", "hash-2", PublicationAttemptStatus.SUCCEEDED, "remote-2", null, null,
+                        "https://www.instagram.com/p/y/"));
+
+        PublicationDto dto = service.retry(publicationId, UUID.randomUUID());
+
+        assertEquals(1, dto.retryCount());
+        assertEquals(PublicationStatus.PUBLISHED, dto.status());
+    }
+
+    @Test
+    void retry_of_a_non_failed_publication_is_rejected() {
+        UUID publicationId = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(publicationId, null);
+        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        UUID actorId = UUID.randomUUID();
+        assertThrows(DomainException.class, () -> service.retry(publicationId, actorId));
+    }
+
+    @Test
     void submit_and_approve_transition_publication() {
         UUID publicationId = UUID.randomUUID();
         PublicationEntity entity = approvedPublication(publicationId, null);
@@ -247,6 +287,76 @@ class PublicationServiceTest {
         PublicationDto approved = service.approve(publicationId, UUID.randomUUID(), "ok");
         assertEquals(PublicationStatus.APPROVED, approved.status());
         verify(eventPublisher).publish(any(PublicationApproved.class));
+    }
+
+    @Test
+    void list_batches_summarizes_each_batch_by_status() {
+        UUID batchId = UUID.randomUUID();
+        PublicationBatchEntity batch = new PublicationBatchEntity();
+        batch.setId(batchId);
+        batch.setCaptionTemplate("{producto}");
+        batch.setHashtagsJson("[\"#pilarestilo\"]");
+        batch.setCampaignLabel("Liquidacion");
+        batch.setCreatedAt(Instant.now());
+        when(publicationBatchRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(batch));
+
+        PublicationEntity ok = batchRow(batchId, PublicationStatus.PUBLISHED, PublicationPlatform.INSTAGRAM);
+        PublicationEntity bad = batchRow(batchId, PublicationStatus.FAILED, PublicationPlatform.FACEBOOK);
+        when(publicationRepository.findByBatchIdInOrderByCreatedAtAsc(List.of(batchId)))
+                .thenReturn(List.of(ok, bad));
+
+        List<PublicationBatchSummaryDto> result = service.listBatches();
+
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).total());
+        assertEquals(1, result.get(0).published());
+        assertEquals(1, result.get(0).failed());
+        assertTrue(result.get(0).platforms().contains(PublicationPlatform.INSTAGRAM));
+        assertTrue(result.get(0).platforms().contains(PublicationPlatform.FACEBOOK));
+    }
+
+    @Test
+    void get_batch_resolves_product_names_and_rows() {
+        UUID batchId = UUID.randomUUID();
+        PublicationBatchEntity batch = new PublicationBatchEntity();
+        batch.setId(batchId);
+        batch.setCaptionTemplate("{producto}");
+        batch.setHashtagsJson("[\"#pilarestilo\"]");
+        batch.setCreatedAt(Instant.now());
+        when(publicationBatchRepository.findById(batchId)).thenReturn(Optional.of(batch));
+
+        Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(1000), "CLP"),
+                "https://img/x.jpg", ProductCondition.NEW, "Pilar", 1);
+        UUID productId = product.getId();
+
+        PublicationEntity row = batchRow(batchId, PublicationStatus.FAILED, PublicationPlatform.INSTAGRAM);
+        row.setProductId(productId);
+        row.setLastErrorCode("INSTAGRAM_PUBLISH_ERROR");
+        row.setLastErrorMessage("Rate limited");
+        when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(row));
+        when(productRepository.findAllByIds(java.util.Set.of(productId))).thenReturn(List.of(product));
+
+        PublicationBatchDetailDto detail = service.getBatch(batchId);
+
+        assertEquals(1, detail.rows().size());
+        assertEquals("Chaqueta", detail.rows().get(0).productName());
+        assertEquals("Rate limited", detail.rows().get(0).lastErrorMessage());
+        assertEquals(List.of(productId), detail.productIds());
+    }
+
+    @Test
+    void get_batch_throws_for_unknown_id() {
+        UUID unknown = UUID.randomUUID();
+        when(publicationBatchRepository.findById(unknown)).thenReturn(Optional.empty());
+        assertThrows(java.util.NoSuchElementException.class, () -> service.getBatch(unknown));
+    }
+
+    private PublicationEntity batchRow(UUID batchId, PublicationStatus status, PublicationPlatform platform) {
+        PublicationEntity e = approvedPublication(UUID.randomUUID(), UUID.randomUUID());
+        e.setBatchId(batchId);
+        e.setStatus(status);
+        e.setPlatform(platform);
+        return e;
     }
 
     private PublicationEntity approvedPublication(UUID publicationId, UUID productId) {

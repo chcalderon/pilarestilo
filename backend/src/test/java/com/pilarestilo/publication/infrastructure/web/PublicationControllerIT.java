@@ -287,6 +287,100 @@ class PublicationControllerIT {
                 .andExpect(jsonPath("$.items[2].errorMessage", org.hamcrest.Matchers.containsString("no encontrado")));
     }
 
+    @Test
+    void admin_sees_a_published_batch_in_the_history() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Falda historial", "desc",
+                new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/falda.jpg",
+                ProductCondition.NEW, "Pilar", 3));
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM", "FACEBOOK"),
+                                "captionTemplate", "{producto} a solo {precio}",
+                                "hashtags", List.of("#pilarestilo"),
+                                "campaignLabel", "Historial Test"))))
+                .andExpect(status().isOk());
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].campaignLabel").value("Historial Test"))
+                .andExpect(jsonPath("$[0].total").value(2))
+                .andExpect(jsonPath("$[0].failed").value(2))
+                .andExpect(jsonPath("$[0].published").value(0))
+                .andReturn();
+
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.captionTemplate").value("{producto} a solo {precio}"))
+                .andExpect(jsonPath("$.rows", hasSize(2)))
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"))
+                .andExpect(jsonPath("$.rows[0].lastErrorCode").exists())
+                .andExpect(jsonPath("$.productIds", hasItem(product.getId().toString())));
+    }
+
+    @Test
+    void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Blusa retry", "desc",
+                new Money(BigDecimal.valueOf(19990), "CLP"), "https://cdn.example.com/blusa.jpg",
+                ProductCondition.NEW, "Pilar", 2));
+
+        MvcResult batchResult = mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}"))))
+                .andExpect(status().isOk())
+                .andReturn();
+        String publicationId = om.readTree(batchResult.getResponse().getContentAsString())
+                .get("items").get(0).get("publicationId").asString();
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk()).andReturn();
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"));
+
+        mvc.perform(get("/api/admin/publications/{id}", publicationId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retryCount").value(1));
+    }
+
+    @Test
+    void retry_failed_in_batch_requires_update_permission() throws Exception {
+        String sellerToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000003"),
+                "seller-retry@pilarestilo.com", UserRole.SELLER,
+                List.of("productos"), List.of("publications.read"));
+
+        mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", UUID.randomUUID())
+                        .header("Authorization", bearer(sellerToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void unknown_batch_id_returns_404() throws Exception {
+        String adminToken = loginAdmin();
+        mvc.perform(get("/api/admin/publications/batches/{id}", UUID.randomUUID())
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNotFound());
+    }
+
     private String loginAdmin() throws Exception {
         return login("admin@pilarestilo.com", "admin2026");
     }

@@ -33,8 +33,13 @@ import com.pilarestilo.publication.infrastructure.persistence.entities.Publicati
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationMediaBundleEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationReviewEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationSnapshotEntity;
+import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationJpaRepository;
+import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
+import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
+import com.pilarestilo.publication.domain.enums.PublicationPlatform;
 import com.pilarestilo.shared.domain.DomainEventPublisher;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Service;
@@ -42,29 +47,36 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PublicationService {
 
     private static final String DISPATCH_ERROR_CODE = "DISPATCH_ERROR";
 
+    private final PublicationBatchJpaRepository publicationBatchRepository;
     private final PublicationJpaRepository publicationRepository;
     private final ProductRepository productRepository;
     private final PublicationDispatcher publicationDispatcher;
     private final DomainEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
-    public PublicationService(PublicationJpaRepository publicationRepository,
+    public PublicationService(PublicationBatchJpaRepository publicationBatchRepository,
+                              PublicationJpaRepository publicationRepository,
                               ProductRepository productRepository,
                               PublicationDispatcher publicationDispatcher,
                               DomainEventPublisher eventPublisher,
                               ObjectMapper objectMapper) {
+        this.publicationBatchRepository = publicationBatchRepository;
         this.publicationRepository = publicationRepository;
         this.productRepository = productRepository;
         this.publicationDispatcher = publicationDispatcher;
@@ -132,6 +144,74 @@ public class PublicationService {
         return toDto(findById(id));
     }
 
+    @Transactional(readOnly = true)
+    public List<PublicationBatchSummaryDto> listBatches() {
+        List<PublicationBatchEntity> batches = publicationBatchRepository.findAllByOrderByCreatedAtDesc();
+        List<UUID> ids = batches.stream().map(PublicationBatchEntity::getId).toList();
+        Map<UUID, List<PublicationEntity>> byBatch = ids.isEmpty() ? Map.of()
+                : publicationRepository.findByBatchIdInOrderByCreatedAtAsc(ids).stream()
+                        .collect(Collectors.groupingBy(PublicationEntity::getBatchId));
+
+        List<PublicationBatchSummaryDto> out = new ArrayList<>();
+        for (PublicationBatchEntity b : batches) {
+            out.add(summarize(b.getId(), b.getCampaignLabel(), b.getCreatedAt(),
+                    byBatch.getOrDefault(b.getId(), List.of())));
+        }
+        List<PublicationEntity> orphans = publicationRepository.findByBatchIdIsNullOrderByCreatedAtAsc();
+        if (!orphans.isEmpty()) {
+            out.add(summarize(null, null, orphans.get(orphans.size() - 1).getCreatedAt(), orphans));
+        }
+        return out;
+    }
+
+    private PublicationBatchSummaryDto summarize(UUID batchId, String label, Instant createdAt,
+                                                 List<PublicationEntity> rows) {
+        EnumSet<PublicationPlatform> platforms = EnumSet.noneOf(PublicationPlatform.class);
+        int published = 0;
+        int failed = 0;
+        int scheduled = 0;
+        int pending = 0;
+        for (PublicationEntity r : rows) {
+            platforms.add(r.getPlatform());
+            switch (r.getStatus()) {
+                case PUBLISHED -> published++;
+                case FAILED -> failed++;
+                case SCHEDULED -> scheduled++;
+                default -> pending++;
+            }
+        }
+        return new PublicationBatchSummaryDto(batchId, label, createdAt, platforms,
+                rows.size(), published, failed, scheduled, pending);
+    }
+
+    @Transactional(readOnly = true)
+    public PublicationBatchDetailDto getBatch(UUID batchId) {
+        PublicationBatchEntity batch = publicationBatchRepository.findById(batchId)
+                .orElseThrow(() -> new NoSuchElementException("Publication batch not found: " + batchId));
+        List<PublicationEntity> rows = publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId);
+        Set<UUID> productIds = rows.stream()
+                .map(PublicationEntity::getProductId).filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<UUID, Product> products = productIds.isEmpty() ? Map.of()
+                : productRepository.findAllByIds(productIds).stream()
+                        .collect(Collectors.toMap(Product::getId, p -> p));
+
+        List<PublicationBatchDetailDto.Row> dtoRows = rows.stream().map(r -> {
+            Product p = r.getProductId() == null ? null : products.get(r.getProductId());
+            return new PublicationBatchDetailDto.Row(
+                    r.getId(), r.getProductId(),
+                    p != null ? p.getName() : "(producto eliminado)",
+                    p != null ? p.getImageUrl() : null,
+                    r.getPlatform(), r.getStatus(), r.getExternalPermalink(),
+                    r.getLastErrorCode(), r.getLastErrorMessage());
+        }).toList();
+
+        return new PublicationBatchDetailDto(
+                batch.getId(), batch.getCampaignLabel(), batch.getCaptionTemplate(),
+                readHashtags(batch.getHashtagsJson()), batch.getCreatedAt(),
+                new ArrayList<>(productIds), dtoRows);
+    }
+
     @Transactional
     public PublicationDto submitForReview(UUID id, UUID actorUserId) {
         PublicationEntity entity = findById(id);
@@ -190,6 +270,11 @@ public class PublicationService {
             throw new DomainException("Only FAILED publications can be retried");
         }
         entity.setRetryCount(entity.getRetryCount() + 1);
+        // dispatchInternal only accepts APPROVED/SCHEDULED — a retry has to move the row back out
+        // of FAILED before re-dispatching, or the guard throws and rolls the retry count back.
+        entity.setStatus(PublicationStatus.APPROVED);
+        entity.setLastErrorCode(null);
+        entity.setLastErrorMessage(null);
         publicationRepository.save(entity);
         return dispatchInternal(id, PublicationAttemptTriggerType.RETRY);
     }
