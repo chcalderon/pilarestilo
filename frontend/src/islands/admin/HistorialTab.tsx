@@ -1,22 +1,30 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, Clock, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
+import { Ban, CheckCircle2, ChevronRight, Clock, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import {
   getPublicationBatches,
   getPublicationBatchDetail,
   retryBatchFailed,
   retryPublication,
+  cancelBatch,
+  rescheduleBatch,
   type PublicationBatchSummary,
   type PublicationBatchDetail,
 } from '../../lib/api';
+import { instantToSantiagoLabel, instantToSantiagoInputValue, santiagoWallTimeToInstant } from '../../lib/santiagoTime';
 
 type Preload = {
   productIds: string[];
   captionTemplate: string;
   hashtags: string[];
   campaignLabel: string | null;
+  scheduledAt?: string | null;
 };
-type Props = { onRepublish: (p: Preload) => void; onGoToPublish: () => void };
+type Props = {
+  onRepublish: (p: Preload) => void;
+  onGoToPublish: () => void;
+  onEditScheduled: (batchId: string, p: Required<Pick<Preload, 'productIds' | 'captionTemplate' | 'hashtags' | 'campaignLabel' | 'scheduledAt'>>) => void;
+};
 
 const PLATFORM_SHORT: Record<string, string> = { INSTAGRAM: 'IG', FACEBOOK: 'FB' };
 const PLATFORM_NAME: Record<string, string> = { INSTAGRAM: 'Instagram', FACEBOOK: 'Facebook' };
@@ -52,6 +60,13 @@ function StatusPill({ status }: { status: string }) {
       </span>
     );
   }
+  if (status === 'CANCELLED') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[0.72rem] px-1.5 py-0.5 bg-pe-surface text-pe-muted">
+        <Ban size={12} /> Cancelado
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 text-[0.72rem] px-1.5 py-0.5 text-pe-muted">
       <Loader2 size={12} /> {status === 'PUBLISHING' ? 'Publicando' : status}
@@ -59,7 +74,7 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-export default function HistorialTab({ onRepublish, onGoToPublish }: Props) {
+export default function HistorialTab({ onRepublish, onGoToPublish, onEditScheduled }: Props) {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
@@ -68,6 +83,8 @@ export default function HistorialTab({ onRepublish, onGoToPublish }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Map<string, PublicationBatchDetail>>(new Map());
   const [busyBatch, setBusyBatch] = useState<string | null>(null);
+  const [reschedulingFor, setReschedulingFor] = useState<string | null>(null);
+  const [rescheduleInput, setRescheduleInput] = useState('');
   const [openError, setOpenError] = useState<Set<string>>(new Set());
 
   function load() {
@@ -113,6 +130,30 @@ export default function HistorialTab({ onRepublish, onGoToPublish }: Props) {
       await retryPublication(publicationId, effectiveToken);
       const d = await getPublicationBatchDetail(batchId, effectiveToken);
       setDetails((prev) => new Map(prev).set(batchId, d));
+    } finally {
+      setBusyBatch(null);
+    }
+  }
+
+  async function doCancel(batchId: string) {
+    setBusyBatch(batchId);
+    try {
+      const d = await cancelBatch(batchId, effectiveToken);
+      setDetails((prev) => new Map(prev).set(batchId, d));
+      load();
+    } finally {
+      setBusyBatch(null);
+    }
+  }
+
+  async function doReschedule(batchId: string) {
+    if (!rescheduleInput) return;
+    setBusyBatch(batchId);
+    try {
+      const d = await rescheduleBatch(batchId, santiagoWallTimeToInstant(rescheduleInput), effectiveToken);
+      setDetails((prev) => new Map(prev).set(batchId, d));
+      setReschedulingFor(null);
+      load();
     } finally {
       setBusyBatch(null);
     }
@@ -187,44 +228,108 @@ export default function HistorialTab({ onRepublish, onGoToPublish }: Props) {
                   </span>
                 ))}
               </div>
-              <p className="text-[0.78rem] shrink-0 tabular-nums">
-                <span className="text-pe-positive-ink">{b.published} publicados</span>
-                {b.failed > 0 && <span className="text-pe-danger-ink"> · {b.failed} fallidos</span>}
-                {b.scheduled > 0 && <span className="text-pe-warning-ink"> · {b.scheduled} programados</span>}
-              </p>
+              {b.scheduledAt != null && b.scheduled > 0 ? (
+                <p className="text-[0.78rem] shrink-0 text-pe-warning-ink">
+                  ◷ Programada para {instantToSantiagoLabel(b.scheduledAt)}
+                  {b.failed > 0 && <span className="text-pe-danger-ink"> · {b.failed} fallidos</span>}
+                </p>
+              ) : (
+                <p className="text-[0.78rem] shrink-0 tabular-nums">
+                  <span className="text-pe-positive-ink">{b.published} publicados</span>
+                  {b.failed > 0 && <span className="text-pe-danger-ink"> · {b.failed} fallidos</span>}
+                  {b.scheduled > 0 && <span className="text-pe-warning-ink"> · {b.scheduled} programados</span>}
+                </p>
+              )}
             </button>
 
             {isOpen && b.batchId && (
               <div className="border-t border-pe-border p-3 flex flex-col gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {detail && detail.rows.some((r) => r.status === 'FAILED') && (
+                {detail && detail.rows.some((r) => r.status === 'SCHEDULED') ? (
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => doRetryBatch(b.batchId as string)}
+                      onClick={() => doCancel(b.batchId as string)}
                       disabled={busyBatch === b.batchId}
-                      className="inline-flex items-center gap-1.5 text-[0.78rem] bg-pe-rose text-pe-white px-2.5 py-1 rounded-xs disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose disabled:opacity-50"
                     >
-                      {busyBatch === b.batchId ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                      Reintentar fallidos
+                      <Ban size={12} /> Cancelar programación
                     </button>
-                  )}
-                  {detail && detail.captionTemplate && (
+                    {reschedulingFor === b.batchId ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <input
+                          type="datetime-local"
+                          value={rescheduleInput}
+                          onChange={(e) => setRescheduleInput(e.target.value)}
+                          className="bg-pe-surface border border-pe-border rounded-xs px-2 py-1 text-xs text-pe-black"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => doReschedule(b.batchId as string)}
+                          disabled={busyBatch === b.batchId}
+                          className="text-[0.78rem] bg-pe-rose text-pe-white px-2.5 py-1 rounded-xs disabled:opacity-50"
+                        >
+                          Guardar
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReschedulingFor(b.batchId as string);
+                          setRescheduleInput(detail.scheduledAt ? instantToSantiagoInputValue(detail.scheduledAt) : '');
+                        }}
+                        className="text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose"
+                      >
+                        Cambiar hora
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() =>
-                        onRepublish({
+                        onEditScheduled(b.batchId as string, {
                           productIds: detail.productIds,
-                          captionTemplate: detail.captionTemplate as string,
+                          captionTemplate: detail.captionTemplate ?? '',
                           hashtags: detail.hashtags,
                           campaignLabel: detail.campaignLabel,
+                          scheduledAt: detail.scheduledAt,
                         })
                       }
                       className="text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose"
                     >
-                      Volver a publicar esta tanda
+                      Editar
                     </button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {detail && detail.rows.some((r) => r.status === 'FAILED') && (
+                      <button
+                        type="button"
+                        onClick={() => doRetryBatch(b.batchId as string)}
+                        disabled={busyBatch === b.batchId}
+                        className="inline-flex items-center gap-1.5 text-[0.78rem] bg-pe-rose text-pe-white px-2.5 py-1 rounded-xs disabled:opacity-50"
+                      >
+                        {busyBatch === b.batchId ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                        Reintentar fallidos
+                      </button>
+                    )}
+                    {detail && detail.captionTemplate && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onRepublish({
+                            productIds: detail.productIds,
+                            captionTemplate: detail.captionTemplate as string,
+                            hashtags: detail.hashtags,
+                            campaignLabel: detail.campaignLabel,
+                          })
+                        }
+                        className="text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose"
+                      >
+                        Volver a publicar esta tanda
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {!detail && <p className="text-xs text-pe-muted">Cargando…</p>}
                 {detail && (

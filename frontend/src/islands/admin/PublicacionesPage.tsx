@@ -12,6 +12,7 @@ export default function PublicacionesPage() {
   const [tab, setTab] = useState<Tab>('publicar');
   const [synced, setSynced] = useState(false);
   const [preload, setPreload] = useState<PublicarTabPreload | undefined>(undefined);
+  const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -28,8 +29,20 @@ export default function PublicacionesPage() {
   }, [tab, synced]);
 
   function republish(next: PublicarTabPreload) {
+    setEditingBatchId(null);
     setPreload(next);
     setTab('publicar');
+  }
+
+  function editScheduled(batchId: string, next: PublicarTabPreload) {
+    setEditingBatchId(batchId);
+    setPreload(next);
+    setTab('publicar');
+  }
+
+  function clearEditing() {
+    setEditingBatchId(null);
+    setPreload(undefined);
   }
 
   return (
@@ -53,9 +66,20 @@ export default function PublicacionesPage() {
       </div>
 
       {tab === 'publicar' && (
-        <PublicarTab preload={preload} onPreloadConsumed={() => setPreload(undefined)} />
+        <PublicarTab
+          preload={preload}
+          onPreloadConsumed={() => setPreload(undefined)}
+          editingBatchId={editingBatchId ?? undefined}
+          onEditCancelled={clearEditing}
+        />
       )}
-      {tab === 'historial' && <HistorialTab onRepublish={republish} onGoToPublish={() => setTab('publicar')} />}
+      {tab === 'historial' && (
+        <HistorialTab
+          onRepublish={republish}
+          onGoToPublish={() => setTab('publicar')}
+          onEditScheduled={editScheduled}
+        />
+      )}
     </div>
   );
 }

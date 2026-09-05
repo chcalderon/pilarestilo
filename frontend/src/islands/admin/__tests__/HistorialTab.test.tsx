@@ -7,6 +7,7 @@ import {
   getPublicationBatches,
   getPublicationBatchDetail,
   retryBatchFailed,
+  cancelBatch,
 } from '../../../lib/api';
 
 vi.mock('../../../lib/api', () => ({
@@ -14,6 +15,8 @@ vi.mock('../../../lib/api', () => ({
   getPublicationBatchDetail: vi.fn(),
   retryBatchFailed: vi.fn(),
   retryPublication: vi.fn(),
+  cancelBatch: vi.fn(),
+  rescheduleBatch: vi.fn(),
 }));
 vi.mock('../../../lib/authStore', () => ({
   useAuthStore: () => ({ token: 't' }),
@@ -30,6 +33,7 @@ const summary = {
   failed: 1,
   scheduled: 0,
   pending: 0,
+  scheduledAt: null,
 };
 const detail = {
   batchId: 'b1',
@@ -38,6 +42,7 @@ const detail = {
   hashtags: ['#pilarestilo'],
   createdAt: summary.createdAt,
   productIds: ['p1'],
+  scheduledAt: null,
   rows: [
     {
       publicationId: 'pub1',
@@ -72,7 +77,7 @@ beforeEach(() => {
 
 describe('HistorialTab', () => {
   it('renders a batch card with its status summary', async () => {
-    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} />);
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     expect(await screen.findByText('Liquidacion primavera')).toBeInTheDocument();
     expect(screen.getByText(/1 publicados/i)).toBeInTheDocument();
     expect(screen.getByText(/1 fallidos/i)).toBeInTheDocument();
@@ -81,7 +86,7 @@ describe('HistorialTab', () => {
   it('shows an empty state with a button to Publicar', async () => {
     vi.mocked(getPublicationBatches).mockResolvedValue([]);
     const onGoToPublish = vi.fn();
-    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={onGoToPublish} />);
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={onGoToPublish} onEditScheduled={vi.fn()} />);
     const btn = await screen.findByRole('button', { name: /ir a publicar/i });
     await userEvent.setup().click(btn);
     expect(onGoToPublish).toHaveBeenCalled();
@@ -89,7 +94,7 @@ describe('HistorialTab', () => {
 
   it('expands to rows and reveals the error detail on a failed row', async () => {
     const user = userEvent.setup();
-    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} />);
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
 
     expect((await screen.findAllByText('Chaqueta')).length).toBe(2);
@@ -100,7 +105,7 @@ describe('HistorialTab', () => {
 
   it('a published row links to the live post', async () => {
     const user = userEvent.setup();
-    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} />);
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
     const link = await screen.findByRole('link', { name: /ver en instagram/i });
     expect(link).toHaveAttribute('href', 'https://www.instagram.com/p/ABC/');
@@ -109,7 +114,7 @@ describe('HistorialTab', () => {
 
   it('retry-failed calls the endpoint and re-renders from its response', async () => {
     const user = userEvent.setup();
-    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} />);
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
     await user.click(await screen.findByRole('button', { name: /reintentar fallidos/i }));
     await waitFor(() => expect(retryBatchFailed).toHaveBeenCalledWith('b1', 't'));
@@ -118,7 +123,7 @@ describe('HistorialTab', () => {
   it('volver a publicar esta tanda calls onRepublish with the batch data', async () => {
     const onRepublish = vi.fn();
     const user = userEvent.setup();
-    render(<HistorialTab onRepublish={onRepublish} onGoToPublish={vi.fn()} />);
+    render(<HistorialTab onRepublish={onRepublish} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
     await user.click(await screen.findByRole('button', { name: /volver a publicar esta tanda/i }));
     expect(onRepublish).toHaveBeenCalledWith(
@@ -128,5 +133,50 @@ describe('HistorialTab', () => {
         campaignLabel: 'Liquidacion primavera',
       }),
     );
+  });
+
+  it('shows a scheduled batch as "Programada para" with cancel / reschedule / edit', async () => {
+    const s = { ...summary, published: 0, failed: 0, scheduled: 1, scheduledAt: '2027-06-15T14:00:00.000Z' };
+    const d = {
+      ...detail,
+      scheduledAt: '2027-06-15T14:00:00.000Z',
+      rows: [{ ...detail.rows[0], status: 'SCHEDULED', externalPermalink: null }],
+    };
+    vi.mocked(getPublicationBatches).mockResolvedValue([s] as never);
+    vi.mocked(getPublicationBatchDetail).mockResolvedValue(d as never);
+    vi.mocked(cancelBatch).mockResolvedValue({ ...d, rows: [{ ...d.rows[0], status: 'CANCELLED' }] } as never);
+
+    const user = userEvent.setup();
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
+    expect(await screen.findByText(/programada para/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /liquidacion primavera/i }));
+    await user.click(await screen.findByRole('button', { name: /cancelar programaci/i }));
+    await waitFor(() => expect(cancelBatch).toHaveBeenCalledWith('b1', 't'));
+  });
+
+  it('"Editar" on a scheduled batch calls onEditScheduled with the batch data', async () => {
+    const s = { ...summary, published: 0, failed: 0, scheduled: 1, scheduledAt: '2027-06-15T14:00:00.000Z' };
+    const d = {
+      ...detail,
+      scheduledAt: '2027-06-15T14:00:00.000Z',
+      rows: [{ ...detail.rows[0], status: 'SCHEDULED', externalPermalink: null }],
+    };
+    vi.mocked(getPublicationBatches).mockResolvedValue([s] as never);
+    vi.mocked(getPublicationBatchDetail).mockResolvedValue(d as never);
+    const onEditScheduled = vi.fn();
+
+    const user = userEvent.setup();
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={onEditScheduled} />);
+    await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
+    await user.click(await screen.findByRole('button', { name: /^editar$/i }));
+
+    expect(onEditScheduled).toHaveBeenCalledWith('b1', expect.objectContaining({
+      productIds: ['p1'],
+      captionTemplate: '{producto}',
+      hashtags: ['#pilarestilo'],
+      campaignLabel: 'Liquidacion primavera',
+      scheduledAt: '2027-06-15T14:00:00.000Z',
+    }));
   });
 });
