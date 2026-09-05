@@ -11,6 +11,7 @@ import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
 import com.pilarestilo.publication.application.usecases.GetProductPublicationImageHistoryUseCase;
 import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
 import com.pilarestilo.publication.application.usecases.RetryFailedBatchUseCase;
+import com.pilarestilo.publication.application.usecases.UpdateScheduledBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
@@ -20,6 +21,7 @@ import com.pilarestilo.publication.infrastructure.web.requests.ApprovePublicatio
 import com.pilarestilo.publication.infrastructure.web.requests.CreatePublicationRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.PublishProductsBatchRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.RejectPublicationRequest;
+import com.pilarestilo.publication.infrastructure.web.requests.RescheduleBatchRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,14 +44,17 @@ public class PublicationController {
     private final PublishProductsBatchUseCase publishProductsBatchUseCase;
     private final GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase;
     private final RetryFailedBatchUseCase retryFailedBatchUseCase;
+    private final UpdateScheduledBatchUseCase updateScheduledBatchUseCase;
 
     public PublicationController(PublicationService publicationService,
                                  PublishProductsBatchUseCase publishProductsBatchUseCase,
                                  GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase,
-                                 RetryFailedBatchUseCase retryFailedBatchUseCase) {
+                                 RetryFailedBatchUseCase retryFailedBatchUseCase,
+                                 UpdateScheduledBatchUseCase updateScheduledBatchUseCase) {
         this.publicationService = publicationService;
         this.publishProductsBatchUseCase = publishProductsBatchUseCase;
         this.getProductPublicationImageHistoryUseCase = getProductPublicationImageHistoryUseCase;
+        this.updateScheduledBatchUseCase = updateScheduledBatchUseCase;
         this.retryFailedBatchUseCase = retryFailedBatchUseCase;
     }
 
@@ -140,6 +145,28 @@ public class PublicationController {
     public PublicationBatchDetailDto retryFailed(@PathVariable UUID batchId,
                                                  @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return retryFailedBatchUseCase.execute(batchId, currentUser == null ? null : currentUser.id());
+    }
+
+    @PostMapping("/batches/{batchId}/cancel")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto cancelBatch(@PathVariable UUID batchId) {
+        return publicationService.cancelScheduledBatch(batchId);
+    }
+
+    @PostMapping("/batches/{batchId}/reschedule")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto rescheduleBatch(@PathVariable UUID batchId,
+                                                     @Valid @RequestBody RescheduleBatchRequest request) {
+        return publicationService.rescheduleBatch(batchId, parseFutureInstant(request.scheduledAt()));
+    }
+
+    @PutMapping("/batches/{batchId}")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublicationBatchDetailDto updateScheduledBatch(@PathVariable UUID batchId,
+                                                          @Valid @RequestBody PublishProductsBatchRequest request,
+                                                          @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return updateScheduledBatchUseCase.execute(batchId, toBatchCommand(request),
+                currentUser == null ? null : currentUser.id());
     }
 
     private PublishProductsBatchCommand toBatchCommand(PublishProductsBatchRequest request) {
