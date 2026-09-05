@@ -43,7 +43,7 @@ class RetryFailedBatchUseCaseTest {
         PublicationEntity published = row(batchId, PublicationStatus.PUBLISHED);
         when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(failed, published));
         when(publicationService.getBatch(batchId)).thenReturn(
-                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of()));
+                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of(), null));
 
         useCase.execute(batchId, UUID.randomUUID());
 
@@ -58,7 +58,7 @@ class RetryFailedBatchUseCaseTest {
         when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(failed));
         when(publicationService.retry(any(), any())).thenThrow(new DomainException("Only FAILED publications can be retried"));
         when(publicationService.getBatch(batchId)).thenReturn(
-                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of()));
+                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of(), null));
 
         useCase.execute(batchId, UUID.randomUUID()); // must not throw
     }

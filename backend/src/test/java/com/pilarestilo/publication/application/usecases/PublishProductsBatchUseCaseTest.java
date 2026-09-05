@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -57,7 +58,8 @@ class PublishProductsBatchUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new PublishProductsBatchUseCase(
-                publicationService, productRepository, publicationBatchRepository, new ObjectMapper());
+                publicationService, productRepository, publicationBatchRepository,
+                new BatchPublicationFactory(new ObjectMapper()));
         lenient().when(publicationBatchRepository.save(any(PublicationBatchEntity.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }
@@ -267,6 +269,36 @@ class PublishProductsBatchUseCaseTest {
         ArgumentCaptor<CreatePublicationCommand> cmdCaptor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
         verify(publicationService).create(cmdCaptor.capture(), any());
         assertEquals(batchCaptor.getValue().getId(), cmdCaptor.getValue().batchId());
+    }
+
+    @Test
+    void a_scheduled_batch_creates_rows_but_never_dispatches() {
+        UUID productId = UUID.randomUUID();
+        Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 2);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        UUID publicationId = UUID.randomUUID();
+        when(publicationService.create(any(CreatePublicationCommand.class), any()))
+                .thenReturn(new CreatePublicationResult(scheduledDto(publicationId), true));
+
+        PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto}", List.of(), "Camp", Map.of(), Map.of(),
+                java.time.Instant.now().plusSeconds(3600)
+        ), UUID.randomUUID());
+
+        org.mockito.Mockito.verify(publicationService, org.mockito.Mockito.never()).dispatch(any(), any());
+        assertEquals(1, result.items().size());
+        assertTrue(result.items().get(0).scheduled());
+        assertFalse(result.items().get(0).success());
+
+        ArgumentCaptor<PublicationBatchEntity> batchCaptor = ArgumentCaptor.forClass(PublicationBatchEntity.class);
+        verify(publicationBatchRepository).save(batchCaptor.capture());
+        assertNotNull(batchCaptor.getValue().getScheduledAt());
+    }
+
+    private PublicationDto scheduledDto(UUID id) {
+        return dto(id, PublicationStatus.SCHEDULED, null);
     }
 
     private PublicationDto publishedDto(UUID id) {
