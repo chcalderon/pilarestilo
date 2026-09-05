@@ -299,6 +299,10 @@ export interface SystemSettingsDto {
   n8nWebhookUrl?: string | null;
   n8nTokenHeaderName?: string | null;
   n8nApiKeyConfigured: boolean;
+  metaInstagramUserId?: string | null;
+  metaInstagramAccessTokenConfigured: boolean;
+  metaFacebookPageId?: string | null;
+  metaFacebookPageAccessTokenConfigured: boolean;
   whatsappSimulatedTo?: string | null;
   whatsappSimulatedSender?: string | null;
   whatsappTwilioApiBaseUrl?: string | null;
@@ -383,6 +387,12 @@ export interface UpdateSystemSettingsRequest {
   n8nTokenHeaderName?: string;
   n8nApiKey?: string;
   clearN8nApiKey?: boolean;
+  metaInstagramUserId?: string;
+  metaInstagramAccessToken?: string;
+  clearMetaInstagramAccessToken?: boolean;
+  metaFacebookPageId?: string;
+  metaFacebookPageAccessToken?: string;
+  clearMetaFacebookPageAccessToken?: boolean;
   whatsappSimulatedTo?: string;
   whatsappSimulatedSender?: string;
   whatsappTwilioApiBaseUrl?: string;
