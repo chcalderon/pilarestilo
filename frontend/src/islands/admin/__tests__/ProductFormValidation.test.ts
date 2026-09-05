@@ -30,6 +30,7 @@ function baseForm() {
     brand: 'PilarEstilo',
     stock: '1',
     active: true,
+    galleryImageUrls: [] as string[],
   };
 }
 

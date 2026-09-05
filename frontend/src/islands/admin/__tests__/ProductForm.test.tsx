@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import ProductForm from '../ProductForm';
-import type { VariantTemplateDto } from '../../../lib/api';
+import { updateProduct, type VariantTemplateDto, type ProductDto } from '../../../lib/api';
 
 /**
  * Characterization suite for the template-driven rewrite (variant fields no longer derive from
@@ -99,5 +99,50 @@ describe('ProductForm: template-driven variant schema', () => {
 
     await user.click(screen.getAllByRole('button', { name: /quitar/i })[0]);
     expect(screen.getAllByRole('button', { name: /quitar/i })).toHaveLength(1);
+  });
+});
+
+describe('ProductForm: image gallery', () => {
+  const productWithGallery: ProductDto = {
+    id: 'p-gal',
+    name: 'Abrigo Teddy',
+    description: 'Abrigo de peluche',
+    price: { amount: 45000, currency: 'CLP' },
+    imageUrl: 'https://img/cover.jpg',
+    condition: 'NEW',
+    brand: 'Pilar',
+    stock: 3,
+    active: true,
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    categorySlugs: [],
+    galleryImageUrls: ['https://img/a.jpg', 'https://img/b.jpg'],
+  };
+
+  it('seeds the gallery editor from an existing product', async () => {
+    const { container } = render(
+      <ProductForm product={productWithGallery} token="t" onSave={() => {}} onCancel={() => {}} />,
+    );
+    await screen.findByDisplayValue('Abrigo Teddy');
+    const srcs = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    expect(srcs).toEqual(expect.arrayContaining(['https://img/a.jpg', 'https://img/b.jpg']));
+  });
+
+  it('sends the edited gallery with the update payload', async () => {
+    vi.mocked(updateProduct).mockResolvedValue(productWithGallery as never);
+    const user = userEvent.setup();
+    render(<ProductForm product={productWithGallery} token="t" onSave={() => {}} onCancel={() => {}} />);
+    await screen.findByDisplayValue('Abrigo Teddy');
+
+    await user.click(screen.getAllByRole('button', { name: /quitar foto/i })[0]);
+    await user.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    await vi.waitFor(() =>
+      expect(updateProduct).toHaveBeenCalledWith(
+        'p-gal',
+        expect.objectContaining({ galleryImageUrls: ['https://img/b.jpg'] }),
+        't',
+      ),
+    );
   });
 });

@@ -15,6 +15,7 @@ import {
   type VariantTemplateDto,
 } from '../../lib/api';
 import ImageDropzone from './ImageDropzone';
+import ProductGalleryEditor from './ProductGalleryEditor';
 import {
   createEmptyVariantSelections,
   getAttributeValue,
@@ -195,6 +196,7 @@ const EMPTY_FORM = {
   brand: '',
   stock: '1',
   active: true,
+  galleryImageUrls: [] as string[],
 };
 
 type VariantRow = {
@@ -574,6 +576,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
+        galleryImageUrls: product.galleryImageUrls ?? [],
       };
       const nextRows = toVariantRows(reconciledRows, currentSchemaRef.current);
       setForm(nextForm);
@@ -640,6 +643,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         brand: product.brand,
         stock: String(product.stock),
         active: product.active,
+        galleryImageUrls: product.galleryImageUrls ?? [],
       };
       const fixedIds = withAncestors(ids, categories);
       setSelectedCatIds(fixedIds);
@@ -749,6 +753,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       condition: nextForm.condition,
       brand: nextForm.brand.trim(),
       active: nextForm.active,
+      galleryImageUrls: nextForm.galleryImageUrls,
       variantTemplateId: nextTemplateId,
       categories: cats,
       variants,
@@ -802,6 +807,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         brand: form.brand.trim(),
         stock: variantTotalStock,
         active: form.active,
+        galleryImageUrls: form.galleryImageUrls,
         categoryIds: selectedCatIds,
         variantTemplateId: selectedVariantTemplateId || undefined,
         variants: normalizedVariants,
@@ -1229,6 +1235,13 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
                 setLastUploadedFile(file);
                 setAiTransformPreviewUrl('');
               }}
+              token={token ?? ''}
+            />
+            <ProductGalleryEditor
+              value={form.galleryImageUrls}
+              onChange={(next) => setForm((prev) => ({ ...prev, galleryImageUrls: next }))}
+              coverUrl={form.imageUrl}
+              onCoverChange={(url) => setForm((prev) => ({ ...prev, imageUrl: url }))}
               token={token ?? ''}
             />
           </div>

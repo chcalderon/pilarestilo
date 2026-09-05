@@ -9,6 +9,8 @@ interface Props {
   readonly folder: string;
   readonly token: string;
   readonly label?: string;
+  /** Accessible name for the pick control. Defaults to "Subir/Cambiar imagen del producto". */
+  readonly ariaLabel?: string;
   readonly customUpload?: (file: File) => Promise<string>;
   readonly allowClear?: boolean;
   readonly preserveOriginalFile?: boolean;
@@ -61,6 +63,7 @@ export default function ImageDropzone({
   folder,
   token,
   label,
+  ariaLabel,
   customUpload,
   allowClear = true,
   preserveOriginalFile = false,
@@ -236,7 +239,7 @@ export default function ImageDropzone({
         */}
         <label
           className="absolute inset-0 cursor-pointer focus-within:outline-hidden focus-within:ring-2 focus-within:ring-inset focus-within:ring-pe-rose"
-          aria-label={preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto'}
+          aria-label={ariaLabel ?? (preview ? 'Cambiar imagen del producto' : 'Subir imagen del producto')}
         >
           <input
             ref={fileInputRef}

@@ -76,6 +76,7 @@ export default function ProductGalleryEditor({ value, onChange, coverUrl, onCove
           folder="products"
           token={token}
           label="Agregar foto"
+          ariaLabel="Agregar foto a la galería"
           allowClear={false}
           onUpload={(url) => onChange([...value, url])}
         />
