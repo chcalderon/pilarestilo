@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class FacebookPagePublisherAdapterTest {
@@ -70,6 +71,65 @@ class FacebookPagePublisherAdapterTest {
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
         assertEquals("1023624300843445_777", result.remotePostId());
         assertEquals("https://www.facebook.com/1023624300843445_777", result.remotePermalink());
+    }
+
+    @Test
+    void publishes_a_carousel_via_unpublished_photos_and_a_feed_post() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                null, null, "https://graph.instagram.com/v23.0",
+                "1023624300843445", "token-fb", "https://graph.facebook.com/v23.0", null));
+
+        PublicationDispatchPayload carousel = new PublicationDispatchPayload(
+                java.util.UUID.randomUUID(), PublicationPlatform.FACEBOOK, PublicationChannelType.FEED_POST,
+                "Mira esto", List.of("#pilarestilo"),
+                List.of("https://cdn.example.com/1.jpg", "https://cdn.example.com/2.jpg"));
+
+        server.expect(requestTo(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("/1023624300843445/photos"),
+                        org.hamcrest.Matchers.containsString("published=false"))))
+                .andRespond(withSuccess("{\"id\":\"photo-1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("published=false")))
+                .andRespond(withSuccess("{\"id\":\"photo-2\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("/1023624300843445/feed"),
+                        org.hamcrest.Matchers.containsString("media_fbid"))))
+                .andRespond(withSuccess("{\"id\":\"1023624300843445_9999\"}", MediaType.APPLICATION_JSON));
+
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
+        PublicationDispatcher.DispatchResult result = adapter.publish(carousel);
+
+        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
+        assertEquals("1023624300843445_9999", result.remotePostId());
+        assertEquals("https://www.facebook.com/1023624300843445_9999", result.remotePermalink());
+        server.verify();
+    }
+
+    @Test
+    void a_failed_carousel_photo_upload_fails_the_publication() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                null, null, "https://graph.instagram.com/v23.0",
+                "1023624300843445", "token-fb", "https://graph.facebook.com/v23.0", null));
+
+        PublicationDispatchPayload carousel = new PublicationDispatchPayload(
+                java.util.UUID.randomUUID(), PublicationPlatform.FACEBOOK, PublicationChannelType.FEED_POST,
+                "c", List.of(), List.of("https://cdn.example.com/1.jpg", "https://cdn.example.com/2.jpg"));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("published=false")))
+                .andRespond(withServerError());
+
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
+        PublicationDispatcher.DispatchResult result = adapter.publish(carousel);
+
+        assertEquals(PublicationAttemptStatus.FAILED, result.status());
+        assertEquals("FACEBOOK_PUBLISH_ERROR", result.errorCode());
     }
 
     @Test
