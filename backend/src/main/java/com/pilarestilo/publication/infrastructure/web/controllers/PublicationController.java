@@ -6,6 +6,7 @@ import com.pilarestilo.publication.application.commands.PublishProductsBatchComm
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
+import com.pilarestilo.publication.application.usecases.GetProductPublicationImageHistoryUseCase;
 import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,11 +37,14 @@ public class PublicationController {
 
     private final PublicationService publicationService;
     private final PublishProductsBatchUseCase publishProductsBatchUseCase;
+    private final GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase;
 
     public PublicationController(PublicationService publicationService,
-                                 PublishProductsBatchUseCase publishProductsBatchUseCase) {
+                                 PublishProductsBatchUseCase publishProductsBatchUseCase,
+                                 GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase) {
         this.publicationService = publicationService;
         this.publishProductsBatchUseCase = publishProductsBatchUseCase;
+        this.getProductPublicationImageHistoryUseCase = getProductPublicationImageHistoryUseCase;
     }
 
     @PostMapping
@@ -99,6 +104,12 @@ public class PublicationController {
         return publicationService.retry(id, currentUser == null ? null : currentUser.id());
     }
 
+    @GetMapping("/products/{productId}/image-history")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public List<String> productImageHistory(@PathVariable UUID productId) {
+        return getProductPublicationImageHistoryUseCase.execute(productId);
+    }
+
     @PostMapping("/batch")
     @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
     public PublishProductsBatchResult publishBatch(@Valid @RequestBody PublishProductsBatchRequest request,
@@ -110,12 +121,17 @@ public class PublicationController {
         Set<PublicationPlatform> platforms = request.platforms().stream()
                 .map(p -> PublicationPlatform.valueOf(p.trim().toUpperCase()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<UUID, String> imageOverrides = request.imageOverrides() == null
+                ? Map.of()
+                : request.imageOverrides().entrySet().stream()
+                        .collect(Collectors.toMap(e -> UUID.fromString(e.getKey()), Map.Entry::getValue));
         return new PublishProductsBatchCommand(
                 request.productIds(),
                 platforms,
                 request.captionTemplate(),
                 request.hashtags() == null ? List.of() : request.hashtags(),
-                request.campaignLabel()
+                request.campaignLabel(),
+                imageOverrides
         );
     }
 

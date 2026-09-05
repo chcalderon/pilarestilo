@@ -3,11 +3,18 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import PublicacionesPage from '../PublicacionesPage';
-import { searchProducts, publishProductsBatch } from '../../../lib/api';
+import {
+  searchProducts,
+  publishProductsBatch,
+  uploadMediaFile,
+  getProductPublicationImageHistory,
+} from '../../../lib/api';
 
 vi.mock('../../../lib/api', () => ({
   searchProducts: vi.fn(),
   publishProductsBatch: vi.fn(),
+  uploadMediaFile: vi.fn(),
+  getProductPublicationImageHistory: vi.fn(),
 }));
 
 vi.mock('../../../lib/authStore', () => ({
@@ -36,6 +43,8 @@ beforeEach(() => {
       { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: null, errorMessage: 'Credenciales no configuradas' },
     ],
   } as never);
+  vi.mocked(getProductPublicationImageHistory).mockResolvedValue([]);
+  vi.mocked(uploadMediaFile).mockResolvedValue('https://img/edited.jpg');
 });
 
 async function selectTheProduct(user: ReturnType<typeof userEvent.setup>) {
@@ -91,5 +100,44 @@ describe('PublicacionesPage', () => {
 
     await user.click(chip);
     expect(screen.queryByText(/producto\(s\) elegido/i)).not.toBeInTheDocument();
+  });
+
+  it('uploads an edited photo and sends it as the override for that product', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectTheProduct(user);
+
+    const file = new File(['fake'], 'edited.jpg', { type: 'image/jpeg' });
+    const input = screen.getByLabelText(/subir foto editada/i);
+    await user.upload(input, file);
+
+    await waitFor(() => expect(uploadMediaFile).toHaveBeenCalledWith(file, 'publications', 't'));
+    expect(await screen.findByText(/reemplazar foto editada/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ imageOverrides: { p1: 'https://img/edited.jpg' } }),
+        't',
+      ),
+    );
+  });
+
+  it('offers previously used photos for the product and reuses one on click', async () => {
+    vi.mocked(getProductPublicationImageHistory).mockResolvedValue(['https://img/old-edit.jpg']);
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectTheProduct(user);
+
+    const reuseButton = await screen.findByRole('button', { name: /reusar esta foto/i });
+    await user.click(reuseButton);
+
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ imageOverrides: { p1: 'https://img/old-edit.jpg' } }),
+        't',
+      ),
+    );
   });
 });
