@@ -3,12 +3,11 @@ package com.pilarestilo.publication.infrastructure.meta;
 import com.pilarestilo.publication.application.dto.PublicationDispatchPayload;
 import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -16,11 +15,14 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
 
     private final RestClient.Builder restClientBuilder;
     private final MetaPublishingConfigResolver configResolver;
+    private final ObjectMapper objectMapper;
 
     public FacebookPagePublisherAdapter(RestClient.Builder restClientBuilder,
-                                        MetaPublishingConfigResolver configResolver) {
+                                        MetaPublishingConfigResolver configResolver,
+                                        ObjectMapper objectMapper) {
         this.restClientBuilder = restClientBuilder;
         this.configResolver = configResolver;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -32,20 +34,27 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
 
         RestClient client = restClientBuilder.baseUrl(config.facebookBaseUrl()).build();
         try {
-            Map<String, Object> response = client.post()
+            // The Graph API returns JSON with Content-Type: text/javascript, which no JSON
+            // message converter is registered for — read the raw string and parse it directly.
+            String raw = client.post()
                     .uri("/{pageId}/photos?url={imageUrl}&caption={caption}&access_token={token}",
-                            config.facebookPageId(), payload.mediaUrl(), payload.fullCaptionText(), config.facebookPageAccessToken())
+                            config.facebookPageId(), payload.mediaUrl(), payload.fullCaptionText(),
+                            config.facebookPageAccessToken())
                     .retrieve()
-                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
-            Object postIdRaw = response == null ? null : response.get("post_id");
-            String remotePostId = postIdRaw != null ? String.valueOf(postIdRaw)
-                    : (response != null && response.get("id") != null ? String.valueOf(response.get("id")) : null);
-            String permalink = postIdRaw == null ? null : "https://www.facebook.com/" + postIdRaw;
+                    .body(String.class);
+            JsonNode response = raw == null || raw.isBlank()
+                    ? objectMapper.createObjectNode()
+                    : objectMapper.readTree(raw);
+
+            String postId = response.hasNonNull("post_id") ? response.get("post_id").asString() : null;
+            String remotePostId = postId != null ? postId
+                    : (response.hasNonNull("id") ? response.get("id").asString() : null);
+            String permalink = postId == null ? null : "https://www.facebook.com/" + postId;
 
             return new PublicationDispatcher.DispatchResult(
                     UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED,
                     remotePostId, null, null, permalink);
-        } catch (RestClientException ex) {
+        } catch (RuntimeException ex) {
             return failed(ex.getMessage());
         }
     }
