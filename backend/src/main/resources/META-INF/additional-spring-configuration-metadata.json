@@ -422,6 +422,18 @@
       "type": "java.lang.String"
     },
     {
+      "name": "app.social-publishing.meta.instagram.container-poll-interval-ms",
+      "type": "java.lang.Long",
+      "description": "Wait between checks of an Instagram media container's status_code before publishing it.",
+      "defaultValue": 3000
+    },
+    {
+      "name": "app.social-publishing.meta.instagram.container-poll-max-attempts",
+      "type": "java.lang.Integer",
+      "description": "How many times to poll an Instagram media container for FINISHED before giving up.",
+      "defaultValue": 10
+    },
+    {
       "name": "app.social-publishing.meta.public-media-base-url",
       "type": "java.lang.String"
     },

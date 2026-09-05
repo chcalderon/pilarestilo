@@ -3,6 +3,8 @@ package com.pilarestilo.publication.infrastructure.meta;
 import com.pilarestilo.publication.application.dto.PublicationDispatchPayload;
 import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
@@ -16,13 +18,28 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
     private final RestClient.Builder restClientBuilder;
     private final MetaPublishingConfigResolver configResolver;
     private final ObjectMapper objectMapper;
+    private final long containerPollIntervalMs;
+    private final int containerPollMaxAttempts;
 
-    public InstagramGraphPublisherAdapter(RestClient.Builder restClientBuilder,
-                                          MetaPublishingConfigResolver configResolver,
-                                          ObjectMapper objectMapper) {
+    @Autowired
+    public InstagramGraphPublisherAdapter(
+            RestClient.Builder restClientBuilder,
+            MetaPublishingConfigResolver configResolver,
+            ObjectMapper objectMapper,
+            @Value("${app.social-publishing.meta.instagram.container-poll-interval-ms:3000}") long containerPollIntervalMs,
+            @Value("${app.social-publishing.meta.instagram.container-poll-max-attempts:10}") int containerPollMaxAttempts) {
         this.restClientBuilder = restClientBuilder;
         this.configResolver = configResolver;
         this.objectMapper = objectMapper;
+        this.containerPollIntervalMs = containerPollIntervalMs;
+        this.containerPollMaxAttempts = containerPollMaxAttempts;
+    }
+
+    // Test seam: skips the real waits between status polls.
+    InstagramGraphPublisherAdapter(RestClient.Builder restClientBuilder,
+                                   MetaPublishingConfigResolver configResolver,
+                                   ObjectMapper objectMapper) {
+        this(restClientBuilder, configResolver, objectMapper, 0L, 10);
     }
 
     @Override
@@ -38,23 +55,18 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
                     "/{userId}/media?image_url={imageUrl}&caption={caption}&access_token={token}",
                     config.instagramUserId(), payload.mediaUrl(), payload.fullCaptionText(), config.instagramAccessToken());
             String creationId = created.hasNonNull("id") ? created.get("id").asString() : null;
+            if (creationId == null) {
+                return failed("Instagram did not return a media container id");
+            }
+
+            awaitContainerReady(client, creationId, config.instagramAccessToken());
 
             JsonNode published = postJson(client,
                     "/{userId}/media_publish?creation_id={creationId}&access_token={token}",
                     config.instagramUserId(), creationId, config.instagramAccessToken());
             String remotePostId = published.hasNonNull("id") ? published.get("id").asString() : null;
 
-            String permalink = null;
-            try {
-                String raw = client.get()
-                        .uri("/{mediaId}?fields=permalink&access_token={token}", remotePostId, config.instagramAccessToken())
-                        .retrieve()
-                        .body(String.class);
-                JsonNode node = raw == null || raw.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(raw);
-                permalink = node.hasNonNull("permalink") ? node.get("permalink").asString() : null;
-            } catch (RuntimeException permalinkError) {
-                // The post is already live; a permalink lookup failure must not flip it to failed.
-            }
+            String permalink = fetchPermalink(client, remotePostId, config.instagramAccessToken());
 
             return new PublicationDispatcher.DispatchResult(
                     UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED, remotePostId, null, null, permalink);
@@ -63,9 +75,60 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         }
     }
 
+    /**
+     * A freshly created media container is processed asynchronously; calling media_publish before
+     * it reaches FINISHED fails with code 9007 "Media ID is not available". Poll status_code until
+     * the container is ready, or give up with a message the retry path can act on.
+     */
+    private void awaitContainerReady(RestClient client, String creationId, String token) {
+        for (int attempt = 0; attempt < containerPollMaxAttempts; attempt++) {
+            JsonNode status = getJson(client, "/{creationId}?fields=status_code&access_token={token}", creationId, token);
+            String code = status.hasNonNull("status_code") ? status.get("status_code").asString() : "";
+            switch (code) {
+                case "FINISHED", "PUBLISHED" -> {
+                    return;
+                }
+                case "ERROR", "EXPIRED" -> throw new IllegalStateException(
+                        "Instagram media container " + code.toLowerCase() + " before it could be published");
+                default -> sleepBetweenPolls();
+            }
+        }
+        throw new IllegalStateException(
+                "Instagram media container was not ready after " + containerPollMaxAttempts + " checks");
+    }
+
+    private void sleepBetweenPolls() {
+        if (containerPollIntervalMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(containerPollIntervalMs);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for the Instagram media container");
+        }
+    }
+
+    private String fetchPermalink(RestClient client, String remotePostId, String token) {
+        try {
+            JsonNode node = getJson(client, "/{mediaId}?fields=permalink&access_token={token}", remotePostId, token);
+            return node.hasNonNull("permalink") ? node.get("permalink").asString() : null;
+        } catch (RuntimeException permalinkError) {
+            // The post is already live; a permalink lookup failure must not flip it to failed.
+            return null;
+        }
+    }
+
     /** Graph API returns JSON as Content-Type: text/javascript — read the raw string and parse it. */
     private JsonNode postJson(RestClient client, String uri, Object... uriVars) {
-        String raw = client.post().uri(uri, uriVars).retrieve().body(String.class);
+        return parse(client.post().uri(uri, uriVars).retrieve().body(String.class));
+    }
+
+    private JsonNode getJson(RestClient client, String uri, Object... uriVars) {
+        return parse(client.get().uri(uri, uriVars).retrieve().body(String.class));
+    }
+
+    private JsonNode parse(String raw) {
         return raw == null || raw.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(raw);
     }
 
