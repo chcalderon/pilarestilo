@@ -2,6 +2,10 @@ package com.pilarestilo.publication.infrastructure.web;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.pilarestilo.product.domain.enums.ProductCondition;
+import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.user.domain.enums.UserRole;
 import org.junit.jupiter.api.Test;
@@ -17,6 +21,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,6 +60,9 @@ class PublicationControllerIT {
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    ProductRepository productRepository;
 
     @Test
     void admin_can_create_list_and_retrieve_publication() throws Exception {
@@ -224,6 +232,59 @@ class PublicationControllerIT {
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FAILED"));
+    }
+
+    @Test
+    void batch_endpoint_requires_publications_update_permission() throws Exception {
+        String sellerToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000002"),
+                "seller-batch@pilarestilo.com",
+                UserRole.SELLER,
+                List.of("productos"),
+                List.of("publications.read")
+        );
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(sellerToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(UUID.randomUUID().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}"
+                        ))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void batch_publishes_each_product_times_platform_combination_and_survives_a_missing_product() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = Product.create("Chaqueta boutique", "desc",
+                new Money(BigDecimal.valueOf(49990), "CLP"), "https://cdn.example.com/chaqueta.jpg",
+                ProductCondition.NEW, "Pilar", 5);
+        Product saved = productRepository.save(product);
+        String missingProductId = UUID.randomUUID().toString();
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(saved.getId().toString(), missingProductId),
+                                "platforms", List.of("INSTAGRAM", "FACEBOOK"),
+                                "captionTemplate", "{producto} a solo {precio}",
+                                "hashtags", List.of("#pilarestilo"),
+                                "campaignLabel", "Liquidacion"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(4)))
+                .andExpect(jsonPath("$.items[0].productId").value(saved.getId().toString()))
+                .andExpect(jsonPath("$.items[0].platform").value("INSTAGRAM"))
+                .andExpect(jsonPath("$.items[0].publicationId").exists())
+                // No Meta credentials configured in this test env: the outbound call itself fails,
+                // proving the dispatch path really ran rather than being skipped.
+                .andExpect(jsonPath("$.items[0].success").value(false))
+                .andExpect(jsonPath("$.items[2].productId").value(missingProductId))
+                .andExpect(jsonPath("$.items[2].publicationId").doesNotExist())
+                .andExpect(jsonPath("$.items[2].errorMessage", org.hamcrest.Matchers.containsString("no encontrado")));
     }
 
     private String loginAdmin() throws Exception {
