@@ -94,7 +94,7 @@
       "name": "app.product-ai.worker"
     },
     {
-      "name": "app.social-publishing.n8n"
+      "name": "app.social-publishing.meta"
     },
     {
       "name": "app.system-settings",
@@ -393,20 +393,33 @@
       "defaultValue": "*/20 * * * * *"
     },
     {
-      "name": "app.social-publishing.n8n.api-key",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.social-publishing.n8n.callback-token",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.social-publishing.n8n.token-header-name",
+      "name": "app.social-publishing.meta.facebook.base-url",
       "type": "java.lang.String",
-      "defaultValue": "X-PE-N8N-TOKEN"
+      "defaultValue": "https://graph.facebook.com/v23.0"
     },
     {
-      "name": "app.social-publishing.n8n.webhook-url",
+      "name": "app.social-publishing.meta.facebook.page-access-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.meta.facebook.page-id",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.meta.instagram.access-token",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.meta.instagram.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://graph.instagram.com/v23.0"
+    },
+    {
+      "name": "app.social-publishing.meta.instagram.user-id",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "app.social-publishing.meta.public-media-base-url",
       "type": "java.lang.String"
     },
     {

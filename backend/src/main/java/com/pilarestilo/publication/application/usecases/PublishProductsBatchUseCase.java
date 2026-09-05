@@ -1,0 +1,110 @@
+package com.pilarestilo.publication.application.usecases;
+
+import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.publication.application.PublicationService;
+import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
+import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
+import com.pilarestilo.publication.application.dto.CreatePublicationResult;
+import com.pilarestilo.publication.application.dto.PublicationDto;
+import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
+import com.pilarestilo.publication.domain.enums.PublicationChannelType;
+import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
+import com.pilarestilo.publication.domain.enums.PublicationPlatform;
+import com.pilarestilo.publication.domain.enums.PublicationSourceType;
+import com.pilarestilo.publication.domain.enums.PublicationStatus;
+import com.pilarestilo.shared.domain.DomainException;
+import org.springframework.stereotype.Component;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Orchestrates a multi-product, multi-platform publish. Deliberately not @Transactional: each
+ * item's create()+dispatch() opens its own transaction on PublicationService (a different Spring
+ * bean, so its @Transactional proxy applies independently). Wrapping this loop in one outer
+ * transaction would mark it rollback-only the moment any single item's call threw, losing every
+ * other item's already-recorded result too — the opposite of "each row is independent."
+ */
+@Component
+public class PublishProductsBatchUseCase {
+
+    private final PublicationService publicationService;
+    private final ProductRepository productRepository;
+
+    public PublishProductsBatchUseCase(PublicationService publicationService, ProductRepository productRepository) {
+        this.publicationService = publicationService;
+        this.productRepository = productRepository;
+    }
+
+    public PublishProductsBatchResult execute(PublishProductsBatchCommand command, UUID actorUserId) {
+        List<PublishProductsBatchResult.PublicationItemResult> items = new ArrayList<>();
+
+        for (UUID productId : command.productIds()) {
+            Product product = productRepository.findById(productId).orElse(null);
+            if (product == null) {
+                for (PublicationPlatform platform : command.platforms()) {
+                    items.add(new PublishProductsBatchResult.PublicationItemResult(
+                            productId, platform, false, null, "Producto no encontrado: " + productId));
+                }
+                continue;
+            }
+            String caption = interpolate(command.captionTemplate(), product);
+            for (PublicationPlatform platform : command.platforms()) {
+                items.add(publishOne(productId, product, platform, caption, command, actorUserId));
+            }
+        }
+
+        return new PublishProductsBatchResult(items);
+    }
+
+    private PublishProductsBatchResult.PublicationItemResult publishOne(UUID productId,
+                                                                        Product product,
+                                                                        PublicationPlatform platform,
+                                                                        String caption,
+                                                                        PublishProductsBatchCommand command,
+                                                                        UUID actorUserId) {
+        try {
+            CreatePublicationCommand createCommand = new CreatePublicationCommand(
+                    productId,
+                    PublicationSourceType.PRODUCT,
+                    productId,
+                    platform,
+                    PublicationChannelType.FEED_POST,
+                    "es-CL",
+                    command.campaignLabel(),
+                    caption,
+                    command.hashtags(),
+                    false,
+                    null,
+                    "pub-batch-" + productId + "-" + platform.name() + "-" + UUID.randomUUID(),
+                    List.of(new CreatePublicationCommand.MediaBundleCommand(
+                            PublicationMediaBundleType.SOCIAL_FEED,
+                            product.getImageUrl(),
+                            Map.of()
+                    ))
+            );
+            CreatePublicationResult created = publicationService.create(createCommand, actorUserId);
+            PublicationDto dispatched = publicationService.dispatch(created.publication().id(), actorUserId);
+
+            boolean success = dispatched.status() == PublicationStatus.PUBLISHED;
+            return new PublishProductsBatchResult.PublicationItemResult(
+                    productId, platform, success, dispatched.id(),
+                    success ? null : dispatched.lastErrorMessage());
+        } catch (DomainException ex) {
+            return new PublishProductsBatchResult.PublicationItemResult(
+                    productId, platform, false, null, ex.getMessage());
+        }
+    }
+
+    private String interpolate(String template, Product product) {
+        String priceText = NumberFormat.getInstance(Locale.of("es", "CL")).format(product.getPrice().amount());
+        return template
+                .replace("{producto}", product.getName())
+                .replace("{precio}", "$" + priceText);
+    }
+}

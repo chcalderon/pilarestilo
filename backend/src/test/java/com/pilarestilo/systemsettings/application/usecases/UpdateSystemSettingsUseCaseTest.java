@@ -59,6 +59,7 @@ class UpdateSystemSettingsUseCaseTest {
                 null, null, null,  // clearS3SecretKey, s3PathStyle, s3PublicBaseUrl
                 null,              // notificationProvider → LOG
                 null, null, null, null, // n8n fields
+                null, null, null, null, null, null, // meta fields
                 null, null, null, null, null, null, null, null, null, // whatsapp fields
                 null, null, null, null, null, null, // sendgrid fields
                 null, null, null, null, // productAi fields

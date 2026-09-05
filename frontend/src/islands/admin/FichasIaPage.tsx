@@ -50,7 +50,7 @@ function formatRelativeTime(value: string): string {
   return `Hace ${diffDays} d`;
 }
 
-export default function PublicacionesMediaPage() {
+export default function FichasIaPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('uploads');
   const [jobs, setJobs] = useState<ProductAiJobSummaryDto[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);

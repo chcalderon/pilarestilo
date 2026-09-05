@@ -2,8 +2,11 @@ package com.pilarestilo.publication.infrastructure.web.controllers;
 
 import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
+import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
 import com.pilarestilo.publication.application.dto.PublicationDto;
+import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
+import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
@@ -11,6 +14,7 @@ import com.pilarestilo.publication.domain.enums.PublicationSourceType;
 import com.pilarestilo.shared.auth.domain.AuthenticatedUser;
 import com.pilarestilo.publication.infrastructure.web.requests.ApprovePublicationRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.CreatePublicationRequest;
+import com.pilarestilo.publication.infrastructure.web.requests.PublishProductsBatchRequest;
 import com.pilarestilo.publication.infrastructure.web.requests.RejectPublicationRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,17 +23,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/publications")
 public class PublicationController {
 
     private final PublicationService publicationService;
+    private final PublishProductsBatchUseCase publishProductsBatchUseCase;
 
-    public PublicationController(PublicationService publicationService) {
+    public PublicationController(PublicationService publicationService,
+                                 PublishProductsBatchUseCase publishProductsBatchUseCase) {
         this.publicationService = publicationService;
+        this.publishProductsBatchUseCase = publishProductsBatchUseCase;
     }
 
     @PostMapping
@@ -87,6 +97,26 @@ public class PublicationController {
     public PublicationDto retry(@PathVariable UUID id,
                                 @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return publicationService.retry(id, currentUser == null ? null : currentUser.id());
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public PublishProductsBatchResult publishBatch(@Valid @RequestBody PublishProductsBatchRequest request,
+                                                   @AuthenticationPrincipal AuthenticatedUser currentUser) {
+        return publishProductsBatchUseCase.execute(toBatchCommand(request), currentUser == null ? null : currentUser.id());
+    }
+
+    private PublishProductsBatchCommand toBatchCommand(PublishProductsBatchRequest request) {
+        Set<PublicationPlatform> platforms = request.platforms().stream()
+                .map(p -> PublicationPlatform.valueOf(p.trim().toUpperCase()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return new PublishProductsBatchCommand(
+                request.productIds(),
+                platforms,
+                request.captionTemplate(),
+                request.hashtags() == null ? List.of() : request.hashtags(),
+                request.campaignLabel()
+        );
     }
 
     private CreatePublicationCommand toCommand(CreatePublicationRequest request) {

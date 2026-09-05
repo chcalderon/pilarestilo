@@ -216,8 +216,12 @@ packages were deleted in the cleanup deploy (T16) — with them went `Persistenc
 `EntityScanConfig` and the second `pilarestilo_notifications` datasource, so the backend is back to
 one Boot-autoconfigured JPA datasource. The `notification` rule above still applies inside the
 service. Rollback is no longer a flag flip: it needs `git revert` of the cleanup commit plus
-`APP_NOTIFICATION_LISTENERS_ENABLED=false` on the service. The old `notifications` table on the
-main DB and `infra/postgres/init/01-notifications-database.sh` are kept as the data-side fallback.
+`APP_NOTIFICATION_LISTENERS_ENABLED=false` on the service. **V98 dropped the old `notifications`
+table on the main DB** (2026-09-04) — a week-plus of stable prod traffic through
+notification-service's own separate `pilarestilo_notifications` database was enough confidence to
+close that door, so a revert of the cleanup commit would now also need a new migration to recreate
+the table. `infra/postgres/init/01-notifications-database.sh` is unrelated and stays: it creates
+that separate database, not this table.
 The monolith still ships `spring-boot-starter-mail` — `SmtpPasswordResetMailer` (`shared/auth`)
 uses `JavaMailSender` directly and reads `EMAIL_SMTP_*` (env or `system_settings`).
 
@@ -231,7 +235,7 @@ Key flows: `OrderCreated` → payment registration; `PaymentConfirmed` → order
 
 ### Database migrations
 
-Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V94**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
+Flyway manages all schema changes. Migrations live in `backend/src/main/resources/db/migration/`. Current highest: **V98**. Never edit an already-applied migration — always add a new `V{n+1}__description.sql`.
 
 Recent migrations (V54–V66):
 - V54: `products.version` + `cash_registers.version` (optimistic locking `@Version`)
@@ -276,6 +280,18 @@ Recent migrations (V54–V66):
   `orders.external_idempotency_key` (partial unique index), + `orders.create` permission for
   ADMIN and SELLER. `RegisterExternalSaleUseCase` + `POST /api/admin/sales/external` create a
   born-PAID order via reserve+confirm; a `PICKUP` order skips the dispatch queue.
+- V95: `payments.gateway_flag` + `gateway_flagged_at` — a gateway-reported refund/chargeback after
+  approval flags the payment for manual review instead of silently doing nothing
+- V96: `orders.idempotency_key` (separate from V94's `external_idempotency_key`, which is scoped
+  to external sales only) — a client-minted key so a refresh mid-request or a fast double-click on
+  checkout can't create two real orders
+- V97: repairs the shipping-zone comuna seed — LOCAL only had 4 of the Aconcagua valley's 10 real
+  comunas, REGIONAL shipped with an empty comuna list since V42 despite its old "V Region y RM"
+  name; retitled to just the rest of the Valparaíso region (Santiago/RM falls to NACIONAL now)
+- V98: drops the old `notifications` table on the main DB — dead since the T16 cleanup deploy
+  deleted the monolith's own notification code; kept until this migration as the data-side half of
+  a rollback path, closed after a week-plus of stable prod traffic through notification-service's
+  own separate database
 
 ### Notifications go out on every enabled channel
 

@@ -72,6 +72,10 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
         entity.setN8nWebhookUrl(settings.getN8nWebhookUrl());
         entity.setN8nTokenHeaderName(settings.getN8nTokenHeaderName());
         entity.setN8nApiKeyEncrypted(settings.getN8nApiKeyEncrypted());
+        entity.setMetaInstagramUserId(settings.getMetaInstagramUserId());
+        entity.setMetaInstagramAccessTokenEncrypted(settings.getMetaInstagramAccessTokenEncrypted());
+        entity.setMetaFacebookPageId(settings.getMetaFacebookPageId());
+        entity.setMetaFacebookPageAccessTokenEncrypted(settings.getMetaFacebookPageAccessTokenEncrypted());
         entity.setWhatsappSimulatedTo(settings.getWhatsappSimulatedTo());
         entity.setWhatsappSimulatedSender(settings.getWhatsappSimulatedSender());
         entity.setWhatsappTwilioApiBaseUrl(settings.getWhatsappTwilioApiBaseUrl());
@@ -167,6 +171,10 @@ public class SystemSettingsRepositoryAdapter implements SystemSettingsRepository
                 entity.getN8nWebhookUrl(),
                 entity.getN8nTokenHeaderName(),
                 entity.getN8nApiKeyEncrypted(),
+                entity.getMetaInstagramUserId(),
+                entity.getMetaInstagramAccessTokenEncrypted(),
+                entity.getMetaFacebookPageId(),
+                entity.getMetaFacebookPageAccessTokenEncrypted(),
                 entity.getWhatsappSimulatedTo(),
                 entity.getWhatsappSimulatedSender(),
                 entity.getWhatsappTwilioApiBaseUrl(),

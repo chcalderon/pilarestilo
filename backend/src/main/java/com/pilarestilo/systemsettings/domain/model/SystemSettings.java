@@ -58,6 +58,10 @@ public class SystemSettings {
     private String n8nWebhookUrl;
     private String n8nApiKeyEncrypted;
     private String n8nTokenHeaderName;
+    private String metaInstagramUserId;
+    private String metaInstagramAccessTokenEncrypted;
+    private String metaFacebookPageId;
+    private String metaFacebookPageAccessTokenEncrypted;
     private String whatsappSimulatedTo;
     private String whatsappSimulatedSender;
     private String whatsappTwilioApiBaseUrl;
@@ -198,6 +202,10 @@ public class SystemSettings {
             String n8nWebhookUrl,
             String n8nTokenHeaderName,
             String n8nApiKeyEncrypted,
+            String metaInstagramUserId,
+            String metaInstagramAccessTokenEncrypted,
+            String metaFacebookPageId,
+            String metaFacebookPageAccessTokenEncrypted,
             String whatsappSimulatedTo,
             String whatsappSimulatedSender,
             String whatsappTwilioApiBaseUrl,
@@ -268,6 +276,10 @@ public class SystemSettings {
         settings.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
         settings.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
         settings.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
+        settings.metaInstagramUserId = normalizeNullable(metaInstagramUserId);
+        settings.metaInstagramAccessTokenEncrypted = normalizeNullable(metaInstagramAccessTokenEncrypted);
+        settings.metaFacebookPageId = normalizeNullable(metaFacebookPageId);
+        settings.metaFacebookPageAccessTokenEncrypted = normalizeNullable(metaFacebookPageAccessTokenEncrypted);
         settings.whatsappSimulatedTo = normalizeNullable(whatsappSimulatedTo);
         settings.whatsappSimulatedSender = normalizeNullable(whatsappSimulatedSender);
         settings.whatsappTwilioApiBaseUrl = normalizeNullable(whatsappTwilioApiBaseUrl);
@@ -339,6 +351,10 @@ public class SystemSettings {
             String n8nWebhookUrl,
             String n8nTokenHeaderName,
             String n8nApiKeyEncrypted,
+            String metaInstagramUserId,
+            String metaInstagramAccessTokenEncrypted,
+            String metaFacebookPageId,
+            String metaFacebookPageAccessTokenEncrypted,
             String whatsappSimulatedTo,
             String whatsappSimulatedSender,
             String whatsappTwilioApiBaseUrl,
@@ -404,6 +420,10 @@ public class SystemSettings {
         this.n8nWebhookUrl = normalizeNullable(n8nWebhookUrl);
         this.n8nTokenHeaderName = normalizeN8nTokenHeaderName(n8nTokenHeaderName);
         this.n8nApiKeyEncrypted = normalizeNullable(n8nApiKeyEncrypted);
+        this.metaInstagramUserId = normalizeNullable(metaInstagramUserId);
+        this.metaInstagramAccessTokenEncrypted = normalizeNullable(metaInstagramAccessTokenEncrypted);
+        this.metaFacebookPageId = normalizeNullable(metaFacebookPageId);
+        this.metaFacebookPageAccessTokenEncrypted = normalizeNullable(metaFacebookPageAccessTokenEncrypted);
         this.whatsappSimulatedTo = normalizeNullable(whatsappSimulatedTo);
         this.whatsappSimulatedSender = normalizeNullable(whatsappSimulatedSender);
         this.whatsappTwilioApiBaseUrl = normalizeNullable(whatsappTwilioApiBaseUrl);
@@ -711,6 +731,10 @@ public class SystemSettings {
     public String getN8nWebhookUrl() { return n8nWebhookUrl; }
     public String getN8nApiKeyEncrypted() { return n8nApiKeyEncrypted; }
     public String getN8nTokenHeaderName() { return n8nTokenHeaderName; }
+    public String getMetaInstagramUserId() { return metaInstagramUserId; }
+    public String getMetaInstagramAccessTokenEncrypted() { return metaInstagramAccessTokenEncrypted; }
+    public String getMetaFacebookPageId() { return metaFacebookPageId; }
+    public String getMetaFacebookPageAccessTokenEncrypted() { return metaFacebookPageAccessTokenEncrypted; }
     public String getWhatsappSimulatedTo() { return whatsappSimulatedTo; }
     public String getWhatsappSimulatedSender() { return whatsappSimulatedSender; }
     public String getWhatsappTwilioApiBaseUrl() { return whatsappTwilioApiBaseUrl; }

@@ -7,16 +7,14 @@ import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.model.ProductVariant;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
-import com.pilarestilo.publication.application.commands.PublicationExternalResultCommand;
 import com.pilarestilo.publication.application.dto.PublicationAttemptDto;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
-import com.pilarestilo.publication.application.dto.PublicationDispatchWebhookPayload;
+import com.pilarestilo.publication.application.dto.PublicationDispatchPayload;
 import com.pilarestilo.publication.application.dto.PublicationDto;
-import com.pilarestilo.publication.application.dto.PublicationExternalResultDto;
 import com.pilarestilo.publication.application.dto.PublicationMediaBundleDto;
 import com.pilarestilo.publication.application.dto.PublicationReviewDto;
 import com.pilarestilo.publication.application.dto.PublicationSnapshotDto;
-import com.pilarestilo.publication.application.ports.PublicationWebhookDispatcher;
+import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationApprovalStatus;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptTriggerType;
@@ -28,7 +26,6 @@ import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.domain.events.PublicationApproved;
 import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
 import com.pilarestilo.publication.domain.events.PublicationDispatchFailed;
-import com.pilarestilo.publication.domain.events.PublicationDispatchRequested;
 import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
 import com.pilarestilo.publication.domain.events.PublicationRejected;
 import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
@@ -59,18 +56,18 @@ public class PublicationService {
 
     private final PublicationJpaRepository publicationRepository;
     private final ProductRepository productRepository;
-    private final PublicationWebhookDispatcher publicationWebhookDispatcher;
+    private final PublicationDispatcher publicationDispatcher;
     private final DomainEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     public PublicationService(PublicationJpaRepository publicationRepository,
                               ProductRepository productRepository,
-                              PublicationWebhookDispatcher publicationWebhookDispatcher,
+                              PublicationDispatcher publicationDispatcher,
                               DomainEventPublisher eventPublisher,
                               ObjectMapper objectMapper) {
         this.publicationRepository = publicationRepository;
         this.productRepository = productRepository;
-        this.publicationWebhookDispatcher = publicationWebhookDispatcher;
+        this.publicationDispatcher = publicationDispatcher;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
     }
@@ -182,7 +179,7 @@ public class PublicationService {
 
     @Transactional
     public PublicationDto dispatch(UUID id, UUID actorUserId) {
-        return dispatchInternal(id, PublicationAttemptTriggerType.MANUAL, false);
+        return dispatchInternal(id, PublicationAttemptTriggerType.MANUAL);
     }
 
     @Transactional
@@ -193,52 +190,10 @@ public class PublicationService {
         }
         entity.setRetryCount(entity.getRetryCount() + 1);
         publicationRepository.save(entity);
-        return dispatchInternal(id, PublicationAttemptTriggerType.RETRY, true);
+        return dispatchInternal(id, PublicationAttemptTriggerType.RETRY);
     }
 
-    @Transactional
-    public PublicationExternalResultDto registerExternalResult(UUID publicationId, PublicationExternalResultCommand command) {
-        PublicationEntity entity = findById(publicationId);
-        PublicationAttemptEntity attempt = entity.getAttempts().stream()
-                .filter(item -> item.getAttemptNumber() == command.attemptNumber())
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Publication attempt not found: " + command.attemptNumber()));
-
-        attempt.setWorkflowRunId(trimToNull(command.workflowRunId()));
-        attempt.setStatus(command.status());
-        attempt.setRemoteStatus(command.status().name());
-        attempt.setRemotePostId(trimToNull(command.remotePostId()));
-        attempt.setErrorCode(trimToNull(command.errorCode()));
-        attempt.setErrorMessage(trimToNull(command.errorMessage()));
-        attempt.setFinishedAt(command.publishedAt() != null ? command.publishedAt() : Instant.now());
-
-        entity.setUpdatedAt(Instant.now());
-        entity.setLastErrorCode(trimToNull(command.errorCode()));
-        entity.setLastErrorMessage(trimToNull(command.errorMessage()));
-
-        if (command.status() == PublicationAttemptStatus.SUCCEEDED) {
-            entity.setStatus(PublicationStatus.PUBLISHED);
-            entity.setPublishedAt(command.publishedAt() != null ? command.publishedAt() : Instant.now());
-            entity.setExternalPostId(trimToNull(command.remotePostId()));
-            entity.setLastErrorCode(null);
-            entity.setLastErrorMessage(null);
-            eventPublisher.publish(new PublicationDispatchCompleted(entity.getId(), attempt.getAttemptNumber(), attempt.getRemotePostId()));
-        } else {
-            entity.setStatus(PublicationStatus.FAILED);
-            eventPublisher.publish(new PublicationDispatchFailed(entity.getId(), attempt.getAttemptNumber(), trimToNull(command.errorCode())));
-        }
-
-        PublicationEntity saved = publicationRepository.save(entity);
-        return new PublicationExternalResultDto(
-                saved.getId(),
-                attempt.getAttemptNumber(),
-                attempt.getStatus(),
-                attempt.getRemotePostId(),
-                saved.getPublishedAt()
-        );
-    }
-
-    private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType, boolean isRetry) {
+    private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType) {
         PublicationEntity entity = findById(id);
         if (!(entity.getStatus() == PublicationStatus.APPROVED || entity.getStatus() == PublicationStatus.SCHEDULED)) {
             throw new DomainException("Publication cannot be dispatched from status " + entity.getStatus());
@@ -257,7 +212,7 @@ public class PublicationService {
             }
         }
 
-        PublicationDispatchWebhookPayload payload = buildWebhookPayload(entity);
+        PublicationDispatchPayload payload = buildDispatchPayload(entity);
         addSnapshot(entity, PublicationSnapshotType.OUTBOUND_WEBHOOK, toMap(payload), now);
 
         PublicationAttemptEntity attempt = new PublicationAttemptEntity();
@@ -269,35 +224,41 @@ public class PublicationService {
         attempt.setStartedAt(now);
         entity.getAttempts().add(attempt);
 
-        PublicationEntity saved = publicationRepository.save(entity);
-
+        PublicationDispatcher.DispatchResult result;
         try {
-            PublicationWebhookDispatcher.DispatchResult dispatchResult = publicationWebhookDispatcher.dispatch(
-                    saved.getId(),
-                    saved.getIdempotencyKey(),
-                    payload
-            );
-            attempt.setRequestId(dispatchResult.requestId());
-            attempt.setPayloadHash(dispatchResult.payloadHash());
-            saved = publicationRepository.save(saved);
-            eventPublisher.publish(new PublicationDispatchRequested(saved.getId(), attempt.getAttemptNumber()));
-            return toDto(saved);
-        } catch (DomainException ex) {
-            attempt.setStatus(PublicationAttemptStatus.FAILED);
-            attempt.setFinishedAt(Instant.now());
-            attempt.setErrorCode(DISPATCH_ERROR_CODE);
-            attempt.setErrorMessage(ex.getMessage());
-            saved.setStatus(PublicationStatus.FAILED);
-            saved.setLastErrorCode(DISPATCH_ERROR_CODE);
-            saved.setLastErrorMessage(ex.getMessage());
-            saved.setUpdatedAt(Instant.now());
-            publicationRepository.save(saved);
-            eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), attempt.getAttemptNumber(), DISPATCH_ERROR_CODE));
-            if (isRetry) {
-                throw new DomainException("Publication retry failed: " + ex.getMessage());
-            }
-            throw ex;
+            result = publicationDispatcher.dispatch(entity.getId(), entity.getIdempotencyKey(), payload);
+        } catch (RuntimeException ex) {
+            result = new PublicationDispatcher.DispatchResult(
+                    null, null, PublicationAttemptStatus.FAILED, null, DISPATCH_ERROR_CODE, ex.getMessage());
         }
+
+        Instant finishedAt = Instant.now();
+        attempt.setRequestId(result.requestId());
+        attempt.setPayloadHash(result.payloadHash());
+        attempt.setStatus(result.status());
+        attempt.setFinishedAt(finishedAt);
+        attempt.setRemotePostId(result.remotePostId());
+        attempt.setErrorCode(result.errorCode());
+        attempt.setErrorMessage(result.errorMessage());
+        entity.setUpdatedAt(finishedAt);
+
+        if (result.status() == PublicationAttemptStatus.SUCCEEDED) {
+            entity.setStatus(PublicationStatus.PUBLISHED);
+            entity.setPublishedAt(finishedAt);
+            entity.setExternalPostId(result.remotePostId());
+            entity.setLastErrorCode(null);
+            entity.setLastErrorMessage(null);
+            PublicationEntity saved = publicationRepository.save(entity);
+            eventPublisher.publish(new PublicationDispatchCompleted(saved.getId(), attempt.getAttemptNumber(), result.remotePostId()));
+            return toDto(saved);
+        }
+
+        entity.setStatus(PublicationStatus.FAILED);
+        entity.setLastErrorCode(result.errorCode());
+        entity.setLastErrorMessage(result.errorMessage());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), attempt.getAttemptNumber(), result.errorCode()));
+        return toDto(saved);
     }
 
     private PublicationEntity findById(UUID id) {
@@ -350,39 +311,15 @@ public class PublicationService {
         publication.getReviews().add(review);
     }
 
-    private PublicationDispatchWebhookPayload buildWebhookPayload(PublicationEntity entity) {
+    private PublicationDispatchPayload buildDispatchPayload(PublicationEntity entity) {
         PublicationMediaBundleEntity bundle = entity.getMediaBundles().isEmpty() ? null : entity.getMediaBundles().get(0);
-        Map<String, Object> sourceSnapshot = entity.getSnapshots().stream()
-                .filter(snapshot -> snapshot.getSnapshotType() == PublicationSnapshotType.SOURCE_PRODUCT)
-                .reduce((first, second) -> second)
-                .map(PublicationSnapshotEntity::getPayload)
-                .orElseGet(() -> {
-                    Map<String, Object> fallback = new LinkedHashMap<>();
-                    fallback.put("sourceType", entity.getSourceType().name());
-                    fallback.put("sourceId", entity.getSourceId() == null ? null : entity.getSourceId().toString());
-                    return fallback;
-                });
-
-        return new PublicationDispatchWebhookPayload(
-                "PUBLICATION_DISPATCH_REQUESTED",
-                entity.getId(),
-                entity.getIdempotencyKey(),
+        return new PublicationDispatchPayload(
+                entity.getProductId(),
                 entity.getPlatform(),
                 entity.getChannelType(),
-                entity.getLocale(),
-                entity.getScheduledAt(),
-                new PublicationDispatchWebhookPayload.PublicationDispatchContentDto(
-                        entity.getCaption(),
-                        readHashtags(entity.getHashtagsJson())
-                ),
-                bundle == null
-                        ? null
-                        : new PublicationDispatchWebhookPayload.PublicationDispatchMediaBundleDto(
-                                bundle.getBundleType().name(),
-                                bundle.getPrimaryAssetUrl(),
-                                bundle.getAssetManifest()
-                        ),
-                sourceSnapshot
+                entity.getCaption(),
+                readHashtags(entity.getHashtagsJson()),
+                bundle == null ? null : bundle.getPrimaryAssetUrl()
         );
     }
 
@@ -427,7 +364,7 @@ public class PublicationService {
         return payload;
     }
 
-    private Map<String, Object> toMap(PublicationDispatchWebhookPayload payload) {
+    private Map<String, Object> toMap(PublicationDispatchPayload payload) {
         return objectMapper.convertValue(payload, new TypeReference<>() {
         });
     }

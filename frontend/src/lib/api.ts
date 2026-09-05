@@ -1501,6 +1501,39 @@ export async function registerExternalSale(
   });
 }
 
+// ─── Publicaciones (Instagram / Facebook) ────────────────────────────────────
+
+export interface PublishProductsBatchRequest {
+  productIds: string[];
+  platforms: Array<'INSTAGRAM' | 'FACEBOOK'>;
+  captionTemplate: string;
+  hashtags?: string[];
+  campaignLabel?: string;
+}
+
+export interface PublishProductsBatchItemResult {
+  productId: string;
+  platform: 'INSTAGRAM' | 'FACEBOOK';
+  success: boolean;
+  publicationId: string | null;
+  errorMessage: string | null;
+}
+
+export interface PublishProductsBatchResponse {
+  items: PublishProductsBatchItemResult[];
+}
+
+export async function publishProductsBatch(
+  body: PublishProductsBatchRequest,
+  token: string,
+): Promise<PublishProductsBatchResponse> {
+  return apiFetch<PublishProductsBatchResponse>('/admin/publications/batch', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: authHeaders(token),
+  });
+}
+
 // ─── Ventas y documentos tributarios ─────────────────────────────────────────
 
 export interface SaleSummaryDto {

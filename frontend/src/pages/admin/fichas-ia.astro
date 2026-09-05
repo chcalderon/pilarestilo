@@ -1,0 +1,18 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import FichasIaPage from '../../islands/admin/FichasIaPage';
+---
+
+<AdminLayout
+  title="Fichas con IA"
+  breadcrumbs={[{ label: 'Fichas con IA' }]}
+>
+  <div class="mb-5 sm:mb-6">
+    <h1 class="font-display text-pe-black text-2xl sm:text-3xl font-light">Fichas con IA</h1>
+    <p class="font-sans text-[0.78rem] sm:text-sm text-pe-muted mt-1">
+      Flujo masivo de assets y redaccion de fichas de producto con IA.
+    </p>
+  </div>
+
+  <FichasIaPage client:load />
+</AdminLayout>

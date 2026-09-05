@@ -127,6 +127,18 @@ public class SystemSettingsEntity {
     @Column(name = "n8n_token_header_name", length = 120)
     private String n8nTokenHeaderName;
 
+    @Column(name = "meta_instagram_user_id", length = 120)
+    private String metaInstagramUserId;
+
+    @Column(name = "meta_instagram_access_token_encrypted", columnDefinition = "TEXT")
+    private String metaInstagramAccessTokenEncrypted;
+
+    @Column(name = "meta_facebook_page_id", length = 120)
+    private String metaFacebookPageId;
+
+    @Column(name = "meta_facebook_page_access_token_encrypted", columnDefinition = "TEXT")
+    private String metaFacebookPageAccessTokenEncrypted;
+
     @Column(name = "whatsapp_simulated_to", length = 40)
     private String whatsappSimulatedTo;
 
@@ -397,6 +409,14 @@ public class SystemSettingsEntity {
     public void setN8nApiKeyEncrypted(String n8nApiKeyEncrypted) { this.n8nApiKeyEncrypted = n8nApiKeyEncrypted; }
     public String getN8nTokenHeaderName() { return n8nTokenHeaderName; }
     public void setN8nTokenHeaderName(String n8nTokenHeaderName) { this.n8nTokenHeaderName = n8nTokenHeaderName; }
+    public String getMetaInstagramUserId() { return metaInstagramUserId; }
+    public void setMetaInstagramUserId(String metaInstagramUserId) { this.metaInstagramUserId = metaInstagramUserId; }
+    public String getMetaInstagramAccessTokenEncrypted() { return metaInstagramAccessTokenEncrypted; }
+    public void setMetaInstagramAccessTokenEncrypted(String v) { this.metaInstagramAccessTokenEncrypted = v; }
+    public String getMetaFacebookPageId() { return metaFacebookPageId; }
+    public void setMetaFacebookPageId(String metaFacebookPageId) { this.metaFacebookPageId = metaFacebookPageId; }
+    public String getMetaFacebookPageAccessTokenEncrypted() { return metaFacebookPageAccessTokenEncrypted; }
+    public void setMetaFacebookPageAccessTokenEncrypted(String v) { this.metaFacebookPageAccessTokenEncrypted = v; }
     public String getWhatsappSimulatedTo() { return whatsappSimulatedTo; }
     public void setWhatsappSimulatedTo(String whatsappSimulatedTo) { this.whatsappSimulatedTo = whatsappSimulatedTo; }
     public String getWhatsappSimulatedSender() { return whatsappSimulatedSender; }

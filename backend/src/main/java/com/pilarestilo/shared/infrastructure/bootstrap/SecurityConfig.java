@@ -43,7 +43,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhooks/gateway/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/publications/*/external-result").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/inventory/**").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/wishlist/shared/**").permitAll()

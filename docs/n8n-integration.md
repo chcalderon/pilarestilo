@@ -115,40 +115,11 @@ For "is this product available?" and "where do you ship?" questions:
 
 ---
 
-## 6. Campaign workflows (Instagram/Facebook)
+## 6. Campaign workflows (Instagram/Facebook) — superseded
 
-This section documents the recommended baseline for campaign automation from the new admin module `Publicaciones e Imagenes`.
-
-### 6.1 Workflow A - Asset approved -> campaign queue
-
-1. Trigger: backend/admin webhook when an asset is approved for publication.
-2. Validate payload and internal token.
-3. Enrich context:
-   - product/category tags
-   - locale copy hints
-   - campaign objective
-4. Optional AI copy generation node (caption/hashtags variants).
-5. Persist draft campaign row in external table (Notion/Sheets/Postgres).
-6. Notify operator channel (Slack/email) for final review.
-
-### 6.2 Workflow B - Scheduled publish (IG/FB)
-
-1. Trigger: `Cron`.
-2. Fetch pending campaigns with `scheduled_at <= now`.
-3. Publish Instagram content (image/reel/story path according to campaign type).
-4. Publish Facebook page content (post/reel variant according to campaign type).
-5. Persist external IDs and publish status.
-6. Mark campaign as `published` or `failed`.
-7. Send result summary to operations channel.
-
-### 6.3 Recommended controls
-
-- Human approval gate before publish.
-- Retry policy with backoff for transient API failures.
-- Idempotency key per campaign execution.
-- Execution audit log with:
-  - campaign id
-  - channel
-  - status
-  - remote post id
-  - error response (if any)
+This section used to document an n8n-based baseline for the `publication` module's Instagram/
+Facebook dispatch. That path was never actually deployed (no n8n service ever ran in this project,
+no webhook URL was ever configured) and has been replaced with direct Meta Graph API calls from
+the Spring Boot backend (`MetaDirectPublicationDispatcher`, `InstagramGraphPublisherAdapter`,
+`FacebookPagePublisherAdapter` — see `backend/src/main/java/com/pilarestilo/publication/infrastructure/meta/`).
+n8n plays no role in social publishing.

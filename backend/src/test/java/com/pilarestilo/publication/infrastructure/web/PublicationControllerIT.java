@@ -2,6 +2,10 @@ package com.pilarestilo.publication.infrastructure.web;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.pilarestilo.product.domain.enums.ProductCondition;
+import com.pilarestilo.product.domain.model.Product;
+import com.pilarestilo.product.domain.ports.ProductRepository;
+import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.auth.infrastructure.JwtTokenProvider;
 import com.pilarestilo.user.domain.enums.UserRole;
 import org.junit.jupiter.api.Test;
@@ -17,6 +21,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,7 +50,6 @@ class PublicationControllerIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("app.social-publishing.n8n.callback-token", () -> "test-social-token");
     }
 
     @Autowired
@@ -56,6 +60,9 @@ class PublicationControllerIT {
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    ProductRepository productRepository;
 
     @Test
     void admin_can_create_list_and_retrieve_publication() throws Exception {
@@ -178,7 +185,7 @@ class PublicationControllerIT {
     }
 
     @Test
-    void admin_can_approve_dispatch_and_finalize_publication_via_callback() throws Exception {
+    void admin_can_approve_and_dispatch_a_publication_synchronously() throws Exception {
         String adminToken = loginAdmin();
 
         MvcResult created = mvc.perform(post("/api/admin/publications")
@@ -213,28 +220,71 @@ class PublicationControllerIT {
         mvc.perform(post("/api/admin/publications/{id}/dispatch", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PUBLISHING"))
-                .andExpect(jsonPath("$.attempts", hasSize(1)));
-
-        mvc.perform(post("/api/publications/{id}/external-result", publicationId)
-                        .header("X-PE-N8N-TOKEN", "test-social-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "workflowRunId", "wf-1",
-                                "attemptNumber", 1,
-                                "status", "SUCCEEDED",
-                                "remotePostId", "178923456",
-                                "publishedAt", "2026-05-18T05:20:00Z"
-                        ))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"))
-                .andExpect(jsonPath("$.remotePostId").value("178923456"));
+                // No Meta credentials are configured in this test environment, so the outbound
+                // call itself fails — but that failure must actually reach the database, which is
+                // exactly the rollback bug this cutover fixed. Before the fix this row would have
+                // stayed at PUBLISHING forever with no error recorded.
+                .andExpect(jsonPath("$.status").value("FAILED"))
+                .andExpect(jsonPath("$.attempts", hasSize(1)))
+                .andExpect(jsonPath("$.lastErrorCode").exists());
 
         mvc.perform(get("/api/admin/publications/{id}", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PUBLISHED"))
-                .andExpect(jsonPath("$.externalPostId").value("178923456"));
+                .andExpect(jsonPath("$.status").value("FAILED"));
+    }
+
+    @Test
+    void batch_endpoint_requires_publications_update_permission() throws Exception {
+        String sellerToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000002"),
+                "seller-batch@pilarestilo.com",
+                UserRole.SELLER,
+                List.of("productos"),
+                List.of("publications.read")
+        );
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(sellerToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(UUID.randomUUID().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}"
+                        ))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void batch_publishes_each_product_times_platform_combination_and_survives_a_missing_product() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = Product.create("Chaqueta boutique", "desc",
+                new Money(BigDecimal.valueOf(49990), "CLP"), "https://cdn.example.com/chaqueta.jpg",
+                ProductCondition.NEW, "Pilar", 5);
+        Product saved = productRepository.save(product);
+        String missingProductId = UUID.randomUUID().toString();
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(saved.getId().toString(), missingProductId),
+                                "platforms", List.of("INSTAGRAM", "FACEBOOK"),
+                                "captionTemplate", "{producto} a solo {precio}",
+                                "hashtags", List.of("#pilarestilo"),
+                                "campaignLabel", "Liquidacion"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(4)))
+                .andExpect(jsonPath("$.items[0].productId").value(saved.getId().toString()))
+                .andExpect(jsonPath("$.items[0].platform").value("INSTAGRAM"))
+                .andExpect(jsonPath("$.items[0].publicationId").exists())
+                // No Meta credentials configured in this test env: the outbound call itself fails,
+                // proving the dispatch path really ran rather than being skipped.
+                .andExpect(jsonPath("$.items[0].success").value(false))
+                .andExpect(jsonPath("$.items[2].productId").value(missingProductId))
+                .andExpect(jsonPath("$.items[2].publicationId").doesNotExist())
+                .andExpect(jsonPath("$.items[2].errorMessage", org.hamcrest.Matchers.containsString("no encontrado")));
     }
 
     private String loginAdmin() throws Exception {

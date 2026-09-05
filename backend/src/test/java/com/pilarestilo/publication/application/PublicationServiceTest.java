@@ -5,10 +5,9 @@ import com.pilarestilo.product.domain.enums.ProductCondition;
 import com.pilarestilo.product.domain.model.Product;
 import com.pilarestilo.product.domain.ports.ProductRepository;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
-import com.pilarestilo.publication.application.commands.PublicationExternalResultCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
 import com.pilarestilo.publication.application.dto.PublicationDto;
-import com.pilarestilo.publication.application.ports.PublicationWebhookDispatcher;
+import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
@@ -44,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -59,7 +59,7 @@ class PublicationServiceTest {
     ProductRepository productRepository;
 
     @Mock
-    PublicationWebhookDispatcher webhookDispatcher;
+    PublicationDispatcher publicationDispatcher;
 
     @Mock
     DomainEventPublisher eventPublisher;
@@ -71,7 +71,7 @@ class PublicationServiceTest {
         service = new PublicationService(
                 publicationRepository,
                 productRepository,
-                webhookDispatcher,
+                publicationDispatcher,
                 eventPublisher,
                 new ObjectMapper()
         );
@@ -164,16 +164,18 @@ class PublicationServiceTest {
                 Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
                         "https://img", ProductCondition.NEW, "Pilar", 2)
         ));
-        when(webhookDispatcher.dispatch(any(), anyString(), any()))
-                .thenReturn(new PublicationWebhookDispatcher.DispatchResult("req-1", "hash-1"));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenReturn(new PublicationDispatcher.DispatchResult(
+                        "req-1", "hash-1", PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null));
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
-        assertEquals(PublicationStatus.PUBLISHING, dto.status());
+        assertEquals(PublicationStatus.PUBLISHED, dto.status());
+        assertEquals("remote-1", dto.externalPostId());
         assertEquals(1, dto.attempts().size());
         assertEquals("req-1", dto.attempts().get(0).requestId());
         assertEquals(2, dto.snapshots().size());
-        verify(eventPublisher).publish(any(PublicationDispatchRequested.class));
+        verify(eventPublisher).publish(any(PublicationDispatchCompleted.class));
     }
 
     @Test
@@ -188,27 +190,43 @@ class PublicationServiceTest {
     }
 
     @Test
-    void external_success_marks_publication_published() {
+    void dispatch_persists_failure_without_losing_the_record_when_dispatcher_reports_failure() {
+        UUID publicationId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(publicationId, productId);
+        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(
+                Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                        "https://img", ProductCondition.NEW, "Pilar", 2)
+        ));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenReturn(new PublicationDispatcher.DispatchResult(
+                        "req-1", "hash-1", PublicationAttemptStatus.FAILED, null,
+                        "INSTAGRAM_PUBLISH_ERROR", "Rate limited"));
+
+        PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
+
+        // Regression test for the rollback bug: before the fix, dispatchInternal rethrew after
+        // saving, which rolled back that same save — the FAILED status and error never actually
+        // reached the database. Now it must.
+        assertEquals(PublicationStatus.FAILED, dto.status());
+        assertEquals("INSTAGRAM_PUBLISH_ERROR", dto.lastErrorCode());
+        assertEquals("Rate limited", dto.lastErrorMessage());
+        verify(publicationRepository, atLeastOnce()).save(any(PublicationEntity.class));
+    }
+
+    @Test
+    void dispatch_persists_failure_even_when_the_dispatcher_throws_unexpectedly() {
         UUID publicationId = UUID.randomUUID();
         PublicationEntity entity = approvedPublication(publicationId, null);
-        entity.setStatus(PublicationStatus.PUBLISHING);
-        entity.getAttempts().add(startedAttempt(entity, 1));
         when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenThrow(new RuntimeException("connection reset"));
 
-        var result = service.registerExternalResult(publicationId, new PublicationExternalResultCommand(
-                "wf-1",
-                1,
-                PublicationAttemptStatus.SUCCEEDED,
-                "remote-1",
-                Instant.now(),
-                null,
-                null
-        ));
+        PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
-        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
-        assertEquals("remote-1", result.remotePostId());
-        assertEquals(PublicationStatus.PUBLISHED, entity.getStatus());
-        verify(eventPublisher).publish(any(PublicationDispatchCompleted.class));
+        assertEquals(PublicationStatus.FAILED, dto.status());
+        assertEquals("connection reset", dto.lastErrorMessage());
     }
 
     @Test
@@ -252,16 +270,5 @@ class PublicationServiceTest {
         entity.setReviews(new java.util.ArrayList<>(List.of()));
         entity.setSnapshots(new java.util.ArrayList<>(List.of()));
         return entity;
-    }
-
-    private com.pilarestilo.publication.infrastructure.persistence.entities.PublicationAttemptEntity startedAttempt(PublicationEntity publication, int attemptNumber) {
-        var attempt = new com.pilarestilo.publication.infrastructure.persistence.entities.PublicationAttemptEntity();
-        attempt.setId(UUID.randomUUID());
-        attempt.setPublication(publication);
-        attempt.setAttemptNumber(attemptNumber);
-        attempt.setTriggerType(com.pilarestilo.publication.domain.enums.PublicationAttemptTriggerType.MANUAL);
-        attempt.setStatus(PublicationAttemptStatus.STARTED);
-        attempt.setStartedAt(Instant.now());
-        return attempt;
     }
 }
