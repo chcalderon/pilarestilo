@@ -182,7 +182,7 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
-                Map.of(productId, "https://cdn.example.com/edited.jpg"), Map.of(),
+                Map.of(productId, List.of("https://cdn.example.com/edited.jpg")), Map.of(),
                 null
         ), UUID.randomUUID());
 

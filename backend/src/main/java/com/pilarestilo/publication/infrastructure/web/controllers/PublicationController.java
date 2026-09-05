@@ -173,10 +173,19 @@ public class PublicationController {
         Set<PublicationPlatform> platforms = request.platforms().stream()
                 .map(p -> PublicationPlatform.valueOf(p.trim().toUpperCase()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        Map<UUID, String> imageOverrides = request.imageOverrides() == null
+        Map<UUID, List<String>> imageSelections = request.imageSelections() == null
                 ? Map.of()
-                : request.imageOverrides().entrySet().stream()
-                        .collect(Collectors.toMap(e -> UUID.fromString(e.getKey()), Map.Entry::getValue));
+                : request.imageSelections().entrySet().stream()
+                        .collect(Collectors.toMap(
+                                e -> UUID.fromString(e.getKey()),
+                                e -> e.getValue().stream()
+                                        .filter(java.util.Objects::nonNull)
+                                        .map(String::trim)
+                                        .filter(s -> !s.isEmpty())
+                                        .toList()))
+                        .entrySet().stream()
+                        .filter(e -> !e.getValue().isEmpty())
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<UUID, PublishProductsBatchCommand.VariantSelection> variantSelections = request.variantSelections() == null
                 ? Map.of()
                 : request.variantSelections().entrySet().stream()
@@ -191,7 +200,7 @@ public class PublicationController {
                 request.captionTemplate(),
                 request.hashtags() == null ? List.of() : request.hashtags(),
                 request.campaignLabel(),
-                imageOverrides,
+                imageSelections,
                 variantSelections,
                 scheduledAt
         );

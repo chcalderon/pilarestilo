@@ -77,4 +77,40 @@ class BatchPublicationFactoryTest {
         assertEquals("https://img/z.jpg", out.mediaBundles().get(0).primaryAssetUrl());
         assertTrue(out.idempotencyKey().startsWith("pub-batch-"));
     }
+
+    @Test
+    void build_create_command_stores_the_image_selection_list_in_the_manifest() {
+        Product product = Product.create("Zapatos", "d", new Money(BigDecimal.valueOf(1000), "CLP"),
+                "https://img/cover.jpg", ProductCondition.NEW, "Pilar", 5);
+        UUID batchId = UUID.randomUUID();
+        PublishProductsBatchCommand cmd = new PublishProductsBatchCommand(
+                List.of(product.getId()), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto}", List.of("#x"), "Camp",
+                Map.of(product.getId(), List.of("https://img/cover.jpg", "https://img/2.jpg", "https://img/3.jpg")),
+                Map.of(), null);
+
+        CreatePublicationCommand out = factory.buildCreateCommand(
+                cmd, product.getId(), product, PublicationPlatform.INSTAGRAM, "Zapatos", batchId);
+
+        var bundle = out.mediaBundles().get(0);
+        assertEquals("https://img/cover.jpg", bundle.primaryAssetUrl());
+        assertEquals(
+                List.of("https://img/cover.jpg", "https://img/2.jpg", "https://img/3.jpg"),
+                bundle.assetManifest().get("imageUrls"));
+    }
+
+    @Test
+    void build_create_command_falls_back_to_the_product_cover_when_no_selection() {
+        Product product = Product.create("Zapatos", "d", new Money(BigDecimal.valueOf(1000), "CLP"),
+                "https://img/cover.jpg", ProductCondition.NEW, "Pilar", 5);
+        PublishProductsBatchCommand cmd = new PublishProductsBatchCommand(
+                List.of(product.getId()), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto}", List.of("#x"), "Camp", Map.of(), Map.of(), null);
+
+        CreatePublicationCommand out = factory.buildCreateCommand(
+                cmd, product.getId(), product, PublicationPlatform.INSTAGRAM, "Zapatos", UUID.randomUUID());
+
+        assertEquals("https://img/cover.jpg", out.mediaBundles().get(0).primaryAssetUrl());
+        assertEquals(List.of("https://img/cover.jpg"), out.mediaBundles().get(0).assetManifest().get("imageUrls"));
+    }
 }

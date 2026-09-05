@@ -79,6 +79,7 @@ class BatchPublicationFactory {
 
     CreatePublicationCommand buildCreateCommand(PublishProductsBatchCommand command, UUID productId, Product product,
                                                 PublicationPlatform platform, String caption, UUID batchId) {
+        List<String> images = command.imageSelections().getOrDefault(productId, List.of(product.getImageUrl()));
         return new CreatePublicationCommand(
                 productId,
                 PublicationSourceType.PRODUCT,
@@ -94,8 +95,8 @@ class BatchPublicationFactory {
                 "pub-batch-" + productId + "-" + platform.name() + "-" + UUID.randomUUID(),
                 List.of(new CreatePublicationCommand.MediaBundleCommand(
                         PublicationMediaBundleType.SOCIAL_FEED,
-                        command.imageOverrides().getOrDefault(productId, product.getImageUrl()),
-                        Map.of()
+                        images.get(0),
+                        Map.of("imageUrls", images)
                 )),
                 batchId
         );
