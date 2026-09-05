@@ -45,7 +45,6 @@ class PublicationControllerIT {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("app.social-publishing.n8n.callback-token", () -> "test-social-token");
     }
 
     @Autowired
@@ -178,7 +177,7 @@ class PublicationControllerIT {
     }
 
     @Test
-    void admin_can_approve_dispatch_and_finalize_publication_via_callback() throws Exception {
+    void admin_can_approve_and_dispatch_a_publication_synchronously() throws Exception {
         String adminToken = loginAdmin();
 
         MvcResult created = mvc.perform(post("/api/admin/publications")
@@ -213,28 +212,18 @@ class PublicationControllerIT {
         mvc.perform(post("/api/admin/publications/{id}/dispatch", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PUBLISHING"))
-                .andExpect(jsonPath("$.attempts", hasSize(1)));
-
-        mvc.perform(post("/api/publications/{id}/external-result", publicationId)
-                        .header("X-PE-N8N-TOKEN", "test-social-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "workflowRunId", "wf-1",
-                                "attemptNumber", 1,
-                                "status", "SUCCEEDED",
-                                "remotePostId", "178923456",
-                                "publishedAt", "2026-05-18T05:20:00Z"
-                        ))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"))
-                .andExpect(jsonPath("$.remotePostId").value("178923456"));
+                // No Meta credentials are configured in this test environment, so the outbound
+                // call itself fails — but that failure must actually reach the database, which is
+                // exactly the rollback bug this cutover fixed. Before the fix this row would have
+                // stayed at PUBLISHING forever with no error recorded.
+                .andExpect(jsonPath("$.status").value("FAILED"))
+                .andExpect(jsonPath("$.attempts", hasSize(1)))
+                .andExpect(jsonPath("$.lastErrorCode").exists());
 
         mvc.perform(get("/api/admin/publications/{id}", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("PUBLISHED"))
-                .andExpect(jsonPath("$.externalPostId").value("178923456"));
+                .andExpect(jsonPath("$.status").value("FAILED"));
     }
 
     private String loginAdmin() throws Exception {

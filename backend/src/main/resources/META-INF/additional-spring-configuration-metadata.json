@@ -94,9 +94,6 @@
       "name": "app.product-ai.worker"
     },
     {
-      "name": "app.social-publishing.n8n"
-    },
-    {
       "name": "app.social-publishing.meta"
     },
     {
@@ -394,23 +391,6 @@
       "name": "app.product-ai.worker.cron",
       "type": "java.lang.String",
       "defaultValue": "*/20 * * * * *"
-    },
-    {
-      "name": "app.social-publishing.n8n.api-key",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.social-publishing.n8n.callback-token",
-      "type": "java.lang.String"
-    },
-    {
-      "name": "app.social-publishing.n8n.token-header-name",
-      "type": "java.lang.String",
-      "defaultValue": "X-PE-N8N-TOKEN"
-    },
-    {
-      "name": "app.social-publishing.n8n.webhook-url",
-      "type": "java.lang.String"
     },
     {
       "name": "app.social-publishing.meta.facebook.base-url",
