@@ -58,6 +58,30 @@ function idSafe(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+// Google Merchant Center rejects `id` past 50 characters. Most variant suffixes fit easily, but a
+// long color/size name (e.g. "Pata de Gallo") on top of a 36-char UUID product id can push past
+// the limit — this was flagging real products ("Valor demasiado largo en el atributo: id").
+const MAX_ITEM_ID_LENGTH = 50;
+
+function shortHash(value: string): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Falls back to a short deterministic hash of the suffix when the full id would exceed Google's
+ * limit, rather than truncating it — truncation risks two differently-named variants (e.g. same
+ * long color, different size) colliding onto the same shortened id.
+ */
+function buildItemId(productId: string, idSuffix: string): string {
+  const full = productId + idSuffix;
+  if (full.length <= MAX_ITEM_ID_LENGTH) return full;
+  return `${productId}-${shortHash(idSuffix)}`;
+}
+
 function realColor(color: string | undefined): string | null {
   const c = (color ?? '').trim();
   return c && !SENTINEL_COLOR.has(c.toLowerCase()) ? c : null;
@@ -88,7 +112,7 @@ function renderItem(product: ProductDto, opts: MerchantFeedOptions, v: ItemInput
   const sale = hasSale ? product.price : null;
 
   const parts: string[] = [
-    `<g:id>${xmlEscape(product.id + v.idSuffix)}</g:id>`,
+    `<g:id>${xmlEscape(buildItemId(product.id, v.idSuffix))}</g:id>`,
     v.groupId ? `<g:item_group_id>${xmlEscape(v.groupId)}</g:item_group_id>` : '',
     `<g:title>${xmlEscape(truncate(product.name, 150))}</g:title>`,
     `<g:description>${xmlEscape(truncate(product.description || product.name, 5000))}</g:description>`,

@@ -84,6 +84,31 @@ describe('merchantFeedItems — product with real variants', () => {
     expect(items[0]).toContain('<g:availability>in_stock</g:availability>'); // Rojo S
     expect(items[1]).toContain('<g:availability>out_of_stock</g:availability>'); // Rojo M, all reserved
   });
+
+  it('keeps g:id at or under Google\'s 50-character limit for long color/size names', () => {
+    // Real production case: a 36-char UUID plus a long color name (e.g. "Pata de Gallo") pushed
+    // the id past 50 chars, and Merchant Center flagged it as "Valor demasiado largo".
+    const longColorProduct: ProductDto = {
+      ...base,
+      id: '073c7724-24b7-4594-b153-806b7daa5ee9',
+      variants: [
+        { color: 'Pata de Gallo', size: 'M', stock: 2, stockOnHand: 2, stockReserved: 0, stockAvailable: 2 },
+        { color: 'Pata de Gallo', size: 'L', stock: 2, stockOnHand: 2, stockReserved: 0, stockAvailable: 2 },
+      ],
+    };
+
+    const items = merchantFeedItems(longColorProduct, opts);
+    const ids = items.map((item) => /<g:id>(.*?)<\/g:id>/.exec(item)?.[1]);
+
+    for (const id of ids) {
+      expect(id).toBeDefined();
+      expect(id!.length).toBeLessThanOrEqual(50);
+    }
+    // Different variants of the same long-named color must not collapse onto the same id.
+    expect(new Set(ids).size).toBe(2);
+    // item_group_id still ties them to the same product regardless of how g:id was shortened.
+    for (const item of items) expect(item).toContain(`<g:item_group_id>${longColorProduct.id}</g:item_group_id>`);
+  });
 });
 
 describe('googleProductCategory', () => {
