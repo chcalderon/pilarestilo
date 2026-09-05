@@ -68,4 +68,28 @@ describe('PublicacionesPage', () => {
     render(<PublicacionesPage />);
     expect(screen.getByRole('button', { name: /publicar ahora/i })).toBeDisabled();
   });
+
+  it('shows the catalog on focus, before typing anything', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+
+    expect(screen.queryByRole('button', { name: /chaqueta/i })).not.toBeInTheDocument();
+    await user.click(screen.getByPlaceholderText(/buscar producto/i));
+
+    expect(await screen.findByRole('button', { name: /chaqueta/i })).toBeInTheDocument();
+    expect(searchProducts).toHaveBeenCalledWith({ q: '', page: 0, size: 24 }, 0, 24);
+  });
+
+  it('shows a chosen product as a chip right under the search box', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectTheProduct(user);
+
+    expect(screen.getByText('1 producto(s) elegido(s)')).toBeInTheDocument();
+    const chip = screen.getByRole('button', { name: /quitar chaqueta/i });
+    expect(chip).toBeInTheDocument();
+
+    await user.click(chip);
+    expect(screen.queryByText(/producto\(s\) elegido/i)).not.toBeInTheDocument();
+  });
 });

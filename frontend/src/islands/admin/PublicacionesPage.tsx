@@ -30,6 +30,7 @@ export default function PublicacionesPage() {
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
   const [term, setTerm] = useState('');
+  const [browseRequested, setBrowseRequested] = useState(false);
   const [results, setResults] = useState<ProductDto[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<Map<string, ProductDto>>(new Map());
@@ -45,7 +46,9 @@ export default function PublicacionesPage() {
 
   useEffect(() => {
     const q = term.trim();
-    if (q.length < 2) {
+    // Below 2 letters normally means "not enough to search yet" — except once the user has
+    // clicked into the box at all, an empty box means "browse the catalog", not "no results".
+    if (q.length < 2 && !browseRequested) {
       setResults([]);
       return;
     }
@@ -67,7 +70,7 @@ export default function PublicacionesPage() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [term]);
+  }, [term, browseRequested]);
 
   function toggleProduct(product: ProductDto) {
     setSelected((prev) => {
@@ -141,10 +144,33 @@ export default function PublicacionesPage() {
             type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Buscar producto por nombre..."
+            onFocus={() => setBrowseRequested(true)}
+            placeholder="Buscar producto por nombre, o hace clic para ver el catalogo..."
             className="w-full bg-pe-surface border border-pe-border rounded-xs pl-9 pr-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-pe-border"
           />
         </label>
+
+        {selectedProducts.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs text-pe-muted mb-1.5">{selectedProducts.length} producto(s) elegido(s)</p>
+            <ul className="flex flex-wrap gap-2">
+              {selectedProducts.map((product) => (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggleProduct(product)}
+                    className="group flex items-center gap-1.5 border border-pe-rose bg-pe-rose/10 rounded-xs pl-1 pr-2 py-1"
+                  >
+                    <img src={product.imageUrl} alt="" className="w-6 h-7 object-cover flex-shrink-0" />
+                    <span className="font-sans text-[0.7rem] max-w-32 truncate">{product.name}</span>
+                    <span aria-hidden="true" className="text-pe-muted group-hover:text-pe-rose">×</span>
+                    <span className="sr-only">Quitar {product.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {searching && (
           <div className="flex items-center gap-2 mt-3 text-pe-muted text-xs">
@@ -179,10 +205,6 @@ export default function PublicacionesPage() {
               );
             })}
           </ul>
-        )}
-
-        {selectedProducts.length > 0 && (
-          <p className="mt-2 text-xs text-pe-muted">{selectedProducts.length} producto(s) elegido(s)</p>
         )}
       </section>
 
