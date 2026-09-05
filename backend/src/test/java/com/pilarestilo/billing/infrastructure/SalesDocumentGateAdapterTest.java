@@ -78,6 +78,7 @@ class SalesDocumentGateAdapterTest {
                 null, null, null, null, null, null, false, null,
                 null, null, null, null, null, true, true,
                 null, null, null, null,
+                null, null, null, null,
                 null, null, null, null, null, null, null, null,
                 null, null, null, null, null,
                 null, null, null, null,
