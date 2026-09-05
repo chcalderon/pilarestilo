@@ -103,6 +103,9 @@ interface ItemInput {
 function renderItem(product: ProductDto, opts: MerchantFeedOptions, v: ItemInput): string {
   const link = `${opts.siteUrl}/es/products/${product.id}`;
   const image = absoluteUrl(product.imageUrl, opts.siteUrl, opts.headers);
+  const additionalImages = (product.galleryImageUrls ?? [])
+    .slice(0, 10)
+    .map((u) => absoluteUrl(u, opts.siteUrl, opts.headers));
 
   const hasSale =
     !!product.listPrice &&
@@ -118,6 +121,7 @@ function renderItem(product: ProductDto, opts: MerchantFeedOptions, v: ItemInput
     `<g:description>${xmlEscape(truncate(product.description || product.name, 5000))}</g:description>`,
     `<g:link>${xmlEscape(link)}</g:link>`,
     `<g:image_link>${xmlEscape(image)}</g:image_link>`,
+    ...additionalImages.map((u) => `<g:additional_image_link>${xmlEscape(u)}</g:additional_image_link>`),
     `<g:availability>${v.inStock ? 'in_stock' : 'out_of_stock'}</g:availability>`,
     `<g:price>${regular.amount} ${regular.currency}</g:price>`,
     sale ? `<g:sale_price>${sale.amount} ${sale.currency}</g:sale_price>` : '',

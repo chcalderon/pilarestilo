@@ -111,6 +111,24 @@ describe('merchantFeedItems — product with real variants', () => {
   });
 });
 
+describe('merchantFeedItems — image gallery', () => {
+  it('emits one additional_image_link per gallery image, in order', () => {
+    const [item] = merchantFeedItems(
+      { ...base, galleryImageUrls: ['/api/media/products/g1.jpg', 'https://cdn.example.com/g2.jpg'] },
+      opts,
+    );
+    expect(item).toContain('<g:image_link>https://pilarestilo.com/api/media/products/vestido.jpg</g:image_link>');
+    expect(item).toContain('<g:additional_image_link>https://pilarestilo.com/api/media/products/g1.jpg</g:additional_image_link>');
+    expect(item).toContain('<g:additional_image_link>https://cdn.example.com/g2.jpg</g:additional_image_link>');
+    expect(item.indexOf('/g1.jpg')).toBeLessThan(item.indexOf('/g2.jpg'));
+  });
+
+  it('emits no additional_image_link when there is no gallery', () => {
+    const [item] = merchantFeedItems(base, opts);
+    expect(item).not.toContain('<g:additional_image_link>');
+  });
+});
+
 describe('googleProductCategory', () => {
   it('maps the category type, falling back to Apparel & Accessories', () => {
     expect(googleProductCategory({ ...base, categoryTypes: ['SHOES'] })).toBe('187');
