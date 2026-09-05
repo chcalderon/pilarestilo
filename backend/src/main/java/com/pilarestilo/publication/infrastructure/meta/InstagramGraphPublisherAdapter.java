@@ -10,6 +10,8 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -51,15 +53,7 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
 
         RestClient client = restClientBuilder.baseUrl(config.instagramBaseUrl()).build();
         try {
-            JsonNode created = postJson(client,
-                    "/{userId}/media?image_url={imageUrl}&caption={caption}&access_token={token}",
-                    config.instagramUserId(), payload.mediaUrls().get(0), payload.fullCaptionText(), config.instagramAccessToken());
-            String creationId = created.hasNonNull("id") ? created.get("id").asString() : null;
-            if (creationId == null) {
-                return failed("Instagram did not return a media container id");
-            }
-
-            awaitContainerReady(client, creationId, config.instagramAccessToken());
+            String creationId = buildPublishableContainer(client, config, payload.mediaUrls(), payload.fullCaptionText());
 
             JsonNode published = postJson(client,
                     "/{userId}/media_publish?creation_id={creationId}&access_token={token}",
@@ -73,6 +67,47 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         } catch (RuntimeException ex) {
             return failed(ex.getMessage());
         }
+    }
+
+    /**
+     * Builds the container to publish. One image -> a single media container with the caption.
+     * Two or more -> N child containers ({@code is_carousel_item=true}) then a CAROUSEL parent
+     * carrying the caption. Every container is polled to FINISHED before it is used.
+     */
+    private String buildPublishableContainer(RestClient client, MetaPublishingConfigResolver.EffectiveConfig config,
+                                             List<String> mediaUrls, String caption) {
+        if (mediaUrls.size() == 1) {
+            JsonNode created = postJson(client,
+                    "/{userId}/media?image_url={imageUrl}&caption={caption}&access_token={token}",
+                    config.instagramUserId(), mediaUrls.get(0), caption, config.instagramAccessToken());
+            String id = created.hasNonNull("id") ? created.get("id").asString() : null;
+            if (id == null) {
+                throw new IllegalStateException("Instagram did not return a media container id");
+            }
+            awaitContainerReady(client, id, config.instagramAccessToken());
+            return id;
+        }
+        List<String> childIds = new ArrayList<>();
+        for (String url : mediaUrls) {
+            JsonNode child = postJson(client,
+                    "/{userId}/media?image_url={imageUrl}&is_carousel_item=true&access_token={token}",
+                    config.instagramUserId(), url, config.instagramAccessToken());
+            String childId = child.hasNonNull("id") ? child.get("id").asString() : null;
+            if (childId == null) {
+                throw new IllegalStateException("Instagram did not return a carousel child container id");
+            }
+            awaitContainerReady(client, childId, config.instagramAccessToken());
+            childIds.add(childId);
+        }
+        JsonNode parent = postJson(client,
+                "/{userId}/media?media_type=CAROUSEL&caption={caption}&children={children}&access_token={token}",
+                config.instagramUserId(), caption, String.join(",", childIds), config.instagramAccessToken());
+        String parentId = parent.hasNonNull("id") ? parent.get("id").asString() : null;
+        if (parentId == null) {
+            throw new IllegalStateException("Instagram did not return a carousel parent container id");
+        }
+        awaitContainerReady(client, parentId, config.instagramAccessToken());
+        return parentId;
     }
 
     /**
