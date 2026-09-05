@@ -331,6 +331,37 @@ class PublicationControllerIT {
     }
 
     @Test
+    void batch_detail_rows_carry_the_full_image_list() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Falda carrusel", "desc",
+                new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/cover.jpg",
+                ProductCondition.NEW, "Pilar", 3));
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}",
+                                "imageSelections", Map.of(product.getId().toString(),
+                                        List.of("https://cdn.example.com/a.jpg", "https://cdn.example.com/b.jpg"))))))
+                .andExpect(status().isOk());
+
+        MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
+
+        mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].imageUrls[0]").value("https://cdn.example.com/a.jpg"))
+                .andExpect(jsonPath("$.rows[0].imageUrls[1]").value("https://cdn.example.com/b.jpg"));
+    }
+
+    @Test
     void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
         String adminToken = loginAdmin();
         Product product = productRepository.save(Product.create("Blusa retry", "desc",

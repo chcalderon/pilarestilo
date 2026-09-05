@@ -1592,6 +1592,7 @@ export interface PublicationBatchDetailRow {
   externalPermalink: string | null;
   lastErrorCode: string | null;
   lastErrorMessage: string | null;
+  imageUrls: string[];
 }
 
 export interface PublicationBatchDetail {

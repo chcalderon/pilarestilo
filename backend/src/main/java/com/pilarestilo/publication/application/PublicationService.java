@@ -211,7 +211,8 @@ public class PublicationService {
                     p != null ? p.getName() : "(producto eliminado)",
                     p != null ? p.getImageUrl() : null,
                     r.getPlatform(), r.getStatus(), r.getExternalPermalink(),
-                    r.getLastErrorCode(), r.getLastErrorMessage());
+                    r.getLastErrorCode(), r.getLastErrorMessage(),
+                    bundleImageUrls(r));
         }).toList();
 
         return new PublicationBatchDetailDto(
