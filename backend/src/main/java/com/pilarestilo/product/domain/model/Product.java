@@ -12,12 +12,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Product {
 
@@ -40,6 +42,7 @@ public class Product {
     private ShippingOriginZone shippingOriginZone = ShippingOriginZone.LOCAL;
     private List<ProductSizeStock> sizeStocks = new ArrayList<>();
     private List<ProductVariant> variants = new ArrayList<>();
+    private List<String> galleryImageUrls = new ArrayList<>();
     private Set<UUID> categoryIds = new HashSet<>();
     private List<String> categorySlugs = new ArrayList<>();
     private List<String> categoryTypes = new ArrayList<>();
@@ -236,6 +239,32 @@ public class Product {
         this.variants = variants != null ? new ArrayList<>(variants) : new ArrayList<>();
         validateVariants();
         syncStocksFromVariants();
+    }
+
+    private static final int MAX_GALLERY_IMAGES = 9;
+
+    /** Additional images beyond the cover ({@link #getImageUrl()}), in display order. */
+    public List<String> getGalleryImageUrls() {
+        return List.copyOf(galleryImageUrls);
+    }
+
+    public void setGalleryImageUrls(List<String> urls) {
+        if (urls == null) {
+            this.galleryImageUrls = new ArrayList<>();
+            return;
+        }
+        LinkedHashSet<String> unique = new LinkedHashSet<>();
+        for (String url : urls) {
+            if (url == null) {
+                continue;
+            }
+            String trimmed = url.trim();
+            if (!trimmed.isEmpty()) {
+                unique.add(trimmed);
+            }
+        }
+        this.galleryImageUrls = unique.stream().limit(MAX_GALLERY_IMAGES)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public void reserveVariant(int qty, String color, String size) {
