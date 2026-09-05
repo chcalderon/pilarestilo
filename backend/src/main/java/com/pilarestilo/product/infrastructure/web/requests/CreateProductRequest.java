@@ -45,5 +45,7 @@ public record CreateProductRequest(
 
         UUID variantTemplateId,
 
-        List<@Valid ProductVariantRequest> variants
+        List<@Valid ProductVariantRequest> variants,
+
+        List<String> galleryImageUrls
 ) {}

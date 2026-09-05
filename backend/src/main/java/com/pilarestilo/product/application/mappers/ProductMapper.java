@@ -44,7 +44,8 @@ public class ProductMapper {
                 sizeStocks,
                 slugs,
                 categoryTypes,
-                variants
+                variants,
+                product.getGalleryImageUrls()
         );
     }
 
