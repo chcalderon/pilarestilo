@@ -83,6 +83,7 @@ export interface ProductDto {
   variantTemplateId?: string | null;
   variantFieldConfig?: VariantFieldConfigDto | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface WishlistDto {
@@ -632,6 +633,7 @@ export interface CreateProductRequest {
   categoryIds?: string[];
   variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface UpdateProductRequest {
@@ -647,6 +649,7 @@ export interface UpdateProductRequest {
   categoryIds?: string[];
   variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface MediaUploadDto {
@@ -912,8 +915,12 @@ function normalizeProduct(raw: any): ProductDto {
       ?? (raw.listPriceAmount != null
         ? { amount: raw.listPriceAmount, currency: raw.listPriceCurrency ?? raw.priceCurrency ?? 'CLP' }
         : undefined),
+    galleryImageUrls: Array.isArray(raw.galleryImageUrls) ? raw.galleryImageUrls : [],
   };
 }
+
+/** @internal test seam */
+export const __test__normalizeProduct = normalizeProduct;
 
 function hasSellableStock(product: ProductDto): boolean {
   if (Number.isFinite(Number(product.stock))) {
