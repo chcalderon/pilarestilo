@@ -1,8 +1,10 @@
 package com.pilarestilo.publication.infrastructure.persistence.repositories;
 
+import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -15,4 +17,6 @@ public interface PublicationJpaRepository extends JpaRepository<PublicationEntit
     List<PublicationEntity> findByBatchIdOrderByCreatedAtAsc(UUID batchId);
     List<PublicationEntity> findByBatchIdInOrderByCreatedAtAsc(Collection<UUID> batchIds);
     List<PublicationEntity> findByBatchIdIsNullOrderByCreatedAtAsc();
+    List<PublicationEntity> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
+            PublicationStatus status, Instant cutoff);
 }

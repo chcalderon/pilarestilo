@@ -182,6 +182,9 @@ app:
         page-access-token: ${APP_SOCIAL_PUBLISHING_META_FACEBOOK_PAGE_ACCESS_TOKEN:}
         base-url: ${APP_SOCIAL_PUBLISHING_META_FACEBOOK_BASE_URL:https://graph.facebook.com/v23.0}
       public-media-base-url: ${APP_SOCIAL_PUBLISHING_META_PUBLIC_MEDIA_BASE_URL:}
+    schedule:
+      cron: ${APP_SOCIAL_PUBLISHING_SCHEDULE_CRON:0 * * * * *}
+      max-lateness-minutes: ${APP_SOCIAL_PUBLISHING_SCHEDULE_MAX_LATENESS_MINUTES:360}
 
 server:
   port: 8080

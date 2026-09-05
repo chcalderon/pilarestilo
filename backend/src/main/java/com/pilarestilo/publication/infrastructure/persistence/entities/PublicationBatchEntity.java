@@ -24,6 +24,9 @@ public class PublicationBatchEntity {
     @Column(name = "campaign_label", length = 120)
     private String campaignLabel;
 
+    @Column(name = "scheduled_at")
+    private Instant scheduledAt;
+
     @Column(name = "created_by")
     private UUID createdBy;
 
@@ -38,6 +41,8 @@ public class PublicationBatchEntity {
     public void setHashtagsJson(String hashtagsJson) { this.hashtagsJson = hashtagsJson; }
     public String getCampaignLabel() { return campaignLabel; }
     public void setCampaignLabel(String campaignLabel) { this.campaignLabel = campaignLabel; }
+    public Instant getScheduledAt() { return scheduledAt; }
+    public void setScheduledAt(Instant scheduledAt) { this.scheduledAt = scheduledAt; }
     public UUID getCreatedBy() { return createdBy; }
     public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
     public Instant getCreatedAt() { return createdAt; }
