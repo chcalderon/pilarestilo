@@ -1,0 +1,12 @@
+-- The monolith's own notification code (and its second datasource) was deleted in the T16
+-- cleanup deploy (2026-08-29) -- nothing in this codebase has read or written this table since.
+-- It survived that deploy on purpose, as the data-side half of a rollback path: reverting T16
+-- would restore the OLD monolith code that expects this table to exist. A week-plus of stable
+-- production traffic through notification-service (its own separate `pilarestilo_notifications`
+-- database, unrelated to this table) is enough confidence to close that door.
+--
+-- Nothing references this table any more: `services/notification-service/` reads a different,
+-- separate database entirely, and every RO-entity it maps against the shared DB is listed in
+-- CLAUDE.md -- notifications was never one of them, because it moved to its own database instead
+-- of staying as a read-only view here.
+DROP TABLE IF EXISTS notifications;
