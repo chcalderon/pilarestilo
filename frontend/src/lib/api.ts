@@ -1559,6 +1559,69 @@ export async function getProductPublicationImageHistory(
   });
 }
 
+export interface PublicationBatchSummary {
+  batchId: string | null;
+  campaignLabel: string | null;
+  createdAt: string;
+  platforms: Array<'INSTAGRAM' | 'FACEBOOK'>;
+  total: number;
+  published: number;
+  failed: number;
+  scheduled: number;
+  pending: number;
+}
+
+export interface PublicationBatchDetailRow {
+  publicationId: string;
+  productId: string | null;
+  productName: string;
+  thumbnailUrl: string | null;
+  platform: 'INSTAGRAM' | 'FACEBOOK';
+  status: string;
+  externalPermalink: string | null;
+  lastErrorCode: string | null;
+  lastErrorMessage: string | null;
+}
+
+export interface PublicationBatchDetail {
+  batchId: string | null;
+  campaignLabel: string | null;
+  captionTemplate: string | null;
+  hashtags: string[];
+  createdAt: string;
+  productIds: string[];
+  rows: PublicationBatchDetailRow[];
+}
+
+/** Past publish batches, newest first — the "Historial" tab list. */
+export async function getPublicationBatches(token: string): Promise<PublicationBatchSummary[]> {
+  return apiFetch<PublicationBatchSummary[]>('/admin/publications/batches', {
+    headers: authHeaders(token),
+  });
+}
+
+export async function getPublicationBatchDetail(batchId: string, token: string): Promise<PublicationBatchDetail> {
+  return apiFetch<PublicationBatchDetail>(`/admin/publications/batches/${encodeURIComponent(batchId)}`, {
+    headers: authHeaders(token),
+  });
+}
+
+/** Re-dispatch only the FAILED rows of a batch; returns the refreshed detail. */
+export async function retryBatchFailed(batchId: string, token: string): Promise<PublicationBatchDetail> {
+  return apiFetch<PublicationBatchDetail>(`/admin/publications/batches/${encodeURIComponent(batchId)}/retry-failed`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
+/** Re-dispatch a single FAILED publication. */
+export async function retryPublication(publicationId: string, token: string): Promise<unknown> {
+  return apiFetch<unknown>(`/admin/publications/${encodeURIComponent(publicationId)}/retry`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+}
+
 // ─── Ventas y documentos tributarios ─────────────────────────────────────────
 
 export interface SaleSummaryDto {

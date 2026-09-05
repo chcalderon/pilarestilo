@@ -5,6 +5,7 @@ import {
   searchProducts,
   publishProductsBatch,
   uploadMediaFile,
+  getProduct,
   getProductPublicationImageHistory,
   type ProductDto,
   type ProductVariantDto,
@@ -13,6 +14,18 @@ import {
 
 type Platform = 'INSTAGRAM' | 'FACEBOOK';
 type VariantSelection = { color: string; size: string };
+
+export type PublicarTabPreload = {
+  productIds: string[];
+  captionTemplate: string;
+  hashtags: string[];
+  campaignLabel: string | null;
+};
+
+type PublicarTabProps = {
+  preload?: PublicarTabPreload;
+  onPreloadConsumed?: () => void;
+};
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   INSTAGRAM: 'Instagram',
@@ -64,7 +77,7 @@ function joinSpanishList(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
 }
 
-export default function PublicacionesPage() {
+export default function PublicarTab({ preload, onPreloadConsumed }: PublicarTabProps = {}) {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
@@ -88,6 +101,29 @@ export default function PublicacionesPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageHistory, setImageHistory] = useState<Map<string, string[]>>(new Map());
   const [variantSelections, setVariantSelections] = useState<Map<string, VariantSelection>>(new Map());
+
+  useEffect(() => {
+    if (!preload) return;
+    let cancelled = false;
+    setCaptionTemplate(preload.captionTemplate);
+    setHashtagsInput(preload.hashtags.join(' '));
+    setCampaignLabel(preload.campaignLabel ?? '');
+    void Promise.all(preload.productIds.map((id) => getProduct(id).catch(() => null))).then((loaded) => {
+      if (cancelled) return;
+      setSelected(() => {
+        const next = new Map<string, ProductDto>();
+        loaded.forEach((prod) => {
+          if (prod) next.set(prod.id, prod);
+        });
+        return next;
+      });
+      onPreloadConsumed?.();
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preload]);
 
   useEffect(() => {
     const q = term.trim();

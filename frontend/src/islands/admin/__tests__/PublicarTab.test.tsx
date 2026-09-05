@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
-import PublicacionesPage from '../PublicacionesPage';
+import PublicarTab from '../PublicarTab';
 import {
   searchProducts,
   publishProductsBatch,
@@ -84,10 +84,10 @@ function setCaptionTemplate(text: string) {
   fireEvent.change(screen.getByLabelText(/plantilla/i), { target: { value: text } });
 }
 
-describe('PublicacionesPage', () => {
+describe('PublicarTab', () => {
   it('interpolates the caption template in the preview', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
 
     expect(await screen.findByText(/chaqueta a solo \$49\.990/i)).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('PublicacionesPage', () => {
 
   it('publishes the batch and renders a mixed result', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
 
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
@@ -105,13 +105,13 @@ describe('PublicacionesPage', () => {
   });
 
   it('disables the publish button until a product is selected', () => {
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     expect(screen.getByRole('button', { name: /publicar ahora/i })).toBeDisabled();
   });
 
   it('shows the catalog on focus, before typing anything', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
 
     expect(screen.queryByRole('button', { name: /chaqueta/i })).not.toBeInTheDocument();
     await user.click(screen.getByPlaceholderText(/buscar producto/i));
@@ -122,7 +122,7 @@ describe('PublicacionesPage', () => {
 
   it('shows a chosen product as a chip right under the search box', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
 
     expect(screen.getByText('1 producto(s) elegido(s)')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('PublicacionesPage', () => {
 
   it('hides the catalog list once focus leaves the search area, keeping the chip', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
     expect(screen.getByText('Elegido')).toBeInTheDocument();
 
@@ -147,7 +147,7 @@ describe('PublicacionesPage', () => {
 
   it('uploads an edited photo and sends it as the override for that product', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
 
     const file = new File(['fake'], 'edited.jpg', { type: 'image/jpeg' });
@@ -168,7 +168,7 @@ describe('PublicacionesPage', () => {
 
   it('auto-picks a variant with stock and fills {color}/{talla}/{cantidad} in the preview', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectZapatos(user);
     setCaptionTemplate('{color} {talla} quedan {cantidad}');
 
@@ -177,7 +177,7 @@ describe('PublicacionesPage', () => {
 
   it('lets you change talla, and re-picks talla when color changes to one that lacks it', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectZapatos(user);
     setCaptionTemplate('{color} {talla} quedan {cantidad}');
     await screen.findByText(/Negro 38 quedan 4/);
@@ -191,7 +191,7 @@ describe('PublicacionesPage', () => {
 
   it('warns when the template uses a variant token but the product has no variants', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
     setCaptionTemplate('{producto} talla {talla}');
 
@@ -200,7 +200,7 @@ describe('PublicacionesPage', () => {
 
   it('sends the chosen variant in the publish payload', async () => {
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectZapatos(user);
 
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
@@ -215,7 +215,7 @@ describe('PublicacionesPage', () => {
   it('offers previously used photos for the product and reuses one on click', async () => {
     vi.mocked(getProductPublicationImageHistory).mockResolvedValue(['https://img/old-edit.jpg']);
     const user = userEvent.setup();
-    render(<PublicacionesPage />);
+    render(<PublicarTab />);
     await selectTheProduct(user);
 
     const reuseButton = await screen.findByRole('button', { name: /reusar esta foto/i });
