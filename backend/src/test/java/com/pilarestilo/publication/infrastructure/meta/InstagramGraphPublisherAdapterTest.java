@@ -45,7 +45,7 @@ class InstagramGraphPublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("fields=permalink")))
                 .andRespond(withSuccess("{\"permalink\":\"https://www.instagram.com/p/ABC123/\"}", MediaType.APPLICATION_JSON));
 
-        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
@@ -67,7 +67,7 @@ class InstagramGraphPublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/media")))
                 .andRespond(withServerError());
 
-        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.FAILED, result.status());
@@ -82,7 +82,7 @@ class InstagramGraphPublisherAdapterTest {
                 null, null, "https://graph.facebook.com/v23.0", null
         ));
 
-        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(RestClient.builder(), configResolver);
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(RestClient.builder(), configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.FAILED, result.status());
@@ -106,7 +106,7 @@ class InstagramGraphPublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/178923456?fields=permalink")))
                 .andRespond(withSuccess("{\"permalink\":\"https://www.instagram.com/p/ABC123/\"}", MediaType.APPLICATION_JSON));
 
-        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
@@ -132,7 +132,7 @@ class InstagramGraphPublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("fields=permalink")))
                 .andRespond(withServerError());
 
-        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());

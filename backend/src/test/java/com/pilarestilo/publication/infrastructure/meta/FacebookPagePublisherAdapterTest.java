@@ -40,12 +40,36 @@ class FacebookPagePublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/1023624300843445/photos")))
                 .andRespond(withSuccess("{\"post_id\":\"1023624300843445_555\",\"id\":\"555\"}", MediaType.APPLICATION_JSON));
 
-        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver);
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
         assertEquals("1023624300843445_555", result.remotePostId());
         server.verify();
+    }
+
+    @Test
+    void parses_a_json_body_returned_as_text_javascript() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                null, null, "https://graph.instagram.com/v23.0",
+                "1023624300843445", "token-fb", "https://graph.facebook.com/v23.0", null
+        ));
+
+        // The real Graph API returns JSON with this content type.
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/photos")))
+                .andRespond(withSuccess("{\"post_id\":\"1023624300843445_777\",\"id\":\"777\"}",
+                        MediaType.parseMediaType("text/javascript;charset=UTF-8")));
+
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
+        PublicationDispatcher.DispatchResult result = adapter.publish(payload);
+
+        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
+        assertEquals("1023624300843445_777", result.remotePostId());
+        assertEquals("https://www.facebook.com/1023624300843445_777", result.remotePermalink());
     }
 
     @Test
@@ -56,7 +80,7 @@ class FacebookPagePublisherAdapterTest {
                 null, null, "https://graph.facebook.com/v23.0", null
         ));
 
-        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(RestClient.builder(), configResolver);
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(RestClient.builder(), configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.FAILED, result.status());
@@ -76,7 +100,7 @@ class FacebookPagePublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/1023624300843445/photos")))
                 .andRespond(withSuccess("{\"post_id\":\"1023624300843445_555\",\"id\":\"555\"}", MediaType.APPLICATION_JSON));
 
-        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver);
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals("https://www.facebook.com/1023624300843445_555", result.remotePermalink());
@@ -96,7 +120,7 @@ class FacebookPagePublisherAdapterTest {
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/photos")))
                 .andRespond(withSuccess("{\"id\":\"555\"}", MediaType.APPLICATION_JSON));
 
-        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver);
+        FacebookPagePublisherAdapter adapter = new FacebookPagePublisherAdapter(builder, configResolver, new tools.jackson.databind.ObjectMapper());
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(null, result.remotePermalink());
