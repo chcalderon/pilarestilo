@@ -332,6 +332,37 @@ class ProductRepositoryAdapterIT {
     }
 
     @Test
+    void round_trips_the_image_gallery_in_order() {
+        Product p = Product.create("ZT-Gallery", "d", new Money(BigDecimal.valueOf(19990), "CLP"),
+                "https://img/cover.jpg", ProductCondition.NEW, "ZT-Brand", 3);
+        p.setGalleryImageUrls(List.of("https://img/1.jpg", "https://img/2.jpg", "https://img/3.jpg"));
+        UUID id = productRepository.save(p).getId();
+
+        Product reloaded = productRepository.findById(id).orElseThrow();
+        assertThat(reloaded.getGalleryImageUrls())
+                .containsExactly("https://img/1.jpg", "https://img/2.jpg", "https://img/3.jpg");
+    }
+
+    @Test
+    void reorders_and_clears_the_gallery_on_update() {
+        Product p = Product.create("ZT-Gallery2", "d", new Money(BigDecimal.valueOf(19990), "CLP"),
+                "https://img/cover.jpg", ProductCondition.NEW, "ZT-Brand", 3);
+        p.setGalleryImageUrls(List.of("https://img/a.jpg", "https://img/b.jpg"));
+        UUID id = productRepository.save(p).getId();
+
+        Product toReorder = productRepository.findById(id).orElseThrow();
+        toReorder.setGalleryImageUrls(List.of("https://img/b.jpg", "https://img/a.jpg"));
+        productRepository.save(toReorder);
+        assertThat(productRepository.findById(id).orElseThrow().getGalleryImageUrls())
+                .containsExactly("https://img/b.jpg", "https://img/a.jpg");
+
+        Product toClear = productRepository.findById(id).orElseThrow();
+        toClear.setGalleryImageUrls(List.of());
+        productRepository.save(toClear);
+        assertThat(productRepository.findById(id).orElseThrow().getGalleryImageUrls()).isEmpty();
+    }
+
+    @Test
     void findAllFiltersByCreatedDateRange() {
         Instant inRange = LocalDate.of(2026, 5, 10).atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant outOfRange = LocalDate.of(2026, 2, 1).atStartOfDay().toInstant(ZoneOffset.UTC);

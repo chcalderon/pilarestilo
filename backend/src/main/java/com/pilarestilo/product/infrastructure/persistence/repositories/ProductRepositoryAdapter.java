@@ -287,6 +287,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
                 .collect(Collectors.toList());
         entity.setVariants(variantEmbeddables);
 
+        // Mutable, same reason as the collections above: Hibernate repopulates it in place on merge.
+        @SuppressWarnings("java:S6204")
+        List<String> galleryImages = new ArrayList<>(product.getGalleryImageUrls());
+        entity.setGalleryImageUrls(galleryImages);
+
         Set<CategoryEntity> cats = new HashSet<>(
                 categoryJpaRepository.findAllById(product.getCategoryIds())
         );
@@ -339,6 +344,9 @@ public class ProductRepositoryAdapter implements ProductRepository {
                     .map(sizeStock -> new ProductSizeStock(sizeStock.getSize(), sizeStock.getStock()))
                     .toList());
         }
+
+        product.setGalleryImageUrls(
+                entity.getGalleryImageUrls() == null ? List.of() : entity.getGalleryImageUrls());
 
         // Map categories from entity
         if (entity.getCategories() != null && !entity.getCategories().isEmpty()) {

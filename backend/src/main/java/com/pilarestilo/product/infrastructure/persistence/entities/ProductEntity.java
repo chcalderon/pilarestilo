@@ -86,6 +86,12 @@ public class ProductEntity {
     )
     private List<ProductVariantEmbeddable> variants = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderColumn(name = "sort_order")
+    @Column(name = "image_url", nullable = false)
+    private List<String> galleryImageUrls = new ArrayList<>();
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "product_categories",
@@ -112,6 +118,8 @@ public class ProductEntity {
     public void setSizeStocks(List<ProductSizeStockEmbeddable> sizeStocks) { this.sizeStocks = sizeStocks; }
     public List<ProductVariantEmbeddable> getVariants() { return variants; }
     public void setVariants(List<ProductVariantEmbeddable> variants) { this.variants = variants; }
+    public List<String> getGalleryImageUrls() { return galleryImageUrls; }
+    public void setGalleryImageUrls(List<String> galleryImageUrls) { this.galleryImageUrls = galleryImageUrls; }
 
     // Existing getters and setters
     public UUID getId() { return id; }
