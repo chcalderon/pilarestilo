@@ -74,6 +74,16 @@ public class UpdateSystemSettingsUseCase {
                 command.n8nApiKey(),
                 command.clearN8nApiKey()
         );
+        String nextMetaInstagramAccessToken = resolveEncryptedSecret(
+                settings.getMetaInstagramAccessTokenEncrypted(),
+                command.metaInstagramAccessToken(),
+                command.clearMetaInstagramAccessToken()
+        );
+        String nextMetaFacebookPageAccessToken = resolveEncryptedSecret(
+                settings.getMetaFacebookPageAccessTokenEncrypted(),
+                command.metaFacebookPageAccessToken(),
+                command.clearMetaFacebookPageAccessToken()
+        );
 
         boolean oldEnabled = settings.isBankTransferAutoCancelEnabled();
         int oldTimeout = settings.getBankTransferAutoCancelTimeoutMinutes();
@@ -117,6 +127,10 @@ public class UpdateSystemSettingsUseCase {
                 command.n8nWebhookUrl(),
                 command.n8nTokenHeaderName(),
                 nextN8nApiKey,
+                command.metaInstagramUserId(),
+                nextMetaInstagramAccessToken,
+                command.metaFacebookPageId(),
+                nextMetaFacebookPageAccessToken,
                 command.whatsappSimulatedTo(),
                 command.whatsappSimulatedSender(),
                 command.whatsappTwilioApiBaseUrl(),
