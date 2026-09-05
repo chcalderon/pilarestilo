@@ -58,6 +58,9 @@ class ProductRepositoryAdapterIT {
     @Autowired
     CategoryJpaRepository categoryJpaRepository;
 
+    @Autowired
+    com.pilarestilo.varianttemplate.infrastructure.persistence.repositories.VariantTemplateJpaRepository variantTemplateJpaRepository;
+
     UUID categoryId;
 
     @BeforeEach
@@ -94,6 +97,32 @@ class ProductRepositoryAdapterIT {
             product.setCategoryIds(categoryIds);
         }
         return productRepository.save(product);
+    }
+
+    @Test
+    void findById_of_a_product_with_a_variant_template_works_outside_a_transaction() {
+        // Regression: PublishProductsBatchUseCase is deliberately non-@Transactional and calls
+        // findById; before findById was made @Transactional(readOnly=true), mapping a product that
+        // has a variant template threw LazyInitializationException on template.getFieldConfig().
+        var template = new com.pilarestilo.varianttemplate.infrastructure.persistence.entities.VariantTemplateEntity();
+        template.setId(UUID.randomUUID());
+        template.setName("ZT-Template");
+        template.setCreatedAt(Instant.now());
+        java.util.Map<String, Object> field = java.util.Map.of(
+                "label", "Color", "inputType", "FREE_TEXT",
+                "options", java.util.List.of(), "allowMultiple", false, "allowCustom", true);
+        template.setFieldConfig(java.util.Map.of("primary", field, "secondary", field));
+        variantTemplateJpaRepository.save(template);
+
+        Product product = Product.create("ZT-ConTemplate", "desc", Money.of(BigDecimal.TEN),
+                "/img.jpg", ProductCondition.NEW, "ZT-TemplateBrand", 3);
+        product.setVariantTemplateId(template.getId());
+        Product saved = productRepository.save(product);
+
+        Product reloaded = productRepository.findById(saved.getId()).orElseThrow();
+
+        assertThat(reloaded.getVariantTemplateId()).isEqualTo(template.getId());
+        assertThat(reloaded.getVariantFieldConfig()).isNotNull();
     }
 
     // ---- update path (Hibernate merge, not the insert path every other test above exercises) ----
