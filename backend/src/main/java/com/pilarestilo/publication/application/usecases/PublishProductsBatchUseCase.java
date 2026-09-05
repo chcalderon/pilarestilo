@@ -84,7 +84,7 @@ public class PublishProductsBatchUseCase {
                     "pub-batch-" + productId + "-" + platform.name() + "-" + UUID.randomUUID(),
                     List.of(new CreatePublicationCommand.MediaBundleCommand(
                             PublicationMediaBundleType.SOCIAL_FEED,
-                            product.getImageUrl(),
+                            command.imageOverrides().getOrDefault(productId, product.getImageUrl()),
                             Map.of()
                     ))
             );

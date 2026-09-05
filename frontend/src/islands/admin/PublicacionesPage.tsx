@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Search, Send } from 'lucide-react';
+import { Download, Loader2, Search, Send, Upload } from 'lucide-react';
 import { useAuthStore, readAuthTokenCookie } from '../../lib/authStore';
 import {
   searchProducts,
   publishProductsBatch,
+  uploadMediaFile,
+  getProductPublicationImageHistory,
   type ProductDto,
   type PublishProductsBatchItemResult,
 } from '../../lib/api';
@@ -30,6 +32,7 @@ export default function PublicacionesPage() {
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
   const [term, setTerm] = useState('');
+  const [browseRequested, setBrowseRequested] = useState(false);
   const [results, setResults] = useState<ProductDto[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<Map<string, ProductDto>>(new Map());
@@ -42,10 +45,16 @@ export default function PublicacionesPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishResults, setPublishResults] = useState<PublishProductsBatchItemResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imageOverrides, setImageOverrides] = useState<Map<string, string>>(new Map());
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imageHistory, setImageHistory] = useState<Map<string, string[]>>(new Map());
 
   useEffect(() => {
     const q = term.trim();
-    if (q.length < 2) {
+    // Below 2 letters normally means "not enough to search yet" — except once the user has
+    // clicked into the box at all, an empty box means "browse the catalog", not "no results".
+    if (q.length < 2 && !browseRequested) {
       setResults([]);
       return;
     }
@@ -67,9 +76,10 @@ export default function PublicacionesPage() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [term]);
+  }, [term, browseRequested]);
 
   function toggleProduct(product: ProductDto) {
+    const wasSelected = selected.has(product.id);
     setSelected((prev) => {
       const next = new Map(prev);
       if (next.has(product.id)) {
@@ -79,6 +89,11 @@ export default function PublicacionesPage() {
       }
       return next;
     });
+    if (!wasSelected && !imageHistory.has(product.id)) {
+      void getProductPublicationImageHistory(product.id, effectiveToken)
+        .then((urls) => setImageHistory((prev) => new Map(prev).set(product.id, urls)))
+        .catch(() => setImageHistory((prev) => new Map(prev).set(product.id, [])));
+    }
   }
 
   function togglePlatform(platform: Platform) {
@@ -91,6 +106,27 @@ export default function PublicacionesPage() {
       }
       return next;
     });
+  }
+
+  function effectiveImageUrl(product: ProductDto): string {
+    return imageOverrides.get(product.id) ?? product.imageUrl;
+  }
+
+  async function handleImageReplace(product: ProductDto, file: File) {
+    setUploadingFor(product.id);
+    setUploadError(null);
+    try {
+      const url = await uploadMediaFile(file, 'publications', effectiveToken);
+      setImageOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(product.id, url);
+        return next;
+      });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'No se pudo subir la foto editada.');
+    } finally {
+      setUploadingFor(null);
+    }
   }
 
   const selectedProducts = useMemo(() => Array.from(selected.values()), [selected]);
@@ -119,6 +155,7 @@ export default function PublicacionesPage() {
           captionTemplate,
           hashtags,
           campaignLabel: campaignLabel.trim() || undefined,
+          imageOverrides: imageOverrides.size > 0 ? Object.fromEntries(imageOverrides) : undefined,
         },
         effectiveToken,
       );
@@ -133,7 +170,7 @@ export default function PublicacionesPage() {
   return (
     <div className="flex flex-col gap-6">
       <section>
-        <h2 className="font-sans text-sm text-pe-muted mb-2">1. Elegi los productos</h2>
+        <h2 className="font-sans text-sm text-pe-muted mb-2">1. Elige los productos</h2>
         <label className="relative block max-w-md">
           <span className="sr-only">Buscar producto</span>
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-pe-muted" />
@@ -141,10 +178,33 @@ export default function PublicacionesPage() {
             type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Buscar producto por nombre..."
+            onFocus={() => setBrowseRequested(true)}
+            placeholder="Buscar producto por nombre, o hace clic para ver el catalogo..."
             className="w-full bg-pe-surface border border-pe-border rounded-xs pl-9 pr-3 py-2 text-sm outline-hidden focus:ring-1 focus:ring-pe-border"
           />
         </label>
+
+        {selectedProducts.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs text-pe-muted mb-1.5">{selectedProducts.length} producto(s) elegido(s)</p>
+            <ul className="flex flex-wrap gap-2">
+              {selectedProducts.map((product) => (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggleProduct(product)}
+                    className="group flex items-center gap-1.5 border border-pe-rose bg-pe-rose/10 rounded-xs pl-1 pr-2 py-1"
+                  >
+                    <img src={effectiveImageUrl(product)} alt="" className="w-6 h-7 object-cover flex-shrink-0" />
+                    <span className="font-sans text-[0.7rem] max-w-32 truncate">{product.name}</span>
+                    <span aria-hidden="true" className="text-pe-muted group-hover:text-pe-rose">×</span>
+                    <span className="sr-only">Quitar {product.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {searching && (
           <div className="flex items-center gap-2 mt-3 text-pe-muted text-xs">
@@ -179,10 +239,6 @@ export default function PublicacionesPage() {
               );
             })}
           </ul>
-        )}
-
-        {selectedProducts.length > 0 && (
-          <p className="mt-2 text-xs text-pe-muted">{selectedProducts.length} producto(s) elegido(s)</p>
         )}
       </section>
 
@@ -240,21 +296,86 @@ export default function PublicacionesPage() {
       {selectedProducts.length > 0 && (
         <section>
           <h2 className="font-sans text-sm text-pe-muted mb-2">4. Vista previa</h2>
+          {uploadError && (
+            <p className="text-sm text-pe-danger-ink mb-2" role="alert">
+              {uploadError}
+            </p>
+          )}
           <ul className="flex flex-col gap-3">
-            {selectedProducts.map((product) => (
-              <li key={product.id} className="flex gap-3 border border-pe-border p-3">
-                <img src={product.imageUrl} alt={product.name} className="w-16 h-20 object-cover flex-shrink-0" />
-                <p className="text-sm whitespace-pre-wrap">
-                  {interpolateCaption(captionTemplate, product)}
-                  {hashtags.length > 0 && (
-                    <>
-                      {'\n\n'}
-                      {hashtags.join(' ')}
-                    </>
-                  )}
-                </p>
-              </li>
-            ))}
+            {selectedProducts.map((product) => {
+              const isUploading = uploadingFor === product.id;
+              const hasOverride = imageOverrides.has(product.id);
+              const history = (imageHistory.get(product.id) ?? []).filter(
+                (url) => url !== effectiveImageUrl(product),
+              );
+              return (
+                <li key={product.id} className="flex gap-3 border border-pe-border p-3">
+                  <img
+                    src={effectiveImageUrl(product)}
+                    alt={product.name}
+                    className="w-16 h-20 object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {interpolateCaption(captionTemplate, product)}
+                      {hashtags.length > 0 && (
+                        <>
+                          {'\n\n'}
+                          {hashtags.join(' ')}
+                        </>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={effectiveImageUrl(product)}
+                        download
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[0.72rem] text-pe-muted hover:text-pe-rose"
+                      >
+                        <Download size={12} /> Descargar foto
+                      </a>
+                      <label className="inline-flex items-center gap-1 text-[0.72rem] text-pe-muted hover:text-pe-rose cursor-pointer">
+                        {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                        {hasOverride ? 'Reemplazar foto editada' : 'Subir foto editada'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          disabled={isUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = '';
+                            if (file) void handleImageReplace(product, file);
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {history.length > 0 && (
+                      <div>
+                        <p className="text-[0.66rem] text-pe-muted mb-1">Fotos usadas antes en este producto:</p>
+                        <ul className="flex gap-1.5">
+                          {history.map((url) => (
+                            <li key={url}>
+                              <button
+                                type="button"
+                                title="Reusar esta foto"
+                                onClick={() =>
+                                  setImageOverrides((prev) => new Map(prev).set(product.id, url))
+                                }
+                                className="block border border-pe-border hover:border-pe-rose"
+                              >
+                                <img src={url} alt="" className="w-8 h-10 object-cover" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

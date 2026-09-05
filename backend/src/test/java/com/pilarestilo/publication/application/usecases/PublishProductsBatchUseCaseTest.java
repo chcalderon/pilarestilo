@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -70,7 +71,8 @@ class PublishProductsBatchUseCaseTest {
                 Set.of(PublicationPlatform.INSTAGRAM, PublicationPlatform.FACEBOOK),
                 "{producto} a solo {precio}!",
                 List.of("#pilarestilo"),
-                "Liquidacion"
+                "Liquidacion",
+                Map.of()
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
@@ -103,7 +105,7 @@ class PublishProductsBatchUseCaseTest {
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(missingProductId, okProductId),
                 Set.of(PublicationPlatform.INSTAGRAM),
-                "{producto}", List.of(), null
+                "{producto}", List.of(), null, Map.of()
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
@@ -122,7 +124,7 @@ class PublishProductsBatchUseCaseTest {
                 .thenThrow(new DomainException("boom"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null
+                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null, Map.of()
         ), UUID.randomUUID());
 
         assertEquals(1, result.items().size());
@@ -143,11 +145,34 @@ class PublishProductsBatchUseCaseTest {
                 .thenReturn(failedDto(publicationId, "Instagram credentials are not configured"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of()
         ), UUID.randomUUID());
 
         assertFalse(result.items().get(0).success());
         assertEquals("Instagram credentials are not configured", result.items().get(0).errorMessage());
+    }
+
+    @Test
+    void uses_the_image_override_when_provided_for_a_product() {
+        UUID productId = UUID.randomUUID();
+        Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                "https://cdn.example.com/original.jpg", ProductCondition.NEW, "Pilar", 2);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        UUID publicationId = UUID.randomUUID();
+        when(publicationService.create(any(CreatePublicationCommand.class), any()))
+                .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
+        when(publicationService.dispatch(eq(publicationId), any()))
+                .thenReturn(publishedDto(publicationId));
+
+        useCase.execute(new PublishProductsBatchCommand(
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
+                Map.of(productId, "https://cdn.example.com/edited.jpg")
+        ), UUID.randomUUID());
+
+        ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
+        verify(publicationService).create(captor.capture(), any());
+        assertEquals("https://cdn.example.com/edited.jpg",
+                captor.getValue().mediaBundles().get(0).primaryAssetUrl());
     }
 
     private PublicationDto publishedDto(UUID id) {

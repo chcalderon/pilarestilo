@@ -1519,6 +1519,8 @@ export interface PublishProductsBatchRequest {
   captionTemplate: string;
   hashtags?: string[];
   campaignLabel?: string;
+  /** productId -> replacement image URL (e.g. an edited photo uploaded just for this post). */
+  imageOverrides?: Record<string, string>;
 }
 
 export interface PublishProductsBatchItemResult {
@@ -1540,6 +1542,17 @@ export async function publishProductsBatch(
   return apiFetch<PublishProductsBatchResponse>('/admin/publications/batch', {
     method: 'POST',
     body: JSON.stringify(body),
+    headers: authHeaders(token),
+  });
+}
+
+/** Every image ever used to publish this product, most recent first — lets the picker offer
+ *  "reuse this one" instead of re-uploading an edited photo every time. */
+export async function getProductPublicationImageHistory(
+  productId: string,
+  token: string,
+): Promise<string[]> {
+  return apiFetch<string[]>(`/admin/publications/products/${encodeURIComponent(productId)}/image-history`, {
     headers: authHeaders(token),
   });
 }

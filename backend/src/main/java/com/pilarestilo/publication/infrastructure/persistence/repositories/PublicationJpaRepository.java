@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface PublicationJpaRepository extends JpaRepository<PublicationEntity, UUID> {
     Optional<PublicationEntity> findByIdempotencyKey(String idempotencyKey);
     List<PublicationEntity> findAllByOrderByCreatedAtDesc();
+    List<PublicationEntity> findTop20ByProductIdOrderByCreatedAtDesc(UUID productId);
 }
