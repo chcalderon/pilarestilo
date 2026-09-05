@@ -168,7 +168,7 @@ describe('PublicarTab', () => {
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
     await waitFor(() =>
       expect(publishProductsBatch).toHaveBeenCalledWith(
-        expect.objectContaining({ imageOverrides: { p1: 'https://img/edited.jpg' } }),
+        expect.objectContaining({ imageSelections: { p1: ['https://img/edited.jpg'] } }),
         't',
       ),
     );
@@ -181,6 +181,53 @@ describe('PublicarTab', () => {
     setCaptionTemplate('Mira {product_url}');
 
     expect(await screen.findByText(/\/es\/products\/p1/)).toBeInTheDocument();
+  });
+
+  it('hides the carousel toggle for a product with no gallery', async () => {
+    const user = userEvent.setup();
+    render(<PublicarTab />);
+    await selectTheProduct(user);
+    expect(screen.queryByRole('checkbox', { name: /carrusel/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/agregá fotos a la galería/i)).toBeInTheDocument();
+  });
+
+  it('sends imageSelections with the gallery when carousel is on', async () => {
+    const user = userEvent.setup();
+    vi.mocked(searchProducts).mockResolvedValue({
+      content: [{
+        id: 'p1', name: 'Chaqueta', price: { amount: 49990, currency: 'CLP' },
+        imageUrl: 'https://img/cover.jpg', galleryImageUrls: ['https://img/g1.jpg', 'https://img/g2.jpg'],
+      } as never],
+      totalElements: 1, totalPages: 1, size: 24, number: 0,
+    } as never);
+    render(<PublicarTab />);
+    await user.type(screen.getByPlaceholderText(/buscar producto/i), 'cha');
+    await user.click(await screen.findByRole('button', { name: /chaqueta/i }));
+
+    await user.click(screen.getByRole('checkbox', { name: /carrusel/i }));
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imageSelections: { p1: ['https://img/cover.jpg', 'https://img/g1.jpg', 'https://img/g2.jpg'] },
+        }),
+        't',
+      ),
+    );
+  });
+
+  it('sends a single-element imageSelections when carousel is off', async () => {
+    const user = userEvent.setup();
+    render(<PublicarTab />);
+    await selectTheProduct(user);
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ imageSelections: { p1: ['https://img/chaqueta.jpg'] } }),
+        't',
+      ),
+    );
   });
 
   it('auto-picks a variant with stock and fills {color}/{talla}/{cantidad} in the preview', async () => {
@@ -241,7 +288,7 @@ describe('PublicarTab', () => {
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
     await waitFor(() =>
       expect(publishProductsBatch).toHaveBeenCalledWith(
-        expect.objectContaining({ imageOverrides: { p1: 'https://img/old-edit.jpg' } }),
+        expect.objectContaining({ imageSelections: { p1: ['https://img/old-edit.jpg'] } }),
         't',
       ),
     );

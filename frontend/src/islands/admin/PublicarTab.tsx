@@ -23,6 +23,7 @@ export type PublicarTabPreload = {
   hashtags: string[];
   campaignLabel: string | null;
   scheduledAt?: string | null;
+  imageSelections?: Record<string, string[]>;
 };
 
 type PublicarTabProps = {
@@ -115,6 +116,7 @@ export default function PublicarTab(
   const [mode, setMode] = useState<'now' | 'schedule'>('now');
   const [scheduleInput, setScheduleInput] = useState('');
   const [imageOverrides, setImageOverrides] = useState<Map<string, string>>(new Map());
+  const [carouselProducts, setCarouselProducts] = useState<Set<string>>(new Set());
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageHistory, setImageHistory] = useState<Map<string, string[]>>(new Map());
@@ -139,6 +141,17 @@ export default function PublicarTab(
         });
         return next;
       });
+      if (preload.imageSelections) {
+        const nextCarousel = new Set<string>();
+        const nextOverrides = new Map<string, string>();
+        for (const [pid, urls] of Object.entries(preload.imageSelections)) {
+          if (urls.length > 1) nextCarousel.add(pid);
+          const prod = loaded.find((x) => x?.id === pid);
+          if (urls[0] && prod && urls[0] !== prod.imageUrl) nextOverrides.set(pid, urls[0]);
+        }
+        setCarouselProducts(nextCarousel);
+        setImageOverrides(nextOverrides);
+      }
       onPreloadConsumed?.();
     });
     return () => {
@@ -291,7 +304,12 @@ export default function PublicarTab(
         captionTemplate,
         hashtags,
         campaignLabel: campaignLabel.trim() || undefined,
-        imageOverrides: imageOverrides.size > 0 ? Object.fromEntries(imageOverrides) : undefined,
+        imageSelections: Object.fromEntries(
+          selectedProducts.map((p) => {
+            const first = imageOverrides.get(p.id) ?? p.imageUrl;
+            return [p.id, carouselProducts.has(p.id) ? [first, ...(p.galleryImageUrls ?? [])] : [first]];
+          }),
+        ),
         variantSelections: relevantVariants.size > 0 ? Object.fromEntries(relevantVariants) : undefined,
         scheduledAt,
       };
@@ -609,6 +627,36 @@ export default function PublicarTab(
                           ))}
                         </ul>
                       </div>
+                    )}
+                    {(product.galleryImageUrls ?? []).length > 0 ? (
+                      <label className="inline-flex items-center gap-2 text-[0.72rem] text-pe-muted">
+                        <input
+                          type="checkbox"
+                          checked={carouselProducts.has(product.id)}
+                          onChange={(e) =>
+                            setCarouselProducts((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(product.id);
+                              else next.delete(product.id);
+                              return next;
+                            })
+                          }
+                        />
+                        Carrusel ({1 + (product.galleryImageUrls ?? []).length} fotos)
+                      </label>
+                    ) : (
+                      <p className="text-[0.68rem] text-pe-muted">
+                        Agregá fotos a la galería del producto para hacer carrusel.
+                      </p>
+                    )}
+                    {carouselProducts.has(product.id) && (
+                      <ul className="flex gap-1.5">
+                        {[effectiveImageUrl(product), ...(product.galleryImageUrls ?? [])].map((url, i) => (
+                          <li key={`${url}-${i}`}>
+                            <img src={url} alt="" className="w-8 h-10 object-cover border border-pe-border" />
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </div>
                 </li>

@@ -1526,8 +1526,8 @@ export interface PublishProductsBatchRequest {
   captionTemplate: string;
   hashtags?: string[];
   campaignLabel?: string;
-  /** productId -> replacement image URL (e.g. an edited photo uploaded just for this post). */
-  imageOverrides?: Record<string, string>;
+  /** productId -> ordered image list for this post (cover/override first, then carousel extras). */
+  imageSelections?: Record<string, string[]>;
   /** productId -> chosen variant, used to resolve the {color}/{talla}/{cantidad} caption tokens. */
   variantSelections?: Record<string, { color: string; size: string }>;
   /** ISO-8601 instant. When set, the batch is scheduled instead of published now. */
