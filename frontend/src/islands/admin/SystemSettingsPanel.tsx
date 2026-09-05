@@ -84,6 +84,12 @@ export type FormState = {
   n8nTokenHeaderName: string;
   n8nApiKey: string;
   clearN8nApiKey: boolean;
+  metaInstagramUserId: string;
+  metaInstagramAccessToken: string;
+  clearMetaInstagramAccessToken: boolean;
+  metaFacebookPageId: string;
+  metaFacebookPageAccessToken: string;
+  clearMetaFacebookPageAccessToken: boolean;
   whatsappSimulatedTo: string;
   whatsappSimulatedSender: string;
   whatsappTwilioApiBaseUrl: string;
@@ -383,6 +389,12 @@ export function buildFormFromSettings(settings: SystemSettingsDto): FormState {
     n8nTokenHeaderName: settings.n8nTokenHeaderName ?? 'X-PE-N8N-TOKEN',
     n8nApiKey: '',
     clearN8nApiKey: false,
+    metaInstagramUserId: settings.metaInstagramUserId ?? '',
+    metaInstagramAccessToken: '',
+    clearMetaInstagramAccessToken: false,
+    metaFacebookPageId: settings.metaFacebookPageId ?? '',
+    metaFacebookPageAccessToken: '',
+    clearMetaFacebookPageAccessToken: false,
     whatsappSimulatedTo: settings.whatsappSimulatedTo ?? '',
     whatsappSimulatedSender: settings.whatsappSimulatedSender ?? '',
     whatsappTwilioApiBaseUrl: settings.whatsappTwilioApiBaseUrl ?? '',
@@ -698,6 +710,12 @@ export default function SystemSettingsPanel() {
     n8nTokenHeaderName: 'X-PE-N8N-TOKEN',
     n8nApiKey: '',
     clearN8nApiKey: false,
+    metaInstagramUserId: '',
+    metaInstagramAccessToken: '',
+    clearMetaInstagramAccessToken: false,
+    metaFacebookPageId: '',
+    metaFacebookPageAccessToken: '',
+    clearMetaFacebookPageAccessToken: false,
     whatsappSimulatedTo: '',
     whatsappSimulatedSender: '',
     whatsappTwilioApiBaseUrl: '',
@@ -1070,6 +1088,12 @@ export default function SystemSettingsPanel() {
       n8nTokenHeaderName: form.n8nTokenHeaderName.trim(),
       n8nApiKey: form.n8nApiKey.trim(),
       clearN8nApiKey: form.clearN8nApiKey,
+      metaInstagramUserId: form.metaInstagramUserId.trim(),
+      metaInstagramAccessToken: form.metaInstagramAccessToken.trim(),
+      clearMetaInstagramAccessToken: form.clearMetaInstagramAccessToken,
+      metaFacebookPageId: form.metaFacebookPageId.trim(),
+      metaFacebookPageAccessToken: form.metaFacebookPageAccessToken.trim(),
+      clearMetaFacebookPageAccessToken: form.clearMetaFacebookPageAccessToken,
       whatsappSimulatedTo: form.whatsappSimulatedTo.trim(),
       whatsappSimulatedSender: form.whatsappSimulatedSender.trim(),
       whatsappTwilioApiBaseUrl: form.whatsappTwilioApiBaseUrl.trim(),
@@ -1307,6 +1331,104 @@ export default function SystemSettingsPanel() {
               </label>
             </div>
           </div>
+        </div>
+      </section>
+      )}
+
+      {activeSettingsTab === 'store' && (
+      <section className="border border-pe-black/10 bg-pe-white p-4 sm:p-5">
+        <h2 className="font-display text-2xl text-pe-black font-light">Meta — Publicaciones automaticas</h2>
+        <p className="mt-1 font-sans text-[0.74rem] text-pe-muted">
+          Credenciales para publicar productos en Instagram y Facebook desde Publicaciones.
+          Si dejas campos vacios, el backend usa fallback desde variables de entorno.
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Instagram — User ID</span>
+            <input
+              type="text"
+              value={form.metaInstagramUserId}
+              onChange={(e) => updateField('metaInstagramUserId', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
+              placeholder="17841423631997093"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Instagram — Nuevo access token</span>
+            <input
+              type="password"
+              value={form.metaInstagramAccessToken}
+              onChange={(e) => updateField('metaInstagramAccessToken', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
+              placeholder="Deja vacio para mantener el actual"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Facebook — Page ID</span>
+            <input
+              type="text"
+              value={form.metaFacebookPageId}
+              onChange={(e) => updateField('metaFacebookPageId', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
+              placeholder="1023624300843445"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="font-sans text-[0.66rem] uppercase tracking-[0.16em] text-pe-muted">Facebook — Nuevo page access token</span>
+            <input
+              type="password"
+              value={form.metaFacebookPageAccessToken}
+              onChange={(e) => updateField('metaFacebookPageAccessToken', e.target.value)}
+              className="border border-pe-black/15 px-3 py-2 font-sans text-[0.8rem] text-pe-charcoal focus:border-pe-rose/45 focus:outline-hidden"
+              placeholder="Deja vacio para mantener el actual"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
+            <input
+              type="checkbox"
+              checked={form.clearMetaInstagramAccessToken}
+              onChange={(e) => updateField('clearMetaInstagramAccessToken', e.target.checked)}
+              className="h-4 w-4 accent-pe-rose"
+            />{' '}
+            Limpiar access token de Instagram guardado
+          </label>
+          <label className="inline-flex items-center gap-2 font-sans text-[0.74rem] text-pe-muted">
+            <input
+              type="checkbox"
+              checked={form.clearMetaFacebookPageAccessToken}
+              onChange={(e) => updateField('clearMetaFacebookPageAccessToken', e.target.checked)}
+              className="h-4 w-4 accent-pe-rose"
+            />{' '}
+            Limpiar page access token de Facebook guardado
+          </label>
+        </div>
+
+        <SecurityHint
+          configured={Boolean(settings?.metaInstagramAccessTokenConfigured)}
+          clearFlag={form.clearMetaInstagramAccessToken}
+          newValue={form.metaInstagramAccessToken}
+          emptyText="Sin access token de Instagram configurado."
+          keepText="Hay un access token de Instagram guardado (no visible)."
+          replaceText="Se reemplazara el access token de Instagram actual."
+          clearText="Se eliminara el access token de Instagram al guardar."
+        />
+        <div className="mt-2">
+          <SecurityHint
+            configured={Boolean(settings?.metaFacebookPageAccessTokenConfigured)}
+            clearFlag={form.clearMetaFacebookPageAccessToken}
+            newValue={form.metaFacebookPageAccessToken}
+            emptyText="Sin page access token de Facebook configurado."
+            keepText="Hay un page access token de Facebook guardado (no visible)."
+            replaceText="Se reemplazara el page access token de Facebook actual."
+            clearText="Se eliminara el page access token de Facebook al guardar."
+          />
         </div>
       </section>
       )}
