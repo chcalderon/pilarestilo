@@ -100,7 +100,15 @@ public class PublicationService {
         entity.setSourceId(command.sourceId());
         entity.setPlatform(command.platform());
         entity.setChannelType(command.channelType());
-        entity.setStatus(command.approvalRequired() ? PublicationStatus.DRAFT : PublicationStatus.APPROVED);
+        PublicationStatus initialStatus;
+        if (command.approvalRequired()) {
+            initialStatus = PublicationStatus.DRAFT;
+        } else if (command.scheduledAt() != null) {
+            initialStatus = PublicationStatus.SCHEDULED;
+        } else {
+            initialStatus = PublicationStatus.APPROVED;
+        }
+        entity.setStatus(initialStatus);
         entity.setApprovalStatus(command.approvalRequired() ? PublicationApprovalStatus.PENDING_REVIEW : PublicationApprovalStatus.NOT_REQUIRED);
         entity.setCaption(trimToNull(command.caption()));
         entity.setHashtagsJson(writeHashtags(command.hashtags()));
@@ -154,18 +162,18 @@ public class PublicationService {
 
         List<PublicationBatchSummaryDto> out = new ArrayList<>();
         for (PublicationBatchEntity b : batches) {
-            out.add(summarize(b.getId(), b.getCampaignLabel(), b.getCreatedAt(),
+            out.add(summarize(b.getId(), b.getCampaignLabel(), b.getCreatedAt(), b.getScheduledAt(),
                     byBatch.getOrDefault(b.getId(), List.of())));
         }
         List<PublicationEntity> orphans = publicationRepository.findByBatchIdIsNullOrderByCreatedAtAsc();
         if (!orphans.isEmpty()) {
-            out.add(summarize(null, null, orphans.get(orphans.size() - 1).getCreatedAt(), orphans));
+            out.add(summarize(null, null, orphans.get(orphans.size() - 1).getCreatedAt(), null, orphans));
         }
         return out;
     }
 
     private PublicationBatchSummaryDto summarize(UUID batchId, String label, Instant createdAt,
-                                                 List<PublicationEntity> rows) {
+                                                 Instant scheduledAt, List<PublicationEntity> rows) {
         EnumSet<PublicationPlatform> platforms = EnumSet.noneOf(PublicationPlatform.class);
         int published = 0;
         int failed = 0;
@@ -181,7 +189,7 @@ public class PublicationService {
             }
         }
         return new PublicationBatchSummaryDto(batchId, label, createdAt, platforms,
-                rows.size(), published, failed, scheduled, pending);
+                rows.size(), published, failed, scheduled, pending, scheduledAt);
     }
 
     @Transactional(readOnly = true)
@@ -209,7 +217,7 @@ public class PublicationService {
         return new PublicationBatchDetailDto(
                 batch.getId(), batch.getCampaignLabel(), batch.getCaptionTemplate(),
                 readHashtags(batch.getHashtagsJson()), batch.getCreatedAt(),
-                new ArrayList<>(productIds), dtoRows);
+                new ArrayList<>(productIds), dtoRows, batch.getScheduledAt());
     }
 
     @Transactional

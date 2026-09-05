@@ -156,6 +156,8 @@ public class PublicationController {
                         .collect(Collectors.toMap(
                                 e -> UUID.fromString(e.getKey()),
                                 e -> new PublishProductsBatchCommand.VariantSelection(e.getValue().color(), e.getValue().size())));
+        java.time.Instant scheduledAt = request.scheduledAt() == null || request.scheduledAt().isBlank()
+                ? null : parseFutureInstant(request.scheduledAt());
         return new PublishProductsBatchCommand(
                 request.productIds(),
                 platforms,
@@ -163,8 +165,22 @@ public class PublicationController {
                 request.hashtags() == null ? List.of() : request.hashtags(),
                 request.campaignLabel(),
                 imageOverrides,
-                variantSelections
+                variantSelections,
+                scheduledAt
         );
+    }
+
+    private java.time.Instant parseFutureInstant(String raw) {
+        java.time.Instant when;
+        try {
+            when = java.time.Instant.parse(raw);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new com.pilarestilo.shared.domain.DomainException("Fecha de programación inválida");
+        }
+        if (when.isBefore(java.time.Instant.now())) {
+            throw new com.pilarestilo.shared.domain.DomainException("La hora programada ya pasó");
+        }
+        return when;
     }
 
     private CreatePublicationCommand toCommand(CreatePublicationRequest request) {

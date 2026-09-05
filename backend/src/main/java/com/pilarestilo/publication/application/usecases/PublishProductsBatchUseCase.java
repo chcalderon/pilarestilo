@@ -72,7 +72,7 @@ public class PublishProductsBatchUseCase {
             if (product == null) {
                 for (PublicationPlatform platform : command.platforms()) {
                     items.add(new PublishProductsBatchResult.PublicationItemResult(
-                            productId, platform, false, null, "Producto no encontrado: " + productId));
+                            productId, platform, false, null, "Producto no encontrado: " + productId, false));
                 }
                 continue;
             }
@@ -135,10 +135,10 @@ public class PublishProductsBatchUseCase {
             boolean success = dispatched.status() == PublicationStatus.PUBLISHED;
             return new PublishProductsBatchResult.PublicationItemResult(
                     productId, platform, success, dispatched.id(),
-                    success ? null : dispatched.lastErrorMessage());
+                    success ? null : dispatched.lastErrorMessage(), false);
         } catch (DomainException ex) {
             return new PublishProductsBatchResult.PublicationItemResult(
-                    productId, platform, false, null, ex.getMessage());
+                    productId, platform, false, null, ex.getMessage(), false);
         }
     }
 

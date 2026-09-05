@@ -13,6 +13,7 @@ public record PublishProductsBatchResult(
             PublicationPlatform platform,
             boolean success,
             UUID publicationId,
-            String errorMessage
+            String errorMessage,
+            boolean scheduled
     ) {}
 }

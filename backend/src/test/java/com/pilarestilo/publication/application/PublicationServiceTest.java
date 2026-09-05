@@ -121,6 +121,22 @@ class PublicationServiceTest {
     }
 
     @Test
+    void create_with_a_scheduled_at_puts_the_row_in_scheduled() {
+        when(publicationRepository.findByIdempotencyKey(anyString())).thenReturn(Optional.empty());
+
+        CreatePublicationResult result = service.create(new CreatePublicationCommand(
+                null, PublicationSourceType.PRODUCT, null,
+                PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
+                "es-CL", null, "Copy", List.of(), false,
+                java.time.Instant.now().plusSeconds(3600), "pub-sched-1", List.of(), null
+        ), UUID.randomUUID());
+
+        assertEquals(PublicationStatus.SCHEDULED, result.publication().status());
+        assertEquals(com.pilarestilo.publication.domain.enums.PublicationApprovalStatus.NOT_REQUIRED,
+                result.publication().approvalStatus());
+    }
+
+    @Test
     void create_returns_existing_publication_when_idempotency_key_is_reused() {
         PublicationEntity existing = new PublicationEntity();
         existing.setId(UUID.randomUUID());

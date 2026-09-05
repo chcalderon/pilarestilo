@@ -82,7 +82,8 @@ class PublishProductsBatchUseCaseTest {
                 List.of("#pilarestilo"),
                 "Liquidacion",
                 Map.of(),
-                Map.of()
+                Map.of(),
+                null
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
@@ -115,7 +116,8 @@ class PublishProductsBatchUseCaseTest {
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(missingProductId, okProductId),
                 Set.of(PublicationPlatform.INSTAGRAM),
-                "{producto}", List.of(), null, Map.of(), Map.of()
+                "{producto}", List.of(), null, Map.of(), Map.of(),
+                null
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
@@ -134,7 +136,8 @@ class PublishProductsBatchUseCaseTest {
                 .thenThrow(new DomainException("boom"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null, Map.of(), Map.of()
+                List.of(productId), Set.of(PublicationPlatform.FACEBOOK), "{producto}", List.of(), null, Map.of(), Map.of(),
+                null
         ), UUID.randomUUID());
 
         assertEquals(1, result.items().size());
@@ -155,7 +158,8 @@ class PublishProductsBatchUseCaseTest {
                 .thenReturn(failedDto(publicationId, "Instagram credentials are not configured"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
-                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of(), Map.of()
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of(), Map.of(),
+                null
         ), UUID.randomUUID());
 
         assertFalse(result.items().get(0).success());
@@ -176,7 +180,8 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
-                Map.of(productId, "https://cdn.example.com/edited.jpg"), Map.of()
+                Map.of(productId, "https://cdn.example.com/edited.jpg"), Map.of(),
+                null
         ), UUID.randomUUID());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
@@ -204,7 +209,8 @@ class PublishProductsBatchUseCaseTest {
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
                 "{producto} color {color} talla {talla}, quedan {cantidad}", List.of(), null,
-                Map.of(), Map.of(productId, new PublishProductsBatchCommand.VariantSelection("Negro", "M"))
+                Map.of(), Map.of(productId, new PublishProductsBatchCommand.VariantSelection("Negro", "M")),
+                null
         ), UUID.randomUUID());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
@@ -227,7 +233,8 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
-                "{producto} color {color}", List.of(), null, Map.of(), Map.of()
+                "{producto} color {color}", List.of(), null, Map.of(), Map.of(),
+                null
         ), UUID.randomUUID());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
@@ -248,7 +255,8 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
-                "{producto} a solo {precio}", List.of("#pilarestilo"), "Liquidacion", Map.of(), Map.of()
+                "{producto} a solo {precio}", List.of("#pilarestilo"), "Liquidacion", Map.of(), Map.of(),
+                null
         ), UUID.randomUUID());
 
         ArgumentCaptor<PublicationBatchEntity> batchCaptor = ArgumentCaptor.forClass(PublicationBatchEntity.class);

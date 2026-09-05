@@ -14,7 +14,8 @@ public record PublicationBatchDetailDto(
         List<String> hashtags,
         Instant createdAt,
         List<UUID> productIds,
-        List<Row> rows
+        List<Row> rows,
+        Instant scheduledAt
 ) {
     public record Row(
             UUID publicationId,
