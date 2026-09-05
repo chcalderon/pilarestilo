@@ -1521,6 +1521,8 @@ export interface PublishProductsBatchRequest {
   campaignLabel?: string;
   /** productId -> replacement image URL (e.g. an edited photo uploaded just for this post). */
   imageOverrides?: Record<string, string>;
+  /** productId -> chosen variant, used to resolve the {color}/{talla}/{cantidad} caption tokens. */
+  variantSelections?: Record<string, { color: string; size: string }>;
 }
 
 export interface PublishProductsBatchItemResult {

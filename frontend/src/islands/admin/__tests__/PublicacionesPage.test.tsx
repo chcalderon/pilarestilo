@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import PublicacionesPage from '../PublicacionesPage';
@@ -53,6 +53,37 @@ async function selectTheProduct(user: ReturnType<typeof userEvent.setup>) {
   await user.click(hit);
 }
 
+const productWithVariants = {
+  id: 'p2',
+  name: 'Zapatos',
+  price: { amount: 29990, currency: 'CLP' },
+  imageUrl: 'https://img/zapatos.jpg',
+  variants: [
+    { color: 'Negro', size: '38', stock: 5, stockOnHand: 5, stockReserved: 1, stockAvailable: 4 },
+    { color: 'Negro', size: '39', stock: 3, stockOnHand: 3, stockReserved: 0, stockAvailable: 3 },
+    { color: 'Blanco', size: '38', stock: 2, stockOnHand: 2, stockReserved: 0, stockAvailable: 2 },
+  ],
+} as never;
+
+async function selectZapatos(user: ReturnType<typeof userEvent.setup>) {
+  vi.mocked(searchProducts).mockResolvedValue({
+    content: [productWithVariants],
+    totalElements: 1,
+    totalPages: 1,
+    size: 24,
+    number: 0,
+  } as never);
+  await user.type(screen.getByPlaceholderText(/buscar producto/i), 'zap');
+  const hit = await screen.findByRole('button', { name: /zapatos/i });
+  await user.click(hit);
+}
+
+function setCaptionTemplate(text: string) {
+  // userEvent.type treats { and } as special-key syntax; fireEvent.change sets the raw value
+  // directly and sidesteps that entirely.
+  fireEvent.change(screen.getByLabelText(/plantilla/i), { target: { value: text } });
+}
+
 describe('PublicacionesPage', () => {
   it('interpolates the caption template in the preview', async () => {
     const user = userEvent.setup();
@@ -102,6 +133,18 @@ describe('PublicacionesPage', () => {
     expect(screen.queryByText(/producto\(s\) elegido/i)).not.toBeInTheDocument();
   });
 
+  it('hides the catalog list once focus leaves the search area, keeping the chip', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectTheProduct(user);
+    expect(screen.getByText('Elegido')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Instagram'));
+
+    expect(screen.queryByText('Elegido')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /quitar chaqueta/i })).toBeInTheDocument();
+  });
+
   it('uploads an edited photo and sends it as the override for that product', async () => {
     const user = userEvent.setup();
     render(<PublicacionesPage />);
@@ -118,6 +161,52 @@ describe('PublicacionesPage', () => {
     await waitFor(() =>
       expect(publishProductsBatch).toHaveBeenCalledWith(
         expect.objectContaining({ imageOverrides: { p1: 'https://img/edited.jpg' } }),
+        't',
+      ),
+    );
+  });
+
+  it('auto-picks a variant with stock and fills {color}/{talla}/{cantidad} in the preview', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectZapatos(user);
+    setCaptionTemplate('{color} {talla} quedan {cantidad}');
+
+    expect(await screen.findByText(/Negro 38 quedan 4/)).toBeInTheDocument();
+  });
+
+  it('lets you change talla, and re-picks talla when color changes to one that lacks it', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectZapatos(user);
+    setCaptionTemplate('{color} {talla} quedan {cantidad}');
+    await screen.findByText(/Negro 38 quedan 4/);
+
+    await user.selectOptions(screen.getByLabelText(/^talla$/i), '39');
+    expect(await screen.findByText(/Negro 39 quedan 3/)).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/^color$/i), 'Blanco');
+    expect(await screen.findByText(/Blanco 38 quedan 2/)).toBeInTheDocument();
+  });
+
+  it('warns when the template uses a variant token but the product has no variants', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectTheProduct(user);
+    setCaptionTemplate('{producto} talla {talla}');
+
+    expect(await screen.findByText(/sin variante/i)).toBeInTheDocument();
+  });
+
+  it('sends the chosen variant in the publish payload', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await selectZapatos(user);
+
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    await waitFor(() =>
+      expect(publishProductsBatch).toHaveBeenCalledWith(
+        expect.objectContaining({ variantSelections: { p2: { color: 'Negro', size: '38' } } }),
         't',
       ),
     );
