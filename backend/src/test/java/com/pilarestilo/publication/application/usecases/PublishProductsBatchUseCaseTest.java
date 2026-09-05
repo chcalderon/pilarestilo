@@ -15,6 +15,8 @@ import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
 import com.pilarestilo.publication.domain.enums.PublicationSourceType;
 import com.pilarestilo.publication.domain.enums.PublicationStatus;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
+import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.shared.application.Money;
 import com.pilarestilo.shared.domain.DomainException;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -37,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,12 +50,16 @@ class PublishProductsBatchUseCaseTest {
 
     @Mock PublicationService publicationService;
     @Mock ProductRepository productRepository;
+    @Mock PublicationBatchJpaRepository publicationBatchRepository;
 
     PublishProductsBatchUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new PublishProductsBatchUseCase(publicationService, productRepository);
+        useCase = new PublishProductsBatchUseCase(
+                publicationService, productRepository, publicationBatchRepository, new ObjectMapper());
+        lenient().when(publicationBatchRepository.save(any(PublicationBatchEntity.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -227,6 +235,32 @@ class PublishProductsBatchUseCaseTest {
         assertEquals("Bolso color ", captor.getValue().caption());
     }
 
+    @Test
+    void creates_one_batch_row_and_stamps_its_id_on_every_publication() {
+        UUID productId = UUID.randomUUID();
+        Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 2);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        UUID publicationId = UUID.randomUUID();
+        when(publicationService.create(any(CreatePublicationCommand.class), any()))
+                .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
+        when(publicationService.dispatch(eq(publicationId), any())).thenReturn(publishedDto(publicationId));
+
+        useCase.execute(new PublishProductsBatchCommand(
+                List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
+                "{producto} a solo {precio}", List.of("#pilarestilo"), "Liquidacion", Map.of(), Map.of()
+        ), UUID.randomUUID());
+
+        ArgumentCaptor<PublicationBatchEntity> batchCaptor = ArgumentCaptor.forClass(PublicationBatchEntity.class);
+        verify(publicationBatchRepository).save(batchCaptor.capture());
+        assertEquals("{producto} a solo {precio}", batchCaptor.getValue().getCaptionTemplate());
+        assertEquals("Liquidacion", batchCaptor.getValue().getCampaignLabel());
+
+        ArgumentCaptor<CreatePublicationCommand> cmdCaptor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
+        verify(publicationService).create(cmdCaptor.capture(), any());
+        assertEquals(batchCaptor.getValue().getId(), cmdCaptor.getValue().batchId());
+    }
+
     private PublicationDto publishedDto(UUID id) {
         return dto(id, PublicationStatus.PUBLISHED, null);
     }
@@ -243,7 +277,7 @@ class PublishProductsBatchUseCaseTest {
                 "caption", List.of(), "es-CL", null, null, Instant.now(), "remote-1",
                 "idem-1", 1, 1, null, lastErrorMessage, 0, null, null,
                 Instant.now(), Instant.now(),
-                List.of(), List.of(), List.of(), List.of()
+                List.of(), List.of(), List.of(), List.of(), null
         );
     }
 }

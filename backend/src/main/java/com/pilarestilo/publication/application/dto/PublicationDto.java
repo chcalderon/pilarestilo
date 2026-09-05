@@ -39,6 +39,7 @@ public record PublicationDto(
         List<PublicationMediaBundleDto> mediaBundles,
         List<PublicationAttemptDto> attempts,
         List<PublicationReviewDto> reviews,
-        List<PublicationSnapshotDto> snapshots
+        List<PublicationSnapshotDto> snapshots,
+        String externalPermalink
 ) {
 }

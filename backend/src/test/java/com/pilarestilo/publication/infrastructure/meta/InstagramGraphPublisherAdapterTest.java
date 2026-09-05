@@ -42,6 +42,8 @@ class InstagramGraphPublisherAdapterTest {
                 .andRespond(withSuccess("{\"id\":\"creation-1\"}", MediaType.APPLICATION_JSON));
         server.expect(requestTo(org.hamcrest.Matchers.containsString("/media_publish")))
                 .andRespond(withSuccess("{\"id\":\"178923456\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("fields=permalink")))
+                .andRespond(withSuccess("{\"permalink\":\"https://www.instagram.com/p/ABC123/\"}", MediaType.APPLICATION_JSON));
 
         InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
@@ -84,5 +86,56 @@ class InstagramGraphPublisherAdapterTest {
         PublicationDispatcher.DispatchResult result = adapter.publish(payload);
 
         assertEquals(PublicationAttemptStatus.FAILED, result.status());
+    }
+
+    @Test
+    void fetches_the_permalink_after_publishing_and_returns_it() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                "17841423631997093", "token-ig", "https://graph.instagram.com/v23.0",
+                null, null, "https://graph.facebook.com/v23.0", null
+        ));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/17841423631997093/media")))
+                .andRespond(withSuccess("{\"id\":\"creation-1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/media_publish")))
+                .andRespond(withSuccess("{\"id\":\"178923456\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/178923456?fields=permalink")))
+                .andRespond(withSuccess("{\"permalink\":\"https://www.instagram.com/p/ABC123/\"}", MediaType.APPLICATION_JSON));
+
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        PublicationDispatcher.DispatchResult result = adapter.publish(payload);
+
+        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
+        assertEquals("https://www.instagram.com/p/ABC123/", result.remotePermalink());
+        server.verify();
+    }
+
+    @Test
+    void still_succeeds_when_the_permalink_fetch_fails() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        MetaPublishingConfigResolver configResolver = mock(MetaPublishingConfigResolver.class);
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                "17841423631997093", "token-ig", "https://graph.instagram.com/v23.0",
+                null, null, "https://graph.facebook.com/v23.0", null
+        ));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/media")))
+                .andRespond(withSuccess("{\"id\":\"creation-1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/media_publish")))
+                .andRespond(withSuccess("{\"id\":\"178923456\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("fields=permalink")))
+                .andRespond(withServerError());
+
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, configResolver);
+        PublicationDispatcher.DispatchResult result = adapter.publish(payload);
+
+        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
+        assertEquals(null, result.remotePermalink());
     }
 }

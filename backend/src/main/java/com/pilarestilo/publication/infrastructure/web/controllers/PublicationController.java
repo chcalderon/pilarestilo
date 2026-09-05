@@ -162,7 +162,8 @@ public class PublicationController {
                                 bundle.primaryAssetUrl(),
                                 bundle.assetManifest()
                         ))
-                        .toList()
+                        .toList(),
+                null
         );
     }
 }

@@ -37,11 +37,14 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
                             config.facebookPageId(), payload.mediaUrl(), payload.fullCaptionText(), config.facebookPageAccessToken())
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {});
-            Object postId = response.get("post_id") != null ? response.get("post_id") : response.get("id");
+            Object postIdRaw = response == null ? null : response.get("post_id");
+            String remotePostId = postIdRaw != null ? String.valueOf(postIdRaw)
+                    : (response != null && response.get("id") != null ? String.valueOf(response.get("id")) : null);
+            String permalink = postIdRaw == null ? null : "https://www.facebook.com/" + postIdRaw;
 
             return new PublicationDispatcher.DispatchResult(
                     UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED,
-                    String.valueOf(postId), null, null);
+                    remotePostId, null, null, permalink);
         } catch (RestClientException ex) {
             return failed(ex.getMessage());
         }
@@ -50,6 +53,6 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
     private PublicationDispatcher.DispatchResult failed(String message) {
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.FAILED, null,
-                "FACEBOOK_PUBLISH_ERROR", message);
+                "FACEBOOK_PUBLISH_ERROR", message, null);
     }
 }

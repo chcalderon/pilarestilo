@@ -94,6 +94,7 @@ public class PublicationService {
         entity.setHashtagsJson(writeHashtags(command.hashtags()));
         entity.setLocale(normalizeLocale(command.locale()));
         entity.setCampaignLabel(trimToNull(command.campaignLabel()));
+        entity.setBatchId(command.batchId());
         entity.setScheduledAt(command.scheduledAt());
         entity.setIdempotencyKey(idempotencyKey);
         entity.setContentVersion(1);
@@ -229,7 +230,7 @@ public class PublicationService {
             result = publicationDispatcher.dispatch(entity.getId(), entity.getIdempotencyKey(), payload);
         } catch (RuntimeException ex) {
             result = new PublicationDispatcher.DispatchResult(
-                    null, null, PublicationAttemptStatus.FAILED, null, DISPATCH_ERROR_CODE, ex.getMessage());
+                    null, null, PublicationAttemptStatus.FAILED, null, DISPATCH_ERROR_CODE, ex.getMessage(), null);
         }
 
         Instant finishedAt = Instant.now();
@@ -246,6 +247,7 @@ public class PublicationService {
             entity.setStatus(PublicationStatus.PUBLISHED);
             entity.setPublishedAt(finishedAt);
             entity.setExternalPostId(result.remotePostId());
+            entity.setExternalPermalink(result.remotePermalink());
             entity.setLastErrorCode(null);
             entity.setLastErrorMessage(null);
             PublicationEntity saved = publicationRepository.save(entity);
@@ -475,7 +477,8 @@ public class PublicationService {
                         snapshot.getPayload(),
                         snapshot.getVersion(),
                         snapshot.getCreatedAt()
-                )).toList()
+                )).toList(),
+                entity.getExternalPermalink()
         );
     }
 }

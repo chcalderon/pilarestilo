@@ -13,12 +13,16 @@ import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
 import com.pilarestilo.publication.domain.enums.PublicationSourceType;
 import com.pilarestilo.publication.domain.enums.PublicationStatus;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
+import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.shared.domain.DomainException;
 import org.springframework.stereotype.Component;
 
 import com.pilarestilo.product.domain.model.ProductVariant;
+import tools.jackson.databind.ObjectMapper;
 
 import java.text.NumberFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -38,14 +42,30 @@ public class PublishProductsBatchUseCase {
 
     private final PublicationService publicationService;
     private final ProductRepository productRepository;
+    private final PublicationBatchJpaRepository publicationBatchRepository;
+    private final ObjectMapper objectMapper;
 
-    public PublishProductsBatchUseCase(PublicationService publicationService, ProductRepository productRepository) {
+    public PublishProductsBatchUseCase(PublicationService publicationService,
+                                       ProductRepository productRepository,
+                                       PublicationBatchJpaRepository publicationBatchRepository,
+                                       ObjectMapper objectMapper) {
         this.publicationService = publicationService;
         this.productRepository = productRepository;
+        this.publicationBatchRepository = publicationBatchRepository;
+        this.objectMapper = objectMapper;
     }
 
     public PublishProductsBatchResult execute(PublishProductsBatchCommand command, UUID actorUserId) {
         List<PublishProductsBatchResult.PublicationItemResult> items = new ArrayList<>();
+
+        PublicationBatchEntity batch = new PublicationBatchEntity();
+        batch.setId(UUID.randomUUID());
+        batch.setCaptionTemplate(command.captionTemplate());
+        batch.setHashtagsJson(serializeHashtags(command.hashtags()));
+        batch.setCampaignLabel(trimToNull(command.campaignLabel()));
+        batch.setCreatedBy(actorUserId);
+        batch.setCreatedAt(Instant.now());
+        publicationBatchRepository.save(batch);
 
         for (UUID productId : command.productIds()) {
             Product product = productRepository.findById(productId).orElse(null);
@@ -58,11 +78,27 @@ public class PublishProductsBatchUseCase {
             }
             String caption = interpolate(command.captionTemplate(), product, command.variantSelections().get(productId));
             for (PublicationPlatform platform : command.platforms()) {
-                items.add(publishOne(productId, product, platform, caption, command, actorUserId));
+                items.add(publishOne(productId, product, platform, caption, command, actorUserId, batch.getId()));
             }
         }
 
         return new PublishProductsBatchResult(items);
+    }
+
+    private String serializeHashtags(List<String> hashtags) {
+        List<String> clean = hashtags == null ? List.of()
+                : hashtags.stream().map(this::trimToNull).filter(Objects::nonNull).distinct().toList();
+        try {
+            return objectMapper.writeValueAsString(clean);
+        } catch (RuntimeException e) {
+            return "[]";
+        }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private PublishProductsBatchResult.PublicationItemResult publishOne(UUID productId,
@@ -70,7 +106,8 @@ public class PublishProductsBatchUseCase {
                                                                         PublicationPlatform platform,
                                                                         String caption,
                                                                         PublishProductsBatchCommand command,
-                                                                        UUID actorUserId) {
+                                                                        UUID actorUserId,
+                                                                        UUID batchId) {
         try {
             CreatePublicationCommand createCommand = new CreatePublicationCommand(
                     productId,
@@ -89,7 +126,8 @@ public class PublishProductsBatchUseCase {
                             PublicationMediaBundleType.SOCIAL_FEED,
                             command.imageOverrides().getOrDefault(productId, product.getImageUrl()),
                             Map.of()
-                    ))
+                    )),
+                    batchId
             );
             CreatePublicationResult created = publicationService.create(createCommand, actorUserId);
             PublicationDto dispatched = publicationService.dispatch(created.publication().id(), actorUserId);

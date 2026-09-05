@@ -40,7 +40,7 @@ class MetaDirectPublicationDispatcherTest {
                 "ig-user", "ig-token", "https://graph.instagram.com/v23.0", null, null,
                 "https://graph.facebook.com/v23.0", "https://pilarestilo.com"));
         when(instagram.publish(any())).thenReturn(new PublicationDispatcher.DispatchResult(
-                "req-1", null, PublicationAttemptStatus.SUCCEEDED, "post-1", null, null));
+                "req-1", null, PublicationAttemptStatus.SUCCEEDED, "post-1", null, null, null));
 
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
@@ -61,7 +61,7 @@ class MetaDirectPublicationDispatcherTest {
                 null, null, "https://graph.instagram.com/v23.0", "fb-page", "fb-token",
                 "https://graph.facebook.com/v23.0", null));
         when(facebook.publish(any())).thenReturn(new PublicationDispatcher.DispatchResult(
-                "req-2", null, PublicationAttemptStatus.SUCCEEDED, "post-2", null, null));
+                "req-2", null, PublicationAttemptStatus.SUCCEEDED, "post-2", null, null, null));
 
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.FACEBOOK, PublicationChannelType.FEED_POST,

@@ -99,7 +99,8 @@ class PublicationServiceTest {
                         PublicationMediaBundleType.SOCIAL_FEED,
                         "https://cdn.example.com/social-feed.jpg",
                         Map.of("targetAspectRatio", "4:5")
-                ))
+                )),
+                null
         ), UUID.randomUUID());
 
         assertTrue(result.created());
@@ -146,7 +147,8 @@ class PublicationServiceTest {
                 true,
                 null,
                 "pub-123",
-                List.of()
+                List.of(),
+                null
         ), UUID.randomUUID());
 
         assertFalse(result.created());
@@ -166,7 +168,8 @@ class PublicationServiceTest {
         ));
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
-                        "req-1", "hash-1", PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null));
+                        "req-1", "hash-1", PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null,
+                        "https://www.instagram.com/p/x/"));
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
@@ -202,7 +205,7 @@ class PublicationServiceTest {
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
                         "req-1", "hash-1", PublicationAttemptStatus.FAILED, null,
-                        "INSTAGRAM_PUBLISH_ERROR", "Rate limited"));
+                        "INSTAGRAM_PUBLISH_ERROR", "Rate limited", null));
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
