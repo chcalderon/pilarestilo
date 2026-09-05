@@ -460,17 +460,28 @@ public class PublicationService {
     }
 
     private PublicationDispatchPayload buildDispatchPayload(PublicationEntity entity) {
-        PublicationMediaBundleEntity bundle = entity.getMediaBundles().isEmpty() ? null : entity.getMediaBundles().get(0);
         return new PublicationDispatchPayload(
                 entity.getProductId(),
                 entity.getPlatform(),
                 entity.getChannelType(),
                 entity.getCaption(),
                 readHashtags(entity.getHashtagsJson()),
-                bundle == null || bundle.getPrimaryAssetUrl() == null
-                        ? List.of()
-                        : List.of(bundle.getPrimaryAssetUrl())
+                bundleImageUrls(entity)
         );
+    }
+
+    /** The ordered image list for a publication: bundle[0]'s {@code assetManifest.imageUrls},
+     *  falling back to its single {@code primaryAssetUrl} for pre-carousel rows. */
+    private List<String> bundleImageUrls(PublicationEntity entity) {
+        if (entity.getMediaBundles().isEmpty()) {
+            return List.of();
+        }
+        PublicationMediaBundleEntity bundle = entity.getMediaBundles().get(0);
+        Object raw = bundle.getAssetManifest() == null ? null : bundle.getAssetManifest().get("imageUrls");
+        if (raw instanceof List<?> list && !list.isEmpty()) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        return bundle.getPrimaryAssetUrl() == null ? List.of() : List.of(bundle.getPrimaryAssetUrl());
     }
 
     private Map<String, Object> buildContentSnapshot(PublicationEntity entity) {
