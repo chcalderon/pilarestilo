@@ -54,6 +54,13 @@ function pickDefaultVariant(variants: ProductVariantDto[]): ProductVariantDto | 
   return variants.find((v) => v.stockAvailable > 0) ?? variants[0];
 }
 
+/** The storefront product page, for the {product_url} token. The backend builds the real one from
+ *  its configured site base; the admin panel shares the storefront origin, so this preview matches. */
+function productUrl(product: ProductDto): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return origin ? `${origin}/es/products/${product.id}` : '';
+}
+
 function interpolateCaption(template: string, product: ProductDto, selection?: VariantSelection): string {
   const variant = findVariant(product, selection);
   return template
@@ -61,7 +68,8 @@ function interpolateCaption(template: string, product: ProductDto, selection?: V
     .replaceAll('{precio}', `$${formatClp(product.price.amount)}`)
     .replaceAll('{color}', variant?.color ?? '')
     .replaceAll('{talla}', variant?.size ?? '')
-    .replaceAll('{cantidad}', variant ? String(variant.stockAvailable) : '');
+    .replaceAll('{cantidad}', variant ? String(variant.stockAvailable) : '')
+    .replaceAll('{product_url}', productUrl(product));
 }
 
 /** Which of {color}/{talla}/{cantidad} the template actually uses but this product can't fill
@@ -408,7 +416,8 @@ export default function PublicarTab(
         <label className="block">
           <span className="text-xs text-pe-muted">
             Plantilla — variables disponibles: <code>{'{producto}'}</code>, <code>{'{precio}'}</code>,{' '}
-            <code>{'{color}'}</code>, <code>{'{talla}'}</code> y <code>{'{cantidad}'}</code>
+            <code>{'{color}'}</code>, <code>{'{talla}'}</code>, <code>{'{cantidad}'}</code> y{' '}
+            <code>{'{product_url}'}</code> (link clickeable solo en Facebook)
           </span>
           <textarea
             value={captionTemplate}

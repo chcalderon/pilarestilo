@@ -67,7 +67,7 @@ public class UpdateScheduledBatchUseCase {
             if (product == null) {
                 continue;
             }
-            String caption = factory.interpolate(command.captionTemplate(), product,
+            String caption = factory.interpolate(command.captionTemplate(), productId, product,
                     command.variantSelections().get(productId));
             for (PublicationPlatform platform : command.platforms()) {
                 publicationService.create(

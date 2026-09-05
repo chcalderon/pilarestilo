@@ -22,18 +22,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BatchPublicationFactoryTest {
 
-    private final BatchPublicationFactory factory = new BatchPublicationFactory(new ObjectMapper());
+    private final BatchPublicationFactory factory =
+            new BatchPublicationFactory(new ObjectMapper(), "https://pilarestilo.com");
 
     @Test
-    void interpolates_all_five_tokens() {
+    void interpolates_all_five_variant_tokens() {
         Product product = Product.create("Zapatos", "d", new Money(BigDecimal.valueOf(29990), "CLP"),
                 "https://img", ProductCondition.NEW, "Pilar", 5);
         product.setVariants(List.of(new ProductVariant("Negro", "40", 5, 1)));
 
         String caption = factory.interpolate("{producto} {color} {talla} quedan {cantidad} a {precio}",
-                product, new PublishProductsBatchCommand.VariantSelection("Negro", "40"));
+                product.getId(), product, new PublishProductsBatchCommand.VariantSelection("Negro", "40"));
 
         assertEquals("Zapatos Negro 40 quedan 4 a $29.990", caption);
+    }
+
+    @Test
+    void interpolates_the_product_url_from_the_configured_site_base() {
+        Product product = Product.create("Zapatos", "d", new Money(BigDecimal.valueOf(1000), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 5);
+
+        String caption = factory.interpolate("Mira {producto} en {product_url}", product.getId(), product, null);
+
+        assertEquals("Mira Zapatos en https://pilarestilo.com/es/products/" + product.getId(), caption);
+    }
+
+    @Test
+    void leaves_the_product_url_empty_when_no_site_base_is_configured() {
+        BatchPublicationFactory noBase = new BatchPublicationFactory(new ObjectMapper(), "");
+        Product product = Product.create("Zapatos", "d", new Money(BigDecimal.valueOf(1000), "CLP"),
+                "https://img", ProductCondition.NEW, "Pilar", 5);
+
+        String caption = noBase.interpolate("Mira {product_url}", product.getId(), product, null);
+
+        assertEquals("Mira ", caption);
     }
 
     @Test

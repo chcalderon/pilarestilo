@@ -8,6 +8,7 @@ import com.pilarestilo.publication.domain.enums.PublicationChannelType;
 import com.pilarestilo.publication.domain.enums.PublicationMediaBundleType;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
 import com.pilarestilo.publication.domain.enums.PublicationSourceType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -28,9 +29,12 @@ import java.util.UUID;
 class BatchPublicationFactory {
 
     private final ObjectMapper objectMapper;
+    private final String publicSiteBaseUrl;
 
-    BatchPublicationFactory(ObjectMapper objectMapper) {
+    BatchPublicationFactory(ObjectMapper objectMapper,
+                            @Value("${app.social-publishing.meta.public-media-base-url:}") String publicSiteBaseUrl) {
         this.objectMapper = objectMapper;
+        this.publicSiteBaseUrl = publicSiteBaseUrl == null ? "" : publicSiteBaseUrl.trim();
     }
 
     String serializeHashtags(List<String> hashtags) {
@@ -49,7 +53,8 @@ class BatchPublicationFactory {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    String interpolate(String template, Product product, PublishProductsBatchCommand.VariantSelection selection) {
+    String interpolate(String template, UUID productId, Product product,
+                       PublishProductsBatchCommand.VariantSelection selection) {
         String priceText = NumberFormat.getInstance(Locale.of("es", "CL")).format(product.getPrice().amount());
         ProductVariant variant = selection == null ? null : resolveVariant(product, selection);
         return template
@@ -57,7 +62,19 @@ class BatchPublicationFactory {
                 .replace("{precio}", "$" + priceText)
                 .replace("{color}", variant == null ? "" : variant.getColor())
                 .replace("{talla}", variant == null ? "" : variant.getSize())
-                .replace("{cantidad}", variant == null ? "" : String.valueOf(variant.available()));
+                .replace("{cantidad}", variant == null ? "" : String.valueOf(variant.available()))
+                .replace("{product_url}", productUrl(productId));
+    }
+
+    /** Storefront product page. Empty when no public site base URL is configured. */
+    private String productUrl(UUID productId) {
+        if (publicSiteBaseUrl.isBlank()) {
+            return "";
+        }
+        String base = publicSiteBaseUrl.endsWith("/")
+                ? publicSiteBaseUrl.substring(0, publicSiteBaseUrl.length() - 1)
+                : publicSiteBaseUrl;
+        return base + "/es/products/" + productId;
     }
 
     CreatePublicationCommand buildCreateCommand(PublishProductsBatchCommand command, UUID productId, Product product,

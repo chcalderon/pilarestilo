@@ -120,12 +120,12 @@ describe('HistorialTab', () => {
     await waitFor(() => expect(retryBatchFailed).toHaveBeenCalledWith('b1', 't'));
   });
 
-  it('volver a publicar esta tanda calls onRepublish with the batch data', async () => {
+  it('editar y volver a publicar calls onRepublish with the batch data', async () => {
     const onRepublish = vi.fn();
     const user = userEvent.setup();
     render(<HistorialTab onRepublish={onRepublish} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
-    await user.click(await screen.findByRole('button', { name: /volver a publicar esta tanda/i }));
+    await user.click(await screen.findByRole('button', { name: /editar y volver a publicar/i }));
     expect(onRepublish).toHaveBeenCalledWith(
       expect.objectContaining({
         productIds: ['p1'],

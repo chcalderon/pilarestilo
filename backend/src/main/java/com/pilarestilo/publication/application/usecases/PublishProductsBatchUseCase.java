@@ -71,7 +71,7 @@ public class PublishProductsBatchUseCase {
                 }
                 continue;
             }
-            String caption = factory.interpolate(command.captionTemplate(), product,
+            String caption = factory.interpolate(command.captionTemplate(), productId, product,
                     command.variantSelections().get(productId));
             for (PublicationPlatform platform : command.platforms()) {
                 items.add(publishOne(productId, product, platform, caption, command, actorUserId, batch.getId(), scheduled));

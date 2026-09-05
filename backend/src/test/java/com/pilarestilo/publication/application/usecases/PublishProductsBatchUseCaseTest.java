@@ -59,7 +59,7 @@ class PublishProductsBatchUseCaseTest {
     void setUp() {
         useCase = new PublishProductsBatchUseCase(
                 publicationService, productRepository, publicationBatchRepository,
-                new BatchPublicationFactory(new ObjectMapper()));
+                new BatchPublicationFactory(new ObjectMapper(), "https://pilarestilo.com"));
         lenient().when(publicationBatchRepository.save(any(PublicationBatchEntity.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }

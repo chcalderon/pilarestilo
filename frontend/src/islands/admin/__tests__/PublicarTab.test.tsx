@@ -174,6 +174,15 @@ describe('PublicarTab', () => {
     );
   });
 
+  it('fills {product_url} with the storefront product page in the preview', async () => {
+    const user = userEvent.setup();
+    render(<PublicarTab />);
+    await selectTheProduct(user);
+    setCaptionTemplate('Mira {product_url}');
+
+    expect(await screen.findByText(/\/es\/products\/p1/)).toBeInTheDocument();
+  });
+
   it('auto-picks a variant with stock and fills {color}/{talla}/{cantidad} in the preview', async () => {
     const user = userEvent.setup();
     render(<PublicarTab />);

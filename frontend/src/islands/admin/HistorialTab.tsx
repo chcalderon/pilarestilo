@@ -325,7 +325,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                         }
                         className="text-[0.78rem] border border-pe-border px-2.5 py-1 rounded-xs hover:border-pe-rose"
                       >
-                        Volver a publicar esta tanda
+                        Editar y volver a publicar
                       </button>
                     )}
                   </div>
