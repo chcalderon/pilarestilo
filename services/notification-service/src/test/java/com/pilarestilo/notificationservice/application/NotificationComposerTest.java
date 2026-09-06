@@ -176,6 +176,28 @@ class NotificationComposerTest {
         var message = composer.welcome("Camila Torres", coupon);
 
         assertThat(message.bodyText()).contains("BIENVENIDA-ABC123").contains("10%");
-        assertThat(message.bodyHtml()).contains("BIENVENIDA-ABC123");
+        assertThat(message.bodyHtml())
+                .contains("BIENVENIDA-ABC123")
+                .contains("Código de descuento")
+                .doesNotContain("<a ").doesNotContain("href=");
+    }
+
+    @Test
+    void welcomeWithoutACouponPointsAtTheCatalogue() {
+        var message = composer.welcome("Camila Torres", null);
+        assertThat(message.bodyHtml())
+                .contains("Catálogo")
+                .doesNotContain("<a ").doesNotContain("href=");
+    }
+
+    @Test
+    void discountCodeAssignedNamesTheCodeInHtml() {
+        var message = composer.discountCodeAssigned("VUELVE15");
+        assertThat(message.bodyText()).contains("VUELVE15");
+        assertThat(message.bodyHtml())
+                .isNotNull()
+                .contains("VUELVE15")
+                .contains("Código de descuento")
+                .doesNotContain("<a ").doesNotContain("href=");
     }
 }

@@ -330,10 +330,14 @@ public class NotificationComposer {
     public NotificationMessage discountCodeAssigned(String code) {
         return new NotificationMessage(
                 NotificationMessage.DISCOUNT_CODE_ASSIGNED,
-                "Código de descuento exclusivo para ti",
-                "Tienes un código de descuento exclusivo: " + code + "\n"
-                        + "Úsalo en tu próxima compra en Pilar Estilo.\n",
-                null,
+                "Tienes un código de descuento",
+                "Guardamos un código de descuento para tu próxima compra en Pilar Estilo: " + code + "\n\n"
+                        + "Lo escribes en el carrito, en Código de descuento, antes de pagar.\n",
+                EmailLayout.titled("Tienes un código de descuento")
+                        .eyebrow("Solo para ti")
+                        .paragraph("Guardamos este código para tu próxima compra en Pilar Estilo.")
+                        .code(code, "Escríbelo en el carrito, en “Código de descuento”, antes de pagar.")
+                        .build(),
                 Map.of("code", code),
                 null);
     }
@@ -374,8 +378,9 @@ public class NotificationComposer {
                 .append("Ya puedes explorar el catálogo y hacer tu primera compra.\n");
 
         EmailLayout.Builder email = EmailLayout.titled("Bienvenida a Pilar Estilo")
+                .eyebrow("Bienvenida")
                 .paragraph("Hola " + fullName + ", gracias por crear tu cuenta.")
-                .paragraph("Ya puedes explorar el catálogo y hacer tu primera compra.");
+                .paragraph("Ya puedes recorrer el catálogo y guardar tus favoritos.");
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("fullName", fullName);
@@ -385,10 +390,13 @@ public class NotificationComposer {
             body.append("\nTienes un código de bienvenida: ").append(coupon.code())
                     .append(" (").append(condition).append("), válido hasta ")
                     .append(coupon.validUntil()).append(".\n");
-            email.highlight("Tu código de bienvenida", coupon.code())
-                    .note("Condiciones", condition + ". Válido hasta " + coupon.validUntil() + ".");
+            email.paragraph("Como regalo de bienvenida, usa este código en tu primera compra:")
+                    .code(coupon.code(), condition + " · válido hasta " + coupon.validUntil())
+                    .route("Cómo usarlo", "Lo escribes en el carrito, en", "", "Código de descuento");
             data.put("welcomeDiscountCode", coupon.code());
             data.put("welcomeDiscountValidUntil", coupon.validUntil());
+        } else {
+            email.route("Empieza aquí", "Entra a", "pilarestilo.com", "Catálogo");
         }
 
         return new NotificationMessage(

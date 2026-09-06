@@ -84,7 +84,7 @@ class EmailPreviewTest {
         dump(composer.orderDelivered(order));
         dump(composer.welcome("Camila Torres", new WelcomeDiscount(
                 "BIENVENIDA20", "PERCENTAGE", BigDecimal.valueOf(20), null, LocalDate.now().plusDays(24))));
-        // paymentReceived (Task 5), discountCodeAssigned (Task 4), sales-document + returns
-        // (out of scope for this plan) are added to the harness as their HTML lands.
+        dump(composer.discountCodeAssigned("VUELVE15"));
+        // paymentReceived added in Task 5; sales-document + returns are out of scope for this plan.
     }
 }
