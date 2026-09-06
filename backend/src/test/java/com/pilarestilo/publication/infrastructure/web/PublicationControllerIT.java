@@ -69,7 +69,7 @@ class PublicationControllerIT {
     ProductRepository productRepository;
 
     @Autowired
-    com.pilarestilo.publication.application.usecases.PublishDueScheduledPublicationsUseCase publishDueScheduledPublicationsUseCase;
+    com.pilarestilo.publication.application.usecases.DispatchDuePublicationsUseCase dispatchDuePublicationsUseCase;
 
     @Test
     void admin_can_create_list_and_retrieve_publication() throws Exception {
@@ -575,7 +575,7 @@ class PublicationControllerIT {
         String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
 
         Thread.sleep(1400);
-        int handled = publishDueScheduledPublicationsUseCase.execute();
+        int handled = dispatchDuePublicationsUseCase.execute();
         org.junit.jupiter.api.Assertions.assertTrue(handled >= 1);
 
         mvc.perform(get("/api/admin/publications/batches/{id}", batchId)
