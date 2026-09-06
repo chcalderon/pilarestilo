@@ -68,6 +68,9 @@ public class PublicationEntity {
     @Column(name = "scheduled_at")
     private Instant scheduledAt;
 
+    @Column(name = "next_attempt_at")
+    private Instant nextAttemptAt;
+
     @Column(name = "published_at")
     private Instant publishedAt;
 
@@ -152,6 +155,8 @@ public class PublicationEntity {
     public void setCampaignLabel(String campaignLabel) { this.campaignLabel = campaignLabel; }
     public Instant getScheduledAt() { return scheduledAt; }
     public void setScheduledAt(Instant scheduledAt) { this.scheduledAt = scheduledAt; }
+    public Instant getNextAttemptAt() { return nextAttemptAt; }
+    public void setNextAttemptAt(Instant nextAttemptAt) { this.nextAttemptAt = nextAttemptAt; }
     public Instant getPublishedAt() { return publishedAt; }
     public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
     public String getExternalPostId() { return externalPostId; }
