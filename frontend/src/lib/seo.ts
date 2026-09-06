@@ -119,5 +119,5 @@ export function organizationJsonLd(opts: {
 
 /** `<script type="application/ld+json">` payload — JSON with the HTML-unsafe characters escaped. */
 export function serializeJsonLd(data: Record<string, unknown>): string {
-  return JSON.stringify(data).replace(/</g, '\\u003c');
+  return JSON.stringify(data).replaceAll('<', String.raw`\u003c`);
 }

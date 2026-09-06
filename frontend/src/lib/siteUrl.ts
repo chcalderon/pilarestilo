@@ -19,9 +19,16 @@ const RUNTIME_ENV: Record<string, string | undefined> | undefined =
 const CONFIGURED_SITE_URL: string | undefined =
   RUNTIME_ENV?.PUBLIC_SITE_URL ?? import.meta.env.PUBLIC_SITE_URL;
 
+/** Trims one or more trailing slashes without a backtracking regex (Sonar S8786). */
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end -= 1;
+  return value.slice(0, end);
+}
+
 /** Origin with no trailing slash, e.g. `https://pilarestilo.com`. */
 export function resolveSiteUrl(requestUrl?: URL | string, headers?: Headers): string {
-  if (CONFIGURED_SITE_URL) return CONFIGURED_SITE_URL.replace(/\/+$/, '');
+  if (CONFIGURED_SITE_URL) return stripTrailingSlashes(CONFIGURED_SITE_URL);
 
   if (headers) {
     const forwardedHost = headers.get('x-forwarded-host') ?? headers.get('host');
@@ -52,6 +59,6 @@ export function absoluteUrl(pathOrUrl: string, requestUrl?: URL | string, header
  */
 export function canonicalUrlFor(requestUrl: URL, headers?: Headers): string {
   const path =
-    requestUrl.pathname.length > 1 ? requestUrl.pathname.replace(/\/+$/, '') : '/';
+    requestUrl.pathname.length > 1 ? stripTrailingSlashes(requestUrl.pathname) : '/';
   return `${resolveSiteUrl(requestUrl, headers)}${path}`;
 }
