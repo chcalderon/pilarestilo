@@ -127,10 +127,16 @@ class NotificationComposerTest {
         var message = composer.orderConfirmation(order);
 
         assertThat(message.templateKey()).isEqualTo(NotificationMessage.ORDER_CONFIRMATION);
+        assertThat(message.subject()).contains(REFERENCE);
         assertThat(message.bodyText())
                 .contains("Vestido")
                 .contains(REFERENCE)
                 .contains("10 días");
+        assertThat(message.bodyHtml())
+                .contains("Pedido " + REFERENCE)
+                .contains("Vestido")
+                .contains("Mi cuenta")
+                .doesNotContain("<a ").doesNotContain("href=");
     }
 
     @Test

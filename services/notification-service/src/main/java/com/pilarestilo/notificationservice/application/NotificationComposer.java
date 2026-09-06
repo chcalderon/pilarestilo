@@ -197,36 +197,43 @@ public class NotificationComposer {
     }
 
     private String orderConfirmationHtml(OrderView order, String reference, String total) {
-        List<String[]> lines = order.items().stream()
-                .map(item -> new String[]{
-                        item.productName() + variantSuffix(item.variantColor(), item.variantSize())
-                                + " x" + item.quantity(),
+        List<EmailLayout.Line> lines = order.items().stream()
+                .map(item -> new EmailLayout.Line(
+                        item.productName(),
+                        lineVariantAndQty(item),
                         formatAmount(item.unitPrice().amount().toPlainString(),
-                                item.unitPrice().currency())})
+                                item.unitPrice().currency())))
                 .toList();
 
-        EmailLayout.Builder email = EmailLayout.titled("Recibimos tu pedido")
-                .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
-                        + "avisaremos por aquí en cada paso.")
-                .highlight(LABEL_NUMERO_PEDIDO, reference)
-                .details(lines);
-
-        List<String[]> amounts = new java.util.ArrayList<>();
-        amounts.add(new String[]{"Subtotal", formatAmount(
+        List<String[]> totals = new java.util.ArrayList<>();
+        totals.add(new String[]{"Subtotal", formatAmount(
                 order.subtotal().amount().toPlainString(), order.subtotal().currency())});
         if (order.discount().amount().signum() > 0) {
-            amounts.add(new String[]{"Descuento", "-" + formatAmount(
-                    order.discount().amount().toPlainString(),
-                    order.discount().currency())});
+            totals.add(new String[]{"Descuento", "-" + formatAmount(
+                    order.discount().amount().toPlainString(), order.discount().currency())});
         }
-        amounts.add(new String[]{"Total", total});
-        amounts.add(new String[]{"Envío", shippingLine(order)});
+        totals.add(new String[]{"Envío", shippingLine(order)});
+        totals.add(new String[]{"Total", total});
 
-        return email
-                .details(amounts)
+        return EmailLayout.titled("Recibimos tu pedido")
+                .eyebrow("Confirmación de pedido")
+                .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
+                        + "escribimos por aquí en cada paso, desde la preparación hasta la entrega.")
+                .orderSummary(reference, formatDate(Instant.now()), lines, totals)
+                .route("Cómo ver el estado", "Entra a", "pilarestilo.com", "Mi cuenta › Pedidos")
                 .note("Si cambias de opinión", "Tienes 10 días desde que recibes el pedido para "
-                        + "pedir la devolución, sin dar motivo, según la Ley del Consumidor.")
+                        + "pedir la devolución, sin dar motivo, según la Ley del Consumidor. La "
+                        + "solicitas desde Mi cuenta › Pedidos.")
                 .build();
+    }
+
+    /** "Crudo / M · x2", or just "x2" when the item has no real variant. */
+    private String lineVariantAndQty(OrderView.OrderItemView item) {
+        String variant = java.util.stream.Stream.of(item.variantColor(), item.variantSize())
+                .filter(v -> v != null && !v.isBlank())
+                .reduce((a, b) -> a + " / " + b)
+                .orElse(null);
+        return (variant == null ? "" : variant + " · ") + "x" + item.quantity();
     }
 
     private String shippingLine(OrderView order) {

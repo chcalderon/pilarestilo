@@ -133,39 +133,54 @@ public final class EmailLayout {
             return this;
         }
 
-        /** Order reference + date, the item lines, then the totals with a bold Total row. */
+        /**
+         * Order reference + date, the item lines, then the totals with a bold Total row. Two-cell
+         * rows (not {@code float:right}) so the price column holds up in Gmail and Outlook.
+         */
         public Builder orderSummary(String reference, String dateText, List<Line> lines,
                                     List<String[]> totals) {
+            String leftCell = "<td style=\"padding:12px 20px;font-family:" + SANS + ";";
+            String rightCell = "<td align=\"right\" valign=\"top\" style=\"padding:12px 20px;"
+                    + "font-family:" + SANS + ";white-space:nowrap;";
+
             StringBuilder b = new StringBuilder(
                     "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" "
                             + "width=\"100%\" style=\"margin:0 0 18px;border:1px solid " + BORDER + ";\">");
-            b.append("<tr><td style=\"padding:13px 20px;background-color:").append(INSET)
-                    .append(";border-bottom:1px solid ").append(BORDER)
-                    .append(";font-family:").append(SANS).append(";\">")
-                    .append("<span style=\"font-size:13px;font-weight:600;color:").append(INK)
-                    .append(";letter-spacing:.5px;\">Pedido ").append(escape(reference)).append("</span>")
-                    .append("<span style=\"float:right;font-size:12px;color:").append(MUTED).append(";\">")
-                    .append(escape(dateText)).append("</span></td></tr>");
+
+            b.append("<tr style=\"background-color:").append(INSET).append(";\">")
+                    .append(leftCell).append("border-bottom:1px solid ").append(BORDER)
+                    .append(";font-size:13px;font-weight:600;color:").append(INK)
+                    .append(";letter-spacing:.5px;\">Pedido ").append(escape(reference)).append("</td>")
+                    .append(rightCell).append("border-bottom:1px solid ").append(BORDER)
+                    .append(";font-size:12px;font-weight:400;color:").append(MUTED).append(";\">")
+                    .append(escape(dateText)).append("</td></tr>");
+
             for (Line line : lines) {
-                b.append("<tr><td style=\"padding:12px 20px;border-bottom:1px solid ").append(BORDER)
-                        .append(";font-family:").append(SANS).append(";font-size:13px;color:").append(INK)
-                        .append(";\">").append(escape(line.name()))
+                b.append("<tr>")
+                        .append(leftCell).append("border-bottom:1px solid ").append(BORDER)
+                        .append(";font-size:13px;color:").append(INK).append(";line-height:1.5;\">")
+                        .append(escape(line.name()))
                         .append("<br><span style=\"color:").append(MUTED).append(";font-size:12px;\">")
-                        .append(escape(line.variantAndQty())).append("</span>")
-                        .append("<span style=\"float:right;white-space:nowrap;\">")
-                        .append(escape(line.price())).append("</span></td></tr>");
+                        .append(escape(line.variantAndQty())).append("</span></td>")
+                        .append(rightCell).append("border-bottom:1px solid ").append(BORDER)
+                        .append(";font-size:13px;color:").append(INK).append(";\">")
+                        .append(escape(line.price())).append("</td></tr>");
             }
+
             for (String[] row : totals) {
                 boolean isTotal = "Total".equalsIgnoreCase(row[0]);
-                b.append("<tr><td style=\"padding:").append(isTotal ? "10px 20px" : "6px 20px")
-                        .append(";font-family:").append(SANS)
-                        .append(isTotal
-                                ? ";font-size:15px;font-weight:600;color:" + INK + ";border-top:1px solid " + BORDER
-                                : ";font-size:12px;color:" + MUTED)
-                        .append(";\">").append(escape(row[0]))
-                        .append("<span style=\"float:right;\">").append(escape(row[1]))
-                        .append("</span></td></tr>");
+                String rowStyle = isTotal
+                        ? "font-size:15px;font-weight:600;color:" + INK + ";border-top:1px solid " + BORDER
+                        : "font-size:12px;font-weight:400;color:" + MUTED;
+                String pad = isTotal ? "10px 20px" : "5px 20px";
+                b.append("<tr>")
+                        .append("<td style=\"padding:").append(pad).append(";font-family:").append(SANS)
+                        .append(";").append(rowStyle).append(";\">").append(escape(row[0])).append("</td>")
+                        .append("<td align=\"right\" style=\"padding:").append(pad)
+                        .append(";font-family:").append(SANS).append(";white-space:nowrap;")
+                        .append(rowStyle).append(";\">").append(escape(row[1])).append("</td></tr>");
             }
+
             b.append("</table>");
             blocks.add(b.toString());
             return this;
