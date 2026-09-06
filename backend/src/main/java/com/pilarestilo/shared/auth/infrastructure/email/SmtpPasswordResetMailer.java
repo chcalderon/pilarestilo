@@ -112,17 +112,18 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
                 """.formatted(escapeHtml(greetingName), escapeHtml(link), escapeHtml(link), tokenTtlMinutes);
 
         JavaMailSenderImpl sender = buildSender(config);
+        String to = toEmail.trim();
         try {
             var message = sender.createMimeMessage();
             var helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(config.fromEmail(), senderName);
-            helper.setTo(toEmail.trim());
+            helper.setTo(to);
             helper.setSubject(SUBJECT);
             helper.setText(text, html);
             sender.send(message);
-            log.info("[EMAIL:RESET] sent to={}", toEmail.trim());
+            log.info("[EMAIL:RESET] sent to={}", to);
         } catch (Exception ex) {
-            log.warn("[EMAIL:RESET] send failed to={} reason={}", toEmail.trim(), ex.getMessage());
+            log.warn("[EMAIL:RESET] send failed to={} reason={}", to, ex.getMessage());
         }
     }
 
@@ -222,7 +223,9 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
     }
 
     private static boolean looksLikeEmail(String value) {
-        return value != null && value.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+        // Possessive quantifiers (and a dot-free local/domain-label class) keep this linear — the
+        // plain "[^@\s]+@[^@\s]+\.[^@\s]+" form backtracks polynomially on a near-miss (Sonar S8786).
+        return value != null && value.matches("[^@\\s]++@[^@\\s.]++\\.[^@\\s]++");
     }
 
     private static String trimToEmpty(String value) {

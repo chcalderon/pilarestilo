@@ -75,13 +75,14 @@ class ShippingZoneSeedRepairIT {
         JsonNode regional = zone("REGIONAL");
         List<String> comunas = comunas(regional);
 
-        assertThat(comunas).hasSize(27);
         // A sample across every province of the region except Los Andes/San Felipe (that's LOCAL).
-        assertThat(comunas).contains(
-                "Valparaíso", "Viña del Mar", "Quilpué", "Villa Alemana", "Limache", "Olmué",
-                "Quillota", "La Calera", "San Antonio", "Cartagena", "La Ligua", "Petorca",
-                "Casablanca", "Concón", "Quintero"
-        );
+        assertThat(comunas)
+                .hasSize(27)
+                .contains(
+                        "Valparaíso", "Viña del Mar", "Quilpué", "Villa Alemana", "Limache", "Olmué",
+                        "Quillota", "La Calera", "San Antonio", "Cartagena", "La Ligua", "Petorca",
+                        "Casablanca", "Concón", "Quintero"
+                );
         // Aconcagua's own comunas never appear in both zones at once.
         assertThat(comunas).doesNotContain("Los Andes", "San Felipe");
         // Isla de Pascua is administratively in this region but reached by plane, not a regular

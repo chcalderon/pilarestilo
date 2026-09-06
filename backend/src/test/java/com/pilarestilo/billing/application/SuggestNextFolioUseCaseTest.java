@@ -11,6 +11,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,8 +52,7 @@ class SuggestNextFolioUseCaseTest {
 
         useCase.execute(SalesDocumentType.FACTURA);
 
-        org.mockito.Mockito.verify(salesDocumentRepository).findMaxNumericFolio(SalesDocumentType.FACTURA);
-        org.mockito.Mockito.verify(salesDocumentRepository, org.mockito.Mockito.never())
-                .findMaxNumericFolio(SalesDocumentType.BOLETA);
+        verify(salesDocumentRepository).findMaxNumericFolio(SalesDocumentType.FACTURA);
+        verify(salesDocumentRepository, never()).findMaxNumericFolio(SalesDocumentType.BOLETA);
     }
 }

@@ -73,7 +73,7 @@ public class ExternalSaleController {
     private static DeliveryMethod delivery(String raw) {
         try {
             return DeliveryMethod.valueOf(raw == null ? "" : raw.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new DomainException("Metodo de entrega invalido: " + raw);
         }
     }

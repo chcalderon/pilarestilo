@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -133,7 +134,7 @@ class PasswordResetControllerIT {
                 .content(om.writeValueAsString(Map.of("email", email)))).andExpect(status().isOk());
 
         ArgumentCaptor<String> tokens = ArgumentCaptor.forClass(String.class);
-        verify(mailer, org.mockito.Mockito.times(2)).sendResetLink(eq(email), any(), tokens.capture());
+        verify(mailer, times(2)).sendResetLink(eq(email), any(), tokens.capture());
         String firstToken = tokens.getAllValues().get(0);
 
         mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)

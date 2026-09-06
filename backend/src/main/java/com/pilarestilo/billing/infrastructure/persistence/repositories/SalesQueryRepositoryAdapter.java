@@ -80,6 +80,10 @@ class SalesQueryRepositoryAdapter implements SalesQueryRepository {
     @PersistenceContext
     private EntityManager em;
 
+    // java:S2077 — the only dynamic fragment is orderByClause(), which emits a column name taken
+    // from the SORTABLE_COLUMNS whitelist (see its javadoc) plus a hardcoded ASC/DESC; every value
+    // is a bound parameter.
+    @SuppressWarnings("java:S2077")
     @Override
     public Page<SaleSummary> search(String query, String orderStatus, boolean missingOnly, Pageable pageable) {
         String like = query == null || query.isBlank() ? null : "%" + query.trim() + "%";

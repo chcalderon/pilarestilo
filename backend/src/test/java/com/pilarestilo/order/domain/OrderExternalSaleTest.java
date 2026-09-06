@@ -57,28 +57,34 @@ class OrderExternalSaleTest {
 
     @Test
     void createExternalSale_rejects_blank_buyer_name() {
+        List<OrderItem> items = List.of(line("Aros", 8000, 1));
+        BigDecimal vatRate = new BigDecimal("19.00");
         assertThatThrownBy(() -> Order.createExternalSale(
-                "  ", "@x", List.of(line("Aros", 8000, 1)),
+                "  ", "@x", items,
                 PaymentMethod.OTHER, DeliveryMethod.PICKUP, null, null,
-                SalesChannel.WHATSAPP, new BigDecimal("19.00"), "k"))
+                SalesChannel.WHATSAPP, vatRate, "k"))
                 .isInstanceOf(DomainException.class);
     }
 
     @Test
     void createExternalSale_rejects_shipping_without_an_address() {
+        List<OrderItem> items = List.of(line("Aros", 8000, 1));
+        BigDecimal vatRate = new BigDecimal("19.00");
         assertThatThrownBy(() -> Order.createExternalSale(
-                "Ana", "@ana", List.of(line("Aros", 8000, 1)),
+                "Ana", "@ana", items,
                 PaymentMethod.OTHER, DeliveryMethod.SHIPPING, "   ", null,
-                SalesChannel.WHATSAPP, new BigDecimal("19.00"), "k"))
+                SalesChannel.WHATSAPP, vatRate, "k"))
                 .isInstanceOf(DomainException.class);
     }
 
     @Test
     void createExternalSale_rejects_empty_items() {
+        List<OrderItem> items = List.of();
+        BigDecimal vatRate = new BigDecimal("19.00");
         assertThatThrownBy(() -> Order.createExternalSale(
-                "Ana", "@ana", List.of(),
+                "Ana", "@ana", items,
                 PaymentMethod.OTHER, DeliveryMethod.PICKUP, null, null,
-                SalesChannel.WHATSAPP, new BigDecimal("19.00"), "k"))
+                SalesChannel.WHATSAPP, vatRate, "k"))
                 .isInstanceOf(DomainException.class);
     }
 

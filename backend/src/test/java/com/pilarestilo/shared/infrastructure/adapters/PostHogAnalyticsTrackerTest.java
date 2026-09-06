@@ -18,6 +18,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class PostHogAnalyticsTrackerTest {
 
@@ -84,7 +85,7 @@ class PostHogAnalyticsTrackerTest {
         server.stop(0);
         server = null;
 
-        tracker.track("order_created", "cust-1", Map.of());
-        // no exception propagates; nothing to assert beyond that the call returns
+        assertThatCode(() -> tracker.track("order_created", "cust-1", Map.of()))
+                .doesNotThrowAnyException();
     }
 }

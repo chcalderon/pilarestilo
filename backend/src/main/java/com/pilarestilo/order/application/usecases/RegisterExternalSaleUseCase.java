@@ -121,16 +121,18 @@ public class RegisterExternalSaleUseCase {
         if (cmd.deliveryMethod() == DeliveryMethod.SHIPPING && isBlank(cmd.shippingAddress())) {
             throw new DomainException("La direccion es obligatoria para un envio");
         }
-        for (RegisterExternalSaleCommand.Line line : cmd.items()) {
-            if (line.productId() == null) {
-                throw new DomainException("Falta el producto en una linea");
-            }
-            if (line.quantity() < 1 || line.quantity() > 999) {
-                throw new DomainException("Cantidad invalida");
-            }
-            if (line.unitPrice() == null || line.unitPrice().signum() < 0) {
-                throw new DomainException("Precio invalido");
-            }
+        cmd.items().forEach(RegisterExternalSaleUseCase::validateLine);
+    }
+
+    private static void validateLine(RegisterExternalSaleCommand.Line line) {
+        if (line.productId() == null) {
+            throw new DomainException("Falta el producto en una linea");
+        }
+        if (line.quantity() < 1 || line.quantity() > 999) {
+            throw new DomainException("Cantidad invalida");
+        }
+        if (line.unitPrice() == null || line.unitPrice().signum() < 0) {
+            throw new DomainException("Precio invalido");
         }
     }
 
