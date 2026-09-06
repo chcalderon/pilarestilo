@@ -103,13 +103,18 @@ function sanitizeText(value: unknown): string {
 
 /**
  * `crypto.randomUUID()` needs a secure context (https, or localhost) -- true for every real
- * visitor, but not guaranteed for every test/SSR environment this module might load in.
+ * visitor, but not guaranteed for every test/SSR environment this module might load in. The
+ * fallback only has to be unique per attempt in one session (the server dedups on it, it is not
+ * a secret), so a timestamp plus a monotonic counter is enough -- no PRNG.
  */
+let idempotencyCounter = 0;
+
 function generateIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  return `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  idempotencyCounter += 1;
+  return `ck-${Date.now()}-${idempotencyCounter}`;
 }
 
 function sanitizeIdempotencyKey(value: unknown): string {

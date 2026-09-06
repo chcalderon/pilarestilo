@@ -206,7 +206,7 @@ describe('persisted state is treated as untrusted', () => {
       idempotencyKey: string;
     };
     expect(bogus.idempotencyKey).toBeTruthy();
-    expect(bogus.idempotencyKey).not.toBe(42);
+    expect(typeof bogus.idempotencyKey).toBe('string');
   });
 
   /*

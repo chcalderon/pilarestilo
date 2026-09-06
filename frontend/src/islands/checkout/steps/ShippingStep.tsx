@@ -452,9 +452,9 @@ export default function ShippingStep({
           ))}
         </select>
         {courierReassignedTo && (
-          <p role="status" className="mt-1.5 font-sans text-[0.72rem] text-pe-warning-ink">
+          <output className="mt-1.5 block font-sans text-[0.72rem] text-pe-warning-ink">
             {l.courierReassigned(courierReassignedTo)}
-          </p>
+          </output>
         )}
       </div>
 

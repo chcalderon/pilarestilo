@@ -52,7 +52,7 @@ describe('RegisterSaleDrawer', () => {
     await user.clear(priceInput);
     await user.type(priceInput, '15000');
 
-    await waitFor(() => expect(screen.getByText('$15.000')).toBeInTheDocument());
+    expect(await screen.findByText('$15.000')).toBeInTheDocument();
   });
 
   it('requires an address only when Envío is selected', async () => {
