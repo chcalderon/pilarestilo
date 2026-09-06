@@ -20,6 +20,71 @@ function submitLabelFor(loading: boolean, es: boolean): string {
   return es ? 'Guardar contraseña' : 'Save password';
 }
 
+function passwordValidationError(password: string, confirm: string, es: boolean): string | null {
+  if (password.length < MIN_LENGTH) {
+    return es
+      ? `La contraseña debe tener al menos ${MIN_LENGTH} caracteres.`
+      : `The password must be at least ${MIN_LENGTH} characters.`;
+  }
+  if (password !== confirm) {
+    return es ? 'Las contraseñas no coinciden.' : 'The passwords do not match.';
+  }
+  return null;
+}
+
+/** 400 means the link is spent — show the dead-link screen; anything else is an inline message. */
+function submitErrorOutcome(err: unknown, es: boolean): { linkDead: boolean; message: string } {
+  if (err instanceof ApiError && err.status === 400) {
+    return { linkDead: true, message: '' };
+  }
+  if (err instanceof ApiError && err.status === 429) {
+    return {
+      linkDead: false,
+      message: es
+        ? 'Demasiados intentos. Espera un momento e inténtalo otra vez.'
+        : 'Too many attempts. Wait a moment and try again.',
+    };
+  }
+  return {
+    linkDead: false,
+    message: es
+      ? 'No pudimos actualizar la contraseña. Inténtalo de nuevo.'
+      : 'We could not update the password. Please try again.',
+  };
+}
+
+function OutcomeCard({
+  icon,
+  title,
+  body,
+  href,
+  cta,
+  ctaAsButton,
+}: Readonly<{
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
+  ctaAsButton: boolean;
+}>) {
+  const ctaClass = ctaAsButton
+    ? 'flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200'
+    : 'font-sans text-[0.78rem] text-pe-rose-ink hover:underline underline-offset-2';
+  return (
+    <div className="flex flex-col items-center gap-5 py-8 text-center">
+      {icon}
+      <div>
+        <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">{title}</p>
+        <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5 leading-relaxed">{body}</p>
+      </div>
+      <a href={href} className={ctaClass}>
+        {cta}
+      </a>
+    </div>
+  );
+}
+
 export default function ResetPasswordForm({ locale }: Props) {
   const es = locale === 'es';
   const [token, setToken] = useState<string | null>(null);
@@ -43,13 +108,9 @@ export default function ResetPasswordForm({ locale }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (password.length < MIN_LENGTH) {
-      setError(es ? `La contraseña debe tener al menos ${MIN_LENGTH} caracteres.`
-                  : `The password must be at least ${MIN_LENGTH} characters.`);
-      return;
-    }
-    if (password !== confirm) {
-      setError(es ? 'Las contraseñas no coinciden.' : 'The passwords do not match.');
+    const validationError = passwordValidationError(password, confirm, es);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     if (!token) {
@@ -61,14 +122,11 @@ export default function ResetPasswordForm({ locale }: Props) {
       await resetPassword(token, password);
       setDone(true);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
+      const outcome = submitErrorOutcome(err, es);
+      if (outcome.linkDead) {
         setLinkDead(true);
-      } else if (err instanceof ApiError && err.status === 429) {
-        setError(es ? 'Demasiados intentos. Espera un momento e inténtalo otra vez.'
-                    : 'Too many attempts. Wait a moment and try again.');
       } else {
-        setError(es ? 'No pudimos actualizar la contraseña. Inténtalo de nuevo.'
-                    : 'We could not update the password. Please try again.');
+        setError(outcome.message);
       }
     } finally {
       setLoading(false);
@@ -77,49 +135,35 @@ export default function ResetPasswordForm({ locale }: Props) {
 
   if (done) {
     return (
-      <div className="flex flex-col items-center gap-5 py-8 text-center">
-        <CheckCircle2 size={44} className="text-pe-rose-ink" />
-        <div>
-          <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
-            {es ? 'Contraseña actualizada' : 'Password updated'}
-          </p>
-          <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5 leading-relaxed">
-            {es
-              ? 'Se cerraron todas las sesiones anteriores. Inicia sesión con tu nueva contraseña.'
-              : 'Every earlier session was signed out. Sign in with your new password.'}
-          </p>
-        </div>
-        <a
-          href={`/${locale}/auth/login`}
-          className="flex items-center justify-center gap-2 bg-pe-rose-action text-pe-offwhite font-sans text-[0.78rem] tracking-[0.18em] uppercase px-6 py-3 hover:bg-pe-rose-deep transition-colors duration-200"
-        >
-          {es ? 'Iniciar sesión' : 'Sign in'}
-        </a>
-      </div>
+      <OutcomeCard
+        icon={<CheckCircle2 size={44} className="text-pe-rose-ink" />}
+        title={es ? 'Contraseña actualizada' : 'Password updated'}
+        body={
+          es
+            ? 'Se cerraron todas las sesiones anteriores. Inicia sesión con tu nueva contraseña.'
+            : 'Every earlier session was signed out. Sign in with your new password.'
+        }
+        href={`/${locale}/auth/login`}
+        cta={es ? 'Iniciar sesión' : 'Sign in'}
+        ctaAsButton
+      />
     );
   }
 
   if (linkDead) {
     return (
-      <div className="flex flex-col items-center gap-5 py-8 text-center">
-        <AlertCircle size={44} className="text-pe-rose-ink" />
-        <div>
-          <p className="font-sans text-[0.95rem] text-pe-charcoal font-medium">
-            {es ? GENERIC_LINK_ERROR_ES : GENERIC_LINK_ERROR_EN}
-          </p>
-          <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5 leading-relaxed">
-            {es
-              ? 'Solicita un enlace nuevo para restablecer tu contraseña.'
-              : 'Request a fresh link to reset your password.'}
-          </p>
-        </div>
-        <a
-          href={`/${locale}/auth/forgot-password`}
-          className="font-sans text-[0.78rem] text-pe-rose-ink hover:underline underline-offset-2"
-        >
-          {es ? 'Solicitar un enlace nuevo' : 'Request a new link'}
-        </a>
-      </div>
+      <OutcomeCard
+        icon={<AlertCircle size={44} className="text-pe-rose-ink" />}
+        title={es ? GENERIC_LINK_ERROR_ES : GENERIC_LINK_ERROR_EN}
+        body={
+          es
+            ? 'Solicita un enlace nuevo para restablecer tu contraseña.'
+            : 'Request a fresh link to reset your password.'
+        }
+        href={`/${locale}/auth/forgot-password`}
+        cta={es ? 'Solicitar un enlace nuevo' : 'Request a new link'}
+        ctaAsButton={false}
+      />
     );
   }
 
