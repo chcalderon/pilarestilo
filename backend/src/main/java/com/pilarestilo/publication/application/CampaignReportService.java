@@ -73,7 +73,7 @@ public class CampaignReportService {
                     case PUBLISHED -> published++;
                     case FAILED -> failed++;
                     case SCHEDULED -> scheduled++;
-                    default -> { /* counted only in totalPosts */ }
+                    default -> { /* RETRY_SCHEDULED, APPROVED, DRAFT, PUBLISHING: counted only in totalPosts */ }
                 }
                 if (first == null || r.getCreatedAt().isBefore(first)) {
                     first = r.getCreatedAt();

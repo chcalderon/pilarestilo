@@ -43,7 +43,24 @@ function relativeTime(iso: string): string {
   return `hace ${Math.round(hrs / 24)} d`;
 }
 
-function StatusPill({ status }: { status: string }) {
+function StatusPill({
+  status,
+  retryCount,
+  nextAttemptAt,
+}: {
+  status: string;
+  retryCount?: number;
+  nextAttemptAt?: string | null;
+}) {
+  if (status === 'RETRY_SCHEDULED') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[0.72rem] px-1.5 py-0.5 bg-pe-warning-surface text-pe-warning-ink">
+        <Loader2 size={12} /> Reintentando
+        {typeof retryCount === 'number' && retryCount > 0 ? ` · intento ${retryCount}` : ''}
+        {nextAttemptAt ? ` · próximo ${instantToSantiagoLabel(nextAttemptAt)}` : ''}
+      </span>
+    );
+  }
   if (status === 'PUBLISHED') {
     return (
       <span className="inline-flex items-center gap-1 text-[0.72rem] px-1.5 py-0.5 bg-pe-positive-surface text-pe-positive-ink">
@@ -242,6 +259,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                 <p className="text-[0.78rem] shrink-0 tabular-nums">
                   <span className="text-pe-positive-ink">{b.published} publicados</span>
                   {b.failed > 0 && <span className="text-pe-danger-ink"> · {b.failed} fallidos</span>}
+                  {b.retrying > 0 && <span className="text-pe-warning-ink"> · {b.retrying} reintentando</span>}
                   {b.scheduled > 0 && <span className="text-pe-warning-ink"> · {b.scheduled} programados</span>}
                 </p>
               )}
@@ -358,9 +376,9 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                           {(r.imageUrls?.length ?? 0) > 1 && (
                             <span className="text-[0.68rem] text-pe-muted shrink-0">Carrusel · {r.imageUrls.length}</span>
                           )}
-                          <StatusPill status={r.status} />
+                          <StatusPill status={r.status} retryCount={r.retryCount} nextAttemptAt={r.nextAttemptAt} />
                           <div className="shrink-0 flex items-center gap-2">
-                            {r.status === 'FAILED' && (
+                            {(r.status === 'FAILED' || r.status === 'RETRY_SCHEDULED') && (
                               <>
                                 <button
                                   type="button"
@@ -368,7 +386,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                                   disabled={busyBatch === b.batchId}
                                   className="text-[0.72rem] text-pe-rose hover:underline disabled:opacity-50"
                                 >
-                                  Reintentar
+                                  {r.status === 'RETRY_SCHEDULED' ? 'Reintentar ahora' : 'Reintentar'}
                                 </button>
                                 <button
                                   type="button"

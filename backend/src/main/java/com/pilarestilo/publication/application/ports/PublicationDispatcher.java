@@ -15,6 +15,7 @@ public interface PublicationDispatcher {
             String remotePostId,
             String errorCode,
             String errorMessage,
-            String remotePermalink
+            String remotePermalink,
+            boolean retryable
     ) {}
 }

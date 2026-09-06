@@ -69,7 +69,7 @@ class PublicationControllerIT {
     ProductRepository productRepository;
 
     @Autowired
-    com.pilarestilo.publication.application.usecases.PublishDueScheduledPublicationsUseCase publishDueScheduledPublicationsUseCase;
+    com.pilarestilo.publication.application.usecases.DispatchDuePublicationsUseCase dispatchDuePublicationsUseCase;
 
     @Test
     void admin_can_create_list_and_retrieve_publication() throws Exception {
@@ -312,6 +312,10 @@ class PublicationControllerIT {
                                 "campaignLabel", "Historial Test"))))
                 .andExpect(status().isOk());
 
+        // The batch only queues rows; run the worker so they reach a terminal state (no Meta
+        // credentials in the test -> a permanent failure).
+        dispatchDuePublicationsUseCase.execute();
+
         MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
@@ -413,7 +417,7 @@ class PublicationControllerIT {
     }
 
     @Test
-    void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
+    void retry_failed_in_batch_reschedules_the_failed_rows_for_the_worker() throws Exception {
         String adminToken = loginAdmin();
         Product product = productRepository.save(Product.create("Blusa retry", "desc",
                 new Money(BigDecimal.valueOf(19990), "CLP"), "https://cdn.example.com/blusa.jpg",
@@ -431,6 +435,9 @@ class PublicationControllerIT {
         String publicationId = om.readTree(batchResult.getResponse().getContentAsString())
                 .get("items").get(0).get("publicationId").asString();
 
+        // Worker publishes the queued row -> permanent failure (no Meta credentials) -> FAILED.
+        dispatchDuePublicationsUseCase.execute();
+
         MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk()).andReturn();
@@ -439,12 +446,13 @@ class PublicationControllerIT {
         mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", batchId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rows[0].status").value("FAILED"));
+                .andExpect(jsonPath("$.rows[0].status").value("RETRY_SCHEDULED"));
 
         mvc.perform(get("/api/admin/publications/{id}", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.retryCount").value(1));
+                .andExpect(jsonPath("$.status").value("RETRY_SCHEDULED"))
+                .andExpect(jsonPath("$.retryCount").value(0));
     }
 
     @Test
@@ -574,7 +582,7 @@ class PublicationControllerIT {
         String batchId = om.readTree(batches.getResponse().getContentAsString()).get(0).get("batchId").asString();
 
         Thread.sleep(1400);
-        int handled = publishDueScheduledPublicationsUseCase.execute();
+        int handled = dispatchDuePublicationsUseCase.execute();
         org.junit.jupiter.api.Assertions.assertTrue(handled >= 1);
 
         mvc.perform(get("/api/admin/publications/batches/{id}", batchId)

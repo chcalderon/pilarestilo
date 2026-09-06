@@ -10,7 +10,6 @@ import {
   getProductPublicationImageHistory,
   type ProductDto,
   type ProductVariantDto,
-  type PublishProductsBatchItemResult,
 } from '../../lib/api';
 import { santiagoWallTimeToInstant, instantToSantiagoInputValue, instantToSantiagoLabel } from '../../lib/santiagoTime';
 
@@ -31,6 +30,8 @@ type PublicarTabProps = {
   onPreloadConsumed?: () => void;
   editingBatchId?: string;
   onEditCancelled?: () => void;
+  /** Called after a successful non-scheduled publish so the page can jump to Historial. */
+  onPublished?: () => void;
 };
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -92,7 +93,7 @@ function joinSpanishList(items: string[]): string {
 }
 
 export default function PublicarTab(
-  { preload, onPreloadConsumed, editingBatchId, onEditCancelled }: PublicarTabProps = {},
+  { preload, onPreloadConsumed, editingBatchId, onEditCancelled, onPublished }: PublicarTabProps = {},
 ) {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
@@ -110,7 +111,8 @@ export default function PublicarTab(
   const [hashtagsInput, setHashtagsInput] = useState('#pilarestilo');
   const [campaignLabel, setCampaignLabel] = useState('');
   const [publishing, setPublishing] = useState(false);
-  const [publishResults, setPublishResults] = useState<PublishProductsBatchItemResult[] | null>(null);
+  const [queued, setQueued] = useState(false);
+  const [queueErrors, setQueueErrors] = useState<string[]>([]);
   const [scheduledConfirmation, setScheduledConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'now' | 'schedule'>('now');
@@ -289,7 +291,8 @@ export default function PublicarTab(
     if (!canPublish) return;
     setPublishing(true);
     setError(null);
-    setPublishResults(null);
+    setQueued(false);
+    setQueueErrors([]);
     setScheduledConfirmation(null);
     try {
       const relevantVariants = new Map(
@@ -325,7 +328,15 @@ export default function PublicarTab(
           `Programada para ${instantToSantiagoLabel(scheduledAt)}. La vas a ver en Historial.`,
         );
       } else {
-        setPublishResults(response.items);
+        const errs = response.items
+          .map((i) => i.errorMessage)
+          .filter((m): m is string => Boolean(m));
+        if (errs.length > 0) {
+          setQueueErrors(errs);
+        } else {
+          setQueued(true);
+          onPublished?.();
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo publicar el lote.');
@@ -699,22 +710,22 @@ export default function PublicarTab(
         )}
       </div>
 
-      {publishResults && (
+      {queued && (
+        <p className="text-sm text-pe-positive-ink">
+          Encolado. Los posts salen en unos segundos, segui el estado en Historial.
+        </p>
+      )}
+
+      {queueErrors.length > 0 && (
         <section>
-          <h2 className="font-sans text-sm text-pe-muted mb-2">Resultado</h2>
+          <h2 className="font-sans text-sm text-pe-muted mb-2">No se pudieron encolar</h2>
           <ul className="flex flex-col gap-1">
-            {publishResults.map((item, index) => {
-              const product = selected.get(item.productId);
-              return (
-                <li key={`${item.productId}-${item.platform}-${index}`} className="text-sm flex items-center gap-2">
-                  <span aria-hidden="true">{item.success ? '✓' : '✗'}</span>
-                  <span>
-                    {product ? product.name : item.productId} — {PLATFORM_LABELS[item.platform]}
-                    {!item.success && item.errorMessage ? `: ${item.errorMessage}` : ''}
-                  </span>
-                </li>
-              );
-            })}
+            {queueErrors.map((msg, index) => (
+              <li key={index} className="text-sm flex items-center gap-2">
+                <span aria-hidden="true">✗</span>
+                <span>{msg}</span>
+              </li>
+            ))}
           </ul>
         </section>
       )}

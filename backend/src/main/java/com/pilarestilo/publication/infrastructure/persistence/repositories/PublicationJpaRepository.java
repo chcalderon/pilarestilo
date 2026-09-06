@@ -2,7 +2,9 @@ package com.pilarestilo.publication.infrastructure.persistence.repositories;
 
 import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -17,8 +19,21 @@ public interface PublicationJpaRepository extends JpaRepository<PublicationEntit
     List<PublicationEntity> findByBatchIdOrderByCreatedAtAsc(UUID batchId);
     List<PublicationEntity> findByBatchIdInOrderByCreatedAtAsc(Collection<UUID> batchIds);
     List<PublicationEntity> findByBatchIdIsNullOrderByCreatedAtAsc();
-    List<PublicationEntity> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
-            PublicationStatus status, Instant cutoff);
+
+    /** Rows stuck in PUBLISHING past the cutoff — the server likely crashed mid-dispatch. */
+    List<PublicationEntity> findByStatusAndUpdatedAtLessThan(PublicationStatus status, Instant cutoff);
+
+    @Query("""
+            select p from PublicationEntity p
+            where p.status in (
+                com.pilarestilo.publication.domain.enums.PublicationStatus.APPROVED,
+                com.pilarestilo.publication.domain.enums.PublicationStatus.SCHEDULED,
+                com.pilarestilo.publication.domain.enums.PublicationStatus.RETRY_SCHEDULED)
+              and p.nextAttemptAt is not null
+              and p.nextAttemptAt <= :now
+            order by p.nextAttemptAt asc
+            """)
+    List<PublicationEntity> findDueForDispatch(Instant now, Pageable pageable);
 
     @org.springframework.data.jpa.repository.Query("""
             select p from PublicationEntity p

@@ -33,6 +33,7 @@ const summary = {
   failed: 1,
   scheduled: 0,
   pending: 0,
+  retrying: 0,
   scheduledAt: null,
 };
 const detail = {
@@ -55,6 +56,8 @@ const detail = {
       lastErrorCode: null,
       lastErrorMessage: null,
       imageUrls: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'],
+      retryCount: 0,
+      nextAttemptAt: null,
     },
     {
       publicationId: 'pub2',
@@ -67,6 +70,8 @@ const detail = {
       lastErrorCode: 'FACEBOOK_PUBLISH_ERROR',
       lastErrorMessage: 'OAuthException 190',
       imageUrls: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'],
+      retryCount: 0,
+      nextAttemptAt: null,
     },
   ],
 };
@@ -130,6 +135,29 @@ describe('HistorialTab', () => {
       expect.any(String),
       expect.objectContaining({ imageSelections: { p1: ['https://img/a.jpg', 'https://img/b.jpg', 'https://img/c.jpg'] } }),
     );
+  });
+
+  it('shows a Reintentando pill with the attempt number and a retrying count', async () => {
+    const s = { ...summary, published: 0, failed: 0, retrying: 1 };
+    const d = {
+      ...detail,
+      rows: [{
+        ...detail.rows[1],
+        status: 'RETRY_SCHEDULED',
+        retryCount: 2,
+        nextAttemptAt: '2027-06-15T14:35:00.000Z',
+      }],
+    };
+    vi.mocked(getPublicationBatches).mockResolvedValue([s] as never);
+    vi.mocked(getPublicationBatchDetail).mockResolvedValue(d as never);
+
+    const user = userEvent.setup();
+    render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
+    expect(await screen.findByText(/1 reintentando/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /liquidacion primavera/i }));
+    expect(await screen.findByText(/Reintentando · intento 2/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar ahora/i })).toBeInTheDocument();
   });
 
   it('a published row links to the live post', async () => {

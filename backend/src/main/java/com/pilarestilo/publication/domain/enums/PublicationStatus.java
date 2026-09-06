@@ -8,6 +8,7 @@ public enum PublicationStatus {
     REJECTED,
     SCHEDULED,
     PUBLISHING,
+    RETRY_SCHEDULED,
     PUBLISHED,
     FAILED,
     CANCELLED

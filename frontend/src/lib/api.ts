@@ -1579,6 +1579,7 @@ export interface PublicationBatchSummary {
   failed: number;
   scheduled: number;
   pending: number;
+  retrying: number;
   scheduledAt: string | null;
 }
 
@@ -1593,6 +1594,8 @@ export interface PublicationBatchDetailRow {
   lastErrorCode: string | null;
   lastErrorMessage: string | null;
   imageUrls: string[];
+  retryCount: number;
+  nextAttemptAt: string | null;
 }
 
 export interface PublicationBatchDetail {
