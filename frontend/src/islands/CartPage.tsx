@@ -331,7 +331,7 @@ export default function CartPage({ locale }: Props) {
                       )}
 
                       <div className="mt-auto flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2" role="group" aria-label={l.quantity}>
+                        <fieldset className="flex items-center gap-2 m-0 min-w-0 border-0 p-0" aria-label={l.quantity}>
                           <button
                             type="button"
                             onClick={() => {
@@ -352,7 +352,7 @@ export default function CartPage({ locale }: Props) {
                           >
                             +
                           </button>
-                        </div>
+                        </fieldset>
 
                         <span className="font-sans text-sm font-semibold tabular-nums">
                           {formatPrice(item.price.amount * item.quantity, item.price.currency, locale)}
