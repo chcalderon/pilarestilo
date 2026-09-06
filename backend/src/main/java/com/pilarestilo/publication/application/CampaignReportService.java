@@ -53,56 +53,41 @@ public class CampaignReportService {
 
         List<CampaignSummaryDto> out = new ArrayList<>();
         for (Map.Entry<String, List<PublicationEntity>> e : byLabel.entrySet()) {
-            List<PublicationEntity> rows = e.getValue();
-            EnumSet<PublicationPlatform> platforms = EnumSet.noneOf(PublicationPlatform.class);
-            int published = 0;
-            int failed = 0;
-            int scheduled = 0;
-            int postsWithError = 0;
-            long tImp = 0;
-            long tReach = 0;
-            long tLikes = 0;
-            long tComments = 0;
-            long tShares = 0;
-            long tSaved = 0;
-            Instant first = null;
-            Instant last = null;
-            for (PublicationEntity r : rows) {
-                platforms.add(r.getPlatform());
-                switch (r.getStatus()) {
-                    case PUBLISHED -> published++;
-                    case FAILED -> failed++;
-                    case SCHEDULED -> scheduled++;
-                    default -> { /* RETRY_SCHEDULED, APPROVED, DRAFT, PUBLISHING: counted only in totalPosts */ }
-                }
-                if (first == null || r.getCreatedAt().isBefore(first)) {
-                    first = r.getCreatedAt();
-                }
-                if (last == null || r.getCreatedAt().isAfter(last)) {
-                    last = r.getCreatedAt();
-                }
-                PublicationMetricsEntity m = metrics.get(r.getId());
-                if (m != null) {
-                    if (m.getFetchError() != null) {
-                        postsWithError++;
-                    }
-                    tImp += nz(m.getImpressions());
-                    tReach += nz(m.getReach());
-                    tLikes += nz(m.getLikes());
-                    tComments += nz(m.getComments());
-                    tShares += nz(m.getShares());
-                    tSaved += nz(m.getSaved());
-                }
-            }
-            out.add(new CampaignSummaryDto(
-                    e.getKey(), first, last, batchCounts.getOrDefault(e.getKey(), 0), rows.size(),
-                    published, failed, scheduled, platforms,
-                    new CampaignSummaryDto.MetricsTotals(tImp, tReach, tLikes, tComments, tShares, tSaved),
-                    postsWithError));
+            out.add(summarize(e.getKey(), e.getValue(), metrics, batchCounts.getOrDefault(e.getKey(), 0)));
         }
         out.sort(Comparator.comparing(CampaignSummaryDto::lastPostAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
         return out;
+    }
+
+    private CampaignSummaryDto summarize(String label, List<PublicationEntity> rows,
+                                         Map<UUID, PublicationMetricsEntity> metrics, int batchCount) {
+        EnumSet<PublicationPlatform> platforms = EnumSet.noneOf(PublicationPlatform.class);
+        int published = 0;
+        int failed = 0;
+        int scheduled = 0;
+        int postsWithError = 0;
+        Totals t = new Totals();
+        TimeRange range = new TimeRange();
+        for (PublicationEntity r : rows) {
+            platforms.add(r.getPlatform());
+            switch (r.getStatus()) {
+                case PUBLISHED -> published++;
+                case FAILED -> failed++;
+                case SCHEDULED -> scheduled++;
+                default -> { /* RETRY_SCHEDULED, APPROVED, DRAFT, PUBLISHING: counted only in totalPosts */ }
+            }
+            range.include(r.getCreatedAt());
+            PublicationMetricsEntity m = metrics.get(r.getId());
+            if (m != null) {
+                if (m.getFetchError() != null) {
+                    postsWithError++;
+                }
+                t.add(m);
+            }
+        }
+        return new CampaignSummaryDto(label, range.first, range.last, batchCount, rows.size(),
+                published, failed, scheduled, platforms, t.toDto(), postsWithError);
     }
 
     public CampaignDetailDto getCampaign(String label) {
@@ -117,28 +102,67 @@ public class CampaignReportService {
                         .map(PublicationEntity::getProductId).filter(Objects::nonNull).toList()).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
+        TimeRange range = new TimeRange();
         List<CampaignDetailDto.PostRow> postRows = new ArrayList<>();
-        Instant first = null;
-        Instant last = null;
         for (PublicationEntity r : rows) {
-            if (first == null || r.getCreatedAt().isBefore(first)) {
-                first = r.getCreatedAt();
-            }
-            if (last == null || r.getCreatedAt().isAfter(last)) {
-                last = r.getCreatedAt();
-            }
-            Product p = r.getProductId() == null ? null : products.get(r.getProductId());
-            PublicationMetricsEntity m = metrics.get(r.getId());
-            postRows.add(new CampaignDetailDto.PostRow(
-                    r.getId(), r.getProductId(),
-                    p != null ? p.getName() : "(producto eliminado)",
-                    p != null ? p.getImageUrl() : null,
-                    r.getPlatform(), r.getStatus(), r.getExternalPermalink(),
-                    m == null ? null : toPostMetrics(m),
-                    m == null ? null : m.getFetchError(),
-                    m == null ? null : m.getFetchedAt()));
+            range.include(r.getCreatedAt());
+            postRows.add(toPostRow(r, products.get(r.getProductId()), metrics.get(r.getId())));
         }
-        return new CampaignDetailDto(label, first, last, postRows);
+        return new CampaignDetailDto(label, range.first, range.last, postRows);
+    }
+
+    private CampaignDetailDto.PostRow toPostRow(PublicationEntity r, Product p, PublicationMetricsEntity m) {
+        return new CampaignDetailDto.PostRow(
+                r.getId(), r.getProductId(),
+                p != null ? p.getName() : "(producto eliminado)",
+                p != null ? p.getImageUrl() : null,
+                r.getPlatform(), r.getStatus(), r.getExternalPermalink(),
+                m == null ? null : toPostMetrics(m),
+                m == null ? null : m.getFetchError(),
+                m == null ? null : m.getFetchedAt());
+    }
+
+    private static final class TimeRange {
+        private Instant first;
+        private Instant last;
+
+        void include(Instant at) {
+            if (at == null) {
+                return;
+            }
+            if (first == null || at.isBefore(first)) {
+                first = at;
+            }
+            if (last == null || at.isAfter(last)) {
+                last = at;
+            }
+        }
+    }
+
+    private static final class Totals {
+        private long imp;
+        private long reach;
+        private long likes;
+        private long comments;
+        private long shares;
+        private long saved;
+
+        void add(PublicationMetricsEntity m) {
+            imp += nz(m.getImpressions());
+            reach += nz(m.getReach());
+            likes += nz(m.getLikes());
+            comments += nz(m.getComments());
+            shares += nz(m.getShares());
+            saved += nz(m.getSaved());
+        }
+
+        CampaignSummaryDto.MetricsTotals toDto() {
+            return new CampaignSummaryDto.MetricsTotals(imp, reach, likes, comments, shares, saved);
+        }
+
+        private static long nz(Long v) {
+            return v == null ? 0L : v;
+        }
     }
 
     private Map<String, List<PublicationEntity>> groupPublicationsByLabel() {
@@ -177,10 +201,6 @@ public class CampaignReportService {
         }
         return metricsRepository.findByPublicationIdIn(ids).stream()
                 .collect(Collectors.toMap(PublicationMetricsEntity::getPublicationId, m -> m));
-    }
-
-    private static long nz(Long v) {
-        return v == null ? 0L : v;
     }
 
     private static PostMetrics toPostMetrics(PublicationMetricsEntity m) {

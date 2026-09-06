@@ -65,7 +65,7 @@ export default function CampanasTab() {
     }
   }
 
-  if (campaigns && campaigns.length === 0) {
+  if (campaigns?.length === 0) {
     return (
       <p className="text-sm text-pe-muted">
         Aún no hay campañas. Poné una etiqueta de campaña al publicar.
@@ -75,7 +75,7 @@ export default function CampanasTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      {notice && <p className="text-xs text-pe-muted" role="status">{notice}</p>}
+      {notice && <output className="text-xs text-pe-muted">{notice}</output>}
       {(campaigns ?? []).map((c) => (
         <div key={c.label} className="border border-pe-border rounded-xs">
           <div className="flex items-start justify-between gap-3 p-3">

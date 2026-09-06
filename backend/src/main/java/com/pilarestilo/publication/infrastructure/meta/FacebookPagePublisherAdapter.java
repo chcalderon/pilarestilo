@@ -55,8 +55,8 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
                 .retrieve().body(String.class));
 
         String postId = response.hasNonNull("post_id") ? response.get("post_id").asString() : null;
-        String remotePostId = postId != null ? postId
-                : (response.hasNonNull("id") ? response.get("id").asString() : null);
+        String fallbackId = response.hasNonNull("id") ? response.get("id").asString() : null;
+        String remotePostId = postId != null ? postId : fallbackId;
         String permalink = postId == null ? null : "https://www.facebook.com/" + postId;
 
         return new PublicationDispatcher.DispatchResult(

@@ -1,12 +1,9 @@
 package com.pilarestilo.publication.application.usecases;
 
-import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationMediaBundleEntity;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationJpaRepository;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,20 +25,12 @@ public class GetProductPublicationImageHistoryUseCase {
     }
 
     public List<String> execute(UUID productId) {
-        List<PublicationEntity> recent = publicationRepository.findTop20ByProductIdOrderByCreatedAtDesc(productId);
-        LinkedHashSet<String> urls = new LinkedHashSet<>();
-        outer:
-        for (PublicationEntity publication : recent) {
-            for (PublicationMediaBundleEntity bundle : publication.getMediaBundles()) {
-                String url = bundle.getPrimaryAssetUrl();
-                if (url != null && !url.isBlank()) {
-                    urls.add(url);
-                }
-                if (urls.size() >= MAX_RESULTS) {
-                    break outer;
-                }
-            }
-        }
-        return new ArrayList<>(urls);
+        return publicationRepository.findTop20ByProductIdOrderByCreatedAtDesc(productId).stream()
+                .flatMap(publication -> publication.getMediaBundles().stream())
+                .map(PublicationMediaBundleEntity::getPrimaryAssetUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .distinct()
+                .limit(MAX_RESULTS)
+                .toList();
     }
 }

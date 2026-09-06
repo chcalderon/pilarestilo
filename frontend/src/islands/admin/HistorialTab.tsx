@@ -96,7 +96,7 @@ function StatusPill({
   );
 }
 
-export default function HistorialTab({ onRepublish, onGoToPublish, onEditScheduled }: Props) {
+export default function HistorialTab({ onRepublish, onGoToPublish, onEditScheduled }: Readonly<Props>) {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie() ?? '';
 
@@ -267,7 +267,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
 
             {isOpen && b.batchId && (
               <div className="border-t border-pe-border p-3 flex flex-col gap-3">
-                {detail && detail.rows.some((r) => r.status === 'SCHEDULED') ? (
+                {detail?.rows.some((r) => r.status === 'SCHEDULED') ? (
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
@@ -329,7 +329,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {detail && detail.rows.some((r) => r.status === 'FAILED') && (
+                    {detail?.rows.some((r) => r.status === 'FAILED') && (
                       <button
                         type="button"
                         onClick={() => doRetryBatch(b.batchId as string)}
@@ -340,7 +340,7 @@ export default function HistorialTab({ onRepublish, onGoToPublish, onEditSchedul
                         Reintentar fallidos
                       </button>
                     )}
-                    {detail && detail.captionTemplate && (
+                    {detail?.captionTemplate && (
                       <button
                         type="button"
                         onClick={() =>

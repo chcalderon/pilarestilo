@@ -18,6 +18,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,7 +52,7 @@ class MetaDirectPublicationDispatcherTest {
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
         org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
                 org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
-        org.mockito.Mockito.verify(instagram).publish(captor.capture());
+        verify(instagram).publish(captor.capture());
         assertEquals("https://pilarestilo.com/api/media/products/x.jpg", captor.getValue().mediaUrls().get(0));
     }
 
@@ -71,7 +72,7 @@ class MetaDirectPublicationDispatcherTest {
 
         org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
                 org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
-        org.mockito.Mockito.verify(instagram).publish(captor.capture());
+        verify(instagram).publish(captor.capture());
         assertEquals(
                 List.of("https://pilarestilo.com/api/media/products/a.jpg", "https://cdn.example.com/b.jpg"),
                 captor.getValue().mediaUrls());
@@ -93,7 +94,7 @@ class MetaDirectPublicationDispatcherTest {
 
         org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
                 org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
-        org.mockito.Mockito.verify(facebook).publish(captor.capture());
+        verify(facebook).publish(captor.capture());
         assertEquals("https://cdn.example.com/x.jpg", captor.getValue().mediaUrls().get(0));
     }
 
@@ -106,7 +107,8 @@ class MetaDirectPublicationDispatcherTest {
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
                 "Caption", List.of(), List.of("/api/media/products/x.jpg"));
+        UUID publicationId = UUID.randomUUID();
 
-        assertThrows(DomainException.class, () -> dispatcher.dispatch(UUID.randomUUID(), "idem-3", payload));
+        assertThrows(DomainException.class, () -> dispatcher.dispatch(publicationId, "idem-3", payload));
     }
 }

@@ -42,7 +42,7 @@ class BatchPublicationFactory {
                 : hashtags.stream().map(this::trimToNull).filter(Objects::nonNull).distinct().toList();
         try {
             return objectMapper.writeValueAsString(clean);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return "[]";
         }
     }

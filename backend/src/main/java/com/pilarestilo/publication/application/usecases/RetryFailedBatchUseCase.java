@@ -31,7 +31,7 @@ public class RetryFailedBatchUseCase {
                 .forEach(p -> {
                     try {
                         publicationService.retry(p.getId(), actorUserId);
-                    } catch (RuntimeException raced) {
+                    } catch (RuntimeException _) {
                         // Row is no longer FAILED (retried elsewhere, or state changed) — skip it.
                     }
                 });

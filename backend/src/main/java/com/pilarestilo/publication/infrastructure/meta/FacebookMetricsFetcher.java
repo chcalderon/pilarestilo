@@ -22,6 +22,11 @@ class FacebookMetricsFetcher {
         this.objectMapper = objectMapper;
     }
 
+    private static final String SUMMARY = "summary";
+
+    private record Engagement(Long likes, Long comments, Long shares) {}
+    private record Reach(Long impressions, Long reach) {}
+
     PublicationMetricsFetcher.Result fetch(String externalPostId) {
         MetaPublishingConfigResolver.EffectiveConfig config = configResolver.resolve();
         if (config.facebookPageId() == null || config.facebookPageAccessToken() == null) {
@@ -30,51 +35,56 @@ class FacebookMetricsFetcher {
         RestClient client = restClientBuilder.baseUrl(config.facebookBaseUrl()).build();
         String token = config.facebookPageAccessToken();
 
-        Long likes;
-        Long comments;
-        Long shares;
+        Engagement e;
         try {
-            JsonNode summary = getJson(client,
-                    "/{postId}?fields=likes.summary(true),comments.summary(true),shares&access_token={token}",
-                    externalPostId, token);
-            likes = summaryCount(summary.get("likes"));
-            comments = summaryCount(summary.get("comments"));
-            shares = summary.hasNonNull("shares") && summary.get("shares").hasNonNull("count")
-                    ? summary.get("shares").get("count").asLong() : null;
+            e = fetchEngagement(client, externalPostId, token);
         } catch (RuntimeException ex) {
             return PublicationMetricsFetcher.Result.failed(ex.getMessage());
         }
 
+        Reach r = fetchReach(client, externalPostId, token);
+        return PublicationMetricsFetcher.Result.ok(
+                new PostMetrics(r.impressions(), r.reach(), e.likes(), e.comments(), e.shares(), null));
+    }
+
+    private Engagement fetchEngagement(RestClient client, String postId, String token) {
+        JsonNode summary = getJson(client,
+                "/{postId}?fields=likes.summary(true),comments.summary(true),shares&access_token={token}",
+                postId, token);
+        JsonNode shares = summary.get("shares");
+        Long shareCount = shares != null && shares.hasNonNull("count") ? shares.get("count").asLong() : null;
+        return new Engagement(summaryCount(summary.get("likes")), summaryCount(summary.get("comments")), shareCount);
+    }
+
+    /** read_insights may not be granted — a failure here keeps the like/comment/share counts. */
+    private Reach fetchReach(RestClient client, String postId, String token) {
         Long impressions = null;
         Long reach = null;
         try {
             JsonNode insights = getJson(client,
                     "/{postId}/insights?metric=post_impressions,post_impressions_unique&access_token={token}",
-                    externalPostId, token);
+                    postId, token);
             if (insights.hasNonNull("data")) {
                 for (JsonNode metric : insights.get("data")) {
                     String name = metric.hasNonNull("name") ? metric.get("name").asString() : "";
-                    Long value = firstValue(metric);
                     if ("post_impressions".equals(name)) {
-                        impressions = value;
+                        impressions = firstValue(metric);
                     } else if ("post_impressions_unique".equals(name)) {
-                        reach = value;
+                        reach = firstValue(metric);
                     }
                 }
             }
-        } catch (RuntimeException insightsError) {
-            // read_insights may not be granted — keep the like/comment/share counts.
+        } catch (RuntimeException _) {
+            // insight scope not granted
         }
-
-        return PublicationMetricsFetcher.Result.ok(
-                new PostMetrics(impressions, reach, likes, comments, shares, null));
+        return new Reach(impressions, reach);
     }
 
     private Long summaryCount(JsonNode node) {
-        if (node == null || !node.hasNonNull("summary") || !node.get("summary").hasNonNull("total_count")) {
+        if (node == null || !node.hasNonNull(SUMMARY) || !node.get(SUMMARY).hasNonNull("total_count")) {
             return null;
         }
-        return node.get("summary").get("total_count").asLong();
+        return node.get(SUMMARY).get("total_count").asLong();
     }
 
     private Long firstValue(JsonNode metric) {

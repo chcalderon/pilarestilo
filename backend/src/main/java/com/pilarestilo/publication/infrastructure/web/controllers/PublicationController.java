@@ -239,7 +239,7 @@ public class PublicationController {
         java.time.Instant when;
         try {
             when = java.time.Instant.parse(raw);
-        } catch (java.time.format.DateTimeParseException e) {
+        } catch (java.time.format.DateTimeParseException _) {
             throw new com.pilarestilo.shared.domain.DomainException("Fecha de programación inválida");
         }
         if (when.isBefore(java.time.Instant.now())) {

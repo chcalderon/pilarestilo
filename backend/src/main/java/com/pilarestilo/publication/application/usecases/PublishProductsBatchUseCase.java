@@ -49,7 +49,6 @@ public class PublishProductsBatchUseCase {
 
     public PublishProductsBatchResult execute(PublishProductsBatchCommand command, UUID actorUserId) {
         List<PublishProductsBatchResult.PublicationItemResult> items = new ArrayList<>();
-        boolean scheduled = command.scheduledAt() != null;
 
         PublicationBatchEntity batch = new PublicationBatchEntity();
         batch.setId(UUID.randomUUID());
@@ -73,7 +72,7 @@ public class PublishProductsBatchUseCase {
             String caption = factory.interpolate(command.captionTemplate(), productId, product,
                     command.variantSelections().get(productId));
             for (PublicationPlatform platform : command.platforms()) {
-                items.add(publishOne(productId, product, platform, caption, command, actorUserId, batch.getId(), scheduled));
+                items.add(publishOne(productId, product, platform, caption, command, actorUserId, batch.getId()));
             }
         }
         return new PublishProductsBatchResult(items);
@@ -85,14 +84,14 @@ public class PublishProductsBatchUseCase {
                                                                         String caption,
                                                                         PublishProductsBatchCommand command,
                                                                         UUID actorUserId,
-                                                                        UUID batchId,
-                                                                        boolean scheduled) {
+                                                                        UUID batchId) {
+        // "scheduled" only means "the admin picked a future time" (drives the UI copy) — both paths
+        // create the row and leave it for the dispatch worker.
+        boolean scheduled = command.scheduledAt() != null;
         try {
             CreatePublicationCommand createCommand =
                     factory.buildCreateCommand(command, productId, product, platform, caption, batchId);
             CreatePublicationResult created = publicationService.create(createCommand, actorUserId);
-            // Both the immediate and the scheduled paths leave the row for the dispatch worker.
-            // "scheduled" here still means "the admin picked a future time" (drives the UI copy).
             return new PublishProductsBatchResult.PublicationItemResult(
                     productId, platform, false, created.publication().id(), null, scheduled);
         } catch (DomainException ex) {

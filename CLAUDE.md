@@ -78,6 +78,16 @@ One command scans everything with coverage:
 SONAR_TOKEN=<token> bash scripts/quality/sonar-scan.sh
 ```
 
+**Do not run `mvn verify` while the app compose stack or SonarQube is up.** On Docker Desktop the
+Testcontainers Postgres a `*IT` needs and SonarQube's embedded Elasticsearch fight over the VM's
+disk IO and ephemeral ports — the ITs start failing with `Connection to localhost:NNNNN refused`.
+Stop everything Docker-side, run `mvn verify` (or `mvn test jacoco:report` for a coverage-only
+pass), then bring SonarQube up just for the `sonar:sonar` upload. The SonarQube service is heap-
+capped (`SONAR_*_JAVAOPTS`, `mem_limit: 2g`) so it is a lighter neighbour, but stopped is still
+best. If `mvn clean` fails `Failed to delete target/site/jacoco/…`, the VS Code `redhat.java`
+Language Server is holding the handle: `rm -rf backend/target`, kill stray `java` forks, or run
+"Java: Disable autobuild" from the Command Palette.
+
 Sonar Community has **no taint analysis**, so it never follows a value from a request into a query
 — it says so in a banner on every project. That gap is covered locally and for free by
 `scripts/quality/security-scan.sh`: Find Security Bugs (bytecode taint for Java, run with

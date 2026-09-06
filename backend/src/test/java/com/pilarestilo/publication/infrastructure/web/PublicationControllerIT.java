@@ -567,6 +567,7 @@ class PublicationControllerIT {
     }
 
     @Test
+    @SuppressWarnings("java:S2925") // waits for the 1s-future scheduled_at to pass wall-clock, not for a thread
     void the_scheduled_job_publishes_a_due_batch() throws Exception {
         String adminToken = loginAdmin();
         Product p = productRepository.save(Product.create("Prod due", "d",
