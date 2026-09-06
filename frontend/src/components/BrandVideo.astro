@@ -1,0 +1,222 @@
+---
+import type { Locale } from '../i18n/index';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const copy = locale === 'es'
+  ? {
+      videoLabel: 'Animación de la marca Pilar Estilo, que cierra con la frase Lujo con Propósito.',
+      play: 'Reproducir',
+      sound: 'Sonido',
+      soundHint: 'Sonido del video de marca',
+    }
+  : {
+      videoLabel: 'Pilar Estilo brand animation, closing on the line Luxury with Purpose.',
+      play: 'Play',
+      sound: 'Sound',
+      soundHint: 'Brand video sound',
+    };
+---
+
+<figure class="pe-brandvideo mx-auto w-full max-w-4xl px-6" data-pe-brandvideo>
+  <div class="pe-brandvideo-frame relative aspect-[3/2] overflow-hidden border border-pe-gold/25 bg-pe-black">
+    <video
+      class="pe-brandvideo-media h-full w-full object-cover"
+      data-pe-brandvideo-media
+      muted
+      playsinline
+      preload="none"
+      poster="/media/pilar-estilo-marca-poster.jpg"
+      aria-label={copy.videoLabel}
+    >
+      <source src="/media/pilar-estilo-marca.webm" type="video/webm" />
+      <source src="/media/pilar-estilo-marca.mp4" type="video/mp4" />
+    </video>
+
+    <div
+      class="pe-brandvideo-poster absolute inset-0 bg-pe-black bg-cover bg-center"
+      style="background-image: url('/media/pilar-estilo-marca-poster.jpg');"
+      data-pe-brandvideo-poster
+      aria-hidden="true"
+    >
+    </div>
+
+    <button
+      type="button"
+      class="pe-brandvideo-play absolute bottom-3 left-3 z-20 inline-flex min-h-[44px] items-center gap-3 border border-pe-gold/50 bg-pe-black/70 px-4 font-sans text-[0.68rem] font-medium uppercase tracking-[0.26em] text-pe-on-dark transition-colors duration-200 hover:bg-pe-black/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pe-gold"
+      data-pe-brandvideo-play
+      hidden
+    >
+      <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" /></svg>
+      {copy.play}
+    </button>
+
+    <button
+      type="button"
+      class="pe-brandvideo-sound absolute bottom-3 right-3 z-20 inline-flex min-h-[44px] items-center gap-2 border border-pe-gold/30 bg-pe-black/60 px-4 font-sans text-[0.6rem] font-medium uppercase tracking-[0.24em] text-pe-on-dark-muted transition-colors duration-200 hover:text-pe-on-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pe-gold"
+      data-pe-brandvideo-sound
+      aria-pressed="false"
+      aria-label={copy.soundHint}
+      hidden
+    >
+      <svg
+        data-pe-brandvideo-icon-off
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <line x1="22" y1="9" x2="16" y2="15" />
+        <line x1="16" y1="9" x2="22" y2="15" />
+      </svg>
+      <svg
+        data-pe-brandvideo-icon-on
+        class="hidden"
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      </svg>
+      <span>{copy.sound}</span>
+    </button>
+  </div>
+</figure>
+
+<style>
+  /* The poster sits over the video and crossfades out when playback starts.
+     Without JS (or with reduced motion) it simply stays, so the frame always
+     shows the closing lockup rather than an empty black box. */
+  .pe-brandvideo-poster {
+    transition: opacity 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .pe-brandvideo-poster.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pe-brandvideo-poster {
+      transition: none;
+    }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    function setup(root) {
+      if (root.dataset.peBrandvideoReady === '1') return;
+      root.dataset.peBrandvideoReady = '1';
+
+      var video = root.querySelector('[data-pe-brandvideo-media]');
+      var poster = root.querySelector('[data-pe-brandvideo-poster]');
+      var playBtn = root.querySelector('[data-pe-brandvideo-play]');
+      var soundBtn = root.querySelector('[data-pe-brandvideo-sound]');
+      if (!video) return;
+
+      function hidePoster() {
+        if (poster) poster.classList.add('is-hidden');
+      }
+
+      function showPlay() {
+        if (playBtn) playBtn.hidden = false;
+      }
+
+      function hidePlay() {
+        if (playBtn) playBtn.hidden = true;
+      }
+
+      function tryPlay() {
+        var p = video.play();
+        if (p && typeof p.then === 'function') {
+          p.then(function () {
+            hidePlay();
+            hidePoster();
+          }).catch(function () {
+            showPlay();
+          });
+        } else {
+          hidePlay();
+          hidePoster();
+        }
+      }
+
+      if (soundBtn) {
+        soundBtn.hidden = false;
+        var iconOff = soundBtn.querySelector('[data-pe-brandvideo-icon-off]');
+        var iconOn = soundBtn.querySelector('[data-pe-brandvideo-icon-on]');
+        soundBtn.addEventListener('click', function () {
+          video.muted = !video.muted;
+          var on = !video.muted;
+          soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          if (iconOff) iconOff.classList.toggle('hidden', on);
+          if (iconOn) iconOn.classList.toggle('hidden', !on);
+          if (on && video.paused) tryPlay();
+        });
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener('click', function () {
+          hidePlay();
+          hidePoster();
+          video.play();
+        });
+      }
+
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (reduceMotion.matches) {
+        showPlay();
+        return;
+      }
+
+      if (!('IntersectionObserver' in window)) {
+        tryPlay();
+        return;
+      }
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              tryPlay();
+            } else if (!video.paused) {
+              video.pause();
+            }
+          });
+        },
+        { threshold: 0.4 }
+      );
+      observer.observe(root);
+    }
+
+    function init() {
+      document.querySelectorAll('[data-pe-brandvideo]').forEach(setup);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+    document.addEventListener('astro:page-load', init);
+  })();
+</script>
