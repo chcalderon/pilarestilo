@@ -19,4 +19,24 @@ public interface PublicationJpaRepository extends JpaRepository<PublicationEntit
     List<PublicationEntity> findByBatchIdIsNullOrderByCreatedAtAsc();
     List<PublicationEntity> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
             PublicationStatus status, Instant cutoff);
+
+    @org.springframework.data.jpa.repository.Query("""
+            select p from PublicationEntity p
+            where p.status = com.pilarestilo.publication.domain.enums.PublicationStatus.PUBLISHED
+              and p.externalPostId is not null
+              and p.batchId in (
+                  select b.id from PublicationBatchEntity b where b.campaignLabel = :label
+              )
+            order by p.createdAt asc
+            """)
+    List<PublicationEntity> findPublishedWithPostIdByCampaignLabel(String label);
+
+    @org.springframework.data.jpa.repository.Query("""
+            select p from PublicationEntity p
+            where p.status = com.pilarestilo.publication.domain.enums.PublicationStatus.PUBLISHED
+              and p.externalPostId is not null
+              and p.publishedAt >= :since
+            order by p.publishedAt asc
+            """)
+    List<PublicationEntity> findPublishedWithPostIdSince(Instant since);
 }
