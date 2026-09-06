@@ -18,12 +18,19 @@ export function productJsonLd(
       ? 'https://schema.org/UsedCondition'
       : 'https://schema.org/NewCondition';
 
+  const imageUrls = [product.imageUrl, ...(product.galleryImageUrls ?? [])]
+    .map((u) => (u ?? '').trim())
+    .filter(Boolean);
+  const uniqueImages = [...new Set(imageUrls)].map((u) =>
+    absoluteUrl(u, opts.requestUrl, opts.headers),
+  );
+
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: product.description,
-    image: [absoluteUrl(product.imageUrl, opts.requestUrl, opts.headers)],
+    image: uniqueImages,
     sku: product.id,
     brand: { '@type': 'Brand', name: product.brand },
     itemCondition: condition,

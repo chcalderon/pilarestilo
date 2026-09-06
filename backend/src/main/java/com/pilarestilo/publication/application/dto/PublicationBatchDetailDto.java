@@ -26,6 +26,7 @@ public record PublicationBatchDetailDto(
             PublicationStatus status,
             String externalPermalink,
             String lastErrorCode,
-            String lastErrorMessage
+            String lastErrorMessage,
+            List<String> imageUrls
     ) {}
 }

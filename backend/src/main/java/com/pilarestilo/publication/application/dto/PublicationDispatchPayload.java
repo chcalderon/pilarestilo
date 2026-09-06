@@ -12,7 +12,7 @@ public record PublicationDispatchPayload(
         PublicationChannelType channelType,
         String caption,
         List<String> hashtags,
-        String mediaUrl
+        List<String> mediaUrls
 ) {
     public String fullCaptionText() {
         String base = caption == null ? "" : caption.trim();

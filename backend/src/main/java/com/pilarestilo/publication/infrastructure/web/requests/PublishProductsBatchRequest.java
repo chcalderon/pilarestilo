@@ -13,9 +13,9 @@ public record PublishProductsBatchRequest(
         @NotBlank String captionTemplate,
         List<String> hashtags,
         String campaignLabel,
-        /** Per-product replacement image URL, keyed by productId (as a string — JSON object keys
-         *  can't be UUIDs directly). */
-        Map<String, String> imageOverrides,
+        /** Per-product ordered image list, keyed by productId (string keys — JSON objects can't
+         *  key by UUID). */
+        Map<String, List<String>> imageSelections,
         /** Per-product chosen variant, keyed by productId (as a string, same reason as above). */
         Map<String, VariantSelectionRequest> variantSelections,
         /** ISO-8601 instant. When set, the batch is scheduled instead of published now. */

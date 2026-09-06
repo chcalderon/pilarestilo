@@ -14,9 +14,10 @@ public record PublishProductsBatchCommand(
         String captionTemplate,
         List<String> hashtags,
         String campaignLabel,
-        /** Per-product replacement image URL (e.g. an edited version uploaded just for this post),
-         *  keyed by productId. A product missing from this map uses its catalog photo as-is. */
-        Map<UUID, String> imageOverrides,
+        /** Per-product ordered image list for this post: cover/override first, then any extra
+         *  carousel images. A product missing from this map posts a single image, its catalog
+         *  photo as-is. */
+        Map<UUID, List<String>> imageSelections,
         /** Per-product chosen variant, keyed by productId, used to resolve the {color}/{talla}/
          *  {cantidad} caption tokens. A product missing from this map (or with no matching
          *  variant) resolves those tokens to an empty string. */

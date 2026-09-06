@@ -95,7 +95,8 @@ class CreateProductUseCaseTest {
                         new ProductVariantInput("Camel", "xl", 1),
                         new ProductVariantInput("Camel", "l-xl", 2),
                         new ProductVariantInput("Negro", "  s-m-l  ", 3)
-                )
+                ),
+                List.of()
         );
 
         assertEquals(6, dto.stock());
@@ -111,7 +112,8 @@ class CreateProductUseCaseTest {
         ProductDto dto = useCase.execute(
                 "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
                 "http://img", "NEW", "Pilar", 0, true, null, null,
-                List.of(new ProductVariantInput("Camel", "X", 1))
+                List.of(new ProductVariantInput("Camel", "X", 1)),
+                List.of()
         );
 
         assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("X")));
@@ -124,7 +126,8 @@ class CreateProductUseCaseTest {
         ProductDto dto = useCase.execute(
                 "Abrigo", "desc", BigDecimal.valueOf(120000), "CLP", null, null,
                 "http://img", "NEW", "Pilar", 0, true, null, null,
-                List.of(new ProductVariantInput("Camel", "L--XL", 1))
+                List.of(new ProductVariantInput("Camel", "L--XL", 1)),
+                List.of()
         );
 
         assertTrue(dto.variants().stream().anyMatch(v -> v.size().equals("L--XL")));

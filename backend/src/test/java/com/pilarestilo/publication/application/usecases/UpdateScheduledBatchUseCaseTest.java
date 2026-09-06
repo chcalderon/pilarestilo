@@ -54,7 +54,8 @@ class UpdateScheduledBatchUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new UpdateScheduledBatchUseCase(publicationService, publicationRepository,
-                publicationBatchRepository, productRepository, new BatchPublicationFactory(new ObjectMapper()));
+                publicationBatchRepository, productRepository,
+                new BatchPublicationFactory(new ObjectMapper(), "https://pilarestilo.com"));
     }
 
     private PublicationEntity row(UUID batchId, PublicationStatus status) {

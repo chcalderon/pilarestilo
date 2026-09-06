@@ -46,7 +46,8 @@ public class UpdateProductUseCase {
                                String imageUrl, String condition, String brand, int stock,
                                boolean active, Set<UUID> categoryIds, UUID variantTemplateId) {
         return execute(id, name, description, priceAmount, priceCurrency, listPriceAmount,
-                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, variantTemplateId, null);
+                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, variantTemplateId,
+                null, List.of());
     }
 
     @SuppressWarnings("java:S107")
@@ -55,7 +56,7 @@ public class UpdateProductUseCase {
                                BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
                                boolean active, Set<UUID> categoryIds, UUID variantTemplateId,
-                               List<ProductVariantInput> variants) {
+                               List<ProductVariantInput> variants, List<String> galleryImageUrls) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Product not found: " + id));
 
@@ -72,6 +73,7 @@ public class UpdateProductUseCase {
         ProductCondition productCondition = ProductCondition.valueOf(condition);
 
         product.update(name, description, price, imageUrl, productCondition, brand, stock, active, listPrice);
+        product.setGalleryImageUrls(galleryImageUrls);
         if (categoryIds != null) {
             product.setCategoryIds(categoryIds);
         }

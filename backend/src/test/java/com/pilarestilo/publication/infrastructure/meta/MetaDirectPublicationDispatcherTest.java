@@ -44,7 +44,7 @@ class MetaDirectPublicationDispatcherTest {
 
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
-                "Caption", List.of(), "/api/media/products/x.jpg");
+                "Caption", List.of(), List.of("/api/media/products/x.jpg"));
 
         PublicationDispatcher.DispatchResult result = dispatcher.dispatch(UUID.randomUUID(), "idem-1", payload);
 
@@ -52,7 +52,29 @@ class MetaDirectPublicationDispatcherTest {
         org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
                 org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
         org.mockito.Mockito.verify(instagram).publish(captor.capture());
-        assertEquals("https://pilarestilo.com/api/media/products/x.jpg", captor.getValue().mediaUrl());
+        assertEquals("https://pilarestilo.com/api/media/products/x.jpg", captor.getValue().mediaUrls().get(0));
+    }
+
+    @Test
+    void resolves_every_relative_url_in_the_list_to_absolute() {
+        when(configResolver.resolve()).thenReturn(new MetaPublishingConfigResolver.EffectiveConfig(
+                "ig-user", "ig-token", "https://graph.instagram.com/v23.0", null, null,
+                "https://graph.facebook.com/v23.0", "https://pilarestilo.com"));
+        when(instagram.publish(any())).thenReturn(new PublicationDispatcher.DispatchResult(
+                "req-1", null, PublicationAttemptStatus.SUCCEEDED, "post-1", null, null, null));
+
+        PublicationDispatchPayload payload = new PublicationDispatchPayload(
+                UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
+                "Caption", List.of(), List.of("/api/media/products/a.jpg", "https://cdn.example.com/b.jpg"));
+
+        dispatcher.dispatch(UUID.randomUUID(), "idem-1", payload);
+
+        org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
+                org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
+        org.mockito.Mockito.verify(instagram).publish(captor.capture());
+        assertEquals(
+                List.of("https://pilarestilo.com/api/media/products/a.jpg", "https://cdn.example.com/b.jpg"),
+                captor.getValue().mediaUrls());
     }
 
     @Test
@@ -65,14 +87,14 @@ class MetaDirectPublicationDispatcherTest {
 
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.FACEBOOK, PublicationChannelType.FEED_POST,
-                "Caption", List.of(), "https://cdn.example.com/x.jpg");
+                "Caption", List.of(), List.of("https://cdn.example.com/x.jpg"));
 
         dispatcher.dispatch(UUID.randomUUID(), "idem-2", payload);
 
         org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
                 org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
         org.mockito.Mockito.verify(facebook).publish(captor.capture());
-        assertEquals("https://cdn.example.com/x.jpg", captor.getValue().mediaUrl());
+        assertEquals("https://cdn.example.com/x.jpg", captor.getValue().mediaUrls().get(0));
     }
 
     @Test
@@ -83,7 +105,7 @@ class MetaDirectPublicationDispatcherTest {
 
         PublicationDispatchPayload payload = new PublicationDispatchPayload(
                 UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
-                "Caption", List.of(), "/api/media/products/x.jpg");
+                "Caption", List.of(), List.of("/api/media/products/x.jpg"));
 
         assertThrows(DomainException.class, () -> dispatcher.dispatch(UUID.randomUUID(), "idem-3", payload));
     }

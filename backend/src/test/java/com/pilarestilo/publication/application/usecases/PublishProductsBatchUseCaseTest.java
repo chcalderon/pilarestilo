@@ -59,7 +59,7 @@ class PublishProductsBatchUseCaseTest {
     void setUp() {
         useCase = new PublishProductsBatchUseCase(
                 publicationService, productRepository, publicationBatchRepository,
-                new BatchPublicationFactory(new ObjectMapper()));
+                new BatchPublicationFactory(new ObjectMapper(), "https://pilarestilo.com"));
         lenient().when(publicationBatchRepository.save(any(PublicationBatchEntity.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }
@@ -182,7 +182,7 @@ class PublishProductsBatchUseCaseTest {
 
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
-                Map.of(productId, "https://cdn.example.com/edited.jpg"), Map.of(),
+                Map.of(productId, List.of("https://cdn.example.com/edited.jpg")), Map.of(),
                 null
         ), UUID.randomUUID());
 

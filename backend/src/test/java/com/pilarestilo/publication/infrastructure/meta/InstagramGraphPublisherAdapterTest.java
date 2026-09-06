@@ -26,7 +26,7 @@ class InstagramGraphPublisherAdapterTest {
 
     private final PublicationDispatchPayload payload = new PublicationDispatchPayload(
             UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
-            "Chaqueta a solo $49.990", List.of("#pilarestilo"), "https://cdn.example.com/chaqueta.jpg"
+            "Chaqueta a solo $49.990", List.of("#pilarestilo"), List.of("https://cdn.example.com/chaqueta.jpg")
     );
 
     private MetaPublishingConfigResolver instagramConfig() {
@@ -58,6 +58,62 @@ class InstagramGraphPublisherAdapterTest {
         assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
         assertEquals("178923456", result.remotePostId());
         server.verify();
+    }
+
+    @Test
+    void publishes_a_two_image_carousel() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        PublicationDispatchPayload carousel = new PublicationDispatchPayload(
+                UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
+                "Mira esto", List.of("#pilarestilo"),
+                List.of("https://cdn.example.com/1.jpg", "https://cdn.example.com/2.jpg"));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("is_carousel_item=true")))
+                .andRespond(withSuccess("{\"id\":\"child-1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("child-1?fields=status_code")))
+                .andRespond(withSuccess("{\"status_code\":\"FINISHED\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("is_carousel_item=true")))
+                .andRespond(withSuccess("{\"id\":\"child-2\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("child-2?fields=status_code")))
+                .andRespond(withSuccess("{\"status_code\":\"FINISHED\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("media_type=CAROUSEL"),
+                        org.hamcrest.Matchers.containsString("children=child-1%2Cchild-2"))))
+                .andRespond(withSuccess("{\"id\":\"parent-1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("parent-1?fields=status_code")))
+                .andRespond(withSuccess("{\"status_code\":\"FINISHED\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("/media_publish?creation_id=parent-1")))
+                .andRespond(withSuccess("{\"id\":\"178999\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("178999?fields=permalink")))
+                .andRespond(withSuccess("{\"permalink\":\"https://www.instagram.com/p/ZZZ/\"}", MediaType.APPLICATION_JSON));
+
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, instagramConfig(), new tools.jackson.databind.ObjectMapper());
+        PublicationDispatcher.DispatchResult result = adapter.publish(carousel);
+
+        assertEquals(PublicationAttemptStatus.SUCCEEDED, result.status());
+        assertEquals("178999", result.remotePostId());
+        server.verify();
+    }
+
+    @Test
+    void a_failed_carousel_child_fails_the_whole_publication() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+
+        PublicationDispatchPayload carousel = new PublicationDispatchPayload(
+                UUID.randomUUID(), PublicationPlatform.INSTAGRAM, PublicationChannelType.FEED_POST,
+                "c", List.of(), List.of("https://cdn.example.com/1.jpg", "https://cdn.example.com/2.jpg"));
+
+        server.expect(requestTo(org.hamcrest.Matchers.containsString("is_carousel_item=true")))
+                .andRespond(withServerError());
+
+        InstagramGraphPublisherAdapter adapter = new InstagramGraphPublisherAdapter(builder, instagramConfig(), new tools.jackson.databind.ObjectMapper());
+        PublicationDispatcher.DispatchResult result = adapter.publish(carousel);
+
+        assertEquals(PublicationAttemptStatus.FAILED, result.status());
+        assertEquals("INSTAGRAM_PUBLISH_ERROR", result.errorCode());
     }
 
     @Test

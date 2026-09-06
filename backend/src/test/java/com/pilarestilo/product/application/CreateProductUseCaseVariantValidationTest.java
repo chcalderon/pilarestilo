@@ -49,7 +49,7 @@ class CreateProductUseCaseVariantValidationTest {
         assertThrows(DomainException.class, () -> useCase.execute(
                 "Zapato", "desc", price, "CLP", null, null,
                 "http://img", "NEW", "Marca", 0, true, null, templateId,
-                outOfRangeVariant
+                outOfRangeVariant, List.of()
         ));
     }
 
@@ -70,7 +70,7 @@ class CreateProductUseCaseVariantValidationTest {
         ProductDto dto = useCase.execute(
                 "Zapato", "desc", BigDecimal.valueOf(50000), "CLP", null, null,
                 "http://img", "NEW", "Marca", 0, true, null, templateId,
-                List.of(new ProductVariantInput("Blanco", "38", 1))
+                List.of(new ProductVariantInput("Blanco", "38", 1)), List.of()
         );
 
         assertNotNull(dto.id());

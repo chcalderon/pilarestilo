@@ -8,6 +8,7 @@ import com.pilarestilo.publication.application.commands.CreatePublicationCommand
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
 import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
 import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
+import com.pilarestilo.publication.application.dto.PublicationDispatchPayload;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.ports.PublicationDispatcher;
 import com.pilarestilo.publication.domain.enums.PublicationAttemptStatus;
@@ -21,8 +22,10 @@ import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
 import com.pilarestilo.publication.domain.events.PublicationDispatchRequested;
 import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
 import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
+import com.pilarestilo.publication.domain.enums.PublicationMediaRenderStatus;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationEntity;
+import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationMediaBundleEntity;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationJpaRepository;
 import com.pilarestilo.shared.application.Money;
@@ -443,6 +446,64 @@ class PublicationServiceTest {
         e.setStatus(status);
         e.setPlatform(platform);
         return e;
+    }
+
+    private static PublicationMediaBundleEntity bundleWithManifest(String primary, List<String> imageUrls) {
+        PublicationMediaBundleEntity b = new PublicationMediaBundleEntity();
+        b.setId(UUID.randomUUID());
+        b.setBundleType(PublicationMediaBundleType.SOCIAL_FEED);
+        b.setPrimaryAssetUrl(primary);
+        b.setAssetManifest(imageUrls == null ? Map.of() : Map.of("imageUrls", imageUrls));
+        b.setRenderStatus(PublicationMediaRenderStatus.READY);
+        b.setCreatedAt(Instant.now());
+        b.setUpdatedAt(Instant.now());
+        return b;
+    }
+
+    @Test
+    void dispatch_passes_the_full_image_list_from_the_manifest_to_the_dispatcher() {
+        UUID publicationId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(publicationId, productId);
+        entity.setMediaBundles(new java.util.ArrayList<>(List.of(
+                bundleWithManifest("https://img/a.jpg", List.of("https://img/a.jpg", "https://img/b.jpg")))));
+        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(
+                Product.create("Chaqueta", "d", new Money(BigDecimal.valueOf(49990), "CLP"),
+                        "https://img", ProductCondition.NEW, "Pilar", 2)));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenReturn(new PublicationDispatcher.DispatchResult(
+                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null));
+
+        service.dispatch(publicationId, UUID.randomUUID());
+
+        org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
+                org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
+        verify(publicationDispatcher).dispatch(any(), anyString(), captor.capture());
+        assertEquals(List.of("https://img/a.jpg", "https://img/b.jpg"), captor.getValue().mediaUrls());
+    }
+
+    @Test
+    void dispatch_falls_back_to_the_primary_url_when_the_manifest_has_no_image_list() {
+        UUID publicationId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        PublicationEntity entity = approvedPublication(publicationId, productId);
+        entity.setMediaBundles(new java.util.ArrayList<>(List.of(
+                bundleWithManifest("https://img/only.jpg", null))));
+        when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(
+                Product.create("Chaqueta", "d", new Money(BigDecimal.valueOf(49990), "CLP"),
+                        "https://img", ProductCondition.NEW, "Pilar", 2)));
+        when(publicationDispatcher.dispatch(any(), anyString(), any()))
+                .thenReturn(new PublicationDispatcher.DispatchResult(
+                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null));
+
+        service.dispatch(publicationId, UUID.randomUUID());
+
+        org.mockito.ArgumentCaptor<PublicationDispatchPayload> captor =
+                org.mockito.ArgumentCaptor.forClass(PublicationDispatchPayload.class);
+        verify(publicationDispatcher).dispatch(any(), anyString(), captor.capture());
+        assertEquals(List.of("https://img/only.jpg"), captor.getValue().mediaUrls());
     }
 
     private PublicationEntity approvedPublication(UUID publicationId, UUID productId) {

@@ -45,7 +45,8 @@ public class CreateProductUseCase {
                                String imageUrl, String condition, String brand, int stock,
                                Boolean active, Set<UUID> categoryIds, UUID variantTemplateId) {
         return execute(name, description, priceAmount, priceCurrency, listPriceAmount,
-                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, variantTemplateId, null);
+                listPriceCurrency, imageUrl, condition, brand, stock, active, categoryIds, variantTemplateId,
+                null, List.of());
     }
 
     @SuppressWarnings("java:S107")
@@ -54,7 +55,7 @@ public class CreateProductUseCase {
                                BigDecimal listPriceAmount, String listPriceCurrency,
                                String imageUrl, String condition, String brand, int stock,
                                Boolean active, Set<UUID> categoryIds, UUID variantTemplateId,
-                               List<ProductVariantInput> variants) {
+                               List<ProductVariantInput> variants, List<String> galleryImageUrls) {
         Money price = Money.of(priceAmount, priceCurrency == null || priceCurrency.isBlank()
                 ? Money.DEFAULT_CURRENCY
                 : priceCurrency);
@@ -68,6 +69,7 @@ public class CreateProductUseCase {
         ProductCondition productCondition = ProductCondition.valueOf(condition);
 
         Product product = Product.create(name, description, price, imageUrl, productCondition, brand, stock, listPrice);
+        product.setGalleryImageUrls(galleryImageUrls);
         if (active != null) {
             product.setActive(active);
         }

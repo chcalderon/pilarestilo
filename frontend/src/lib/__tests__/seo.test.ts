@@ -34,6 +34,22 @@ describe('productJsonLd', () => {
     expect(offer.url).toBe(canonicalUrl);
   });
 
+  it('puts the cover first then the gallery, deduped and absolute', () => {
+    const ld = productJsonLd(
+      { ...base, galleryImageUrls: ['/api/media/products/g1.jpg', '/api/media/products/vestido.jpg'] },
+      { locale: 'es', canonicalUrl, requestUrl: req },
+    );
+    expect(ld.image).toEqual([
+      'https://pilarestilo.com/api/media/products/vestido.jpg',
+      'https://pilarestilo.com/api/media/products/g1.jpg',
+    ]);
+  });
+
+  it('falls back to a single-element image when there is no gallery', () => {
+    const ld = productJsonLd(base, { locale: 'es', canonicalUrl, requestUrl: req });
+    expect(ld.image).toEqual(['https://pilarestilo.com/api/media/products/vestido.jpg']);
+  });
+
   it('marks OutOfStock when stock is zero', () => {
     const ld = productJsonLd({ ...base, stock: 0 }, { locale: 'es', canonicalUrl, requestUrl: req });
     const offer = ld.offers as Record<string, unknown>;

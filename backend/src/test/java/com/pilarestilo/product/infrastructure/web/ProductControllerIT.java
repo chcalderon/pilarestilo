@@ -71,6 +71,41 @@ class ProductControllerIT {
 
     @Test
     @WithMockUser(username = "admin@pilarestilo.com", roles = {"ADMIN"})
+    void create_product_stores_and_returns_the_image_gallery() throws Exception {
+        String body = objectMapper.writeValueAsString(Map.of(
+                "name", "Abrigo con galeria",
+                "description", "d",
+                "priceAmount", 45000,
+                "imageUrl", "https://example.com/cover.jpg",
+                "condition", "NEW",
+                "brand", "Pilar",
+                "stock", 2,
+                "galleryImageUrls", List.of("https://example.com/1.jpg", "https://example.com/2.jpg")
+        ));
+
+        mvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.galleryImageUrls[0]").value("https://example.com/1.jpg"))
+                .andExpect(jsonPath("$.galleryImageUrls[1]").value("https://example.com/2.jpg"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@pilarestilo.com", roles = {"ADMIN"})
+    void omitting_the_gallery_yields_an_empty_list() throws Exception {
+        String body = objectMapper.writeValueAsString(Map.of(
+                "name", "Abrigo sin galeria", "description", "d", "priceAmount", 45000,
+                "imageUrl", "https://example.com/cover.jpg", "condition", "NEW", "brand", "Pilar", "stock", 2));
+
+        mvc.perform(post("/api/products").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.galleryImageUrls").isArray())
+                .andExpect(jsonPath("$.galleryImageUrls").isEmpty());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@pilarestilo.com", roles = {"ADMIN"})
     void update_shoe_product_accepts_numeric_variant_size() throws Exception {
         String body = objectMapper.writeValueAsString(Map.ofEntries(
                 Map.entry("name", "Pumps Stiletto Nude"),

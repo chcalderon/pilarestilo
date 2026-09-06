@@ -28,7 +28,8 @@ public record ProductDto(
         List<SizeStockDto> sizeStocks,
         List<String> categorySlugs,
         List<String> categoryTypes,
-        List<VariantDto> variants
+        List<VariantDto> variants,
+        List<String> galleryImageUrls
 ) {
     public record SizeStockDto(String size, int stock) {}
     public record VariantDto(String color, String size, int stock, int stockOnHand, int stockReserved, int stockAvailable) {}

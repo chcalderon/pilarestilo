@@ -83,6 +83,7 @@ export interface ProductDto {
   variantTemplateId?: string | null;
   variantFieldConfig?: VariantFieldConfigDto | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface WishlistDto {
@@ -632,6 +633,7 @@ export interface CreateProductRequest {
   categoryIds?: string[];
   variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface UpdateProductRequest {
@@ -647,6 +649,7 @@ export interface UpdateProductRequest {
   categoryIds?: string[];
   variantTemplateId?: string | null;
   variants?: ProductVariantDto[];
+  galleryImageUrls?: string[];
 }
 
 export interface MediaUploadDto {
@@ -912,8 +915,12 @@ function normalizeProduct(raw: any): ProductDto {
       ?? (raw.listPriceAmount != null
         ? { amount: raw.listPriceAmount, currency: raw.listPriceCurrency ?? raw.priceCurrency ?? 'CLP' }
         : undefined),
+    galleryImageUrls: Array.isArray(raw.galleryImageUrls) ? raw.galleryImageUrls : [],
   };
 }
+
+/** @internal test seam */
+export const __test__normalizeProduct = normalizeProduct;
 
 function hasSellableStock(product: ProductDto): boolean {
   if (Number.isFinite(Number(product.stock))) {
@@ -1519,8 +1526,8 @@ export interface PublishProductsBatchRequest {
   captionTemplate: string;
   hashtags?: string[];
   campaignLabel?: string;
-  /** productId -> replacement image URL (e.g. an edited photo uploaded just for this post). */
-  imageOverrides?: Record<string, string>;
+  /** productId -> ordered image list for this post (cover/override first, then carousel extras). */
+  imageSelections?: Record<string, string[]>;
   /** productId -> chosen variant, used to resolve the {color}/{talla}/{cantidad} caption tokens. */
   variantSelections?: Record<string, { color: string; size: string }>;
   /** ISO-8601 instant. When set, the batch is scheduled instead of published now. */
@@ -1585,6 +1592,7 @@ export interface PublicationBatchDetailRow {
   externalPermalink: string | null;
   lastErrorCode: string | null;
   lastErrorMessage: string | null;
+  imageUrls: string[];
 }
 
 export interface PublicationBatchDetail {
