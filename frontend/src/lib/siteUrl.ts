@@ -54,11 +54,14 @@ export function absoluteUrl(pathOrUrl: string, requestUrl?: URL | string, header
 
 /**
  * The canonical URL for the current request: the origin plus the path with the query string
- * dropped and any trailing slash removed (except the root). Same value BaseLayout emits in
- * `<link rel="canonical">`.
+ * dropped and the trailing slash removed — except for the site root and a bare locale root
+ * (`/es`, `/en`), which are served, linked, and reached by the `/` redirect *with* a slash, so
+ * the canonical has to match that exact URL or Google reports the pair as duplicates. Same value
+ * BaseLayout emits in `<link rel="canonical">`.
  */
 export function canonicalUrlFor(requestUrl: URL, headers?: Headers): string {
-  const path =
-    requestUrl.pathname.length > 1 ? stripTrailingSlashes(requestUrl.pathname) : '/';
+  const stripped = stripTrailingSlashes(requestUrl.pathname);
+  const isLocaleRoot = /^\/[a-z]{2}$/.test(stripped);
+  const path = stripped.length > 1 ? (isLocaleRoot ? `${stripped}/` : stripped) : '/';
   return `${resolveSiteUrl(requestUrl, headers)}${path}`;
 }
