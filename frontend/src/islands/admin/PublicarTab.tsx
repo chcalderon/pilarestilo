@@ -720,8 +720,8 @@ export default function PublicarTab(
         <section>
           <h2 className="font-sans text-sm text-pe-muted mb-2">No se pudieron encolar</h2>
           <ul className="flex flex-col gap-1">
-            {queueErrors.map((msg, index) => (
-              <li key={index} className="text-sm flex items-center gap-2">
+            {queueErrors.map((msg) => (
+              <li key={msg} className="text-sm flex items-center gap-2">
                 <span aria-hidden="true">✗</span>
                 <span>{msg}</span>
               </li>

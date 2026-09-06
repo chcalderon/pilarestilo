@@ -47,11 +47,11 @@ function StatusPill({
   status,
   retryCount,
   nextAttemptAt,
-}: {
+}: Readonly<{
   status: string;
   retryCount?: number;
   nextAttemptAt?: string | null;
-}) {
+}>) {
   if (status === 'RETRY_SCHEDULED') {
     return (
       <span className="inline-flex items-center gap-1 text-[0.72rem] px-1.5 py-0.5 bg-pe-warning-surface text-pe-warning-ink">
