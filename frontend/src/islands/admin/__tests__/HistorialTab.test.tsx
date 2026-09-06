@@ -104,7 +104,7 @@ describe('HistorialTab', () => {
     render(<HistorialTab onRepublish={vi.fn()} onGoToPublish={vi.fn()} onEditScheduled={vi.fn()} />);
     await user.click(await screen.findByRole('button', { name: /liquidacion primavera/i }));
 
-    expect((await screen.findAllByText('Chaqueta')).length).toBe(2);
+    expect(await screen.findAllByText('Chaqueta')).toHaveLength(2);
 
     await user.click(screen.getByRole('button', { name: /ver detalle/i }));
     expect(screen.getByText(/OAuthException 190/)).toBeInTheDocument();

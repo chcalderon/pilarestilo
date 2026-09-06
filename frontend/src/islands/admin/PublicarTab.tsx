@@ -89,7 +89,13 @@ function missingVariantTokens(template: string, product: ProductDto, selection?:
 
 function joinSpanishList(items: string[]): string {
   if (items.length <= 1) return items.join('');
-  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
+  return `${items.slice(0, -1).join(", ")} y ${items.at(-1) ?? ""}`;
+}
+
+function resolveCtaLabel(editingBatchId: string | undefined, mode: 'now' | 'schedule'): string {
+  if (editingBatchId) return 'Guardar cambios';
+  if (mode === 'schedule') return 'Programar publicación';
+  return 'Publicar ahora';
 }
 
 export default function PublicarTab(
@@ -281,11 +287,7 @@ export default function PublicarTab(
     (mode === 'now' || scheduleInput.length > 0) &&
     !publishing;
 
-  const ctaLabel = editingBatchId
-    ? 'Guardar cambios'
-    : mode === 'schedule'
-      ? 'Programar publicación'
-      : 'Publicar ahora';
+  const ctaLabel = resolveCtaLabel(editingBatchId, mode);
 
   async function handleSubmit() {
     if (!canPublish) return;
@@ -486,7 +488,7 @@ export default function PublicarTab(
             onChange={() => setMode('now')}
             className="accent-pe-rose"
           />
-          Publicar ahora
+          <span>Publicar ahora</span>
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -496,11 +498,11 @@ export default function PublicarTab(
             onChange={() => setMode('schedule')}
             className="accent-pe-rose"
           />
-          Programar
+          <span>Programar</span>
         </label>
         {mode === 'schedule' && (
           <label className="flex flex-col gap-1 text-xs text-pe-muted mt-1 max-w-xs">
-            Fecha y hora (hora de Chile)
+            <span>Fecha y hora (hora de Chile)</span>
             <input
               type="datetime-local"
               value={scheduleInput}
@@ -588,9 +590,9 @@ export default function PublicarTab(
                       )}
                     </p>
                     {missingTokens.length > 0 && (
-                      <p role="status" className="text-[0.72rem] text-pe-warning-ink">
+                      <output className="block text-[0.72rem] text-pe-warning-ink">
                         Sin variante: {joinSpanishList(missingTokens)} quedará vacío en el texto de este producto.
-                      </p>
+                      </output>
                     )}
                     <div className="flex items-center gap-3">
                       <a
@@ -684,9 +686,9 @@ export default function PublicarTab(
       )}
 
       {scheduledConfirmation && (
-        <p className="text-sm text-pe-positive-ink" role="status">
+        <output className="block text-sm text-pe-positive-ink">
           {scheduledConfirmation}
-        </p>
+        </output>
       )}
 
       <div className="flex items-center gap-3">
@@ -711,9 +713,9 @@ export default function PublicarTab(
       </div>
 
       {queued && (
-        <p className="text-sm text-pe-positive-ink">
+        <output className="block text-sm text-pe-positive-ink">
           Encolado. Los posts salen en unos segundos, segui el estado en Historial.
-        </p>
+        </output>
       )}
 
       {queueErrors.length > 0 && (
