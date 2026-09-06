@@ -39,11 +39,9 @@ final class MetaErrorClassifier {
         if (msg.contains("was not ready after")) {
             return true;                                    // container still processing
         }
-        if (msg.contains("error before it could be published")
-                || msg.contains("expired before it could be published")) {
-            return false;                                   // media rejected by Meta
-        }
-        return true;                                        // unknown adapter/parse error — give it the retry budget
+        // media rejected by Meta -> permanent; any other unknown adapter/parse error -> retry it
+        return !(msg.contains("error before it could be published")
+                || msg.contains("expired before it could be published"));
     }
 
     private static Integer extractMetaErrorCode(String body) {
@@ -54,7 +52,7 @@ final class MetaErrorClassifier {
             JsonNode node = MAPPER.readTree(body);
             JsonNode code = node.path("error").path("code");
             return code.isNumber() ? code.asInt() : null;
-        } catch (RuntimeException parseFailure) {
+        } catch (RuntimeException _) {
             return null;
         }
     }

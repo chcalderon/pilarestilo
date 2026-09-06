@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -90,7 +91,7 @@ class PublishProductsBatchUseCaseTest {
         assertTrue(result.items().stream()
                 .noneMatch(PublishProductsBatchResult.PublicationItemResult::success));
         assertTrue(result.items().stream().allMatch(i -> i.publicationId() != null));
-        org.mockito.Mockito.verify(publicationService, org.mockito.Mockito.never()).dispatch(any(), any());
+        verify(publicationService, never()).dispatch(any(), any());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
         verify(publicationService, times(2)).create(captor.capture(), any());
@@ -272,7 +273,7 @@ class PublishProductsBatchUseCaseTest {
                 java.time.Instant.now().plusSeconds(3600)
         ), UUID.randomUUID());
 
-        org.mockito.Mockito.verify(publicationService, org.mockito.Mockito.never()).dispatch(any(), any());
+        verify(publicationService, never()).dispatch(any(), any());
         assertEquals(1, result.items().size());
         assertTrue(result.items().get(0).scheduled());
         assertFalse(result.items().get(0).success());
