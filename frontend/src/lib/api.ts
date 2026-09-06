@@ -1665,6 +1665,83 @@ export async function updateScheduledBatch(
   });
 }
 
+// ─── Campañas de publicación (reporte + métricas) ────────────────────────────
+
+export interface PostMetricsDto {
+  impressions: number | null;
+  reach: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  saved: number | null;
+}
+
+export interface MetricsTotals {
+  impressions: number;
+  reach: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saved: number;
+}
+
+export interface CampaignSummary {
+  label: string;
+  firstPostAt: string;
+  lastPostAt: string;
+  batchCount: number;
+  totalPosts: number;
+  published: number;
+  failed: number;
+  scheduled: number;
+  platforms: Array<'INSTAGRAM' | 'FACEBOOK'>;
+  totals: MetricsTotals;
+  postsWithError: number;
+}
+
+export interface CampaignPostRow {
+  publicationId: string;
+  productId: string | null;
+  productName: string;
+  thumbnailUrl: string | null;
+  platform: 'INSTAGRAM' | 'FACEBOOK';
+  status: string;
+  externalPermalink: string | null;
+  metrics: PostMetricsDto | null;
+  fetchError: string | null;
+  fetchedAt: string | null;
+}
+
+export interface CampaignDetail {
+  label: string;
+  firstPostAt: string | null;
+  lastPostAt: string | null;
+  posts: CampaignPostRow[];
+}
+
+/** All campaigns (grouped by campaign_label) with aggregate outcome + metric totals. */
+export async function getCampaigns(token?: string): Promise<CampaignSummary[]> {
+  return apiFetch<CampaignSummary[]>('/admin/publications/campaigns', { headers: authHeaders(token) });
+}
+
+export async function getCampaignDetail(label: string, token?: string): Promise<CampaignDetail> {
+  return apiFetch<CampaignDetail>(
+    `/admin/publications/campaigns/detail?label=${encodeURIComponent(label)}`,
+    { headers: authHeaders(token) },
+  );
+}
+
+/** Pull fresh engagement metrics from Meta for every published post in the campaign. */
+export async function refreshCampaignMetrics(
+  label: string,
+  token?: string,
+): Promise<{ refreshed: number; failed: number }> {
+  return apiFetch<{ refreshed: number; failed: number }>(
+    `/admin/publications/campaigns/refresh-metrics?label=${encodeURIComponent(label)}`,
+    { method: 'POST', headers: authHeaders(token) },
+  );
+}
+
 // ─── Ventas y documentos tributarios ─────────────────────────────────────────
 
 export interface SaleSummaryDto {
