@@ -37,6 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
+// This class logs in once per test and sits near the per-IP auth rate limit (default 12);
+// lift it so adding a test never flakes an unrelated one with a 429 on /auth/login.
+@org.springframework.test.context.TestPropertySource(properties = "app.gateway.rate-limit.login-max-requests=500")
 class PublicationControllerIT {
 
     @Container
@@ -363,7 +366,11 @@ class PublicationControllerIT {
 
     @Test
     void campaigns_list_groups_a_published_batch_by_its_label() throws Exception {
-        String adminToken = loginAdmin();
+        // Generated, not a /auth/login call — the class already logs in enough times to sit near
+        // the per-IP auth rate limit; one more real login flakes an unrelated later test with 429.
+        String adminToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                "admin@pilarestilo.com", UserRole.ADMIN, List.of(), List.of());
         Product product = productRepository.save(Product.create("Falda campaña", "d",
                 new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/f.jpg",
                 ProductCondition.NEW, "Pilar", 3));
