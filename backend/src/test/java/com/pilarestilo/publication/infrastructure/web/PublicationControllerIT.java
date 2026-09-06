@@ -413,7 +413,7 @@ class PublicationControllerIT {
     }
 
     @Test
-    void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
+    void retry_failed_in_batch_reschedules_the_failed_rows_for_the_worker() throws Exception {
         String adminToken = loginAdmin();
         Product product = productRepository.save(Product.create("Blusa retry", "desc",
                 new Money(BigDecimal.valueOf(19990), "CLP"), "https://cdn.example.com/blusa.jpg",
@@ -439,12 +439,13 @@ class PublicationControllerIT {
         mvc.perform(post("/api/admin/publications/batches/{id}/retry-failed", batchId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rows[0].status").value("FAILED"));
+                .andExpect(jsonPath("$.rows[0].status").value("RETRY_SCHEDULED"));
 
         mvc.perform(get("/api/admin/publications/{id}", publicationId)
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.retryCount").value(1));
+                .andExpect(jsonPath("$.status").value("RETRY_SCHEDULED"))
+                .andExpect(jsonPath("$.retryCount").value(0));
     }
 
     @Test

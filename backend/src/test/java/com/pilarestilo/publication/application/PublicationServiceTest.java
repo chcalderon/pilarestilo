@@ -46,6 +46,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -84,7 +85,8 @@ class PublicationServiceTest {
                 productRepository,
                 publicationDispatcher,
                 eventPublisher,
-                new ObjectMapper()
+                new ObjectMapper(),
+                new DispatchBackoffPolicy(java.util.List.of(2, 10, 30, 120, 360))
         );
         lenient().when(publicationRepository.save(any(PublicationEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -246,7 +248,7 @@ class PublicationServiceTest {
     }
 
     @Test
-    void dispatch_persists_failure_even_when_the_dispatcher_throws_unexpectedly() {
+    void dispatch_that_throws_unexpectedly_is_persisted_as_a_scheduled_retry() {
         UUID publicationId = UUID.randomUUID();
         PublicationEntity entity = approvedPublication(publicationId, null);
         when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
@@ -255,31 +257,28 @@ class PublicationServiceTest {
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
-        assertEquals(PublicationStatus.FAILED, dto.status());
+        // An unexpected throw is treated as transient — the row is scheduled for another attempt,
+        // not lost (regression test for the old rollback bug: the FAILED save was rethrown away).
+        assertEquals(PublicationStatus.RETRY_SCHEDULED, dto.status());
         assertEquals("connection reset", dto.lastErrorMessage());
     }
 
     @Test
-    void retry_of_a_failed_publication_bumps_the_count_and_redispatches() {
+    void retry_of_a_failed_publication_reschedules_it_for_the_worker() {
         UUID publicationId = UUID.randomUUID();
-        UUID productId = UUID.randomUUID();
-        PublicationEntity entity = approvedPublication(publicationId, productId);
+        PublicationEntity entity = approvedPublication(publicationId, null);
         entity.setStatus(PublicationStatus.FAILED);
+        entity.setRetryCount(5);
         entity.setLastErrorCode("INSTAGRAM_PUBLISH_ERROR");
         entity.setLastErrorMessage("Rate limited");
         when(publicationRepository.findById(publicationId)).thenReturn(Optional.of(entity));
-        when(productRepository.findById(productId)).thenReturn(Optional.of(
-                Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
-                        "https://img", ProductCondition.NEW, "Pilar", 2)));
-        when(publicationDispatcher.dispatch(any(), anyString(), any()))
-                .thenReturn(new PublicationDispatcher.DispatchResult(
-                        "req-2", "hash-2", PublicationAttemptStatus.SUCCEEDED, "remote-2", null, null,
-                        "https://www.instagram.com/p/y/", true));
 
         PublicationDto dto = service.retry(publicationId, UUID.randomUUID());
 
-        assertEquals(1, dto.retryCount());
-        assertEquals(PublicationStatus.PUBLISHED, dto.status());
+        assertEquals(PublicationStatus.RETRY_SCHEDULED, dto.status());
+        assertEquals(0, dto.retryCount());
+        assertNull(dto.lastErrorCode());
+        verify(publicationDispatcher, never()).dispatch(any(), anyString(), any());
     }
 
     @Test

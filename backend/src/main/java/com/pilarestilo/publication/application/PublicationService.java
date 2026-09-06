@@ -26,6 +26,7 @@ import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.domain.events.PublicationApproved;
 import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
 import com.pilarestilo.publication.domain.events.PublicationDispatchFailed;
+import com.pilarestilo.publication.domain.events.PublicationDispatchScheduledForRetry;
 import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
 import com.pilarestilo.publication.domain.events.PublicationRejected;
 import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
@@ -69,19 +70,22 @@ public class PublicationService {
     private final PublicationDispatcher publicationDispatcher;
     private final DomainEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final DispatchBackoffPolicy backoffPolicy;
 
     public PublicationService(PublicationBatchJpaRepository publicationBatchRepository,
                               PublicationJpaRepository publicationRepository,
                               ProductRepository productRepository,
                               PublicationDispatcher publicationDispatcher,
                               DomainEventPublisher eventPublisher,
-                              ObjectMapper objectMapper) {
+                              ObjectMapper objectMapper,
+                              DispatchBackoffPolicy backoffPolicy) {
         this.publicationBatchRepository = publicationBatchRepository;
         this.publicationRepository = publicationRepository;
         this.productRepository = productRepository;
         this.publicationDispatcher = publicationDispatcher;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
+        this.backoffPolicy = backoffPolicy;
     }
 
     @Transactional
@@ -109,6 +113,11 @@ public class PublicationService {
             initialStatus = PublicationStatus.APPROVED;
         }
         entity.setStatus(initialStatus);
+        if (initialStatus == PublicationStatus.APPROVED) {
+            entity.setNextAttemptAt(now);
+        } else if (initialStatus == PublicationStatus.SCHEDULED) {
+            entity.setNextAttemptAt(command.scheduledAt());
+        }
         entity.setApprovalStatus(command.approvalRequired() ? PublicationApprovalStatus.PENDING_REVIEW : PublicationApprovalStatus.NOT_REQUIRED);
         entity.setCaption(trimToNull(command.caption()));
         entity.setHashtagsJson(writeHashtags(command.hashtags()));
@@ -243,6 +252,7 @@ public class PublicationService {
             throw new DomainException("Publication cannot be approved from status " + entity.getStatus());
         }
         entity.setStatus(PublicationStatus.APPROVED);
+        entity.setNextAttemptAt(Instant.now());
         entity.setApprovalStatus(PublicationApprovalStatus.APPROVED);
         entity.setApprovedBy(actorUserId);
         entity.setUpdatedAt(Instant.now());
@@ -272,20 +282,33 @@ public class PublicationService {
         return dispatchInternal(id, PublicationAttemptTriggerType.MANUAL);
     }
 
+    /** The dispatch worker's entry point: picks the attempt trigger type from the row's state. */
+    @Transactional
+    public PublicationDto dispatchFromWorker(UUID id) {
+        PublicationEntity entity = findById(id);
+        PublicationAttemptTriggerType trigger = entity.getStatus() == PublicationStatus.RETRY_SCHEDULED
+                ? PublicationAttemptTriggerType.RETRY
+                : PublicationAttemptTriggerType.SCHEDULED;
+        return dispatchInternal(id, trigger);
+    }
+
     @Transactional
     public PublicationDto retry(UUID id, UUID actorUserId) {
         PublicationEntity entity = findById(id);
-        if (entity.getStatus() != PublicationStatus.FAILED) {
-            throw new DomainException("Only FAILED publications can be retried");
+        if (!(entity.getStatus() == PublicationStatus.FAILED
+                || entity.getStatus() == PublicationStatus.RETRY_SCHEDULED)) {
+            throw new DomainException("Only FAILED or RETRY_SCHEDULED publications can be retried");
         }
-        entity.setRetryCount(entity.getRetryCount() + 1);
-        // dispatchInternal only accepts APPROVED/SCHEDULED — a retry has to move the row back out
-        // of FAILED before re-dispatching, or the guard throws and rolls the retry count back.
-        entity.setStatus(PublicationStatus.APPROVED);
+        // A manual retry is the admin taking responsibility, so it earns a fresh automatic-retry
+        // budget. The true attempt count survives in attempts[] for audit. The worker (20s tick)
+        // picks the row up from RETRY_SCHEDULED; retry() never dispatches inline.
+        entity.setStatus(PublicationStatus.RETRY_SCHEDULED);
+        entity.setRetryCount(0);
+        entity.setNextAttemptAt(Instant.now());
         entity.setLastErrorCode(null);
         entity.setLastErrorMessage(null);
-        publicationRepository.save(entity);
-        return dispatchInternal(id, PublicationAttemptTriggerType.RETRY);
+        entity.setUpdatedAt(Instant.now());
+        return toDto(publicationRepository.save(entity));
     }
 
     @Transactional
@@ -295,12 +318,36 @@ public class PublicationService {
             throw new DomainException("Publication is not scheduled: " + entity.getStatus());
         }
         entity.setStatus(PublicationStatus.FAILED);
+        entity.setNextAttemptAt(null);
         entity.setLastErrorCode("SCHEDULE_WINDOW_MISSED");
         entity.setLastErrorMessage(
                 "La hora programada ya pasó; no se publicó automáticamente. Publícala o reprográmala a mano.");
         entity.setUpdatedAt(Instant.now());
         PublicationEntity saved = publicationRepository.save(entity);
         eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), 0, "SCHEDULE_WINDOW_MISSED"));
+        return toDto(saved);
+    }
+
+    /**
+     * A publication left in PUBLISHING because the server died mid-dispatch. NOT auto-retried: the
+     * post may have gone live on Meta before the crash, so a re-dispatch could double-post. The
+     * admin checks Instagram/Facebook and decides.
+     */
+    @Transactional
+    public PublicationDto markDispatchInterrupted(UUID id) {
+        PublicationEntity entity = findById(id);
+        if (entity.getStatus() != PublicationStatus.PUBLISHING) {
+            throw new DomainException("Publication is not mid-dispatch: " + entity.getStatus());
+        }
+        entity.setStatus(PublicationStatus.FAILED);
+        entity.setNextAttemptAt(null);
+        entity.setLastErrorCode("DISPATCH_INTERRUPTED");
+        entity.setLastErrorMessage(
+                "El servidor se reinicio mientras publicaba esta pieza. Revisa Instagram o Facebook: "
+                        + "si ya salio marcala como lista, si no reintentala.");
+        entity.setUpdatedAt(Instant.now());
+        PublicationEntity saved = publicationRepository.save(entity);
+        eventPublisher.publish(new PublicationDispatchFailed(saved.getId(), 0, "DISPATCH_INTERRUPTED"));
         return toDto(saved);
     }
 
@@ -343,7 +390,9 @@ public class PublicationService {
 
     private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType) {
         PublicationEntity entity = findById(id);
-        if (!(entity.getStatus() == PublicationStatus.APPROVED || entity.getStatus() == PublicationStatus.SCHEDULED)) {
+        if (!(entity.getStatus() == PublicationStatus.APPROVED
+                || entity.getStatus() == PublicationStatus.SCHEDULED
+                || entity.getStatus() == PublicationStatus.RETRY_SCHEDULED)) {
             throw new DomainException("Publication cannot be dispatched from status " + entity.getStatus());
         }
 
@@ -394,6 +443,7 @@ public class PublicationService {
         if (result.status() == PublicationAttemptStatus.SUCCEEDED) {
             entity.setStatus(PublicationStatus.PUBLISHED);
             entity.setPublishedAt(finishedAt);
+            entity.setNextAttemptAt(null);
             entity.setExternalPostId(result.remotePostId());
             entity.setExternalPermalink(result.remotePermalink());
             entity.setLastErrorCode(null);
@@ -403,7 +453,21 @@ public class PublicationService {
             return toDto(saved);
         }
 
+        int retriesDone = entity.getRetryCount();
+        if (result.retryable() && backoffPolicy.canRetry(retriesDone)) {
+            entity.setRetryCount(retriesDone + 1);
+            entity.setStatus(PublicationStatus.RETRY_SCHEDULED);
+            entity.setNextAttemptAt(Instant.now().plus(backoffPolicy.delayFor(retriesDone)));
+            entity.setLastErrorCode(result.errorCode());
+            entity.setLastErrorMessage(result.errorMessage());
+            PublicationEntity saved = publicationRepository.save(entity);
+            eventPublisher.publish(new PublicationDispatchScheduledForRetry(
+                    saved.getId(), saved.getRetryCount(), saved.getNextAttemptAt()));
+            return toDto(saved);
+        }
+
         entity.setStatus(PublicationStatus.FAILED);
+        entity.setNextAttemptAt(null);
         entity.setLastErrorCode(result.errorCode());
         entity.setLastErrorMessage(result.errorMessage());
         PublicationEntity saved = publicationRepository.save(entity);
