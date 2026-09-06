@@ -8,7 +8,7 @@ interface Props {
 
 function submitLabelFor(loading: boolean, es: boolean): string {
   if (loading) return es ? 'Enviando…' : 'Sending…';
-  return es ? 'Enviar enlace' : 'Send link';
+  return es ? 'Enviar código' : 'Send code';
 }
 
 function requestErrorMessage(err: unknown, es: boolean): string {
@@ -56,8 +56,8 @@ export default function ForgotPasswordForm({ locale }: Props) {
           </p>
           <p className="font-sans text-[0.78rem] text-pe-muted mt-1.5 leading-relaxed">
             {es
-              ? 'Si el correo pertenece a una cuenta, te enviamos un enlace para restablecer tu contraseña. El enlace expira en 30 minutos.'
-              : 'If the address belongs to an account, we sent a link to reset your password. It expires in 30 minutes.'}
+              ? 'Si el correo pertenece a una cuenta, te enviamos un código para cambiar tu contraseña. El código expira en 30 minutos.'
+              : 'If the address belongs to an account, we sent a code to change your password. It expires in 30 minutes.'}
           </p>
         </div>
         <a
@@ -74,8 +74,8 @@ export default function ForgotPasswordForm({ locale }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <p className="font-sans text-[0.82rem] text-pe-muted leading-relaxed">
         {es
-          ? 'Ingresa el correo de tu cuenta y te enviaremos un enlace para elegir una nueva contraseña.'
-          : 'Enter your account email and we will send you a link to choose a new password.'}
+          ? 'Ingresa el correo de tu cuenta y te enviaremos un código para elegir una nueva contraseña.'
+          : 'Enter your account email and we will send you a code to choose a new password.'}
       </p>
 
       <div className="flex flex-col gap-1.5">
