@@ -24,6 +24,10 @@ public interface PasswordResetTokenJpaRepository extends JpaRepository<PasswordR
     void invalidateUnusedForUser(@Param("userId") UUID userId, @Param("now") Instant now);
 
     @Modifying
+    @Query("UPDATE PasswordResetTokenEntity t SET t.attemptCount = t.attemptCount + 1 WHERE t.id = :id")
+    void incrementAttemptCount(@Param("id") UUID id);
+
+    @Modifying
     @Query("DELETE FROM PasswordResetTokenEntity t WHERE t.expiresAt < :cutoff")
     int deleteExpiredBefore(@Param("cutoff") Instant cutoff);
 }

@@ -4,6 +4,7 @@ import com.pilarestilo.shared.auth.domain.model.PasswordResetToken;
 import com.pilarestilo.shared.auth.domain.ports.PasswordResetTokenRepository;
 import com.pilarestilo.shared.auth.infrastructure.persistence.entities.PasswordResetTokenEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -35,6 +36,12 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
         return jpaRepository.findActiveByUserId(userId, Instant.now()).stream()
                 .findFirst()
                 .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordFailedAttempt(UUID tokenId) {
+        jpaRepository.incrementAttemptCount(tokenId);
     }
 
     @Override

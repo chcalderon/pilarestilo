@@ -84,10 +84,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:U2VjcmV0U2VjcmV0MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
   password-reset:
-    # Where the reset link points. The storefront origin, no trailing slash.
-    link-base-url: ${APP_PASSWORD_RESET_LINK_BASE_URL:http://localhost:4321}
-    # Minutes a reset link stays valid. Kept in step with RequestPasswordResetUseCase.TOKEN_TTL.
-    token-ttl-minutes: ${APP_PASSWORD_RESET_TOKEN_TTL_MINUTES:30}
+    # Minutes the emailed 6-digit code stays valid.
+    code-ttl-minutes: ${APP_PASSWORD_RESET_CODE_TTL_MINUTES:30}
     # Cron for pruning expired reset tokens. Default: daily at 03:30.
     cleanup-cron: ${APP_PASSWORD_RESET_CLEANUP_CRON:0 30 3 * * *}
   google:

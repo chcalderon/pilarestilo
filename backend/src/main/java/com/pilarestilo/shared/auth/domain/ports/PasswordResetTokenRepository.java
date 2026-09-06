@@ -18,6 +18,12 @@ public interface PasswordResetTokenRepository {
      */
     Optional<PasswordResetToken> findActiveByUserId(UUID userId);
 
+    /**
+     * Bumps {@code attempt_count} for one row, in its own transaction — a wrong code must stick
+     * even though the reset use case rolls back the request that carried it.
+     */
+    void recordFailedAttempt(UUID tokenId);
+
     /** Marks every unused token for the user as used, so a newly issued link is the only live one. */
     void invalidateUnusedForUser(UUID userId);
 

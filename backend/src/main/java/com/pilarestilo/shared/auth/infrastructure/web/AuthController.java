@@ -108,13 +108,13 @@ public class AuthController {
     public Map<String, String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest req) {
         requestPasswordResetUseCase.execute(req.email());
         return Map.of("message",
-                "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.");
+                "Si el correo existe, te enviamos un código para cambiar tu contraseña.");
     }
 
     @PostMapping("/reset-password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void resetPassword(@RequestBody @Valid ResetPasswordRequest req) {
-        resetPasswordUseCase.execute(req.token(), req.newPassword());
+        resetPasswordUseCase.execute(req.email(), req.code(), req.newPassword());
     }
 
     @GetMapping("/me")

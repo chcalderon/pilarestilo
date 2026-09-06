@@ -37,14 +37,14 @@ class RequestPasswordResetUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new RequestPasswordResetUseCase(userRepository, tokenRepository, mailer);
+        useCase = new RequestPasswordResetUseCase(userRepository, tokenRepository, mailer, 30);
         user = User.reconstruct(
                 java.util.UUID.randomUUID(), "camila@example.com", "Camila", UserRole.CUSTOMER, true, "hash",
                 java.time.Instant.now());
     }
 
     @Test
-    void an_existing_email_invalidates_prior_tokens_saves_a_hash_and_sends_the_link() {
+    void an_existing_email_invalidates_prior_tokens_saves_a_hash_and_sends_a_6_digit_code() {
         when(userRepository.findByEmail("camila@example.com")).thenReturn(Optional.of(user));
 
         useCase.execute("  Camila@Example.com  ");
@@ -52,7 +52,8 @@ class RequestPasswordResetUseCaseTest {
         verify(tokenRepository).invalidateUnusedForUser(user.getId());
         verify(tokenRepository).save(argThat((PasswordResetToken t) ->
                 t.getUserId().equals(user.getId()) && t.getTokenHash().length() == 64));
-        verify(mailer).sendResetLink(eq("camila@example.com"), eq("Camila"), anyString());
+        verify(mailer).sendResetCode(eq("camila@example.com"), eq("Camila"),
+                argThat((String c) -> c != null && c.matches("\\d{6}")));
     }
 
     @Test
@@ -74,7 +75,7 @@ class RequestPasswordResetUseCaseTest {
     @Test
     void a_dead_smtp_host_does_not_blow_up_the_request() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
-        doThrow(new RuntimeException("smtp down")).when(mailer).sendResetLink(any(), any(), any());
+        doThrow(new RuntimeException("smtp down")).when(mailer).sendResetCode(any(), any(), any());
 
         assertThatCode(() -> useCase.execute("camila@example.com")).doesNotThrowAnyException();
     }

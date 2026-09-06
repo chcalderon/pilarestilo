@@ -4,13 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.HexFormat;
 
 /**
- * The raw reset token and its stored hash. The raw value goes in the email link and is never
- * persisted; only {@link #hash(String)} of it reaches the database, so a leaked table cannot be
- * turned back into a working link.
+ * The reset code and its stored hash. The code goes in the email and is never persisted; only
+ * {@link #hash(String)} of it reaches the database, so a leaked table cannot be turned back into
+ * a working code.
  */
 public final class PasswordResetTokens {
 
@@ -18,17 +17,18 @@ public final class PasswordResetTokens {
 
     private PasswordResetTokens() {}
 
-    /** 256 bits of entropy, URL-safe, no padding. */
-    public static String newRawToken() {
-        byte[] bytes = new byte[32];
-        RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    /**
+     * A 6-digit numeric code, zero-padded, e.g. {@code "418302"}. Low entropy on purpose — paired
+     * with a 30-minute TTL, single use, and a {@code PasswordResetToken.MAX_ATTEMPTS} lock.
+     */
+    public static String newCode() {
+        return String.format("%06d", RANDOM.nextInt(1_000_000));
     }
 
-    public static String hash(String rawToken) {
+    public static String hash(String code) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(rawToken.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(digest.digest(code.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
