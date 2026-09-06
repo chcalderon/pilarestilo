@@ -1,7 +1,7 @@
 ﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Hero from '../../components/Hero.astro';
-import BrandVideo from '../../components/BrandVideo.astro';
+// BrandVideo (src/components/BrandVideo.astro) is built but disabled pending a presentation redesign.
 import ProductCard from '../../components/ProductCard.astro';
 import Button from '../../components/Button.astro';
 import { SUPPORTED_LOCALES, type Locale, t } from '../../i18n/index';
@@ -763,14 +763,23 @@ const organizationLd = serializeJsonLd(
     }());
   </script>
 
-  <section class="py-20 bg-pe-black relative overflow-hidden" aria-label={locale === 'es' ? 'Marca Pilar Estilo' : 'Pilar Estilo brand'}>
+  <section class="py-20 bg-pe-black text-center relative overflow-hidden" aria-label={locale === 'es' ? 'Manifiesto de marca' : 'Brand statement'}>
     <div class="absolute inset-0 opacity-10" aria-hidden="true">
       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-pe-gold/40"></div>
     </div>
 
-    <div class="relative z-10">
-      <BrandVideo locale={locale} />
-      <div class="rose-rule mt-12 max-w-xs mx-auto" aria-hidden="true"></div>
+    <div class="pe-container relative z-10">
+      <p class="pe-script text-pe-rose-soft" style="font-size: clamp(2rem, 6vw, 4rem); line-height: 1.2; margin-bottom: 1.25rem;">
+        {locale === 'es' ? 'Lujo con Proposito' : 'Luxury with Purpose'}
+      </p>
+
+      <p class="font-display text-pe-on-dark-muted font-light text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+        {locale === 'es'
+          ? 'Cada pieza tiene una historia. La nuestra es de calidad, cuidado y moda consciente.'
+          : 'Every piece has a story. Ours is about quality, care, and mindful fashion.'}
+      </p>
+
+      <div class="rose-rule mt-10 max-w-xs mx-auto" aria-hidden="true"></div>
     </div>
   </section>
 </BaseLayout>
