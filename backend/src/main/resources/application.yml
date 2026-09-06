@@ -184,9 +184,12 @@ app:
         page-access-token: ${APP_SOCIAL_PUBLISHING_META_FACEBOOK_PAGE_ACCESS_TOKEN:}
         base-url: ${APP_SOCIAL_PUBLISHING_META_FACEBOOK_BASE_URL:https://graph.facebook.com/v23.0}
       public-media-base-url: ${APP_SOCIAL_PUBLISHING_META_PUBLIC_MEDIA_BASE_URL:}
-    schedule:
-      cron: ${APP_SOCIAL_PUBLISHING_SCHEDULE_CRON:0 * * * * *}
-      max-lateness-minutes: ${APP_SOCIAL_PUBLISHING_SCHEDULE_MAX_LATENESS_MINUTES:360}
+    dispatch:
+      cron: ${APP_SOCIAL_PUBLISHING_DISPATCH_CRON:*/20 * * * * *}
+      max-lateness-minutes: ${APP_SOCIAL_PUBLISHING_DISPATCH_MAX_LATENESS_MINUTES:360}
+      backoff-minutes: ${APP_SOCIAL_PUBLISHING_DISPATCH_BACKOFF_MINUTES:2,10,30,120,360}
+      batch-size: ${APP_SOCIAL_PUBLISHING_DISPATCH_BATCH_SIZE:25}
+      stuck-publishing-minutes: ${APP_SOCIAL_PUBLISHING_DISPATCH_STUCK_PUBLISHING_MINUTES:15}
     metrics:
       refresh-cron: ${APP_SOCIAL_PUBLISHING_METRICS_REFRESH_CRON:0 0 6 * * *}
       max-age-days: ${APP_SOCIAL_PUBLISHING_METRICS_MAX_AGE_DAYS:30}

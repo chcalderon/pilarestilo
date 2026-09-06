@@ -17,7 +17,7 @@ public class PublishDueScheduledPublicationsScheduler {
         this.useCase = useCase;
     }
 
-    @Scheduled(cron = "${app.social-publishing.schedule.cron:0 * * * * *}")
+    @Scheduled(cron = "${app.social-publishing.dispatch.cron:*/20 * * * * *}")
     public void run() {
         int handled = useCase.execute();
         if (handled > 0) {

@@ -34,7 +34,7 @@ public class PublishDueScheduledPublicationsUseCase {
     @Autowired
     public PublishDueScheduledPublicationsUseCase(PublicationJpaRepository publicationRepository,
                                                  PublicationService publicationService,
-                                                 @Value("${app.social-publishing.schedule.max-lateness-minutes:360}") long maxLatenessMinutes) {
+                                                 @Value("${app.social-publishing.dispatch.max-lateness-minutes:360}") long maxLatenessMinutes) {
         this(publicationRepository, publicationService, Clock.systemUTC(), maxLatenessMinutes);
     }
 

@@ -97,7 +97,7 @@
       "name": "app.social-publishing.meta"
     },
     {
-      "name": "app.social-publishing.schedule"
+      "name": "app.social-publishing.dispatch"
     },
     {
       "name": "app.system-settings",
@@ -438,9 +438,26 @@
       "type": "java.lang.String"
     },
     {
-      "name": "app.social-publishing.schedule.cron",
+      "name": "app.social-publishing.dispatch.cron",
       "type": "java.lang.String",
-      "description": "Cron for the scheduled-publication job. Default: every minute."
+      "description": "Cron for the publication dispatch worker (immediate + scheduled + retry). Default: every 20 seconds."
+    },
+    {
+      "name": "app.social-publishing.dispatch.backoff-minutes",
+      "type": "java.util.List<java.lang.Integer>",
+      "description": "Minutes to wait before each automatic retry. List length is the retry cap. Default: 2,10,30,120,360."
+    },
+    {
+      "name": "app.social-publishing.dispatch.batch-size",
+      "type": "java.lang.Integer",
+      "description": "Maximum publications dispatched per worker tick.",
+      "defaultValue": 25
+    },
+    {
+      "name": "app.social-publishing.dispatch.stuck-publishing-minutes",
+      "type": "java.lang.Integer",
+      "description": "A publication left in PUBLISHING longer than this (server crashed mid-dispatch) is failed as DISPATCH_INTERRUPTED for manual review.",
+      "defaultValue": 15
     },
     {
       "name": "app.social-publishing.metrics.refresh-cron",
@@ -454,7 +471,7 @@
       "defaultValue": 30
     },
     {
-      "name": "app.social-publishing.schedule.max-lateness-minutes",
+      "name": "app.social-publishing.dispatch.max-lateness-minutes",
       "type": "java.lang.Long",
       "description": "A SCHEDULED publication more than this many minutes overdue is failed instead of published."
     },
