@@ -187,6 +187,7 @@ public class PublicationService {
         int published = 0;
         int failed = 0;
         int scheduled = 0;
+        int retrying = 0;
         int pending = 0;
         for (PublicationEntity r : rows) {
             platforms.add(r.getPlatform());
@@ -194,11 +195,12 @@ public class PublicationService {
                 case PUBLISHED -> published++;
                 case FAILED -> failed++;
                 case SCHEDULED -> scheduled++;
+                case RETRY_SCHEDULED -> retrying++;
                 default -> pending++;
             }
         }
         return new PublicationBatchSummaryDto(batchId, label, createdAt, platforms,
-                rows.size(), published, failed, scheduled, pending, scheduledAt);
+                rows.size(), published, failed, scheduled, pending, retrying, scheduledAt);
     }
 
     @Transactional(readOnly = true)
@@ -221,7 +223,7 @@ public class PublicationService {
                     p != null ? p.getImageUrl() : null,
                     r.getPlatform(), r.getStatus(), r.getExternalPermalink(),
                     r.getLastErrorCode(), r.getLastErrorMessage(),
-                    bundleImageUrls(r));
+                    bundleImageUrls(r), r.getRetryCount(), r.getNextAttemptAt());
         }).toList();
 
         return new PublicationBatchDetailDto(

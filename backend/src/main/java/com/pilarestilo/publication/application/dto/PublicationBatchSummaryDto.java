@@ -16,5 +16,6 @@ public record PublicationBatchSummaryDto(
         int failed,
         int scheduled,
         int pending,
+        int retrying,
         Instant scheduledAt
 ) {}
