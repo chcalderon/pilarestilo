@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import ProductForm from '../ProductForm';
-import { updateProduct, type VariantTemplateDto, type ProductDto } from '../../../lib/api';
+import { updateProduct, getVariantTemplates, type VariantTemplateDto, type ProductDto } from '../../../lib/api';
 
 /**
  * Characterization suite for the template-driven rewrite (variant fields no longer derive from
@@ -141,6 +141,84 @@ describe('ProductForm: image gallery', () => {
       expect(updateProduct).toHaveBeenCalledWith(
         'p-gal',
         expect.objectContaining({ galleryImageUrls: ['https://img/b.jpg'] }),
+        't',
+      ),
+    );
+  });
+});
+
+/**
+ * A template-backed product's schema must come from its own resolved `variantFieldConfig`, not
+ * the generic fallback that stands in until getVariantTemplates resolves. Seeding the rows and the
+ * dirty-check baseline against the fallback parsed a composite value like "S-M" alphabetically
+ * ("M-S"), which then read back as an unsaved change on open (and, before the sibling fix, as
+ * "Talla invalido en fila 1" that blocked the save with no network call).
+ */
+describe('ProductForm: template-backed product loads from its own variantFieldConfig', () => {
+  const CLOTHING_TEMPLATE: VariantTemplateDto = {
+    id: 'tpl-ropa', name: 'Ropa',
+    config: {
+      primary: { label: 'Color', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
+      secondary: {
+        label: 'Talla', inputType: 'OPTIONS',
+        options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        min: null, max: null, allowMultiple: true, allowCustom: true,
+      },
+    },
+  };
+
+  const teddy: ProductDto = {
+    id: 'p-teddy',
+    name: 'Abrigo Teddy elegante',
+    description: 'Hermoso abrigo corto Teddy',
+    price: { amount: 25000, currency: 'CLP' },
+    listPrice: { amount: 50999, currency: 'CLP' },
+    imageUrl: '/api/media/x.jpg',
+    condition: 'USED',
+    brand: 'Stradivarius',
+    stock: 1,
+    active: true,
+    createdAt: '2026-09-05T16:28:29Z',
+    updatedAt: '2026-09-06T23:31:40Z',
+    categorySlugs: [],
+    variantTemplateId: 'tpl-ropa',
+    variantFieldConfig: CLOTHING_TEMPLATE.config,
+    variants: [
+      { color: 'Blanco tornasol', size: 'S-M', stock: 1, stockOnHand: 1, stockReserved: 0, stockAvailable: 1 },
+    ],
+    galleryImageUrls: [],
+  };
+
+  it('is not dirty right after loading (closing does not warn about unsaved changes)', async () => {
+    vi.mocked(getVariantTemplates).mockResolvedValue([CLOTHING_TEMPLATE]);
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    render(<ProductForm product={teddy} token="t" onSave={() => {}} onCancel={onCancel} />);
+    await screen.findByDisplayValue('Abrigo Teddy elegante');
+    await screen.findByRole('option', { name: 'Ropa' });
+
+    await user.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(screen.queryByText(/salir sin guardar/i)).not.toBeInTheDocument();
+  });
+
+  it('seeds the composite size from product.variantFieldConfig before the template list resolves', async () => {
+    vi.mocked(getVariantTemplates).mockReturnValue(new Promise(() => {}) as never);
+    vi.mocked(updateProduct).mockResolvedValue(teddy as never);
+    const user = userEvent.setup();
+    render(<ProductForm product={teddy} token="t" onSave={() => {}} onCancel={() => {}} />);
+    await screen.findByDisplayValue('Abrigo Teddy elegante');
+
+    expect(screen.getByText('S-M')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /guardar cambios/i }));
+    await vi.waitFor(() =>
+      expect(updateProduct).toHaveBeenCalledWith(
+        'p-teddy',
+        expect.objectContaining({
+          variants: [expect.objectContaining({ color: 'Blanco tornasol', size: 'S-M' })],
+        }),
         't',
       ),
     );

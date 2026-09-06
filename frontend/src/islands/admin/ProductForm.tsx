@@ -287,6 +287,16 @@ function rebindVariantRowsToSchema(rows: VariantRow[], fromSchema: VariantSchema
   }));
 }
 
+/**
+ * The variant schema of a product as it stands in the database. `variantFieldConfig` is filled by
+ * the backend live from the current template, so the form can seed its rows and its dirty-check
+ * baseline from it on the first render, instead of falling back to the generic Variante/Detalle
+ * schema until getVariantTemplates resolves.
+ */
+function schemaForProduct(product: ProductDto): VariantSchema {
+  return buildVariantSchema(product.variantFieldConfig ?? null, product.variantTemplateId ?? 'GENERIC');
+}
+
 function validateBasicFields(form: typeof EMPTY_FORM): Record<string, string> {
   const e: Record<string, string> = {};
   if (!form.name.trim()) e.name = 'Nombre requerido';
@@ -462,10 +472,17 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
     () => variantTemplates.find((t) => t.id === selectedVariantTemplateId) ?? null,
     [variantTemplates, selectedVariantTemplateId],
   );
-  const variantSchema = useMemo(
-    () => buildVariantSchema(selectedTemplate?.config ?? null, selectedVariantTemplateId ?? 'GENERIC'),
-    [selectedTemplate, selectedVariantTemplateId]
-  );
+  const variantSchema = useMemo(() => {
+    if (selectedTemplate) {
+      return buildVariantSchema(selectedTemplate.config, selectedVariantTemplateId ?? 'GENERIC');
+    }
+    // Template list not in yet — for the product's own template, use the config already on the DTO
+    // rather than the generic fallback, so rows and the dirty baseline are seeded once and right.
+    if (product && selectedVariantTemplateId === (product.variantTemplateId ?? null)) {
+      return schemaForProduct(product);
+    }
+    return buildVariantSchema(null, selectedVariantTemplateId ?? 'GENERIC');
+  }, [selectedTemplate, selectedVariantTemplateId, product]);
   const primaryAttribute = useMemo(() => getPrimaryAttribute(variantSchema), [variantSchema]);
   const secondaryAttribute = useMemo(() => getSecondaryAttribute(variantSchema), [variantSchema]);
   const previousSchemaRef = useRef<VariantSchema>(variantSchema);
@@ -586,11 +603,15 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
         active: product.active,
         galleryImageUrls: product.galleryImageUrls ?? [],
       };
-      const nextRows = toVariantRows(reconciledRows, currentSchemaRef.current);
+      // The product's own resolved schema, not currentSchemaRef (still the generic fallback on the
+      // first mount, before getVariantTemplates resolves) — so a composite value like "S-M" is
+      // parsed in the real option order and the dirty baseline below matches the live snapshot.
+      const seedSchema = schemaForProduct(product);
+      const nextRows = toVariantRows(reconciledRows, seedSchema);
       setForm(nextForm);
       setVariantRows(nextRows);
       setSelectedVariantTemplateId(product.variantTemplateId ?? null);
-      previousSchemaRef.current = currentSchemaRef.current;
+      previousSchemaRef.current = seedSchema;
       /*
        * The warning that the rows had been rewritten to match products.stock. Nothing rewrites
        * them any more — the aggregate is recomputed from the variants on every movement — so
@@ -599,7 +620,7 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       setStockSyncHint('');
       // Categories are initialized by the separate categories useEffect.
       // Do not reset them here — doing so would undo interactive toggles when the schema changes.
-      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], product.variantTemplateId ?? null, currentSchemaRef.current));
+      setInitialSnapshot(makeSnapshot(nextForm, nextRows, [], product.variantTemplateId ?? null, seedSchema));
     } else {
       const nextForm = { ...EMPTY_FORM };
       const nextRows = [createVariantRow(currentSchemaRef.current, EMPTY_FORM.stock)];
@@ -639,7 +660,10 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       const seededRows = existingFlatVariants.length > 0
         ? existingFlatVariants
         : [{ color: 'Base', size: 'UNICO', stock: String(product.stock) }];
-      const snapshotRows = toVariantRows(seededRows, variantSchema);
+      // Same product schema the [product] effect seeds against — the generic fallback would
+      // reorder a composite value and make the baseline disagree with the live snapshot.
+      const seedSchema = schemaForProduct(product);
+      const snapshotRows = toVariantRows(seededRows, seedSchema);
       const snapshotForm = {
         name: product.name,
         description: product.description,
@@ -657,9 +681,9 @@ export default function ProductForm({ product, onSave, onSaveFailed, onCancel, t
       setSelectedCatIds(fixedIds);
       // Keep initialSnapshot with original ids so form is dirty when parents were auto-added,
       // forcing the user to save and persist the corrected category selection.
-      setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, product.variantTemplateId ?? null, variantSchema));
+      setInitialSnapshot(makeSnapshot(snapshotForm, snapshotRows, ids, product.variantTemplateId ?? null, seedSchema));
     }
-  }, [categories, product, variantSchema]);  // variantSchema kept in deps for makeSnapshot freshness; catInitKeyRef guards re-init
+  }, [categories, product]);  // catInitKeyRef guards re-init; schema comes from the product itself
 
   function toggleCategory(id: string) {
     setSelectedCatIds((prev) => {
