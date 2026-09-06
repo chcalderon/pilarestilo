@@ -45,7 +45,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @TestPropertySource(properties = {
         "app.gateway.rate-limit.login-max-requests=500",
-        "app.social-publishing.dispatch.backoff-minutes=0,0,0,0,0"
+        "app.social-publishing.dispatch.backoff-minutes=0,0,0,0,0",
+        // Disable the background worker: the tests drive worker.execute() explicitly and assert
+        // intermediate states, so an every-20s scheduler firing in between would race them.
+        "app.social-publishing.dispatch.cron=-"
 })
 class PublicationDispatchOutboxIT {
 
