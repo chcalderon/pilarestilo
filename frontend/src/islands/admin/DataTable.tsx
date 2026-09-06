@@ -348,9 +348,10 @@ function DesktopTable<T>({
           ))}
           {onRowClick && (
             /* Hover tint says "clickable" for a mouse; this chevron is the same signal for
-             * keyboard/touch users, who never see the hover state at all. */
-            <td className={tdBase + ' text-pe-muted'} style={{ width: '32px' }} aria-hidden="true">
-              <ChevronRight size={14} />
+             * a touch user. It carries no information a keyboard user of the focusable row
+             * lacks, so only the icon is hidden from assistive tech, not the grid cell. */
+            <td className={tdBase + ' text-pe-muted'} style={{ width: '32px' }}>
+              <ChevronRight size={14} aria-hidden="true" />
             </td>
           )}
         </tr>
@@ -387,7 +388,11 @@ function DesktopTable<T>({
                 </span>
               </th>
             ))}
-            {onRowClick && <th className={thBase} style={{ width: '32px' }} aria-hidden="true" />}
+            {onRowClick && (
+              <th className={thBase} style={{ width: '32px' }}>
+                <span className="sr-only">Abrir</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>{tbodyContent}</tbody>

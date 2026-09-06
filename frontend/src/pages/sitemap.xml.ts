@@ -28,23 +28,23 @@ interface UrlEntry {
 
 function xmlEscape(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 }
 
 /** A `<url>` block with an `xhtml:link` alternate per locale. */
 function urlBlock(site: string, localisedPath: string, entry: Omit<UrlEntry, 'loc'>): string {
-  const alternates = SUPPORTED_LOCALES.map(
-    (loc) =>
-      `    <xhtml:link rel="alternate" hreflang="${loc}" href="${xmlEscape(
-        `${site}/${loc}${localisedPath ? `/${localisedPath}` : ''}`,
-      )}"/>`,
-  ).join('\n');
+  const pathSuffix = localisedPath ? `/${localisedPath}` : '';
 
-  const loc = `${site}/${SUPPORTED_LOCALES[0]}${localisedPath ? `/${localisedPath}` : ''}`;
+  const alternates = SUPPORTED_LOCALES.map((locale) => {
+    const href = xmlEscape(`${site}/${locale}${pathSuffix}`);
+    return `    <xhtml:link rel="alternate" hreflang="${locale}" href="${href}"/>`;
+  }).join('\n');
+
+  const loc = `${site}/${SUPPORTED_LOCALES[0]}${pathSuffix}`;
   const lastmod = entry.lastmod ? `\n    <lastmod>${entry.lastmod}</lastmod>` : '';
   const changefreq = entry.changefreq ? `\n    <changefreq>${entry.changefreq}</changefreq>` : '';
   const priority = entry.priority ? `\n    <priority>${entry.priority}</priority>` : '';

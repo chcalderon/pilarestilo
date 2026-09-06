@@ -160,6 +160,42 @@ function stockColorClass(stock: number, defaultClass: string) {
   return stock <= 2 ? 'text-pe-warning-ink' : defaultClass;
 }
 
+function DeactivateProductDialog({
+  onConfirm,
+  onCancel,
+  deleting,
+}: Readonly<{ onConfirm: () => void; onCancel: () => void; deleting: boolean }>) {
+  return (
+    <div className="fixed inset-0 bg-pe-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-pe-white p-6 max-w-sm w-full shadow-2xl border border-pe-black/6">
+        <h3 className="font-display text-pe-black text-lg font-light mb-2">Desactivar producto?</h3>
+        <p className="font-sans text-sm text-pe-muted mb-6">
+          Dejara de mostrarse en la tienda y en el listado de activos. Puedes reactivarlo editandolo
+          desde la pestana &ldquo;Inactivos&rdquo;.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={deleting}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-pe-danger text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:opacity-90 disabled:opacity-50 transition-colors"
+          >
+            <EyeOff size={13} />
+            {deleting ? 'Desactivando...' : 'Desactivar'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 border border-pe-black/15 font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:border-pe-charcoal transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductTable() {
   const { token } = useAuthStore();
   const effectiveToken = token ?? readAuthTokenCookie();
@@ -742,33 +778,11 @@ export default function ProductTable() {
       )}
 
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-pe-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-pe-white p-6 max-w-sm w-full shadow-2xl border border-pe-black/6">
-            <h3 className="font-display text-pe-black text-lg font-light mb-2">Desactivar producto?</h3>
-            <p className="font-sans text-sm text-pe-muted mb-6">
-              Dejara de mostrarse en la tienda y en el listado de activos. Puedes reactivarlo editandolo
-              desde la pestana &ldquo;Inactivos&rdquo;.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => handleDelete(deleteConfirm)}
-                disabled={deleting}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-pe-danger text-white font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:opacity-90 disabled:opacity-50 transition-colors"
-              >
-                <EyeOff size={13} />
-                {deleting ? 'Desactivando...' : 'Desactivar'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 border border-pe-black/15 font-sans text-[0.72rem] uppercase tracking-widest py-2.5 hover:border-pe-charcoal transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeactivateProductDialog
+          onConfirm={() => handleDelete(deleteConfirm)}
+          onCancel={() => setDeleteConfirm(null)}
+          deleting={deleting}
+        />
       )}
 
       <div className="mb-4 flex flex-col gap-2">

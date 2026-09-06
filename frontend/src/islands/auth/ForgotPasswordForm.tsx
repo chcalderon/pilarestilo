@@ -11,6 +11,20 @@ function submitLabelFor(loading: boolean, es: boolean): string {
   return es ? 'Enviar enlace' : 'Send link';
 }
 
+function requestErrorMessage(err: unknown, es: boolean): string {
+  if (err instanceof ApiError && err.status === 429) {
+    return es
+      ? 'Demasiados intentos. Espera un momento e inténtalo otra vez.'
+      : 'Too many attempts. Wait a moment and try again.';
+  }
+  if (err instanceof ApiError && err.status === 422) {
+    return es ? 'Ingresa un correo electrónico válido.' : 'Enter a valid email address.';
+  }
+  return es
+    ? 'No pudimos procesar la solicitud. Inténtalo de nuevo.'
+    : 'We could not process the request. Please try again.';
+}
+
 export default function ForgotPasswordForm({ locale }: Props) {
   const es = locale === 'es';
   const [email, setEmail] = useState('');
@@ -26,15 +40,7 @@ export default function ForgotPasswordForm({ locale }: Props) {
       await requestPasswordReset(email.trim());
       setSent(true);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError(es ? 'Demasiados intentos. Espera un momento e inténtalo otra vez.'
-                    : 'Too many attempts. Wait a moment and try again.');
-      } else if (err instanceof ApiError && err.status === 422) {
-        setError(es ? 'Ingresa un correo electrónico válido.' : 'Enter a valid email address.');
-      } else {
-        setError(es ? 'No pudimos procesar la solicitud. Inténtalo de nuevo.'
-                    : 'We could not process the request. Please try again.');
-      }
+      setError(requestErrorMessage(err, es));
     } finally {
       setLoading(false);
     }

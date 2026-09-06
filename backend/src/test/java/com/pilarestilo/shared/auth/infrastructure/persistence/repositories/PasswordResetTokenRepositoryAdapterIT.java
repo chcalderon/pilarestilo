@@ -66,6 +66,7 @@ class PasswordResetTokenRepositoryAdapterIT {
 
         assertThat(jpaRepository.findAll())
                 .filteredOn(t -> t.getUserId().equals(SEEDED_USER))
+                .isNotEmpty()
                 .allMatch(t -> t.getUsedAt() != null);
     }
 

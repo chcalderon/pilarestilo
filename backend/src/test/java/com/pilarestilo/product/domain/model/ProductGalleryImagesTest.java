@@ -52,7 +52,7 @@ class ProductGalleryImagesTest {
     void getter_returns_a_copy() {
         Product p = newProduct();
         p.setGalleryImageUrls(List.of("https://img/a.jpg"));
-        assertThrows(UnsupportedOperationException.class,
-                () -> p.getGalleryImageUrls().add("https://img/x.jpg"));
+        List<String> gallery = p.getGalleryImageUrls();
+        assertThrows(UnsupportedOperationException.class, () -> gallery.add("https://img/x.jpg"));
     }
 }

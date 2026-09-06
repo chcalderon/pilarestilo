@@ -1492,7 +1492,7 @@ function AddressFormFields({
         </select>
       </div>
       <div className="flex flex-col">
-        <label htmlFor="addr-comuna" className={addrLabelClass}>{es ? 'Comuna' : 'Comuna'}</label>
+        <label htmlFor="addr-comuna" className={addrLabelClass}>Comuna</label>
         <select
           id="addr-comuna"
           value={addressDraft.comunaId}

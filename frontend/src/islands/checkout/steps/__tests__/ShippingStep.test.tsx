@@ -147,30 +147,18 @@ describe('ShippingStep: zone follows the selected address, invisibly', () => {
     expect(screen.getByLabelText(/courier/i)).toBeInTheDocument();
   });
 
-  it('derives LOCAL for a default address in an Aconcagua comuna', async () => {
-    getMyAddresses.mockResolvedValue([address({ comuna: 'Los Andes' })]);
+  // Los Andes = Aconcagua (LOCAL); Viña del Mar = rest of the Valparaíso region (REGIONAL);
+  // Arica = outside both explicit zones (NACIONAL fallback).
+  it.each([
+    ['Los Andes', 'LOCAL'],
+    ['Viña del Mar', 'REGIONAL'],
+    ['Arica', 'NACIONAL'],
+  ])('a default address in %s derives the %s zone', async (comuna, expectedZone) => {
+    getMyAddresses.mockResolvedValue([address({ comuna })]);
     render(<Harness />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('zone-debug')).toHaveTextContent('LOCAL');
-    });
-  });
-
-  it('derives REGIONAL for a default address elsewhere in the Valparaíso region', async () => {
-    getMyAddresses.mockResolvedValue([address({ comuna: 'Viña del Mar' })]);
-    render(<Harness />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('zone-debug')).toHaveTextContent('REGIONAL');
-    });
-  });
-
-  it('falls back to NACIONAL for a comuna outside both explicit zones', async () => {
-    getMyAddresses.mockResolvedValue([address({ comuna: 'Arica' })]);
-    render(<Harness />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('zone-debug')).toHaveTextContent('NACIONAL');
+      expect(screen.getByTestId('zone-debug')).toHaveTextContent(expectedZone);
     });
   });
 

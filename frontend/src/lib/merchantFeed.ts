@@ -42,11 +42,11 @@ export function googleProductCategory(product: ProductDto): string {
 
 function xmlEscape(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 }
 
 function truncate(value: string, max: number): string {
@@ -55,7 +55,12 @@ function truncate(value: string, max: number): string {
 }
 
 function idSafe(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
+  // Runs of non-alnum are already collapsed to a single '-', so trimming needs only /^-/ and /-$/
+  // (no '+', which keeps the regex linear — Sonar S8786).
+  return (
+    value.trim().toLowerCase().replaceAll(/[^a-z0-9]+/g, '-').replace(/^-/, '').replace(/-$/, '') ||
+    'x'
+  );
 }
 
 // Google Merchant Center rejects `id` past 50 characters. Most variant suffixes fit easily, but a
@@ -66,7 +71,7 @@ const MAX_ITEM_ID_LENGTH = 50;
 function shortHash(value: string): string {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+    hash = (hash * 31 + (value.codePointAt(i) ?? 0)) >>> 0;
   }
   return hash.toString(36);
 }

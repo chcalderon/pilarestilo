@@ -192,7 +192,7 @@ export default function ProductVariantSelector({
     <div className="space-y-4">
       {hasVariants && (
         <>
-          <div role="group" aria-labelledby="variant-primary-label">
+          <fieldset className="m-0 min-w-0 border-0 p-0" aria-labelledby="variant-primary-label">
             <p id="variant-primary-label" className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectPrimary}
             </p>
@@ -219,9 +219,9 @@ export default function ProductVariantSelector({
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
-          <div role="group" aria-labelledby="variant-secondary-label">
+          <fieldset className="m-0 min-w-0 border-0 p-0" aria-labelledby="variant-secondary-label">
             <p id="variant-secondary-label" className="text-[10px] tracking-widest uppercase text-pe-charcoal/60 mb-2">
               {labels.selectSecondary}
             </p>
@@ -259,7 +259,7 @@ export default function ProductVariantSelector({
                 );
               })}
             </div>
-          </div>
+          </fieldset>
         </>
       )}
 
