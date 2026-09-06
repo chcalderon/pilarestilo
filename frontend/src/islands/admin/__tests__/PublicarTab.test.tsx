@@ -43,8 +43,8 @@ beforeEach(() => {
   } as never);
   vi.mocked(publishProductsBatch).mockResolvedValue({
     items: [
-      { productId: 'p1', platform: 'INSTAGRAM', success: true, publicationId: 'pub-1', errorMessage: null, scheduled: false },
-      { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: null, errorMessage: 'Credenciales no configuradas', scheduled: false },
+      { productId: 'p1', platform: 'INSTAGRAM', success: false, publicationId: 'pub-1', errorMessage: null, scheduled: false },
+      { productId: 'p1', platform: 'FACEBOOK', success: false, publicationId: 'pub-2', errorMessage: null, scheduled: false },
     ],
   } as never);
   vi.mocked(getProductPublicationImageHistory).mockResolvedValue([]);
@@ -101,15 +101,32 @@ describe('PublicarTab', () => {
     expect(await screen.findByText(/chaqueta a solo \$49\.990/i)).toBeInTheDocument();
   });
 
-  it('publishes the batch and renders a mixed result', async () => {
+  it('publishes the batch, shows the queued confirmation and jumps to Historial', async () => {
+    const user = userEvent.setup();
+    const onPublished = vi.fn();
+    render(<PublicarTab onPublished={onPublished} />);
+    await selectTheProduct(user);
+
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+
+    await waitFor(() => expect(publishProductsBatch).toHaveBeenCalled());
+    expect(await screen.findByText(/encolado/i)).toBeInTheDocument();
+    expect(onPublished).toHaveBeenCalled();
+  });
+
+  it('shows creation errors when an item comes back with a message', async () => {
+    vi.mocked(publishProductsBatch).mockResolvedValueOnce({
+      items: [
+        { productId: 'p1', platform: 'INSTAGRAM', success: false, publicationId: null, errorMessage: 'clave duplicada', scheduled: false },
+      ],
+    } as never);
     const user = userEvent.setup();
     render(<PublicarTab />);
     await selectTheProduct(user);
 
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
 
-    await waitFor(() => expect(publishProductsBatch).toHaveBeenCalled());
-    expect(await screen.findByText(/credenciales no configuradas/i)).toBeInTheDocument();
+    expect(await screen.findByText(/clave duplicada/i)).toBeInTheDocument();
   });
 
   it('disables the publish button until a product is selected', () => {

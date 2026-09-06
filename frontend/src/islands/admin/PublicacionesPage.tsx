@@ -81,6 +81,7 @@ export default function PublicacionesPage() {
           onPreloadConsumed={() => setPreload(undefined)}
           editingBatchId={editingBatchId ?? undefined}
           onEditCancelled={clearEditing}
+          onPublished={() => setTab('historial')}
         />
       )}
       {tab === 'historial' && (
