@@ -85,8 +85,36 @@ function OutcomeCard({
   );
 }
 
+const COPY = {
+  es: {
+    newLabel: 'Nueva contraseña',
+    newPlaceholder: 'Al menos 8 caracteres',
+    confirmLabel: 'Repite la contraseña',
+    confirmPlaceholder: 'Repite la contraseña',
+    doneTitle: 'Contraseña actualizada',
+    doneBody: 'Se cerraron todas las sesiones anteriores. Inicia sesión con tu nueva contraseña.',
+    doneCta: 'Iniciar sesión',
+    deadTitle: GENERIC_LINK_ERROR_ES,
+    deadBody: 'Solicita un enlace nuevo para restablecer tu contraseña.',
+    deadCta: 'Solicitar un enlace nuevo',
+  },
+  en: {
+    newLabel: 'New password',
+    newPlaceholder: 'At least 8 characters',
+    confirmLabel: 'Confirm password',
+    confirmPlaceholder: 'Repeat the password',
+    doneTitle: 'Password updated',
+    doneBody: 'Every earlier session was signed out. Sign in with your new password.',
+    doneCta: 'Sign in',
+    deadTitle: GENERIC_LINK_ERROR_EN,
+    deadBody: 'Request a fresh link to reset your password.',
+    deadCta: 'Request a new link',
+  },
+} as const;
+
 export default function ResetPasswordForm({ locale }: Props) {
   const es = locale === 'es';
+  const t = COPY[locale];
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -137,14 +165,10 @@ export default function ResetPasswordForm({ locale }: Props) {
     return (
       <OutcomeCard
         icon={<CheckCircle2 size={44} className="text-pe-rose-ink" />}
-        title={es ? 'Contraseña actualizada' : 'Password updated'}
-        body={
-          es
-            ? 'Se cerraron todas las sesiones anteriores. Inicia sesión con tu nueva contraseña.'
-            : 'Every earlier session was signed out. Sign in with your new password.'
-        }
+        title={t.doneTitle}
+        body={t.doneBody}
         href={`/${locale}/auth/login`}
-        cta={es ? 'Iniciar sesión' : 'Sign in'}
+        cta={t.doneCta}
         ctaAsButton
       />
     );
@@ -154,14 +178,10 @@ export default function ResetPasswordForm({ locale }: Props) {
     return (
       <OutcomeCard
         icon={<AlertCircle size={44} className="text-pe-rose-ink" />}
-        title={es ? GENERIC_LINK_ERROR_ES : GENERIC_LINK_ERROR_EN}
-        body={
-          es
-            ? 'Solicita un enlace nuevo para restablecer tu contraseña.'
-            : 'Request a fresh link to reset your password.'
-        }
+        title={t.deadTitle}
+        body={t.deadBody}
         href={`/${locale}/auth/forgot-password`}
-        cta={es ? 'Solicitar un enlace nuevo' : 'Request a new link'}
+        cta={t.deadCta}
         ctaAsButton={false}
       />
     );
@@ -173,7 +193,7 @@ export default function ResetPasswordForm({ locale }: Props) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="reset-password" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
-          {es ? 'Nueva contraseña' : 'New password'}
+          {t.newLabel}
         </label>
         <div className="relative">
           <input
@@ -184,7 +204,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 pr-10 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
-            placeholder={es ? 'Al menos 8 caracteres' : 'At least 8 characters'}
+            placeholder={t.newPlaceholder}
           />
           <button
             type="button"
@@ -199,7 +219,7 @@ export default function ResetPasswordForm({ locale }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="reset-confirm" className="font-sans text-[0.72rem] tracking-[0.18em] uppercase text-pe-muted">
-          {es ? 'Repite la contraseña' : 'Confirm password'}
+          {t.confirmLabel}
         </label>
         <input
           id="reset-confirm"
@@ -209,7 +229,7 @@ export default function ResetPasswordForm({ locale }: Props) {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           className="bg-pe-white border border-pe-black/12 font-sans text-sm text-pe-charcoal px-3 py-2.5 focus:outline-hidden focus:border-pe-rose/60 focus-visible:ring-1 focus-visible:ring-pe-rose/40 transition-colors duration-200"
-          placeholder={es ? 'Repite la contraseña' : 'Repeat the password'}
+          placeholder={t.confirmPlaceholder}
         />
       </div>
 

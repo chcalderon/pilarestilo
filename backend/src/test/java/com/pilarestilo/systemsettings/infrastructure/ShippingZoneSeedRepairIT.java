@@ -76,18 +76,17 @@ class ShippingZoneSeedRepairIT {
         List<String> comunas = comunas(regional);
 
         // A sample across every province of the region except Los Andes/San Felipe (that's LOCAL).
+        // doesNotContain: Aconcagua's own comunas never appear in both zones at once; Isla de Pascua
+        // is in this region administratively but reached by plane, so it is left for NACIONAL
+        // rather than promising REGIONAL's ETA.
         assertThat(comunas)
                 .hasSize(27)
                 .contains(
                         "Valparaíso", "Viña del Mar", "Quilpué", "Villa Alemana", "Limache", "Olmué",
                         "Quillota", "La Calera", "San Antonio", "Cartagena", "La Ligua", "Petorca",
                         "Casablanca", "Concón", "Quintero"
-                );
-        // Aconcagua's own comunas never appear in both zones at once.
-        assertThat(comunas).doesNotContain("Los Andes", "San Felipe");
-        // Isla de Pascua is administratively in this region but reached by plane, not a regular
-        // courier -- deliberately left for NACIONAL rather than promising REGIONAL's ETA.
-        assertThat(comunas).doesNotContain("Isla de Pascua");
+                )
+                .doesNotContain("Los Andes", "San Felipe", "Isla de Pascua");
         // No longer promises "y RM": Santiago/RM falls to NACIONAL along with the rest of Chile.
         assertThat(regional.get("titleEs").asString()).doesNotContain("RM");
         assertThat(regional.get("titleEn").asString()).doesNotContain("Metropolitan");
