@@ -14,10 +14,13 @@ const PRIVATE_PATHS = [
 ];
 
 /**
- * `Googlebot` and `Googlebot-Image` get their own groups so they are NOT subject to the
- * `Disallow: /api/` that applies to everyone else — product images are served under
- * `/api/media/`, and Merchant Center's quality checks need to reach both the product pages and
- * their images. Merchant Center also specifically looks for these two user-agents by name.
+ * `Googlebot` and `Googlebot-Image` get their own groups so they can reach `/api/media/` —
+ * product images live there and Merchant Center's quality checks need them. Everything else under
+ * `/api/` is JSON with no `<head>` and no canonical; leaving it open had Google crawling
+ * `/api/products`, `/api/categories`, every paginated variant, and reporting them all as
+ * "Duplicada: sin versión canónica". `Allow` beats `Disallow` on the longest match for Google, so
+ * `/api/media/x.jpg` stays crawlable while `/api/products` does not. Merchant Center also looks
+ * for these two user-agents by name.
  */
 export const GET: APIRoute = ({ request }) => {
   const site = resolveSiteUrl(new URL(request.url), request.headers);
@@ -25,9 +28,13 @@ export const GET: APIRoute = ({ request }) => {
   const body = [
     'User-agent: Googlebot',
     ...PRIVATE_PATHS.map((path) => `Disallow: ${path}`),
+    'Disallow: /api/',
+    'Allow: /api/media/',
     '',
     'User-agent: Googlebot-Image',
     'Disallow: /admin/',
+    'Disallow: /api/',
+    'Allow: /api/media/',
     '',
     'User-agent: *',
     ...PRIVATE_PATHS.map((path) => `Disallow: ${path}`),

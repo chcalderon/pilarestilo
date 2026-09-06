@@ -70,10 +70,16 @@ describe('canonicalUrlFor', () => {
     );
   });
 
-  it('drops a trailing slash but keeps the root', () => {
+  it('drops a trailing slash on a normal page', () => {
     expect(canonicalUrlFor(new URL('https://pilarestilo.com/es/products/'))).toBe(
       'https://pilarestilo.com/es/products',
     );
+  });
+
+  it('keeps the trailing slash on the site root and the locale root', () => {
     expect(canonicalUrlFor(new URL('https://pilarestilo.com/'))).toBe('https://pilarestilo.com/');
+    expect(canonicalUrlFor(new URL('https://pilarestilo.com/es/'))).toBe('https://pilarestilo.com/es/');
+    expect(canonicalUrlFor(new URL('https://pilarestilo.com/es'))).toBe('https://pilarestilo.com/es/');
+    expect(canonicalUrlFor(new URL('https://pilarestilo.com/en/'))).toBe('https://pilarestilo.com/en/');
   });
 });
