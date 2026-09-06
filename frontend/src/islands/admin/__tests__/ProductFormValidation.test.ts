@@ -6,6 +6,7 @@ import {
   getSecondaryAttribute,
   createEmptyVariantSelections,
 } from '@/lib/variantSchema';
+import type { VariantFieldConfigDto } from '@/lib/api';
 
 /**
  * Unit tests for validate()'s extracted pure form, written before splitting it into
@@ -112,5 +113,88 @@ describe('validateProductForm', () => {
       variantRows: [variantRow('Negro', 'UNICO'), variantRow('Rojo', 'UNICO')],
     }));
     expect(errors.combinations).toBeUndefined();
+  });
+});
+
+/**
+ * Regression: a template-backed product (options list on the secondary field) whose stored
+ * composite value is in a different but equivalent order must still save.
+ *
+ * "Abrigo Teddy elegante" stores size "S-M". On mount, before getVariantTemplates resolves, the
+ * form runs on the generic fallback schema (no options), which sorts a split composite
+ * alphabetically -> ["M", "S"]. The real template then loads without changing variantSchema.key
+ * (it is already the template id), so the rows are never re-sorted to option order ["S", "M"].
+ * validate() used to compare the raw array against its normalized form and reject any difference
+ * as "Talla invalido en fila 1" -- blocking the save with no network call. Order/dedupe/case are
+ * re-normalized by normalizeVariantRows on save, so only genuinely unknown values in a strict
+ * (no allowCustom) options field are a real error.
+ */
+const CLOTHING_CONFIG: VariantFieldConfigDto = {
+  primary: { label: 'Color', inputType: 'FREE_TEXT', options: [], min: null, max: null, allowMultiple: true, allowCustom: true },
+  secondary: {
+    label: 'Talla', inputType: 'OPTIONS',
+    options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+    min: null, max: null, allowMultiple: true, allowCustom: true,
+  },
+};
+
+describe('validateProductForm: composite variant value whose order differs from the schema', () => {
+  const clothing = buildVariantSchema(CLOTHING_CONFIG);
+  const clothingPrimary = getPrimaryAttribute(clothing);
+  const clothingSecondary = getSecondaryAttribute(clothing);
+
+  function clothingRow(secondaryValues: string[]) {
+    return {
+      id: crypto.randomUUID(),
+      attributes: {
+        ...createEmptyVariantSelections(clothing),
+        [clothingPrimary.code]: ['Blanco tornasol'],
+        [clothingSecondary.code]: secondaryValues,
+      },
+      stock: '1',
+    };
+  }
+
+  function clothingArgs(rows: ReturnType<typeof clothingRow>[]): ValidateProductFormArgs {
+    return {
+      form: baseForm(),
+      variantRows: rows,
+      variantSchema: clothing,
+      primaryAttribute: clothingPrimary,
+      secondaryAttribute: clothingSecondary,
+    };
+  }
+
+  it('accepts a composite size stored out of option order (["M","S"] vs option order ["S","M"])', () => {
+    expect(validateProductForm(clothingArgs([clothingRow(['M', 'S'])])).combinations).toBeUndefined();
+  });
+
+  it('accepts a custom size when the options field allows custom values', () => {
+    expect(validateProductForm(clothingArgs([clothingRow(['Talla especial'])])).combinations).toBeUndefined();
+  });
+
+  it('rejects an unknown value when the options field forbids custom values', () => {
+    const strict = buildVariantSchema({
+      ...CLOTHING_CONFIG,
+      secondary: { ...CLOTHING_CONFIG.secondary, allowCustom: false },
+    });
+    const strictSecondary = getSecondaryAttribute(strict);
+    const row = {
+      id: crypto.randomUUID(),
+      attributes: {
+        ...createEmptyVariantSelections(strict),
+        [getPrimaryAttribute(strict).code]: ['Blanco tornasol'],
+        [strictSecondary.code]: ['Inventada'],
+      },
+      stock: '1',
+    };
+    const errors = validateProductForm({
+      form: baseForm(),
+      variantRows: [row],
+      variantSchema: strict,
+      primaryAttribute: getPrimaryAttribute(strict),
+      secondaryAttribute: strictSecondary,
+    });
+    expect(errors.combinations).toMatch(/talla invalido/i);
   });
 });

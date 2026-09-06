@@ -310,8 +310,16 @@ function variantRowAttributeError(row: VariantRow, schema: VariantSchema, rowInd
     if (attribute.required && normalizedValues.length === 0) {
       return `${attribute.label} requerido en fila ${rowIndex + 1}`;
     }
-    if (normalizedValues.length > 0 && values.join('|') !== normalizedValues.join('|')) {
-      return `${attribute.label} invalido en fila ${rowIndex + 1}`;
+    // Only a genuinely unknown value in a strict options field is an error. Order, dedupe and case
+    // are re-normalised by normalizeVariantRows on save, so the raw array not matching its
+    // normalised form is not — comparing them byte-for-byte rejected valid rows whose stored
+    // composite value (e.g. "S-M") was parsed under the generic fallback schema before the real
+    // template loaded.
+    if (attribute.type === 'choice' && !attribute.allowCustom) {
+      const allowed = new Set(attribute.options.map((option) => option.value.toLowerCase()));
+      if (normalizedValues.some((value) => !allowed.has(value.toLowerCase()))) {
+        return `${attribute.label} invalido en fila ${rowIndex + 1}`;
+      }
     }
   }
   return undefined;
