@@ -37,9 +37,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
-// This class logs in once per test and sits near the per-IP auth rate limit (default 12);
-// lift it so adding a test never flakes an unrelated one with a 429 on /auth/login.
-@org.springframework.test.context.TestPropertySource(properties = "app.gateway.rate-limit.login-max-requests=500")
+// login-max-requests: this class logs in once per test and sits near the per-IP auth rate limit
+//   (default 12); lift it so adding a test never flakes an unrelated one with a 429 on /auth/login.
+// dispatch.cron="-": disable the background dispatch worker so the only dispatcher is the explicit
+//   dispatchDuePublicationsUseCase.execute() call a test makes — otherwise the every-20s scheduler
+//   races the test and steals the row before the assertion.
+@org.springframework.test.context.TestPropertySource(properties = {
+        "app.gateway.rate-limit.login-max-requests=500",
+        "app.social-publishing.dispatch.cron=-",
+})
 class PublicationControllerIT {
 
     @Container
