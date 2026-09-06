@@ -287,6 +287,25 @@ export default function CheckoutPage({ locale }: Props) {
     };
   }, [token]);
 
+  /*
+   * Starts the gateway checkout session and navigates there. Returns true when the browser is on
+   * its way to the gateway (the caller must stop), false when it should fall through to the
+   * account panel — the order already exists, so a failure here is a soft landing, not a loss.
+   */
+  async function redirectToGateway(orderId: string, authToken: string): Promise<boolean> {
+    setRedirectingToGateway(true);
+    try {
+      const payment = await getPaymentByOrder(orderId, authToken);
+      if (!payment) throw new Error('missing payment');
+      const session = await createGatewayCheckoutSession(payment.id, authToken);
+      window.location.assign(session.checkoutUrl);
+      return true;
+    } catch {
+      setRedirectingToGateway(false);
+      return false;
+    }
+  }
+
   async function placeOrder() {
     if (submitting) return;
     /*
@@ -380,22 +399,11 @@ export default function CheckoutPage({ locale }: Props) {
        * already reads Mercado Pago's own return signals (mp/collection_status/status) and shows a
        * reassuring banner there, where the customer actually lands.
        */
-      let gatewayRedirectFailed = false;
-      if (isGatewayMethod) {
-        setRedirectingToGateway(true);
-        try {
-          const payment = await getPaymentByOrder(order.id, token);
-          if (!payment) throw new Error('missing payment');
-          const session = await createGatewayCheckoutSession(payment.id, token);
-          window.location.assign(session.checkoutUrl);
-          return;
-        } catch {
-          setRedirectingToGateway(false);
-          gatewayRedirectFailed = true;
-        }
+      if (isGatewayMethod && (await redirectToGateway(order.id, token))) {
+        return;
       }
 
-      const fallbackSignal = gatewayRedirectFailed ? '&gw=fallback' : '';
+      const fallbackSignal = isGatewayMethod ? '&gw=fallback' : '';
       window.location.href = `/${locale}/account?tab=orders&order=${encodeURIComponent(order.id)}${fallbackSignal}`;
     } catch (error) {
       const raw = error instanceof Error ? error.message : '';
