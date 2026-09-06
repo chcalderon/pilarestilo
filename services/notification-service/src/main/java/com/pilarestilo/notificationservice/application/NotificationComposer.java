@@ -252,15 +252,54 @@ public class NotificationComposer {
         return variant == null ? "" : " (" + variant + ")";
     }
 
-    public NotificationMessage paymentReceived(UUID paymentId) {
+    public NotificationMessage paymentReceived(OrderView order, PaymentView payment) {
+        String reference = order.publicReference();
+        String total = formatAmount(order.total().amount().toPlainString(), order.total().currency());
+        int itemCount = order.items().stream().mapToInt(OrderView.OrderItemView::quantity).sum();
+        String methodLabel = methodLabel(payment.method());
+
+        String body = "Recibimos el pago de tu pedido " + reference + " " + methodLabel + ".\n\n"
+                + "Ya estamos preparando el pedido; te avisamos por aquí apenas salga a despacho.\n\n"
+                + "Puedes seguirlo en pilarestilo.com, en Mi cuenta > Pedidos.\n";
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(KEY_ORDER_ID, order.id());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put("paymentId", payment.id());
+        data.put("method", payment.method());
+        data.put(KEY_TOTAL_AMOUNT, order.total().amount());
+        data.put(KEY_CURRENCY, order.total().currency());
+
         return new NotificationMessage(
                 NotificationMessage.PAYMENT_RECEIVED,
-                "Pago " + shortId(paymentId) + " recibido",
-                "Confirmamos el pago " + paymentId + ".\n"
-                        + "Gracias por tu compra en Pilar Estilo.\n",
-                null,
-                Map.of("paymentId", paymentId),
-                paymentId);
+                "Pago confirmado — pedido " + reference,
+                body,
+                EmailLayout.titled("Estamos preparando tu pedido")
+                        .eyebrow("Pago confirmado")
+                        .paragraph("Recibimos tu pago. Ya estamos armando el paquete y te avisamos por "
+                                + "aquí apenas salga a despacho.")
+                        .orderSummary(reference, formatDate(payment.createdAt()), List.of(),
+                                List.of(new String[]{"Productos", itemCount + " · " + total},
+                                        new String[]{"Pago", capitalize(methodLabel)}))
+                        .route("Cómo seguirlo", "Entra a", "pilarestilo.com", "Mi cuenta › Pedidos")
+                        .build(),
+                data,
+                order.id());
+    }
+
+    private static String methodLabel(String method) {
+        if (method == null) {
+            return "con tarjeta o transferencia";
+        }
+        return switch (method) {
+            case "TRANSFER" -> "por transferencia";
+            case "MERCADO_PAGO" -> "con Mercado Pago";
+            default -> "con tarjeta";
+        };
+    }
+
+    private static String capitalize(String s) {
+        return s == null || s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private String orderCancelledHtml(String reference, String reason) {
@@ -273,23 +312,6 @@ public class NotificationComposer {
                 .paragraph("Los productos volvieron a estar disponibles. Si aún quieres comprarlos, "
                         + "puedes hacer un nuevo pedido cuando quieras.")
                 .build();
-    }
-
-    public NotificationMessage orderPreparing(OrderView order) {
-        UUID orderId = order.id();
-        String reference = order.publicReference();
-        return new NotificationMessage(
-                NotificationMessage.ORDER_PREPARING,
-                PREFIX_PEDIDO + reference + " en preparación",
-                PREFIX_TU_PEDIDO + reference + " está en preparación.\n"
-                        + "Te avisaremos cuando sea despachado.\n",
-                EmailLayout.titled("Estamos preparando tu pedido")
-                        .paragraph("Tu pago quedó confirmado y ya estamos armando el paquete.")
-                        .highlight(LABEL_NUMERO_PEDIDO, reference)
-                        .paragraph("Te escribimos de nuevo apenas salga.")
-                        .build(),
-                Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
-                orderId);
     }
 
     public NotificationMessage orderShipped(OrderView order) {
@@ -417,9 +439,6 @@ public class NotificationComposer {
                 : amount + " de descuento en tu próxima compra";
     }
 
-    private static String shortId(UUID id) {
-        return id == null ? "" : id.toString().substring(0, 8);
-    }
 
     private String formatDeadline(Instant deadline) {
         var local = deadline.atZone(STORE_ZONE);

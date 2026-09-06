@@ -85,6 +85,7 @@ class EmailPreviewTest {
         dump(composer.welcome("Camila Torres", new WelcomeDiscount(
                 "BIENVENIDA20", "PERCENTAGE", BigDecimal.valueOf(20), null, LocalDate.now().plusDays(24))));
         dump(composer.discountCodeAssigned("VUELVE15"));
-        // paymentReceived added in Task 5; sales-document + returns are out of scope for this plan.
+        dump(composer.paymentReceived(order, payment));
+        // sales-document + returns are out of scope for this plan.
     }
 }

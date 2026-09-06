@@ -81,6 +81,26 @@ class NotificationComposerTest {
     }
 
     @Test
+    void paymentReceivedReferencesTheOrderNotThePaymentUuid() {
+        var message = composer.paymentReceived(order, payment);
+
+        assertThat(message.templateKey()).isEqualTo(NotificationMessage.PAYMENT_RECEIVED);
+        assertThat(message.subject()).isEqualTo("Pago confirmado — pedido " + REFERENCE);
+        assertThat(message.subject()).doesNotContain(payment.id().toString());
+        assertThat(message.bodyText())
+                .contains(REFERENCE)
+                .contains("preparando")
+                .contains("por transferencia")
+                .doesNotContain(payment.id().toString());
+        assertThat(message.bodyHtml())
+                .contains("Pago confirmado")
+                .contains("Pedido " + REFERENCE)
+                .contains("Mi cuenta")
+                .doesNotContain("<a ").doesNotContain("href=");
+        assertThat(message.referenceId()).isEqualTo(order.id());
+    }
+
+    @Test
     void omitsTheDeadlineParagraphWhenThereIsNoDeadline() {
         var message = composer.transferInstructions(order, payment, null);
 
