@@ -108,7 +108,7 @@ public class NotificationComposer {
                         + "podamos identificar tu pago.");
 
         if (deadline != null) {
-            email.note("Sube tu comprobante desde Mi Cuenta antes de las "
+            email.note("Antes de la fecha límite", "Sube tu comprobante desde Mi cuenta antes de las "
                     + formatDeadline(deadline) + ". Sin comprobante, el pedido puede cancelarse "
                     + "y el stock quedará liberado.");
         } else {
@@ -224,8 +224,8 @@ public class NotificationComposer {
 
         return email
                 .details(amounts)
-                .note("Tienes 10 días desde que recibes el pedido para arrepentirte de la compra y "
-                        + "pedir la devolución, según la Ley del Consumidor.")
+                .note("Si cambias de opinión", "Tienes 10 días desde que recibes el pedido para "
+                        + "pedir la devolución, sin dar motivo, según la Ley del Consumidor.")
                 .build();
     }
 
@@ -261,7 +261,7 @@ public class NotificationComposer {
                 .highlight(LABEL_NUMERO_PEDIDO, reference);
         Optional.ofNullable(reason)
                 .filter(r -> !r.isBlank())
-                .ifPresent(r -> email.note("Motivo: " + r));
+                .ifPresent(r -> email.note("Motivo", r));
         return email
                 .paragraph("Los productos volvieron a estar disponibles. Si aún quieres comprarlos, "
                         + "puedes hacer un nuevo pedido cuando quieras.")
@@ -313,7 +313,7 @@ public class NotificationComposer {
                         + "Nos ayudarías mucho contándonos qué te pareció.\n",
                 EmailLayout.titled("Tu pedido quedó como entregado")
                         .highlight(LABEL_NUMERO_PEDIDO, reference)
-                        .note("Si aún no lo recibiste, respóndenos este correo y lo revisamos.")
+                        .note("Si aún no llega", "Si aún no lo recibiste, responde este correo y lo revisamos.")
                         .paragraph("Nos ayudarías mucho contándonos qué te pareció.")
                         .build(),
                 Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
@@ -379,7 +379,7 @@ public class NotificationComposer {
                     .append(" (").append(condition).append("), válido hasta ")
                     .append(coupon.validUntil()).append(".\n");
             email.highlight("Tu código de bienvenida", coupon.code())
-                    .note(condition + ". Válido hasta " + coupon.validUntil() + ".");
+                    .note("Condiciones", condition + ". Válido hasta " + coupon.validUntil() + ".");
             data.put("welcomeDiscountCode", coupon.code());
             data.put("welcomeDiscountValidUntil", coupon.validUntil());
         }
@@ -579,7 +579,7 @@ public class NotificationComposer {
                 EmailLayout.titled("Reembolso realizado")
                         .paragraph("Te devolvimos el dinero de tu pedido " + reference + ".")
                         .details(rows)
-                        .note("Según tu banco puede tardar unos días en aparecer en tu cartola.")
+                        .note("Cuándo lo verás", "Según tu banco puede tardar unos días en aparecer en tu cartola.")
                         .build(),
                 data,
                 order.id());
