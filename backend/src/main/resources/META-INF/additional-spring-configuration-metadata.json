@@ -443,6 +443,17 @@
       "description": "Cron for the scheduled-publication job. Default: every minute."
     },
     {
+      "name": "app.social-publishing.metrics.refresh-cron",
+      "type": "java.lang.String",
+      "description": "Cron for the daily engagement-metrics refresh job. Default: 06:00."
+    },
+    {
+      "name": "app.social-publishing.metrics.max-age-days",
+      "type": "java.lang.Integer",
+      "description": "The scheduled refresh only touches posts published within this many days.",
+      "defaultValue": 30
+    },
+    {
       "name": "app.social-publishing.schedule.max-lateness-minutes",
       "type": "java.lang.Long",
       "description": "A SCHEDULED publication more than this many minutes overdue is failed instead of published."

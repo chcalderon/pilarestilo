@@ -187,6 +187,9 @@ app:
     schedule:
       cron: ${APP_SOCIAL_PUBLISHING_SCHEDULE_CRON:0 * * * * *}
       max-lateness-minutes: ${APP_SOCIAL_PUBLISHING_SCHEDULE_MAX_LATENESS_MINUTES:360}
+    metrics:
+      refresh-cron: ${APP_SOCIAL_PUBLISHING_METRICS_REFRESH_CRON:0 0 6 * * *}
+      max-age-days: ${APP_SOCIAL_PUBLISHING_METRICS_MAX_AGE_DAYS:30}
 
 server:
   port: 8080
