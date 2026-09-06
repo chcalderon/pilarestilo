@@ -159,6 +159,10 @@ public class CampaignReportService {
         CampaignSummaryDto.MetricsTotals toDto() {
             return new CampaignSummaryDto.MetricsTotals(imp, reach, likes, comments, shares, saved);
         }
+
+        private static long nz(Long v) {
+            return v == null ? 0L : v;
+        }
     }
 
     private Map<String, List<PublicationEntity>> groupPublicationsByLabel() {
@@ -197,10 +201,6 @@ public class CampaignReportService {
         }
         return metricsRepository.findByPublicationIdIn(ids).stream()
                 .collect(Collectors.toMap(PublicationMetricsEntity::getPublicationId, m -> m));
-    }
-
-    private static long nz(Long v) {
-        return v == null ? 0L : v;
     }
 
     private static PostMetrics toPostMetrics(PublicationMetricsEntity m) {
