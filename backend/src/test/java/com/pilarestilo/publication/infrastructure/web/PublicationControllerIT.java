@@ -312,6 +312,10 @@ class PublicationControllerIT {
                                 "campaignLabel", "Historial Test"))))
                 .andExpect(status().isOk());
 
+        // The batch only queues rows; run the worker so they reach a terminal state (no Meta
+        // credentials in the test -> a permanent failure).
+        dispatchDuePublicationsUseCase.execute();
+
         MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
@@ -430,6 +434,9 @@ class PublicationControllerIT {
                 .andReturn();
         String publicationId = om.readTree(batchResult.getResponse().getContentAsString())
                 .get("items").get(0).get("publicationId").asString();
+
+        // Worker publishes the queued row -> permanent failure (no Meta credentials) -> FAILED.
+        dispatchDuePublicationsUseCase.execute();
 
         MvcResult batches = mvc.perform(get("/api/admin/publications/batches")
                         .header("Authorization", bearer(adminToken)))

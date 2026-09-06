@@ -40,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +64,7 @@ class PublishProductsBatchUseCaseTest {
     }
 
     @Test
-    void interpolates_caption_template_per_product_and_dispatches_each_selected_platform() {
+    void interpolates_caption_template_per_product_and_queues_each_selected_platform() {
         UUID productId = UUID.randomUUID();
         Product product = Product.create("Chaqueta", "desc", new Money(BigDecimal.valueOf(49990), "CLP"),
                 "https://img", ProductCondition.NEW, "Pilar", 2);
@@ -74,8 +73,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(publishedDto(publicationId));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId),
@@ -89,7 +86,11 @@ class PublishProductsBatchUseCaseTest {
         ), UUID.randomUUID());
 
         assertEquals(2, result.items().size());
-        assertTrue(result.items().stream().allMatch(PublishProductsBatchResult.PublicationItemResult::success));
+        // The batch endpoint only queues rows now; the worker publishes them.
+        assertTrue(result.items().stream()
+                .noneMatch(PublishProductsBatchResult.PublicationItemResult::success));
+        assertTrue(result.items().stream().allMatch(i -> i.publicationId() != null));
+        org.mockito.Mockito.verify(publicationService, org.mockito.Mockito.never()).dispatch(any(), any());
 
         ArgumentCaptor<CreatePublicationCommand> captor = ArgumentCaptor.forClass(CreatePublicationCommand.class);
         verify(publicationService, times(2)).create(captor.capture(), any());
@@ -112,9 +113,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(publishedDto(publicationId));
-
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(missingProductId, okProductId),
                 Set.of(PublicationPlatform.INSTAGRAM),
@@ -125,7 +123,8 @@ class PublishProductsBatchUseCaseTest {
         assertEquals(2, result.items().size());
         assertFalse(result.items().get(0).success());
         assertTrue(result.items().get(0).errorMessage().contains("no encontrado"));
-        assertTrue(result.items().get(1).success());
+        assertFalse(result.items().get(1).success());
+        assertNotNull(result.items().get(1).publicationId());
     }
 
     @Test
@@ -148,16 +147,13 @@ class PublishProductsBatchUseCaseTest {
     }
 
     @Test
-    void a_dispatch_result_that_is_not_published_is_reported_as_a_failure_with_its_error() {
+    void a_create_failure_is_reported_per_item() {
         UUID productId = UUID.randomUUID();
         Product product = Product.create("Falda", "desc", new Money(BigDecimal.valueOf(8000), "CLP"),
                 "https://img", ProductCondition.NEW, "Pilar", 1);
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
-                .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(failedDto(publicationId, "Instagram credentials are not configured"));
+                .thenThrow(new DomainException("clave idempotente en conflicto"));
 
         PublishProductsBatchResult result = useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null, Map.of(), Map.of(),
@@ -165,7 +161,7 @@ class PublishProductsBatchUseCaseTest {
         ), UUID.randomUUID());
 
         assertFalse(result.items().get(0).success());
-        assertEquals("Instagram credentials are not configured", result.items().get(0).errorMessage());
+        assertEquals("clave idempotente en conflicto", result.items().get(0).errorMessage());
     }
 
     @Test
@@ -177,9 +173,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(publishedDto(publicationId));
-
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM), "{producto}", List.of(), null,
                 Map.of(productId, List.of("https://cdn.example.com/edited.jpg")), Map.of(),
@@ -205,9 +198,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(publishedDto(publicationId));
-
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
                 "{producto} color {color} talla {talla}, quedan {cantidad}", List.of(), null,
@@ -230,9 +220,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any()))
-                .thenReturn(publishedDto(publicationId));
-
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
                 "{producto} color {color}", List.of(), null, Map.of(), Map.of(),
@@ -253,8 +240,6 @@ class PublishProductsBatchUseCaseTest {
         UUID publicationId = UUID.randomUUID();
         when(publicationService.create(any(CreatePublicationCommand.class), any()))
                 .thenReturn(new CreatePublicationResult(publishedDto(publicationId), true));
-        when(publicationService.dispatch(eq(publicationId), any())).thenReturn(publishedDto(publicationId));
-
         useCase.execute(new PublishProductsBatchCommand(
                 List.of(productId), Set.of(PublicationPlatform.INSTAGRAM),
                 "{producto} a solo {precio}", List.of("#pilarestilo"), "Liquidacion", Map.of(), Map.of(),
@@ -303,10 +288,6 @@ class PublishProductsBatchUseCaseTest {
 
     private PublicationDto publishedDto(UUID id) {
         return dto(id, PublicationStatus.PUBLISHED, null);
-    }
-
-    private PublicationDto failedDto(UUID id, String errorMessage) {
-        return dto(id, PublicationStatus.FAILED, errorMessage);
     }
 
     private PublicationDto dto(UUID id, PublicationStatus status, String lastErrorMessage) {

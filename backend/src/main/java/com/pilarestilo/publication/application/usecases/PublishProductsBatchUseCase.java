@@ -6,10 +6,8 @@ import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
 import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
-import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
 import com.pilarestilo.publication.domain.enums.PublicationPlatform;
-import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.infrastructure.persistence.entities.PublicationBatchEntity;
 import com.pilarestilo.publication.infrastructure.persistence.repositories.PublicationBatchJpaRepository;
 import com.pilarestilo.shared.domain.DomainException;
@@ -22,13 +20,14 @@ import java.util.UUID;
 
 /**
  * Orchestrates a multi-product, multi-platform publish. Deliberately not @Transactional: each
- * item's create()+dispatch() opens its own transaction on PublicationService (a different Spring
- * bean, so its @Transactional proxy applies independently). Wrapping this loop in one outer
- * transaction would mark it rollback-only the moment any single item's call threw, losing every
- * other item's already-recorded result too — the opposite of "each row is independent."
+ * item's create() opens its own transaction on PublicationService (a different Spring bean, so its
+ * @Transactional proxy applies independently). Wrapping this loop in one outer transaction would
+ * mark it rollback-only the moment any single item's call threw, losing every other item's
+ * already-recorded result too — the opposite of "each row is independent."
  *
- * <p>When the command carries a scheduledAt, each row is created as SCHEDULED and NOT dispatched;
- * a background job publishes it when due.
+ * <p>This use case never dispatches. Every row is created (APPROVED for "now", SCHEDULED for a
+ * future time) and left for {@link DispatchDuePublicationsUseCase} to publish. Item results carry
+ * only the created publication id, or a create-time error message.
  */
 @Component
 public class PublishProductsBatchUseCase {
@@ -92,15 +91,10 @@ public class PublishProductsBatchUseCase {
             CreatePublicationCommand createCommand =
                     factory.buildCreateCommand(command, productId, product, platform, caption, batchId);
             CreatePublicationResult created = publicationService.create(createCommand, actorUserId);
-            if (scheduled) {
-                return new PublishProductsBatchResult.PublicationItemResult(
-                        productId, platform, false, created.publication().id(), null, true);
-            }
-            PublicationDto dispatched = publicationService.dispatch(created.publication().id(), actorUserId);
-            boolean success = dispatched.status() == PublicationStatus.PUBLISHED;
+            // Both the immediate and the scheduled paths leave the row for the dispatch worker.
+            // "scheduled" here still means "the admin picked a future time" (drives the UI copy).
             return new PublishProductsBatchResult.PublicationItemResult(
-                    productId, platform, success, dispatched.id(),
-                    success ? null : dispatched.lastErrorMessage(), false);
+                    productId, platform, false, created.publication().id(), null, scheduled);
         } catch (DomainException ex) {
             return new PublishProductsBatchResult.PublicationItemResult(
                     productId, platform, false, null, ex.getMessage(), false);

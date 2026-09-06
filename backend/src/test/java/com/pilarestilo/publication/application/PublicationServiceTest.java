@@ -19,7 +19,6 @@ import com.pilarestilo.publication.domain.enums.PublicationSourceType;
 import com.pilarestilo.publication.domain.enums.PublicationStatus;
 import com.pilarestilo.publication.domain.events.PublicationApproved;
 import com.pilarestilo.publication.domain.events.PublicationDispatchCompleted;
-import com.pilarestilo.publication.domain.events.PublicationDispatchRequested;
 import com.pilarestilo.publication.domain.events.PublicationDraftCreated;
 import com.pilarestilo.publication.domain.events.PublicationSubmittedForReview;
 import com.pilarestilo.publication.domain.enums.PublicationMediaRenderStatus;
