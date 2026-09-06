@@ -1,15 +1,20 @@
 package com.pilarestilo.publication.infrastructure.web.controllers;
 
+import com.pilarestilo.publication.application.CampaignReportService;
 import com.pilarestilo.publication.application.PublicationService;
 import com.pilarestilo.publication.application.commands.CreatePublicationCommand;
 import com.pilarestilo.publication.application.commands.PublishProductsBatchCommand;
 import com.pilarestilo.publication.application.dto.CreatePublicationResult;
 import com.pilarestilo.publication.application.dto.PublicationBatchDetailDto;
 import com.pilarestilo.publication.application.dto.PublicationBatchSummaryDto;
+import com.pilarestilo.publication.application.dto.CampaignDetailDto;
+import com.pilarestilo.publication.application.dto.CampaignSummaryDto;
 import com.pilarestilo.publication.application.dto.PublicationDto;
 import com.pilarestilo.publication.application.dto.PublishProductsBatchResult;
 import com.pilarestilo.publication.application.usecases.GetProductPublicationImageHistoryUseCase;
+import com.pilarestilo.publication.application.usecases.MetricsRefreshScope;
 import com.pilarestilo.publication.application.usecases.PublishProductsBatchUseCase;
+import com.pilarestilo.publication.application.usecases.RefreshMetricsUseCase;
 import com.pilarestilo.publication.application.usecases.RetryFailedBatchUseCase;
 import com.pilarestilo.publication.application.usecases.UpdateScheduledBatchUseCase;
 import com.pilarestilo.publication.domain.enums.PublicationChannelType;
@@ -45,17 +50,23 @@ public class PublicationController {
     private final GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase;
     private final RetryFailedBatchUseCase retryFailedBatchUseCase;
     private final UpdateScheduledBatchUseCase updateScheduledBatchUseCase;
+    private final CampaignReportService campaignReportService;
+    private final RefreshMetricsUseCase refreshMetricsUseCase;
 
     public PublicationController(PublicationService publicationService,
                                  PublishProductsBatchUseCase publishProductsBatchUseCase,
                                  GetProductPublicationImageHistoryUseCase getProductPublicationImageHistoryUseCase,
                                  RetryFailedBatchUseCase retryFailedBatchUseCase,
-                                 UpdateScheduledBatchUseCase updateScheduledBatchUseCase) {
+                                 UpdateScheduledBatchUseCase updateScheduledBatchUseCase,
+                                 CampaignReportService campaignReportService,
+                                 RefreshMetricsUseCase refreshMetricsUseCase) {
         this.publicationService = publicationService;
         this.publishProductsBatchUseCase = publishProductsBatchUseCase;
         this.getProductPublicationImageHistoryUseCase = getProductPublicationImageHistoryUseCase;
         this.updateScheduledBatchUseCase = updateScheduledBatchUseCase;
         this.retryFailedBatchUseCase = retryFailedBatchUseCase;
+        this.campaignReportService = campaignReportService;
+        this.refreshMetricsUseCase = refreshMetricsUseCase;
     }
 
     @PostMapping
@@ -167,6 +178,24 @@ public class PublicationController {
                                                           @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return updateScheduledBatchUseCase.execute(batchId, toBatchCommand(request),
                 currentUser == null ? null : currentUser.id());
+    }
+
+    @GetMapping("/campaigns")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public List<CampaignSummaryDto> campaigns() {
+        return campaignReportService.listCampaigns();
+    }
+
+    @GetMapping("/campaigns/detail")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_READ)")
+    public CampaignDetailDto campaignDetail(@RequestParam String label) {
+        return campaignReportService.getCampaign(label);
+    }
+
+    @PostMapping("/campaigns/refresh-metrics")
+    @PreAuthorize("hasRole('ADMIN') or @rbac.hasPermission(authentication, T(com.pilarestilo.shared.rbac.domain.PermissionRegistry).PUBLICATIONS_UPDATE)")
+    public RefreshMetricsUseCase.MetricsRefreshResult refreshCampaignMetrics(@RequestParam String label) {
+        return refreshMetricsUseCase.execute(new MetricsRefreshScope.Campaign(label));
     }
 
     private PublishProductsBatchCommand toBatchCommand(PublishProductsBatchRequest request) {

@@ -362,6 +362,50 @@ class PublicationControllerIT {
     }
 
     @Test
+    void campaigns_list_groups_a_published_batch_by_its_label() throws Exception {
+        String adminToken = loginAdmin();
+        Product product = productRepository.save(Product.create("Falda campaña", "d",
+                new Money(BigDecimal.valueOf(29990), "CLP"), "https://cdn.example.com/f.jpg",
+                ProductCondition.NEW, "Pilar", 3));
+
+        mvc.perform(post("/api/admin/publications/batch")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "productIds", List.of(product.getId().toString()),
+                                "platforms", List.of("INSTAGRAM"),
+                                "captionTemplate", "{producto}",
+                                "campaignLabel", "Campaña de prueba"))))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/admin/publications/campaigns").header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.label == 'Campaña de prueba')]").exists());
+
+        mvc.perform(get("/api/admin/publications/campaigns/detail")
+                        .param("label", "Campaña de prueba")
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.label").value("Campaña de prueba"))
+                .andExpect(jsonPath("$.posts", org.hamcrest.Matchers.hasSize(1)));
+    }
+
+    @Test
+    void refresh_metrics_requires_update_permission() throws Exception {
+        String sellerToken = jwtTokenProvider.generateAccessToken(
+                UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                "seller-metrics@pilarestilo.com",
+                UserRole.SELLER,
+                List.of("productos"),
+                List.of("publications.read"));
+
+        mvc.perform(post("/api/admin/publications/campaigns/refresh-metrics")
+                        .param("label", "x")
+                        .header("Authorization", bearer(sellerToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void retry_failed_in_batch_redispatches_only_failed_rows() throws Exception {
         String adminToken = loginAdmin();
         Product product = productRepository.save(Product.create("Blusa retry", "desc",

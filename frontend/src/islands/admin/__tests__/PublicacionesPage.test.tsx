@@ -18,6 +18,9 @@ vi.mock('../../../lib/api', () => ({
   uploadMediaFile: vi.fn(),
   getProduct: vi.fn(),
   getProductPublicationImageHistory: vi.fn().mockResolvedValue([]),
+  getCampaigns: vi.fn().mockResolvedValue([]),
+  getCampaignDetail: vi.fn(),
+  refreshCampaignMetrics: vi.fn(),
 }));
 vi.mock('../../../lib/authStore', () => ({
   useAuthStore: () => ({ token: 't' }),
@@ -42,6 +45,14 @@ describe('PublicacionesPage shell', () => {
     await user.click(screen.getByRole('tab', { name: /historial/i }));
     expect(screen.getByRole('tab', { name: /historial/i })).toHaveAttribute('aria-selected', 'true');
     expect(new URLSearchParams(window.location.search).get('tab')).toBe('historial');
+  });
+
+  it('opens the Campañas tab and writes ?tab=campanas', async () => {
+    const user = userEvent.setup();
+    render(<PublicacionesPage />);
+    await user.click(screen.getByRole('tab', { name: /campañas/i }));
+    expect(screen.getByRole('tab', { name: /campañas/i })).toHaveAttribute('aria-selected', 'true');
+    expect(new URLSearchParams(window.location.search).get('tab')).toBe('campanas');
   });
 
   it('opens on Historial when the URL says so', () => {

@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import PublicarTab, { type PublicarTabPreload } from './PublicarTab';
 import HistorialTab from './HistorialTab';
+import CampanasTab from './CampanasTab';
 
-type Tab = 'publicar' | 'historial';
+type Tab = 'publicar' | 'historial' | 'campanas';
 
 function parseTab(raw: string | null): Tab {
-  return raw?.toLowerCase() === 'historial' ? 'historial' : 'publicar';
+  const v = raw?.toLowerCase();
+  if (v === 'historial') return 'historial';
+  if (v === 'campanas') return 'campanas';
+  return 'publicar';
 }
+
+const TAB_LABEL: Record<Tab, string> = {
+  publicar: 'Publicar',
+  historial: 'Historial',
+  campanas: 'Campañas',
+};
 
 export default function PublicacionesPage() {
   const [tab, setTab] = useState<Tab>('publicar');
@@ -48,7 +58,7 @@ export default function PublicacionesPage() {
   return (
     <div className="flex flex-col gap-5">
       <div role="tablist" aria-label="Publicaciones" className="flex gap-1 border-b border-pe-border">
-        {(['publicar', 'historial'] as const).map((id) => (
+        {(['publicar', 'historial', 'campanas'] as const).map((id) => (
           <button
             key={id}
             role="tab"
@@ -60,7 +70,7 @@ export default function PublicacionesPage() {
               tab === id ? 'border-pe-rose text-pe-black' : 'border-transparent text-pe-muted hover:text-pe-black',
             ].join(' ')}
           >
-            {id === 'publicar' ? 'Publicar' : 'Historial'}
+            {TAB_LABEL[id]}
           </button>
         ))}
       </div>
@@ -80,6 +90,7 @@ export default function PublicacionesPage() {
           onEditScheduled={editScheduled}
         />
       )}
+      {tab === 'campanas' && <CampanasTab />}
     </div>
   );
 }
