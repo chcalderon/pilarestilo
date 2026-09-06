@@ -71,6 +71,31 @@ class PasswordResetTokenRepositoryAdapterIT {
     }
 
     @Test
+    void findActiveByUserId_returns_the_newest_unused_unexpired_row() {
+        repository.save(PasswordResetToken.issue(SEEDED_USER, "old-" + UUID.randomUUID(), Duration.ofMinutes(30)));
+        PasswordResetToken newest = repository.save(
+                PasswordResetToken.issue(SEEDED_USER, "new-" + UUID.randomUUID(), Duration.ofMinutes(30)));
+
+        var found = repository.findActiveByUserId(SEEDED_USER);
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getTokenHash()).isEqualTo(newest.getTokenHash());
+    }
+
+    @Test
+    void attempt_count_survives_a_round_trip() {
+        PasswordResetToken saved = repository.save(
+                PasswordResetToken.issue(SEEDED_USER, "h-" + UUID.randomUUID(), Duration.ofMinutes(30)));
+        saved.recordFailedAttempt();
+        saved.recordFailedAttempt();
+        repository.save(saved);
+
+        var reloaded = repository.findActiveByUserId(SEEDED_USER);
+        assertThat(reloaded).isPresent();
+        assertThat(reloaded.get().getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
     void delete_expired_before_removes_only_the_stale_rows() {
         String fresh = "fresh-" + UUID.randomUUID();
         repository.save(PasswordResetToken.issue(SEEDED_USER, fresh, Duration.ofMinutes(30)));

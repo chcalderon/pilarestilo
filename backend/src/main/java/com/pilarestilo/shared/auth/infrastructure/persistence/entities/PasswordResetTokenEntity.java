@@ -30,6 +30,9 @@ public class PasswordResetTokenEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getUserId() { return userId; }
@@ -42,4 +45,6 @@ public class PasswordResetTokenEntity {
     public void setUsedAt(Instant usedAt) { this.usedAt = usedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public int getAttemptCount() { return attemptCount; }
+    public void setAttemptCount(int attemptCount) { this.attemptCount = attemptCount; }
 }

@@ -12,6 +12,12 @@ public interface PasswordResetTokenRepository {
 
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);
 
+    /**
+     * The newest unused, unexpired token for the user, if any. The attempt-count lock is judged by
+     * the caller (a locked row still comes back, and yields the one generic failure).
+     */
+    Optional<PasswordResetToken> findActiveByUserId(UUID userId);
+
     /** Marks every unused token for the user as used, so a newly issued link is the only live one. */
     void invalidateUnusedForUser(UUID userId);
 

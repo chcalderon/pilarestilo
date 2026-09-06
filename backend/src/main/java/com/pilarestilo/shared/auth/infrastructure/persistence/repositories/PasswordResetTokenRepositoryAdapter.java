@@ -31,6 +31,13 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
     }
 
     @Override
+    public Optional<PasswordResetToken> findActiveByUserId(UUID userId) {
+        return jpaRepository.findActiveByUserId(userId, Instant.now()).stream()
+                .findFirst()
+                .map(this::toDomain);
+    }
+
+    @Override
     @Transactional
     public void invalidateUnusedForUser(UUID userId) {
         jpaRepository.invalidateUnusedForUser(userId, Instant.now());
@@ -50,6 +57,7 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
         entity.setExpiresAt(token.getExpiresAt());
         entity.setUsedAt(token.getUsedAt());
         entity.setCreatedAt(token.getCreatedAt());
+        entity.setAttemptCount(token.getAttemptCount());
         return entity;
     }
 
@@ -60,6 +68,7 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
                 entity.getTokenHash(),
                 entity.getExpiresAt(),
                 entity.getUsedAt(),
-                entity.getCreatedAt());
+                entity.getCreatedAt(),
+                entity.getAttemptCount());
     }
 }
