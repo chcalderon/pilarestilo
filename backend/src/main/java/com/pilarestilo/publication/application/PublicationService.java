@@ -205,6 +205,12 @@ public class PublicationService {
 
     @Transactional(readOnly = true)
     public PublicationBatchDetailDto getBatch(UUID batchId) {
+        return buildBatchDetail(batchId);
+    }
+
+    // Not @Transactional: the write use cases below reuse it inside their own read-write tx, so a
+    // read-after-write sees the uncommitted changes (a self-call to getBatch would not).
+    private PublicationBatchDetailDto buildBatchDetail(UUID batchId) {
         PublicationBatchEntity batch = publicationBatchRepository.findById(batchId)
                 .orElseThrow(() -> new NoSuchElementException("Publication batch not found: " + batchId));
         List<PublicationEntity> rows = publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId);
@@ -367,7 +373,7 @@ public class PublicationService {
             r.setUpdatedAt(now);
             publicationRepository.save(r);
         }
-        return getBatch(batchId);
+        return buildBatchDetail(batchId);
     }
 
     @Transactional
@@ -387,7 +393,7 @@ public class PublicationService {
             r.setUpdatedAt(now);
             publicationRepository.save(r);
         }
-        return getBatch(batchId);
+        return buildBatchDetail(batchId);
     }
 
     private PublicationDto dispatchInternal(UUID id, PublicationAttemptTriggerType triggerType) {

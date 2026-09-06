@@ -138,7 +138,7 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         }
         try {
             Thread.sleep(containerPollIntervalMs);
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for the Instagram media container");
         }
@@ -148,7 +148,7 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         try {
             JsonNode node = getJson(client, "/{mediaId}?fields=permalink&access_token={token}", remotePostId, token);
             return node.hasNonNull("permalink") ? node.get("permalink").asString() : null;
-        } catch (RuntimeException permalinkError) {
+        } catch (RuntimeException _) {
             // The post is already live; a permalink lookup failure must not flip it to failed.
             return null;
         }

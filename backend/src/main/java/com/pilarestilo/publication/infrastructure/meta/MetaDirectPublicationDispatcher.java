@@ -46,6 +46,7 @@ public class MetaDirectPublicationDispatcher implements PublicationDispatcher {
         };
     }
 
+    @SuppressWarnings("java:S1075") // the "/" joins URL segments, not a filesystem path
     private String resolveAbsoluteUrl(String mediaUrl, String publicBaseUrl) {
         if (mediaUrl != null && (mediaUrl.startsWith("http://") || mediaUrl.startsWith("https://"))) {
             return mediaUrl;

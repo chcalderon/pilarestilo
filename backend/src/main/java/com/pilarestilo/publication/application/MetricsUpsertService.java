@@ -31,8 +31,9 @@ public class MetricsUpsertService {
             return n;
         });
         e.setFetchedAt(now);
-        if (result.metrics().isPresent()) {
-            PostMetrics m = result.metrics().get();
+        var metrics = result.metrics();
+        if (metrics.isPresent()) {
+            PostMetrics m = metrics.get();
             e.setImpressions(m.impressions());
             e.setReach(m.reach());
             e.setLikes(m.likes());

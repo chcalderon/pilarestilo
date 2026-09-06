@@ -44,11 +44,11 @@ public class RefreshMetricsUseCase {
 
     public MetricsRefreshResult execute(MetricsRefreshScope scope) {
         List<PublicationEntity> targets = switch (scope) {
-            case MetricsRefreshScope.Campaign c ->
-                    publicationRepository.findPublishedWithPostIdByCampaignLabel(c.label());
-            case MetricsRefreshScope.RecentDays r ->
+            case MetricsRefreshScope.Campaign(String label) ->
+                    publicationRepository.findPublishedWithPostIdByCampaignLabel(label);
+            case MetricsRefreshScope.RecentDays(int days) ->
                     publicationRepository.findPublishedWithPostIdSince(
-                            Instant.now(clock).minus(Duration.ofDays(r.days())));
+                            Instant.now(clock).minus(Duration.ofDays(days)));
         };
         int refreshed = 0;
         int failed = 0;

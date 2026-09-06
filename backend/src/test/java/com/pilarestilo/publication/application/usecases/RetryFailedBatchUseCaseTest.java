@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -57,10 +59,13 @@ class RetryFailedBatchUseCaseTest {
         PublicationEntity failed = row(batchId, PublicationStatus.FAILED);
         when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(failed));
         when(publicationService.retry(any(), any())).thenThrow(new DomainException("Only FAILED publications can be retried"));
-        when(publicationService.getBatch(batchId)).thenReturn(
-                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of(), null));
+        PublicationBatchDetailDto detail =
+                new PublicationBatchDetailDto(batchId, null, "{producto}", List.of(), Instant.now(), List.of(), List.of(), null);
+        when(publicationService.getBatch(batchId)).thenReturn(detail);
 
-        useCase.execute(batchId, UUID.randomUUID()); // must not throw
+        PublicationBatchDetailDto result = assertDoesNotThrow(() -> useCase.execute(batchId, UUID.randomUUID()));
+
+        assertSame(detail, result);
     }
 
     private PublicationEntity row(UUID batchId, PublicationStatus status) {

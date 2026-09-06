@@ -108,8 +108,10 @@ class UpdateScheduledBatchUseCaseTest {
         when(publicationRepository.findByBatchIdOrderByCreatedAtAsc(batchId)).thenReturn(List.of(
                 row(batchId, PublicationStatus.SCHEDULED), row(batchId, PublicationStatus.PUBLISHING)));
 
-        assertThrows(DomainException.class,
-                () -> useCase.execute(batchId, cmd(UUID.randomUUID(), Instant.now().plusSeconds(60)), UUID.randomUUID()));
+        var command = cmd(UUID.randomUUID(), Instant.now().plusSeconds(60));
+        UUID actorId = UUID.randomUUID();
+
+        assertThrows(DomainException.class, () -> useCase.execute(batchId, command, actorId));
         verify(publicationRepository, never()).deleteAll(any());
     }
 
