@@ -401,8 +401,10 @@ const organizationLd = serializeJsonLd(
         var pointerDownAt = 0;
         var suppressClickOnce = false;
         var longPressMs = 420;
-        const reduceMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-        var autoplayEnabled = !(reduceMotionQuery && reduceMotionQuery.matches);
+        // Autoplay is on by default for everyone. Under prefers-reduced-motion the CSS drops the
+        // 720ms slide (see the media query), so the panel changes without a glide -- but it still
+        // advances, and the Pausar/Reproducir control is the way to stop it.
+        var autoplayEnabled = true;
 
         function syncToggleButton() {
           if (!toggleButton) return;
@@ -495,6 +497,17 @@ const organizationLd = serializeJsonLd(
           dragDelta = 0;
           index = newIndex;
           setTransform(true);
+          // With prefers-reduced-motion the track has `transition: none`, so `transitionend`
+          // never fires and normalizeAfterTransition would never run -- the loop would walk off
+          // into the clones. Reconcile on the next frame instead.
+          if (transitionsOff()) {
+            requestAnimationFrame(normalizeAfterTransition);
+          }
+        }
+
+        function transitionsOff() {
+          var d = window.getComputedStyle(track).transitionDuration || '0s';
+          return parseFloat(d) === 0;
         }
 
         function next() {
@@ -528,7 +541,6 @@ const organizationLd = serializeJsonLd(
           stopAutoplay();
 
           if (!autoplayEnabled) return;
-          if (reduceMotionQuery && reduceMotionQuery.matches) return;
           if (document.hidden) return;
 
           timer = window.setInterval(function () {
