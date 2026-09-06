@@ -69,21 +69,27 @@ public class OrderNotificationDispatcher {
                     event.orderId(), event.newStatus());
             return;
         }
-        NotificationMessage message = compose(order.get(), event.newStatus());
+        Optional<NotificationMessage> message = compose(order.get(), event.newStatus());
 
         customerReadPort.findById(event.customerId()).ifPresentOrElse(
                 user -> {
-                    notificationSender.send(message, recipientFor(user));
+                    message.ifPresent(m -> notificationSender.send(m, recipientFor(user)));
                     notifyInApp(user.id(), event);
                 },
-                () -> notificationSender.send(message, NotificationRecipient.unknown()));
+                () -> message.ifPresent(m -> notificationSender.send(m, NotificationRecipient.unknown())));
     }
 
-    private NotificationMessage compose(OrderView order, String status) {
+    /**
+     * Empty for {@code PREPARING_ORDER} — that beat has no email of its own; "pago confirmado /
+     * estamos preparando tu pedido" already went out from {@link PaymentNotificationDispatcher}
+     * on {@code PaymentConfirmed}, the same moment. The in-app bell entry still fires (see
+     * {@link #notifyInApp}).
+     */
+    private Optional<NotificationMessage> compose(OrderView order, String status) {
         return switch (status) {
-            case "PREPARING_ORDER" -> composer.orderPreparing(order);
-            case "SHIPPED" -> composer.orderShipped(order);
-            case "DELIVERED" -> composer.orderDelivered(order);
+            case "PREPARING_ORDER" -> Optional.empty();
+            case "SHIPPED" -> Optional.of(composer.orderShipped(order));
+            case "DELIVERED" -> Optional.of(composer.orderDelivered(order));
             default -> throw new IllegalStateException("No message defined for status " + status);
         };
     }

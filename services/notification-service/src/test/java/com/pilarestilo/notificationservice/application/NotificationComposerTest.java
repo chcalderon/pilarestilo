@@ -81,6 +81,26 @@ class NotificationComposerTest {
     }
 
     @Test
+    void paymentReceivedReferencesTheOrderNotThePaymentUuid() {
+        var message = composer.paymentReceived(order, payment);
+
+        assertThat(message.templateKey()).isEqualTo(NotificationMessage.PAYMENT_RECEIVED);
+        assertThat(message.subject()).isEqualTo("Pago confirmado — pedido " + REFERENCE);
+        assertThat(message.subject()).doesNotContain(payment.id().toString());
+        assertThat(message.bodyText())
+                .contains(REFERENCE)
+                .contains("preparando")
+                .contains("por transferencia")
+                .doesNotContain(payment.id().toString());
+        assertThat(message.bodyHtml())
+                .contains("Pago confirmado")
+                .contains("Pedido " + REFERENCE)
+                .contains("Mi cuenta")
+                .doesNotContain("<a ").doesNotContain("href=");
+        assertThat(message.referenceId()).isEqualTo(order.id());
+    }
+
+    @Test
     void omitsTheDeadlineParagraphWhenThereIsNoDeadline() {
         var message = composer.transferInstructions(order, payment, null);
 
@@ -127,10 +147,16 @@ class NotificationComposerTest {
         var message = composer.orderConfirmation(order);
 
         assertThat(message.templateKey()).isEqualTo(NotificationMessage.ORDER_CONFIRMATION);
+        assertThat(message.subject()).contains(REFERENCE);
         assertThat(message.bodyText())
                 .contains("Vestido")
                 .contains(REFERENCE)
                 .contains("10 días");
+        assertThat(message.bodyHtml())
+                .contains("Pedido " + REFERENCE)
+                .contains("Vestido")
+                .contains("Mi cuenta")
+                .doesNotContain("<a ").doesNotContain("href=");
     }
 
     @Test
@@ -170,6 +196,28 @@ class NotificationComposerTest {
         var message = composer.welcome("Camila Torres", coupon);
 
         assertThat(message.bodyText()).contains("BIENVENIDA-ABC123").contains("10%");
-        assertThat(message.bodyHtml()).contains("BIENVENIDA-ABC123");
+        assertThat(message.bodyHtml())
+                .contains("BIENVENIDA-ABC123")
+                .contains("Código de descuento")
+                .doesNotContain("<a ").doesNotContain("href=");
+    }
+
+    @Test
+    void welcomeWithoutACouponPointsAtTheCatalogue() {
+        var message = composer.welcome("Camila Torres", null);
+        assertThat(message.bodyHtml())
+                .contains("Catálogo")
+                .doesNotContain("<a ").doesNotContain("href=");
+    }
+
+    @Test
+    void discountCodeAssignedNamesTheCodeInHtml() {
+        var message = composer.discountCodeAssigned("VUELVE15");
+        assertThat(message.bodyText()).contains("VUELVE15");
+        assertThat(message.bodyHtml())
+                .isNotNull()
+                .contains("VUELVE15")
+                .contains("Código de descuento")
+                .doesNotContain("<a ").doesNotContain("href=");
     }
 }

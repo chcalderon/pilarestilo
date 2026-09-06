@@ -34,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PasswordResetControllerIT {
 
     private static final String SAME_BODY =
-            "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.";
+            "Si el correo existe, te enviamos un código para cambiar tu contraseña.";
+    private static final String GENERIC_ERROR = "El enlace no es válido o ya expiró";
 
     @Container
     @SuppressWarnings("resource")
@@ -74,16 +75,27 @@ class PasswordResetControllerIT {
                 : null;
     }
 
+    private void forgot(String email) throws Exception {
+        mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", email))))
+                .andExpect(status().isOk());
+    }
+
+    private void resetExpect(String email, String code, String newPassword, int expectedStatus) throws Exception {
+        mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of(
+                                "email", email, "code", code, "newPassword", newPassword))))
+                .andExpect(status().is(expectedStatus));
+    }
+
     @Test
     void forgot_password_returns_the_same_200_body_for_known_and_unknown_emails() throws Exception {
         register("known-" + UUID.randomUUID() + "@example.com", "Password123");
 
-        for (String email : new String[]{"nobody-" + UUID.randomUUID() + "@example.com"}) {
-            mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
-                            .content(om.writeValueAsString(Map.of("email", email))))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value(SAME_BODY));
-        }
+        mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
+                        .content(om.writeValueAsString(Map.of("email", "nobody-" + UUID.randomUUID() + "@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(SAME_BODY));
     }
 
     @Test
@@ -92,54 +104,57 @@ class PasswordResetControllerIT {
         String body = register(email, "OldPassword1");
         String oldAccessToken = om.readTree(body).get("accessToken").asString();
 
-        mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk());
+        forgot(email);
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(mailer).sendResetCode(eq(email), any(), code.capture());
 
-        ArgumentCaptor<String> rawToken = ArgumentCaptor.forClass(String.class);
-        verify(mailer).sendResetLink(eq(email), any(), rawToken.capture());
+        resetExpect(email, code.getValue(), "BrandNewPass1", 204);
 
-        mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "token", rawToken.getValue(), "newPassword", "BrandNewPass1"))))
-                .andExpect(status().isNoContent());
-
-        // Old access token is now behind the user's session_version: the filter leaves the request
-        // anonymous, and this app answers a rejected token on a guarded route with 403 (same as an
-        // expired one — there is no 401 entry point).
+        // Old access token is now behind the user's session_version → 403 on a guarded route.
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + oldAccessToken))
                 .andExpect(status().isForbidden());
-        // The old password no longer logs in; the new one does.
         org.junit.jupiter.api.Assertions.assertNull(login(email, "OldPassword1"));
         org.junit.jupiter.api.Assertions.assertNotNull(login(email, "BrandNewPass1"));
     }
 
     @Test
-    void reset_password_with_a_garbage_token_is_a_generic_400() throws Exception {
-        mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "token", "not-a-real-token", "newPassword", "BrandNewPass1"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("El enlace no es válido o ya expiró"));
+    void a_wrong_code_is_a_generic_400_and_the_fifth_locks_the_code() throws Exception {
+        String email = "lock-" + UUID.randomUUID() + "@example.com";
+        register(email, "OldPassword1");
+        forgot(email);
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(mailer).sendResetCode(eq(email), any(), code.capture());
+
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
+                            .content(om.writeValueAsString(Map.of(
+                                    "email", email, "code", "000000", "newPassword", "BrandNewPass1"))))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.detail").value(GENERIC_ERROR));
+        }
+        // Even the right code no longer works — the row is locked.
+        resetExpect(email, code.getValue(), "BrandNewPass1", 400);
     }
 
     @Test
-    void requesting_a_second_link_invalidates_the_first() throws Exception {
+    void a_non_numeric_code_fails_bean_validation() throws Exception {
+        String email = "badfmt-" + UUID.randomUUID() + "@example.com";
+        register(email, "OldPassword1");
+        // Bean-validation rejections in this app answer 422, not the domain 400.
+        resetExpect(email, "abc", "BrandNewPass1", 422);
+    }
+
+    @Test
+    void requesting_a_second_code_invalidates_the_first() throws Exception {
         String email = "reissue-" + UUID.randomUUID() + "@example.com";
         register(email, "OldPassword1");
 
-        mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
-                .content(om.writeValueAsString(Map.of("email", email)))).andExpect(status().isOk());
-        mvc.perform(post("/api/auth/forgot-password").contentType(APPLICATION_JSON)
-                .content(om.writeValueAsString(Map.of("email", email)))).andExpect(status().isOk());
+        forgot(email);
+        forgot(email);
+        ArgumentCaptor<String> codes = ArgumentCaptor.forClass(String.class);
+        verify(mailer, times(2)).sendResetCode(eq(email), any(), codes.capture());
+        String firstCode = codes.getAllValues().get(0);
 
-        ArgumentCaptor<String> tokens = ArgumentCaptor.forClass(String.class);
-        verify(mailer, times(2)).sendResetLink(eq(email), any(), tokens.capture());
-        String firstToken = tokens.getAllValues().get(0);
-
-        mvc.perform(post("/api/auth/reset-password").contentType(APPLICATION_JSON)
-                        .content(om.writeValueAsString(Map.of(
-                                "token", firstToken, "newPassword", "BrandNewPass1"))))
-                .andExpect(status().isBadRequest());
+        resetExpect(email, firstCode, "BrandNewPass1", 400);
     }
 }

@@ -11,6 +11,8 @@ import com.pilarestilo.notificationservice.domain.ports.PaymentReviewerReadPort;
 import com.pilarestilo.notificationservice.domain.view.CustomerView;
 import com.pilarestilo.notificationservice.events.Events;
 import com.pilarestilo.notificationservice.events.PaymentConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,8 @@ import java.util.List;
  */
 @Service
 public class PaymentNotificationDispatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentNotificationDispatcher.class);
 
     /** Whoever may approve a payment. */
     private static final List<String> PAYMENT_REVIEWERS = List.of("ADMIN", "ADMINISTRACION");
@@ -70,15 +74,18 @@ public class PaymentNotificationDispatcher {
 
     public void onPaymentConfirmed(Events.PaymentConfirmed event) {
         orderReadPort.findById(event.orderId()).ifPresentOrElse(
-                order -> {
-                    NotificationRecipient recipient = customerReadPort.findById(order.customerId())
-                            .map(this::recipientFor)
-                            .orElse(NotificationRecipient.unknown());
-                    notificationSender.send(composer.paymentReceived(event.paymentId()), recipient);
-                    inAppNotificationPort.notifyPaymentReceived(order.customerId(), event.paymentId());
-                },
-                () -> notificationSender.send(
-                        composer.paymentReceived(event.paymentId()), NotificationRecipient.unknown()));
+                order -> paymentReadPort.findById(event.paymentId()).ifPresentOrElse(
+                        payment -> {
+                            NotificationRecipient recipient = customerReadPort.findById(order.customerId())
+                                    .map(this::recipientFor)
+                                    .orElse(NotificationRecipient.unknown());
+                            notificationSender.send(composer.paymentReceived(order, payment), recipient);
+                            inAppNotificationPort.notifyPaymentReceived(order.customerId(), event.paymentId());
+                        },
+                        () -> log.warn("Payment {} confirmed but not readable; no message sent",
+                                event.paymentId())),
+                () -> log.warn("Order {} for payment {} not readable; no message sent",
+                        event.orderId(), event.paymentId()));
     }
 
     public void onPaymentRejected(Events.PaymentRejected event) {

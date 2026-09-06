@@ -7,6 +7,7 @@ import com.pilarestilo.systemsettings.infrastructure.security.SystemSettingsCryp
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 /**
- * Sends the password-reset link over SMTP, self-contained on purpose.
+ * Sends the password-reset code over SMTP, self-contained on purpose.
  *
  * <p>Account recovery must work when the shop's notification pipeline is down and regardless of
  * which channels an admin has toggled on, so this does not go through {@code notification-service},
@@ -23,6 +24,8 @@ import java.util.Properties;
  * everything else does — {@code system_settings} first, then {@code EMAIL_SMTP_*} — and sends
  * directly. A misconfigured or dead server is logged and swallowed; the use case treats a mailer
  * failure as non-fatal so a broken SMTP host cannot leak "this address exists".
+ *
+ * <p>The email carries a 6-digit code and the route to type it in — never a link.
  */
 @Component
 public class SmtpPasswordResetMailer implements PasswordResetMailer {
@@ -32,8 +35,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
 
     private final SystemSettingsRepository systemSettingsRepository;
     private final SystemSettingsCryptoService cryptoService;
-    private final String linkBaseUrl;
-    private final int tokenTtlMinutes;
+    private final int codeTtlMinutes;
     private final String envHost;
     private final String envPort;
     private final String envUsername;
@@ -47,8 +49,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
     public SmtpPasswordResetMailer(
             SystemSettingsRepository systemSettingsRepository,
             SystemSettingsCryptoService cryptoService,
-            @Value("${app.password-reset.link-base-url:http://localhost:4321}") String linkBaseUrl,
-            @Value("${app.password-reset.token-ttl-minutes:30}") int tokenTtlMinutes,
+            @Value("${app.password-reset.code-ttl-minutes:30}") int codeTtlMinutes,
             @Value("${EMAIL_SMTP_HOST:}") String envHost,
             @Value("${EMAIL_SMTP_PORT:}") String envPort,
             @Value("${EMAIL_SMTP_USERNAME:}") String envUsername,
@@ -61,8 +62,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
     ) {
         this.systemSettingsRepository = systemSettingsRepository;
         this.cryptoService = cryptoService;
-        this.linkBaseUrl = stripTrailingSlash(firstToken(blankToDefault(linkBaseUrl, "http://localhost:4321")));
-        this.tokenTtlMinutes = tokenTtlMinutes;
+        this.codeTtlMinutes = codeTtlMinutes;
         this.envHost = trimToEmpty(envHost);
         this.envPort = trimToEmpty(envPort);
         this.envUsername = trimToEmpty(envUsername);
@@ -75,7 +75,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
     }
 
     @Override
-    public void sendResetLink(String toEmail, String fullName, String rawToken) {
+    public void sendResetCode(String toEmail, String fullName, String code) {
         if (!looksLikeEmail(toEmail)) {
             log.warn("[EMAIL:RESET] skipped: recipient address is not valid");
             return;
@@ -85,31 +85,25 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
             return;
         }
 
-        String link = linkBaseUrl + "/es/auth/reset-password?token=" + rawToken;
-        String greetingName = (fullName == null || fullName.isBlank()) ? "" : " " + fullName.trim();
-        String text = """
-                Hola%s,
-
-                Recibimos una solicitud para restablecer la contraseña de tu cuenta en Pilar Estilo.
-                Abre este enlace para elegir una nueva contraseña:
-
-                %s
-
-                El enlace expira en %d minutos y solo puede usarse una vez.
-                Si no fuiste tú, ignora este correo: tu contraseña actual sigue siendo válida.
-
-                Pilar Estilo
-                """.formatted(greetingName, link, tokenTtlMinutes);
-        String html = """
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#1f2937;line-height:1.5">
-                  <p>Hola%s,</p>
-                  <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Pilar Estilo.</p>
-                  <p><a href="%s" style="display:inline-block;padding:10px 18px;background:#b8446b;color:#ffffff;text-decoration:none;border-radius:6px">Elegir una nueva contraseña</a></p>
-                  <p style="font-size:13px;color:#6b7280">O copia este enlace: <br>%s</p>
-                  <p style="font-size:13px;color:#6b7280">El enlace expira en %d minutos y solo puede usarse una vez. Si no fuiste tú, ignora este correo: tu contraseña actual sigue siendo válida.</p>
-                  <p>Pilar Estilo</p>
-                </div>
-                """.formatted(escapeHtml(greetingName), escapeHtml(link), escapeHtml(link), tokenTtlMinutes);
+        String greeting = (fullName == null || fullName.isBlank()) ? "Hola" : "Hola " + fullName.trim();
+        String text = greeting + ".\n\n"
+                + "Recibimos una solicitud para cambiar la contraseña de tu cuenta en Pilar Estilo.\n\n"
+                + "Tu código: " + code + "\n\n"
+                + "Entra a pilarestilo.com, abre \"¿Olvidaste tu contraseña?\", escribe tu correo y "
+                + "el código, y elige una nueva contraseña.\n\n"
+                + "El código vence en " + codeTtlMinutes + " minutos y se usa una sola vez. "
+                + "Si no fuiste tú, ignora este correo: tu contraseña actual sigue válida.\n";
+        String html = AuthEmailLayout.titled("Código para cambiar tu contraseña")
+                .eyebrow("Seguridad")
+                .paragraph(greeting + ". Recibimos una solicitud para cambiar la contraseña de tu "
+                        + "cuenta. Si fuiste tú, usa este código:")
+                .code(code, null)
+                .route("Cómo usarlo", "Entra a", "pilarestilo.com",
+                        "Iniciar sesión › ¿Olvidaste tu contraseña?")
+                .paragraph("Escribe tu correo y el código, y elige tu nueva contraseña.")
+                .note("Importante", "El código vence en " + codeTtlMinutes + " minutos y se usa una "
+                        + "sola vez. Si no fuiste tú, ignora este correo: tu contraseña actual sigue válida.")
+                .build();
 
         JavaMailSenderImpl sender = buildSender(config);
         String to = toEmail.trim();
@@ -120,6 +114,7 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
             helper.setTo(to);
             helper.setSubject(SUBJECT);
             helper.setText(text, html);
+            helper.addInline(AuthEmailLayout.LOGO_CONTENT_ID, new ClassPathResource(AuthEmailLayout.LOGO_RESOURCE));
             sender.send(message);
             log.info("[EMAIL:RESET] sent to={}", to);
         } catch (Exception ex) {
@@ -234,25 +229,6 @@ public class SmtpPasswordResetMailer implements PasswordResetMailer {
 
     private static String blankToDefault(String value, String fallback) {
         return (value == null || value.isBlank()) ? fallback : value.trim();
-    }
-
-    private static String stripTrailingSlash(String value) {
-        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
-    }
-
-    /**
-     * The storefront origin, first token only. {@code DOMAIN} in the shipped env may hold several
-     * space-separated hostnames (so Caddy serves them all); {@code https://${DOMAIN}} would then be
-     * two hosts joined by a space, which URL-encodes to a broken link.
-     */
-    private static String firstToken(String value) {
-        String trimmed = value.trim();
-        int space = trimmed.indexOf(' ');
-        return space > 0 ? trimmed.substring(0, space) : trimmed;
-    }
-
-    private static String escapeHtml(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     record SmtpConfig(String host, int port, String username, String password, String fromEmail,

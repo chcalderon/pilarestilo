@@ -1346,11 +1346,11 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
   });
 }
 
-/** Resolves on 204; throws ApiError with the generic message on an invalid/used/expired token. */
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
+/** Resolves on 204; throws ApiError with the generic message on a wrong/used/expired code. */
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
   return apiFetch<void>('/auth/reset-password', {
     method: 'POST',
-    body: JSON.stringify({ token, newPassword }),
+    body: JSON.stringify({ email, code, newPassword }),
   });
 }
 

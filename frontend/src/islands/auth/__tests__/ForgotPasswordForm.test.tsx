@@ -26,7 +26,7 @@ describe('ForgotPasswordForm', () => {
     render(<ForgotPasswordForm locale="es" />);
 
     await user.type(screen.getByPlaceholderText(/email.com/i), 'ana@correo.cl');
-    await user.click(screen.getByRole('button', { name: /enviar enlace/i }));
+    await user.click(screen.getByRole('button', { name: /enviar código/i }));
 
     expect(await screen.findByText(/revisa tu correo/i)).toBeInTheDocument();
     expect(requestPasswordReset).toHaveBeenCalledWith('ana@correo.cl');
@@ -38,7 +38,7 @@ describe('ForgotPasswordForm', () => {
     render(<ForgotPasswordForm locale="es" />);
 
     await user.type(screen.getByPlaceholderText(/email.com/i), 'ghost@nowhere.invalid');
-    await user.click(screen.getByRole('button', { name: /enviar enlace/i }));
+    await user.click(screen.getByRole('button', { name: /enviar código/i }));
 
     expect(await screen.findByText(/revisa tu correo/i)).toBeInTheDocument();
   });
@@ -49,7 +49,7 @@ describe('ForgotPasswordForm', () => {
     render(<ForgotPasswordForm locale="es" />);
 
     await user.type(screen.getByPlaceholderText(/email.com/i), 'ana@correo.cl');
-    await user.click(screen.getByRole('button', { name: /enviar enlace/i }));
+    await user.click(screen.getByRole('button', { name: /enviar código/i }));
 
     expect(await screen.findByText(/demasiados intentos/i)).toBeInTheDocument();
     expect(screen.queryByText(/revisa tu correo/i)).not.toBeInTheDocument();

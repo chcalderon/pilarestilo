@@ -108,7 +108,7 @@ public class NotificationComposer {
                         + "podamos identificar tu pago.");
 
         if (deadline != null) {
-            email.note("Sube tu comprobante desde Mi Cuenta antes de las "
+            email.note("Antes de la fecha límite", "Sube tu comprobante desde Mi cuenta antes de las "
                     + formatDeadline(deadline) + ". Sin comprobante, el pedido puede cancelarse "
                     + "y el stock quedará liberado.");
         } else {
@@ -197,36 +197,43 @@ public class NotificationComposer {
     }
 
     private String orderConfirmationHtml(OrderView order, String reference, String total) {
-        List<String[]> lines = order.items().stream()
-                .map(item -> new String[]{
-                        item.productName() + variantSuffix(item.variantColor(), item.variantSize())
-                                + " x" + item.quantity(),
+        List<EmailLayout.Line> lines = order.items().stream()
+                .map(item -> new EmailLayout.Line(
+                        item.productName(),
+                        lineVariantAndQty(item),
                         formatAmount(item.unitPrice().amount().toPlainString(),
-                                item.unitPrice().currency())})
+                                item.unitPrice().currency())))
                 .toList();
 
-        EmailLayout.Builder email = EmailLayout.titled("Recibimos tu pedido")
-                .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
-                        + "avisaremos por aquí en cada paso.")
-                .highlight(LABEL_NUMERO_PEDIDO, reference)
-                .details(lines);
-
-        List<String[]> amounts = new java.util.ArrayList<>();
-        amounts.add(new String[]{"Subtotal", formatAmount(
+        List<String[]> totals = new java.util.ArrayList<>();
+        totals.add(new String[]{"Subtotal", formatAmount(
                 order.subtotal().amount().toPlainString(), order.subtotal().currency())});
         if (order.discount().amount().signum() > 0) {
-            amounts.add(new String[]{"Descuento", "-" + formatAmount(
-                    order.discount().amount().toPlainString(),
-                    order.discount().currency())});
+            totals.add(new String[]{"Descuento", "-" + formatAmount(
+                    order.discount().amount().toPlainString(), order.discount().currency())});
         }
-        amounts.add(new String[]{"Total", total});
-        amounts.add(new String[]{"Envío", shippingLine(order)});
+        totals.add(new String[]{"Envío", shippingLine(order)});
+        totals.add(new String[]{"Total", total});
 
-        return email
-                .details(amounts)
-                .note("Tienes 10 días desde que recibes el pedido para arrepentirte de la compra y "
-                        + "pedir la devolución, según la Ley del Consumidor.")
+        return EmailLayout.titled("Recibimos tu pedido")
+                .eyebrow("Confirmación de pedido")
+                .paragraph("Gracias por comprar en Pilar Estilo. Esto es lo que pediste; te "
+                        + "escribimos por aquí en cada paso, desde la preparación hasta la entrega.")
+                .orderSummary(reference, formatDate(Instant.now()), lines, totals)
+                .route("Cómo ver el estado", "Entra a", "pilarestilo.com", "Mi cuenta › Pedidos")
+                .note("Si cambias de opinión", "Tienes 10 días desde que recibes el pedido para "
+                        + "pedir la devolución, sin dar motivo, según la Ley del Consumidor. La "
+                        + "solicitas desde Mi cuenta › Pedidos.")
                 .build();
+    }
+
+    /** "Crudo / M · x2", or just "x2" when the item has no real variant. */
+    private String lineVariantAndQty(OrderView.OrderItemView item) {
+        String variant = java.util.stream.Stream.of(item.variantColor(), item.variantSize())
+                .filter(v -> v != null && !v.isBlank())
+                .reduce((a, b) -> a + " / " + b)
+                .orElse(null);
+        return (variant == null ? "" : variant + " · ") + "x" + item.quantity();
     }
 
     private String shippingLine(OrderView order) {
@@ -245,15 +252,54 @@ public class NotificationComposer {
         return variant == null ? "" : " (" + variant + ")";
     }
 
-    public NotificationMessage paymentReceived(UUID paymentId) {
+    public NotificationMessage paymentReceived(OrderView order, PaymentView payment) {
+        String reference = order.publicReference();
+        String total = formatAmount(order.total().amount().toPlainString(), order.total().currency());
+        int itemCount = order.items().stream().mapToInt(OrderView.OrderItemView::quantity).sum();
+        String methodLabel = methodLabel(payment.method());
+
+        String body = "Recibimos el pago de tu pedido " + reference + " " + methodLabel + ".\n\n"
+                + "Ya estamos preparando el pedido; te avisamos por aquí apenas salga a despacho.\n\n"
+                + "Puedes seguirlo en pilarestilo.com, en Mi cuenta > Pedidos.\n";
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put(KEY_ORDER_ID, order.id());
+        data.put(KEY_ORDER_REFERENCE, reference);
+        data.put("paymentId", payment.id());
+        data.put("method", payment.method());
+        data.put(KEY_TOTAL_AMOUNT, order.total().amount());
+        data.put(KEY_CURRENCY, order.total().currency());
+
         return new NotificationMessage(
                 NotificationMessage.PAYMENT_RECEIVED,
-                "Pago " + shortId(paymentId) + " recibido",
-                "Confirmamos el pago " + paymentId + ".\n"
-                        + "Gracias por tu compra en Pilar Estilo.\n",
-                null,
-                Map.of("paymentId", paymentId),
-                paymentId);
+                "Pago confirmado — pedido " + reference,
+                body,
+                EmailLayout.titled("Estamos preparando tu pedido")
+                        .eyebrow("Pago confirmado")
+                        .paragraph("Recibimos tu pago. Ya estamos armando el paquete y te avisamos por "
+                                + "aquí apenas salga a despacho.")
+                        .orderSummary(reference, formatDate(payment.createdAt()), List.of(),
+                                List.of(new String[]{"Productos", itemCount + " · " + total},
+                                        new String[]{"Pago", capitalize(methodLabel)}))
+                        .route("Cómo seguirlo", "Entra a", "pilarestilo.com", "Mi cuenta › Pedidos")
+                        .build(),
+                data,
+                order.id());
+    }
+
+    private static String methodLabel(String method) {
+        if (method == null) {
+            return "con tarjeta o transferencia";
+        }
+        return switch (method) {
+            case "TRANSFER" -> "por transferencia";
+            case "MERCADO_PAGO" -> "con Mercado Pago";
+            default -> "con tarjeta";
+        };
+    }
+
+    private static String capitalize(String s) {
+        return s == null || s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private String orderCancelledHtml(String reference, String reason) {
@@ -261,28 +307,11 @@ public class NotificationComposer {
                 .highlight(LABEL_NUMERO_PEDIDO, reference);
         Optional.ofNullable(reason)
                 .filter(r -> !r.isBlank())
-                .ifPresent(r -> email.note("Motivo: " + r));
+                .ifPresent(r -> email.note("Motivo", r));
         return email
                 .paragraph("Los productos volvieron a estar disponibles. Si aún quieres comprarlos, "
                         + "puedes hacer un nuevo pedido cuando quieras.")
                 .build();
-    }
-
-    public NotificationMessage orderPreparing(OrderView order) {
-        UUID orderId = order.id();
-        String reference = order.publicReference();
-        return new NotificationMessage(
-                NotificationMessage.ORDER_PREPARING,
-                PREFIX_PEDIDO + reference + " en preparación",
-                PREFIX_TU_PEDIDO + reference + " está en preparación.\n"
-                        + "Te avisaremos cuando sea despachado.\n",
-                EmailLayout.titled("Estamos preparando tu pedido")
-                        .paragraph("Tu pago quedó confirmado y ya estamos armando el paquete.")
-                        .highlight(LABEL_NUMERO_PEDIDO, reference)
-                        .paragraph("Te escribimos de nuevo apenas salga.")
-                        .build(),
-                Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
-                orderId);
     }
 
     public NotificationMessage orderShipped(OrderView order) {
@@ -313,7 +342,7 @@ public class NotificationComposer {
                         + "Nos ayudarías mucho contándonos qué te pareció.\n",
                 EmailLayout.titled("Tu pedido quedó como entregado")
                         .highlight(LABEL_NUMERO_PEDIDO, reference)
-                        .note("Si aún no lo recibiste, respóndenos este correo y lo revisamos.")
+                        .note("Si aún no llega", "Si aún no lo recibiste, responde este correo y lo revisamos.")
                         .paragraph("Nos ayudarías mucho contándonos qué te pareció.")
                         .build(),
                 Map.of(KEY_ORDER_ID, orderId, KEY_REFERENCE, reference),
@@ -323,10 +352,14 @@ public class NotificationComposer {
     public NotificationMessage discountCodeAssigned(String code) {
         return new NotificationMessage(
                 NotificationMessage.DISCOUNT_CODE_ASSIGNED,
-                "Código de descuento exclusivo para ti",
-                "Tienes un código de descuento exclusivo: " + code + "\n"
-                        + "Úsalo en tu próxima compra en Pilar Estilo.\n",
-                null,
+                "Tienes un código de descuento",
+                "Guardamos un código de descuento para tu próxima compra en Pilar Estilo: " + code + "\n\n"
+                        + "Lo escribes en el carrito, en Código de descuento, antes de pagar.\n",
+                EmailLayout.titled("Tienes un código de descuento")
+                        .eyebrow("Solo para ti")
+                        .paragraph("Guardamos este código para tu próxima compra en Pilar Estilo.")
+                        .code(code, "Escríbelo en el carrito, en “Código de descuento”, antes de pagar.")
+                        .build(),
                 Map.of("code", code),
                 null);
     }
@@ -367,8 +400,9 @@ public class NotificationComposer {
                 .append("Ya puedes explorar el catálogo y hacer tu primera compra.\n");
 
         EmailLayout.Builder email = EmailLayout.titled("Bienvenida a Pilar Estilo")
+                .eyebrow("Bienvenida")
                 .paragraph("Hola " + fullName + ", gracias por crear tu cuenta.")
-                .paragraph("Ya puedes explorar el catálogo y hacer tu primera compra.");
+                .paragraph("Ya puedes recorrer el catálogo y guardar tus favoritos.");
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("fullName", fullName);
@@ -378,10 +412,13 @@ public class NotificationComposer {
             body.append("\nTienes un código de bienvenida: ").append(coupon.code())
                     .append(" (").append(condition).append("), válido hasta ")
                     .append(coupon.validUntil()).append(".\n");
-            email.highlight("Tu código de bienvenida", coupon.code())
-                    .note(condition + ". Válido hasta " + coupon.validUntil() + ".");
+            email.paragraph("Como regalo de bienvenida, usa este código en tu primera compra:")
+                    .code(coupon.code(), condition + " · válido hasta " + coupon.validUntil())
+                    .route("Cómo usarlo", "Lo escribes en el carrito, en", "", "Código de descuento");
             data.put("welcomeDiscountCode", coupon.code());
             data.put("welcomeDiscountValidUntil", coupon.validUntil());
+        } else {
+            email.route("Empieza aquí", "Entra a", "pilarestilo.com", "Catálogo");
         }
 
         return new NotificationMessage(
@@ -402,9 +439,6 @@ public class NotificationComposer {
                 : amount + " de descuento en tu próxima compra";
     }
 
-    private static String shortId(UUID id) {
-        return id == null ? "" : id.toString().substring(0, 8);
-    }
 
     private String formatDeadline(Instant deadline) {
         var local = deadline.atZone(STORE_ZONE);
@@ -579,7 +613,7 @@ public class NotificationComposer {
                 EmailLayout.titled("Reembolso realizado")
                         .paragraph("Te devolvimos el dinero de tu pedido " + reference + ".")
                         .details(rows)
-                        .note("Según tu banco puede tardar unos días en aparecer en tu cartola.")
+                        .note("Cuándo lo verás", "Según tu banco puede tardar unos días en aparecer en tu cartola.")
                         .build(),
                 data,
                 order.id());

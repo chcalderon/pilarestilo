@@ -4,6 +4,7 @@ import com.pilarestilo.shared.auth.domain.model.PasswordResetToken;
 import com.pilarestilo.shared.auth.domain.ports.PasswordResetTokenRepository;
 import com.pilarestilo.shared.auth.infrastructure.persistence.entities.PasswordResetTokenEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -31,6 +32,19 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
     }
 
     @Override
+    public Optional<PasswordResetToken> findActiveByUserId(UUID userId) {
+        return jpaRepository.findActiveByUserId(userId, Instant.now()).stream()
+                .findFirst()
+                .map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordFailedAttempt(UUID tokenId) {
+        jpaRepository.incrementAttemptCount(tokenId);
+    }
+
+    @Override
     @Transactional
     public void invalidateUnusedForUser(UUID userId) {
         jpaRepository.invalidateUnusedForUser(userId, Instant.now());
@@ -50,6 +64,7 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
         entity.setExpiresAt(token.getExpiresAt());
         entity.setUsedAt(token.getUsedAt());
         entity.setCreatedAt(token.getCreatedAt());
+        entity.setAttemptCount(token.getAttemptCount());
         return entity;
     }
 
@@ -60,6 +75,7 @@ public class PasswordResetTokenRepositoryAdapter implements PasswordResetTokenRe
                 entity.getTokenHash(),
                 entity.getExpiresAt(),
                 entity.getUsedAt(),
-                entity.getCreatedAt());
+                entity.getCreatedAt(),
+                entity.getAttemptCount());
     }
 }

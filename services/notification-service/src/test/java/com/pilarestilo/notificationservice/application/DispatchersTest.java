@@ -81,6 +81,18 @@ class DispatchersTest {
         }
 
         @Test
+        void preparing_writes_the_in_app_row_but_sends_no_email() {
+            when(orders.findById(orderId)).thenReturn(Optional.of(order(orderId, customerId, "PE-1")));
+            when(customers.findById(customerId)).thenReturn(Optional.of(customer(customerId)));
+
+            dispatcher.onOrderStatusChanged(new Events.OrderStatusChanged(
+                    orderId, customerId, "PAID", "PREPARING_ORDER", Instant.now()));
+
+            verifyNoInteractions(sender);
+            verify(inApp).notifyOrderPreparing(customerId, orderId);
+        }
+
+        @Test
         void an_uninteresting_status_change_is_ignored() {
             dispatcher.onOrderStatusChanged(new Events.OrderStatusChanged(
                     orderId, customerId, "CREATED", "PAID", Instant.now()));
@@ -97,12 +109,25 @@ class DispatchersTest {
         @Test
         void confirmed_sends_the_receipt_and_writes_the_in_app_row() {
             when(orders.findById(orderId)).thenReturn(Optional.of(order(orderId, customerId, "PE-1")));
+            when(payments.findById(paymentId)).thenReturn(Optional.of(transferPayment(paymentId, orderId)));
             when(customers.findById(customerId)).thenReturn(Optional.of(customer(customerId)));
 
             dispatcher.onPaymentConfirmed(new Events.PaymentConfirmed(paymentId, orderId, Instant.now()));
 
-            verify(sender).send(argThat(m -> NotificationMessage.PAYMENT_RECEIVED.equals(m.templateKey())), any());
+            verify(sender).send(argThat(m ->
+                    NotificationMessage.PAYMENT_RECEIVED.equals(m.templateKey())
+                            && m.subject().contains("PE-1")), any());
             verify(inApp).notifyPaymentReceived(customerId, paymentId);
+        }
+
+        @Test
+        void confirmed_with_an_unreadable_payment_sends_nothing() {
+            when(orders.findById(orderId)).thenReturn(Optional.of(order(orderId, customerId, "PE-1")));
+            when(payments.findById(paymentId)).thenReturn(Optional.empty());
+
+            dispatcher.onPaymentConfirmed(new Events.PaymentConfirmed(paymentId, orderId, Instant.now()));
+
+            verifyNoInteractions(sender);
         }
 
         @Test

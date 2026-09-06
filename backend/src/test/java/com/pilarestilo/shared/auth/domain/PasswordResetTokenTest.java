@@ -44,8 +44,25 @@ class PasswordResetTokenTest {
         Instant created = Instant.now().minusSeconds(60);
         Instant expires = created.plusSeconds(1800);
         PasswordResetToken token = PasswordResetToken.reconstruct(
-                UUID.randomUUID(), userId, "hash", expires, null, created);
+                UUID.randomUUID(), userId, "hash", expires, null, created, 0);
         assertTrue(token.isUsable(created.plusSeconds(10)));
         assertFalse(token.isUsable(expires.plusSeconds(1)));
+    }
+
+    @Test
+    void a_row_at_the_attempt_limit_is_no_longer_usable() {
+        Instant created = Instant.now();
+        PasswordResetToken token = PasswordResetToken.reconstruct(
+                UUID.randomUUID(), userId, "hash", created.plusSeconds(1800), null, created,
+                PasswordResetToken.MAX_ATTEMPTS);
+        assertFalse(token.isUsable(created.plusSeconds(10)));
+    }
+
+    @Test
+    void recordFailedAttempt_bumps_the_count() {
+        PasswordResetToken token = PasswordResetToken.issue(userId, "hash", Duration.ofMinutes(30));
+        token.recordFailedAttempt();
+        token.recordFailedAttempt();
+        assertEquals(2, token.getAttemptCount());
     }
 }

@@ -7,12 +7,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * A single password-reset link, stored as the hash of a token that only ever lived in the email.
+ * A single password-reset secret, stored as the hash of a 6-digit code that only ever lived in
+ * the email.
  *
- * <p>Single use ({@code usedAt}) and short lived ({@code expiresAt}). Requesting a new link marks
- * every earlier unused row for that user as used, so only the most recent link works.
+ * <p>Single use ({@code usedAt}), short lived ({@code expiresAt}), and locked after
+ * {@link #MAX_ATTEMPTS} wrong guesses ({@code attemptCount}) — the code is low-entropy, so the
+ * lock is what stops a brute force in the TTL window. Requesting a new code marks every earlier
+ * unused row for that user as used, so only the most recent code works.
  */
 public class PasswordResetToken {
+
+    /** Wrong-guess budget before the row is dead, however much of the TTL is left. */
+    public static final int MAX_ATTEMPTS = 5;
 
     private UUID id;
     private UUID userId;
@@ -20,6 +26,7 @@ public class PasswordResetToken {
     private Instant expiresAt;
     private Instant usedAt;
     private Instant createdAt;
+    private int attemptCount;
 
     private PasswordResetToken() {}
 
@@ -37,15 +44,21 @@ public class PasswordResetToken {
         token.createdAt = Instant.now();
         token.expiresAt = token.createdAt.plus(ttl);
         token.usedAt = null;
+        token.attemptCount = 0;
         return token;
     }
 
     public boolean isUsable(Instant now) {
-        return usedAt == null && now.isBefore(expiresAt);
+        return usedAt == null && now.isBefore(expiresAt) && attemptCount < MAX_ATTEMPTS;
     }
 
     public void markUsed(Instant now) {
         this.usedAt = now;
+    }
+
+    /** A wrong code was submitted against this row. */
+    public void recordFailedAttempt() {
+        this.attemptCount++;
     }
 
     /** Rehydration from the stored row; the parameter order follows the schema. */
@@ -54,7 +67,8 @@ public class PasswordResetToken {
                                                  String tokenHash,
                                                  Instant expiresAt,
                                                  Instant usedAt,
-                                                 Instant createdAt) {
+                                                 Instant createdAt,
+                                                 int attemptCount) {
         PasswordResetToken token = new PasswordResetToken();
         token.id = id;
         token.userId = userId;
@@ -62,6 +76,7 @@ public class PasswordResetToken {
         token.expiresAt = expiresAt;
         token.usedAt = usedAt;
         token.createdAt = createdAt;
+        token.attemptCount = attemptCount;
         return token;
     }
 
@@ -71,4 +86,5 @@ public class PasswordResetToken {
     public Instant getExpiresAt() { return expiresAt; }
     public Instant getUsedAt() { return usedAt; }
     public Instant getCreatedAt() { return createdAt; }
+    public int getAttemptCount() { return attemptCount; }
 }

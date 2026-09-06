@@ -39,38 +39,28 @@ class SmtpPasswordResetMailerTest {
     }
 
     @Test
-    void sends_a_message_carrying_the_reset_link_when_smtp_is_configured() throws Exception {
+    void the_email_carries_the_code_and_no_link() throws Exception {
         smtpConfigured();
-        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository, "https://pilarestilo.cl");
+        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository);
 
-        mailer.sendResetLink("cliente@example.com", "Camila", "TOK-123");
+        mailer.sendResetCode("cliente@example.com", "Camila", "418302");
 
         assertThat(mailer.sent).isNotNull();
         assertThat(mailer.sent.getSubject()).isEqualTo("Restablece tu contraseña — Pilar Estilo");
         String body = textOf(mailer.sent);
-        assertThat(body).contains("https://pilarestilo.cl/es/auth/reset-password?token=TOK-123", "30 minutos");
-    }
-
-    @Test
-    void a_multi_host_base_url_collapses_to_the_first_host() throws Exception {
-        smtpConfigured();
-        RecordingMailer mailer = new RecordingMailer(
-                systemSettingsRepository, "https://pilarestilo.com www.pilarestilo.com");
-
-        mailer.sendResetLink("cliente@example.com", "Camila", "TOK-123");
-
-        String body = textOf(mailer.sent);
         assertThat(body)
-                .contains("https://pilarestilo.com/es/auth/reset-password?token=TOK-123")
-                .doesNotContain("www.pilarestilo.com");
+                .contains("418302")
+                .contains("30 minutos")
+                .doesNotContain("http")
+                .doesNotContain("<a ");
     }
 
     @Test
     void is_a_no_op_when_smtp_is_not_configured() {
         smtpNotConfigured();
-        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository, "https://pilarestilo.cl");
+        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository);
 
-        assertThatCode(() -> mailer.sendResetLink("cliente@example.com", "Camila", "TOK-123"))
+        assertThatCode(() -> mailer.sendResetCode("cliente@example.com", "Camila", "418302"))
                 .doesNotThrowAnyException();
         assertThat(mailer.sent).isNull();
     }
@@ -78,9 +68,9 @@ class SmtpPasswordResetMailerTest {
     @Test
     void is_a_no_op_when_the_recipient_address_is_not_an_email() {
         smtpConfigured();
-        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository, "https://pilarestilo.cl");
+        RecordingMailer mailer = new RecordingMailer(systemSettingsRepository);
 
-        mailer.sendResetLink("not-an-email", "Camila", "TOK-123");
+        mailer.sendResetCode("not-an-email", "Camila", "418302");
 
         assertThat(mailer.sent).isNull();
     }
@@ -88,7 +78,7 @@ class SmtpPasswordResetMailerTest {
     @Test
     void a_failing_mail_server_does_not_propagate() {
         smtpConfigured();
-        RecordingMailer failing = new RecordingMailer(systemSettingsRepository, "https://pilarestilo.cl") {
+        RecordingMailer failing = new RecordingMailer(systemSettingsRepository) {
             @Override
             JavaMailSenderImpl buildSender(SmtpConfig config) {
                 JavaMailSenderImpl impl = new JavaMailSenderImpl();
@@ -98,7 +88,7 @@ class SmtpPasswordResetMailerTest {
             }
         };
 
-        assertThatCode(() -> failing.sendResetLink("a@b.cl", "A", "TOK-123")).doesNotThrowAnyException();
+        assertThatCode(() -> failing.sendResetCode("a@b.cl", "A", "418302")).doesNotThrowAnyException();
     }
 
     /** Walks the MIME tree and concatenates every text/* part, so quoted-printable is decoded for us. */
@@ -122,9 +112,9 @@ class SmtpPasswordResetMailerTest {
 
         private MimeMessage sent;
 
-        RecordingMailer(SystemSettingsRepository repository, String linkBaseUrl) {
+        RecordingMailer(SystemSettingsRepository repository) {
             super(repository, mock(SystemSettingsCryptoService.class),
-                    linkBaseUrl, 30,
+                    30,
                     "", "", "", "", "", "Pilar Estilo", "", "", "");
         }
 
