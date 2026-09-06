@@ -48,7 +48,7 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
     public PublicationDispatcher.DispatchResult publish(PublicationDispatchPayload payload) {
         MetaPublishingConfigResolver.EffectiveConfig config = configResolver.resolve();
         if (config.instagramUserId() == null || config.instagramAccessToken() == null) {
-            return failed("Instagram credentials are not configured");
+            return failed("Instagram credentials are not configured", false);
         }
 
         RestClient client = restClientBuilder.baseUrl(config.instagramBaseUrl()).build();
@@ -63,9 +63,9 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
             String permalink = fetchPermalink(client, remotePostId, config.instagramAccessToken());
 
             return new PublicationDispatcher.DispatchResult(
-                    UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED, remotePostId, null, null, permalink);
+                    UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED, remotePostId, null, null, permalink, true);
         } catch (RuntimeException ex) {
-            return failed(ex.getMessage());
+            return failed(ex.getMessage(), MetaErrorClassifier.isRetryable(ex));
         }
     }
 
@@ -167,9 +167,9 @@ public class InstagramGraphPublisherAdapter implements SocialPlatformPublisher {
         return raw == null || raw.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(raw);
     }
 
-    private PublicationDispatcher.DispatchResult failed(String message) {
+    private PublicationDispatcher.DispatchResult failed(String message, boolean retryable) {
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.FAILED, null,
-                "INSTAGRAM_PUBLISH_ERROR", message, null);
+                "INSTAGRAM_PUBLISH_ERROR", message, null, retryable);
     }
 }

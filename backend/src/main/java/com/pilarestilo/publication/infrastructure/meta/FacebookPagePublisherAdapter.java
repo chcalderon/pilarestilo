@@ -32,7 +32,7 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
     public PublicationDispatcher.DispatchResult publish(PublicationDispatchPayload payload) {
         MetaPublishingConfigResolver.EffectiveConfig config = configResolver.resolve();
         if (config.facebookPageId() == null || config.facebookPageAccessToken() == null) {
-            return failed("Facebook credentials are not configured");
+            return failed("Facebook credentials are not configured", false);
         }
 
         RestClient client = restClientBuilder.baseUrl(config.facebookBaseUrl()).build();
@@ -42,7 +42,7 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
             }
             return publishCarousel(client, config, payload.mediaUrls(), payload.fullCaptionText());
         } catch (RuntimeException ex) {
-            return failed(ex.getMessage());
+            return failed(ex.getMessage(), MetaErrorClassifier.isRetryable(ex));
         }
     }
 
@@ -61,7 +61,7 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
 
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED,
-                remotePostId, null, null, permalink);
+                remotePostId, null, null, permalink, true);
     }
 
     private PublicationDispatcher.DispatchResult publishCarousel(RestClient client,
@@ -89,7 +89,7 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
         String permalink = postId == null ? null : "https://www.facebook.com/" + postId;
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.SUCCEEDED,
-                postId, null, null, permalink);
+                postId, null, null, permalink, true);
     }
 
     /** The Graph API returns JSON as Content-Type: text/javascript — read the raw string and parse it. */
@@ -97,9 +97,9 @@ public class FacebookPagePublisherAdapter implements SocialPlatformPublisher {
         return raw == null || raw.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(raw);
     }
 
-    private PublicationDispatcher.DispatchResult failed(String message) {
+    private PublicationDispatcher.DispatchResult failed(String message, boolean retryable) {
         return new PublicationDispatcher.DispatchResult(
                 UUID.randomUUID().toString(), null, PublicationAttemptStatus.FAILED, null,
-                "FACEBOOK_PUBLISH_ERROR", message, null);
+                "FACEBOOK_PUBLISH_ERROR", message, null, retryable);
     }
 }

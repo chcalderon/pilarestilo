@@ -196,7 +196,7 @@ class PublicationServiceTest {
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
                         "req-1", "hash-1", PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null,
-                        "https://www.instagram.com/p/x/"));
+                        "https://www.instagram.com/p/x/", true));
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
@@ -232,7 +232,7 @@ class PublicationServiceTest {
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
                         "req-1", "hash-1", PublicationAttemptStatus.FAILED, null,
-                        "INSTAGRAM_PUBLISH_ERROR", "Rate limited", null));
+                        "INSTAGRAM_PUBLISH_ERROR", "Rate limited", null, false));
 
         PublicationDto dto = service.dispatch(publicationId, UUID.randomUUID());
 
@@ -274,7 +274,7 @@ class PublicationServiceTest {
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
                         "req-2", "hash-2", PublicationAttemptStatus.SUCCEEDED, "remote-2", null, null,
-                        "https://www.instagram.com/p/y/"));
+                        "https://www.instagram.com/p/y/", true));
 
         PublicationDto dto = service.retry(publicationId, UUID.randomUUID());
 
@@ -473,7 +473,7 @@ class PublicationServiceTest {
                         "https://img", ProductCondition.NEW, "Pilar", 2)));
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
-                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null));
+                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null, true));
 
         service.dispatch(publicationId, UUID.randomUUID());
 
@@ -496,7 +496,7 @@ class PublicationServiceTest {
                         "https://img", ProductCondition.NEW, "Pilar", 2)));
         when(publicationDispatcher.dispatch(any(), anyString(), any()))
                 .thenReturn(new PublicationDispatcher.DispatchResult(
-                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null));
+                        "req-1", null, PublicationAttemptStatus.SUCCEEDED, "remote-1", null, null, null, true));
 
         service.dispatch(publicationId, UUID.randomUUID());
 

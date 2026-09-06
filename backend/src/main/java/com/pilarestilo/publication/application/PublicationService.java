@@ -376,8 +376,9 @@ public class PublicationService {
         try {
             result = publicationDispatcher.dispatch(entity.getId(), entity.getIdempotencyKey(), payload);
         } catch (RuntimeException ex) {
+            boolean retryable = !(ex instanceof DomainException);
             result = new PublicationDispatcher.DispatchResult(
-                    null, null, PublicationAttemptStatus.FAILED, null, DISPATCH_ERROR_CODE, ex.getMessage(), null);
+                    null, null, PublicationAttemptStatus.FAILED, null, DISPATCH_ERROR_CODE, ex.getMessage(), null, retryable);
         }
 
         Instant finishedAt = Instant.now();
